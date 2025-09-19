@@ -1,76 +1,187 @@
 'use client';
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
-  BookOpen,
-  FolderPlus,
-  Search,
-  SlidersHorizontal,
+  ChevronRight,
+  Folder,
+  File,
+  Home as HomeIcon,
+  Plus,
+  Download,
+  Star,
+  Book,
+  FileText,
+  Presentation,
+  Users,
+  TestTube2,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+
+const folderData = [
+  {
+    name: 'Lectures',
+    fileCount: 8,
+    icon: Presentation,
+    color: 'text-blue-400',
+  },
+  {
+    name: 'Case Studies',
+    fileCount: 5,
+    icon: Users,
+    color: 'text-purple-400',
+  },
+  {
+    name: 'Textbooks',
+    fileCount: 3,
+    icon: Book,
+    color: 'text-green-400',
+  },
+  {
+    name: 'Research Papers',
+    fileCount: 4,
+    icon: FileText,
+    color: 'text-red-400',
+  },
+  {
+    name: 'Practical Sessions',
+    fileCount: 2,
+    icon: TestTube2,
+    color: 'text-orange-400',
+  },
+];
+
+const fileData = [
+  {
+    name: 'Course Syllabus.pdf',
+    size: '2.1 MB',
+    date: '2024-09-01',
+    icon: File,
+  },
+  {
+    name: 'Quick Reference Guide.pdf',
+    size: '1.5 MB',
+    date: '2024-09-15',
+    icon: File,
+  },
+];
+
+const Breadcrumbs = () => (
+  <nav className="flex items-center text-sm text-slate-300 mb-6">
+    <a href="#" className="flex items-center gap-2 hover:text-white">
+      <HomeIcon className="w-4 h-4" />
+      <span>Home</span>
+    </a>
+    <ChevronRight className="w-4 h-4 mx-1" />
+    <a href="#" className="hover:text-white">Levels</a>
+    <ChevronRight className="w-4 h-4 mx-1" />
+    <a href="#" className="hover:text-white">Semesters</a>
+    <ChevronRight className="w-4 h-4 mx-1" />
+    <a href="#" className="hover:text-white">Subjects</a>
+    <ChevronRight className="w-4 h-4 mx-1" />
+    <span className="font-semibold text-white">Anatomy</span>
+  </nav>
+);
+
+type FolderCardProps = {
+  name: string;
+  fileCount: number;
+  icon: LucideIcon;
+  color: string;
+};
+
+const FolderCard = ({ name, fileCount, icon: Icon, color }: FolderCardProps) => (
+  <div className="glass-card p-4 flex items-center justify-between transition-all hover:bg-white/10 cursor-pointer">
+    <div className="flex items-center gap-4">
+      <div className={`p-3 rounded-lg bg-slate-800 ${color}`}>
+        <Icon className="w-6 h-6" />
+      </div>
+      <div>
+        <p className="font-semibold text-white">{name}</p>
+        <p className="text-sm text-slate-400">{fileCount} files</p>
+      </div>
+    </div>
+    <ChevronRight className="w-5 h-5 text-slate-500" />
+  </div>
+);
+
+type FileListItemProps = {
+  name: string;
+  size: string;
+  date: string;
+  icon: LucideIcon;
+};
+
+const FileListItem = ({ name, size, date, icon: Icon }: FileListItemProps) => (
+  <div className="glass-card p-4 flex items-center justify-between transition-all hover:bg-white/10 cursor-pointer">
+    <div className="flex items-center gap-4">
+      <div className="p-3 rounded-lg bg-slate-800 text-purple-400">
+        <Icon className="w-6 h-6" />
+      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:gap-4">
+        <p className="font-semibold text-white">{name}</p>
+        <div className="flex items-center gap-4 text-sm text-slate-400">
+          <span>{size}</span>
+          <span className="hidden sm:inline">|</span>
+          <span>{date}</span>
+        </div>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-700">
+        <Download className="w-5 h-5" />
+      </Button>
+      <Button variant="ghost" size="icon" className="text-slate-400 hover:text-white hover:bg-slate-700">
+        <Star className="w-5 h-5" />
+      </Button>
+    </div>
+  </div>
+);
+
 
 export default function Home() {
   return (
     <div className="flex min-h-screen w-full bg-[#0d121c] p-4 gap-4">
       <Sidebar />
-      <main className="flex flex-1 flex-col gap-4 bg-slate-900/50 border border-slate-800 rounded-2xl">
-        <header className="flex h-16 items-center justify-end gap-4 px-6 border-b border-slate-800">
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
-            <Input
-              type="search"
-              placeholder="Search files, subjects, or content..."
-              className="w-full bg-slate-800 border-slate-700 rounded-lg pl-10 pr-4 text-sm"
-            />
-          </div>
-          <Button variant="outline" className="bg-slate-800 border-slate-700">
-            <SlidersHorizontal className="h-4 w-4" />
-          </Button>
-        </header>
-        <div className="flex-1 flex items-center justify-center p-6">
-          <div className="relative w-full max-w-4xl">
-            <div className="absolute -top-16 left-16 text-purple-400/50">
-              <Search size={48} strokeWidth={1} />
-            </div>
-            <div className="absolute -top-12 right-16 text-green-400/50">
-              <FolderPlus size={48} strokeWidth={1} />
-            </div>
-            <div className="text-center">
-              <div className="inline-block bg-blue-500/10 text-blue-400 p-4 rounded-full mb-6">
-                <BookOpen size={48} strokeWidth={1.5} />
+      <main className="flex-1 p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
+          <Breadcrumbs />
+          <div className="glass-card p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <Folder className="w-8 h-8 text-blue-400" />
+                <h1 className="text-2xl font-bold text-white">
+                  Anatomy Content
+                </h1>
               </div>
-              <h1 className="text-3xl font-bold text-white mb-3">
-                Welcome to Your Medical Study Hub
-              </h1>
-              <p className="text-slate-400 max-w-2xl mx-auto mb-8">
-                Select an academic level, semester, and subject from the sidebar
-                to start organizing your medical study materials. Create
-                folders, upload files, and track your progress through your
-                medical education journey.
-              </p>
-              <ul className="inline-flex flex-col sm:flex-row sm:gap-8 gap-2 text-left">
-                <li className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-blue-400"></span>
-                  <span className="text-slate-300">
-                    Organize by Academic Levels (1-5)
-                  </span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-green-400"></span>
-                  <span className="text-slate-300">
-                    Navigate through Semesters
-                  </span>
-                </li>
-                <li className="flex items-center gap-2">
-                  <span className="h-2 w-2 rounded-full bg-purple-400"></span>
-                  <span className="text-slate-300">
-                    Manage Subject Content & Files
-                  </span>
-                </li>
-              </ul>
+              <Button className="bg-white/10 border-white/20 border text-white hover:bg-white/20">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Content
+              </Button>
             </div>
+
+            <section className="mb-8">
+              <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <div className="w-2 h-4 bg-yellow-400 rounded-full"></div>
+                Folders
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {folderData.map((folder) => (
+                  <FolderCard key={folder.name} {...folder} />
+                ))}
+              </div>
+            </section>
+
+            <section>
+              <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                 <div className="w-2 h-4 bg-blue-400 rounded-full"></div>
+                Files
+              </h2>
+              <div className="space-y-3">
+                {fileData.map((file) => (
+                  <FileListItem key={file.name} {...file} />
+                ))}
+              </div>
+            </section>
           </div>
-        </div>
       </main>
     </div>
   );
