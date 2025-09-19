@@ -117,7 +117,7 @@ export default function Page() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       <StatCard icon={Folder} title="Total Folders" value={totalFolders.toString()} color="text-yellow-400" />
                       <StatCard icon={FileTextIcon} title="Total Files" value={totalFiles.toString()} color="text-blue-400" />
-                      <StatCard icon={Clock} title="Study Progress" value="75%" color="text-green-400" />
+                      <StatCard icon={Clock} title="Study Hours" value="128" color="text-green-400" />
                     </div>
                     <div className="glass-card p-6 text-center">
                         <div className="flex justify-center items-center mb-4">
