@@ -61,16 +61,7 @@ const initialLevels = [
 export function Sidebar() {
   const [activeLevel, setActiveLevel] = useState('Level 1');
   const [activeSemester, setActiveSemester] = useState('Semester 1');
-  const [openLevels, setOpenLevels] = useState(['Level 1']);
-
-  const handleLevelClick = (levelName: string) => {
-    setActiveLevel(levelName);
-    setOpenLevels((prevOpenLevels) =>
-      prevOpenLevels.includes(levelName)
-        ? prevOpenLevels.filter((l) => l !== levelName)
-        : [...prevOpenLevels, levelName]
-    );
-  };
+  const [openLevel, setOpenLevel] = useState('Level 1');
   
   return (
     <aside className="w-80 flex-col glass-card p-4 hidden md:flex">
@@ -84,9 +75,10 @@ export function Sidebar() {
 
       <nav className="flex-1 space-y-1">
         <Accordion
-          type="multiple"
-          value={openLevels}
-          onValueChange={setOpenLevels}
+          type="single"
+          collapsible
+          value={openLevel}
+          onValueChange={(value) => setOpenLevel(value || '')}
           className="w-full"
         >
           {initialLevels.map((level) => (
@@ -103,7 +95,7 @@ export function Sidebar() {
                 )}
               >
                 <div className="flex items-center gap-3">
-                  {openLevels.includes(level.name) ? (
+                  {openLevel === level.name ? (
                      <ChevronDown
                       className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:text-white"
                       aria-hidden="true"
@@ -168,8 +160,8 @@ export function Sidebar() {
                         e.preventDefault();
                         setActiveSemester(semester.name);
                         setActiveLevel(level.name);
-                         if (!openLevels.includes(level.name)) {
-                          setOpenLevels([...openLevels, level.name]);
+                         if (openLevel !== level.name) {
+                          setOpenLevel(level.name);
                         }
                       }}
                       className={cn(
