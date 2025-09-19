@@ -165,68 +165,66 @@ export default function Page() {
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs />
-          <div className="glass-card p-6">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-4">
-                {searchResults === null ? (
-                  <Folder className="w-8 h-8 text-blue-400" />
-                ) : (
-                  <Search className="w-8 h-8 text-blue-400" />
-                )}
-                <h1 className="text-2xl font-bold text-white">
-                  {searchResults === null ? 'Anatomy Content' : `Search Results (${searchResults.length})`}
-                </h1>
-              </div>
-               {searchResults === null && (
-                <Button className="bg-white/10 border-white/20 border text-white hover:bg-white/20">
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Content
-                </Button>
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              {searchResults === null ? (
+                <Folder className="w-8 h-8 text-blue-400" />
+              ) : (
+                <Search className="w-8 h-8 text-blue-400" />
               )}
+              <h1 className="text-2xl font-bold text-white">
+                {searchResults === null ? 'Anatomy Content' : `Search Results (${searchResults.length})`}
+              </h1>
             </div>
-
-            {isSearching ? (
-              <div className="text-white">Searching...</div>
-            ) : (
-              <>
-                {searchResults === null && (
-                  <section className="mb-8">
-                    <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                      <div className="w-2 h-4 bg-yellow-400 rounded-full"></div>
-                      Folders
-                    </h2>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {folderData.map((folder) => (
-                        <FolderCard key={folder.name} {...folder} />
-                      ))}
-                    </div>
-                  </section>
-                )}
-
-                <section>
-                  <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                    <div className="w-2 h-4 bg-blue-400 rounded-full"></div>
-                    {searchResults === null ? 'Files' : 'Found Files'}
-                  </h2>
-                  <div className="space-y-3">
-                    {filesToDisplay.length > 0 ? (
-                      filesToDisplay.map((file) => (
-                        <FileListItem
-                          key={file.name}
-                          name={file.name}
-                          size={file.size}
-                          date={file.date}
-                          icon={File}
-                        />
-                      ))
-                    ) : (
-                      <p className="text-slate-400">No files found.</p>
-                    )}
-                  </div>
-                </section>
-              </>
+             {searchResults === null && (
+              <Button className="bg-white/10 border-white/20 border text-white hover:bg-white/20">
+                <Plus className="w-4 h-4 mr-2" />
+                Add Content
+              </Button>
             )}
           </div>
+
+          {isSearching ? (
+            <div className="text-white">Searching...</div>
+          ) : (
+            <>
+              {searchResults === null && (
+                <section className="mb-8">
+                  <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                    <div className="w-2 h-4 bg-yellow-400 rounded-full"></div>
+                    Folders
+                  </h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {folderData.map((folder) => (
+                      <FolderCard key={folder.name} {...folder} />
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              <section>
+                <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                  <div className="w-2 h-4 bg-blue-400 rounded-full"></div>
+                  {searchResults === null ? 'Files' : 'Found Files'}
+                </h2>
+                <div className="space-y-3">
+                  {filesToDisplay.length > 0 ? (
+                    filesToDisplay.map((file) => (
+                      <FileListItem
+                        key={file.name}
+                        name={file.name}
+                        size={file.size}
+                        date={file.date}
+                        icon={File}
+                      />
+                    ))
+                  ) : (
+                    <p className="text-slate-400">No files found.</p>
+                  )}
+                </div>
+              </section>
+            </>
+          )}
         </main>
       </div>
     </div>
