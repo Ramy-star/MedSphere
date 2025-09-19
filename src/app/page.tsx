@@ -5,7 +5,7 @@ import {
   ChevronRight,
   Folder,
   File,
-  Home as HomeIcon,
+  HomeIcon,
   Plus,
   Download,
   Star,
@@ -14,12 +14,8 @@ import {
   Presentation,
   Users,
   TestTube2,
-  Search,
-  Filter,
-  GraduationCap,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
-import { Input } from '@/components/ui/input';
 
 const folderData = [
   {
@@ -68,31 +64,6 @@ const fileData = [
     icon: File,
   },
 ];
-
-const Header = () => (
-  <header className="glass-card p-4 mb-4">
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className="bg-blue-500/10 text-blue-400 p-2 rounded-lg">
-          <GraduationCap />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold text-white">Medical Study Organizer</h1>
-          <p className="text-sm text-slate-400">Organize your medical education journey</p>
-        </div>
-      </div>
-      <div className="flex items-center gap-4 w-full max-w-md">
-        <div className="relative w-full">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-          <Input placeholder="Search files, subjects, or content..." className="pl-10 bg-slate-800/60 border-slate-700" />
-        </div>
-        <Button variant="outline" className="bg-slate-800/60 border-slate-700 hover:bg-slate-700/80">
-          <Filter className="w-5 h-5" />
-        </Button>
-      </div>
-    </div>
-  </header>
-);
 
 const Breadcrumbs = () => (
   <nav className="flex items-center text-sm text-slate-300 mb-6">
@@ -169,10 +140,9 @@ const FileListItem = ({ name, size, date, icon: Icon }: FileListItemProps) => (
 
 export default function Page() {
   return (
-    <div className="flex min-h-screen w-full bg-[#0d121c] p-4 gap-4">
+    <div className="flex flex-1 w-full p-4 gap-4">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <Header />
         <main className="flex-1 p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
           <Breadcrumbs />
           <div className="glass-card p-6">
