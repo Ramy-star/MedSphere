@@ -83,7 +83,6 @@ export function Sidebar() {
           <GraduationCap className="text-blue-400" size={24} />
           Academic Structure
         </h2>
-        <p className="text-sm text-slate-400">Navigate your medical education</p>
       </div>
 
       <nav className="flex-1 space-y-1">

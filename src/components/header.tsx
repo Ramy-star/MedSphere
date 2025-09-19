@@ -40,9 +40,6 @@ export const Header = () => {
             <h1 className="text-lg font-bold text-white">
               Medical Study Organizer
             </h1>
-            <p className="text-sm text-slate-400">
-              Organize your medical education journey
-            </p>
           </div>
         </div>
         <div className="flex items-center gap-4 w-full max-w-md">
