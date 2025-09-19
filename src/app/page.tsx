@@ -124,7 +124,7 @@ export default function Page() {
                       <StatCard icon={FileTextIcon} title="Total Files" value={totalFiles.toString()} color="text-blue-400" />
                     </div>
 
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="flex flex-col gap-8">
                         <div className="space-y-4">
                             <div className="flex items-center gap-3">
                                <div className="p-2 bg-green-400/10 rounded-lg">
