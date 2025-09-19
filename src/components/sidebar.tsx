@@ -15,10 +15,42 @@ import {
 } from 'lucide-react';
 
 const levels = [
-  { name: 'Level 1', semesters: [], fileCount: 1, active: false },
-  { name: 'Level 2', semesters: [], fileCount: 2, active: false },
-  { name: 'Level 3', semesters: [], fileCount: 3, active: false },
-  { name: 'Level 4', semesters: [], fileCount: 4, active: false },
+  { 
+    name: 'Level 1', 
+    semesters: [
+      { name: 'Semester 1', subjects: 5 },
+      { name: 'Semester 2', subjects: 6 },
+    ], 
+    fileCount: 1, 
+    active: false 
+  },
+  { 
+    name: 'Level 2', 
+    semesters: [
+      { name: 'Semester 3', subjects: 7 },
+      { name: 'Semester 4', subjects: 8 },
+    ], 
+    fileCount: 2, 
+    active: false 
+  },
+  { 
+    name: 'Level 3', 
+    semesters: [
+      { name: 'Semester 5', subjects: 9 },
+      { name: 'Semester 6', subjects: 8 },
+    ], 
+    fileCount: 3, 
+    active: false 
+  },
+  { 
+    name: 'Level 4', 
+    semesters: [
+      { name: 'Semester 7', subjects: 7 },
+      { name: 'Semester 8', subjects: 6 },
+    ], 
+    fileCount: 4, 
+    active: false 
+  },
   {
     name: 'Level 5',
     semesters: [
@@ -53,35 +85,27 @@ export function Sidebar() {
               value={level.name}
               className={cn(
                 'border-none rounded-lg transition-all',
-                level.active && 'bg-blue-500/10 border border-blue-500/30'
+                'data-[state=open]:bg-blue-500/10 data-[state=open]:border data-[state=open]:border-blue-500/30'
               )}
             >
               <AccordionTrigger
                 className={cn(
                   'p-3 hover:no-underline rounded-lg w-full text-slate-300 hover:text-white group',
-                  level.active && 'text-white'
+                  'data-[state=open]:text-white'
                 )}
               >
                 <div className="flex items-center gap-3">
-                  {level.active ? (
-                    <ChevronDown
-                      className="h-5 w-5 shrink-0 text-slate-400"
+                  <ChevronRight
+                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:rotate-90"
                       aria-hidden="true"
                     />
-                  ) : (
-                    <ChevronRight
-                      className="h-5 w-5 shrink-0 text-slate-400"
-                      aria-hidden="true"
-                    />
-                  )}
                   <span className="font-medium">{level.name}</span>
                 </div>
                 <div
                   className={cn(
                     'h-6 w-6 flex items-center justify-center rounded-full text-xs font-semibold',
-                    level.active
-                      ? 'bg-blue-500/20 text-blue-300 border border-blue-400'
-                      : 'bg-slate-700 text-slate-300'
+                    'group-data-[state=open]:bg-blue-500/20 group-data-[state=open]:text-blue-300 group-data-[state=open]:border group-data-[state=open]:border-blue-400',
+                    'bg-slate-700 text-slate-300'
                   )}
                 >
                   {level.fileCount}
