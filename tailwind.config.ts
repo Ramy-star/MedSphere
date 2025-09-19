@@ -10,11 +10,14 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Inter', 'sans-serif'],
+        body: ['Roboto', 'sans-serif'],
         headline: ['Inter', 'sans-serif'],
         code: ['monospace'],
       },
       colors: {
+        'glass-surface': 'rgba(255, 255, 255, 0.04)',
+        'glass-border': 'rgba(255, 255, 255, 0.06)',
+        highlight: '#E6F7EE',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
@@ -93,6 +96,9 @@ export default {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
       },
+      boxShadow: {
+        'neon-accent': '0 0 10px hsl(var(--accent))',
+      }
     },
   },
   plugins: [require('tailwindcss-animate')],

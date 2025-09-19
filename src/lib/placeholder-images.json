@@ -1,3 +1,53 @@
+
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "anatomy-1",
+      "description": "Anatomy study materials showing human skeleton.",
+      "imageUrl": "https://picsum.photos/seed/anatomy1/600/400",
+      "imageHint": "anatomy skeleton"
+    },
+    {
+      "id": "pharma-1",
+      "description": "Pharmacology presentation slide with molecular structures.",
+      "imageUrl": "https://picsum.photos/seed/pharma1/600/400",
+      "imageHint": "pharmacology molecules"
+    },
+    {
+      "id": "pathology-1",
+      "description": "Pathology micrograph of tissue sample.",
+      "imageUrl": "https://picsum.photos/seed/pathology1/600/400",
+      "imageHint": "pathology microscope"
+    },
+    {
+      "id": "cardiology-1",
+      "description": "Cardiology notes with ECG diagram.",
+      "imageUrl": "https://picsum.photos/seed/cardio1/600/400",
+      "imageHint": "cardiology ecg"
+    },
+    {
+      "id": "neurology-1",
+      "description": "Neurology textbook chapter on brain anatomy.",
+      "imageUrl": "https://picsum.photos/seed/neuro1/600/400",
+      "imageHint": "neurology brain"
+    },
+    {
+      "id": "genetics-1",
+      "description": "Genetics research paper on DNA sequencing.",
+      "imageUrl": "https://picsum.photos/seed/genetics1/600/400",
+      "imageHint": "genetics dna"
+    },
+    {
+      "id": "biochem-1",
+      "description": "Biochemistry diagram of metabolic pathways.",
+      "imageUrl": "https://picsum.photos/seed/biochem1/600/400",
+      "imageHint": "biochemistry pathway"
+    },
+    {
+      "id": "immunology-1",
+      "description": "Immunology lecture slides about antibodies.",
+      "imageUrl": "https://picsum.photos/seed/immuno1/600/400",
+      "imageHint": "immunology antibody"
+    }
+  ]
 }
