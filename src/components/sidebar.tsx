@@ -16,8 +16,9 @@ import {
   Menu,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
+import { usePathname } from 'next/navigation';
 
 
 const initialLevels = [
@@ -59,25 +60,37 @@ const initialLevels = [
 ];
 
 export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
+  const pathname = usePathname();
   const [activeLevel, setActiveLevel] = useState('');
   const [activeSemester, setActiveSemester] = useState('');
   const [openLevel, setOpenLevel] = useState('');
   
+  useEffect(() => {
+    const pathParts = pathname.split('/').map(decodeURIComponent);
+    if (pathParts[1] === 'semester' && pathParts.length === 4) {
+      const levelName = pathParts[2];
+      const semesterName = pathParts[3];
+      setActiveLevel(levelName);
+      setOpenLevel(levelName);
+      setActiveSemester(semesterName);
+    } else {
+        // On home page or other pages, reset active states
+        setActiveLevel('');
+        setActiveSemester('');
+        setOpenLevel('');
+    }
+  }, [pathname]);
+
   const handleLevelChange = (value: string) => {
     const newLevel = value || '';
     setOpenLevel(newLevel);
-    setActiveLevel(newLevel);
-    if (!newLevel) {
-      setActiveSemester('');
-    }
+    // Don't reset active semester here, let link clicks handle it
   };
 
   const handleSemesterClick = (levelName: string, semesterName: string) => {
     setActiveLevel(levelName);
-    if (openLevel !== levelName) {
-      setOpenLevel(levelName);
-    }
-    setActiveSemester(prev => (prev === semesterName ? '' : semesterName));
+    setActiveSemester(semesterName);
+    setOpenLevel(levelName);
   }
 
   return (
@@ -146,7 +159,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 ))}
               </AccordionTrigger>
               <AccordionContent className={cn("pl-4 pr-1 pb-0 pt-1 space-y-2", !open && "hidden")}>
-                 <Accordion type="single" collapsible value={activeSemester} onValueChange={setActiveSemester}>
+                 <Accordion type="single" collapsible value={activeSemester} onValueChange={(value) => setActiveSemester(value)}>
                   {level.semesters.map((semester) => {
                     const isSemesterActive = activeSemester === semester.name && activeLevel === level.name;
                     return (
@@ -163,11 +176,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                               <Calendar size={18} className="text-green-400" />
                               <span className={cn(!open && "hidden")}>{semester.name}</span>
                             </div>
-                             {isSemesterActive ? (
-                              <ChevronDown size={18} className="text-slate-400" />
-                             ) : (
-                              <ChevronRight size={18} className="text-slate-500" />
-                             )}
+                             <ChevronRight size={18} className="text-slate-500" />
                           </AccordionTrigger>
                         </Link>
                          <AccordionContent className={cn("text-slate-400 text-center py-2", !open && "hidden")}>
