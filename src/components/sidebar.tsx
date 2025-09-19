@@ -71,8 +71,8 @@ export function Sidebar() {
                 <div className="flex items-center gap-3">
                   <ChevronRight
                     className={cn(
-                      'h-5 w-5 transition-transform duration-200',
-                      'group-data-[state=open]:rotate-90'
+                      'h-5 w-5 shrink-0 transition-transform duration-200 text-slate-400',
+                      'group-data-[state=open]:rotate-90 group-data-[state=open]:text-white'
                     )}
                   />
                   <span className="font-medium">{level.name}</span>
@@ -85,7 +85,7 @@ export function Sidebar() {
                       : 'bg-slate-700 text-slate-300'
                   )}
                 >
-                  {level.fileCount}
+                  {level.active ? level.fileCount : index + 1}
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pl-6 pr-3 pb-2">
@@ -99,7 +99,7 @@ export function Sidebar() {
                       <span>Semester {index * 2 + 1}</span>
                     </div>
                     <div className="h-6 w-6 flex items-center justify-center rounded-full bg-slate-700 text-slate-300 text-xs font-semibold">
-                      {level.fileCount * 2 + 5}
+                      {level.active ? 9 : ''}
                     </div>
                   </a>
                   <a
@@ -111,7 +111,7 @@ export function Sidebar() {
                       <span>Semester {index * 2 + 2}</span>
                     </div>
                      <div className="h-6 w-6 flex items-center justify-center rounded-full bg-slate-700 text-slate-300 text-xs font-semibold">
-                      {level.fileCount * 3 + 5}
+                      {level.active ? 10 : ''}
                     </div>
                   </a>
                 </div>
