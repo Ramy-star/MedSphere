@@ -163,7 +163,7 @@ export default function Page() {
     <div className="flex flex-1 w-full p-4 gap-4">
       <Sidebar />
       <div className="flex-1 flex flex-col">
-        <main className="flex-1 p-6 bg-slate-900/50 rounded-2xl border border-slate-800">
+        <main className="flex-1 p-6 glass-card">
           <Breadcrumbs />
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-6">
