@@ -24,7 +24,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import Image from 'next/image';
 import { useState } from 'react';
 
 const FileItem = ({
@@ -82,7 +81,7 @@ const FileItem = ({
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-48">
+            <DropdownMenuContent className="w-48 bg-slate-900 border-dark">
               <DropdownMenuItem>
                 <Eye className="mr-2 h-4 w-4" />
                 <span>Preview</span>
@@ -99,7 +98,7 @@ const FileItem = ({
                 <Pencil className="mr-2 h-4 w-4" />
                 <span>Rename</span>
               </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-400">
+              <DropdownMenuItem className="text-red-400 hover:!text-red-300">
                 <Trash2 className="mr-2 h-4 w-4" />
                 <span>Delete</span>
               </DropdownMenuItem>
@@ -122,7 +121,6 @@ export default function Home() {
       size: '150.2 MB',
       thumb: 'https://picsum.photos/seed/video1/600/400',
     },
-    // Add more files to fill the grid
     { type: 'folder', name: 'Labs', fileCount: 8 },
     { type: 'pdf', name: 'Lab_Manual.pdf', size: '5.2 MB' },
     {
@@ -132,6 +130,14 @@ export default function Home() {
       thumb: 'https://picsum.photos/seed/video2/600/400',
     },
     { type: 'pdf', name: 'Syllabus.pdf', size: '1.1 MB' },
+    { type: 'folder', name: 'Case Studies', fileCount: 5 },
+    { type: 'pdf', name: 'Case_Study_1.pdf', size: '2.1 MB' },
+    {
+      type: 'video',
+      name: 'Patient_Interview.mp4',
+      size: '98.4 MB',
+      thumb: 'https://picsum.photos/seed/video3/600/400',
+    },
   ];
 
   return (
@@ -154,6 +160,9 @@ export default function Home() {
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-4">
+               <Button variant="ghost" size="icon" className="relative">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
+              </Button>
               <Avatar className="h-10 w-10">
                 <AvatarImage src="https://picsum.photos/seed/user-avatar/100/100" />
                 <AvatarFallback>U</AvatarFallback>
@@ -191,8 +200,7 @@ export default function Home() {
           <div className="flex items-center justify-between gap-4 mb-6">
             <h1 className="text-3xl font-bold text-white">Anatomy Files</h1>
             <Button
-              variant="outline"
-              className="bg-surface-dark hover:bg-white/10 border-dark text-slate-300 font-semibold text-sm transition-colors"
+              className="bg-surface-dark hover:bg-white/10 border border-dark text-slate-300 font-semibold text-sm transition-colors"
             >
               <Upload className="mr-2 h-4 w-4" />
               <span>Upload</span>
