@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/sidebar';
 import { folderData } from '@/lib/file-data';
 import {
   ChevronRight,
-  Archive as ContentIcon,
+  File as ContentIcon,
   HomeIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -48,7 +48,7 @@ export default function FolderPage({ params }: FolderPageProps) {
           <Breadcrumbs folderName={folder.name} folderIcon={folder.icon} folderColor={folder.color} />
           <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
             <ContentIcon className="w-6 h-6 text-blue-400" />
-            <span>Content in {folder.name}</span>
+            <span>Content</span>
           </h2>
           <div className="space-y-3">
             {folder.files.length > 0 ? (
