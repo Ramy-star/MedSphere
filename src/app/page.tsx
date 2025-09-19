@@ -14,8 +14,12 @@ import {
   Presentation,
   Users,
   TestTube2,
+  Search,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { search, SearchOutput } from '@/ai/flows/search-flow';
+import { fileData as allFilesData } from '@/lib/file-data';
 
 const folderData = [
   {
@@ -47,21 +51,6 @@ const folderData = [
     fileCount: 2,
     icon: TestTube2,
     color: 'text-orange-400',
-  },
-];
-
-const fileData = [
-  {
-    name: 'Course Syllabus.pdf',
-    size: '2.1 MB',
-    date: '2024-09-01',
-    icon: File,
-  },
-  {
-    name: 'Quick Reference Guide.pdf',
-    size: '1.5 MB',
-    date: '2024-09-15',
-    icon: File,
   },
 ];
 
@@ -139,6 +128,30 @@ const FileListItem = ({ name, size, date, icon: Icon }: FileListItemProps) => (
 
 
 export default function Page() {
+  const [searchResults, setSearchResults] = useState<SearchOutput | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const handleSearch = async (query: string) => {
+    if (!query) {
+      setSearchResults(null);
+      setIsSearching(false);
+      return;
+    }
+    setIsSearching(true);
+    const results = await search(query);
+    setSearchResults(results);
+    setIsSearching(false);
+  };
+  
+  useEffect(() => {
+    window.__handleSearch = handleSearch;
+    return () => {
+      delete window.__handleSearch;
+    }
+  }, []);
+
+  const filesToDisplay = searchResults === null ? allFilesData : searchResults;
+
   return (
     <div className="flex flex-1 w-full p-4 gap-4">
       <Sidebar />
@@ -148,40 +161,64 @@ export default function Page() {
           <div className="glass-card p-6">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center gap-4">
-                <Folder className="w-8 h-8 text-blue-400" />
+                {searchResults === null ? (
+                  <Folder className="w-8 h-8 text-blue-400" />
+                ) : (
+                  <Search className="w-8 h-8 text-blue-400" />
+                )}
                 <h1 className="text-2xl font-bold text-white">
-                  Anatomy Content
+                  {searchResults === null ? 'Anatomy Content' : `Search Results (${searchResults.length})`}
                 </h1>
               </div>
-              <Button className="bg-white/10 border-white/20 border text-white hover:bg-white/20">
-                <Plus className="w-4 h-4 mr-2" />
-                Add Content
-              </Button>
+               {searchResults === null && (
+                <Button className="bg-white/10 border-white/20 border text-white hover:bg-white/20">
+                  <Plus className="w-4 h-4 mr-2" />
+                  Add Content
+                </Button>
+              )}
             </div>
 
-            <section className="mb-8">
-              <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                <div className="w-2 h-4 bg-yellow-400 rounded-full"></div>
-                Folders
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {folderData.map((folder) => (
-                  <FolderCard key={folder.name} {...folder} />
-                ))}
-              </div>
-            </section>
+            {isSearching ? (
+              <div className="text-white">Searching...</div>
+            ) : (
+              <>
+                {searchResults === null && (
+                  <section className="mb-8">
+                    <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                      <div className="w-2 h-4 bg-yellow-400 rounded-full"></div>
+                      Folders
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {folderData.map((folder) => (
+                        <FolderCard key={folder.name} {...folder} />
+                      ))}
+                    </div>
+                  </section>
+                )}
 
-            <section>
-              <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                 <div className="w-2 h-4 bg-blue-400 rounded-full"></div>
-                Files
-              </h2>
-              <div className="space-y-3">
-                {fileData.map((file) => (
-                  <FileListItem key={file.name} {...file} />
-                ))}
-              </div>
-            </section>
+                <section>
+                  <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                    <div className="w-2 h-4 bg-blue-400 rounded-full"></div>
+                    {searchResults === null ? 'Files' : 'Found Files'}
+                  </h2>
+                  <div className="space-y-3">
+                    {filesToDisplay.length > 0 ? (
+                      filesToDisplay.map((file) => (
+                        <FileListItem
+                          key={file.name}
+                          name={file.name}
+                          size={file.size}
+                          date={file.date}
+                          icon={File}
+                        />
+                      ))
+                    ) : (
+                      <p className="text-slate-400">No files found.</p>
+                    )}
+                  </div>
+                </section>
+              </>
+            )}
           </div>
         </main>
       </div>
