@@ -8,25 +8,26 @@ import {
 } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import {
+  Calendar,
+  ChevronDown,
   ChevronRight,
-  Folder,
-  LayoutDashboard,
+  GraduationCap,
 } from 'lucide-react';
 
 const levels = [
-  { name: 'Level 1', semesterCount: 2, fileCount: 1 },
-  { name: 'Level 2', semesterCount: 2, fileCount: 2 },
-  { name: 'Level 3', semesterCount: 2, fileCount: 3 },
-  { name: 'Level 4', semesterCount: 2, fileCount: 4 },
-  { name: 'Level 5', semesterCount: 2, fileCount: 5, active: true },
+  { name: 'Level 1', semesters: ['Semester 1', 'Semester 2'], fileCount: 1, active: true },
+  { name: 'Level 2', semesters: ['Semester 3', 'Semester 4'], fileCount: 2 },
+  { name: 'Level 3', semesters: ['Semester 5', 'Semester 6'], fileCount: 3 },
+  { name: 'Level 4', semesters: ['Semester 7', 'Semester 8'], fileCount: 4 },
+  { name: 'Level 5', semesters: ['Semester 9', 'Semester 10'], fileCount: 5 },
 ];
 
 export function Sidebar() {
   return (
     <aside className="w-80 flex-col border border-slate-800 bg-slate-900/50 p-6 rounded-2xl hidden md:flex">
       <div className="mb-6">
-        <h2 className="text-base font-semibold text-white flex items-center gap-2 mb-1">
-          <LayoutDashboard className="text-slate-400" size={20} />
+        <h2 className="text-base font-semibold text-white flex items-center gap-3 mb-1">
+          <GraduationCap className="text-blue-400" size={24} />
           Academic Structure
         </h2>
         <p className="text-sm text-slate-400">Navigate your medical education</p>
@@ -35,29 +36,29 @@ export function Sidebar() {
       <nav className="flex-1 space-y-2">
         <Accordion
           type="multiple"
-          defaultValue={['Level 5']}
-          className="w-full"
+          defaultValue={['Level 1']}
+          className="w-full space-y-1"
         >
-          {levels.map((level, index) => (
+          {levels.map((level) => (
             <AccordionItem
               key={level.name}
               value={level.name}
               className={cn(
-                'border-none rounded-lg',
-                level.active && 'bg-blue-500/10'
+                'border-none rounded-lg transition-all',
+                level.active && 'bg-blue-500/10 border border-blue-500/30'
               )}
             >
               <AccordionTrigger
                 className={cn(
-                  'p-3 hover:no-underline rounded-lg w-full text-slate-300 hover:text-white',
+                  'p-3 hover:no-underline rounded-lg w-full text-slate-300 hover:text-white group',
                   level.active && 'text-white'
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <ChevronRight
+                   <ChevronRight
                     className={cn(
-                      'h-5 w-5 shrink-0 transition-transform duration-200 text-slate-400',
-                      'group-data-[state=open]:rotate-90 group-data-[state=open]:text-white'
+                      'h-5 w-5 shrink-0 transition-transform duration-200 text-slate-400 group-data-[state=open]:rotate-90',
+                       !level.active && "group-data-[state=open]:text-white"
                     )}
                   />
                   <span className="font-medium">{level.name}</span>
@@ -66,40 +67,29 @@ export function Sidebar() {
                   className={cn(
                     'h-6 w-6 flex items-center justify-center rounded-full text-xs font-semibold',
                     level.active
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-blue-500/20 text-blue-300 border border-blue-400'
                       : 'bg-slate-700 text-slate-300'
                   )}
                 >
-                  {level.active ? level.fileCount : index + 1}
+                  {level.fileCount}
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pl-6 pr-3 pb-2">
-                <div className="space-y-2">
-                  <a
+              <AccordionContent className="pl-8 pr-3 pb-3 space-y-2">
+                {level.semesters.map((semester, index) => (
+                   <a
                     href="#"
+                    key={semester}
                     className="flex items-center justify-between p-2 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-white"
                   >
-                    <div className="flex items-center gap-2">
-                      <Folder size={18} />
-                      <span>Semester {index * 2 + 1}</span>
+                    <div className="flex items-center gap-3">
+                      <Calendar size={18} className="text-green-400" />
+                      <span>{semester}</span>
                     </div>
                     <div className="h-6 w-6 flex items-center justify-center rounded-full bg-slate-700 text-slate-300 text-xs font-semibold">
-                      {level.active ? 9 : ''}
+                      {index === 0 ? '9' : '10'}
                     </div>
                   </a>
-                  <a
-                    href="#"
-                    className="flex items-center justify-between p-2 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-white"
-                  >
-                    <div className="flex items-center gap-2">
-                      <Folder size={18} />
-                      <span>Semester {index * 2 + 2}</span>
-                    </div>
-                     <div className="h-6 w-6 flex items-center justify-center rounded-full bg-slate-700 text-slate-300 text-xs font-semibold">
-                      {level.active ? 10 : ''}
-                    </div>
-                  </a>
-                </div>
+                ))}
               </AccordionContent>
             </AccordionItem>
           ))}
