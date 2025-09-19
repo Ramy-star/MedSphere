@@ -12,7 +12,7 @@ import {
   ChevronDown,
   ChevronRight,
   GraduationCap,
-  PanelLeft,
+  Menu,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './ui/button';
@@ -86,7 +86,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
         onClick={() => setOpen(!open)} 
         className="absolute top-4 right-4 text-white hover:bg-slate-700"
       >
-        <PanelLeft />
+        <Menu />
       </Button>
       <div className={cn("mb-4 px-2 transition-all", open ? "opacity-100" : "opacity-0 pointer-events-none")}>
         <h2 className="text-base font-semibold text-white flex items-center gap-3 mb-1">
