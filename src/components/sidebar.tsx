@@ -15,6 +15,7 @@ import {
   Layers,
   Menu,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useState } from 'react';
 import { Button } from './ui/button';
 
@@ -150,23 +151,25 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     const isSemesterActive = activeSemester === semester.name && activeLevel === level.name;
                     return (
                        <AccordionItem key={semester.name} value={semester.name} className="border-none">
-                        <AccordionTrigger
-                           onClick={() => handleSemesterClick(level.name, semester.name)}
-                          className={cn(
-                            "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white hover:no-underline",
-                            isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Calendar size={18} className="text-green-400" />
-                            <span className={cn(!open && "hidden")}>{semester.name}</span>
-                          </div>
-                           {isSemesterActive ? (
-                            <ChevronDown size={18} className="text-slate-400" />
-                           ) : (
-                            <ChevronRight size={18} className="text-slate-500" />
-                           )}
-                        </AccordionTrigger>
+                         <Link href={`/semester/${encodeURIComponent(level.name)}/${encodeURIComponent(semester.name)}`} passHref>
+                          <AccordionTrigger
+                             onClick={() => handleSemesterClick(level.name, semester.name)}
+                            className={cn(
+                              "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white hover:no-underline",
+                              isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Calendar size={18} className="text-green-400" />
+                              <span className={cn(!open && "hidden")}>{semester.name}</span>
+                            </div>
+                             {isSemesterActive ? (
+                              <ChevronDown size={18} className="text-slate-400" />
+                             ) : (
+                              <ChevronRight size={18} className="text-slate-500" />
+                             )}
+                          </AccordionTrigger>
+                        </Link>
                          <AccordionContent className={cn("text-slate-400 text-center py-2", !open && "hidden")}>
                            No subjects yet
                         </AccordionContent>

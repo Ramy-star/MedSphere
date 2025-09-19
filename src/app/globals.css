@@ -61,6 +61,6 @@
 
 @layer components {
   .glass-card {
-    @apply rounded-xl border border-white/10 bg-white/5 backdrop-blur-lg;
+    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-lg;
   }
 }
