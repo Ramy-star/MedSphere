@@ -14,12 +14,12 @@ export const StatCard = ({
   value: string;
   color: string;
 }) => (
-  <div className="glass-card p-4 flex-1">
-    <div className={`p-3 rounded-lg bg-slate-800 w-fit mb-4 ${color}`}>
-      <Icon className="w-6 h-6" />
+  <div className="glass-card p-5 flex-1">
+    <div className={`p-3 rounded-lg bg-slate-800 w-fit mb-4`}>
+      <Icon className={`w-6 h-6 ${color}`} />
     </div>
     <p className="text-sm text-slate-400 mb-1">{title}</p>
-    <p className="text-2xl font-bold text-white">{value}</p>
+    <p className="text-3xl font-bold text-white">{value}</p>
   </div>
 );
 
@@ -49,14 +49,14 @@ export const RecentFileCard = ({ name, size, date }: RecentFileCardProps) => {
     return (
     <div className="glass-card p-3 flex items-center justify-between transition-all hover:bg-white/10 cursor-pointer">
       <div className="flex items-center gap-3">
-        <div className="p-2 rounded-lg bg-slate-800 text-slate-400">
+        <div className="p-2 rounded-lg bg-slate-800 text-slate-300">
           <Icon className="w-5 h-5" />
         </div>
         <div>
           <p className="font-semibold text-white text-sm">{name}</p>
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <span>{size}</span>
-            <span>|</span>
+            <span>&bull;</span>
             <span>{date}</span>
           </div>
         </div>

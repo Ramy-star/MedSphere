@@ -65,16 +65,20 @@ export default function Page() {
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs />
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-2">
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-3">
                 {searchResults === null ? (
                     <>
-                        <HomeIcon className="w-6 h-6 text-yellow-400" />
+                        <div className="p-2 bg-yellow-400/10 rounded-lg">
+                            <HomeIcon className="w-6 h-6 text-yellow-400" />
+                        </div>
                         <h1 className="text-2xl font-bold text-white">Dashboard</h1>
                     </>
                 ) : (
                     <>
-                        <Search className="w-6 h-6 text-blue-400" />
+                        <div className="p-2 bg-blue-400/10 rounded-lg">
+                            <Search className="w-6 h-6 text-blue-400" />
+                        </div>
                         <h1 className="text-2xl font-bold text-white">
                             {`Search Results (${searchResults.length})`}
                         </h1>
@@ -90,7 +94,9 @@ export default function Page() {
           </div>
 
           {isSearching ? (
-            <div className="text-white">Searching...</div>
+            <div className="flex justify-center items-center h-64">
+                <p className="text-white text-lg">Searching...</p>
+            </div>
           ) : (
             <>
               {searchResults !== null ? (
@@ -107,51 +113,57 @@ export default function Page() {
                         />
                         ))
                     ) : (
-                        <p className="text-slate-400">No files found.</p>
+                        <p className="text-slate-400 text-center py-10">No files found.</p>
                     )}
                     </div>
                 </section>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                  <div className="xl:col-span-2 space-y-6">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                          <StatCard icon={Folder} title="Total Folders" value={totalFolders.toString()} color="text-yellow-400" />
-                          <StatCard icon={FileTextIcon} title="Total Files" value={totalFiles.toString()} color="text-blue-400" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2 mb-4">
-                          <Clock className="w-6 h-6 text-green-400" />
-                          <h2 className="text-xl font-bold text-white">Recent Files</h2>
-                        </div>
-                        <div className="space-y-3">
-                          {recentFiles.map(file => <RecentFileCard key={file.name} {...file} />)}
-                        </div>
-                      </div>
-                  </div>
-                  <div className="space-y-6">
-                    <div className="flex items-center gap-2">
-                      <Folder className="w-6 h-6 text-purple-400" />
-                      <h2 className="text-xl font-bold text-white">Folders</h2>
+                <div className="space-y-8">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                      <StatCard icon={Folder} title="Total Folders" value={totalFolders.toString()} color="text-yellow-400" />
+                      <StatCard icon={FileTextIcon} title="Total Files" value={totalFiles.toString()} color="text-blue-400" />
                     </div>
-                    <div className="space-y-3">
-                        {folderData.map((folder) => (
-                          <Link href={`/folder/${encodeURIComponent(folder.name)}`} passHref key={folder.name}>
-                            <div className="glass-card p-3 flex items-center justify-between transition-all hover:bg-white/10 cursor-pointer">
-                              <div className="flex items-center gap-3">
-                                <div className={`p-2 rounded-lg bg-slate-800 ${folder.color}`}>
-                                  <folder.icon className="w-5 h-5" />
-                                </div>
-                                <div>
-                                  <p className="font-semibold text-white text-sm">{folder.name}</p>
-                                  <p className="text-xs text-slate-400">{folder.files.length} files</p>
-                                </div>
-                              </div>
-                              <ChevronRight className="w-4 h-4 text-slate-500" />
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                               <div className="p-2 bg-green-400/10 rounded-lg">
+                                 <Clock className="w-6 h-6 text-green-400" />
+                               </div>
+                               <h2 className="text-xl font-bold text-white">Recent Files</h2>
                             </div>
-                          </Link>
-                        ))}
+                            <div className="space-y-3">
+                                {recentFiles.map(file => <RecentFileCard key={file.name} {...file} />)}
+                            </div>
+                        </div>
+
+                        <div className="space-y-4">
+                           <div className="flex items-center gap-3">
+                                <div className="p-2 bg-purple-400/10 rounded-lg">
+                                    <Folder className="w-6 h-6 text-purple-400" />
+                                </div>
+                                <h2 className="text-xl font-bold text-white">Folders</h2>
+                            </div>
+                            <div className="space-y-3">
+                                {folderData.map((folder) => (
+                                <Link href={`/folder/${encodeURIComponent(folder.name)}`} passHref key={folder.name}>
+                                    <div className="glass-card p-3 flex items-center justify-between transition-all hover:bg-white/10 cursor-pointer">
+                                    <div className="flex items-center gap-3">
+                                        <div className={`p-2 rounded-lg bg-slate-800 ${folder.color}`}>
+                                        <folder.icon className="w-5 h-5" />
+                                        </div>
+                                        <div>
+                                        <p className="font-semibold text-white text-sm">{folder.name}</p>
+                                        <p className="text-xs text-slate-400">{folder.files.length} files</p>
+                                        </div>
+                                    </div>
+                                    <ChevronRight className="w-4 h-4 text-slate-500" />
+                                    </div>
+                                </Link>
+                                ))}
+                            </div>
+                        </div>
                     </div>
-                  </div>
                 </div>
               )}
             </>
