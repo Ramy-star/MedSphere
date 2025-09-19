@@ -21,7 +21,10 @@ const levels = [
   { name: 'Level 4', semesters: [], fileCount: 4, active: false },
   {
     name: 'Level 5',
-    semesters: ['Semester 9', 'Semester 10'],
+    semesters: [
+      { name: 'Semester 9', subjects: 9 },
+      { name: 'Semester 10', subjects: 10 },
+    ],
     fileCount: 5,
     active: true,
   },
@@ -61,12 +64,14 @@ export function Sidebar() {
               >
                 <div className="flex items-center gap-3">
                   {level.active ? (
-                     <ChevronDown
-                      className={cn('h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200', 'group-data-[state=closed]:-rotate-90')}
+                    <ChevronDown
+                      className="h-5 w-5 shrink-0 text-slate-400"
+                      aria-hidden="true"
                     />
                   ) : (
                     <ChevronRight
-                      className={cn('h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200', 'group-data-[state=open]:rotate-90')}
+                      className="h-5 w-5 shrink-0 text-slate-400"
+                      aria-hidden="true"
                     />
                   )}
                   <span className="font-medium">{level.name}</span>
@@ -83,19 +88,19 @@ export function Sidebar() {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pl-8 pr-3 pb-3 space-y-2">
-                {level.semesters.map((semester, index) => (
+                {level.semesters.map((semester) => (
                   <a
                     href="#"
-                    key={semester}
+                    key={semester.name}
                     className="flex items-center justify-between p-2 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-white"
                   >
                     <div className="flex items-center gap-3">
                       <ChevronRight size={18} className="text-slate-500" />
                       <Calendar size={18} className="text-green-400" />
-                      <span>{semester}</span>
+                      <span>{semester.name}</span>
                     </div>
                     <div className="h-6 w-6 flex items-center justify-center rounded-full bg-slate-700 text-slate-300 text-xs font-semibold">
-                      {index === 0 ? '9' : '10'}
+                      {semester.subjects}
                     </div>
                   </a>
                 ))}
