@@ -5,17 +5,16 @@ import { Input } from '@/components/ui/input';
 import {
   BookOpen,
   FolderPlus,
-  GraduationCap,
   Search,
   SlidersHorizontal,
 } from 'lucide-react';
 
 export default function Home() {
   return (
-    <div className="flex min-h-screen w-full bg-[#0d121c]">
+    <div className="flex min-h-screen w-full bg-[#0d121c] p-4 gap-4">
       <Sidebar />
       <div className="flex flex-col flex-1">
-        <header className="flex h-16 items-center justify-end gap-4 border-b border-white/10 px-6">
+        <header className="flex h-16 items-center justify-end gap-4 px-6">
           <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
@@ -28,7 +27,7 @@ export default function Home() {
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
         </header>
-        <main className="flex flex-1 items-center justify-center p-6">
+        <main className="flex flex-1 items-center justify-center p-6 bg-slate-900/50 border border-slate-800 rounded-2xl">
           <div className="relative w-full max-w-4xl">
             <div className="absolute -top-16 left-16 text-purple-400/50">
               <Search size={48} strokeWidth={1} />
@@ -36,7 +35,7 @@ export default function Home() {
             <div className="absolute -top-12 right-16 text-green-400/50">
               <FolderPlus size={48} strokeWidth={1} />
             </div>
-            <div className="bg-slate-900/50 border border-slate-800 rounded-2xl p-12 text-center">
+            <div className="text-center">
               <div className="inline-block bg-blue-500/10 text-blue-400 p-4 rounded-full mb-6">
                 <BookOpen size={48} strokeWidth={1.5} />
               </div>
