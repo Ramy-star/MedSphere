@@ -19,49 +19,44 @@ const initialLevels = [
   {
     name: 'Level 1',
     semesters: [
-      { name: 'Semester 1', subjects: 1 },
-      { name: 'Semester 2', subjects: 2 },
+      { name: 'Semester 1', subjects: [] },
+      { name: 'Semester 2', subjects: [] },
     ],
-    fileCount: 1,
   },
   {
     name: 'Level 2',
     semesters: [
-      { name: 'Semester 3', subjects: 4 },
-      { name: 'Semester 4', subjects: 5 },
+      { name: 'Semester 3', subjects: [] },
+      { name: 'Semester 4', subjects: [] },
     ],
-    fileCount: 2,
   },
   {
     name: 'Level 3',
     semesters: [
-      { name: 'Semester 5', subjects: 3 },
-      { name: 'Semester 6', subjects: 4 },
+      { name: 'Semester 5', subjects: [] },
+      { name: 'Semester 6', subjects: [] },
     ],
-    fileCount: 3,
   },
   {
     name: 'Level 4',
     semesters: [
-      { name: 'Semester 7', subjects: 5 },
-      { name: 'Semester 8', subjects: 3 },
+      { name: 'Semester 7', subjects: [] },
+      { name: 'Semester 8', subjects: [] },
     ],
-    fileCount: 4,
   },
   {
     name: 'Level 5',
     semesters: [
-      { name: 'Semester 9', subjects: 2 },
-      { name: 'Semester 10', subjects: 3 },
+      { name: 'Semester 9', subjects: [] },
+      { name: 'Semester 10', subjects: [] },
     ],
-    fileCount: 5,
   },
 ];
 
 export function Sidebar() {
-  const [activeLevel, setActiveLevel] = useState('Level 1');
+  const [activeLevel, setActiveLevel] = useState('');
   const [activeSemester, setActiveSemester] = useState('');
-  const [openLevel, setOpenLevel] = useState('Level 1');
+  const [openLevel, setOpenLevel] = useState('');
   
   const handleLevelChange = (value: string) => {
     const newLevel = value || '';
@@ -72,6 +67,14 @@ export function Sidebar() {
       setActiveSemester('');
     }
   };
+
+  const handleSemesterClick = (levelName: string, semesterName: string) => {
+    setActiveLevel(levelName);
+    if (openLevel !== levelName) {
+      setOpenLevel(levelName);
+    }
+    setActiveSemester(prev => (prev === semesterName ? '' : semesterName));
+  }
 
   return (
     <aside className="w-80 flex-col glass-card p-4 hidden md:flex">
@@ -120,33 +123,35 @@ export function Sidebar() {
                 </div>
               </AccordionTrigger>
               <AccordionContent className="pl-4 pr-1 pb-0 pt-1 space-y-1">
-                {level.semesters.map((semester) => {
-                  const isSemesterActive = activeSemester === semester.name && activeLevel === level.name;
-                  return (
-                    <a
-                      href="#"
-                      key={semester.name}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        setActiveSemester(semester.name);
-                        setActiveLevel(level.name);
-                         if (openLevel !== level.name) {
-                          setOpenLevel(level.name);
-                        }
-                      }}
-                      className={cn(
-                        "flex items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white",
-                        isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                      )}
-                    >
-                      <div className="flex items-center gap-3">
-                        <ChevronRight size={18} className="text-slate-500" />
-                        <Calendar size={18} className="text-green-400" />
-                        <span>{semester.name}</span>
-                      </div>
-                    </a>
-                  );
-                })}
+                 <Accordion type="single" collapsible value={activeSemester} onValueChange={setActiveSemester}>
+                  {level.semesters.map((semester) => {
+                    const isSemesterActive = activeSemester === semester.name && activeLevel === level.name;
+                    return (
+                       <AccordionItem key={semester.name} value={semester.name} className="border-none">
+                        <AccordionTrigger
+                           onClick={() => handleSemesterClick(level.name, semester.name)}
+                          className={cn(
+                            "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white hover:no-underline",
+                            isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
+                          )}
+                        >
+                          <div className="flex items-center gap-3">
+                             {isSemesterActive ? (
+                              <ChevronDown size={18} className="text-slate-400" />
+                             ) : (
+                              <ChevronRight size={18} className="text-slate-500" />
+                             )}
+                            <Calendar size={18} className="text-green-400" />
+                            <span>{semester.name}</span>
+                          </div>
+                        </AccordionTrigger>
+                         <AccordionContent className="text-slate-400 text-center py-2">
+                           No subjects yet
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  })}
+                 </Accordion>
               </AccordionContent>
             </AccordionItem>
           ))}
