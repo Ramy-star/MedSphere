@@ -18,11 +18,17 @@ type FolderPageProps = {
 };
 
 const Breadcrumbs = ({ folderName, folderIcon: Icon, folderColor }: { folderName: string, folderIcon: React.ElementType, folderColor: string }) => (
-  <nav className="flex items-center text-sm text-slate-300 mb-6">
+  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap">
     <a href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
     </a>
+    <ChevronRight className="w-4 h-4 mx-1" />
+    <span className="text-slate-400">Level 1</span>
+    <ChevronRight className="w-4 h-4 mx-1" />
+    <span className="text-slate-400">Semester 1</span>
+    <ChevronRight className="w-4 h-4 mx-1" />
+    <span className="text-slate-400">Chest</span>
     <ChevronRight className="w-4 h-4 mx-1" />
     <span className="font-semibold text-white flex items-center gap-2">
         <Icon className={`w-5 h-5 ${folderColor}`} />

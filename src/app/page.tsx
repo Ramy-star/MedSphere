@@ -20,12 +20,10 @@ export type SearchOutput = FileType[];
 
 const Breadcrumbs = () => (
   <nav className="flex items-center text-sm text-slate-300 mb-6">
-    <a href="#" className="flex items-center gap-2 hover:text-white">
+    <a href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
     </a>
-    <ChevronRight className="w-4 h-4 mx-1" />
-    <span className="font-semibold text-white">All Folders</span>
   </nav>
 );
 
