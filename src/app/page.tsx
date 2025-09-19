@@ -193,8 +193,8 @@ export default function Page() {
               {searchResults === null && (
                 <section className="mb-8">
                   <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                    <div className="w-2 h-4 bg-yellow-400 rounded-full"></div>
-                    Folders
+                    <Folder className="w-6 h-6 text-yellow-400" />
+                    <span>Folders</span>
                   </h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {folderData.map((folder) => (
@@ -206,8 +206,8 @@ export default function Page() {
 
               <section>
                 <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                  <div className="w-2 h-4 bg-blue-400 rounded-full"></div>
-                  {searchResults === null ? 'Files' : 'Found Files'}
+                  <File className="w-6 h-6 text-blue-400" />
+                  <span>{searchResults === null ? 'Files' : 'Found Files'}</span>
                 </h2>
                 <div className="space-y-3">
                   {filesToDisplay.length > 0 ? (
