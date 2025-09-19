@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/sidebar';
 import { folderData } from '@/lib/file-data';
 import {
   ChevronRight,
-  File as FileIcon,
+  Archive as ContentIcon,
   HomeIcon,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -47,8 +47,8 @@ export default function FolderPage({ params }: FolderPageProps) {
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs folderName={folder.name} folderIcon={folder.icon} folderColor={folder.color} />
           <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <FileIcon className="w-6 h-6 text-blue-400" />
-            <span>Files in {folder.name}</span>
+            <ContentIcon className="w-6 h-6 text-blue-400" />
+            <span>Content in {folder.name}</span>
           </h2>
           <div className="space-y-3">
             {folder.files.length > 0 ? (
@@ -58,11 +58,11 @@ export default function FolderPage({ params }: FolderPageProps) {
                   name={file.name}
                   size={file.size}
                   date={file.date}
-                  icon={FileIcon}
+                  icon={ContentIcon}
                 />
               ))
             ) : (
-              <p className="text-slate-400">No files in this folder.</p>
+              <p className="text-slate-400">No content in this folder.</p>
             )}
           </div>
         </main>
