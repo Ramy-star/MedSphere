@@ -126,8 +126,8 @@ export default function Page() {
                             </div>
                         </div>
                         <h3 className="text-lg font-semibold text-white mb-2">Quote of the Day</h3>
-                        <p className="text-slate-400 italic">"The art of medicine consists of amusing the patient while nature cures the disease."</p>
-                        <p className="text-slate-500 text-sm mt-2">- Voltaire</p>
+                        <p className="text-slate-400 italic">"The good physician treats the disease; the great physician treats the patient who has the disease."</p>
+                        <p className="text-slate-500 text-sm mt-2">- William Osler</p>
                     </div>
                 </div>
               )}
