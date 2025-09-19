@@ -13,8 +13,8 @@ export default function Home() {
   return (
     <div className="flex min-h-screen w-full bg-[#0d121c] p-4 gap-4">
       <Sidebar />
-      <div className="flex flex-col flex-1">
-        <header className="flex h-16 items-center justify-end gap-4 px-6">
+      <main className="flex flex-1 flex-col gap-4 bg-slate-900/50 border border-slate-800 rounded-2xl">
+        <header className="flex h-16 items-center justify-end gap-4 px-6 border-b border-slate-800">
           <div className="relative w-full max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 h-4 w-4" />
             <Input
@@ -27,7 +27,7 @@ export default function Home() {
             <SlidersHorizontal className="h-4 w-4" />
           </Button>
         </header>
-        <main className="flex flex-1 items-center justify-center p-6 bg-slate-900/50 border border-slate-800 rounded-2xl">
+        <div className="flex-1 flex items-center justify-center p-6">
           <div className="relative w-full max-w-4xl">
             <div className="absolute -top-16 left-16 text-purple-400/50">
               <Search size={48} strokeWidth={1} />
@@ -70,8 +70,8 @@ export default function Home() {
               </ul>
             </div>
           </div>
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }
