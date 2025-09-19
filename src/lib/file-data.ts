@@ -40,6 +40,12 @@ const practicalSessionFiles: File[] = [
     { name: 'Anatomy Dissection Guide.pdf', size: '1.5 MB', date: '2024-09-09' },
 ];
 
+export const recentFiles: File[] = [
+    { name: 'Endocrinology Case - Diabetes.docx', size: '400 KB', date: '2024-09-18' },
+    { name: 'AI in Medical Diagnosis.pdf', size: '3.5 MB', date: '2024-09-15' },
+    { name: 'Neurology Case - Seizures.docx', size: '450 KB', date: '2024-09-12' },
+    { name: 'Anatomy Lecture 2 - Thorax.pptx', size: '7.1 MB', date: '2024-09-10' },
+];
 
 export const folderData: Folder[] = [
   {
