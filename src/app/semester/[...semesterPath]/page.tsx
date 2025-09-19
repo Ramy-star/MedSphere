@@ -3,7 +3,7 @@
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
 import { HomeIcon, ChevronRight, Plus, Folder, File as FileIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useState, use } from 'react';
 import { notFound } from 'next/navigation';
 
 type SemesterPageProps = {
@@ -27,7 +27,8 @@ const Breadcrumbs = ({ level, semester }: { level: string; semester: string }) =
 
 export default function SemesterPage({ params }: SemesterPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [levelName, semesterName] = params.semesterPath.map(decodeURIComponent);
+  const { semesterPath } = params;
+  const [levelName, semesterName] = semesterPath.map(decodeURIComponent);
 
   if (!levelName || !semesterName) {
     notFound();
