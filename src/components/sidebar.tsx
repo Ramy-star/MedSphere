@@ -12,8 +12,8 @@ import {
   ChevronDown,
   ChevronRight,
   GraduationCap,
+  Layers,
   Menu,
-  Signal,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './ui/button';
@@ -122,7 +122,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 <div className="flex items-center gap-3">
                   {open ? (
                     <>
-                      <Signal className="h-5 w-5 text-slate-400" />
+                      <Layers className="h-5 w-5 text-slate-400" />
                       <span className={cn("font-medium", !open && "hidden")}>{level.name}</span>
                     </>
                   ) : (
