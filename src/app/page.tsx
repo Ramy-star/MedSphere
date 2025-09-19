@@ -9,58 +9,17 @@ import {
   Plus,
   Download,
   Star,
-  Book,
-  FileText,
-  Presentation,
-  Users,
-  TestTube2,
   Search,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { search } from '@/ai/flows/search-flow';
-import { fileData as allFilesData } from '@/lib/file-data';
+import { folderData, File as FileType } from '@/lib/file-data';
 import { cn } from '@/lib/utils';
 
-// This type is moved here from the flow file
-export type SearchOutput = {
-    name: string;
-    size: string;
-    date: string;
-}[];
+export type SearchOutput = FileType[];
 
-const folderData = [
-  {
-    name: 'Lectures',
-    fileCount: 8,
-    icon: Presentation,
-    color: 'text-blue-400',
-  },
-  {
-    name: 'Case Studies',
-    fileCount: 5,
-    icon: Users,
-    color: 'text-purple-400',
-  },
-  {
-    name: 'Textbooks',
-    fileCount: 3,
-    icon: Book,
-    color: 'text-green-400',
-  },
-  {
-    name: 'Research Papers',
-    fileCount: 4,
-    icon: FileText,
-    color: 'text-red-400',
-  },
-  {
-    name: 'Practical Sessions',
-    fileCount: 2,
-    icon: TestTube2,
-    color: 'text-orange-400',
-  },
-];
+const allFilesData: FileType[] = folderData.flatMap(f => f.files);
 
 const Breadcrumbs = () => (
   <nav className="flex items-center text-sm text-slate-300 mb-6">
@@ -84,10 +43,18 @@ type FolderCardProps = {
   fileCount: number;
   icon: LucideIcon;
   color: string;
+  onClick: () => void;
+  isActive: boolean;
 };
 
-const FolderCard = ({ name, fileCount, icon: Icon, color }: FolderCardProps) => (
-  <div className="glass-card p-4 flex items-center justify-between transition-all hover:bg-white/10 cursor-pointer">
+const FolderCard = ({ name, fileCount, icon: Icon, color, onClick, isActive }: FolderCardProps) => (
+  <div 
+    className={cn(
+      "glass-card p-4 flex items-center justify-between transition-all hover:bg-white/10 cursor-pointer",
+      isActive && "bg-blue-500/20"
+    )}
+    onClick={onClick}
+  >
     <div className="flex items-center gap-4">
       <div className={`p-3 rounded-lg bg-slate-800 ${color}`}>
         <Icon className="w-6 h-6" />
@@ -139,6 +106,7 @@ export default function Page() {
   const [searchResults, setSearchResults] = useState<SearchOutput | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [activeFolder, setActiveFolder] = useState(folderData[0].name);
 
   const handleSearch = async (query: string) => {
     if (!query) {
@@ -159,7 +127,11 @@ export default function Page() {
     }
   }, []);
 
-  const filesToDisplay = searchResults === null ? allFilesData : searchResults;
+  const filesToDisplay = searchResults === null 
+    ? folderData.find(f => f.name === activeFolder)?.files || []
+    : searchResults;
+
+  const currentFolder = folderData.find(f => f.name === activeFolder);
 
   return (
     <div className="flex flex-1 w-full p-4 gap-4">
@@ -190,41 +162,74 @@ export default function Page() {
             <div className="text-white">Searching...</div>
           ) : (
             <>
-              {searchResults === null && (
-                <section className="mb-8">
-                  <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                    <Folder className="w-6 h-6 text-yellow-400" />
-                    <span>Folders</span>
-                  </h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {folderData.map((folder) => (
-                      <FolderCard key={folder.name} {...folder} />
-                    ))}
-                  </div>
+              {searchResults !== null ? (
+                 <section>
+                    <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                    <File className="w-6 h-6 text-blue-400" />
+                    <span>Found Files</span>
+                    </h2>
+                    <div className="space-y-3">
+                    {filesToDisplay.length > 0 ? (
+                        filesToDisplay.map((file) => (
+                        <FileListItem
+                            key={file.name}
+                            name={file.name}
+                            size={file.size}
+                            date={file.date}
+                            icon={File}
+                        />
+                        ))
+                    ) : (
+                        <p className="text-slate-400">No files found.</p>
+                    )}
+                    </div>
                 </section>
-              )}
-
-              <section>
-                <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-                  <File className="w-6 h-6 text-blue-400" />
-                  <span>{searchResults === null ? 'Files' : 'Found Files'}</span>
-                </h2>
-                <div className="space-y-3">
-                  {filesToDisplay.length > 0 ? (
-                    filesToDisplay.map((file) => (
-                      <FileListItem
-                        key={file.name}
-                        name={file.name}
-                        size={file.size}
-                        date={file.date}
-                        icon={File}
-                      />
-                    ))
-                  ) : (
-                    <p className="text-slate-400">No files found.</p>
-                  )}
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <section>
+                    <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                      <Folder className="w-6 h-6 text-yellow-400" />
+                      <span>Folders</span>
+                    </h2>
+                    <div className="space-y-3">
+                      {folderData.map((folder) => (
+                        <FolderCard 
+                          key={folder.name} 
+                          {...folder} 
+                          fileCount={folder.files.length}
+                          onClick={() => setActiveFolder(folder.name)}
+                          isActive={activeFolder === folder.name}
+                        />
+                      ))}
+                    </div>
+                  </section>
+                  <section>
+                     {currentFolder && (
+                        <>
+                            <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                                {currentFolder.icon && <currentFolder.icon className={`w-6 h-6 ${currentFolder.color}`} />}
+                                <span>{currentFolder.name}</span>
+                            </h2>
+                            <div className="space-y-3">
+                            {filesToDisplay.length > 0 ? (
+                                filesToDisplay.map((file) => (
+                                <FileListItem
+                                    key={file.name}
+                                    name={file.name}
+                                    size={file.size}
+                                    date={file.date}
+                                    icon={File}
+                                />
+                                ))
+                            ) : (
+                                <p className="text-slate-400">No files in this folder.</p>
+                            )}
+                            </div>
+                        </>
+                     )}
+                  </section>
                 </div>
-              </section>
+              )}
             </>
           )}
         </main>

@@ -5,7 +5,9 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { fileData, File } from '@/lib/file-data';
+import { folderData, File } from '@/lib/file-data';
+
+const allFilesData = folderData.flatMap(f => f.files);
 
 const SearchInputSchema = z.object({
   query: z.string(),
@@ -25,11 +27,11 @@ type SearchOutput = z.infer<typeof SearchOutputSchema>;
 async function searchFiles(input: SearchInput): Promise<SearchOutput> {
   const { query } = input;
   if (!query) {
-    return fileData;
+    return allFilesData;
   }
   const lowerCaseQuery = query.toLowerCase();
   
-  const searchResults = fileData.filter(file => 
+  const searchResults = allFilesData.filter(file => 
     file.name.toLowerCase().includes(lowerCaseQuery) ||
     file.size.toLowerCase().includes(lowerCaseQuery) ||
     file.date.toLowerCase().includes(lowerCaseQuery)
