@@ -15,11 +15,11 @@ import {
 } from 'lucide-react';
 
 const levels = [
-  { name: 'Level 1', semesters: ['Semester 1', 'Semester 2'], fileCount: 1, active: true },
-  { name: 'Level 2', semesters: ['Semester 3', 'Semester 4'], fileCount: 2 },
-  { name: 'Level 3', semesters: ['Semester 5', 'Semester 6'], fileCount: 3 },
-  { name: 'Level 4', semesters: ['Semester 7', 'Semester 8'], fileCount: 4 },
-  { name: 'Level 5', semesters: ['Semester 9', 'Semester 10'], fileCount: 5 },
+  { name: 'Level 1', semesters: ['Semester 9', 'Semester 10'], fileCount: 1, active: true },
+  { name: 'Level 2', semesters: [], fileCount: 2 },
+  { name: 'Level 3', semesters: [], fileCount: 3 },
+  { name: 'Level 4', semesters: [], fileCount: 4 },
+  { name: 'Level 5', semesters: [], fileCount: 5 },
 ];
 
 export function Sidebar() {
@@ -55,12 +55,19 @@ export function Sidebar() {
                 )}
               >
                 <div className="flex items-center gap-3">
-                   <ChevronRight
-                    className={cn(
-                      'h-5 w-5 shrink-0 transition-transform duration-200 text-slate-400 group-data-[state=open]:rotate-90',
-                       !level.active && "group-data-[state=open]:text-white"
-                    )}
-                  />
+                   {level.active ? (
+                     <ChevronDown
+                      className={cn(
+                        'h-5 w-5 shrink-0 text-slate-400',
+                      )}
+                    />
+                   ) : (
+                    <ChevronRight
+                      className={cn(
+                        'h-5 w-5 shrink-0 text-slate-400'
+                      )}
+                    />
+                   )}
                   <span className="font-medium">{level.name}</span>
                 </div>
                 <div
