@@ -2,7 +2,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Filter, GraduationCap, Search } from 'lucide-react';
+import { GraduationCap, Search } from 'lucide-react';
 import { useState } from 'react';
 
 // This is a bit of a hack to pass the search handler from the page to the header.
@@ -30,7 +30,7 @@ export const Header = () => {
   };
 
   return (
-    <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 py-3">
+    <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-10 py-3">
       <div className="flex items-center justify-between mx-auto">
         <div className="flex items-center gap-3">
           <div className="bg-blue-500/10 text-blue-400 p-2 rounded-lg">
@@ -56,12 +56,6 @@ export const Header = () => {
               onKeyDown={handleKeyDown}
             />
           </div>
-          <Button
-            variant="outline"
-            className="bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 rounded-full"
-          >
-            <Filter className="w-5 h-5" />
-          </Button>
         </div>
       </div>
     </header>
