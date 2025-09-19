@@ -18,8 +18,15 @@ import {
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
-import { search, SearchOutput } from '@/ai/flows/search-flow';
+import { search } from '@/ai/flows/search-flow';
 import { fileData as allFilesData } from '@/lib/file-data';
+
+// This type is moved here from the flow file
+export type SearchOutput = {
+    name: string;
+    size: string;
+    date: string;
+}[];
 
 const folderData = [
   {

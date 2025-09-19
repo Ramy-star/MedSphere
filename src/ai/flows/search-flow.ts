@@ -7,11 +7,11 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { fileData, File } from '@/lib/file-data';
 
-export const SearchInputSchema = z.object({
+const SearchInputSchema = z.object({
   query: z.string(),
 });
 
-export const SearchOutputSchema = z.array(
+const SearchOutputSchema = z.array(
   z.object({
     name: z.string(),
     size: z.string(),
@@ -19,8 +19,8 @@ export const SearchOutputSchema = z.array(
   })
 );
 
-export type SearchInput = z.infer<typeof SearchInputSchema>;
-export type SearchOutput = z.infer<typeof SearchOutputSchema>;
+type SearchInput = z.infer<typeof SearchInputSchema>;
+type SearchOutput = z.infer<typeof SearchOutputSchema>;
 
 async function searchFiles(input: SearchInput): Promise<SearchOutput> {
   const { query } = input;
