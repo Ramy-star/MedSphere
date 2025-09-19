@@ -13,6 +13,7 @@ import {
   ChevronRight,
   GraduationCap,
   Menu,
+  Signal,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './ui/button';
@@ -120,23 +121,26 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
               >
                 <div className="flex items-center gap-3">
                   {open ? (
-                    openLevel === level.name ? (
-                      <ChevronDown
-                        className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:text-white"
-                        aria-hidden="true"
-                      />
-                    ) : (
-                      <ChevronRight
-                        className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200"
-                        aria-hidden="true"
-                      />
-                    )
+                    <>
+                      <Signal className="h-5 w-5 text-slate-400" />
+                      <span className={cn("font-medium", !open && "hidden")}>{level.name}</span>
+                    </>
                   ) : (
                      <span className="font-bold text-lg">{index + 1}</span>
                   )}
 
-                  <span className={cn("font-medium", !open && "hidden")}>{level.name}</span>
                 </div>
+                 {open && (openLevel === level.name ? (
+                  <ChevronDown
+                    className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:text-white"
+                    aria-hidden="true"
+                  />
+                ) : (
+                  <ChevronRight
+                    className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200"
+                    aria-hidden="true"
+                  />
+                ))}
               </AccordionTrigger>
               <AccordionContent className={cn("pl-4 pr-1 pb-0 pt-1 space-y-2", !open && "hidden")}>
                  <Accordion type="single" collapsible value={activeSemester} onValueChange={setActiveSemester}>
@@ -152,14 +156,14 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                           )}
                         >
                           <div className="flex items-center gap-3">
-                             {isSemesterActive ? (
-                              <ChevronDown size={18} className="text-slate-400" />
-                             ) : (
-                              <ChevronRight size={18} className="text-slate-500" />
-                             )}
                             <Calendar size={18} className="text-green-400" />
                             <span className={cn(!open && "hidden")}>{semester.name}</span>
                           </div>
+                           {isSemesterActive ? (
+                            <ChevronDown size={18} className="text-slate-400" />
+                           ) : (
+                            <ChevronRight size={18} className="text-slate-500" />
+                           )}
                         </AccordionTrigger>
                          <AccordionContent className={cn("text-slate-400 text-center py-2", !open && "hidden")}>
                            No subjects yet
