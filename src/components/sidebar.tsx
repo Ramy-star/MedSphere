@@ -118,16 +118,6 @@ export function Sidebar() {
 
                   <span className="font-medium">{level.name}</span>
                 </div>
-                <div
-                  className={cn(
-                    'h-6 w-6 flex items-center justify-center rounded-full text-xs font-semibold',
-                    activeLevel === level.name
-                      ? 'border border-white/50 text-white'
-                      : 'bg-slate-700 text-slate-300'
-                  )}
-                >
-                  {level.fileCount}
-                </div>
               </AccordionTrigger>
               <AccordionContent className="pl-4 pr-1 pb-0 pt-1 space-y-1">
                 {level.semesters.map((semester) => {
@@ -153,9 +143,6 @@ export function Sidebar() {
                         <ChevronRight size={18} className="text-slate-500" />
                         <Calendar size={18} className="text-green-400" />
                         <span>{semester.name}</span>
-                      </div>
-                      <div className="h-6 w-6 flex items-center justify-center rounded-full bg-slate-700 text-slate-300 text-xs font-semibold">
-                        {semester.subjects}
                       </div>
                     </a>
                   );
