@@ -63,6 +63,16 @@ export function Sidebar() {
   const [activeSemester, setActiveSemester] = useState('');
   const [openLevel, setOpenLevel] = useState('Level 1');
   
+  const handleLevelChange = (value: string) => {
+    const newLevel = value || '';
+    setOpenLevel(newLevel);
+    setActiveLevel(newLevel);
+    // When a level is collapsed, also collapse the semester
+    if (!newLevel) {
+      setActiveSemester('');
+    }
+  };
+
   return (
     <aside className="w-80 flex-col glass-card p-4 hidden md:flex">
       <div className="mb-4 px-2">
@@ -78,7 +88,7 @@ export function Sidebar() {
           type="single"
           collapsible
           value={openLevel}
-          onValueChange={(value) => setOpenLevel(value || '')}
+          onValueChange={handleLevelChange}
           className="w-full"
         >
           {initialLevels.map((level) => (
@@ -88,7 +98,6 @@ export function Sidebar() {
               className="border-none"
             >
               <AccordionTrigger
-                onClick={() => setActiveLevel(level.name)}
                 className={cn(
                   'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white group',
                   activeLevel === level.name && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white'
