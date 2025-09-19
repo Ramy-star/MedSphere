@@ -19,7 +19,7 @@ const initialLevels = [
   {
     name: 'Level 1',
     semesters: [
-      { name: 'Semester 1', subjects: 1, content: 'No subjects yet' },
+      { name: 'Semester 1', subjects: 1 },
       { name: 'Semester 2', subjects: 2 },
     ],
     fileCount: 1,
@@ -123,35 +123,6 @@ export function Sidebar() {
               <AccordionContent className="pl-4 pr-1 pb-0 pt-1 space-y-1">
                 {level.semesters.map((semester) => {
                   const isSemesterActive = activeSemester === semester.name && activeLevel === level.name;
-                  if (semester.content) {
-                    return (
-                      <AccordionItem
-                        key={semester.name}
-                        value={semester.name}
-                        className="border-none"
-                      >
-                        <AccordionTrigger
-                           onClick={() => setActiveSemester(semester.name)}
-                           className={cn(
-                            'flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white',
-                            isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                          )}
-                        >
-                           <div className="flex items-center gap-3">
-                              <ChevronDown size={18} />
-                              <Calendar size={18} />
-                              <span>{semester.name}</span>
-                            </div>
-                            <div className="h-6 w-6 flex items-center justify-center rounded-full border border-white/50 text-white text-xs font-semibold">
-                              {semester.subjects}
-                            </div>
-                        </AccordionTrigger>
-                        <AccordionContent className="py-2 px-4 text-slate-400 text-sm">
-                          {semester.content}
-                        </AccordionContent>
-                      </AccordionItem>
-                    );
-                  }
                   return (
                     <a
                       href="#"
