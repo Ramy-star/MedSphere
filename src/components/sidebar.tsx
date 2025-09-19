@@ -61,19 +61,14 @@ export function Sidebar() {
               >
                 <div className="flex items-center gap-3">
                   {level.active ? (
-                    <ChevronDown
-                      className={cn('h-5 w-5 shrink-0 text-slate-400', 'group-data-[state=closed]:hidden')}
+                     <ChevronDown
+                      className={cn('h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200', 'group-data-[state=closed]:-rotate-90')}
                     />
                   ) : (
                     <ChevronRight
-                      className={cn('h-5 w-5 shrink-0 text-slate-400')}
+                      className={cn('h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200', 'group-data-[state=open]:rotate-90')}
                     />
                   )}
-                   <ChevronRight className={cn('h-5 w-5 shrink-0 text-slate-400', {'hidden': level.active}, 'group-data-[state=open]:hidden')} />
-                   <ChevronDown className={cn('h-5 w-5 shrink-0 text-slate-400', {'hidden': !level.active}, 'group-data-[state=open]:hidden')} />
-                   <ChevronDown className={cn('h-5 w-5 shrink-0 text-slate-400', 'group-data-[state=closed]:hidden')} />
-
-
                   <span className="font-medium">{level.name}</span>
                 </div>
                 <div
