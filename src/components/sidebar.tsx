@@ -10,7 +10,6 @@ import { cn } from '@/lib/utils';
 import {
   ChevronRight,
   Folder,
-  GraduationCap,
   LayoutDashboard,
 } from 'lucide-react';
 
@@ -25,20 +24,6 @@ const levels = [
 export function Sidebar() {
   return (
     <aside className="w-80 flex-col border border-slate-800 bg-slate-900/50 p-6 rounded-2xl hidden md:flex">
-      <div className="flex items-center gap-3 mb-8">
-        <div className="bg-blue-500/10 text-blue-400 p-2 rounded-lg">
-          <GraduationCap />
-        </div>
-        <div>
-          <h1 className="text-lg font-bold text-white">
-            Medical Study Organizer
-          </h1>
-          <p className="text-sm text-slate-400">
-            Organize your medical education journey
-          </p>
-        </div>
-      </div>
-
       <div className="mb-6">
         <h2 className="text-base font-semibold text-white flex items-center gap-2 mb-1">
           <LayoutDashboard className="text-slate-400" size={20} />
