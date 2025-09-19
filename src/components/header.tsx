@@ -30,8 +30,8 @@ export const Header = () => {
   };
 
   return (
-    <header className="bg-[#222b3c] p-3 border-b border-slate-700">
-      <div className="flex items-center justify-between mx-auto px-4">
+    <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 py-3">
+      <div className="flex items-center justify-between mx-auto">
         <div className="flex items-center gap-3">
           <div className="bg-blue-500/10 text-blue-400 p-2 rounded-lg">
             <GraduationCap />
