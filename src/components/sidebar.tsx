@@ -64,7 +64,7 @@ const levels = [
 
 export function Sidebar() {
   return (
-    <aside className="w-80 flex-col border border-slate-800 bg-slate-900/50 p-6 rounded-2xl hidden md:flex">
+    <aside className="w-80 flex-col glass-card p-6 hidden md:flex">
       <div className="mb-6">
         <h2 className="text-base font-semibold text-white flex items-center gap-3 mb-1">
           <GraduationCap className="text-blue-400" size={24} />
