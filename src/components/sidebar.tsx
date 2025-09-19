@@ -80,22 +80,24 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <aside className={cn("relative h-full flex-col glass-card p-4 hidden md:flex transition-all duration-300 z-10", open ? 'w-72' : 'w-20')}>
-       <Button 
-        variant="ghost" 
-        size="icon" 
-        onClick={() => setOpen(!open)} 
-        className="absolute top-4 right-4 text-white hover:bg-slate-700"
-      >
-        <Menu />
-      </Button>
-      <div className={cn("mb-4 px-2 transition-all", open ? "opacity-100" : "opacity-0 pointer-events-none")}>
-        <h2 className="text-base font-semibold text-white flex items-center gap-3 mb-1">
+      <div className={cn("flex items-center mb-4 px-2 transition-all", open ? "justify-between" : "justify-center")}>
+        <div className={cn("flex items-center gap-3", !open && "hidden")}>
           <GraduationCap className="text-blue-400" size={24} />
-          Academic Structure
-        </h2>
+          <h2 className="text-base font-semibold text-white">
+            Academic Structure
+          </h2>
+        </div>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={() => setOpen(!open)} 
+          className="text-white hover:bg-slate-700"
+        >
+          <Menu />
+        </Button>
       </div>
 
-      <nav className="flex-1 space-y-2 mt-12">
+      <nav className="flex-1 space-y-2">
         <Accordion
           type="single"
           collapsible
