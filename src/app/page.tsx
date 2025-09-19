@@ -123,47 +123,6 @@ export default function Page() {
                       <StatCard icon={Folder} title="Total Folders" value={totalFolders.toString()} color="text-yellow-400" />
                       <StatCard icon={FileTextIcon} title="Total Files" value={totalFiles.toString()} color="text-blue-400" />
                     </div>
-
-                    <div className="flex flex-col gap-8">
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-3">
-                               <div className="p-2 bg-green-400/10 rounded-lg">
-                                 <Clock className="w-6 h-6 text-green-400" />
-                               </div>
-                               <h2 className="text-xl font-bold text-white">Recent Files</h2>
-                            </div>
-                            <div className="space-y-3">
-                                {recentFiles.map(file => <RecentFileCard key={file.name} {...file} />)}
-                            </div>
-                        </div>
-
-                        <div className="space-y-4">
-                           <div className="flex items-center gap-3">
-                                <div className="p-2 bg-purple-400/10 rounded-lg">
-                                    <Folder className="w-6 h-6 text-purple-400" />
-                                </div>
-                                <h2 className="text-xl font-bold text-white">Folders</h2>
-                            </div>
-                            <div className="space-y-3">
-                                {folderData.map((folder) => (
-                                <Link href={`/folder/${encodeURIComponent(folder.name)}`} passHref key={folder.name}>
-                                    <div className="glass-card p-3 flex items-center justify-between transition-all hover:bg-white/10 cursor-pointer">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`p-2 rounded-lg bg-slate-800 ${folder.color}`}>
-                                        <folder.icon className="w-5 h-5" />
-                                        </div>
-                                        <div>
-                                        <p className="font-semibold text-white text-sm">{folder.name}</p>
-                                        <p className="text-xs text-slate-400">{folder.files.length} files</p>
-                                        </div>
-                                    </div>
-                                    <ChevronRight className="w-4 h-4 text-slate-500" />
-                                    </div>
-                                </Link>
-                                ))}
-                            </div>
-                        </div>
-                    </div>
                 </div>
               )}
             </>
