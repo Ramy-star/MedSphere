@@ -60,7 +60,7 @@ const initialLevels = [
 
 export function Sidebar() {
   const [activeLevel, setActiveLevel] = useState('Level 1');
-  const [activeSemester, setActiveSemester] = useState('Semester 1');
+  const [activeSemester, setActiveSemester] = useState('');
   const [openLevel, setOpenLevel] = useState('Level 1');
   
   return (
