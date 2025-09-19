@@ -81,7 +81,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <aside className={cn("relative h-full flex-col glass-card p-4 hidden md:flex transition-all duration-300 z-10", open ? 'w-72' : 'w-20')}>
-      <div className={cn("flex items-center mb-4 px-2 transition-all", open ? "justify-between" : "justify-center")}>
+      <div className={cn("flex items-center mb-4 transition-all", open ? "justify-between pl-2.5 pr-2.5" : "justify-center")}>
         <div className={cn("flex items-center gap-3", !open && "hidden")}>
           <GraduationCap className="text-blue-400" size={24} />
           <h2 className="text-base font-semibold text-white whitespace-nowrap">
@@ -94,7 +94,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           onClick={() => setOpen(!open)} 
           className="text-white hover:bg-slate-700"
         >
-          <Menu size={32} />
+          <Menu size={24} />
         </Button>
       </div>
 
