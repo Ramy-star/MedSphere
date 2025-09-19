@@ -1,179 +1,125 @@
 'use client';
-import { useState } from 'react';
+
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { ChevronsLeft, Menu, X, TestTube, School, HeartPulse, Brain, Dna, FlaskConical, Shield, Microscope } from 'lucide-react';
-
-const levelIcons: { [key: string]: React.ElementType } = {
-  "Level 1": School,
-  "Level 2": School,
-  "Level 3": School,
-  "Level 4": School,
-  "Level 5": School,
-};
-
-const subjectIcons: { [key: string]: React.ElementType } = {
-    'Anatomy': Brain,
-    'Histology': Microscope,
-    'Physiology': HeartPulse,
-    'Biochemistry': FlaskConical,
-    'Immunology': Shield,
-    'Genetics': Dna,
-};
+import {
+  ChevronRight,
+  Folder,
+  GraduationCap,
+  LayoutDashboard,
+} from 'lucide-react';
 
 const levels = [
-  {
-    name: 'Level 1',
-    semesters: [
-      {
-        name: 'Semester 1',
-        subjects: [
-          { name: 'Anatomy', active: true, icon: 'anatomy' },
-          { name: 'Histology', icon: 'biotech' },
-        ],
-      },
-      { 
-        name: 'Semester 2', 
-        subjects: [
-            { name: 'Physiology', icon: 'science' },
-            { name: 'Biochemistry', icon: 'science' },
-        ] 
-      },
-    ],
-  },
-  {
-    name: 'Level 2',
-    semesters: [
-      { 
-          name: 'Semester 3', 
-          subjects: [
-            { name: 'Immunology', icon: 'science' },
-          ]
-      },
-      { 
-          name: 'Semester 4',
-          subjects: [
-            { name: 'Genetics', icon: 'science' },
-          ]
-      },
-    ],
-  },
-  { name: 'Level 3', semesters: [] },
-  { name: 'Level 4', semesters: [] },
-  { name: 'Level 5', semesters: [] },
+  { name: 'Level 1', semesterCount: 2, fileCount: 1 },
+  { name: 'Level 2', semesterCount: 2, fileCount: 2 },
+  { name: 'Level 3', semesterCount: 2, fileCount: 3 },
+  { name: 'Level 4', semesterCount: 2, fileCount: 4 },
+  { name: 'Level 5', semesterCount: 2, fileCount: 5, active: true },
 ];
 
-export function Sidebar({ isMobileOpen, setMobileOpen }: { isMobileOpen: boolean; setMobileOpen: (open: boolean) => void; }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-
-  const toggleSidebar = () => setIsCollapsed(!isCollapsed);
-  const closeMobileMenu = () => setMobileOpen(false);
-  
-  const SidebarContent = () => (
-    <div className="flex flex-col h-full">
-       <div className="flex items-center justify-between text-white p-4 border-b border-dark h-16">
-        <div className={cn("flex items-center gap-3 overflow-hidden transition-all", isCollapsed ? "w-0" : "w-auto")}>
-          <div className="flex items-center justify-center rounded-lg bg-primary/10 text-primary p-2">
-            <TestTube />
-          </div>
-          <h2 className={cn("text-lg font-bold whitespace-nowrap", isCollapsed && "hidden")}>
-            MedicalStudyHub
-          </h2>
+export function Sidebar() {
+  return (
+    <aside className="w-80 flex-col border-r border-white/10 bg-slate-900/50 p-6 hidden md:flex">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="bg-blue-500/10 text-blue-400 p-2 rounded-lg">
+          <GraduationCap />
         </div>
-        <Button onClick={toggleSidebar} variant="ghost" size="icon" className="hidden md:flex p-1 rounded-full hover:bg-surface-dark">
-          {isCollapsed ? <Menu /> : <ChevronsLeft />}
-        </Button>
-         <Button onClick={closeMobileMenu} variant="ghost" size="icon" className="md:hidden p-1 rounded-full hover:bg-surface-dark">
-          <X />
-        </Button>
+        <div>
+          <h1 className="text-lg font-bold text-white">
+            Medical Study Organizer
+          </h1>
+          <p className="text-sm text-slate-400">
+            Organize your medical education journey
+          </p>
+        </div>
       </div>
-      <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        <Accordion type="multiple" defaultValue={['Level 1']} className="w-full">
-          {levels.map((level) => {
-            const LevelIcon = levelIcons[level.name] || School;
-            return (
-              <AccordionItem value={level.name} key={level.name} className="border-none">
-                <AccordionTrigger className={cn("w-full flex items-center justify-between text-slate-300 hover:text-white hover:bg-surface-dark p-2 rounded-lg hover:no-underline", isCollapsed && "justify-center")}>
-                  <div className="flex items-center gap-3">
-                    <LevelIcon className="h-5 w-5"/>
-                    <span className={cn("font-semibold", isCollapsed && "hidden")}>{level.name}</span>
-                  </div>
-                </AccordionTrigger>
-                <AccordionContent className={cn("pl-4 mt-1 space-y-1 overflow-hidden", isCollapsed && "hidden")}>
-                  {level.semesters.length > 0 ? (
-                    <Accordion type="multiple" defaultValue={['Semester 1']}>
-                      {level.semesters.map((semester) => (
-                          <AccordionItem
-                            value={semester.name}
-                            key={semester.name}
-                            className="border-none"
-                          >
-                            <AccordionTrigger className="w-full flex items-center justify-between text-slate-300 hover:text-white hover:bg-surface-dark p-2 rounded-lg hover:no-underline">
-                              <div className="flex items-center gap-3">
-                                <span className="font-medium">{semester.name}</span>
-                              </div>
-                            </AccordionTrigger>
-                            <AccordionContent className="pl-4 mt-1 space-y-1">
-                              {semester.subjects.map((subject) => {
-                                const SubjectIcon = subjectIcons[subject.name] || TestTube;
-                                return (
-                                  <Link
-                                    href="#"
-                                    key={subject.name}
-                                    className={cn(
-                                      'flex items-center gap-3 p-2 rounded-lg text-sm',
-                                      subject.active
-                                        ? 'text-white bg-primary/80 font-semibold'
-                                        : 'text-slate-400 hover:text-white hover:bg-surface-dark'
-                                    )}
-                                  >
-                                    <SubjectIcon className="h-5 w-5" />
-                                    <span>{subject.name}</span>
-                                  </Link>
-                                )
-                              })}
-                            </AccordionContent>
-                          </AccordionItem>
-                        )
-                      )}
-                    </Accordion>
-                  ) : !isCollapsed && (
-                     <div className="pl-6 text-slate-500 text-sm">No semesters</div>
+
+      <div className="mb-6">
+        <h2 className="text-base font-semibold text-white flex items-center gap-2 mb-1">
+          <LayoutDashboard className="text-slate-400" size={20} />
+          Academic Structure
+        </h2>
+        <p className="text-sm text-slate-400">Navigate your medical education</p>
+      </div>
+
+      <nav className="flex-1 space-y-2">
+        <Accordion
+          type="multiple"
+          defaultValue={['Level 5']}
+          className="w-full"
+        >
+          {levels.map((level, index) => (
+            <AccordionItem
+              key={level.name}
+              value={level.name}
+              className={cn(
+                'border-none rounded-lg',
+                level.active && 'bg-blue-500/10'
+              )}
+            >
+              <AccordionTrigger
+                className={cn(
+                  'p-3 hover:no-underline rounded-lg w-full text-slate-300 hover:text-white',
+                  level.active && 'text-white'
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <ChevronRight
+                    className={cn(
+                      'h-5 w-5 transition-transform duration-200',
+                      'group-data-[state=open]:rotate-90'
+                    )}
+                  />
+                  <span className="font-medium">{level.name}</span>
+                </div>
+                <div
+                  className={cn(
+                    'h-6 w-6 flex items-center justify-center rounded-full text-xs font-semibold',
+                    level.active
+                      ? 'bg-blue-500 text-white'
+                      : 'bg-slate-700 text-slate-300'
                   )}
-                </AccordionContent>
-              </AccordionItem>
-            )
-          })}
+                >
+                  {level.fileCount}
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pl-6 pr-3 pb-2">
+                <div className="space-y-2">
+                  <a
+                    href="#"
+                    className="flex items-center justify-between p-2 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Folder size={18} />
+                      <span>Semester {index * 2 + 1}</span>
+                    </div>
+                    <div className="h-6 w-6 flex items-center justify-center rounded-full bg-slate-700 text-slate-300 text-xs font-semibold">
+                      {level.fileCount * 2 + 5}
+                    </div>
+                  </a>
+                  <a
+                    href="#"
+                    className="flex items-center justify-between p-2 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Folder size={18} />
+                      <span>Semester {index * 2 + 2}</span>
+                    </div>
+                     <div className="h-6 w-6 flex items-center justify-center rounded-full bg-slate-700 text-slate-300 text-xs font-semibold">
+                      {level.fileCount * 3 + 5}
+                    </div>
+                  </a>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
         </Accordion>
       </nav>
-    </div>
-  );
-
-  return (
-    <>
-    <aside
-      className={cn(
-        'hidden md:flex flex-col h-full bg-black/20 backdrop-blur-lg border-r border-dark transition-all duration-300 ease-in-out',
-        isCollapsed ? 'w-20' : 'w-64'
-      )}
-    >
-      <SidebarContent />
     </aside>
-     {isMobileOpen && (
-        <div className="fixed inset-0 z-40 flex md:hidden" onClick={closeMobileMenu}>
-          <div className="absolute inset-0 bg-black/50 backdrop-blur-sm"></div>
-           <aside onClick={(e) => e.stopPropagation()} className="relative z-50 flex flex-col h-full w-64 bg-black/20 backdrop-blur-lg border-r border-dark">
-             <SidebarContent />
-           </aside>
-        </div>
-      )}
-    </>
   );
 }
