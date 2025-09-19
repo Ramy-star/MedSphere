@@ -4,23 +4,23 @@
 
 @layer base {
   :root {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    --background: 208 65% 9%; /* Updated from #111921 */
+    --foreground: 210 40% 98%;
 
     --muted: 223 47% 11%;
     --muted-foreground: 216 34% 65%;
 
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 208 65% 9%;
+    --popover-foreground: 210 40% 98%;
 
-    --card: 223 47% 11%;
-    --card-foreground: 213 31% 91%;
+    --card: 208 65% 9%;
+    --card-foreground: 210 40% 98%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 207 79% 47%; /* Updated from #1e7bd2 */
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 216 34% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -31,29 +31,29 @@
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --ring: 216 34% 17%;
+    --ring: 207 79% 47%;
     
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 224 71% 4%;
-    --foreground: 213 31% 91%;
+    --background: 208 65% 9%;
+    --foreground: 210 40% 98%;
 
     --muted: 223 47% 11%;
     --muted-foreground: 216 34% 65%;
 
-    --popover: 224 71% 4%;
-    --popover-foreground: 213 31% 91%;
+    --popover: 208 65% 9%;
+    --popover-foreground: 210 40% 98%;
 
-    --card: 223 47% 11%;
-    --card-foreground: 213 31% 91%;
+    --card: 208 65% 9%;
+    --card-foreground: 210 40% 98%;
 
-    --border: 216 34% 17%;
-    --input: 216 34% 17%;
+    --border: 240 4% 16%;
+    --input: 240 4% 16%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
+    --primary: 207 79% 47%;
+    --primary-foreground: 210 40% 98%;
 
     --secondary: 216 34% 17%;
     --secondary-foreground: 210 40% 98%;
@@ -64,7 +64,7 @@
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
 
-    --ring: 216 34% 17%;
+    --ring: 207 79% 47%;
   }
 }
 
@@ -79,10 +79,6 @@
 
 @layer components {
   .glass-card {
-    background-color: hsla(225, 20%, 15%, 0.3);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid hsla(216, 34%, 17%, 0.5);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+    @apply rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg;
   }
 }

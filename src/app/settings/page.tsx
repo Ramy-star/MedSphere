@@ -4,59 +4,57 @@ import { Switch } from '@/components/ui/switch';
 
 export function SettingsPage() {
   return (
-    <div className="p-8 text-white">
-      <h1 className="text-4xl font-bold mb-10">Settings</h1>
-      <div className="space-y-12 max-w-2xl mx-auto">
+    <div className="mx-auto w-full max-w-2xl">
+      <h1 className="text-3xl font-bold text-white mb-8">Settings</h1>
+      <div className="space-y-10">
         
-        {/* Account Section */}
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Account</h2>
-          <div className="glass-card rounded-xl p-6">
-            <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-4 rounded-lg transition-colors">
+        <section className="glass-card">
+          <h2 className="text-lg font-bold text-white mb-4">Account</h2>
+          <div className="flex flex-col">
+            <a href="#" className="flex items-center justify-between rounded-lg p-4 transition-colors hover:bg-white/10">
               <div className="flex items-center gap-4">
-                <div className="bg-blue-500/10 p-3 rounded-lg">
-                  <User className="text-blue-400" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <User />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Account Management</h3>
-                  <p className="text-sm text-gray-400">Manage your account details</p>
+                  <p className="font-medium text-white">Account Management</p>
+                  <p className="text-sm text-slate-400">Manage your account details</p>
                 </div>
               </div>
-              <ChevronRight className="text-gray-500" />
-            </div>
+              <ChevronRight className="text-slate-500" />
+            </a>
           </div>
-        </div>
+        </section>
 
-        {/* Preferences Section */}
-        <div>
-          <h2 className="text-2xl font-semibold mb-4">Preferences</h2>
-          <div className="glass-card rounded-xl p-6">
-            <div className="flex items-center justify-between cursor-pointer hover:bg-white/5 p-4 rounded-lg transition-colors">
+        <section className="glass-card">
+          <h2 className="text-lg font-bold text-white mb-4">Preferences</h2>
+          <div className="flex flex-col space-y-2">
+            <a href="#" className="flex items-center justify-between rounded-lg p-4 transition-colors hover:bg-white/10">
               <div className="flex items-center gap-4">
-                <div className="bg-blue-500/10 p-3 rounded-lg">
-                  <SettingsIcon className="text-blue-400" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <SettingsIcon />
                 </div>
                 <div>
-                  <h3 className="font-semibold">App Preferences</h3>
-                  <p className="text-sm text-gray-400">Customize your app experience</p>
+                  <p className="font-medium text-white">App Preferences</p>
+                  <p className="text-sm text-slate-400">Customize your app experience</p>
                 </div>
               </div>
-              <ChevronRight className="text-gray-500" />
-            </div>
-            <div className="flex items-center justify-between p-4 rounded-lg">
+              <ChevronRight className="text-slate-500" />
+            </a>
+            <div className="flex items-center justify-between rounded-lg p-4">
               <div className="flex items-center gap-4">
-                <div className="bg-blue-500/10 p-3 rounded-lg">
-                  <Moon className="text-blue-400" />
+                <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                  <Moon />
                 </div>
                 <div>
-                  <h3 className="font-semibold">Dark Mode</h3>
-                  <p className="text-sm text-gray-400">Enable or disable dark mode</p>
+                  <p className="font-medium text-white">Dark Mode</p>
+                  <p className="text-sm text-slate-400">Enable or disable dark mode</p>
                 </div>
               </div>
               <Switch defaultChecked />
             </div>
           </div>
-        </div>
+        </section>
 
       </div>
     </div>
