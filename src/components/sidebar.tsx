@@ -13,8 +13,7 @@ import {
   ChevronRight,
   GraduationCap,
   Layers,
-  SidebarClose,
-  SidebarOpen,
+  Menu,
 } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from './ui/button';
@@ -95,7 +94,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           onClick={() => setOpen(!open)} 
           className="text-white hover:bg-slate-700"
         >
-          {open ? <SidebarClose /> : <SidebarOpen />}
+          <Menu size={28} />
         </Button>
       </div>
 
