@@ -26,25 +26,37 @@ const levels = [
   },
   {
     name: 'Level 2',
-    semesters: [],
+    semesters: [
+        { name: 'Semester 3', subjects: 4, active: false },
+        { name: 'Semester 4', subjects: 5, active: false },
+    ],
     fileCount: 2,
     active: false,
   },
   {
     name: 'Level 3',
-    semesters: [],
+    semesters: [
+        { name: 'Semester 5', subjects: 3, active: false },
+        { name: 'Semester 6', subjects: 4, active: false },
+    ],
     fileCount: 3,
     active: false,
   },
   {
     name: 'Level 4',
-    semesters: [],
+    semesters: [
+        { name: 'Semester 7', subjects: 5, active: false },
+        { name: 'Semester 8', subjects: 3, active: false },
+    ],
     fileCount: 4,
     active: false,
   },
   {
     name: 'Level 5',
-    semesters: [],
+    semesters: [
+        { name: 'Semester 9', subjects: 2, active: false },
+        { name: 'Semester 10', subjects: 3, active: false },
+    ],
     fileCount: 5,
     active: false,
   },
@@ -64,7 +76,7 @@ export function Sidebar() {
       <nav className="flex-1 space-y-1">
         <Accordion
           type="multiple"
-          defaultValue={['Level 1', 'Semester 1']}
+          defaultValue={levels.filter(l => l.active).map(l => l.name)}
           className="w-full"
         >
           {levels.map((level) => (
@@ -75,22 +87,15 @@ export function Sidebar() {
             >
               <AccordionTrigger
                 className={cn(
-                  'p-3 hover:no-underline rounded-lg w-full text-slate-300 hover:text-white group',
-                  level.active && 'bg-blue-600 text-white hover:bg-blue-600/90'
+                  'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white group',
+                  level.active && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white'
                 )}
               >
                 <div className="flex items-center gap-3">
-                  {level.active ? (
-                     <ChevronDown
-                      className="h-5 w-5 shrink-0 transition-transform duration-200"
+                  <ChevronRight
+                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:text-white group-data-[state=open]:rotate-90"
                       aria-hidden="true"
                     />
-                  ) : (
-                    <ChevronRight
-                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200"
-                      aria-hidden="true"
-                    />
-                  )}
 
                   <span className="font-medium">{level.name}</span>
                 </div>
@@ -115,8 +120,8 @@ export function Sidebar() {
                     >
                       <AccordionTrigger
                         className={cn(
-                          'flex items-center justify-between p-3 rounded-lg text-slate-400 hover:text-white',
-                           'bg-green-600/30 border border-green-400/50 text-white hover:bg-green-600/40'
+                          'flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white',
+                           'bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-400/30 text-white'
                         )}
                       >
                          <div className="flex items-center gap-3">
@@ -136,7 +141,7 @@ export function Sidebar() {
                     <a
                       href="#"
                       key={semester.name}
-                      className="flex items-center justify-between p-3 rounded-lg text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                      className="flex items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white"
                     >
                       <div className="flex items-center gap-3">
                         <ChevronRight size={18} className="text-slate-500" />
