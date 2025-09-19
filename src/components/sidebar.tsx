@@ -92,7 +92,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           variant="ghost" 
           size="icon" 
           onClick={() => setOpen(!open)} 
-          className="text-white hover:bg-slate-700 mr-2"
+          className="text-white hover:bg-slate-700"
         >
           <Menu size={32} />
         </Button>
