@@ -70,15 +70,16 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
       const levelName = pathParts[2];
       const semesterName = pathParts[3];
       setActivePath({ level: levelName, semester: semesterName });
-      setOpenLevel(levelName);
+      if (!openLevel) {
+        setOpenLevel(levelName);
+      }
     } else {
       setActivePath({ level: '', semester: '' });
-      setOpenLevel('');
     }
-  }, [pathname]);
+  }, [pathname, openLevel]);
 
   const handleLevelChange = (value: string) => {
-    setOpenLevel(value || '');
+    setOpenLevel(prevOpenLevel => (prevOpenLevel === value ? '' : value));
   };
 
   return (
@@ -111,7 +112,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           className="w-full"
         >
           {initialLevels.map((level, index) => {
-            const isLevelActive = openLevel === level.name || activePath.level === level.name;
+            const isLevelActive = openLevel === level.name;
             return (
               <AccordionItem
                 key={level.name}
