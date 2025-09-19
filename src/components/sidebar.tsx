@@ -84,7 +84,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
       <div className={cn("flex items-center mb-4 px-2 transition-all", open ? "justify-between" : "justify-center")}>
         <div className={cn("flex items-center gap-3", !open && "hidden")}>
           <GraduationCap className="text-blue-400" size={24} />
-          <h2 className="text-base font-semibold text-white">
+          <h2 className="text-base font-semibold text-white whitespace-nowrap">
             Academic Structure
           </h2>
         </div>
