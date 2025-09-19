@@ -10,7 +10,8 @@ import {
   Search,
   Clock,
   Book,
-  FileText as FileTextIcon
+  FileText as FileTextIcon,
+  Lightbulb,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
@@ -85,12 +86,6 @@ export default function Page() {
                     </>
                 )}
             </div>
-            
-            <Button className="bg-white/10 border-white/20 border text-white hover:bg-white/20 ml-auto">
-              <Plus className="w-4 h-4 mr-2" />
-              Add Content
-            </Button>
-            
           </div>
 
           {isSearching ? (
@@ -119,9 +114,20 @@ export default function Page() {
                 </section>
               ) : (
                 <div className="space-y-8">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                       <StatCard icon={Folder} title="Total Folders" value={totalFolders.toString()} color="text-yellow-400" />
                       <StatCard icon={FileTextIcon} title="Total Files" value={totalFiles.toString()} color="text-blue-400" />
+                      <StatCard icon={Clock} title="Study Progress" value="75%" color="text-green-400" />
+                    </div>
+                    <div className="glass-card p-6 text-center">
+                        <div className="flex justify-center items-center mb-4">
+                            <div className="p-2 bg-purple-400/10 rounded-lg">
+                                <Lightbulb className="w-6 h-6 text-purple-400" />
+                            </div>
+                        </div>
+                        <h3 className="text-lg font-semibold text-white mb-2">Quote of the Day</h3>
+                        <p className="text-slate-400 italic">"The art of medicine consists of amusing the patient while nature cures the disease."</p>
+                        <p className="text-slate-500 text-sm mt-2">- Voltaire</p>
                     </div>
                 </div>
               )}
