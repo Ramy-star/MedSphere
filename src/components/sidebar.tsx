@@ -84,7 +84,6 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
   const handleLevelChange = (value: string) => {
     const newLevel = value || '';
     setOpenLevel(newLevel);
-    // Don't reset active semester here, let link clicks handle it
   };
 
   const handleSemesterClick = (levelName: string, semesterName: string) => {
@@ -131,7 +130,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
               <AccordionTrigger
                 className={cn(
                   'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white group',
-                   activeLevel === level.name && open ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white' : '',
+                   (activeLevel === level.name || openLevel === level.name) && open ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white' : '',
                    !open && 'flex justify-center'
                 )}
               >
