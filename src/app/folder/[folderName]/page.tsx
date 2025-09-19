@@ -17,7 +17,7 @@ type FolderPageProps = {
   };
 };
 
-const Breadcrumbs = ({ folderName, folderIcon: Icon, folderColor }: { folderName: string, folderIcon: React.ElementType, folderColor: string }) => (
+const Breadcrumbs = ({ folderName }: { folderName: string }) => (
   <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap">
     <a href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
@@ -30,8 +30,7 @@ const Breadcrumbs = ({ folderName, folderIcon: Icon, folderColor }: { folderName
     <ChevronRight className="w-4 h-4 mx-1" />
     <span className="text-slate-400">Chest</span>
     <ChevronRight className="w-4 h-4 mx-1" />
-    <span className="font-semibold text-white flex items-center gap-2">
-        <Icon className={`w-5 h-5 ${folderColor}`} />
+    <span className="font-semibold text-white">
         {folderName}
     </span>
   </nav>
@@ -51,7 +50,7 @@ export default function FolderPage({ params }: FolderPageProps) {
       <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-6 glass-card">
-          <Breadcrumbs folderName={folder.name} folderIcon={folder.icon} folderColor={folder.color} />
+          <Breadcrumbs folderName={folder.name} />
           <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
             <ContentIcon className="w-6 h-6 text-blue-400" />
             <span>Content</span>
