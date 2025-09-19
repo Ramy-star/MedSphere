@@ -4,7 +4,7 @@ import { Sidebar } from '@/components/sidebar';
 import { folderData } from '@/lib/file-data';
 import {
   ChevronRight,
-  File as ContentIcon,
+  Newspaper as ContentIcon,
   HomeIcon,
 } from 'lucide-react';
 import { useState } from 'react';
