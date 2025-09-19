@@ -12,8 +12,11 @@ import {
   ChevronDown,
   ChevronRight,
   GraduationCap,
+  PanelLeft,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { Button } from './ui/button';
+
 
 const initialLevels = [
   {
@@ -53,7 +56,20 @@ const initialLevels = [
   },
 ];
 
-export function Sidebar() {
+export function SidebarToggle() {
+    const toggle = () => {
+        if (window.__toggleSidebar) {
+            window.__toggleSidebar();
+        }
+    }
+    return (
+        <Button variant="ghost" size="icon" onClick={toggle} className="text-white hover:bg-slate-700">
+            <PanelLeft />
+        </Button>
+    )
+}
+
+export function Sidebar({ open }: { open: boolean }) {
   const [activeLevel, setActiveLevel] = useState('');
   const [activeSemester, setActiveSemester] = useState('');
   const [openLevel, setOpenLevel] = useState('');
@@ -62,7 +78,6 @@ export function Sidebar() {
     const newLevel = value || '';
     setOpenLevel(newLevel);
     setActiveLevel(newLevel);
-    // When a level is collapsed, also collapse the semester
     if (!newLevel) {
       setActiveSemester('');
     }
@@ -76,8 +91,33 @@ export function Sidebar() {
     setActiveSemester(prev => (prev === semesterName ? '' : semesterName));
   }
 
+  useEffect(() => {
+    const handleToggle = () => setSidebarOpen(prev => !prev);
+    const setSidebarOpen = (setter: (prev: boolean) => boolean) => {
+      // A bit of a hacky way to pass state up to the parent `page.tsx`
+      // In a real app, this should be handled with a proper state management (e.g. Context or Zustand)
+      const page = document.querySelector('.flex-1.flex.flex-col');
+      if (page instanceof HTMLElement) {
+        const current = !page.classList.contains('ml-0');
+        const next = setter(current);
+        if (next) {
+          page.classList.remove('ml-0');
+          page.classList.add('ml-72');
+        } else {
+          page.classList.remove('ml-72');
+          page.classList.add('ml-0');
+        }
+      }
+    };
+
+    window.__toggleSidebar = handleToggle;
+    return () => {
+      delete window.__toggleSidebar;
+    }
+  }, []);
+
   return (
-    <aside className="w-80 flex-col glass-card p-4 hidden md:flex">
+    <aside className={cn("fixed top-0 left-0 h-full w-72 flex-col glass-card p-4 hidden md:flex transition-transform duration-300 z-10", open ? 'translate-x-0' : '-translate-x-full')}>
       <div className="mb-4 px-2">
         <h2 className="text-base font-semibold text-white flex items-center gap-3 mb-1">
           <GraduationCap className="text-blue-400" size={24} />
@@ -85,7 +125,7 @@ export function Sidebar() {
         </h2>
       </div>
 
-      <nav className="flex-1 space-y-1">
+      <nav className="flex-1 space-y-2">
         <Accordion
           type="single"
           collapsible
@@ -121,7 +161,7 @@ export function Sidebar() {
                   <span className="font-medium">{level.name}</span>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pl-4 pr-1 pb-0 pt-1 space-y-1">
+              <AccordionContent className="pl-4 pr-1 pb-0 pt-1 space-y-2">
                  <Accordion type="single" collapsible value={activeSemester} onValueChange={setActiveSemester}>
                   {level.semesters.map((semester) => {
                     const isSemesterActive = activeSemester === semester.name && activeLevel === level.name;

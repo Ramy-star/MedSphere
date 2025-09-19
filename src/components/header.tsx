@@ -2,14 +2,16 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Filter, GraduationCap, Search } from 'lucide-react';
-import { useState } from 'react';
+import { Filter, GraduationCap, PanelLeft, Search } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { SidebarToggle } from './sidebar';
 
 // This is a bit of a hack to pass the search handler from the page to the header.
 // A more robust solution would use React Context or a state management library.
 declare global {
   interface Window {
     __handleSearch?: (query: string) => void;
+    __toggleSidebar?: () => void;
   }
 }
 
@@ -33,6 +35,7 @@ export const Header = () => {
     <header className="bg-[#222b3c] p-3 border-b border-slate-700">
       <div className="flex items-center justify-between mx-auto px-4">
         <div className="flex items-center gap-3">
+          <SidebarToggle />
           <div className="bg-blue-500/10 text-blue-400 p-2 rounded-lg">
             <GraduationCap />
           </div>

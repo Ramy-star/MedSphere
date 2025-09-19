@@ -1,5 +1,5 @@
 'use client';
-import { Sidebar } from '@/components/sidebar';
+import { Sidebar, SidebarToggle } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
 import {
   ChevronRight,
@@ -20,6 +20,7 @@ import type { LucideIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { search } from '@/ai/flows/search-flow';
 import { fileData as allFilesData } from '@/lib/file-data';
+import { cn } from '@/lib/utils';
 
 // This type is moved here from the flow file
 export type SearchOutput = {
@@ -137,6 +138,7 @@ const FileListItem = ({ name, size, date, icon: Icon }: FileListItemProps) => (
 export default function Page() {
   const [searchResults, setSearchResults] = useState<SearchOutput | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const handleSearch = async (query: string) => {
     if (!query) {
@@ -161,8 +163,8 @@ export default function Page() {
 
   return (
     <div className="flex flex-1 w-full p-4 gap-4">
-      <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <Sidebar open={sidebarOpen} />
+      <div className={cn("flex-1 flex flex-col transition-all duration-300", sidebarOpen ? "ml-72" : "ml-0")}>
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs />
           <div className="flex items-center justify-between mb-6">
