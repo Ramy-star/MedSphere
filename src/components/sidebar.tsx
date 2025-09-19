@@ -93,7 +93,6 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           <GraduationCap className="text-blue-400" size={24} />
           Academic Structure
         </h2>
-        <p className="text-xs text-slate-400">Navigate your medical education</p>
       </div>
 
       <nav className="flex-1 space-y-2 mt-12">
@@ -104,7 +103,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           onValueChange={handleLevelChange}
           className="w-full"
         >
-          {initialLevels.map((level) => (
+          {initialLevels.map((level, index) => (
             <AccordionItem
               key={level.name}
               value={level.name}
@@ -113,20 +112,25 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
               <AccordionTrigger
                 className={cn(
                   'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white group',
-                   activeLevel === level.name && open ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white' : ''
+                   activeLevel === level.name && open ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white' : '',
+                   !open && 'flex justify-center'
                 )}
               >
                 <div className="flex items-center gap-3">
-                  {open && openLevel === level.name ? (
-                     <ChevronDown
-                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:text-white"
-                      aria-hidden="true"
-                    />
+                  {open ? (
+                    openLevel === level.name ? (
+                      <ChevronDown
+                        className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:text-white"
+                        aria-hidden="true"
+                      />
+                    ) : (
+                      <ChevronRight
+                        className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200"
+                        aria-hidden="true"
+                      />
+                    )
                   ) : (
-                    <ChevronRight
-                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200"
-                      aria-hidden="true"
-                    />
+                     <span className="font-bold text-lg">{index + 1}</span>
                   )}
 
                   <span className={cn("font-medium", !open && "hidden")}>{level.name}</span>
