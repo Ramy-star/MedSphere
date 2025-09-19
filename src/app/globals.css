@@ -4,66 +4,47 @@
 
 @layer base {
   :root {
-    --background: 208 65% 9%; /* Updated from #111921 */
+    --background: 210 17% 9%;
     --foreground: 210 40% 98%;
-
-    --muted: 223 47% 11%;
-    --muted-foreground: 216 34% 65%;
-
-    --popover: 208 65% 9%;
-    --popover-foreground: 210 40% 98%;
-
-    --card: 208 65% 9%;
+    --card: 210 17% 9%;
     --card-foreground: 210 40% 98%;
-
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-
-    --primary: 207 79% 47%; /* Updated from #1e7bd2 */
+    --popover: 210 17% 9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 207 79% 47%;
     --primary-foreground: 210 40% 98%;
-
-    --secondary: 216 34% 17%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-
-    --accent: 216 34% 17%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-
+    --border: 215 14% 34%;
+    --input: 215 14% 34%;
     --ring: 207 79% 47%;
-    
     --radius: 0.5rem;
   }
 
   .dark {
-    --background: 208 65% 9%;
+    --background: 210 17% 9%;
     --foreground: 210 40% 98%;
-
-    --muted: 223 47% 11%;
-    --muted-foreground: 216 34% 65%;
-
-    --popover: 208 65% 9%;
-    --popover-foreground: 210 40% 98%;
-
-    --card: 208 65% 9%;
+    --card: 210 17% 9%;
     --card-foreground: 210 40% 98%;
-
-    --border: 240 4% 16%;
-    --input: 240 4% 16%;
-
+    --popover: 210 17% 9%;
+    --popover-foreground: 210 40% 98%;
     --primary: 207 79% 47%;
     --primary-foreground: 210 40% 98%;
-
-    --secondary: 216 34% 17%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-
-    --accent: 216 34% 17%;
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
     --accent-foreground: 210 40% 98%;
-
     --destructive: 0 63% 31%;
     --destructive-foreground: 210 40% 98%;
-
+    --border: 215 14% 34%;
+    --input: 215 14% 34%;
     --ring: 207 79% 47%;
   }
 }
@@ -75,10 +56,30 @@
   body {
     @apply bg-background text-foreground;
   }
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
+  }
 }
 
 @layer components {
   .glass-card {
     @apply rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg;
+  }
+  .surface-dark {
+    @apply bg-white/5;
+  }
+  .border-dark {
+    @apply border-white/10;
   }
 }
