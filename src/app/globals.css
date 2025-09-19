@@ -73,9 +73,6 @@
 }
 
 @layer components {
-  .glass-card {
-    @apply rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-lg;
-  }
   .surface-dark {
     @apply bg-white/5;
   }

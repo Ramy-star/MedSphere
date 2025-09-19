@@ -9,17 +9,17 @@ import {
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { ChevronsLeft, Menu, X, ChevronRight, ChevronsRight, School, TestTube, Microscope, HeartPulse, Brain, Dna, FlaskConical, Shield } from 'lucide-react';
+import { ChevronsLeft, Menu, X, TestTube, School, HeartPulse, Brain, Dna, FlaskConical, Shield, Microscope } from 'lucide-react';
 
-const levelIcons = {
+const levelIcons: { [key: string]: React.ElementType } = {
   "Level 1": School,
   "Level 2": School,
   "Level 3": School,
   "Level 4": School,
   "Level 5": School,
-}
+};
 
-const subjectIcons = {
+const subjectIcons: { [key: string]: React.ElementType } = {
     'Anatomy': Brain,
     'Histology': Microscope,
     'Physiology': HeartPulse,
@@ -28,11 +28,6 @@ const subjectIcons = {
     'Genetics': Dna,
 };
 
-const semesterIcons = [
-    ChevronRight,
-    ChevronsRight,
-]
-
 const levels = [
   {
     name: 'Level 1',
@@ -40,15 +35,15 @@ const levels = [
       {
         name: 'Semester 1',
         subjects: [
-          { name: 'Anatomy', active: true },
-          { name: 'Histology' },
+          { name: 'Anatomy', active: true, icon: 'anatomy' },
+          { name: 'Histology', icon: 'biotech' },
         ],
       },
       { 
         name: 'Semester 2', 
         subjects: [
-            { name: 'Physiology' },
-            { name: 'Biochemistry' },
+            { name: 'Physiology', icon: 'science' },
+            { name: 'Biochemistry', icon: 'science' },
         ] 
       },
     ],
@@ -59,13 +54,13 @@ const levels = [
       { 
           name: 'Semester 3', 
           subjects: [
-            { name: 'Immunology' },
+            { name: 'Immunology', icon: 'science' },
           ]
       },
       { 
           name: 'Semester 4',
           subjects: [
-            { name: 'Genetics' },
+            { name: 'Genetics', icon: 'science' },
           ]
       },
     ],
@@ -84,7 +79,7 @@ export function Sidebar({ isMobileOpen, setMobileOpen }: { isMobileOpen: boolean
   const SidebarContent = () => (
     <div className="flex flex-col h-full">
        <div className="flex items-center justify-between text-white p-4 border-b border-dark h-16">
-        <div className={cn("flex items-center gap-3 overflow-hidden", isCollapsed && "w-0")}>
+        <div className={cn("flex items-center gap-3 overflow-hidden transition-all", isCollapsed ? "w-0" : "w-auto")}>
           <div className="flex items-center justify-center rounded-lg bg-primary/10 text-primary p-2">
             <TestTube />
           </div>
@@ -100,26 +95,21 @@ export function Sidebar({ isMobileOpen, setMobileOpen }: { isMobileOpen: boolean
         </Button>
       </div>
       <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
-        <Accordion type="multiple" defaultValue={['Level 1', 'Semester 1']} className="w-full">
+        <Accordion type="multiple" defaultValue={['Level 1']} className="w-full">
           {levels.map((level) => {
-            const LevelIcon = levelIcons[level.name as keyof typeof levelIcons] || School;
+            const LevelIcon = levelIcons[level.name] || School;
             return (
               <AccordionItem value={level.name} key={level.name} className="border-none">
-                <AccordionTrigger className="w-full flex items-center justify-between text-slate-300 hover:text-white hover:bg-surface-dark p-2 rounded-lg hover:no-underline">
+                <AccordionTrigger className={cn("w-full flex items-center justify-between text-slate-300 hover:text-white hover:bg-surface-dark p-2 rounded-lg hover:no-underline", isCollapsed && "justify-center")}>
                   <div className="flex items-center gap-3">
-                    <LevelIcon />
+                    <LevelIcon className="h-5 w-5"/>
                     <span className={cn("font-semibold", isCollapsed && "hidden")}>{level.name}</span>
                   </div>
                 </AccordionTrigger>
-                <AccordionContent className="pl-4 mt-1 space-y-1 overflow-hidden">
+                <AccordionContent className={cn("pl-4 mt-1 space-y-1 overflow-hidden", isCollapsed && "hidden")}>
                   {level.semesters.length > 0 ? (
-                    <Accordion
-                      type="multiple"
-                      defaultValue={['Semester 1']}
-                    >
-                      {level.semesters.map((semester, semIndex) => {
-                        const SemesterIcon = semesterIcons[semIndex % semesterIcons.length];
-                        return (
+                    <Accordion type="multiple" defaultValue={['Semester 1']}>
+                      {level.semesters.map((semester) => (
                           <AccordionItem
                             value={semester.name}
                             key={semester.name}
@@ -127,33 +117,32 @@ export function Sidebar({ isMobileOpen, setMobileOpen }: { isMobileOpen: boolean
                           >
                             <AccordionTrigger className="w-full flex items-center justify-between text-slate-300 hover:text-white hover:bg-surface-dark p-2 rounded-lg hover:no-underline">
                               <div className="flex items-center gap-3">
-                                <SemesterIcon />
-                                <span className={cn(isCollapsed && "hidden")}>{semester.name}</span>
+                                <span className="font-medium">{semester.name}</span>
                               </div>
                             </AccordionTrigger>
                             <AccordionContent className="pl-4 mt-1 space-y-1">
                               {semester.subjects.map((subject) => {
-                                const SubjectIcon = subjectIcons[subject.name as keyof typeof subjectIcons] || TestTube;
+                                const SubjectIcon = subjectIcons[subject.name] || TestTube;
                                 return (
                                   <Link
                                     href="#"
                                     key={subject.name}
                                     className={cn(
-                                      'flex items-center gap-3 p-2 rounded-lg',
+                                      'flex items-center gap-3 p-2 rounded-lg text-sm',
                                       subject.active
                                         ? 'text-white bg-primary/80 font-semibold'
                                         : 'text-slate-400 hover:text-white hover:bg-surface-dark'
                                     )}
                                   >
-                                    <SubjectIcon />
-                                    <span className={cn(isCollapsed && "hidden")}>{subject.name}</span>
+                                    <SubjectIcon className="h-5 w-5" />
+                                    <span>{subject.name}</span>
                                   </Link>
                                 )
                               })}
                             </AccordionContent>
                           </AccordionItem>
                         )
-                      })}
+                      )}
                     </Accordion>
                   ) : !isCollapsed && (
                      <div className="pl-6 text-slate-500 text-sm">No semesters</div>

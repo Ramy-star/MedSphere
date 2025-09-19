@@ -38,7 +38,7 @@ const FileItem = ({
   };
 }) => {
   return (
-    <div className="file-item group cursor-pointer">
+    <div className="group cursor-pointer">
       <div className="relative flex flex-col p-3 bg-surface-dark border border-dark rounded-xl hover:bg-white/10 transition-all duration-200 h-40">
         {item.type === 'folder' ? (
           <div className="flex flex-col items-center justify-center h-full">
@@ -70,13 +70,13 @@ const FileItem = ({
             <p className="text-[11px] text-slate-400">{item.size}</p>
           </>
         )}
-        <div className="context-menu absolute top-2 right-2 z-20">
+        <div className="absolute top-2 right-2 z-20">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
-                className="options-btn h-8 w-8 rounded-full text-slate-300 bg-black/30 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                className="h-8 w-8 rounded-full text-slate-300 bg-black/30 backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <MoreVertical className="h-4 w-4" />
               </Button>
