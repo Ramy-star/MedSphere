@@ -168,18 +168,18 @@ export default function Page() {
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs />
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
-              {searchResults === null ? (
-                <Folder className="w-8 h-8 text-blue-400" />
-              ) : (
-                <Search className="w-8 h-8 text-blue-400" />
+            <div>
+              {searchResults !== null && (
+                <div className="flex items-center gap-4">
+                  <Search className="w-8 h-8 text-blue-400" />
+                  <h1 className="text-2xl font-bold text-white">
+                    {`Search Results (${searchResults.length})`}
+                  </h1>
+                </div>
               )}
-              <h1 className="text-2xl font-bold text-white">
-                {searchResults === null ? 'Anatomy Content' : `Search Results (${searchResults.length})`}
-              </h1>
             </div>
-             {searchResults === null && (
-              <Button className="bg-white/10 border-white/20 border text-white hover:bg-white/20">
+            {searchResults === null && (
+              <Button className="bg-white/10 border-white/20 border text-white hover:bg-white/20 ml-auto">
                 <Plus className="w-4 h-4 mr-2" />
                 Add Content
               </Button>
