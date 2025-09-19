@@ -121,7 +121,7 @@ export function Sidebar() {
                       <AccordionTrigger
                         className={cn(
                           'flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white',
-                           'bg-gradient-to-r from-green-500/20 to-green-600/20 border border-green-400/30 text-white'
+                           'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
                         )}
                       >
                          <div className="flex items-center gap-3">
