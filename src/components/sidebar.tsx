@@ -70,13 +70,18 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
       const levelName = pathParts[2];
       const semesterName = pathParts[3];
       setActivePath({ level: levelName, semester: semesterName });
-      if (!openLevel) {
+      // Only set openLevel if it's not already set to avoid re-renders
+      if (openLevel !== levelName) {
         setOpenLevel(levelName);
       }
     } else {
       setActivePath({ level: '', semester: '' });
+      // When on home page or other pages, no level should be forced open
+      // setOpenLevel(''); // This can be uncommented if you want all levels to close when navigating away
     }
-  }, [pathname, openLevel]);
+  // We remove openLevel from dependency array to prevent flickering on navigation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const handleLevelChange = (value: string) => {
     setOpenLevel(prevOpenLevel => (prevOpenLevel === value ? '' : value));
@@ -140,7 +145,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     <ChevronDown
                       className={cn(
                         "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
-                        openLevel === level.name ? 'rotate-180 text-white' : 'group-hover:text-white'
+                        isLevelActive ? 'rotate-180 text-white' : 'group-hover:text-white'
                       )}
                       aria-hidden="true"
                     />
@@ -161,7 +166,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                             <Calendar size={18} className="text-green-400" />
                             <span className={cn(!open && "hidden")}>{semester.name}</span>
                           </div>
-                           <ChevronRight size={18} className="text-slate-500" />
+                           <ChevronRight size={18} className={cn("text-slate-500 transition-transform", isSemesterActive && "rotate-90")} />
                         </div>
                       </Link>
                     );
