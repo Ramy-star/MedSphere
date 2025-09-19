@@ -13,56 +13,65 @@ import {
   ChevronRight,
   GraduationCap,
 } from 'lucide-react';
+import { useState } from 'react';
 
-const levels = [
+const initialLevels = [
   {
     name: 'Level 1',
     semesters: [
-      { name: 'Semester 1', subjects: 1, active: true, content: 'No subjects yet' },
-      { name: 'Semester 2', subjects: 2, active: false },
+      { name: 'Semester 1', subjects: 1, content: 'No subjects yet' },
+      { name: 'Semester 2', subjects: 2 },
     ],
     fileCount: 1,
-    active: true,
   },
   {
     name: 'Level 2',
     semesters: [
-        { name: 'Semester 3', subjects: 4, active: false },
-        { name: 'Semester 4', subjects: 5, active: false },
+      { name: 'Semester 3', subjects: 4 },
+      { name: 'Semester 4', subjects: 5 },
     ],
     fileCount: 2,
-    active: false,
   },
   {
     name: 'Level 3',
     semesters: [
-        { name: 'Semester 5', subjects: 3, active: false },
-        { name: 'Semester 6', subjects: 4, active: false },
+      { name: 'Semester 5', subjects: 3 },
+      { name: 'Semester 6', subjects: 4 },
     ],
     fileCount: 3,
-    active: false,
   },
   {
     name: 'Level 4',
     semesters: [
-        { name: 'Semester 7', subjects: 5, active: false },
-        { name: 'Semester 8', subjects: 3, active: false },
+      { name: 'Semester 7', subjects: 5 },
+      { name: 'Semester 8', subjects: 3 },
     ],
     fileCount: 4,
-    active: false,
   },
   {
     name: 'Level 5',
     semesters: [
-        { name: 'Semester 9', subjects: 2, active: false },
-        { name: 'Semester 10', subjects: 3, active: false },
+      { name: 'Semester 9', subjects: 2 },
+      { name: 'Semester 10', subjects: 3 },
     ],
     fileCount: 5,
-    active: false,
   },
 ];
 
 export function Sidebar() {
+  const [activeLevel, setActiveLevel] = useState('Level 1');
+  const [activeSemester, setActiveSemester] = useState('Semester 1');
+  const [openLevels, setOpenLevels] = useState(['Level 1']);
+
+  const handleLevelClick = (levelName: string) => {
+    setActiveLevel(levelName);
+    setOpenLevels((prevOpenLevels) =>
+      prevOpenLevels.includes(levelName)
+        ? prevOpenLevels.filter((l) => l !== levelName)
+        : [...prevOpenLevels, levelName]
+    );
+  };
+  
   return (
     <aside className="w-80 flex-col glass-card p-4 hidden md:flex">
       <div className="mb-4 px-2">
@@ -76,33 +85,42 @@ export function Sidebar() {
       <nav className="flex-1 space-y-1">
         <Accordion
           type="multiple"
-          defaultValue={levels.filter(l => l.active).map(l => l.name)}
+          value={openLevels}
+          onValueChange={setOpenLevels}
           className="w-full"
         >
-          {levels.map((level) => (
+          {initialLevels.map((level) => (
             <AccordionItem
               key={level.name}
               value={level.name}
               className="border-none"
             >
               <AccordionTrigger
+                onClick={() => setActiveLevel(level.name)}
                 className={cn(
                   'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white group',
-                  level.active && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white'
+                  activeLevel === level.name && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white'
                 )}
               >
                 <div className="flex items-center gap-3">
-                  <ChevronRight
-                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:text-white group-data-[state=open]:rotate-90"
+                  {openLevels.includes(level.name) ? (
+                     <ChevronDown
+                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200 group-data-[state=open]:text-white"
                       aria-hidden="true"
                     />
+                  ) : (
+                    <ChevronRight
+                      className="h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200"
+                      aria-hidden="true"
+                    />
+                  )}
 
                   <span className="font-medium">{level.name}</span>
                 </div>
                 <div
                   className={cn(
                     'h-6 w-6 flex items-center justify-center rounded-full text-xs font-semibold',
-                    level.active
+                    activeLevel === level.name
                       ? 'border border-white/50 text-white'
                       : 'bg-slate-700 text-slate-300'
                   )}
@@ -110,38 +128,54 @@ export function Sidebar() {
                   {level.fileCount}
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pl-4 pr-1 pb-1 space-y-1">
-                {level.semesters.map((semester) =>
-                  semester.content ? (
-                    <AccordionItem
-                      key={semester.name}
-                      value={semester.name}
-                      className="border-none"
-                    >
-                      <AccordionTrigger
-                        className={cn(
-                          'flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white',
-                           'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                        )}
+              <AccordionContent className="pl-4 pr-1 pb-0 pt-1 space-y-1">
+                {level.semesters.map((semester) => {
+                  const isSemesterActive = activeSemester === semester.name && activeLevel === level.name;
+                  if (semester.content) {
+                    return (
+                      <AccordionItem
+                        key={semester.name}
+                        value={semester.name}
+                        className="border-none"
                       >
-                         <div className="flex items-center gap-3">
-                            <ChevronDown size={18} />
-                            <Calendar size={18} />
-                            <span>{semester.name}</span>
-                          </div>
-                          <div className="h-6 w-6 flex items-center justify-center rounded-full border border-white/50 text-white text-xs font-semibold">
-                            {semester.subjects}
-                          </div>
-                      </AccordionTrigger>
-                      <AccordionContent className="py-2 px-4 text-slate-400 text-sm">
-                        {semester.content}
-                      </AccordionContent>
-                    </AccordionItem>
-                  ) : (
+                        <AccordionTrigger
+                           onClick={() => setActiveSemester(semester.name)}
+                           className={cn(
+                            'flex items-center justify-between p-2.5 rounded-xl text-slate-400 hover:text-white',
+                            isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
+                          )}
+                        >
+                           <div className="flex items-center gap-3">
+                              <ChevronDown size={18} />
+                              <Calendar size={18} />
+                              <span>{semester.name}</span>
+                            </div>
+                            <div className="h-6 w-6 flex items-center justify-center rounded-full border border-white/50 text-white text-xs font-semibold">
+                              {semester.subjects}
+                            </div>
+                        </AccordionTrigger>
+                        <AccordionContent className="py-2 px-4 text-slate-400 text-sm">
+                          {semester.content}
+                        </AccordionContent>
+                      </AccordionItem>
+                    );
+                  }
+                  return (
                     <a
                       href="#"
                       key={semester.name}
-                      className="flex items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setActiveSemester(semester.name);
+                        setActiveLevel(level.name);
+                         if (!openLevels.includes(level.name)) {
+                          setOpenLevels([...openLevels, level.name]);
+                        }
+                      }}
+                      className={cn(
+                        "flex items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white",
+                        isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
+                      )}
                     >
                       <div className="flex items-center gap-3">
                         <ChevronRight size={18} className="text-slate-500" />
@@ -152,8 +186,8 @@ export function Sidebar() {
                         {semester.subjects}
                       </div>
                     </a>
-                  )
-                )}
+                  );
+                })}
               </AccordionContent>
             </AccordionItem>
           ))}
