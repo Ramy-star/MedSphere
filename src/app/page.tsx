@@ -1,5 +1,5 @@
 'use client';
-import { Sidebar, SidebarToggle } from '@/components/sidebar';
+import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
 import {
   ChevronRight,
@@ -154,10 +154,8 @@ export default function Page() {
   
   useEffect(() => {
     window.__handleSearch = handleSearch;
-    window.__toggleSidebar = () => setSidebarOpen(prev => !prev);
     return () => {
       delete window.__handleSearch;
-      delete window.__toggleSidebar;
     }
   }, []);
 
@@ -165,7 +163,7 @@ export default function Page() {
 
   return (
     <div className="flex flex-1 w-full p-4 gap-4">
-      <Sidebar open={sidebarOpen} />
+      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs />
