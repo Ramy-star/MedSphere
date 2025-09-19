@@ -27,7 +27,7 @@ const Breadcrumbs = ({ level, semester }: { level: string; semester: string }) =
 
 export default function SemesterPage({ params }: SemesterPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { semesterPath } = params;
+  const { semesterPath } = use(params);
   const [levelName, semesterName] = semesterPath.map(decodeURIComponent);
 
   if (!levelName || !semesterName) {
