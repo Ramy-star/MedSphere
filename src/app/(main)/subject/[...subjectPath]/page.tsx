@@ -2,7 +2,7 @@
 'use client';
 
 import { HomeIcon, ChevronRight, Folder as FolderIcon, Plus } from 'lucide-react';
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
@@ -36,6 +36,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   const resolvedParams = React.use(params);
   const { subjectPath } = resolvedParams;
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
 
   const subject = useMemo(() => {
     return allSubjects.find(s => s.name === subjectName && s.level === levelName && s.semester === semesterName);
@@ -60,7 +61,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
             </div>
             <h1 className="text-2xl font-bold text-white">{name}</h1>
         </div>
-        <AddContentMenu />
+        <AddContentMenu showNewFolderDialog={showNewFolderDialog} setShowNewFolderDialog={setShowNewFolderDialog} />
         </div>
 
         {content.length > 0 ? (
@@ -73,7 +74,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
             <h3 className="mt-4 text-lg font-semibold text-white">This subject is empty</h3>
             <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
             <div className="mt-6">
-              <AddContentMenu />
+              <AddContentMenu showNewFolderDialog={showNewFolderDialog} setShowNewFolderDialog={setShowNewFolderDialog} />
             </div>
         </div>
         )}

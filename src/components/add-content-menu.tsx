@@ -8,47 +8,57 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { FolderPlus, Plus, Upload } from 'lucide-react';
+import { NewFolderDialog } from './new-folder-dialog';
 
-const menuItems = [
-    {
-        label: "New Folder",
-        icon: FolderPlus,
-        action: () => console.log("New Folder clicked"),
-    },
-    {
-        label: "Upload File",
-        icon: Upload,
-        action: () => console.log("Upload file clicked"),
-    }
-]
+type AddContentMenuProps = {
+  showNewFolderDialog: boolean;
+  setShowNewFolderDialog: (show: boolean) => void;
+}
 
-export function AddContentMenu() {
+export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog }: AddContentMenuProps) {
+
+  const menuItems = [
+      {
+          label: "New Folder",
+          icon: FolderPlus,
+          action: () => setShowNewFolderDialog(true),
+      },
+      {
+          label: "Upload File",
+          icon: Upload,
+          action: () => console.log("Upload file clicked"),
+      }
+  ]
+
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button className="rounded-xl">
-          <Plus className="mr-2 h-4 w-4" />
-          Add Content
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent 
-        className="w-56 p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10" 
-        align="end"
-      >
-          <div className="p-2 space-y-1">
-            <p className="px-2 py-1 text-sm font-semibold text-slate-300">Create New</p>
-            {menuItems.map((item) => (
-                <div 
-                    key={item.label}
-                    onClick={item.action}
-                    className="flex items-center gap-3 p-2 rounded-lg text-sm text-slate-200 hover:bg-white/10 cursor-pointer transition-colors"
-                >
-                    <item.icon className="h-4 w-4 text-slate-400" />
-                    <span>{item.label}</span>
-                </div>
-            ))}
-        </div>
-      </PopoverContent>
-    </Popover>
+    <>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button className="rounded-xl">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Content
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent 
+          className="w-56 p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10" 
+          align="end"
+        >
+            <div className="p-2 space-y-1">
+              <p className="px-2 py-1 text-sm font-semibold text-slate-300">Create New</p>
+              {menuItems.map((item) => (
+                  <div 
+                      key={item.label}
+                      onClick={item.action}
+                      className="flex items-center gap-3 p-2 rounded-lg text-sm text-slate-200 hover:bg-white/10 cursor-pointer transition-colors"
+                  >
+                      <item.icon className="h-4 w-4 text-slate-400" />
+                      <span>{item.label}</span>
+                  </div>
+              ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+      <NewFolderDialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog} />
+    </>
   );
 }
