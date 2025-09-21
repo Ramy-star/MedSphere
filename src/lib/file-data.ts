@@ -1,4 +1,4 @@
-import { Book, FileText, Presentation, TestTube2, Users, type LucideIcon } from 'lucide-react';
+import { Book, FileText, Presentation, TestTube2, Users, type LucideIcon, Heart, Brain, Dna, Bone, Shield, FlaskConical, Stethoscope, Microscope } from 'lucide-react';
 
 export interface File {
   name: string;
@@ -12,6 +12,13 @@ export interface Folder {
   color: string;
   files: File[];
 }
+
+export interface Subject {
+  name: string;
+  icon: LucideIcon;
+  color: string;
+}
+
 
 const lectureFiles: File[] = [
     { name: 'Anatomy Lecture 1 - Intro.pptx', size: '5.5 MB', date: '2024-09-03' },
@@ -78,4 +85,15 @@ export const folderData: Folder[] = [
     color: 'text-orange-400',
     files: practicalSessionFiles
   },
+];
+
+export const subjectsData: Subject[] = [
+  { name: 'Cardiology', icon: Heart, color: 'text-red-400' },
+  { name: 'Neurology', icon: Brain, color: 'text-blue-400' },
+  { name: 'Genetics', icon: Dna, color: 'text-purple-400' },
+  { name: 'Anatomy', icon: Bone, color: 'text-gray-400' },
+  { name: 'Immunology', icon: Shield, color: 'text-yellow-400' },
+  { name: 'Biochemistry', icon: FlaskConical, color: 'text-green-400' },
+  { name: 'Clinical Skills', icon: Stethoscope, color: 'text-teal-400' },
+  { name: 'Pathology', icon: Microscope, color: 'text-pink-400' },
 ];

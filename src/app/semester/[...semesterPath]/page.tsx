@@ -2,9 +2,11 @@
 
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
-import { HomeIcon, ChevronRight, Plus, Folder, File as FileIcon } from 'lucide-react';
-import { useState, use } from 'react';
+import { HomeIcon, ChevronRight, Plus, Folder } from 'lucide-react';
+import { useState, useMemo } from 'react';
 import { notFound } from 'next/navigation';
+import { subjectsData } from '@/lib/file-data';
+import { SubjectCard } from '@/components/subject-card';
 
 type SemesterPageProps = {
   params: {
@@ -27,15 +29,29 @@ const Breadcrumbs = ({ level, semester }: { level: string; semester: string }) =
 
 export default function SemesterPage({ params }: SemesterPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { semesterPath } = use(params);
+  const { semesterPath } = params;
   const [levelName, semesterName] = semesterPath.map(decodeURIComponent);
+
+  const subjects = useMemo(() => {
+    // In a real app, you'd fetch subjects for the specific semester.
+    // For this demo, we'll show a subset of subjects based on semester number.
+    const semesterNum = parseInt(semesterName.split(' ')[1]);
+    if (isNaN(semesterNum)) return [];
+    
+    // Simple logic to vary subjects by semester
+    const startIndex = (semesterNum - 1) % 4;
+    const numSubjects = 4; // Show 4 subjects per semester
+    return Array.from({ length: numSubjects }).map((_, i) => {
+        const index = (startIndex + i * 2) % subjectsData.length;
+        return subjectsData[index];
+    });
+
+  }, [semesterName]);
+
 
   if (!levelName || !semesterName) {
     notFound();
   }
-
-  // In a real app, you'd fetch subjects for the semester here.
-  const subjects: any[] = [];
 
   return (
     <div className="flex flex-1 w-full p-4 gap-4">
@@ -47,12 +63,19 @@ export default function SemesterPage({ params }: SemesterPageProps) {
             <h1 className="text-2xl font-bold text-white">Subjects</h1>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
-              Add Content
+              Add Subject
             </Button>
           </div>
           {subjects.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {/* Render subjects here */}
+              {subjects.map((subject) => (
+                <SubjectCard
+                  key={subject.name}
+                  name={subject.name}
+                  icon={subject.icon}
+                  color={subject.color}
+                />
+              ))}
             </div>
           ) : (
             <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl">
