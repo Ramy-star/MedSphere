@@ -2,9 +2,9 @@
 
 import { Sidebar } from '@/components/sidebar';
 import { HomeIcon, ChevronRight, Folder as FolderIcon, Plus } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, use } from 'react';
 import { notFound } from 'next/navigation';
-import { allSubjects, File, subjectsBySemester } from '@/lib/file-data';
+import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
@@ -33,7 +33,7 @@ const Breadcrumbs = ({ level, semester, subject }: { level: string; semester: st
 
 export default function SubjectPage({ params }: SubjectPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { subjectPath } = params;
+  const { subjectPath } = use(params);
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
 
   const subject = useMemo(() => {

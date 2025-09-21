@@ -2,8 +2,8 @@
 
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
-import { HomeIcon, ChevronRight, Plus, Folder, Eye, Ear } from 'lucide-react';
-import { useState, useMemo } from 'react';
+import { HomeIcon, ChevronRight, Plus, Folder } from 'lucide-react';
+import { useState, useMemo, use } from 'react';
 import { notFound } from 'next/navigation';
 import { subjectsBySemester } from '@/lib/file-data';
 import { SubjectCard } from '@/components/subject-card';
@@ -29,7 +29,7 @@ const Breadcrumbs = ({ level, semester }: { level: string; semester: string }) =
 
 export default function SemesterPage({ params }: SemesterPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { semesterPath } = params;
+  const { semesterPath } = use(params);
   const [levelName, semesterName] = semesterPath.map(decodeURIComponent);
 
   const subjects = useMemo(() => {
