@@ -48,7 +48,7 @@ export function NewFolderDialog({ open, onOpenChange }: NewFolderDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-slate-900/80 border-slate-700 text-white backdrop-blur-lg">
+      <DialogContent className="sm:max-w-[425px] bg-gradient-to-b from-slate-800/80 to-slate-900/70 border-slate-700 text-white backdrop-blur-lg shadow-lg">
         <DialogHeader>
           <DialogTitle>New Folder</DialogTitle>
           <DialogDescription>
