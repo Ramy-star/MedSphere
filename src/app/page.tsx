@@ -15,8 +15,6 @@ import {
 import type { LucideIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { search } from '@/ai/flows/search-flow';
-import { getQuote } from '@/ai/flows/quote-flow';
-import type { QuoteOutput } from '@/ai/flows/quote-types';
 import { folderData, recentFiles, File as FileType } from '@/lib/file-data';
 import Link from 'next/link';
 import { FileListItem } from '@/components/file-list-item';
@@ -41,8 +39,6 @@ export default function Page() {
   const [searchResults, setSearchResults] = useState<SearchOutput | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [quote, setQuote] = useState<QuoteOutput | null>(null);
-  const [isQuoteLoading, setIsQuoteLoading] = useState(true);
 
   const handleSearch = async (query: string) => {
     if (!query) {
@@ -58,25 +54,6 @@ export default function Page() {
   
   useEffect(() => {
     window.__handleSearch = handleSearch;
-
-    const fetchQuote = async () => {
-      setIsQuoteLoading(true);
-      try {
-        const result = await getQuote();
-        setQuote(result);
-      } catch (error) {
-        console.error("Error fetching quote:", error);
-        // Fallback to a default quote in case of an error
-        setQuote({
-          quote: "The good physician treats the disease; the great physician treats the patient who has the disease.",
-          author: "William Osler"
-        });
-      }
-      setIsQuoteLoading(false);
-    };
-
-    fetchQuote();
-
     return () => {
       delete window.__handleSearch;
     }
@@ -148,14 +125,8 @@ export default function Page() {
                             </div>
                         </div>
                         <h3 className="text-lg font-semibold text-white mb-2">Quote of the Day</h3>
-                        {isQuoteLoading ? (
-                          <p className="text-slate-400 italic">"Loading an inspiring quote..."</p>
-                        ) : (
-                          <>
-                            <p className="text-slate-400 italic">"{quote?.quote}"</p>
-                            <p className="text-slate-500 text-sm mt-2">- {quote?.author}</p>
-                          </>
-                        )}
+                        <p className="text-slate-400 italic">"The good physician treats the disease; the great physician treats the patient who has the disease."</p>
+                        <p className="text-slate-500 text-sm mt-2">- William Osler</p>
                     </div>
                 </div>
               )}
