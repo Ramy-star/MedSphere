@@ -52,9 +52,9 @@ export default function SemesterPage({ params }: SemesterPageProps) {
         </Button>
         </div>
         {subjects.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.15s' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {subjects.map((subject, index) => (
-            <div key={subject.name} className="animate-fade-in" style={{ animationDelay: `${index * 0.05}s`}}>
+            <div key={subject.name} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.15}s`}}>
                 <SubjectCard
                     name={subject.name}
                     icon={subject.icon}
