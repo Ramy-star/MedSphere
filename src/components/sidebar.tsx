@@ -69,7 +69,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
       const levelName = pathParts[2];
       const semesterName = pathParts[3];
       setActivePath({ level: levelName, semester: semesterName });
-      if (openLevel === '') {
+      if (openLevel !== levelName) {
         setOpenLevel(levelName);
       }
     } else {
