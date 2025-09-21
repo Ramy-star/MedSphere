@@ -157,7 +157,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                         animate={{ opacity: open ? 0 : 1, display: open ? 'none' : 'flex' }}
                         transition={{ duration: 0.2 }}
                      >
-                       <span className="font-semibold text-sm">{`Lvl ${index + 1}`}</span>
+                       <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
                     </motion.div>
                   </div>
                    <motion.div
