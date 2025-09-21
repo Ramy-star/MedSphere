@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { AddContentMenu } from '@/components/add-content-menu';
 
 type SubjectPageProps = {
   params: {
@@ -59,10 +60,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
             </div>
             <h1 className="text-2xl font-bold text-white">{name}</h1>
         </div>
-        <Button className="rounded-xl">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Content
-        </Button>
+        <AddContentMenu />
         </div>
 
         {content.length > 0 ? (
@@ -74,10 +72,9 @@ export default function SubjectPage({ params }: SubjectPageProps) {
             <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
             <h3 className="mt-4 text-lg font-semibold text-white">This subject is empty</h3>
             <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
-            <Button className="mt-6 rounded-xl">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Content
-            </Button>
+            <div className="mt-6">
+              <AddContentMenu />
+            </div>
         </div>
         )}
     </main>
