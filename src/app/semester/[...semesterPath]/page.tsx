@@ -62,6 +62,8 @@ export default function SemesterPage({ params }: SemesterPageProps) {
                   name={subject.name}
                   icon={subject.icon}
                   color={subject.color}
+                  level={subject.level}
+                  semester={subject.semester}
                 />
               ))}
             </div>
