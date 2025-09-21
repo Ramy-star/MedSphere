@@ -22,7 +22,6 @@ export function SubjectCard({ name, icon: Icon, color }: SubjectCardProps) {
         </Button>
       </div>
       <h3 className="text-lg font-semibold text-white">{name}</h3>
-      <p className="text-sm text-slate-400 mt-1">4 Topics</p>
     </Link>
   );
 }
