@@ -10,6 +10,7 @@ import {
 import { useState } from 'react';
 import { notFound } from 'next/navigation';
 import { FileListItem } from '@/components/file-list-item';
+import Link from 'next/link';
 
 type FolderPageProps = {
   params: {
@@ -19,10 +20,10 @@ type FolderPageProps = {
 
 const Breadcrumbs = ({ folderName }: { folderName: string }) => (
   <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
-    <a href="/" className="flex items-center gap-2 hover:text-white">
+    <Link href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
-    </a>
+    </Link>
     <ChevronRight className="w-4 h-4 mx-1" />
     <span className="text-slate-400">Level 1</span>
     <ChevronRight className="w-4 h-4 mx-1" />

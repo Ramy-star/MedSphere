@@ -1,3 +1,4 @@
+
 'use client';
 import {
   ChevronRight,
@@ -24,10 +25,10 @@ export type SearchOutput = FileType[];
 
 const Breadcrumbs = () => (
   <nav className="flex items-center text-sm text-slate-300 mb-6">
-    <a href="/" className="flex items-center gap-2 hover:text-white">
+    <Link href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
-    </a>
+    </Link>
   </nav>
 );
 

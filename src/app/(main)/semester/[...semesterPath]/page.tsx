@@ -1,12 +1,12 @@
 
 'use client';
 
-import { Button } from '@/components/ui/button';
-import { HomeIcon, ChevronRight, Plus, Folder } from 'lucide-react';
+import { HomeIcon, ChevronRight, Folder } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { notFound } from 'next/navigation';
 import { subjectsBySemester } from '@/lib/file-data';
 import { SubjectCard } from '@/components/subject-card';
+import Link from 'next/link';
 
 type SemesterPageProps = {
   params: {
@@ -16,10 +16,10 @@ type SemesterPageProps = {
 
 const Breadcrumbs = ({ level, semester }: { level: string; semester: string }) => (
   <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
-    <a href="/" className="flex items-center gap-2 hover:text-white">
+    <Link href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
-    </a>
+    </Link>
     <ChevronRight className="w-4 h-4 mx-1" />
     <span className="text-slate-400">{level}</span>
     <ChevronRight className="w-4 h-4 mx-1" />
