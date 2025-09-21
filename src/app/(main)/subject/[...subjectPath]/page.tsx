@@ -59,7 +59,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
             </div>
             <h1 className="text-2xl font-bold text-white">{name}</h1>
         </div>
-        <Button className="rounded-xl">
+        <Button>
             <Plus className="mr-2 h-4 w-4" />
             Add Content
         </Button>
@@ -74,7 +74,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
             <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
             <h3 className="mt-4 text-lg font-semibold text-white">This subject is empty</h3>
             <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
-            <Button className="mt-6 rounded-xl">
+            <Button className="mt-6">
             <Plus className="mr-2 h-4 w-4" />
             Add Content
             </Button>
