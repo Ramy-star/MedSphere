@@ -48,38 +48,40 @@ export function NewFolderDialog({ open, onOpenChange }: NewFolderDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] bg-gradient-to-b from-slate-800/80 to-slate-900/70 border-slate-700 text-white backdrop-blur-lg shadow-lg">
-        <DialogHeader>
-          <DialogTitle>New Folder</DialogTitle>
-          <DialogDescription>
-            Enter a name for your new folder.
-          </DialogDescription>
-        </DialogHeader>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            <FormField
-              control={form.control}
-              name="folderName"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Folder Name</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="e.g. 'Lecture Notes'" 
-                      {...field} 
-                      className="bg-slate-800/60 border-slate-700 focus:ring-blue-500"
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <DialogFooter>
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-              <Button type="submit">Create</Button>
-            </DialogFooter>
-          </form>
-        </Form>
+      <DialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+        <div className="p-6">
+          <DialogHeader>
+            <DialogTitle>New Folder</DialogTitle>
+            <DialogDescription>
+              Enter a name for your new folder.
+            </DialogDescription>
+          </DialogHeader>
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-4">
+              <FormField
+                control={form.control}
+                name="folderName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Folder Name</FormLabel>
+                    <FormControl>
+                      <Input 
+                        placeholder="e.g. 'Lecture Notes'" 
+                        {...field} 
+                        className="bg-slate-800/60 border-slate-700 focus:ring-blue-500"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="submit">Create</Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </div>
       </DialogContent>
     </Dialog>
   );
