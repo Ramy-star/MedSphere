@@ -129,6 +129,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
         >
           {initialLevels.map((level, index) => {
             const isLevelActive = openLevel === level.name;
+            const isPathActive = activePath.level === level.name;
             return (
               <AccordionItem
                 key={level.name}
@@ -138,7 +139,8 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 <AccordionTrigger
                   className={cn(
                     'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white',
-                    isLevelActive && open ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white' : '',
+                    (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
+                    (!open && isPathActive) && 'bg-blue-500/20 text-white',
                     !open && 'flex justify-center'
                   )}
                 >
@@ -155,7 +157,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                         animate={{ opacity: open ? 0 : 1, display: open ? 'none' : 'flex' }}
                         transition={{ duration: 0.2 }}
                      >
-                       <span className="font-bold text-lg">{index + 1}</span>
+                       <span className="font-semibold text-sm">{`Lvl ${index + 1}`}</span>
                     </motion.div>
                   </div>
                    <motion.div
