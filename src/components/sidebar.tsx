@@ -134,7 +134,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
               <AccordionItem
                 key={level.name}
                 value={level.name}
-                className="border-none"
+                className={cn("border-none", !open && "mb-1")}
               >
                 <AccordionTrigger
                   className={cn(
