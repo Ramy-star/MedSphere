@@ -71,7 +71,7 @@
   }
 
   .animate-fade-in {
-    animation: fade-in 0.15s ease-in-out both;
+    animation: fade-in 0.1s ease-in-out both;
   }
 }
 

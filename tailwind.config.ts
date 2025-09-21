@@ -98,8 +98,8 @@ export default {
         },
       },
       animation: {
-        'accordion-down': 'accordion-down 0.15s ease-in-out',
-        'accordion-up': 'accordion-up 0.15s ease-in-out',
+        'accordion-down': 'accordion-down 0.1s ease-in-out',
+        'accordion-up': 'accordion-up 0.1s ease-in-out',
       },
       boxShadow: {
         'neon-accent': '0 0 10px hsl(var(--accent))',
