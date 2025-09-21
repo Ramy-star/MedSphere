@@ -15,7 +15,7 @@ type SubjectPageProps = {
 };
 
 const Breadcrumbs = ({ level, semester, subject }: { level: string; semester: string, subject: string }) => (
-  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in-up">
+  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
     <Link href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
@@ -50,7 +50,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   const { icon: SubjectIcon, color, name } = subject;
 
   return (
-    <main className="flex-1 p-6 glass-card animate-fade-in-up">
+    <main className="flex-1 p-6 glass-card animate-fade-in">
         <Breadcrumbs level={levelName} semester={semesterName} subject={name} />
         <div className="flex items-center justify-between mb-6" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">

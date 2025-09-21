@@ -18,7 +18,7 @@ type FolderPageProps = {
 };
 
 const Breadcrumbs = ({ folderName }: { folderName: string }) => (
-  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in-up">
+  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
     <a href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
@@ -47,16 +47,16 @@ export default function FolderPage({ params }: FolderPageProps) {
   return (
     <main className="flex-1 p-6 glass-card">
         <Breadcrumbs folderName={folder.name} />
-        <div className="animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
             <ContentIcon className="w-6 h-6 text-blue-400" />
             <span>Content</span>
         </h2>
         </div>
-        <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+        <div className="space-y-3 animate-fade-in" style={{ animationDelay: '0.15s' }}>
         {folder.files.length > 0 ? (
             folder.files.map((file, index) => (
-            <div key={file.name} style={{ animationDelay: `${index * 0.05}s`}} className="animate-fade-in-up">
+            <div key={file.name} style={{ animationDelay: `${index * 0.05}s`}} className="animate-fade-in">
                 <FileListItem
                     name={file.name}
                     size={file.size}

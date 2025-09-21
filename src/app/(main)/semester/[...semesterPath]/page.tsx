@@ -15,7 +15,7 @@ type SemesterPageProps = {
 };
 
 const Breadcrumbs = ({ level, semester }: { level: string; semester: string }) => (
-  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in-up">
+  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
     <a href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
@@ -44,7 +44,7 @@ export default function SemesterPage({ params }: SemesterPageProps) {
   return (
     <main className="flex-1 p-6 glass-card">
         <Breadcrumbs level={levelName} semester={semesterName} />
-        <div className="flex items-center justify-between mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="flex items-center justify-between mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <h1 className="text-2xl font-bold text-white">Subjects</h1>
         <Button>
             <Plus className="mr-2 h-4 w-4" />
@@ -52,9 +52,9 @@ export default function SemesterPage({ params }: SemesterPageProps) {
         </Button>
         </div>
         {subjects.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in" style={{ animationDelay: '0.15s' }}>
             {subjects.map((subject, index) => (
-            <div key={subject.name} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.05}s`}}>
+            <div key={subject.name} className="animate-fade-in" style={{ animationDelay: `${index * 0.05}s`}}>
                 <SubjectCard
                     name={subject.name}
                     icon={subject.icon}
@@ -66,7 +66,7 @@ export default function SemesterPage({ params }: SemesterPageProps) {
             ))}
         </div>
         ) : (
-        <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
+        <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in" style={{ animationDelay: '0.15s' }}>
             <Folder className="mx-auto h-12 w-12 text-slate-500" />
             <h3 className="mt-4 text-lg font-semibold text-white">No subjects yet</h3>
             <p className="mt-2 text-sm text-slate-400">Get started by adding a new subject.</p>
