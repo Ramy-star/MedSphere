@@ -2,10 +2,10 @@
 
 import { Sidebar } from '@/components/sidebar';
 import { Button } from '@/components/ui/button';
-import { HomeIcon, ChevronRight, Plus, Folder } from 'lucide-react';
+import { HomeIcon, ChevronRight, Plus, Folder, Eye, Ear } from 'lucide-react';
 import { useState, useMemo } from 'react';
 import { notFound } from 'next/navigation';
-import { subjectsData } from '@/lib/file-data';
+import { subjectsBySemester } from '@/lib/file-data';
 import { SubjectCard } from '@/components/subject-card';
 
 type SemesterPageProps = {
@@ -33,19 +33,7 @@ export default function SemesterPage({ params }: SemesterPageProps) {
   const [levelName, semesterName] = semesterPath.map(decodeURIComponent);
 
   const subjects = useMemo(() => {
-    // In a real app, you'd fetch subjects for the specific semester.
-    // For this demo, we'll show a subset of subjects based on semester number.
-    const semesterNum = parseInt(semesterName.split(' ')[1]);
-    if (isNaN(semesterNum)) return [];
-    
-    // Simple logic to vary subjects by semester
-    const startIndex = (semesterNum - 1) % 4;
-    const numSubjects = 4; // Show 4 subjects per semester
-    return Array.from({ length: numSubjects }).map((_, i) => {
-        const index = (startIndex + i * 2) % subjectsData.length;
-        return subjectsData[index];
-    });
-
+    return subjectsBySemester[semesterName] || [];
   }, [semesterName]);
 
 
