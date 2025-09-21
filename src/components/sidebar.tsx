@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -18,6 +19,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
+import { motion } from 'framer-motion';
 
 
 const initialLevels = [
@@ -83,14 +85,28 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
   };
 
   return (
-    <aside className={cn("relative h-full flex-col glass-card p-4 hidden md:flex transition-all duration-300 z-10", open ? 'w-72' : 'w-20')}>
+    <motion.aside
+      animate={{
+        width: open ? 288 : 80,
+        opacity: open ? 1 : 0.8,
+      }}
+      transition={{
+        duration: 0.25,
+        ease: [0.25, 0.8, 0.25, 1],
+      }}
+      className={cn("relative h-full flex-col glass-card p-4 hidden md:flex z-10 overflow-hidden")}
+    >
       <div className={cn("flex items-center mb-4 transition-all", open ? "justify-between" : "justify-center")}>
-        <div className={cn("flex items-center gap-3 pl-2.5", !open && "hidden")}>
+        <motion.div 
+            animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none' }}
+            transition={{ duration: 0.2, delay: open ? 0.1 : 0 }}
+            className="flex items-center gap-3 pl-2.5"
+        >
           <GraduationCap className="text-blue-400" size={24} />
           <h2 className="text-base font-semibold text-white whitespace-nowrap">
             Academic Structure
           </h2>
-        </div>
+        </motion.div>
         <div className={cn(!open && "w-full flex justify-center")}>
             <Button 
               variant="ghost" 
@@ -121,31 +137,45 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
               >
                 <AccordionTrigger
                   className={cn(
-                    'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white group',
+                    'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white',
                     isLevelActive && open ? 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white' : '',
                     !open && 'flex justify-center'
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    {open ? (
-                      <>
+                    <motion.div
+                        animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none' }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center gap-3"
+                    >
                         <Layers className="h-5 w-5 text-slate-400" />
-                        <span className={cn("font-medium", !open && "hidden")}>{level.name}</span>
-                      </>
-                    ) : (
+                        <span className="font-medium whitespace-nowrap">{level.name}</span>
+                    </motion.div>
+                     <motion.div
+                        animate={{ opacity: open ? 0 : 1, display: open ? 'none' : 'flex' }}
+                        transition={{ duration: 0.2 }}
+                     >
                        <span className="font-bold text-lg">{index + 1}</span>
-                    )}
+                    </motion.div>
                   </div>
-                   {open && (
+                   <motion.div
+                     animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none' }}
+                     transition={{ duration: 0.2 }}
+                   >
                     <ChevronDown
                       className={cn(
                         "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
-                        isLevelActive ? 'rotate-180 text-white' : 'group-hover:text-white'
+                        isLevelActive ? 'rotate-180 text-white' : ''
                       )}
                       aria-hidden="true"
                     />
-                  )}
+                  </motion.div>
                 </AccordionTrigger>
+                <motion.div
+                    initial={false}
+                    animate={{ height: isLevelActive ? 'auto' : 0, opacity: isLevelActive ? 1 : 0 }}
+                    className="overflow-hidden"
+                >
                 <AccordionContent className={cn("pl-4 pr-1 pb-0 pt-1 space-y-2", !open && "hidden")}>
                   {level.semesters.map((semester) => {
                     const isSemesterActive = activePath.semester === semester.name && activePath.level === level.name;
@@ -159,18 +189,19 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                         >
                           <div className="flex items-center gap-3">
                             <Calendar size={18} className="text-green-400" />
-                            <span className={cn(!open && "hidden")}>{semester.name}</span>
+                            <span className={cn("whitespace-nowrap", !open && "hidden")}>{semester.name}</span>
                           </div>
                         </div>
                       </Link>
                     );
                   })}
                 </AccordionContent>
+                </motion.div>
               </AccordionItem>
             )
           })}
         </Accordion>
       </nav>
-    </aside>
+    </motion.aside>
   );
 }
