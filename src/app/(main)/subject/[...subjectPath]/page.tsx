@@ -1,8 +1,7 @@
 'use client';
 
-import { Sidebar } from '@/components/sidebar';
 import { HomeIcon, ChevronRight, Folder as FolderIcon, Plus } from 'lucide-react';
-import { useState, useMemo, use } from 'react';
+import { useMemo, use } from 'react';
 import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
@@ -32,7 +31,6 @@ const Breadcrumbs = ({ level, semester, subject }: { level: string; semester: st
 );
 
 export default function SubjectPage({ params }: SubjectPageProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const resolvedParams = use(params);
   const { subjectPath } = resolvedParams;
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
@@ -51,41 +49,36 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   const { icon: SubjectIcon, color, name } = subject;
 
   return (
-    <div className="flex flex-1 w-full p-4 gap-4">
-      <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />
-      <div className="flex-1 flex flex-col">
-        <main className="flex-1 p-6 glass-card">
-          <Breadcrumbs level={levelName} semester={semesterName} subject={name} />
-          <div className="flex items-center justify-between mb-6 animate-fade-in-up">
-            <div className="flex items-center gap-3">
-              <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
-                <SubjectIcon className={`w-7 h-7 ${color}`} />
-              </div>
-              <h1 className="text-2xl font-bold text-white">{name}</h1>
+    <main className="flex-1 p-6 glass-card">
+        <Breadcrumbs level={levelName} semester={semesterName} subject={name} />
+        <div className="flex items-center justify-between mb-6 animate-fade-in-up">
+        <div className="flex items-center gap-3">
+            <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
+            <SubjectIcon className={`w-7 h-7 ${color}`} />
             </div>
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add Content
-            </Button>
-          </div>
+            <h1 className="text-2xl font-bold text-white">{name}</h1>
+        </div>
+        <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add Content
+        </Button>
+        </div>
 
-          {content.length > 0 ? (
-            <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-              {/* TODO: Render files and folders here */}
-            </div>
-          ) : (
-            <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
-              <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
-              <h3 className="mt-4 text-lg font-semibold text-white">This subject is empty</h3>
-              <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
-              <Button className="mt-6">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Content
-              </Button>
-            </div>
-          )}
-        </main>
-      </div>
-    </div>
+        {content.length > 0 ? (
+        <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            {/* TODO: Render files and folders here */}
+        </div>
+        ) : (
+        <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+            <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
+            <h3 className="mt-4 text-lg font-semibold text-white">This subject is empty</h3>
+            <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
+            <Button className="mt-6">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Content
+            </Button>
+        </div>
+        )}
+    </main>
   );
 }
