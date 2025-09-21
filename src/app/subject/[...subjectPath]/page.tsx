@@ -33,7 +33,8 @@ const Breadcrumbs = ({ level, semester, subject }: { level: string; semester: st
 
 export default function SubjectPage({ params }: SubjectPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { subjectPath } = use(params);
+  const resolvedParams = use(params);
+  const { subjectPath } = resolvedParams;
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
 
   const subject = useMemo(() => {
@@ -55,7 +56,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs level={levelName} semester={semesterName} subject={name} />
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 animate-fade-in-up">
             <div className="flex items-center gap-3">
               <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
                 <SubjectIcon className={`w-7 h-7 ${color}`} />
@@ -69,11 +70,11 @@ export default function SubjectPage({ params }: SubjectPageProps) {
           </div>
 
           {content.length > 0 ? (
-            <div className="space-y-3">
+            <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               {/* TODO: Render files and folders here */}
             </div>
           ) : (
-            <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl">
+            <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This subject is empty</h3>
               <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>

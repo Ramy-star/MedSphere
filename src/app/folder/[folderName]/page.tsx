@@ -51,20 +51,23 @@ export default function FolderPage({ params }: FolderPageProps) {
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs folderName={folder.name} />
-          <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
-            <ContentIcon className="w-6 h-6 text-blue-400" />
-            <span>Content</span>
-          </h2>
-          <div className="space-y-3">
+          <div className="animate-fade-in-up">
+            <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <ContentIcon className="w-6 h-6 text-blue-400" />
+                <span>Content</span>
+            </h2>
+          </div>
+          <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
             {folder.files.length > 0 ? (
-              folder.files.map((file) => (
-                <FileListItem
-                  key={file.name}
-                  name={file.name}
-                  size={file.size}
-                  date={file.date}
-                  icon={ContentIcon}
-                />
+              folder.files.map((file, index) => (
+                <div key={file.name} className="animate-fade-in-up" style={{ animationDelay: `${0.15 + index * 0.05}s`}}>
+                    <FileListItem
+                        name={file.name}
+                        size={file.size}
+                        date={file.date}
+                        icon={ContentIcon}
+                    />
+                </div>
               ))
             ) : (
               <p className="text-slate-400">No content in this folder.</p>

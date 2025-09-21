@@ -29,7 +29,8 @@ const Breadcrumbs = ({ level, semester }: { level: string; semester: string }) =
 
 export default function SemesterPage({ params }: SemesterPageProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { semesterPath } = use(params);
+  const resolvedParams = use(params);
+  const { semesterPath } = resolvedParams;
   const [levelName, semesterName] = semesterPath.map(decodeURIComponent);
 
   const subjects = useMemo(() => {
@@ -47,7 +48,7 @@ export default function SemesterPage({ params }: SemesterPageProps) {
       <div className="flex-1 flex flex-col">
         <main className="flex-1 p-6 glass-card">
           <Breadcrumbs level={levelName} semester={semesterName} />
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 animate-fade-in-up">
             <h1 className="text-2xl font-bold text-white">Subjects</h1>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -55,7 +56,7 @@ export default function SemesterPage({ params }: SemesterPageProps) {
             </Button>
           </div>
           {subjects.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               {subjects.map((subject) => (
                 <SubjectCard
                   key={subject.name}
@@ -68,7 +69,7 @@ export default function SemesterPage({ params }: SemesterPageProps) {
               ))}
             </div>
           ) : (
-            <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl">
+            <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
               <Folder className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">No subjects yet</h3>
               <p className="mt-2 text-sm text-slate-400">Get started by adding a new subject.</p>
