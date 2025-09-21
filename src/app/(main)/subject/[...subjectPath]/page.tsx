@@ -1,7 +1,7 @@
 'use client';
 
 import { HomeIcon, ChevronRight, Folder as FolderIcon, Plus } from 'lucide-react';
-import { useMemo, use } from 'react';
+import React, { useMemo } from 'react';
 import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
@@ -14,7 +14,7 @@ type SubjectPageProps = {
 };
 
 const Breadcrumbs = ({ level, semester, subject }: { level: string; semester: string, subject: string }) => (
-  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap">
+  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in-up">
     <Link href="/" className="flex items-center gap-2 hover:text-white">
       <HomeIcon className="w-4 h-4" />
       <span>Home</span>
@@ -31,7 +31,7 @@ const Breadcrumbs = ({ level, semester, subject }: { level: string; semester: st
 );
 
 export default function SubjectPage({ params }: SubjectPageProps) {
-  const resolvedParams = use(params);
+  const resolvedParams = React.use(params);
   const { subjectPath } = resolvedParams;
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
 
@@ -51,7 +51,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   return (
     <main className="flex-1 p-6 glass-card">
         <Breadcrumbs level={levelName} semester={semesterName} subject={name} />
-        <div className="flex items-center justify-between mb-6 animate-fade-in-up">
+        <div className="flex items-center justify-between mb-6 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">
             <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
             <SubjectIcon className={`w-7 h-7 ${color}`} />
@@ -65,11 +65,11 @@ export default function SubjectPage({ params }: SubjectPageProps) {
         </div>
 
         {content.length > 0 ? (
-        <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             {/* TODO: Render files and folders here */}
         </div>
         ) : (
-        <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in-up" style={{ animationDelay: '0.1s' }}>
+        <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
             <h3 className="mt-4 text-lg font-semibold text-white">This subject is empty</h3>
             <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
