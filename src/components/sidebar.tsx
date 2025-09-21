@@ -14,6 +14,7 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import { allSubjects } from '@/lib/file-data';
 
 
 const initialLevels = [
@@ -61,13 +62,30 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
   
   useEffect(() => {
     const pathParts = pathname.split('/').map(decodeURIComponent);
+    let levelName = '';
+    let semesterName = '';
+
     if (pathParts[1] === 'semester' && pathParts.length >= 4) {
-      const levelName = pathParts[2];
-      const semesterName = pathParts[3];
-      setActivePath({ level: levelName, semester: semesterName });
-      if (openLevel !== levelName) {
-        setOpenLevel(levelName);
+      levelName = pathParts[2];
+      semesterName = pathParts[3];
+    } else if (pathParts[1] === 'subject' && pathParts.length >= 5) {
+        levelName = pathParts[2];
+        semesterName = pathParts[3];
+    } else if (pathParts[1] === 'folder' && pathParts.length >= 3) {
+      // This is a bit of a workaround as folder structure isn't tied to levels yet.
+      // We can make an assumption for now or look it up if we have the data.
+      // For "Chest", it's under Level 1, Semester 1.
+      if (pathParts[2] === 'Chest') {
+        levelName = 'Level 1';
+        semesterName = 'Semester 1';
       }
+    }
+    
+    if (levelName) {
+        setActivePath({ level: levelName, semester: semesterName });
+        if (openLevel !== levelName) {
+            setOpenLevel(levelName);
+        }
     } else {
       setActivePath({ level: '', semester: '' });
     }
