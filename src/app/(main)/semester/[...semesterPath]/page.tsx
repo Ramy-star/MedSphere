@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -51,9 +52,9 @@ export default function SemesterPage({ params }: SemesterPageProps) {
         </Button>
         </div>
         {subjects.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
             {subjects.map((subject, index) => (
-            <div key={subject.name} className="animate-fade-in-up" style={{ animationDelay: `${0.15 + index * 0.05}s`}}>
+            <div key={subject.name} className="animate-fade-in-up" style={{ animationDelay: `${index * 0.05}s`}}>
                 <SubjectCard
                     name={subject.name}
                     icon={subject.icon}

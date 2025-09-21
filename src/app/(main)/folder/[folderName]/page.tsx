@@ -1,3 +1,4 @@
+
 'use client';
 
 import { folderData } from '@/lib/file-data';
@@ -52,10 +53,10 @@ export default function FolderPage({ params }: FolderPageProps) {
             <span>Content</span>
         </h2>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-3 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>
         {folder.files.length > 0 ? (
             folder.files.map((file, index) => (
-            <div key={file.name} className="animate-fade-in-up" style={{ animationDelay: `${0.15 + index * 0.05}s`}}>
+            <div key={file.name} style={{ animationDelay: `${index * 0.05}s`}} className="animate-fade-in-up">
                 <FileListItem
                     name={file.name}
                     size={file.size}
@@ -65,7 +66,7 @@ export default function FolderPage({ params }: FolderPageProps) {
             </div>
             ))
         ) : (
-            <p className="text-slate-400 animate-fade-in-up" style={{ animationDelay: '0.15s' }}>No content in this folder.</p>
+            <p className="text-slate-400" style={{ animationDelay: '0.15s' }}>No content in this folder.</p>
         )}
         </div>
     </main>
