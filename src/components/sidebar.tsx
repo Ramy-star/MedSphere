@@ -1,12 +1,6 @@
 
 'use client';
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import {
   Calendar,
@@ -19,7 +13,7 @@ import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 const initialLevels = [
@@ -120,25 +114,19 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
       </div>
 
       <nav className="flex-1 space-y-2">
-        <Accordion
-          type="single"
-          collapsible
-          value={openLevel}
-          onValueChange={handleLevelChange}
-          className="w-full"
-        >
+        <div className="w-full">
           {initialLevels.map((level, index) => {
             const isLevelActive = openLevel === level.name;
             const isPathActive = activePath.level === level.name;
             return (
-              <AccordionItem
+              <div
                 key={level.name}
-                value={level.name}
                 className={cn("border-none", !open && "mb-1")}
               >
-                <AccordionTrigger
+                <button
+                  onClick={() => handleLevelChange(level.name)}
                   className={cn(
-                    'p-2.5 hover:no-underline rounded-xl w-full text-slate-300 hover:text-white',
+                    'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center justify-between',
                     (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
                     (!open && isPathActive) && 'bg-blue-500/20 text-white',
                     !open && 'flex justify-center'
@@ -161,48 +149,53 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     </motion.div>
                   </div>
                    <motion.div
-                     animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none' }}
-                     transition={{ duration: 0.2 }}
+                     animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none', rotate: isLevelActive ? 180 : 0 }}
+                     transition={{ duration: 0.25, ease: "easeInOut" }}
                    >
                     <ChevronDown
                       className={cn(
                         "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
-                        isLevelActive ? 'rotate-180 text-white' : ''
+                        isLevelActive ? 'text-white' : ''
                       )}
                       aria-hidden="true"
                     />
                   </motion.div>
-                </AccordionTrigger>
-                <motion.div
-                    initial={false}
-                    animate={{ height: isLevelActive ? 'auto' : 0, opacity: isLevelActive ? 1 : 0 }}
-                    className="overflow-hidden"
-                >
-                <AccordionContent className={cn("pl-4 pr-1 pb-0 pt-1 space-y-2", !open && "hidden")}>
-                  {level.semesters.map((semester) => {
-                    const isSemesterActive = activePath.semester === semester.name && activePath.level === level.name;
-                    return (
-                      <Link key={semester.name} href={`/semester/${encodeURIComponent(level.name)}/${encodeURIComponent(semester.name)}`} passHref>
-                        <div
-                          className={cn(
-                            "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer",
-                            isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                          )}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Calendar size={18} className="text-green-400" />
-                            <span className={cn("whitespace-nowrap", !open && "hidden")}>{semester.name}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </AccordionContent>
-                </motion.div>
-              </AccordionItem>
+                </button>
+                 <AnimatePresence initial={false}>
+                    {isLevelActive && open && (
+                    <motion.div
+                        key="content"
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: 'easeInOut' }}
+                        className={cn("pl-4 pr-1 pt-1 space-y-2 overflow-hidden", !open && "hidden")}
+                    >
+                      {level.semesters.map((semester) => {
+                        const isSemesterActive = activePath.semester === semester.name && activePath.level === level.name;
+                        return (
+                          <Link key={semester.name} href={`/semester/${encodeURIComponent(level.name)}/${encodeURIComponent(semester.name)}`} passHref>
+                            <div
+                              className={cn(
+                                "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer",
+                                isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
+                              )}
+                            >
+                              <div className="flex items-center gap-3">
+                                <Calendar size={18} className="text-green-400" />
+                                <span className={cn("whitespace-nowrap", !open && "hidden")}>{semester.name}</span>
+                              </div>
+                            </div>
+                          </Link>
+                        );
+                      })}
+                    </motion.div>
+                    )}
+                </AnimatePresence>
+              </div>
             )
           })}
-        </Accordion>
+        </div>
       </nav>
     </motion.aside>
   );
