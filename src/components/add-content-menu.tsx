@@ -21,9 +21,9 @@ export function AddContentMenu() {
           Add Content
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56">
+      <DropdownMenuContent className="w-56 glass-card bg-slate-900/80 backdrop-blur-lg border-slate-700">
         <DropdownMenuLabel>Create New</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="bg-slate-700" />
         <DropdownMenuItem>
           <FolderPlus className="mr-2 h-4 w-4" />
           <span>New Folder</span>
