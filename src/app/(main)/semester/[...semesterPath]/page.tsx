@@ -46,10 +46,6 @@ export default function SemesterPage({ params }: SemesterPageProps) {
         <Breadcrumbs level={levelName} semester={semesterName} />
         <div className="flex items-center justify-between mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
         <h1 className="text-2xl font-bold text-white">Subjects</h1>
-        <Button>
-            <Plus className="mr-2 h-4 w-4" />
-            Add Subject
-        </Button>
         </div>
         {subjects.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -70,10 +66,6 @@ export default function SemesterPage({ params }: SemesterPageProps) {
             <Folder className="mx-auto h-12 w-12 text-slate-500" />
             <h3 className="mt-4 text-lg font-semibold text-white">No subjects yet</h3>
             <p className="mt-2 text-sm text-slate-400">Get started by adding a new subject.</p>
-            <Button className="mt-6">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Subject
-            </Button>
         </div>
         )}
     </main>
