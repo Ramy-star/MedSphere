@@ -8,7 +8,6 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { FolderPlus, Plus, Upload } from 'lucide-react';
-import { cn } from '@/lib/utils';
 
 const menuItems = [
     {
@@ -32,7 +31,10 @@ export function AddContentMenu() {
           Add Content
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-56 p-0 glass-card border-slate-700/50" align="end">
+      <PopoverContent 
+        className="w-56 p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10" 
+        align="end"
+      >
           <div className="p-2 space-y-1">
             <p className="px-2 py-1 text-sm font-semibold text-slate-300">Create New</p>
             {menuItems.map((item) => (
