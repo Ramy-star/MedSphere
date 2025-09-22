@@ -18,9 +18,9 @@ function loadAll(): ContentItem[] {
     const seed: ContentItem[] = [
       { id: 'root', name: 'Root', type: 'FOLDER', parentId: null },
       { id: 'lvl1', name: 'Lvl 1', type: 'FOLDER', parentId: 'root' },
+      { id: 'lvl2', name: 'Lvl 2', type: 'FOLDER', parentId: 'root' },
       { id: 'sem1', name: 'Semester 1', type: 'FOLDER', parentId: 'lvl1' },
-      { id: 'subj_anat', name: 'Anatomy', type: 'FOLDER', parentId: 'sem1' },
-      { id: 'file1', name: 'notes1.pdf', type: 'FILE', parentId: 'sem1', metadata: { mime: 'application/pdf' } }
+      { id: 'file1', name: 'notes1.pdf', type: 'FILE', parentId: 'sem1', metadata: { mime: 'application/pdf', size: 1024 } }
     ];
     localStorage.setItem(KEY, JSON.stringify(seed));
     return seed;
@@ -44,32 +44,23 @@ export const contentService = {
     const all = loadAll();
     const id = 'id_' + Math.random().toString(36).slice(2,9);
     const item: ContentItem = { id, name, type: 'FOLDER', parentId, createdAt: new Date().toISOString() };
-    all.push(item);
-    saveAll(all);
-    return item;
+    all.push(item); saveAll(all); return item;
   },
 
   async uploadFile(parentId: string | null, file: { name: string, size?: number, mime?: string }) {
     const all = loadAll();
     const id = 'file_' + Math.random().toString(36).slice(2,9);
     const item: ContentItem = { id, name: file.name, type: 'FILE', parentId, metadata: { size: file.size, mime: file.mime }, createdAt: new Date().toISOString() };
-    all.push(item);
-    saveAll(all);
-    return item;
+    all.push(item); saveAll(all); return item;
   },
 
   async getById(id: string) {
-    const all = loadAll();
-    return all.find(i => i.id === id) ?? null;
+    const all = loadAll(); return all.find(i => i.id === id) ?? null;
   },
 
   async rename(id: string, name: string) {
-    const all = loadAll();
-    const it = all.find(i => i.id === id);
-    if (!it) throw new Error('not found');
-    it.name = name;
-    saveAll(all);
-    return it;
+    const all = loadAll(); const it = all.find(i => i.id === id); if (!it) throw new Error('not found');
+    it.name = name; saveAll(all); return it;
   },
 
   async delete(id: string) {
