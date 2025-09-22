@@ -6,11 +6,15 @@ import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { AddContentMenu } from '@/components/add-content-menu';
+import { saveFile } from '@/lib/indexedDBService';
+
 
 async function getAncestors(id: string): Promise<ContentItem[]> {
     let ancestors: ContentItem[] = [];
+    if (id === 'root') return [];
+
     let current = await contentService.getById(id);
-    while (current && current.parentId) {
+    while (current && current.parentId && current.parentId !== 'root') {
         current = await contentService.getById(current.parentId);
         if (current) {
             ancestors.unshift(current);
@@ -28,30 +32,29 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   const [ancestors, setAncestors] = useState<ContentItem[]>([]);
   const [content, setContent] = useState<ContentItem[]>([]);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
-  const [_, setForceUpdate] = useState(0);
+  const [forceUpdateKey, setForceUpdateKey] = useState(0);
 
   useEffect(() => {
     async function fetchFolderData() {
       const fetchedFolder = await contentService.getById(id);
       setFolder(fetchedFolder);
       if (fetchedFolder) {
-        const children = await contentService.getChildren(id);
-        setContent(children);
         const fetchedAncestors = await getAncestors(id);
         setAncestors(fetchedAncestors);
       }
     }
     fetchFolderData();
-  }, [id]);
+  }, [id, forceUpdateKey]);
   
   const handleAddFolder = async (folderName: string) => {
     await contentService.createFolder(id, folderName);
-    setForceUpdate(v => v + 1); // Force re-render of FolderGrid
+    setForceUpdateKey(v => v + 1);
   };
 
   const handleUploadFile = async (file: File) => {
-    await contentService.uploadFile(id, { name: file.name, size: file.size, mime: file.type });
-    setForceUpdate(v => v + 1); // Force re-render of FolderGrid
+    const newFileItem = await contentService.uploadFile(id, { name: file.name, size: file.size, mime: file.type });
+    await saveFile(newFileItem.id, file);
+    setForceUpdateKey(v => v + 1);
   };
 
   return (
@@ -64,7 +67,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
             onUploadFile={handleUploadFile}
           />
         </FileExplorerHeader>
-      <FolderGrid parentId={id} key={_} />
+      <FolderGrid parentId={id} key={forceUpdateKey} />
     </main>
   );
 }
