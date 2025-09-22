@@ -39,9 +39,6 @@ export default function PdfViewer({ file }: { file: string }) {
       description: 'The file could not be loaded. It may be corrupted or in an unsupported format.',
     });
   }
-
-  const goToPrevPage = () => setPageNumber(prev => Math.max(prev - 1, 1));
-  const goToNextPage = () => setPageNumber(prev => Math.min(prev + 1, numPages ?? 1));
   
   const zoomIn = () => setScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
@@ -49,7 +46,7 @@ export default function PdfViewer({ file }: { file: string }) {
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex-1 w-full overflow-auto">
-        <div className="flex justify-center items-start p-4 min-h-full">
+        <div className="flex justify-center items-center p-4 min-h-full">
           <Document
             file={file}
             onLoadSuccess={onDocumentLoadSuccess}
@@ -64,7 +61,7 @@ export default function PdfViewer({ file }: { file: string }) {
               <Page 
                 pageNumber={pageNumber} 
                 renderTextLayer={true}
-                scale={1.5}
+                devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
               />
             </div>
           </Document>
@@ -73,7 +70,7 @@ export default function PdfViewer({ file }: { file: string }) {
 
       {numPages && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-          <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
+           <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
             <span className="text-sm px-3">Page {pageNumber} / {numPages ?? '--'}</span>
             <div className="h-6 w-px bg-white/20"></div>
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
@@ -88,3 +85,4 @@ export default function PdfViewer({ file }: { file: string }) {
     </div>
   );
 }
+
