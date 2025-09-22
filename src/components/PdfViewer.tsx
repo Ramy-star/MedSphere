@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight, Minus, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 const options = {
   cMapUrl: '/cmaps/',
@@ -105,4 +105,3 @@ export default function PdfViewer({ file }: { file: string }) {
     </div>
   );
 }
-
