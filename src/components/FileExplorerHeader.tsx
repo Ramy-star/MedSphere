@@ -10,6 +10,7 @@ import React, { useRef, useState } from 'react';
 import { saveFile as saveFileToDb } from '@/lib/indexedDBService';
 import { contentService } from '@/lib/contentService';
 import { LucideIcon } from 'lucide-react';
+import { NewFolderDialog } from './new-folder-dialog';
 
 
 type AddContentMenuProps = {
