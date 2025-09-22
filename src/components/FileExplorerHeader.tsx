@@ -10,39 +10,40 @@ export default function FileExplorerHeader({ currentFolder, children }: { curren
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button onClick={() => window.history.back()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowLeft size={16} /></button>
-          <button onClick={() => window.history.forward()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowRight size={16} /></button>
-
-          <nav className="flex items-center gap-2 ml-4 text-sm text-slate-300">
-            <Link href="/" className="flex items-center gap-1 hover:text-white">
-                <Home size={14}/> 
-                <span>Home</span>
-            </Link>
-            {segments.map((seg, i) => {
-              const href = '/' + segments.slice(0, i + 1).join('/');
-              const isLast = i === segments.length - 1;
-              // Don't create a link for the current page segment
-              if (isLast) {
-                 return (
-                  <span key={href} className="flex items-center gap-2">
-                    <span className="opacity-60">/</span>
-                    <span className="font-semibold text-white">{decodeURIComponent(seg)}</span>
-                  </span>
-                );
-              }
-              return (
+        <nav className="flex items-center gap-2 text-sm text-slate-300">
+          <Link href="/" className="flex items-center gap-1 hover:text-white">
+              <Home size={14}/> 
+              <span>Home</span>
+          </Link>
+          {segments.map((seg, i) => {
+            const href = '/' + segments.slice(0, i + 1).join('/');
+            const isLast = i === segments.length - 1;
+            // Don't create a link for the current page segment
+            if (isLast) {
+                return (
                 <span key={href} className="flex items-center gap-2">
                   <span className="opacity-60">/</span>
-                  <Link href={href} className={"hover:text-white"}>
-                    {decodeURIComponent(seg)} 
-                  </Link>
+                  <span className="font-semibold text-white">{decodeURIComponent(seg)}</span>
                 </span>
               );
-            })}
-          </nav>
+            }
+            return (
+              <span key={href} className="flex items-center gap-2">
+                <span className="opacity-60">/</span>
+                <Link href={href} className={"hover:text-white"}>
+                  {decodeURIComponent(seg)} 
+                </Link>
+              </span>
+            );
+          })}
+        </nav>
+        <div className="flex items-center gap-3">
+          {children}
+          <div className="flex items-center gap-3">
+            <button onClick={() => window.history.back()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowLeft size={16} /></button>
+            <button onClick={() => window.history.forward()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowRight size={16} /></button>
+          </div>
         </div>
-        <div>{children}</div>
       </div>
 
       {currentFolder && (
