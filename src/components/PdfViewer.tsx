@@ -23,7 +23,7 @@ const ZOOM_STEP = 0.2;
 export default function PdfViewer({ file }: { file: string }) {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.5);
+  const [scale, setScale] = useState(1);
   const { toast } = useToast();
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
@@ -63,8 +63,9 @@ export default function PdfViewer({ file }: { file: string }) {
             >
               <Page 
                 pageNumber={pageNumber} 
-                scale={1.5}
                 renderTextLayer={true}
+                scale={1.5}
+                devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
               />
             </div>
           </Document>
