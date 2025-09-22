@@ -1,6 +1,6 @@
 
 'use client';
-import { File, MoreVertical, Edit, Trash2, Replace, Download } from 'lucide-react';
+import { File, MoreVertical, Edit, Trash2, Replace, Download, FileText, Image, Presentation, Sheet, AudioWaveform, Video, LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -10,6 +10,22 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
+
+const getIconForFileMime = (mimeType?: string): { Icon: LucideIcon; color: string } => {
+    if (!mimeType) return { Icon: File, color: 'text-slate-400' };
+
+    if (mimeType.startsWith('image/')) return { Icon: Image, color: 'text-purple-400' };
+    if (mimeType.startsWith('audio/')) return { Icon: AudioWaveform, color: 'text-orange-400' };
+    if (mimeType.startsWith('video/')) return { Icon: Video, color: 'text-red-400' };
+    if (mimeType === 'application/pdf') return { Icon: FileText, color: 'text-red-500' };
+    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return { Icon: FileText, color: 'text-blue-500' };
+    if (mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') return { Icon: Presentation, color: 'text-orange-500' };
+    if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') return { Icon: Sheet, color: 'text-green-500' };
+    if (mimeType.startsWith('text/')) return { Icon: FileText, color: 'text-gray-400' };
+
+    return { Icon: File, color: 'text-slate-400' };
+};
+
 
 export function FileCard({ 
     item, 
@@ -33,6 +49,8 @@ export function FileCard({
         : `${(sizeInKB / 1024).toFixed(1)} MB`;
 
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
+    
+    const { Icon, color } = getIconForFileMime(item.metadata?.mime);
 
     return (
       <DropdownMenu>
@@ -41,7 +59,7 @@ export function FileCard({
             className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-between"
         >
             <div className="flex items-center gap-3 overflow-hidden">
-                <File className="w-6 h-6 text-blue-400 shrink-0" />
+                <Icon className={`w-6 h-6 ${color} shrink-0`} />
                 <h3 className="text-sm font-medium text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</h3>
             </div>
             
