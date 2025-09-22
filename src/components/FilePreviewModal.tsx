@@ -12,7 +12,6 @@ import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { getFile } from '@/lib/indexedDBService';
 import { useEffect, useState } from 'react';
-import { cn } from '@/lib/utils';
 import { X, Download, Share2, File as FileIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
@@ -98,7 +97,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className="max-w-none w-screen h-screen rounded-none p-0 flex flex-col bg-slate-900/80 backdrop-blur-sm border-0"
         hideCloseButton={true}
       >
-        <DialogHeader className='hidden'>
+        <DialogHeader className="hidden">
             <DialogTitle>File Preview: {item.name}</DialogTitle>
             <DialogDescription>Content of the file {item.name}.</DialogDescription>
         </DialogHeader>
@@ -151,7 +150,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center">
+        <div className="flex-1 overflow-auto flex items-center justify-center">
            <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />
         </div>
 

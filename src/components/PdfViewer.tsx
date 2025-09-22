@@ -48,7 +48,7 @@ export default function PdfViewer({ file }: { file: string }) {
 
   return (
     <div className="relative w-full h-full flex flex-col items-center">
-      <div className="flex-1 w-full overflow-auto flex justify-center pt-4 pb-20">
+      <div className="flex-1 w-full overflow-auto flex justify-center">
         <Document
           file={file}
           onLoadSuccess={onDocumentLoadSuccess}
@@ -56,7 +56,9 @@ export default function PdfViewer({ file }: { file: string }) {
           options={options}
           className="flex justify-center"
         >
-          <Page pageNumber={pageNumber} scale={scale} renderTextLayer={true} />
+           <div className="transition-transform duration-300 ease-in-out" style={{ transform: `scale(${scale})` }}>
+            <Page pageNumber={pageNumber} scale={1} renderTextLayer={true} />
+          </div>
         </Document>
       </div>
 
