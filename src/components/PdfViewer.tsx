@@ -9,7 +9,7 @@ import { ChevronLeft, ChevronRight, Minus, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
+  'react-pdf/node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
   import.meta.url,
 ).toString();
 
@@ -51,8 +51,10 @@ export default function PdfViewer({ file }: { file: string }) {
 
   return (
     <div className="w-full h-full flex flex-col">
-      <div className="flex-1 w-full overflow-auto">
-        <div className="flex justify-center items-start min-h-full p-4">
+      {/* This div is for scrolling */}
+      <div className="flex-1 overflow-auto">
+        {/* This div is for centering the content */}
+        <div className="flex justify-center items-start min-h-full">
           <Document
             file={file}
             onLoadSuccess={onDocumentLoadSuccess}
