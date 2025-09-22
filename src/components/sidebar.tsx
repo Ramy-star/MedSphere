@@ -42,30 +42,35 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
   useEffect(() => {
     async function findActivePath() {
         const pathParts = pathname.split('/');
-        if (pathParts[1] !== 'folder' || pathParts.length < 3) {
-            setActivePath({ levelId: '', semesterId: '' });
-            setOpenLevelId('');
-            return;
-        };
-        const currentId = pathParts[2];
-        const ancestors = await contentService.getAncestors(currentId);
-        const current = await contentService.getById(currentId);
-        const pathItems = [...ancestors, current].filter(Boolean) as Content[];
+        
+        if (pathParts[1] === 'folder' && pathParts.length >= 3) {
+            const currentId = pathParts[2];
+            const ancestors = await contentService.getAncestors(currentId);
+            const current = await contentService.getById(currentId);
+            const pathItems = [...ancestors, current].filter(Boolean) as Content[];
 
-        const level = pathItems.find(p => p.type === 'LEVEL');
-        const semester = pathItems.find(p => p.type === 'SEMESTER');
+            const level = pathItems.find(p => p.type === 'LEVEL');
+            const semester = pathItems.find(p => p.type === 'SEMESTER');
 
-        if (level) {
-            setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
-            // if (openLevelId !== level.id) {
-            //     setOpenLevelId(level.id);
-            // }
+            if (level) {
+                setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
+            } else {
+                 setActivePath({ levelId: '', semesterId: '' });
+            }
+        } else if (pathParts[1] === 'level' && pathParts.length >= 3) {
+            const levelName = decodeURIComponent(pathParts[2]);
+            const allLevels = await contentService.getChildren(null);
+            const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
+            if (currentLevel) {
+                 setActivePath({ levelId: currentLevel.id, semesterId: '' });
+            } else {
+                 setActivePath({ levelId: '', semesterId: '' });
+            }
         } else {
              setActivePath({ levelId: '', semesterId: '' });
         }
     }
     findActivePath();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
   const handleLevelChange = (levelId: string) => {
