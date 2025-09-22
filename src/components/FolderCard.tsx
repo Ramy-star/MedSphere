@@ -1,7 +1,8 @@
+
 'use client';
 import Link from 'next/link';
 import { Folder, MoreVertical, Edit, Trash2 } from 'lucide-react';
-import type { ContentItem } from '@/lib/contentService';
+import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 
-export function FolderCard({ item, onRename, onDelete }: { item: ContentItem, onRename: () => void, onDelete: () => void }) {
+export function FolderCard({ item, onRename, onDelete }: { item: Content, onRename: () => void, onDelete: () => void }) {
     
     return (
         <div className="relative group">

@@ -1,22 +1,17 @@
+
 'use client';
 
 import { LucideIcon, MoreVertical, Folder } from 'lucide-react';
 import { Button } from './ui/button';
 import Link from 'next/link';
 import { allSubjectIcons } from '@/lib/file-data';
+import type { Content } from '@/lib/contentService';
 
 
-type SubjectCardProps = {
-  name: string;
-  iconName: string;
-  color: string;
-  level: string;
-  semester: string;
-};
-
-export function SubjectCard({ name, iconName, color, level, semester }: SubjectCardProps) {
-  const subjectPath = `/subject/${encodeURIComponent(level)}/${encodeURIComponent(semester)}/${encodeURIComponent(name)}`;
-  const Icon = allSubjectIcons[iconName] || Folder;
+export function SubjectCard({ subject }: { subject: Content }) {
+  const { id, name, iconName, color } = subject;
+  const subjectPath = `/folder/${id}`;
+  const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
 
   return (
     <Link href={subjectPath} className="block glass-card p-4 rounded-xl group hover:bg-white/10 transition-colors">

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -22,14 +23,14 @@ import { Input } from './ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import type { ContentItem } from '@/lib/contentService';
+import type { Content } from '@/lib/contentService';
 
 const formSchema = z.object({
   name: z.string().min(1, { message: 'Name is required.' }),
 });
 
 type RenameDialogProps = {
-  item: ContentItem | null;
+  item: Content | null;
   onOpenChange: (open: boolean) => void;
   onRename: (newName: string) => void;
 };

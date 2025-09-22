@@ -14,86 +14,61 @@ import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { allSubjects } from '@/lib/file-data';
-
-
-const initialLevels = [
-  {
-    name: 'Level 1',
-    semesters: [
-      { name: 'Semester 1', subjects: [] },
-      { name: 'Semester 2', subjects: [] },
-    ],
-  },
-  {
-    name: 'Level 2',
-    semesters: [
-      { name: 'Semester 3', subjects: [] },
-      { name: 'Semester 4', subjects: [] },
-    ],
-  },
-  {
-    name: 'Level 3',
-    semesters: [
-      { name: 'Semester 5', subjects: [] },
-      { name: 'Semester 6', subjects: [] },
-    ],
-  },
-  {
-    name: 'Level 4',
-    semesters: [
-      { name: 'Semester 7', subjects: [] },
-      { name: 'Semester 8', subjects: [] },
-    ],
-  },
-  {
-    name: 'Level 5',
-    semesters: [
-      { name: 'Semester 9', subjects: [] },
-      { name: 'Semester 10', subjects: [] },
-    ],
-  },
-];
+import { contentService, Content } from '@/lib/contentService';
 
 export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const pathname = usePathname();
-  const [activePath, setActivePath] = useState({ level: '', semester: '' });
-  const [openLevel, setOpenLevel] = useState('');
+  const [levels, setLevels] = useState<Content[]>([]);
+  const [semestersByLevel, setSemestersByLevel] = useState<{[levelId: string]: Content[]}>({});
+  const [activePath, setActivePath] = useState({ levelId: '', semesterId: '' });
+  const [openLevelId, setOpenLevelId] = useState('');
   
   useEffect(() => {
-    const pathParts = pathname.split('/').map(decodeURIComponent);
-    let levelName = '';
-    let semesterName = '';
+    async function loadInitialData() {
+        const topLevels = await contentService.getChildren(null);
+        const allLevels = topLevels.filter(c => c.type === 'LEVEL');
+        setLevels(allLevels);
 
-    if (pathParts[1] === 'semester' && pathParts.length >= 4) {
-      levelName = pathParts[2];
-      semesterName = pathParts[3];
-    } else if (pathParts[1] === 'subject' && pathParts.length >= 5) {
-        levelName = pathParts[2];
-        semesterName = pathParts[3];
-    } else if (pathParts[1] === 'folder' && pathParts.length >= 3) {
-      // This is a bit of a workaround as folder structure isn't tied to levels yet.
-      // We can make an assumption for now or look it up if we have the data.
-      // For "Chest", it's under Level 1, Semester 1.
-      if (pathParts[2] === 'Chest') {
-        levelName = 'Level 1';
-        semesterName = 'Semester 1';
-      }
-    }
-    
-    if (levelName) {
-        setActivePath({ level: levelName, semester: semesterName });
-        if (openLevel !== levelName) {
-            setOpenLevel(levelName);
+        const semestersMap: {[levelId: string]: Content[]} = {};
+        for (const level of allLevels) {
+            const levelSemesters = await contentService.getChildren(level.id);
+            semestersMap[level.id] = levelSemesters.filter(c => c.type === 'SEMESTER');
         }
-    } else {
-      setActivePath({ level: '', semester: '' });
+        setSemestersByLevel(semestersMap);
     }
+    loadInitialData();
+  }, []);
+
+  useEffect(() => {
+    async function findActivePath() {
+        const pathParts = pathname.split('/');
+        if (pathParts[1] !== 'folder' || pathParts.length < 3) {
+            setActivePath({ levelId: '', semesterId: '' });
+            return;
+        };
+        const currentId = pathParts[2];
+        const ancestors = await contentService.getAncestors(currentId);
+        const current = await contentService.getById(currentId);
+        const pathItems = [...ancestors, current].filter(Boolean) as Content[];
+
+        const level = pathItems.find(p => p.type === 'LEVEL');
+        const semester = pathItems.find(p => p.type === 'SEMESTER');
+
+        if (level) {
+            setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
+            if (openLevelId !== level.id) {
+                setOpenLevelId(level.id);
+            }
+        } else {
+             setActivePath({ levelId: '', semesterId: '' });
+        }
+    }
+    findActivePath();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 
-  const handleLevelChange = (value: string) => {
-    setOpenLevel(prevOpenLevel => (prevOpenLevel === value ? '' : value));
+  const handleLevelChange = (levelId: string) => {
+    setOpenLevelId(prevOpenLevelId => (prevOpenLevelId === levelId ? '' : levelId));
   };
 
   return (
@@ -133,16 +108,16 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
       <nav className="flex-1 space-y-2">
         <div className="w-full">
-          {initialLevels.map((level, index) => {
-            const isLevelActive = openLevel === level.name;
-            const isPathActive = activePath.level === level.name;
+          {levels.map((level, index) => {
+            const isLevelActive = openLevelId === level.id;
+            const isPathActive = activePath.levelId === level.id;
             return (
               <div
-                key={level.name}
+                key={level.id}
                 className={cn("border-none", !open && "mb-1")}
               >
                 <button
-                  onClick={() => handleLevelChange(level.name)}
+                  onClick={() => handleLevelChange(level.id)}
                   className={cn(
                     'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center justify-between',
                     (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
@@ -189,10 +164,10 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                         transition={{ duration: 0.25, ease: 'easeInOut' }}
                         className={cn("pl-4 pr-1 pt-1 space-y-2 overflow-hidden", !open && "hidden")}
                     >
-                      {level.semesters.map((semester) => {
-                        const isSemesterActive = activePath.semester === semester.name && activePath.level === level.name;
+                      {(semestersByLevel[level.id] || []).map((semester) => {
+                        const isSemesterActive = activePath.semesterId === semester.id;
                         return (
-                          <Link key={semester.name} href={`/semester/${encodeURIComponent(level.name)}/${encodeURIComponent(semester.name)}`} passHref>
+                          <Link key={semester.id} href={`/folder/${semester.id}`} passHref>
                             <div
                               className={cn(
                                 "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer",

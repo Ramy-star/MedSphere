@@ -9,11 +9,11 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import FilePreview from './FilePreview';
-import type { ContentItem } from '@/lib/contentService';
+import type { Content } from '@/lib/contentService';
 import { getFile } from '@/lib/indexedDBService';
 import { useEffect, useState } from 'react';
 
-export function FilePreviewModal({ item, onOpenChange }: { item: ContentItem | null, onOpenChange: (open: boolean) => void }) {
+export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const [fileUrl, setFileUrl] = useState<string>('#');
   const [fileHandle, setFileHandle] = useState<File | null>(null);
 

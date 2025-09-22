@@ -4,66 +4,67 @@
 import { useEffect, useState, useCallback, use } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
-import { contentService, ContentItem } from '@/lib/contentService';
-import { allSubjects } from '@/lib/file-data';
-
-async function getAncestors(id: string): Promise<ContentItem[]> {
-    let ancestors: ContentItem[] = [];
-    if (id === 'root') return [];
-
-    let current = await contentService.getById(id);
-    
-    while (current && current.id !== 'root') {
-        ancestors.unshift(current);
-        if (current.parentId) {
-            current = await contentService.getById(current.parentId);
-        } else {
-            const subjectRootPrefix = 'subject-root-';
-            if (current.id.startsWith(subjectRootPrefix)) {
-                const subjectId = current.id.substring(subjectRootPrefix.length);
-                const [subjectName, semesterName] = subjectId.split('-');
-                const subject = allSubjects.find(s => s.name.replace(/\s+/g, '') === subjectName && s.semester.replace(/\s+/g, '') === semesterName);
-                if (subject) {
-                    const subjectFolder = await contentService.getById(`subject-root-${subject.name.replace(/\s+/g, '-')}-${subject.semester.replace(/\s+/g, '-')}`);
-                    if(subjectFolder) {
-                        ancestors.splice(1, 0, 
-                            { id: 'level', name: subject.level, type: 'LINK' },
-                            { id: 'semester', name: subject.semester, type: 'LINK' },
-                            { id: 'subject-folder', name: subject.name, type: 'LINK' }
-                        );
-                    }
-                }
-            }
-            break; 
-        }
-    }
-    return ancestors;
-}
+import { contentService, Content } from '@/lib/contentService';
+import { allSubjectIcons } from '@/lib/file-data';
+import { notFound } from 'next/navigation';
+import { LucideIcon, Folder } from 'lucide-react';
 
 
 export default function FolderPage({ params }: { params: { id: string } }) {
   const { id } = use(params);
 
-  const [folder, setFolder] = useState<ContentItem | null>(null);
-  const [ancestors, setAncestors] = useState<ContentItem[]>([]);
-
+  const [current, setCurrent] = useState<Content | null>(null);
+  const [ancestors, setAncestors] = useState<Content[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const fetchFolderData = useCallback(async () => {
-    const fetchedFolder = await contentService.getById(id);
-    setFolder(fetchedFolder);
-    if (fetchedFolder) {
-      const fetchedAncestors = await getAncestors(id);
-      setAncestors(fetchedAncestors);
+    setLoading(true);
+    const fetchedCurrent = await contentService.getById(id);
+
+    if (!fetchedCurrent) {
+        setLoading(false);
+        // Maybe show a 'not found' component later
+        return;
     }
+
+    setCurrent(fetchedCurrent);
+    
+    const fetchedAncestors = await contentService.getAncestors(id);
+    setAncestors(fetchedAncestors);
+    setLoading(false);
   }, [id]);
 
   useEffect(() => {
     fetchFolderData();
   }, [id, fetchFolderData]);
   
+  if (loading) {
+      return <main className="flex-1 p-6 glass-card">
+        {/* Can add a skeleton loader here */}
+      </main>
+  }
+
+  if (!current) {
+      notFound();
+  }
+
+  let Icon: LucideIcon = Folder;
+  let iconColor = 'text-yellow-400';
+
+  if (current.type === 'SUBJECT' && current.iconName) {
+      Icon = allSubjectIcons[current.iconName] || Folder;
+      iconColor = current.color || 'text-yellow-400';
+  }
+
+  const extendedCurrent = {
+      ...current,
+      icon: Icon,
+      iconColor: iconColor
+  }
+
   return (
     <main className="flex-1 p-6 glass-card">
-       <FileExplorerHeader currentFolder={folder ?? undefined} ancestors={ancestors} onContentAdded={fetchFolderData} />
+       <FileExplorerHeader currentFolder={extendedCurrent} ancestors={ancestors} onContentAdded={fetchFolderData} />
       <FolderGrid parentId={id} />
     </main>
   );

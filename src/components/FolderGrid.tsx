@@ -2,9 +2,10 @@
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { contentService, ContentItem } from '@/lib/contentService';
+import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
 import { FileCard } from './FileCard';
+import { SubjectCard } from './subject-card';
 import { FilePreviewModal } from './FilePreviewModal';
 import { RenameDialog } from './RenameDialog';
 import {
@@ -111,20 +112,16 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
 
 
 export function FolderGrid({ parentId }: { parentId: string | null }) {
-  const [items, setItems] = useState<ContentItem[]>([]);
+  const [items, setItems] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
-  const [previewFile, setPreviewFile] = useState<ContentItem | null>(null);
-  const [itemToRename, setItemToRename] = useState<ContentItem | null>(null);
-  const [itemToDelete, setItemToDelete] = useState<ContentItem | null>(null);
+  const [previewFile, setPreviewFile] = useState<Content | null>(null);
+  const [itemToRename, setItemToRename] = useState<Content | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
-    if (parentId === null) {
-      setItems([]);
-    } else {
-      const fetchedItems = await contentService.getChildren(parentId);
-      setItems(fetchedItems);
-    }
+    const fetchedItems = await contentService.getChildren(parentId);
+    setItems(fetchedItems);
     setLoading(false);
   }, [parentId]);
 
@@ -132,7 +129,7 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
     fetchItems();
   }, [fetchItems]);
 
-  const handleFileClick = (file: ContentItem) => {
+  const handleFileClick = (file: Content) => {
     setPreviewFile(file);
   };
 
@@ -184,14 +181,16 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
     <div>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
         <AnimatePresence>
-          {items.map((it: ContentItem, index) => (
+          {items.map((it: Content, index) => (
             <motion.div key={it.id}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 8 }}
               transition={{ duration: 0.15, delay: index * 0.02 }}
             >
-              {it.type === 'FOLDER' ? (
+              {it.type === 'SUBJECT' ? (
+                <SubjectCard subject={it} />
+              ) : it.type === 'FOLDER' ? (
                 <FolderCard 
                   item={it} 
                   onRename={() => setItemToRename(it)}

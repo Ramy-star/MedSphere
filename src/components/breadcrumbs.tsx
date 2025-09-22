@@ -1,12 +1,26 @@
 
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
 import { HomeIcon, ChevronRight } from 'lucide-react';
-import type { ContentItem } from '@/lib/contentService';
+import type { Content } from '@/lib/contentService';
 
-export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
-  const pathname = usePathname() || '/';
+function getLink(item: Content): string {
+  switch (item.type) {
+    case 'LEVEL':
+      return `/level/${encodeURIComponent(item.name)}`;
+    case 'SEMESTER':
+        // This requires finding the level parent, which is complex here.
+        // A simpler approach is to have a generic folder page.
+        return `/folder/${item.id}`;
+    case 'SUBJECT':
+    case 'FOLDER':
+      return `/folder/${item.id}`;
+    default:
+      return '#';
+  }
+}
+
+export function Breadcrumbs({ ancestors, current }: { ancestors?: Content[], current?: Content }) {
 
   const homeElement = (
     <div className="flex items-center">
@@ -17,88 +31,31 @@ export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
     </div>
   );
 
-  // If ancestors are provided (from folder pages), use them to build the path
-  if (ancestors && ancestors.length > 0) {
-    const pathToShow = ancestors;
-
-    return (
-       <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
-        {homeElement}
-        {pathToShow.length > 0 && <ChevronRight className="w-4 h-4 opacity-60" />}
-        {pathToShow.map((node, idx) => {
-          const isLast = idx === pathToShow.length - 1;
-          return (
-            <span key={node.id} className="flex items-center gap-2">
-              {isLast ? (
-                 <span className="font-semibold text-white">{node.name}</span>
-              ) : (
-                <Link 
-                  href={`/folder/${node.id}`} 
-                  className="hover:text-white"
-                >
-                  {node.name} 
-                </Link>
-              )}
-              {!isLast && <ChevronRight className="w-4 h-4 opacity-60" />}
-            </span>
-          );
-        })}
-      </nav>
-    )
-  }
-
-  // Fallback for pages without ancestor data, build from URL
-  const segments = pathname.split('/').filter(Boolean);
-  const segmentsToFilter = ['level', 'semester', 'subject', 'folder'];
+  const pathToShow = ancestors || [];
   
-  const breadcrumbItems = segments
-    .map((segment, index) => {
-        const decodedSegment = decodeURIComponent(segment);
-        const isFilterable = segmentsToFilter.includes(decodedSegment.toLowerCase());
-        
-        if (isFilterable) return null;
-
-        const href = '/' + segments.slice(0, index + 1).join('/');
-        
-        return {
-            name: decodedSegment,
-            href: href,
-        };
-    })
-    .filter((item): item is { name: string; href: string } => item !== null);
-
-
-  // If there are no valid segments to show besides 'Home', just show Home.
-  if (breadcrumbItems.length === 0 && pathname === '/') {
-    return (
-        <nav className="flex items-center text-sm mb-6 flex-wrap animate-fade-in">
-             <div className="flex items-center gap-2 font-semibold text-white">
-                <HomeIcon className="w-4 h-4" />
-                <span>Home</span>
-            </div>
-        </nav>
-    );
-  }
-
-
   return (
-    <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
+     <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
       {homeElement}
-      {breadcrumbItems.map((item, i) => {
-        const isLast = i === breadcrumbItems.length - 1;
-        return (
-          <span key={item.href} className="flex items-center gap-2">
+      
+      {pathToShow.map((node) => (
+        <span key={node.id} className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
-            {isLast ? (
-              <span className="font-semibold text-white">{item.name}</span>
-            ) : (
-              <Link href={item.href} className="hover:text-white">
-                {item.name}
-              </Link>
-            )}
-          </span>
-        );
-      })}
+            <Link 
+              href={getLink(node)} 
+              className="hover:text-white"
+            >
+              {node.name} 
+            </Link>
+        </span>
+      ))}
+
+      {current && current.id !== 'root' && (
+        <span className="flex items-center gap-2">
+            <ChevronRight className="w-4 h-4 opacity-60" />
+            <span className="font-semibold text-white">{current.name}</span>
+        </span>
+      )}
+
     </nav>
-  );
+  )
 }

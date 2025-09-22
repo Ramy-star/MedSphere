@@ -1,30 +1,35 @@
 
+'use client';
 import { deleteFile } from './indexedDBService';
-export type ContentItem = {
+import { allContent as seedData } from './file-data';
+import { v4 as uuidv4 } from 'uuid';
+
+
+export type Content = {
   id: string;
   name: string;
-  type: 'FOLDER' | 'FILE' | 'LINK';
-  parentId?: string | null;
+  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE';
+  parentId: string | null;
   metadata?: any;
   createdAt?: string;
+  iconName?: string;
+  color?: string;
 };
 
-const KEY = 'mock_content_v1';
+const KEY = 'app_content_v2';
 const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
-function loadAll(): ContentItem[] {
+function loadAll(): Content[] {
   if (typeof window === 'undefined') return [];
   const raw = localStorage.getItem(KEY);
   if (!raw) {
-    const seed: ContentItem[] = [
-      { id: 'root', name: 'Root', type: 'FOLDER', parentId: null },
-    ];
-    localStorage.setItem(KEY, JSON.stringify(seed));
-    return seed;
+    localStorage.setItem(KEY, JSON.stringify(seedData));
+    return seedData;
   }
   return JSON.parse(raw);
 }
-function saveAll(items: ContentItem[]) {
+
+function saveAll(items: Content[]) {
   localStorage.setItem(KEY, JSON.stringify(items));
 }
 
@@ -32,34 +37,79 @@ export const contentService = {
   async getChildren(parentId: string | null) {
     if (typeof window === 'undefined') return [];
     const all = loadAll();
-    return all.filter(i => (i.parentId ?? null) === (parentId ?? 'root')).sort((a,b) => {
-      if (a.type !== b.type) return a.type === 'FOLDER' ? -1 : 1;
+    const children = all.filter(i => (i.parentId ?? null) === (parentId ?? null));
+    
+    return children.sort((a,b) => {
+      if (a.type === 'FOLDER' && b.type !== 'FOLDER') return -1;
+      if (a.type !== 'FOLDER' && b.type === 'FOLDER') return 1;
+      if (a.type === 'SUBJECT' && b.type !== 'SUBJECT') return -1;
+      if (a.type !== 'SUBJECT' && b.type === 'SUBJECT') return 1;
       return collator.compare(a.name, b.name);
     });
   },
 
   async createFolder(parentId: string | null, name: string) {
     const all = loadAll();
-    const id = 'id_' + Math.random().toString(36).slice(2,9);
-    const item: ContentItem = { id, name, type: 'FOLDER', parentId: parentId ?? 'root', createdAt: new Date().toISOString() };
-    all.push(item); saveAll(all); return item;
+    const id = `folder_${uuidv4()}`;
+    const item: Content = { 
+        id, 
+        name, 
+        type: 'FOLDER', 
+        parentId: parentId, 
+        createdAt: new Date().toISOString() 
+    };
+    all.push(item); 
+    saveAll(all); 
+    return item;
   },
 
   async uploadFile(parentId: string | null, file: { name: string, size?: number, mime?: string }) {
     const all = loadAll();
-    const id = 'file_' + Math.random().toString(36).slice(2,9);
-    const item: ContentItem = { id, name: file.name, type: 'FILE', parentId: parentId ?? 'root', metadata: { size: file.size, mime: file.mime }, createdAt: new Date().toISOString() };
-    all.push(item); saveAll(all); return item;
+    const id = `file_${uuidv4()}`;
+    const item: Content = { 
+        id, 
+        name: file.name, 
+        type: 'FILE', 
+        parentId: parentId, 
+        metadata: { size: file.size, mime: file.mime }, 
+        createdAt: new Date().toISOString() 
+    };
+    all.push(item); 
+    saveAll(all); 
+    return item;
   },
 
   async getById(id: string) {
     if (typeof window === 'undefined') return null;
-    const all = loadAll(); return all.find(i => i.id === id) ?? null;
+    if (id === 'root') {
+      return { id: 'root', name: 'Home', type: 'FOLDER', parentId: null };
+    }
+    const all = loadAll(); 
+    return all.find(i => i.id === id) ?? null;
+  },
+
+  async getAncestors(id: string): Promise<Content[]> {
+    if (id === 'root') return [];
+    const all = loadAll();
+    const ancestors: Content[] = [];
+    let current = all.find(c => c.id === id);
+
+    while (current?.parentId) {
+        const parent = all.find(c => c.id === current!.parentId);
+        if (!parent) break;
+        ancestors.unshift(parent);
+        current = parent;
+    }
+    return ancestors;
   },
 
   async rename(id: string, name: string) {
-    const all = loadAll(); const it = all.find(i => i.id === id); if (!it) throw new Error('not found');
-    it.name = name; saveAll(all); return it;
+    const all = loadAll(); 
+    const it = all.find(i => i.id === id); 
+    if (!it) throw new Error('not found');
+    it.name = name; 
+    saveAll(all); 
+    return it;
   },
 
   async delete(id: string) {
