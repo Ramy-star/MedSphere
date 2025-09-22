@@ -22,7 +22,7 @@ const ZOOM_STEP = 0.2;
 export default function PdfViewer({ file }: { file: string }) {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(1.5); // Start with a slightly larger scale for better initial quality
   const { toast } = useToast();
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
@@ -48,7 +48,7 @@ export default function PdfViewer({ file }: { file: string }) {
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex-1 w-full overflow-auto">
-        <div className="flex justify-center items-start min-h-full">
+        <div className="flex justify-center items-start p-4 min-h-full">
           <Document
             file={file}
             onLoadSuccess={onDocumentLoadSuccess}
@@ -56,14 +56,12 @@ export default function PdfViewer({ file }: { file: string }) {
             options={options}
             className="flex justify-center"
           >
-            <div className="transition-transform duration-300 ease-in-out" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
-              <Page 
-                pageNumber={pageNumber} 
-                scale={1} 
-                renderTextLayer={true}
-                devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
-              />
-            </div>
+            <Page 
+              pageNumber={pageNumber} 
+              scale={scale} 
+              renderTextLayer={true}
+              devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
+            />
           </Document>
         </div>
       </div>
@@ -107,3 +105,4 @@ export default function PdfViewer({ file }: { file: string }) {
     </div>
   );
 }
+
