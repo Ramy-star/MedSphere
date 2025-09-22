@@ -4,11 +4,10 @@
 import { Folder as FolderIcon } from 'lucide-react';
 import React, { use, useMemo, useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
-import { allSubjects } from '@/lib/file-data';
+import { allSubjects, allSubjectIcons } from '@/lib/file-data';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { FolderGrid } from '@/components/FolderGrid';
-import { allSubjectIcons } from '@/components/subject-card';
 
 
 type SubjectPageProps = {

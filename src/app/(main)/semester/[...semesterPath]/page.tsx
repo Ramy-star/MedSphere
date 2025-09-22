@@ -41,7 +41,7 @@ export default function SemesterPage({ params }: SemesterPageProps) {
             <div key={subject.name} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.15}s`}}>
                 <SubjectCard
                     name={subject.name}
-                    icon={subject.icon}
+                    iconName={subject.iconName}
                     color={subject.color}
                     level={subject.level}
                     semester={subject.semester}
