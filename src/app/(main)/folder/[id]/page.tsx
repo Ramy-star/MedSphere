@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, use, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
@@ -22,8 +22,7 @@ async function getAncestors(id: string): Promise<ContentItem[]> {
 
 
 export default function FolderPage({ params }: { params: { id: string } }) {
-  const resolvedParams = use(params);
-  const { id } = resolvedParams;
+  const { id } = params;
 
   const [folder, setFolder] = useState<ContentItem | null>(null);
   const [ancestors, setAncestors] = useState<ContentItem[]>([]);
@@ -40,7 +39,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     fetchFolderData();
-  }, [fetchFolderData]);
+  }, [id, fetchFolderData]);
   
   return (
     <main className="flex-1 p-6 glass-card">
