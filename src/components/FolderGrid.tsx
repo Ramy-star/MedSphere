@@ -116,7 +116,9 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
+  const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
+  const updateFileRef = useRef<HTMLInputElement>(null);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -146,12 +148,28 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
     setItemToDelete(null);
     await fetchItems();
   };
+  
+  const handleUpdateClick = (item: Content) => {
+    setItemToUpdate(item);
+    updateFileRef.current?.click();
+  };
+
+  const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file && itemToUpdate) {
+      await contentService.updateFileContent(itemToUpdate.id, { name: file.name, size: file.size, mime: file.type });
+      await saveFileToDb(itemToUpdate.id, file);
+      setItemToUpdate(null);
+      await fetchItems();
+    }
+  };
+
 
   if (loading) {
     return (
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-        {[...Array(5)].map((_, i) => (
-          <Skeleton key={i} className="h-28 rounded-xl" />
+      <div className="space-y-2">
+        {[...Array(3)].map((_, i) => (
+          <Skeleton key={i} className="h-14 w-full rounded-xl" />
         ))}
       </div>
     );
@@ -179,7 +197,8 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
 
   return (
     <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+      <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
+      <div className="flex flex-col gap-2">
         <AnimatePresence>
           {items.map((it: Content, index) => (
             <motion.div key={it.id}
@@ -189,6 +208,8 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
               transition={{ duration: 0.15, delay: index * 0.02 }}
             >
               {it.type === 'SUBJECT' ? (
+                // SubjectCard might need a list-view variant too, but for now we focus on files/folders.
+                // Using FolderCard style for subjects for now.
                 <SubjectCard subject={it} />
               ) : it.type === 'FOLDER' ? (
                 <FolderCard 
@@ -202,6 +223,7 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
                   onFileClick={handleFileClick} 
                   onRename={() => setItemToRename(it)}
                   onDelete={() => setItemToDelete(it)}
+                  onUpdate={() => handleUpdateClick(it)}
                 />
               )}
             </motion.div>

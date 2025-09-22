@@ -40,10 +40,13 @@ export const contentService = {
     const children = all.filter(i => (i.parentId ?? null) === (parentId ?? null));
     
     return children.sort((a,b) => {
-      if (a.type === 'FOLDER' && b.type !== 'FOLDER') return -1;
-      if (a.type !== 'FOLDER' && b.type === 'FOLDER') return 1;
-      if (a.type === 'SUBJECT' && b.type !== 'SUBJECT') return -1;
-      if (a.type !== 'SUBJECT' && b.type === 'SUBJECT') return 1;
+      // Subjects and folders come first
+      const aIsContainer = a.type === 'FOLDER' || a.type === 'SUBJECT';
+      const bIsContainer = b.type === 'FOLDER' || b.type === 'SUBJECT';
+
+      if (aIsContainer && !bIsContainer) return -1;
+      if (!aIsContainer && bIsContainer) return 1;
+
       return collator.compare(a.name, b.name);
     });
   },
@@ -76,6 +79,18 @@ export const contentService = {
     };
     all.push(item); 
     saveAll(all); 
+    return item;
+  },
+  
+  async updateFileContent(id: string, file: { name: string, size?: number, mime?: string }) {
+    const all = loadAll();
+    const item = all.find(i => i.id === id && i.type === 'FILE');
+    if (!item) throw new Error('File not found');
+
+    item.name = file.name;
+    item.metadata = { ...item.metadata, size: file.size, mime: file.mime };
+    item.createdAt = new Date().toISOString(); // Also update the date on content update
+    saveAll(all);
     return item;
   },
 

@@ -10,26 +10,32 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
+import { format } from 'date-fns';
+
 
 export function FolderCard({ item, onRename, onDelete }: { item: Content, onRename: () => void, onDelete: () => void }) {
+    const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     
     return (
-        <div className="relative group">
-            <Link href={`/folder/${item.id}`} className="block glass-card p-4 rounded-xl group-hover:bg-white/10 transition-colors h-full">
-                <div className="flex items-start justify-between">
-                    <div className="flex items-center gap-3">
-                        <Folder className="w-6 h-6 text-yellow-400" />
-                        <h3 className="text-lg font-semibold text-white truncate">{item.name}</h3>
-                    </div>
-                </div>
+        <div className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors flex items-center justify-between">
+            <Link href={`/folder/${item.id}`} className="flex items-center gap-3 overflow-hidden flex-1">
+                <Folder className="w-6 h-6 text-yellow-400 shrink-0" />
+                <h3 className="text-sm font-medium text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</h3>
             </Link>
-            <div className="absolute top-2 right-2">
-                <DropdownMenu>
+            
+            <div className="flex items-center gap-4 shrink-0 ml-4">
+                <p className="text-xs text-slate-400 hidden md:block w-24 text-right">
+                    {createdAt}
+                </p>
+                <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
+                    --
+                </p>
+                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="w-8 h-8 text-slate-400 hover:text-white hover:bg-slate-700 opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="w-8 h-8 text-slate-400 hover:text-white hover:bg-slate-700"
                             onClick={(e) => {
                                 e.stopPropagation();
                                 e.preventDefault();
