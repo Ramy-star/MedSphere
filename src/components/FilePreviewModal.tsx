@@ -82,7 +82,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className={cn(
             "flex flex-col p-0 border-slate-700 shadow-lg shadow-blue-500/10 text-white transition-all duration-300 ease-in-out",
             isFullScreen 
-                ? "fixed inset-0 w-full h-full max-w-full max-h-full rounded-none bg-slate-950 z-[9999]" 
+                ? "fixed inset-0 w-screen h-screen max-w-full max-h-full rounded-none bg-slate-950 z-[9999] transform-none top-0 left-0" 
                 : "max-w-4xl h-[80vh] rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950"
         )}
         hideCloseButton={true}

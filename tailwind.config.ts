@@ -83,6 +83,9 @@ export default {
       },
       boxShadow: {
         'neon-accent': '0 0 10px hsl(var(--accent))',
+      },
+      transform: {
+        'none': 'none',
       }
     },
   },
