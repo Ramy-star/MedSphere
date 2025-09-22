@@ -20,18 +20,6 @@ export default function FileExplorerHeader({ currentFolder, ancestors, children 
           </div>
         </div>
       </div>
-
-      {currentFolder && (
-        <div className="mt-3 flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
-            {currentFolder.type === 'FILE' ? <img src={currentFolder.metadata?.icon} className="w-6 h-6" alt={currentFolder.name} /> : <FolderIcon className="w-5 h-5 text-yellow-400" />}
-          </div>
-          <div>
-            <div className="text-lg font-semibold text-white">{currentFolder.name}</div>
-            <div className="text-xs text-slate-400">{currentFolder.type === 'FOLDER' ? 'Folder' : 'File'}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
