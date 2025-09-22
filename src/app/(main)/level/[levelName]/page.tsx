@@ -7,6 +7,7 @@ import { notFound } from 'next/navigation';
 import { use, useEffect, useState } from 'react';
 import { contentService, Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Layers } from 'lucide-react';
 
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
@@ -54,10 +55,16 @@ export default function LevelPage({ params }: { params: { levelName: string } })
   if (!level) {
     notFound();
   }
+  
+  const extendedLevel = {
+      ...level,
+      icon: Layers,
+      iconColor: 'text-blue-400'
+  }
 
   return (
     <main className="flex-1 p-6 glass-card animate-fade-in">
-        <FileExplorerHeader currentFolder={level} ancestors={[]} />
+        <FileExplorerHeader currentFolder={extendedLevel} ancestors={[]} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
             {semesters.map((semester, index) => (
                 <div key={semester.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.15}s` }}>
