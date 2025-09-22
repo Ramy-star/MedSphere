@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight, Minus, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
 
 
 const options = {
@@ -92,7 +92,7 @@ export default function PdfViewer({ file }: { file: string }) {
             <ChevronRight className="w-6 h-6" />
           </Button>
 
-          <div className="flex items-center gap-2 bg-slate-900/80 text-white backdrop-blur-md rounded-full p-2 shadow-lg border border-white/10">
+          <div className="flex items-center gap-2 bg-black/40 text-white rounded-full p-2 shadow-lg">
             <span className="text-sm px-3">Page {pageNumber} / {numPages ?? '--'}</span>
             <div className="h-6 w-px bg-white/20"></div>
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
