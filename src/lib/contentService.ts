@@ -33,6 +33,11 @@ function saveAll(items: Content[]) {
 }
 
 export const contentService = {
+  async getAll() {
+    if (typeof window === 'undefined') return [];
+    return loadAll();
+  },
+  
   async getChildren(parentId: string | null) {
     if (typeof window === 'undefined') return [];
     const all = loadAll();

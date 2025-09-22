@@ -7,17 +7,18 @@ import { search } from '@/ai/flows/search-flow';
 import { RecentFileCard } from '@/components/dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Breadcrumbs } from '@/components/breadcrumbs';
-
-type SearchResult = {
-    name: string;
-    size: string;
-    date: string;
-};
+import { motion } from 'framer-motion';
+import { format } from 'date-fns';
+import { FileCard } from '@/components/FileCard';
+import { FolderCard } from '@/components/FolderCard';
+import { SubjectCard } from '@/components/subject-card';
+import { Content } from '@/lib/contentService';
+import Link from 'next/link';
 
 function SearchResults() {
     const searchParams = useSearchParams();
     const query = searchParams.get('q');
-    const [results, setResults] = useState<SearchResult[]>([]);
+    const [results, setResults] = useState<Content[]>([]);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
@@ -57,18 +58,46 @@ function SearchResults() {
             ) : (
                 <div className="space-y-3">
                     {results.length > 0 ? (
-                        results.map((file, index) => (
+                        results.map((item, index) => (
                              <motion.div
-                                key={`${file.name}-${index}`}
+                                key={`${item.name}-${index}`}
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.15, delay: index * 0.03 }}
                             >
-                                <RecentFileCard
-                                    name={file.name}
-                                    size={file.size}
-                                    date={file.date}
-                                />
+                                {item.type === 'FILE' && (
+                                    <Link href={`/folder/${item.parentId}`}>
+                                        <RecentFileCard
+                                            name={item.name}
+                                            size={item.metadata?.size ? `${(item.metadata.size / 1024).toFixed(1)} KB` : ''}
+                                            date={item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : ''}
+                                        />
+                                    </Link>
+                                )}
+                                {item.type === 'FOLDER' && (
+                                    <FolderCard 
+                                        item={item}
+                                        onRename={() => {}}
+                                        onDelete={() => {}}
+                                    />
+                                )}
+                                {item.type === 'SUBJECT' && (
+                                     <SubjectCard subject={item} />
+                                )}
+                                 {item.type === 'SEMESTER' && (
+                                     <Link href={`/folder/${item.id}`}>
+                                        <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
+                                            <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+                                        </div>
+                                    </Link>
+                                )}
+                                {item.type === 'LEVEL' && (
+                                     <Link href={`/level/${encodeURIComponent(item.name)}`}>
+                                        <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
+                                            <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+                                        </div>
+                                    </Link>
+                                )}
                             </motion.div>
                         ))
                     ) : (

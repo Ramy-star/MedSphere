@@ -5,9 +5,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { folderData, File } from '@/lib/file-data';
-
-const allFilesData = folderData.flatMap(f => f.files);
+import { contentService, Content } from '@/lib/contentService';
 
 const SearchInputSchema = z.object({
   query: z.string(),
@@ -15,9 +13,14 @@ const SearchInputSchema = z.object({
 
 const SearchOutputSchema = z.array(
   z.object({
+    id: z.string(),
     name: z.string(),
-    size: z.string(),
-    date: z.string(),
+    type: z.string(),
+    parentId: z.string().nullable(),
+    metadata: z.any().optional(),
+    createdAt: z.string().optional(),
+    iconName: z.string().optional(),
+    color: z.string().optional(),
   })
 );
 
@@ -26,15 +29,16 @@ type SearchOutput = z.infer<typeof SearchOutputSchema>;
 
 async function searchFiles(input: SearchInput): Promise<SearchOutput> {
   const { query } = input;
+  const allFilesData = await contentService.getAll();
+  
   if (!query) {
-    return allFilesData;
+    return allFilesData.filter(item => item.type === 'FILE');
   }
+
   const lowerCaseQuery = query.toLowerCase();
   
   const searchResults = allFilesData.filter(file => 
-    file.name.toLowerCase().includes(lowerCaseQuery) ||
-    file.size.toLowerCase().includes(lowerCaseQuery) ||
-    file.date.toLowerCase().includes(lowerCaseQuery)
+    file.name.toLowerCase().includes(lowerCaseQuery)
   );
   
   return searchResults;
