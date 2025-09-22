@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useCallback } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
@@ -29,21 +29,22 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   const [ancestors, setAncestors] = useState<ContentItem[]>([]);
 
 
-  useEffect(() => {
-    async function fetchFolderData() {
-      const fetchedFolder = await contentService.getById(id);
-      setFolder(fetchedFolder);
-      if (fetchedFolder) {
-        const fetchedAncestors = await getAncestors(id);
-        setAncestors(fetchedAncestors);
-      }
+  const fetchFolderData = useCallback(async () => {
+    const fetchedFolder = await contentService.getById(id);
+    setFolder(fetchedFolder);
+    if (fetchedFolder) {
+      const fetchedAncestors = await getAncestors(id);
+      setAncestors(fetchedAncestors);
     }
-    fetchFolderData();
   }, [id]);
+
+  useEffect(() => {
+    fetchFolderData();
+  }, [fetchFolderData]);
   
   return (
     <main className="flex-1 p-6 glass-card">
-       <FileExplorerHeader currentFolder={folder ?? undefined} ancestors={ancestors} />
+       <FileExplorerHeader currentFolder={folder ?? undefined} ancestors={ancestors} onContentAdded={fetchFolderData} />
       <FolderGrid parentId={id} />
     </main>
   );

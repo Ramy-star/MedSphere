@@ -108,7 +108,7 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
             <button onClick={() => window.history.back()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowLeft size={16} /></button>
             <button onClick={() => window.history.forward()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowRight size={16} /></button>
           </div>
-          {currentFolder && onContentAdded && (
+           {currentFolder && onContentAdded && (
             <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />
           )}
         </div>
