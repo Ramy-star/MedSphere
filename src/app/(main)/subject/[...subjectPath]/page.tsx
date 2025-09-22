@@ -1,7 +1,7 @@
 
 'use client';
 
-import { HomeIcon, ChevronRight, Folder as FolderIcon, Plus } from 'lucide-react';
+import { HomeIcon, ChevronRight, Folder as FolderIcon, Plus, Folder } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
@@ -14,6 +14,9 @@ type SubjectPageProps = {
     subjectPath: string[];
   };
 };
+
+type ContentItem = File | { name: string; type: 'folder' };
+
 
 const Breadcrumbs = ({ level, semester, subject }: { level: string; semester: string, subject: string }) => (
   <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
@@ -37,18 +40,21 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   const { subjectPath } = resolvedParams;
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
-
+  
   const subject = useMemo(() => {
     return allSubjects.find(s => s.name === subjectName && s.level === levelName && s.semester === semesterName);
   }, [subjectName, levelName, semesterName]);
 
+  const [content, setContent] = useState<ContentItem[]>([]);
+
   if (!subject) {
     notFound();
   }
-  
-  // For now, content is empty. This will be populated later.
-  const content: (File | {name: string, type: 'folder'})[] = [];
 
+  const handleAddFolder = (folderName: string) => {
+    setContent(prevContent => [...prevContent, { name: folderName, type: 'folder' }]);
+  };
+  
   const { icon: SubjectIcon, color, name } = subject;
 
   return (
@@ -61,12 +67,31 @@ export default function SubjectPage({ params }: SubjectPageProps) {
             </div>
             <h1 className="text-2xl font-bold text-white">{name}</h1>
         </div>
-        <AddContentMenu showNewFolderDialog={showNewFolderDialog} setShowNewFolderDialog={setShowNewFolderDialog} />
+        <AddContentMenu 
+          showNewFolderDialog={showNewFolderDialog} 
+          setShowNewFolderDialog={setShowNewFolderDialog}
+          onAddFolder={handleAddFolder}
+        />
         </div>
 
         {content.length > 0 ? (
-        <div className="space-y-3" style={{ animationDelay: '0.15s' }}>
-            {/* TODO: Render files and folders here */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" style={{ animationDelay: '0.15s' }}>
+            {content.map((item, index) => {
+              if ('type' in item && item.type === 'folder') {
+                return (
+                  <Link key={index} href={`/folder/${encodeURIComponent(item.name)}`}>
+                    <div className="glass-card p-4 rounded-xl group hover:bg-white/10 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <Folder className="w-6 h-6 text-yellow-400" />
+                        <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+                      </div>
+                    </div>
+                  </Link>
+                )
+              }
+              // TODO: Render files here
+              return null;
+            })}
         </div>
         ) : (
         <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl" style={{ animationDelay: '0.15s' }}>
@@ -74,7 +99,11 @@ export default function SubjectPage({ params }: SubjectPageProps) {
             <h3 className="mt-4 text-lg font-semibold text-white">This subject is empty</h3>
             <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
             <div className="mt-6">
-              <AddContentMenu showNewFolderDialog={showNewFolderDialog} setShowNewFolderDialog={setShowNewFolderDialog} />
+              <AddContentMenu 
+                showNewFolderDialog={showNewFolderDialog} 
+                setShowNewFolderDialog={setShowNewFolderDialog}
+                onAddFolder={handleAddFolder}
+              />
             </div>
         </div>
         )}

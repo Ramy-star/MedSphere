@@ -30,9 +30,10 @@ const formSchema = z.object({
 type NewFolderDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onAddFolder: (folderName: string) => void;
 };
 
-export function NewFolderDialog({ open, onOpenChange }: NewFolderDialogProps) {
+export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDialogProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -41,7 +42,7 @@ export function NewFolderDialog({ open, onOpenChange }: NewFolderDialogProps) {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log('Creating new folder:', values.folderName);
+    onAddFolder(values.folderName);
     onOpenChange(false);
     form.reset();
   }

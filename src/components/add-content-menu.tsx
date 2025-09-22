@@ -13,9 +13,10 @@ import { NewFolderDialog } from './new-folder-dialog';
 type AddContentMenuProps = {
   showNewFolderDialog: boolean;
   setShowNewFolderDialog: (show: boolean) => void;
+  onAddFolder: (folderName: string) => void;
 }
 
-export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog }: AddContentMenuProps) {
+export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog, onAddFolder }: AddContentMenuProps) {
 
   const menuItems = [
       {
@@ -58,7 +59,7 @@ export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog }: 
           </div>
         </PopoverContent>
       </Popover>
-      <NewFolderDialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog} />
+      <NewFolderDialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog} onAddFolder={onAddFolder} />
     </>
   );
 }
