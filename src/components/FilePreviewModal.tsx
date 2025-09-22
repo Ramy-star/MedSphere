@@ -96,8 +96,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
         className={cn(
-            "fixed inset-0 w-screen h-screen max-w-full max-h-full rounded-none p-0 flex flex-col",
-            "bg-slate-900/80 backdrop-blur-sm"
+            "max-w-none w-screen h-screen rounded-none p-0 flex flex-col",
+            "bg-slate-900/80 backdrop-blur-sm border-0"
         )}
         hideCloseButton={true}
       >
@@ -158,7 +158,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
            <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />
         </div>
 
-         {/* Footer could go here if needed for PDF controls etc. */}
       </DialogContent>
     </Dialog>
   );
