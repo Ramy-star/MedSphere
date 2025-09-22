@@ -20,10 +20,11 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-import { Folder as FolderIcon, FolderPlus, Plus, Upload } from 'lucide-react';
+import { Folder as FolderIcon, FolderPlus, Plus, Upload, UploadCloud } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { NewFolderDialog } from './new-folder-dialog';
 import { saveFile as saveFileToDb } from '@/lib/indexedDBService';
+import { cn } from '@/lib/utils';
 
 
 type AddContentMenuProps = {
@@ -110,15 +111,30 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
   );
 }
 
+function DropZone({ isVisible }: { isVisible: boolean }) {
+  if (!isVisible) return null;
+  return (
+    <div className="absolute inset-0 bg-blue-900/10 backdrop-blur-sm flex items-center justify-center border-4 border-dashed border-blue-500 rounded-2xl z-10 pointer-events-none">
+        <div className="text-center text-white">
+            <UploadCloud className="mx-auto h-16 w-16 mb-4" />
+            <h3 className="text-2xl font-bold">Drop files to upload</h3>
+            <p className="text-blue-200">Release to start uploading your files</p>
+        </div>
+    </div>
+  );
+}
 
-export function FolderGrid({ parentId }: { parentId: string | null }) {
+
+export function FolderGrid({ parentId, onContentAdded }: { parentId: string | null, onContentAdded: () => void }) {
   const [items, setItems] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
   const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
+  const [isDraggingOver, setIsDraggingOver] = useState(false);
   const updateFileRef = useRef<HTMLInputElement>(null);
+  const dropZoneRef = useRef<HTMLDivElement>(null);
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -164,77 +180,120 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
     }
   };
 
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDraggingOver(true);
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Check if the leave event is heading outside the drop zone area
+    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+        setIsDraggingOver(false);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDraggingOver(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      setLoading(true);
+      for (const file of Array.from(files)) {
+        const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
+        await saveFileToDb(newFileItem.id, file);
+      }
+      await fetchItems(); // This already sets loading to false
+    }
+  };
+
   const isSubjectView = items.length > 0 && items.every(it => it.type === 'SUBJECT');
-
-  if (loading) {
-    const skeletonCount = isSubjectView ? 4 : 3;
-    const skeletonClass = isSubjectView ? "h-28" : "h-14";
-    return (
-      <div className={isSubjectView ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2"}>
-        {[...Array(skeletonCount)].map((_, i) => (
-          <Skeleton key={i} className={`${skeletonClass} w-full rounded-xl`} />
-        ))}
-      </div>
-    );
-  }
-
-  if (items.length === 0) {
-    return (
-      <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in flex flex-col items-center justify-center" style={{ animationDelay: '0.15s' }}>
-          <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
-          <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
-          <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
-          <AddContentMenu 
-            parentId={parentId}
-            onContentAdded={fetchItems}
-            trigger={
-              <Button className="mt-6 rounded-xl">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Content
-              </Button>
-            }
-          />
-      </div>
-    )
-  }
 
   const containerClasses = isSubjectView 
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
     : "flex flex-col gap-2";
 
   return (
-    <div>
+    <div 
+        ref={dropZoneRef}
+        onDragEnter={handleDragEnter}
+        onDragLeave={handleDragLeave}
+        onDragOver={handleDragOver}
+        onDrop={handleDrop}
+        className={cn("h-full", isDraggingOver && "opacity-50")}
+    >
+      <DropZone isVisible={isDraggingOver} />
       <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
-      <div className={containerClasses}>
-        <AnimatePresence>
-          {items.map((it: Content, index) => (
-            <motion.div key={it.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 8 }}
-              transition={{ duration: 0.15, delay: index * 0.02 }}
-            >
-              {it.type === 'SUBJECT' ? (
-                <SubjectCard subject={it} />
-              ) : it.type === 'FOLDER' ? (
-                <FolderCard 
-                  item={it} 
-                  onRename={() => setItemToRename(it)}
-                  onDelete={() => setItemToDelete(it)}
-                />
-              ) : (
-                <FileCard 
-                  item={it} 
-                  onFileClick={handleFileClick} 
-                  onRename={() => setItemToRename(it)}
-                  onDelete={() => setItemToDelete(it)}
-                  onUpdate={() => handleUpdateClick(it)}
-                />
-              )}
-            </motion.div>
+      
+      {loading && (
+        <div className={isSubjectView ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2"}>
+          {[...Array(isSubjectView ? 4 : 3)].map((_, i) => (
+            <Skeleton key={i} className={`${isSubjectView ? "h-28" : "h-14"} w-full rounded-xl`} />
           ))}
-        </AnimatePresence>
-      </div>
+        </div>
+      )}
+
+      {!loading && items.length === 0 && (
+         <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in flex flex-col items-center justify-center h-full" style={{ animationDelay: '0.15s' }}>
+              <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
+              <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
+              <p className="mt-2 text-sm text-slate-400">Drag and drop files here, or use the button to add content.</p>
+              <AddContentMenu 
+                parentId={parentId}
+                onContentAdded={onContentAdded}
+                trigger={
+                  <Button className="mt-6 rounded-xl">
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Content
+                  </Button>
+                }
+              />
+          </div>
+      )}
+      
+      {!loading && items.length > 0 && (
+          <div className={containerClasses}>
+            <AnimatePresence>
+              {items.map((it: Content, index) => (
+                <motion.div key={it.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: 8 }}
+                  transition={{ duration: 0.15, delay: index * 0.02 }}
+                >
+                  {it.type === 'SUBJECT' ? (
+                    <SubjectCard subject={it} />
+                  ) : it.type === 'FOLDER' ? (
+                    <FolderCard 
+                      item={it} 
+                      onRename={() => setItemToRename(it)}
+                      onDelete={() => setItemToDelete(it)}
+                    />
+                  ) : (
+                    <FileCard 
+                      item={it} 
+                      onFileClick={handleFileClick} 
+                      onRename={() => setItemToRename(it)}
+                      onDelete={() => setItemToDelete(it)}
+                      onUpdate={() => handleUpdateClick(it)}
+                    />
+                  )}
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+      )}
       
       <FilePreviewModal
         item={previewFile}
