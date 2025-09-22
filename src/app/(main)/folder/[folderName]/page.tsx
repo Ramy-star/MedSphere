@@ -7,7 +7,7 @@ import {
   Newspaper as ContentIcon,
   HomeIcon,
 } from 'lucide-react';
-import { useState } from 'react';
+import React from 'react';
 import { notFound } from 'next/navigation';
 import { FileListItem } from '@/components/file-list-item';
 import Link from 'next/link';
@@ -38,11 +38,34 @@ const Breadcrumbs = ({ folderName }: { folderName: string }) => (
 );
 
 export default function FolderPage({ params }: FolderPageProps) {
-  const folderName = decodeURIComponent(params.folderName);
+  const resolvedParams = React.use(params);
+  const folderName = decodeURIComponent(resolvedParams.folderName);
   const folder = folderData.find((f) => f.name === folderName);
 
   if (!folder) {
-    notFound();
+    // This case will be hit for newly created folders that don't exist in mock data.
+    // We can create a placeholder folder object.
+    const newFolder = {
+        name: folderName,
+        files: [],
+        icon: ContentIcon,
+        color: 'text-gray-400'
+    };
+
+    return (
+        <main className="flex-1 p-6 glass-card">
+            <Breadcrumbs folderName={newFolder.name} />
+            <div className="animate-fade-in" style={{ animationDelay: '0.1s' }}>
+            <h2 className="text-lg font-semibold text-slate-300 mb-4 flex items-center gap-2">
+                <ContentIcon className="w-6 h-6 text-blue-400" />
+                <span>Content</span>
+            </h2>
+            </div>
+            <div className="space-y-3">
+                <p className="text-slate-400 animate-fade-in" style={{ animationDelay: '0.15s' }}>No content in this folder.</p>
+            </div>
+        </main>
+    );
   }
 
   return (
