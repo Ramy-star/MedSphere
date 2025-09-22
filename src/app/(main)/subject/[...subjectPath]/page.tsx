@@ -58,16 +58,11 @@ export default function SubjectPage({ params }: SubjectPageProps) {
 
   return (
     <main className="flex-1 p-6 glass-card animate-fade-in">
-        <FileExplorerHeader currentFolder={subjectRootFolder ?? undefined} onContentAdded={getOrCreateSubjectFolder} />
-        <div className="flex items-center justify-between mb-6" style={{ animationDelay: '0.1s' }}>
-        <div className="flex items-center gap-3">
-            <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
-            <SubjectIcon className={`w-7 h-7 ${color}`} />
-            </div>
-            <h1 className="text-2xl font-bold text-white">{name}</h1>
-        </div>
-        </div>
-
+        <FileExplorerHeader 
+            currentFolder={subjectRootFolder ? { ...subjectRootFolder, icon: SubjectIcon, iconColor: color } : undefined} 
+            onContentAdded={getOrCreateSubjectFolder} 
+        />
+        
         {subjectRootFolder ? (
           <FolderGrid 
             parentId={subjectRootFolder.id} 

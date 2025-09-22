@@ -6,10 +6,10 @@ import type { ContentItem } from '@/lib/contentService';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { FolderPlus, Upload } from 'lucide-react';
-import { NewFolderDialog } from './new-folder-dialog';
 import React, { useRef, useState } from 'react';
 import { saveFile as saveFileToDb } from '@/lib/indexedDBService';
 import { contentService } from '@/lib/contentService';
+import { LucideIcon } from 'lucide-react';
 
 
 type AddContentMenuProps = {
@@ -96,9 +96,11 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
   );
 }
 
+type ExtendedContentItem = ContentItem & { icon?: LucideIcon, iconColor?: string };
 
-export default function FileExplorerHeader({ currentFolder, ancestors, onContentAdded }: { currentFolder?: ContentItem, ancestors?: ContentItem[], onContentAdded?: () => void }) {
-  
+export default function FileExplorerHeader({ currentFolder, ancestors, onContentAdded }: { currentFolder?: ExtendedContentItem, ancestors?: ContentItem[], onContentAdded?: () => void }) {
+  const CurrentIcon = currentFolder?.icon || Folder;
+  const iconColor = currentFolder?.iconColor || 'text-yellow-400';
   return (
     <div className="mb-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -112,7 +114,9 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
       <div className="flex items-center justify-between min-h-[40px]">
         {currentFolder && (
              <div className="flex items-center gap-3">
-                <Folder className="w-7 h-7 text-yellow-400" />
+                <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
+                    <CurrentIcon className={`w-7 h-7 ${iconColor}`} />
+                </div>
                 <h1 className="text-2xl font-bold text-white">
                     {currentFolder?.name}
                 </h1>
