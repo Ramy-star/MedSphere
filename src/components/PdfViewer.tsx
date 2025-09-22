@@ -23,25 +23,14 @@ const ZOOM_STEP = 0.05;
 export default function PdfViewer({ file }: { file: string }) {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1);
+  const [scale, setScale] = useState(0.6);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
 
 
-  async function onDocumentLoadSuccess(pdf: any): Promise<void> {
-    setNumPages(pdf.numPages);
+  function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
+    setNumPages(nextNumPages);
     setPageNumber(1);
-
-    if (containerRef.current) {
-        const firstPage = await pdf.getPage(1);
-        const containerWidth = containerRef.current.clientWidth;
-        const viewport = firstPage.getViewport({ scale: 1 });
-        
-        // Add some padding
-        const calculatedScale = (containerWidth - 32) / viewport.width;
-
-        setScale(Math.max(MIN_ZOOM, Math.min(calculatedScale, MAX_ZOOM)));
-    }
   }
 
   function onDocumentLoadError(error: Error) {
@@ -62,7 +51,7 @@ export default function PdfViewer({ file }: { file: string }) {
   return (
     <div className="w-full h-full flex flex-col" ref={containerRef}>
       <div className="flex-1 w-full overflow-auto">
-        <div className="flex justify-center items-center p-4 min-h-full">
+        <div className="flex justify-start items-center p-4 min-h-full">
             <Document
               file={file}
               onLoadSuccess={onDocumentLoadSuccess}
@@ -86,9 +75,17 @@ export default function PdfViewer({ file }: { file: string }) {
 
       {numPages && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-           <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
+           <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg backdrop-blur-md">
+            
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => setPageNumber(p => Math.max(p - 1, 1))} disabled={pageNumber <= 1}>
+                <span className="sr-only">Previous Page</span>
+            </Button>
             
             <span className="text-sm px-3 tabular-nums">Page {pageNumber} / {numPages ?? '--'}</span>
+            
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => setPageNumber(p => Math.min(p + 1, numPages))} disabled={pageNumber >= numPages}>
+                <span className="sr-only">Next Page</span>
+            </Button>
 
             <div className="h-6 w-px bg-white/20"></div>
             
