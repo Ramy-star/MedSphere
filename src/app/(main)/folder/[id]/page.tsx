@@ -18,21 +18,23 @@ async function getAncestors(id: string): Promise<ContentItem[]> {
         if (current.parentId) {
             current = await contentService.getById(current.parentId);
         } else {
-            // Check if this is a subject root folder
             const subjectRootPrefix = 'subject-root-';
             if (current.id.startsWith(subjectRootPrefix)) {
                 const subjectId = current.id.substring(subjectRootPrefix.length);
                 const [subjectName, semesterName] = subjectId.split('-');
                 const subject = allSubjects.find(s => s.name.replace(/\s+/g, '') === subjectName && s.semester.replace(/\s+/g, '') === semesterName);
                 if (subject) {
-                    // Manually construct the breadcrumbs for subjects
-                    ancestors.unshift({ id: 'level', name: subject.level, type: 'LINK' });
-                    ancestors.unshift({ id: 'semester', name: subject.semester, type: 'LINK' });
-                    ancestors.unshift({ id: 'subject', name: subject.name, type: 'LINK' });
+                    const subjectFolder = await contentService.getById(`subject-root-${subject.name.replace(/\s+/g, '-')}-${subject.semester.replace(/\s+/g, '-')}`);
+                    if(subjectFolder) {
+                        ancestors.splice(1, 0, 
+                            { id: 'level', name: subject.level, type: 'LINK' },
+                            { id: 'semester', name: subject.semester, type: 'LINK' },
+                            { id: 'subject-folder', name: subject.name, type: 'LINK' }
+                        );
+                    }
                 }
-
             }
-            break;
+            break; 
         }
     }
     return ancestors;
