@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 
-export function FileCard({ item, onFileClick, onRename, onDelete }: { item: Content, onFileClick: (item: Content) => void, onRename: () => void, onDelete: () to void }) {
+export function FileCard({ item, onFileClick, onRename, onDelete }: { item: Content, onFileClick: (item: Content) => void, onRename: () => void, onDelete: () => void }) {
     return (
       <DropdownMenu>
         <div 
