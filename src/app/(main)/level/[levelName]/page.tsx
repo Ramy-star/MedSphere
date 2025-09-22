@@ -4,6 +4,7 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { use } from 'react';
 
 const levels: { [key: string]: string[] } = {
   'Level 1': ['Semester 1', 'Semester 2'],
@@ -14,7 +15,8 @@ const levels: { [key: string]: string[] } = {
 };
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
-  const levelName = decodeURIComponent(params.levelName);
+  const resolvedParams = use(params);
+  const levelName = decodeURIComponent(resolvedParams.levelName);
   const semesters = levels[levelName];
 
   if (!semesters) {

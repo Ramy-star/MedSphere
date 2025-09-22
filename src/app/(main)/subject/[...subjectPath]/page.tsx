@@ -7,8 +7,7 @@ import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
 import { AddContentMenu } from '@/components/add-content-menu';
-import { NavHistory } from '@/components/nav-history';
-import { Breadcrumbs } from '@/components/breadcrumbs';
+import FileExplorerHeader from '@/components/FileExplorerHeader';
 
 type SubjectPageProps = {
   params: {
@@ -61,10 +60,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
 
   return (
     <main className="flex-1 p-6 glass-card animate-fade-in">
-        <div className="flex items-center justify-between mb-6">
-            <Breadcrumbs />
-            <NavHistory />
-        </div>
+        <FileExplorerHeader />
         <div className="flex items-center justify-between mb-6" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">
             <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
