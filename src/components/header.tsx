@@ -1,33 +1,34 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { GraduationCap, Search } from 'lucide-react';
-import { useState } from 'react';
-
-// This is a bit of a hack to pass the search handler from the page to the header.
-// A more robust solution would use React Context or a state management library.
-declare global {
-  interface Window {
-    __handleSearch?: (query: string) => void;
-  }
-}
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useDebounce } from 'use-debounce';
 
 
 export const Header = () => {
-  const [query, setQuery] = useState('');
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [query, setQuery] = useState(searchParams.get('q') || '');
+  const [debouncedQuery] = useDebounce(query, 300);
 
-  const handleSearch = () => {
-    if (window.__handleSearch) {
-      window.__handleSearch(query);
+  useEffect(() => {
+    if (debouncedQuery) {
+      router.push(`/search?q=${debouncedQuery}`);
+    } else {
+        // Optional: If you want to navigate away from search page when query is cleared
+        // Check if current page is search page before pushing to home
+        // if (pathname === '/search') router.push('/');
     }
-  };
+  }, [debouncedQuery, router]);
+  
+  useEffect(() => {
+    setQuery(searchParams.get('q') || '');
+  }, [searchParams]);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
-      handleSearch();
-    }
-  };
 
   return (
     <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-10 py-3">
@@ -45,15 +46,13 @@ export const Header = () => {
         <div className="flex items-center gap-4 w-full max-w-md">
           <div className="relative w-full">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400 cursor-pointer"
-              onClick={handleSearch}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
             />
             <Input
               placeholder="Search files, subjects, or content..."
               className="pl-10 bg-slate-800/60 border-slate-700 rounded-full"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
             />
           </div>
         </div>

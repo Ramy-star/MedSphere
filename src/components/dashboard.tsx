@@ -1,7 +1,9 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Download, Star, File as FileIcon, Folder, Users, Book, FileText, TestTube2, Clock, Presentation } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 export const StatCard = ({
   icon: Icon,
