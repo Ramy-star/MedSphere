@@ -93,7 +93,7 @@ export default function PdfViewer({ file }: { file: string }) {
             <ChevronRight className="w-6 h-6" />
           </Button>
 
-          <div className="flex items-center gap-2 bg-black/40 text-white rounded-full p-2 shadow-lg">
+          <div className="flex items-center gap-2 bg-black/50 text-white rounded-full p-2 shadow-lg">
             <span className="text-sm px-3">Page {pageNumber} / {numPages ?? '--'}</span>
             <div className="h-6 w-px bg-white/20"></div>
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
