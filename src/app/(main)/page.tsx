@@ -17,9 +17,9 @@ export default function HomePage() {
   return (
     <main className="flex-1 p-6 space-y-6 animate-fade-in flex flex-col">
         <Breadcrumbs />
-        <div className="flex-1 flex flex-col items-center justify-between pt-12 pb-24">
+        <div className="flex-1 flex flex-col items-center justify-between pt-12 pb-16">
             <div className="w-full max-w-4xl text-center">
-                <h2 className="text-2xl font-bold text-white mb-6">Your Study Levels</h2>
+                <h2 className="text-4xl font-bold mb-8 bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">Your Study Levels</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                     {levels.map((level, index) => (
                         <div key={level.name} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.25}s` }}>
