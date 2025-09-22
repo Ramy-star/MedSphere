@@ -15,9 +15,9 @@ const levels = [
 export default function HomePage() {
 
   return (
-    <main className="flex-1 p-6 space-y-12 animate-fade-in flex flex-col">
+    <main className="flex-1 p-6 space-y-6 animate-fade-in flex flex-col">
         <Breadcrumbs />
-        <div className="flex-1 flex flex-col items-center justify-center space-y-12">
+        <div className="flex-1 flex flex-col items-center justify-center space-y-10">
             <div className="w-full max-w-4xl text-center">
                 <h2 className="text-2xl font-bold text-white mb-6">Your Study Levels</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -32,13 +32,16 @@ export default function HomePage() {
                     ))}
                 </div>
             </div>
-            <blockquote className="animate-fade-in border-l-4 border-blue-400 pl-4" style={{ animationDelay: '0.5s' }}>
-                <p className="text-lg text-center text-slate-300 italic max-w-2xl">
-                    "The good doctor treats the disease; the great doctor treats the patient who has the disease."
-                </p>
-                <cite className="block text-right text-slate-400 mt-2">- William Osler</cite>
-            </blockquote>
+            <div className="animate-fade-in border border-blue-400/30 bg-blue-900/10 rounded-xl p-6" style={{ animationDelay: '0.5s' }}>
+                <blockquote className="text-center">
+                    <p className="text-lg text-slate-300 italic max-w-2xl">
+                        "The good doctor treats the disease; the great doctor treats the patient who has the disease."
+                    </p>
+                    <cite className="block text-right text-slate-400 mt-4 pr-4">- William Osler</cite>
+                </blockquote>
+            </div>
         </div>
     </main>
   );
 }
+
