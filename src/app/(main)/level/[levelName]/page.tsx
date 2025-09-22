@@ -25,7 +25,7 @@ export default function LevelPage({ params }: { params: { levelName: string } })
     <main className="flex-1 p-6 glass-card animate-fade-in">
         <FileExplorerHeader />
         <div className="flex items-center justify-between mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
-          <h1 className="text-2xl font-bold text-white">{levelName} Semesters</h1>
+          <h1 className="text-2xl font-bold text-white">{levelName}</h1>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             {semesters.map((semester, index) => (
