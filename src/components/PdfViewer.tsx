@@ -5,7 +5,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Button } from './ui/button';
-import { ChevronLeft, ChevronRight, Minus, Plus, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 pdfjs.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -93,14 +93,11 @@ export default function PdfViewer({ file }: { file: string }) {
             <ChevronRight className="w-6 h-6" />
           </Button>
 
-          <div className="flex items-center gap-2 bg-black/60 text-white rounded-full p-2 shadow-lg">
+          <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
             <span className="text-sm px-3">Page {pageNumber} / {numPages ?? '--'}</span>
             <div className="h-6 w-px bg-white/20"></div>
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
               <Minus className="w-4 h-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" disabled>
-              <Search className="w-4 h-4" />
             </Button>
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
               <Plus className="w-4 h-4" />
