@@ -41,6 +41,12 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   useEffect(() => {
     async function findActivePath() {
+        if (pathname === '/') {
+            setActivePath({ levelId: '', semesterId: '' });
+            setOpenLevelId('');
+            return;
+        }
+
         const pathParts = pathname.split('/');
         
         if (pathParts[1] === 'folder' && pathParts.length >= 3) {
@@ -70,7 +76,6 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
             }
         } else {
              setActivePath({ levelId: '', semesterId: '' });
-             // setOpenLevelId(''); // This was commented out in a previous step, keeping it that way.
         }
     }
     findActivePath();
