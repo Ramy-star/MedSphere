@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { Minus, Plus, ZoomIn } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
 
 const options = {
@@ -42,11 +42,8 @@ export default function PdfViewer({ file }: { file: string }) {
   
   const zoomIn = () => setScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
-
-  const goToPrevPage = () => setPageNumber(prev => Math.max(1, prev - 1));
-  const goToNextPage = () => setPageNumber(prev => Math.min(numPages!, prev + 1));
   
-  const devicePixelRatio = useMemo(() => typeof window !== 'undefined' ? window.devicePixelRatio : 1, []);
+  const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
 
   return (
