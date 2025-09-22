@@ -138,7 +138,7 @@ function SearchResults() {
     return (
         <main className="flex-1 p-6 space-y-6 animate-fade-in flex flex-col">
             <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
-            <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: 'root' }} ancestors={[{ id: 'root', name: 'Home', type: 'FOLDER', parentId: null }]} />
+            <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: null }} ancestors={[]} />
 
             <h2 className="text-2xl font-bold text-white">
                 {loading && !results.length ? 'Searching...' : `Found ${results.length} results for "${query}"`}
