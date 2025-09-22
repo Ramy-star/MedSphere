@@ -18,7 +18,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   }
   
   if (mime === 'application/pdf') {
-    return <iframe src={url} className="w-full h-full border-0 rounded-lg shadow-2xl" title={itemName} />;
+    return <iframe src={`${url}#toolbar=0`} className="w-full h-full border-0 rounded-lg shadow-2xl" title={itemName} />;
   }
   
   if (mime.startsWith('audio/')) {
