@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, use } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
@@ -22,7 +22,7 @@ async function getAncestors(id: string): Promise<ContentItem[]> {
 
 
 export default function FolderPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const { id } = use(params);
 
   const [folder, setFolder] = useState<ContentItem | null>(null);
   const [ancestors, setAncestors] = useState<ContentItem[]>([]);
