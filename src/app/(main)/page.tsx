@@ -17,7 +17,7 @@ export default function HomePage() {
   return (
     <main className="flex-1 p-6 space-y-6 animate-fade-in flex flex-col">
         <Breadcrumbs />
-        <div className="flex-1 flex flex-col items-center justify-start pt-12 space-y-8">
+        <div className="flex-1 flex flex-col items-center justify-between pt-12">
             <div className="w-full max-w-4xl text-center">
                 <h2 className="text-2xl font-bold text-white mb-6">Your Study Levels</h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
@@ -32,7 +32,7 @@ export default function HomePage() {
                     ))}
                 </div>
             </div>
-            <div className="mt-24 animate-fade-in border border-blue-400/30 bg-blue-900/10 rounded-xl p-6" style={{ animationDelay: '0.5s' }}>
+            <div className="animate-fade-in border border-blue-400/30 bg-blue-900/10 rounded-xl p-6" style={{ animationDelay: '0.5s' }}>
                 <blockquote className="text-center">
                     <p className="text-lg text-slate-300 italic max-w-2xl">
                         "The good doctor treats the disease; the great doctor treats the patient who has the disease."
