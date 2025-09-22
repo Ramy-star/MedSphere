@@ -95,13 +95,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className={cn(
-            "max-w-none w-screen h-screen rounded-none p-0 flex flex-col",
-            "bg-slate-900/80 backdrop-blur-sm border-0"
-        )}
+        className="max-w-none w-screen h-screen rounded-none p-0 flex flex-col bg-slate-900/80 backdrop-blur-sm border-0"
         hideCloseButton={true}
       >
-        <DialogHeader className='sr-only'>
+        <DialogHeader className='hidden'>
             <DialogTitle>File Preview: {item.name}</DialogTitle>
             <DialogDescription>Content of the file {item.name}.</DialogDescription>
         </DialogHeader>

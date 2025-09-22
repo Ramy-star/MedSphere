@@ -1,6 +1,10 @@
 
 'use client';
 
+import dynamic from 'next/dynamic';
+
+const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false });
+
 export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName: string }) {
   
   if (url === '#') {
@@ -18,7 +22,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   }
   
   if (mime === 'application/pdf') {
-    return <iframe src={`${url}#toolbar=0`} className="w-full h-full border-0 rounded-lg shadow-2xl" title={itemName} />;
+    return <PdfViewer file={url} />;
   }
   
   if (mime.startsWith('audio/')) {
