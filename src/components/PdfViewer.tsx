@@ -23,7 +23,7 @@ const ZOOM_STEP = 0.05;
 export default function PdfViewer({ file }: { file: string }) {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(0.6);
+  const [scale, setScale] = useState(1);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   
