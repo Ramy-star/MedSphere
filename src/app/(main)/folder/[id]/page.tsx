@@ -67,9 +67,9 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <main className="flex-1 p-6 glass-card flex flex-col">
+    <main className="flex-1 p-6 glass-card flex flex-col h-full">
        <FileExplorerHeader currentFolder={extendedCurrent} ancestors={ancestors} onContentAdded={fetchFolderData} />
-       <div className="relative flex-1">
+       <div className="relative flex-1 overflow-y-auto">
           <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
        </div>
     </main>
