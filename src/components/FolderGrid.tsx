@@ -5,24 +5,53 @@ import { contentService, ContentItem } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
 import { FileCard } from './FileCard';
 import { FilePreviewModal } from './FilePreviewModal';
+import { RenameDialog } from './RenameDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+
 
 export function FolderGrid({ parentId }: { parentId: string | null }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<ContentItem | null>(null);
+  const [itemToRename, setItemToRename] = useState<ContentItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<ContentItem | null>(null);
+
+  const fetchItems = async () => {
+    setLoading(true);
+    const fetchedItems = await contentService.getChildren(parentId);
+    setItems(fetchedItems);
+    setLoading(false);
+  };
 
   useEffect(() => {
-    async function fetchItems() {
-      setLoading(true);
-      const fetchedItems = await contentService.getChildren(parentId);
-      setItems(fetchedItems);
-      setLoading(false);
-    }
     fetchItems();
   }, [parentId]);
 
   const handleFileClick = (file: ContentItem) => {
     setPreviewFile(file);
+  };
+
+  const handleRename = async (newName: string) => {
+    if (!itemToRename) return;
+    await contentService.rename(itemToRename.id, newName);
+    setItemToRename(null);
+    await fetchItems();
+  };
+  
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    await contentService.delete(itemToDelete.id);
+    setItemToDelete(null);
+    await fetchItems();
   };
 
   if (loading && items.length === 0) return <div className="text-center text-slate-400">Loading...</div>;
@@ -39,22 +68,49 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
               transition={{ duration: 0.15, delay: index * 0.02 }}
             >
               {it.type === 'FOLDER' ? (
-                <FolderCard item={it} />
+                <FolderCard 
+                  item={it} 
+                  onRename={() => setItemToRename(it)}
+                  onDelete={() => setItemToDelete(it)}
+                />
               ) : (
-                <FileCard item={it} onFileClick={handleFileClick} />
+                <FileCard 
+                  item={it} 
+                  onFileClick={handleFileClick} 
+                  onRename={() => setItemToRename(it)}
+                  onDelete={() => setItemToDelete(it)}
+                />
               )}
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
+      
       <FilePreviewModal
         item={previewFile}
-        onOpenChange={(isOpen) => {
-          if (!isOpen) {
-            setPreviewFile(null);
-          }
-        }}
+        onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
       />
+
+      <RenameDialog 
+        item={itemToRename} 
+        onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
+        onRename={handleRename}
+      />
+
+      <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
+        <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+          <AlertDialogHeader className="p-6 pb-0">
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{itemToDelete?.name}" and all its contents. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="p-6 pt-4">
+            <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
+            <AlertDialogAction asChild><Button variant="destructive" onClick={handleDelete}>Delete</Button></AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
