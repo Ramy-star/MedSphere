@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight, Minus, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-pdfjs.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+pdfjs.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
 
 const options = {
