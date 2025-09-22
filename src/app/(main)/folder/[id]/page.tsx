@@ -11,6 +11,12 @@ async function getAncestors(id: string): Promise<ContentItem[]> {
     if (id === 'root') return [];
 
     let current = await contentService.getById(id);
+    
+    // Add the current folder itself to the ancestors list to be displayed in breadcrumbs
+    if (current) {
+        ancestors.unshift(current);
+    }
+
     while (current && current.parentId && current.parentId !== 'root') {
         current = await contentService.getById(current.parentId);
         if (current) {

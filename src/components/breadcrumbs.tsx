@@ -19,8 +19,7 @@ export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
 
   // If ancestors are provided (from folder pages), use them to build the path
   if (ancestors && ancestors.length > 0) {
-     const homeAncestor = ancestors[0]?.id === 'root' ? ancestors[0] : null;
-     const pathToShow = homeAncestor ? ancestors.slice(1) : ancestors;
+     const pathToShow = ancestors;
 
     return (
        <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
