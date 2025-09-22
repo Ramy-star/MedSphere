@@ -25,12 +25,11 @@ export default function PdfViewer({ file }: { file: string }) {
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(0.6);
   const { toast } = useToast();
-  const containerRef = useRef<HTMLDivElement>(null);
-
+  
+  const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
   function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
     setNumPages(nextNumPages);
-    setPageNumber(1);
   }
 
   function onDocumentLoadError(error: Error) {
@@ -44,38 +43,34 @@ export default function PdfViewer({ file }: { file: string }) {
   
   const zoomIn = () => setScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
-  
-  const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
-
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center">
+    <div className="w-full h-full flex flex-col items-center justify-start">
       <div className="flex-1 w-full overflow-auto">
-        <div className="flex justify-center items-center p-4 min-h-full">
+        <div className="flex justify-center items-start p-4 min-h-full">
             <Document
               file={file}
               onLoadSuccess={onDocumentLoadSuccess}
               onLoadError={onDocumentLoadError}
               options={options}
-              className="flex justify-center"
+              className="flex flex-col items-center"
             >
-              <div
-                  className="transition-transform duration-300 ease-in-out"
-                  style={{ transform: `scale(${scale})` }}
-              >
-                  <Page 
-                    pageNumber={pageNumber} 
-                    scale={MAX_ZOOM * devicePixelRatio}
-                    renderTextLayer={true}
-                  />
-              </div>
+              {Array.from({ length: numPages || 0 }, (_, i) => i + 1).map((page) => (
+                  <div key={`page_${page}`} className="mb-4">
+                    <Page 
+                      pageNumber={page} 
+                      scale={scale * devicePixelRatio}
+                      renderTextLayer={true}
+                    />
+                  </div>
+              ))}
             </Document>
         </div>
       </div>
 
       {numPages && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-           <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
+           <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg backdrop-blur-md">
             
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => setPageNumber(p => Math.max(p - 1, 1))} disabled={pageNumber <= 1}>
                 <span className="sr-only">Previous Page</span>
