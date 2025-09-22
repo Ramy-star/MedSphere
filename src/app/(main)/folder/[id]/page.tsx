@@ -39,7 +39,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   }, [id, fetchFolderData]);
   
   if (loading) {
-      return <main className="flex-1 p-6 glass-card">
+      return <main className="flex-1 p-6 glass-card flex flex-col">
         {/* Can add a skeleton loader here */}
       </main>
   }
@@ -67,9 +67,9 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   }
 
   return (
-    <main className="flex-1 p-6 glass-card flex flex-col h-full">
+    <main className="flex-1 p-6 glass-card flex flex-col h-full overflow-hidden">
        <FileExplorerHeader currentFolder={extendedCurrent} ancestors={ancestors} onContentAdded={fetchFolderData} />
-       <div className="relative flex-1 overflow-y-auto">
+       <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
           <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
        </div>
     </main>
