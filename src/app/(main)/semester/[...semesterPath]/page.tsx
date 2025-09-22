@@ -1,32 +1,19 @@
 
 'use client';
 
-import { HomeIcon, ChevronRight, Folder, Plus } from 'lucide-react';
+import { Folder } from 'lucide-react';
 import React, { useMemo } from 'react';
 import { notFound } from 'next/navigation';
 import { subjectsBySemester } from '@/lib/file-data';
 import { SubjectCard } from '@/components/subject-card';
-import Link from 'next/link';
-import { Button } from '@/components/ui/button';
+import { NavHistory } from '@/components/nav-history';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 type SemesterPageProps = {
   params: {
     semesterPath: string[];
   };
 };
-
-const Breadcrumbs = ({ level, semester }: { level: string; semester: string }) => (
-  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
-    <Link href="/" className="flex items-center gap-2 hover:text-white">
-      <HomeIcon className="w-4 h-4" />
-      <span>Home</span>
-    </Link>
-    <ChevronRight className="w-4 h-4 mx-1" />
-    <span className="text-slate-400">{level}</span>
-    <ChevronRight className="w-4 h-4 mx-1" />
-    <span className="font-semibold text-white">{semester}</span>
-  </nav>
-);
 
 export default function SemesterPage({ params }: SemesterPageProps) {
   const resolvedParams = React.use(params);
@@ -44,7 +31,10 @@ export default function SemesterPage({ params }: SemesterPageProps) {
 
   return (
     <main className="flex-1 p-6 glass-card">
-        <Breadcrumbs level={levelName} semester={semesterName} />
+        <div className="flex items-center justify-between mb-6">
+          <Breadcrumbs />
+          <NavHistory />
+        </div>
         <div className="flex items-center justify-between mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <h1 className="text-2xl font-bold text-white">Subjects</h1>
         </div>

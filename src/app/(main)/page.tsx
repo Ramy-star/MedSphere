@@ -1,36 +1,24 @@
 
 'use client';
 import {
-  ChevronRight,
   Folder,
   File as FileIcon,
   HomeIcon,
-  Plus,
   Search,
-  Clock,
   Book,
   FileText as FileTextIcon,
   Lightbulb,
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { search } from '@/ai/flows/search-flow';
-import { folderData, recentFiles, File as FileType } from '@/lib/file-data';
-import Link from 'next/link';
+import { folderData, File as FileType } from '@/lib/file-data';
 import { FileListItem } from '@/components/file-list-item';
-import { StatCard, RecentFileCard } from '@/components/dashboard';
+import { StatCard } from '@/components/dashboard';
+import { Breadcrumbs } from '@/components/breadcrumbs';
+import { NavHistory } from '@/components/nav-history';
 
 
 export type SearchOutput = FileType[];
-
-const Breadcrumbs = () => (
-  <nav className="flex items-center text-sm text-slate-300 mb-6">
-    <Link href="/" className="flex items-center gap-2 hover:text-white">
-      <HomeIcon className="w-4 h-4" />
-      <span>Home</span>
-    </Link>
-  </nav>
-);
 
 const totalFolders = folderData.length;
 const totalFiles = folderData.reduce((acc, folder) => acc + folder.files.length, 0);
@@ -60,7 +48,10 @@ export default function Page() {
 
   return (
     <main className="flex-1 p-6 glass-card">
-      <Breadcrumbs />
+      <div className="flex items-center justify-between mb-6">
+        <Breadcrumbs />
+        <NavHistory />
+      </div>
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
             {searchResults === null ? (

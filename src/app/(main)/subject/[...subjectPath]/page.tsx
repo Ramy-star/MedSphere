@@ -1,13 +1,14 @@
 
 'use client';
 
-import { HomeIcon, ChevronRight, Folder as FolderIcon, Plus, Folder } from 'lucide-react';
+import { Folder as FolderIcon, Folder } from 'lucide-react';
 import React, { useMemo, useState } from 'react';
 import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
-import { Button } from '@/components/ui/button';
 import { AddContentMenu } from '@/components/add-content-menu';
+import { NavHistory } from '@/components/nav-history';
+import { Breadcrumbs } from '@/components/breadcrumbs';
 
 type SubjectPageProps = {
   params: {
@@ -17,23 +18,6 @@ type SubjectPageProps = {
 
 type ContentItem = File | { name: string; type: 'folder' };
 
-
-const Breadcrumbs = ({ level, semester, subject }: { level: string; semester: string, subject: string }) => (
-  <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
-    <Link href="/" className="flex items-center gap-2 hover:text-white">
-      <HomeIcon className="w-4 h-4" />
-      <span>Home</span>
-    </Link>
-    <ChevronRight className="w-4 h-4 mx-1" />
-    <span className="text-slate-400">{level}</span>
-    <ChevronRight className="w-4 h-4 mx-1" />
-    <Link href={`/semester/${encodeURIComponent(level)}/${encodeURIComponent(semester)}`} className="hover:text-white">
-        {semester}
-    </Link>
-    <ChevronRight className="w-4 h-4 mx-1" />
-    <span className="font-semibold text-white">{subject}</span>
-  </nav>
-);
 
 export default function SubjectPage({ params }: SubjectPageProps) {
   const resolvedParams = React.use(params);
@@ -59,7 +43,10 @@ export default function SubjectPage({ params }: SubjectPageProps) {
 
   return (
     <main className="flex-1 p-6 glass-card animate-fade-in">
-        <Breadcrumbs level={levelName} semester={semesterName} subject={name} />
+        <div className="flex items-center justify-between mb-6">
+            <Breadcrumbs />
+            <NavHistory />
+        </div>
         <div className="flex items-center justify-between mb-6" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">
             <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
