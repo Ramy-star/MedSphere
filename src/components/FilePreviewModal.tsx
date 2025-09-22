@@ -1,7 +1,11 @@
+
 'use client';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import FilePreview from './FilePreview';
@@ -97,6 +101,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         )}
         hideCloseButton={true}
       >
+        <DialogHeader className='sr-only'>
+            <DialogTitle>File Preview: {item.name}</DialogTitle>
+            <DialogDescription>Content of the file {item.name}.</DialogDescription>
+        </DialogHeader>
+
         {/* Header */}
         <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
           <div className="flex items-center gap-4">
