@@ -126,7 +126,7 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
                 </h1>
             </div>
         )}
-        {onContentAdded && currentFolder && (
+        {onContentAdded && currentFolder && currentFolder.type !== 'SEMESTER' && (
           <div>
             <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />
           </div>
