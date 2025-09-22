@@ -4,10 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
 import { FileCard } from './FileCard';
+import { FilePreviewModal } from './FilePreviewModal';
 
 export function FolderGrid({ parentId }: { parentId: string | null }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
+  const [previewFile, setPreviewFile] = useState<ContentItem | null>(null);
 
   useEffect(() => {
     async function fetchItems() {
@@ -18,6 +20,10 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
     }
     fetchItems();
   }, [parentId]);
+
+  const handleFileClick = (file: ContentItem) => {
+    setPreviewFile(file);
+  };
 
   if (loading && items.length === 0) return <div className="text-center text-slate-400">Loading...</div>;
 
@@ -35,12 +41,20 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
               {it.type === 'FOLDER' ? (
                 <FolderCard item={it} />
               ) : (
-                <FileCard item={it} />
+                <FileCard item={it} onFileClick={handleFileClick} />
               )}
             </motion.div>
           ))}
         </AnimatePresence>
       </div>
+      <FilePreviewModal
+        item={previewFile}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setPreviewFile(null);
+          }
+        }}
+      />
     </div>
   );
 }
