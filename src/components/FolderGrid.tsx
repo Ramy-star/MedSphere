@@ -1,5 +1,6 @@
+
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -18,9 +19,95 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-import { Folder as FolderIcon, Plus } from 'lucide-react';
+import { Folder as FolderIcon, FolderPlus, Plus, Upload } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { NewFolderDialog } from './new-folder-dialog';
+import { saveFile as saveFileToDb } from '@/lib/indexedDBService';
 
-export function FolderGrid({ parentId, onAddContentClick }: { parentId: string | null, onAddContentClick?: () => void }) {
+
+type AddContentMenuProps = {
+  parentId: string | null;
+  onContentAdded: () => void;
+  trigger: React.ReactNode;
+}
+
+function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuProps) {
+  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAddFolder = async (folderName: string) => {
+    await contentService.createFolder(parentId, folderName);
+    onContentAdded();
+  };
+
+  const handleUploadFile = async (file: File) => {
+    const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
+    await saveFileToDb(newFileItem.id, file);
+    onContentAdded();
+  };
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      handleUploadFile(file);
+    }
+  };
+
+  const menuItems = [
+      {
+          label: "New Folder",
+          icon: FolderPlus,
+          action: () => setShowNewFolderDialog(true),
+      },
+      {
+          label: "Upload File",
+          icon: Upload,
+          action: handleUploadClick,
+      }
+  ]
+
+  return (
+    <>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange}
+        className="hidden" 
+      />
+      <Popover>
+        <PopoverTrigger asChild>
+          {trigger}
+        </PopoverTrigger>
+        <PopoverContent 
+          className="w-56 p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10" 
+          align="end"
+        >
+            <div className="p-2 space-y-1">
+              <p className="px-2 py-1 text-sm font-semibold text-slate-300">Create New</p>
+              {menuItems.map((item) => (
+                  <div 
+                      key={item.label}
+                      onClick={item.action}
+                      className="flex items-center gap-3 p-2 rounded-lg text-sm text-slate-200 hover:bg-white/10 cursor-pointer transition-colors"
+                  >
+                      <item.icon className="h-4 w-4 text-slate-400" />
+                      <span>{item.label}</span>
+                  </div>
+              ))}
+          </div>
+        </PopoverContent>
+      </Popover>
+      <NewFolderDialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog} onAddFolder={handleAddFolder} />
+    </>
+  );
+}
+
+
+export function FolderGrid({ parentId }: { parentId: string | null }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<ContentItem | null>(null);
@@ -29,8 +116,12 @@ export function FolderGrid({ parentId, onAddContentClick }: { parentId: string |
 
   const fetchItems = async () => {
     setLoading(true);
-    const fetchedItems = await contentService.getChildren(parentId);
-    setItems(fetchedItems);
+    if (parentId === null) {
+      setItems([]);
+    } else {
+      const fetchedItems = await contentService.getChildren(parentId);
+      setItems(fetchedItems);
+    }
     setLoading(false);
   };
 
@@ -72,12 +163,16 @@ export function FolderGrid({ parentId, onAddContentClick }: { parentId: string |
           <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
           <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
           <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
-          {onAddContentClick && (
-            <Button onClick={onAddContentClick} className="mt-6 rounded-xl">
-              <Plus className="mr-2 h-4 w-4" />
-              Add Content
-            </Button>
-          )}
+          <AddContentMenu 
+            parentId={parentId}
+            onContentAdded={fetchItems}
+            trigger={
+              <Button className="mt-6 rounded-xl">
+                <Plus className="mr-2 h-4 w-4" />
+                Add Content
+              </Button>
+            }
+          />
       </div>
     )
   }

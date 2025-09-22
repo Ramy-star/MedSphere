@@ -2,15 +2,13 @@
 'use client';
 
 import { Folder as FolderIcon } from 'lucide-react';
-import React, { use, useMemo, useState, useEffect, useRef } from 'react';
+import React, { use, useMemo, useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
-import { allSubjects, File as SubjectFile } from '@/lib/file-data';
-import Link from 'next/link';
-import { AddContentMenu } from '@/components/add-content-menu';
+import { allSubjects } from '@/lib/file-data';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { FolderGrid } from '@/components/FolderGrid';
-import { Popover, PopoverTrigger } from '@/components/ui/popover';
+
 
 type SubjectPageProps = {
   params: {
@@ -22,12 +20,8 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   const resolvedParams = use(params);
   const { subjectPath } = resolvedParams;
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
-  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [subjectRootFolder, setSubjectRootFolder] = useState<ContentItem | null>(null);
   const [forceUpdateKey, setForceUpdateKey] = useState(0);
-
-  const addContentPopoverRef = useRef<HTMLButtonElement>(null);
-
 
   const subject = useMemo(() => {
     return allSubjects.find(s => s.name === subjectName && s.level === levelName && s.semester === semesterName);
@@ -59,37 +53,15 @@ export default function SubjectPage({ params }: SubjectPageProps) {
     notFound();
   }
 
-  const handleAddFolder = async (folderName: string) => {
-    if (!subjectRootFolder) return;
-    await contentService.createFolder(subjectRootFolder.id, folderName);
+  const handleContentAdded = () => {
     setForceUpdateKey(k => k + 1);
   };
-
-  const handleUploadFile = (file: globalThis.File) => {
-    // This logic is now handled in the folder page.
-    // In a future version, you might want to upload directly to a subject folder.
-    console.log("File upload initiated from subject page:", file.name);
-  };
-
-  const handleAddContentClick = () => {
-    addContentPopoverRef.current?.click();
-  }
   
   const { icon: SubjectIcon, color, name } = subject;
 
   return (
     <main className="flex-1 p-6 glass-card animate-fade-in">
-        <FileExplorerHeader currentFolder={subjectRootFolder ?? undefined}>
-          {subjectRootFolder && (
-            <AddContentMenu 
-              showNewFolderDialog={showNewFolderDialog} 
-              setShowNewFolderDialog={setShowNewFolderDialog}
-              onAddFolder={handleAddFolder}
-              onUploadFile={handleUploadFile}
-              popoverRef={addContentPopoverRef}
-            />
-          )}
-        </FileExplorerHeader>
+        <FileExplorerHeader currentFolder={subjectRootFolder ?? undefined} onContentAdded={handleContentAdded} />
         <div className="flex items-center justify-between mb-6" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">
             <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
@@ -103,7 +75,6 @@ export default function SubjectPage({ params }: SubjectPageProps) {
           <FolderGrid 
             parentId={subjectRootFolder.id} 
             key={forceUpdateKey}
-            onAddContentClick={handleAddContentClick}
           />
         ) : (
           <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl" style={{ animationDelay: '0.15s' }}>
