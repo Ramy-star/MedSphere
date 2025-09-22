@@ -9,6 +9,9 @@ export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
   const pathname = usePathname() || '/';
   // split path, remove empty parts, and decode them
   const segments = pathname.split('/').filter(Boolean);
+  const segmentsToFilter = ['level', 'semester', 'subject'];
+  const validSegments = segments.filter(segment => !segmentsToFilter.includes(decodeURIComponent(segment).toLowerCase()));
+
 
   const homeElement = (
     <Link href="/" className="flex items-center gap-1 hover:text-white">
@@ -57,9 +60,11 @@ export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
   return (
     <nav className="flex items-center gap-2 text-sm text-slate-300">
       {homeElement}
-      {segments.map((seg, i) => {
-        const href = '/' + segments.slice(0, i + 1).join('/');
-        const isLast = i === segments.length - 1;
+      {validSegments.map((seg, i) => {
+        const originalIndex = segments.indexOf(seg);
+        const href = '/' + segments.slice(0, originalIndex + 1).join('/');
+        const isLast = i === validSegments.length - 1;
+        
         return (
           <span key={href} className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
