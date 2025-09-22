@@ -32,7 +32,7 @@ export default function HomePage() {
                     ))}
                 </div>
             </div>
-            <div className="mt-16 animate-fade-in border border-blue-400/30 bg-blue-900/10 rounded-xl p-6" style={{ animationDelay: '0.5s' }}>
+            <div className="mt-24 animate-fade-in border border-blue-400/30 bg-blue-900/10 rounded-xl p-6" style={{ animationDelay: '0.5s' }}>
                 <blockquote className="text-center">
                     <p className="text-lg text-slate-300 italic max-w-2xl">
                         "The good doctor treats the disease; the great doctor treats the patient who has the disease."
