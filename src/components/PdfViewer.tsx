@@ -1,6 +1,6 @@
 
 'use client';
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -17,7 +17,7 @@ const options = {
 };
 
 const MAX_ZOOM = 3;
-const MIN_ZOOM = 0.5;
+const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.2;
 
 export default function PdfViewer({ file }: { file: string }) {
@@ -25,10 +25,23 @@ export default function PdfViewer({ file }: { file: string }) {
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1);
   const { toast } = useToast();
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
-    setNumPages(numPages);
+
+  async function onDocumentLoadSuccess(pdf: any): Promise<void> {
+    setNumPages(pdf.numPages);
     setPageNumber(1);
+
+    if (containerRef.current) {
+        const firstPage = await pdf.getPage(1);
+        const containerWidth = containerRef.current.clientWidth;
+        const viewport = firstPage.getViewport({ scale: 1 });
+        
+        // Add some padding
+        const calculatedScale = (containerWidth - 32) / viewport.width;
+
+        setScale(Math.max(MIN_ZOOM, Math.min(calculatedScale, MAX_ZOOM)));
+    }
   }
 
   function onDocumentLoadError(error: Error) {
@@ -47,7 +60,7 @@ export default function PdfViewer({ file }: { file: string }) {
 
 
   return (
-    <div className="w-full h-full flex flex-col">
+    <div className="w-full h-full flex flex-col" ref={containerRef}>
       <div className="flex-1 w-full overflow-auto">
         <div className="flex justify-center items-center p-4 min-h-full">
             <Document
@@ -82,6 +95,11 @@ export default function PdfViewer({ file }: { file: string }) {
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
               <Minus className="w-4 h-4" />
             </Button>
+
+            <span className='text-sm w-12 text-center font-mono'>
+                {`${Math.round(scale * 100)}%`}
+            </span>
+
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
               <Plus className="w-4 h-4" />
             </Button>
