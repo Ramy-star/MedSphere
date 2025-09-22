@@ -145,7 +145,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </header>
 
         {/* Content */}
-        <div className="flex-1 overflow-auto p-4 md:p-8">
+        <div className="flex-1 overflow-auto p-4 md:p-8 flex items-center justify-center">
            <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />
         </div>
 
