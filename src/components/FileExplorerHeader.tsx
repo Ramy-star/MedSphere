@@ -15,21 +15,25 @@ import { contentService } from '@/lib/contentService';
 type AddContentMenuProps = {
   parentId: string | null;
   onContentAdded: () => void;
+  trigger?: React.ReactNode;
 }
 
-function AddContentMenu({ parentId, onContentAdded }: AddContentMenuProps) {
+function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const handleAddFolder = async (folderName: string) => {
     await contentService.createFolder(parentId, folderName);
     onContentAdded();
+    setPopoverOpen(false);
   };
 
   const handleUploadFile = async (file: File) => {
     const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
     await saveFileToDb(newFileItem.id, file);
     onContentAdded();
+    setPopoverOpen(false);
   };
 
   const handleUploadClick = () => {
@@ -64,12 +68,9 @@ function AddContentMenu({ parentId, onContentAdded }: AddContentMenuProps) {
         onChange={handleFileChange}
         className="hidden" 
       />
-      <Popover>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
-          <Button className="rounded-xl">
-            <Plus className="mr-2 h-4 w-4" />
-            Add Content
-          </Button>
+          {trigger || <Button className="rounded-xl"><Plus className="mr-2 h-4 w-4" />Add Content</Button>}
         </PopoverTrigger>
         <PopoverContent 
           className="w-56 p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10" 

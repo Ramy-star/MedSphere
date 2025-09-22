@@ -8,6 +8,7 @@ import { allSubjects } from '@/lib/file-data';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { FolderGrid } from '@/components/FolderGrid';
+import { allSubjectIcons } from '@/components/subject-card';
 
 
 type SubjectPageProps = {
@@ -21,7 +22,6 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   const { subjectPath } = resolvedParams;
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
   const [subjectRootFolder, setSubjectRootFolder] = useState<ContentItem | null>(null);
-  const [forceUpdateKey, setForceUpdateKey] = useState(0);
 
   const subject = useMemo(() => {
     return allSubjects.find(s => s.name === subjectName && s.level === levelName && s.semester === semesterName);
@@ -52,16 +52,13 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   if (!subject) {
     notFound();
   }
-
-  const handleContentAdded = () => {
-    setForceUpdateKey(k => k + 1);
-  };
   
-  const { icon: SubjectIcon, color, name } = subject;
+  const { iconName, color, name } = subject;
+  const SubjectIcon = allSubjectIcons[iconName] || FolderIcon;
 
   return (
     <main className="flex-1 p-6 glass-card animate-fade-in">
-        <FileExplorerHeader currentFolder={subjectRootFolder ?? undefined} onContentAdded={handleContentAdded} />
+        <FileExplorerHeader currentFolder={subjectRootFolder ?? undefined} />
         <div className="flex items-center justify-between mb-6" style={{ animationDelay: '0.1s' }}>
         <div className="flex items-center gap-3">
             <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
@@ -74,7 +71,6 @@ export default function SubjectPage({ params }: SubjectPageProps) {
         {subjectRootFolder ? (
           <FolderGrid 
             parentId={subjectRootFolder.id} 
-            key={forceUpdateKey}
           />
         ) : (
           <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl" style={{ animationDelay: '0.15s' }}>

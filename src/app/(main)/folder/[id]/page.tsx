@@ -27,7 +27,6 @@ export default function FolderPage({ params }: { params: { id: string } }) {
 
   const [folder, setFolder] = useState<ContentItem | null>(null);
   const [ancestors, setAncestors] = useState<ContentItem[]>([]);
-  const [forceUpdateKey, setForceUpdateKey] = useState(0);
 
 
   useEffect(() => {
@@ -40,16 +39,12 @@ export default function FolderPage({ params }: { params: { id: string } }) {
       }
     }
     fetchFolderData();
-  }, [id, forceUpdateKey]);
+  }, [id]);
   
-  const handleContentAdded = () => {
-    setForceUpdateKey(v => v + 1);
-  };
-
   return (
     <main className="flex-1 p-6 glass-card">
-       <FileExplorerHeader currentFolder={folder ?? undefined} ancestors={ancestors} onContentAdded={handleContentAdded} />
-      <FolderGrid parentId={id} key={forceUpdateKey} />
+       <FileExplorerHeader currentFolder={folder ?? undefined} ancestors={ancestors} />
+      <FolderGrid parentId={id} />
     </main>
   );
 }

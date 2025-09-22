@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -34,16 +34,19 @@ type AddContentMenuProps = {
 function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
   const handleAddFolder = async (folderName: string) => {
     await contentService.createFolder(parentId, folderName);
     onContentAdded();
+    setPopoverOpen(false);
   };
 
   const handleUploadFile = async (file: File) => {
     const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
     await saveFileToDb(newFileItem.id, file);
     onContentAdded();
+    setPopoverOpen(false);
   };
 
   const handleUploadClick = () => {
@@ -78,7 +81,7 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
         onChange={handleFileChange}
         className="hidden" 
       />
-      <Popover>
+      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
           {trigger}
         </PopoverTrigger>
@@ -114,7 +117,7 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
   const [itemToRename, setItemToRename] = useState<ContentItem | null>(null);
   const [itemToDelete, setItemToDelete] = useState<ContentItem | null>(null);
 
-  const fetchItems = async () => {
+  const fetchItems = useCallback(async () => {
     setLoading(true);
     if (parentId === null) {
       setItems([]);
@@ -123,11 +126,11 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
       setItems(fetchedItems);
     }
     setLoading(false);
-  };
+  }, [parentId]);
 
   useEffect(() => {
     fetchItems();
-  }, [parentId]);
+  }, [fetchItems]);
 
   const handleFileClick = (file: ContentItem) => {
     setPreviewFile(file);
