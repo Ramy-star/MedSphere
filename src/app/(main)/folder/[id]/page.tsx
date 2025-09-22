@@ -7,23 +7,41 @@ import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { AddContentMenu } from '@/components/add-content-menu';
 
+async function getAncestors(id: string): Promise<ContentItem[]> {
+    let ancestors: ContentItem[] = [];
+    let current = await contentService.getById(id);
+    while (current && current.parentId) {
+        current = await contentService.getById(current.parentId);
+        if (current) {
+            ancestors.unshift(current);
+        }
+    }
+    return ancestors;
+}
+
+
 export default function FolderPage({ params }: { params: { id: string } }) {
   const resolvedParams = use(params);
   const { id } = resolvedParams;
 
   const [folder, setFolder] = useState<ContentItem | null>(null);
+  const [ancestors, setAncestors] = useState<ContentItem[]>([]);
   const [content, setContent] = useState<ContentItem[]>([]);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [_, setForceUpdate] = useState(0);
 
   useEffect(() => {
-    async function fetchFolder() {
+    async function fetchFolderData() {
       const fetchedFolder = await contentService.getById(id);
       setFolder(fetchedFolder);
-      const children = await contentService.getChildren(id);
-      setContent(children);
+      if (fetchedFolder) {
+        const children = await contentService.getChildren(id);
+        setContent(children);
+        const fetchedAncestors = await getAncestors(id);
+        setAncestors(fetchedAncestors);
+      }
     }
-    fetchFolder();
+    fetchFolderData();
   }, [id]);
   
   const handleAddFolder = async (folderName: string) => {
@@ -38,7 +56,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
 
   return (
     <main className="flex-1 p-6 glass-card">
-       <FileExplorerHeader currentFolder={folder ?? undefined}>
+       <FileExplorerHeader currentFolder={folder ?? undefined} ancestors={ancestors}>
           <AddContentMenu 
             showNewFolderDialog={showNewFolderDialog} 
             setShowNewFolderDialog={setShowNewFolderDialog}

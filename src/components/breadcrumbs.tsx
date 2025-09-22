@@ -7,37 +7,40 @@ import type { ContentItem } from '@/lib/contentService';
 
 export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
   const pathname = usePathname() || '/';
-  // split path, remove empty parts, and decode them
   const segments = pathname.split('/').filter(Boolean);
-  const segmentsToFilter = ['level', 'semester', 'subject'];
-  const validSegments = segments.filter(segment => !segmentsToFilter.includes(decodeURIComponent(segment).toLowerCase()));
-
 
   const homeElement = (
-    <Link href="/" className="flex items-center gap-1 hover:text-white">
-      <HomeIcon size={14}/> 
-      <span>Home</span>
-    </Link>
+    <div className="flex items-center">
+      <Link href="/" className="flex items-center gap-1 hover:text-white">
+        <HomeIcon size={14}/> 
+        <span>Home</span>
+      </Link>
+    </div>
   );
 
+  // If ancestors are provided (from folder pages), use them to build the path
   if (ancestors && ancestors.length > 0) {
-    const homeAncestor = ancestors[0]?.id === 'root' ? ancestors[0] : null;
-    const pathToShow = homeAncestor ? ancestors.slice(1) : ancestors;
+     const homeAncestor = ancestors[0]?.id === 'root' ? ancestors[0] : null;
+     const pathToShow = homeAncestor ? ancestors.slice(1) : ancestors;
 
     return (
-       <nav className="flex items-center gap-2 text-sm text-slate-300">
+       <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
         {homeElement}
         {pathToShow.length > 0 && <ChevronRight className="w-4 h-4 opacity-60" />}
         {pathToShow.map((node, idx) => {
           const isLast = idx === pathToShow.length - 1;
           return (
             <span key={node.id} className="flex items-center gap-2">
-              <Link 
-                href={`/folder/${node.id}`} 
-                className={isLast ? "font-semibold text-white" : "hover:text-white"}
-              >
-                {node.name} 
-              </Link>
+              {isLast ? (
+                 <span className="font-semibold text-white">{node.name}</span>
+              ) : (
+                <Link 
+                  href={`/folder/${node.id}`} 
+                  className="hover:text-white"
+                >
+                  {node.name} 
+                </Link>
+              )}
               {!isLast && <ChevronRight className="w-4 h-4 opacity-60" />}
             </span>
           );
@@ -46,10 +49,15 @@ export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
     )
   }
 
-  if (segments.length === 0) {
+  // Fallback for pages without ancestor data, build from URL
+  const segmentsToFilter = ['level', 'semester', 'subject', 'folder'];
+  const breadcrumbSegments = segments.filter(segment => !segmentsToFilter.includes(decodeURIComponent(segment).toLowerCase()));
+  
+  // If there are no valid segments to show besides 'Home', just show Home.
+  if (breadcrumbSegments.length === 0) {
     return (
-        <nav className="flex items-center text-sm text-slate-300 mb-6 flex-wrap animate-fade-in">
-            <div className="flex items-center gap-2 text-white font-semibold">
+        <nav className="flex items-center text-sm mb-6 flex-wrap animate-fade-in">
+             <div className="flex items-center gap-2 font-semibold text-white">
                 <HomeIcon className="w-4 h-4" />
                 <span>Home</span>
             </div>
@@ -57,23 +65,32 @@ export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
     );
   }
 
+  // Build breadcrumbs from URL segments
+  let currentPath = '';
+  const pathItems = segments.map((segment) => {
+      currentPath += `/${segment}`;
+      return {
+          name: decodeURIComponent(segment),
+          href: currentPath
+      };
+  }).filter(item => !segmentsToFilter.includes(item.name.toLowerCase()));
+
+
   return (
-    <nav className="flex items-center gap-2 text-sm text-slate-300">
+    <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
       {homeElement}
-      {validSegments.map((seg, i) => {
-        const originalIndex = segments.indexOf(seg);
-        const href = '/' + segments.slice(0, originalIndex + 1).join('/');
-        const isLast = i === validSegments.length - 1;
-        
+      {pathItems.map((item, i) => {
+        const isLast = i === pathItems.length - 1;
         return (
-          <span key={href} className="flex items-center gap-2">
+          <span key={item.href} className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
-            <Link 
-              href={href} 
-              className={isLast ? "font-semibold text-white" : "hover:text-white"}
-            >
-              {decodeURIComponent(seg)} 
-            </Link>
+            {isLast ? (
+              <span className="font-semibold text-white">{item.name}</span>
+            ) : (
+              <Link href={item.href} className="hover:text-white">
+                {item.name}
+              </Link>
+            )}
           </span>
         );
       })}

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Folder as FolderIcon, Folder } from 'lucide-react';
+import { Folder as FolderIcon } from 'lucide-react';
 import React, { use, useMemo, useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
@@ -88,7 +88,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
                   <Link key={index} href={`/folder/${encodeURIComponent(item.name)}`}>
                     <div className="glass-card p-4 rounded-xl group hover:bg-white/10 transition-colors cursor-pointer">
                       <div className="flex items-center gap-3">
-                        <Folder className="w-6 h-6 text-yellow-400" />
+                        <FolderIcon className="w-6 h-6 text-yellow-400" />
                         <h3 className="text-lg font-semibold text-white">{item.name}</h3>
                       </div>
                     </div>
