@@ -2,10 +2,6 @@
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import FilePreview from './FilePreview';
@@ -13,18 +9,18 @@ import type { Content } from '@/lib/contentService';
 import { getFile } from '@/lib/indexedDBService';
 import { useEffect, useState } from 'react';
 import { cn } from '@/lib/utils';
-import { Maximize, Minimize, X } from 'lucide-react';
-import { Separator } from './ui/separator';
+import { X, Download, Share2, File as FileIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
+import { Input } from './ui/input';
+import { useToast } from '@/hooks/use-toast';
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const [fileUrl, setFileUrl] = useState<string>('#');
-  const [fileHandle, setFileHandle] = useState<File | null>(null);
-  const [isFullScreen, setIsFullScreen] = useState(false);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (!item || item.type !== 'FILE') {
         setFileUrl('#');
-        setFileHandle(null);
         return;
     };
 
@@ -35,15 +31,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         if (file) {
             objectUrl = URL.createObjectURL(file);
             setFileUrl(objectUrl);
-            setFileHandle(file);
         } else {
-             // Fallback for files without content in IndexedDB (e.g. seeded data)
             if (item.metadata?.mime?.startsWith('image/')) {
-                setFileUrl(`https://picsum.photos/seed/${item.id}/800/600`);
+                setFileUrl(`https://picsum.photos/seed/${item.id}/1280/720`);
             } else {
                 setFileUrl('#');
             }
-            setFileHandle(null);
         }
     };
 
@@ -60,7 +53,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   if (!item) return null;
 
   const handleDownload = () => {
-    const urlToDownload = fileUrl === '#' && item?.metadata?.mime?.startsWith('image/') ? `https://picsum.photos/seed/${item.id}/800/600` : fileUrl;
+    const urlToDownload = fileUrl === '#' && item?.metadata?.mime?.startsWith('image/') 
+        ? `https://picsum.photos/seed/${item.id}/1280/720` 
+        : fileUrl;
+        
     if (urlToDownload !== '#') {
         const link = document.createElement('a');
         link.href = urlToDownload;
@@ -73,41 +69,87 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleClose = () => {
     onOpenChange(false);
-    setIsFullScreen(false); // Reset fullscreen state on close
+  }
+
+  const handleCopyLink = () => {
+    const link = window.location.href;
+    navigator.clipboard.writeText(link).then(() => {
+        toast({
+            title: "Link Copied!",
+            description: "The link to this page has been copied to your clipboard.",
+        })
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        toast({
+            variant: "destructive",
+            title: "Failed to Copy",
+            description: "Could not copy the link to your clipboard.",
+        })
+    });
   }
 
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
         className={cn(
-            "flex flex-col p-0 border-slate-700 shadow-lg shadow-blue-500/10 text-white transition-all duration-300 ease-in-out",
-            isFullScreen 
-                ? "fixed inset-0 w-screen h-screen max-w-full max-h-full rounded-none bg-slate-950 z-[9999] transform-none top-0 left-0" 
-                : "max-w-4xl h-[80vh] rounded-2xl bg-gradient-to-b from-slate-900 to-slate-950"
+            "fixed inset-0 w-screen h-screen max-w-full max-h-full rounded-none p-0 flex flex-col",
+            "bg-slate-900/80 backdrop-blur-sm"
         )}
         hideCloseButton={true}
       >
-        <DialogHeader className="p-4 border-b border-slate-800 flex flex-row items-center justify-between shrink-0">
-          <DialogTitle className="truncate">{item.name}</DialogTitle>
-          <div className='flex items-center gap-2'>
-            <Button variant="ghost" size="icon" onClick={() => setIsFullScreen(!isFullScreen)} className="text-slate-300 hover:text-white hover:bg-white/10">
-                {isFullScreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+        {/* Header */}
+        <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10">
+                <X className="w-6 h-6" />
             </Button>
-             <Separator orientation='vertical' className='h-6 bg-slate-700 mx-2' />
-            <DialogClose asChild>
-                <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10">
-                    <X className="w-5 h-5" />
-                </Button>
-            </DialogClose>
+            <div className='flex items-center gap-3'>
+                <FileIcon className='w-5 h-5 text-slate-400' />
+                <span className="font-medium text-white truncate">{item.name}</span>
+            </div>
           </div>
-        </DialogHeader>
-        <div className="flex-1 overflow-auto p-4">
+          <div className='flex items-center gap-2'>
+            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={fileUrl === '#'} className="text-slate-300 hover:text-white hover:bg-white/10">
+                <Download className="w-5 h-5" />
+            </Button>
+             <Popover>
+                <PopoverTrigger asChild>
+                    <Button variant='default' className='rounded-full'>
+                        <Share2 className="w-5 h-5 mr-2" />
+                        Share
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-80 border-slate-700 rounded-xl bg-slate-800 text-white shadow-lg mr-4">
+                    <div className="grid gap-4">
+                        <div className="space-y-2">
+                            <h4 className="font-medium leading-none">Copy Link</h4>
+                            <p className="text-sm text-slate-400">
+                                Anyone with the link can view this page.
+                            </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Input
+                                value={typeof window !== 'undefined' ? window.location.href : ''}
+                                readOnly
+                                className="h-9 bg-slate-700 border-slate-600"
+                            />
+                            <Button onClick={handleCopyLink} size="sm" className="px-3">
+                                <span className="sr-only">Copy</span>
+                                Copy
+                            </Button>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+          </div>
+        </header>
+
+        {/* Content */}
+        <div className="flex-1 overflow-auto p-4 md:p-8">
            <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />
         </div>
-        <DialogFooter className="p-4 border-t border-slate-800 bg-slate-900/50 rounded-b-2xl shrink-0">
-          <Button variant="ghost" onClick={handleClose}>Close</Button>
-          <Button onClick={handleDownload} disabled={fileUrl === '#'}>Download</Button>
-        </DialogFooter>
+
+         {/* Footer could go here if needed for PDF controls etc. */}
       </DialogContent>
     </Dialog>
   );

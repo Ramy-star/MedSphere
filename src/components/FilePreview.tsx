@@ -1,45 +1,50 @@
 
 'use client';
+
 export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName: string }) {
+  
+  const mainContainerClasses = "w-full h-full flex items-center justify-center rounded-lg";
+
   if (url === '#') {
      return (
-        <div className="flex flex-col items-center justify-center h-full text-center text-slate-400 bg-slate-900/50 rounded-lg">
-            <p className="text-lg mb-2">Preview not available or file content not found.</p>
-            <p className="text-sm">MIME Type: {mime}</p>
-             <a href={url} download={itemName} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Download</a>
+        <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+            <p className="text-xl mb-3">File content not available for preview.</p>
+            <p className="text-sm text-slate-400">This might be because the file was part of the initial seeded data or could not be loaded from your browser's storage.</p>
+             <a href={url} download={itemName} className="mt-6 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">Download File</a>
         </div>
     );
   }
   
   if (mime.startsWith('image/')) {
-    return <div className="w-full h-full flex items-center justify-center bg-slate-900/50 rounded-lg p-2"><img src={url} alt={itemName} className="max-w-full max-h-full object-contain h-auto rounded-lg" /></div>;
+    return <div className={`${mainContainerClasses} p-2`}><img src={url} alt={itemName} className="max-w-full max-h-full object-contain h-auto rounded-lg shadow-2xl" /></div>;
   }
   
   if (mime === 'application/pdf') {
-    return <iframe src={url} className="w-full h-full border-0 rounded-lg" title={itemName} />;
+    return <iframe src={url} className="w-full h-full border-0 rounded-lg shadow-2xl" title={itemName} />;
   }
   
   if (mime.startsWith('audio/')) {
-    return <div className="w-full h-full flex items-center justify-center bg-slate-900/50 rounded-lg p-4"><audio controls src={url} className="w-full" /></div>;
+    return <div className={`${mainContainerClasses} p-4`}><audio controls src={url} className="w-full max-w-lg" /></div>;
   }
   
   if (mime.startsWith('video/')) {
-    return <div className="w-full h-full flex items-center justify-center bg-black rounded-lg"><video controls src={url} className="max-w-full max-h-full h-auto" /></div>;
+    return <div className={`${mainContainerClasses} bg-black`}><video controls src={url} className="max-w-full max-h-full h-auto" /></div>;
   }
 
   if (mime.startsWith('text/')) {
-    return <iframe src={url} className="w-full h-full border-2 border-slate-700 rounded-lg bg-slate-800 text-white" title={itemName} />
+    return <iframe src={url} className="w-full h-full border-2 border-slate-700 rounded-lg bg-slate-800 text-white shadow-lg" title={itemName} />
   }
 
-  if (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
-    return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`} className="w-full h-full border-0 rounded-lg" title={itemName} />
+  // Use Office viewer for docx, xlsx, pptx if it's a public URL (won't work for blob URLs)
+  if (!url.startsWith('blob:') && (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation')) {
+    return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`} className="w-full h-full border-0 rounded-lg shadow-2xl" title={itemName} />
   }
   
   return (
-    <div className="flex flex-col items-center justify-center h-full text-center text-slate-400 bg-slate-900/50 rounded-lg">
-        <p className="text-lg mb-2">⚠️ Preview not available for this file type.</p>
-        <p className="text-sm mb-4">MIME Type: {mime}</p>
-        <a href={url} download={itemName} className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">Download File</a>
+    <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+        <p className="text-xl font-semibold mb-3">⚠️ Preview not available</p>
+        <p className="text-base mb-4 text-slate-400">Unsupported file type: <code className='bg-slate-900 px-2 py-1 rounded-md text-slate-300'>{mime}</code></p>
+        <a href={url} download={itemName} className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">Download File</a>
     </div>
   );
 }
