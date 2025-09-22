@@ -265,17 +265,19 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
     }
   };
   
-  const handleDragEnd = (event: DragEndEvent) => {
+  const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active.id !== over?.id) {
-      setItems((currentItems) => {
-        const oldIndex = currentItems.findIndex((item) => item.id === active.id);
-        const newIndex = currentItems.findIndex((item) => item.id === over?.id);
-        if (oldIndex === -1 || newIndex === -1) return currentItems;
-        return arrayMove(currentItems, oldIndex, newIndex);
-      });
-      // Here you would typically call a service to persist the new order.
-      // e.g., contentService.updateOrder(newlyOrderedItems);
+    if (over && active.id !== over.id) {
+        const oldIndex = items.findIndex((item) => item.id === active.id);
+        const newIndex = items.findIndex((item) => item.id === over.id);
+
+        if (oldIndex !== -1 && newIndex !== -1) {
+            const newOrderedItems = arrayMove(items, oldIndex, newIndex);
+            setItems(newOrderedItems);
+            
+            const orderedIds = newOrderedItems.map(item => item.id);
+            await contentService.updateOrder(parentId, orderedIds);
+        }
     }
   };
 

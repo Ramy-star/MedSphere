@@ -17,7 +17,6 @@ export type Content = {
 };
 
 const KEY = 'app_content_v2';
-const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
 
 function loadAll(): Content[] {
   if (typeof window === 'undefined') return [];
@@ -37,18 +36,7 @@ export const contentService = {
   async getChildren(parentId: string | null) {
     if (typeof window === 'undefined') return [];
     const all = loadAll();
-    const children = all.filter(i => (i.parentId ?? null) === (parentId ?? null));
-    
-    return children.sort((a,b) => {
-      // Subjects and folders come first
-      const aIsContainer = a.type === 'FOLDER' || a.type === 'SUBJECT';
-      const bIsContainer = b.type === 'FOLDER' || b.type === 'SUBJECT';
-
-      if (aIsContainer && !bIsContainer) return -1;
-      if (!aIsContainer && bIsContainer) return 1;
-
-      return collator.compare(a.name, b.name);
-    });
+    return all.filter(i => (i.parentId ?? null) === (parentId ?? null));
   },
 
   async createFolder(parentId: string | null, name: string) {
@@ -149,5 +137,28 @@ export const contentService = {
     saveAll(all);
 
     return true;
+  },
+
+  async updateOrder(parentId: string | null, orderedIds: string[]): Promise<void> {
+    const allItems = loadAll();
+    const otherItems = allItems.filter(item => item.parentId !== parentId);
+    
+    const itemsInParent = allItems.filter(item => item.parentId === parentId);
+    const orderedItems = orderedIds.map(id => itemsInParent.find(item => item.id === id)).filter((item): item is Content => !!item);
+
+    // Make sure we didn't lose any items during reordering
+    if (orderedItems.length !== itemsInParent.length) {
+      console.error("Mismatch in item count during reorder. Aborting.");
+      // Find missing items and add them to the end to prevent data loss
+      const orderedIdSet = new Set(orderedIds);
+      itemsInParent.forEach(item => {
+        if (!orderedIdSet.has(item.id)) {
+          orderedItems.push(item);
+        }
+      });
+    }
+
+    const newAllItems = [...otherItems, ...orderedItems];
+    saveAll(newAllItems);
   }
 };
