@@ -7,7 +7,7 @@ import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, Content } from '@/lib/contentService';
 import { allSubjectIcons } from '@/lib/file-data';
 import { notFound } from 'next/navigation';
-import { LucideIcon, Folder } from 'lucide-react';
+import { LucideIcon, Folder, Calendar } from 'lucide-react';
 
 
 export default function FolderPage({ params }: { params: { id: string } }) {
@@ -54,7 +54,11 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   if (current.type === 'SUBJECT' && current.iconName) {
       Icon = allSubjectIcons[current.iconName] || Folder;
       iconColor = current.color || 'text-yellow-400';
+  } else if (current.type === 'SEMESTER') {
+      Icon = Calendar;
+      iconColor = 'text-green-400';
   }
+
 
   const extendedCurrent = {
       ...current,
