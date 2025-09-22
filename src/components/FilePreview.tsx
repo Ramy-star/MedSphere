@@ -1,3 +1,4 @@
+
 'use client';
 export default function FilePreview({ url, mime }: { url: string, mime: string }) {
   if (mime.startsWith('image/')) return <img src={url} alt="preview" className="max-w-full mx-auto rounded-lg" />;
