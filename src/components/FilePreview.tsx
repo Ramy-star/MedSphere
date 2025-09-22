@@ -3,8 +3,6 @@
 
 export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName: string }) {
   
-  const mainContainerClasses = "w-full h-full flex items-center justify-center rounded-lg";
-
   if (url === '#') {
      return (
         <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
@@ -16,7 +14,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   }
   
   if (mime.startsWith('image/')) {
-    return <div className={`${mainContainerClasses} p-2`}><img src={url} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" /></div>;
+    return <img src={url} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />;
   }
   
   if (mime === 'application/pdf') {
@@ -24,11 +22,11 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   }
   
   if (mime.startsWith('audio/')) {
-    return <div className={`${mainContainerClasses} p-4`}><audio controls src={url} className="w-full max-w-lg" /></div>;
+    return <div className="w-full h-full flex items-center justify-center p-4"><audio controls src={url} className="w-full max-w-lg" /></div>;
   }
   
   if (mime.startsWith('video/')) {
-    return <div className={`${mainContainerClasses} bg-black`}><video controls src={url} className="max-w-full max-h-full" /></div>;
+    return <div className="w-full h-full flex items-center justify-center bg-black"><video controls src={url} className="max-w-full max-h-full" /></div>;
   }
 
   if (mime.startsWith('text/')) {
