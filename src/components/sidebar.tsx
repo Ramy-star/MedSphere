@@ -44,6 +44,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
         const pathParts = pathname.split('/');
         if (pathParts[1] !== 'folder' || pathParts.length < 3) {
             setActivePath({ levelId: '', semesterId: '' });
+            setOpenLevelId('');
             return;
         };
         const currentId = pathParts[2];
@@ -56,9 +57,9 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
         if (level) {
             setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
-            if (openLevelId !== level.id) {
-                setOpenLevelId(level.id);
-            }
+            // if (openLevelId !== level.id) {
+            //     setOpenLevelId(level.id);
+            // }
         } else {
              setActivePath({ levelId: '', semesterId: '' });
         }
