@@ -1,6 +1,6 @@
 
 'use client';
-import { ArrowRight, ArrowLeft, Plus } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Plus, Folder } from 'lucide-react';
 import { Breadcrumbs } from './breadcrumbs';
 import type { ContentItem } from '@/lib/contentService';
 import { Button } from '@/components/ui/button';
@@ -101,7 +101,7 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
   
   return (
     <div className="mb-6 space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between">
         <Breadcrumbs ancestors={ancestors} />
         <div className="flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowLeft size={16} /></button>
@@ -109,10 +109,15 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
         </div>
       </div>
       
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-white">
-          {currentFolder?.name}
-        </h1>
+      <div className="flex items-center justify-between min-h-[40px]">
+        {currentFolder && (
+             <div className="flex items-center gap-3">
+                <Folder className="w-7 h-7 text-yellow-400" />
+                <h1 className="text-2xl font-bold text-white">
+                    {currentFolder?.name}
+                </h1>
+            </div>
+        )}
         {currentFolder && onContentAdded && (
           <div>
             <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />
