@@ -7,7 +7,6 @@ import type { ContentItem } from '@/lib/contentService';
 
 export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
   const pathname = usePathname() || '/';
-  const segments = pathname.split('/').filter(Boolean);
 
   const homeElement = (
     <div className="flex items-center">
@@ -50,11 +49,28 @@ export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
   }
 
   // Fallback for pages without ancestor data, build from URL
+  const segments = pathname.split('/').filter(Boolean);
   const segmentsToFilter = ['level', 'semester', 'subject', 'folder'];
-  const breadcrumbSegments = segments.filter(segment => !segmentsToFilter.includes(decodeURIComponent(segment).toLowerCase()));
   
+  const breadcrumbItems = segments
+    .map((segment, index) => {
+        const decodedSegment = decodeURIComponent(segment);
+        const isFilterable = segmentsToFilter.includes(decodedSegment.toLowerCase());
+        
+        if (isFilterable) return null;
+
+        const href = '/' + segments.slice(0, index + 1).join('/');
+        
+        return {
+            name: decodedSegment,
+            href: href,
+        };
+    })
+    .filter((item): item is { name: string; href: string } => item !== null);
+
+
   // If there are no valid segments to show besides 'Home', just show Home.
-  if (breadcrumbSegments.length === 0) {
+  if (breadcrumbItems.length === 0 && pathname === '/') {
     return (
         <nav className="flex items-center text-sm mb-6 flex-wrap animate-fade-in">
              <div className="flex items-center gap-2 font-semibold text-white">
@@ -65,22 +81,12 @@ export function Breadcrumbs({ ancestors }: { ancestors?: ContentItem[] }) {
     );
   }
 
-  // Build breadcrumbs from URL segments
-  let currentPath = '';
-  const pathItems = segments.map((segment) => {
-      currentPath += `/${segment}`;
-      return {
-          name: decodeURIComponent(segment),
-          href: currentPath
-      };
-  }).filter(item => !segmentsToFilter.includes(item.name.toLowerCase()));
-
 
   return (
     <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
       {homeElement}
-      {pathItems.map((item, i) => {
-        const isLast = i === pathItems.length - 1;
+      {breadcrumbItems.map((item, i) => {
+        const isLast = i === breadcrumbItems.length - 1;
         return (
           <span key={item.href} className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
