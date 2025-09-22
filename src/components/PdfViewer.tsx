@@ -8,11 +8,7 @@ import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight, Minus, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'react-pdf/node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
-
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 const options = {
   cMapUrl: '/cmaps/',
@@ -50,10 +46,8 @@ export default function PdfViewer({ file }: { file: string }) {
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
   return (
-    <div className="w-full h-full flex flex-col">
-      {/* This div is for scrolling */}
-      <div className="flex-1 overflow-auto">
-        {/* This div is for centering the content */}
+    <div className="w-full h-full flex flex-col items-center">
+      <div className="flex-1 w-full overflow-auto">
         <div className="flex justify-center items-start min-h-full">
           <Document
             file={file}
@@ -69,42 +63,42 @@ export default function PdfViewer({ file }: { file: string }) {
         </div>
       </div>
 
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-        {/* Navigation arrows */}
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="absolute left-[-100px] top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white/80 hover:bg-black/60 hover:text-white"
-          onClick={goToPrevPage}
-          disabled={pageNumber <= 1}
-        >
-          <ChevronLeft className="w-6 h-6" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="absolute right-[-100px] top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white/80 hover:bg-black/60 hover:text-white"
-          onClick={goToNextPage}
-          disabled={pageNumber >= (numPages ?? 0)}
-        >
-          <ChevronRight className="w-6 h-6" />
-        </Button>
+      {numPages && (
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute left-[-100px] top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white/80 hover:bg-black/60 hover:text-white"
+            onClick={goToPrevPage}
+            disabled={pageNumber <= 1}
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            className="absolute right-[-100px] top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white/80 hover:bg-black/60 hover:text-white"
+            onClick={goToNextPage}
+            disabled={pageNumber >= (numPages ?? 0)}
+          >
+            <ChevronRight className="w-6 h-6" />
+          </Button>
 
-        {/* Controls */}
-        <div className="flex items-center gap-2 bg-slate-900/80 text-white backdrop-blur-md rounded-full p-2 shadow-lg border border-white/10">
-          <span className="text-sm px-3">Page {pageNumber} / {numPages ?? '--'}</span>
-          <div className="h-6 w-px bg-white/20"></div>
-          <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut}>
-            <Minus className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" disabled>
-             <Search className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn}>
-            <Plus className="w-4 h-4" />
-          </Button>
+          <div className="flex items-center gap-2 bg-slate-900/80 text-white backdrop-blur-md rounded-full p-2 shadow-lg border border-white/10">
+            <span className="text-sm px-3">Page {pageNumber} / {numPages ?? '--'}</span>
+            <div className="h-6 w-px bg-white/20"></div>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
+              <Minus className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" disabled>
+              <Search className="w-4 h-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
+              <Plus className="w-4 h-4" />
+            </Button>
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
