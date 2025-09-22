@@ -1,3 +1,4 @@
+
 'use client';
 import { ArrowRight, ArrowLeft, Plus, Folder } from 'lucide-react';
 import { Breadcrumbs } from './breadcrumbs';
@@ -125,7 +126,7 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
                 </h1>
             </div>
         )}
-        {currentFolder && onContentAdded && (
+        {onContentAdded && currentFolder && (
           <div>
             <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />
           </div>
