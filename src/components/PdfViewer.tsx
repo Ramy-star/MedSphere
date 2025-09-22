@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
@@ -47,7 +47,7 @@ export default function PdfViewer({ file }: { file: string }) {
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center">
+    <div className="relative w-full h-full flex flex-col items-center justify-center">
       <div className="flex-1 w-full overflow-auto flex justify-center">
         <Document
           file={file}
@@ -56,7 +56,7 @@ export default function PdfViewer({ file }: { file: string }) {
           options={options}
           className="flex justify-center"
         >
-           <div className="transition-transform duration-300 ease-in-out" style={{ transform: `scale(${scale})` }}>
+           <div className="transition-transform duration-300 ease-in-out w-full h-full flex justify-center items-start" style={{ transform: `scale(${scale})` }}>
             <Page pageNumber={pageNumber} scale={1} renderTextLayer={true} />
           </div>
         </Document>
