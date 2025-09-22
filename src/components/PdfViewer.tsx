@@ -8,7 +8,10 @@ import { Button } from './ui/button';
 import { ChevronLeft, ChevronRight, Minus, Plus, Search } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 
 const options = {
@@ -47,19 +50,20 @@ export default function PdfViewer({ file }: { file: string }) {
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-center">
-      <div className="flex-1 w-full overflow-auto flex justify-center">
-        <Document
-          file={file}
-          onLoadSuccess={onDocumentLoadSuccess}
-          onLoadError={onDocumentLoadError}
-          options={options}
-          className="flex justify-center"
-        >
-           <div className="transition-transform duration-300 ease-in-out w-full h-full flex justify-center items-start" style={{ transform: `scale(${scale})` }}>
-            <Page pageNumber={pageNumber} scale={1} renderTextLayer={true} />
-          </div>
-        </Document>
+    <div className="relative w-full h-full flex flex-col items-center">
+      <div className="flex-1 w-full overflow-auto">
+        <div className="flex justify-center items-center min-h-full min-w-min">
+            <Document
+              file={file}
+              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadError={onDocumentLoadError}
+              options={options}
+            >
+              <div className="transition-transform duration-300 ease-in-out" style={{ transform: `scale(${scale})` }}>
+                <Page pageNumber={pageNumber} scale={1} renderTextLayer={true} />
+              </div>
+            </Document>
+        </div>
       </div>
 
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
