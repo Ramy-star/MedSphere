@@ -54,6 +54,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
             if (level) {
                 setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
+                setOpenLevelId(level.id);
             } else {
                  setActivePath({ levelId: '', semesterId: '' });
             }
@@ -63,11 +64,13 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
             const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
             if (currentLevel) {
                  setActivePath({ levelId: currentLevel.id, semesterId: '' });
+                 setOpenLevelId(currentLevel.id);
             } else {
                  setActivePath({ levelId: '', semesterId: '' });
             }
         } else {
              setActivePath({ levelId: '', semesterId: '' });
+             // setOpenLevelId(''); // This was commented out in a previous step, keeping it that way.
         }
     }
     findActivePath();
