@@ -9,6 +9,7 @@ import { contentService, Content } from '@/lib/contentService';
 
 const SearchInputSchema = z.object({
   query: z.string(),
+  items: z.array(z.any()), // Pass items to be searched
 });
 
 const SearchOutputSchema = z.array(
@@ -27,18 +28,19 @@ const SearchOutputSchema = z.array(
 type SearchInput = z.infer<typeof SearchInputSchema>;
 type SearchOutput = z.infer<typeof SearchOutputSchema>;
 
+// This function now just filters a given array
 async function searchFiles(input: SearchInput): Promise<SearchOutput> {
-  const { query } = input;
-  const allFilesData = await contentService.getAll();
+  const { query, items } = input;
   
   if (!query) {
-    return allFilesData.filter(item => item.type === 'FILE');
+    // Return nothing if query is empty, the client can decide what to show.
+    return [];
   }
 
   const lowerCaseQuery = query.toLowerCase();
   
-  const searchResults = allFilesData.filter(file => 
-    file.name.toLowerCase().includes(lowerCaseQuery)
+  const searchResults = items.filter(item => 
+    item.name.toLowerCase().includes(lowerCaseQuery)
   );
   
   return searchResults;
@@ -53,6 +55,11 @@ const searchFlow = ai.defineFlow(
   searchFiles
 );
 
-export async function search(query: string): Promise<SearchOutput> {
-  return await searchFlow({ query });
+// The exported function is now for client-side use primarily
+export async function search(query: string, items: Content[]): Promise<SearchOutput> {
+   if (!query) {
+    return [];
+  }
+  const lowerCaseQuery = query.toLowerCase();
+  return items.filter(item => item.name.toLowerCase().includes(lowerCaseQuery));
 }

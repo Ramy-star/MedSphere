@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { FileCard } from '@/components/FileCard';
 import { FolderCard } from '@/components/FolderCard';
 import { SubjectCard } from '@/components/subject-card';
-import { Content } from '@/lib/contentService';
+import { contentService, Content } from '@/lib/contentService';
 import Link from 'next/link';
 
 function SearchResults() {
@@ -20,16 +20,27 @@ function SearchResults() {
     const query = searchParams.get('q');
     const [results, setResults] = useState<Content[]>([]);
     const [loading, setLoading] = useState(false);
+    const [allItems, setAllItems] = useState<Content[]>([]);
+
+    useEffect(() => {
+        // Pre-load all content for searching
+        async function loadAllContent() {
+            const allContent = await contentService.getAll();
+            setAllItems(allContent);
+        }
+        loadAllContent();
+    }, []);
 
     useEffect(() => {
         async function performSearch() {
-            if (!query) {
+            if (!query || allItems.length === 0) {
                 setResults([]);
                 return;
             }
             setLoading(true);
             try {
-                const searchResults = await search(query);
+                // Perform search on the client side
+                const searchResults = await search(query, allItems);
                 setResults(searchResults);
             } catch (error) {
                 console.error("Search failed:", error);
@@ -39,7 +50,19 @@ function SearchResults() {
             }
         }
         performSearch();
-    }, [query]);
+    }, [query, allItems]);
+
+    const handleAction = () => {
+        // Placeholder for rename/delete actions if needed in the future
+        // For now, these actions are handled within the cards, which need refetching.
+        // A simple solution is to reload all content.
+        async function reloadAllContent() {
+            const allContent = await contentService.getAll();
+            setAllItems(allContent);
+        }
+        reloadAllContent();
+    };
+
 
     return (
         <main className="flex-1 p-6 space-y-6 animate-fade-in flex flex-col">
@@ -60,13 +83,13 @@ function SearchResults() {
                     {results.length > 0 ? (
                         results.map((item, index) => (
                              <motion.div
-                                key={`${item.name}-${index}`}
+                                key={`${item.id}-${index}`}
                                 initial={{ opacity: 0, y: 8 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ duration: 0.15, delay: index * 0.03 }}
                             >
                                 {item.type === 'FILE' && (
-                                    <Link href={`/folder/${item.parentId}`}>
+                                     <Link href={`/folder/${item.parentId}?file=${item.id}`}>
                                         <RecentFileCard
                                             name={item.name}
                                             size={item.metadata?.size ? `${(item.metadata.size / 1024).toFixed(1)} KB` : ''}
@@ -75,10 +98,10 @@ function SearchResults() {
                                     </Link>
                                 )}
                                 {item.type === 'FOLDER' && (
-                                    <FolderCard 
+                                     <FolderCard 
                                         item={item}
-                                        onRename={() => {}}
-                                        onDelete={() => {}}
+                                        onRename={handleAction}
+                                        onDelete={handleAction}
                                     />
                                 )}
                                 {item.type === 'SUBJECT' && (
