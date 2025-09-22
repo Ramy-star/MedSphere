@@ -103,13 +103,17 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
       <div className="flex items-center justify-between">
         <Breadcrumbs ancestors={ancestors} />
         <div className="flex items-center gap-3">
-          {currentFolder && onContentAdded && <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />}
           <div className="flex items-center gap-3">
             <button onClick={() => window.history.back()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowLeft size={16} /></button>
             <button onClick={() => window.history.forward()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowRight size={16} /></button>
           </div>
         </div>
       </div>
+       {currentFolder && onContentAdded && (
+        <div className="flex justify-end mt-4">
+          <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />
+        </div>
+      )}
     </div>
   );
 }
