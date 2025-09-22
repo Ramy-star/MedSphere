@@ -2,18 +2,31 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState, Suspense, useCallback } from 'react';
 import { search } from '@/ai/flows/search-flow';
-import { RecentFileCard } from '@/components/dashboard';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { motion } from 'framer-motion';
-import { format } from 'date-fns';
 import { FileCard } from '@/components/FileCard';
 import { FolderCard } from '@/components/FolderCard';
 import { SubjectCard } from '@/components/subject-card';
 import { contentService, Content } from '@/lib/contentService';
 import Link from 'next/link';
+import { FilePreviewModal } from '@/components/FilePreviewModal';
+import { RenameDialog } from '@/components/RenameDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { Button } from '@/components/ui/button';
+import { saveFile as saveFileToDb, getFile } from '@/lib/indexedDBService';
+import React from 'react';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -22,57 +35,116 @@ function SearchResults() {
     const [loading, setLoading] = useState(false);
     const [allItems, setAllItems] = useState<Content[]>([]);
 
-    useEffect(() => {
-        // Pre-load all content for searching
-        async function loadAllContent() {
-            const allContent = await contentService.getAll();
-            setAllItems(allContent);
+    const [previewFile, setPreviewFile] = useState<Content | null>(null);
+    const [itemToRename, setItemToRename] = useState<Content | null>(null);
+    const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
+    const updateFileRef = React.useRef<HTMLInputElement>(null);
+
+    const performSearch = useCallback(async () => {
+        if (!query || allItems.length === 0) {
+            setResults([]);
+            return;
         }
-        loadAllContent();
+        setLoading(true);
+        try {
+            const searchResults = await search(query, allItems);
+            setResults(searchResults);
+        } catch (error) {
+            console.error("Search failed:", error);
+            setResults([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [query, allItems]);
+    
+    const reloadAllContent = useCallback(async () => {
+        setLoading(true);
+        const allContent = await contentService.getAll();
+        setAllItems(allContent);
     }, []);
 
     useEffect(() => {
-        async function performSearch() {
-            if (!query || allItems.length === 0) {
-                setResults([]);
-                return;
-            }
-            setLoading(true);
-            try {
-                // Perform search on the client side
-                const searchResults = await search(query, allItems);
-                setResults(searchResults);
-            } catch (error) {
-                console.error("Search failed:", error);
-                setResults([]);
-            } finally {
-                setLoading(false);
-            }
-        }
-        performSearch();
-    }, [query, allItems]);
-
-    const handleAction = () => {
-        // Placeholder for rename/delete actions if needed in the future
-        // For now, these actions are handled within the cards, which need refetching.
-        // A simple solution is to reload all content.
-        async function reloadAllContent() {
-            const allContent = await contentService.getAll();
-            setAllItems(allContent);
-        }
         reloadAllContent();
+    }, [reloadAllContent]);
+
+    useEffect(() => {
+        performSearch();
+    }, [performSearch]);
+
+    const handleAction = useCallback(() => {
+      reloadAllContent().then(() => {
+        // The search will be re-triggered by the useEffect watching allItems
+      });
+    }, [reloadAllContent]);
+    
+    const handleRename = async (newName: string) => {
+        if (!itemToRename) return;
+        await contentService.rename(itemToRename.id, newName);
+        setItemToRename(null);
+        handleAction();
     };
+
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+        await contentService.delete(itemToDelete.id);
+        setItemToDelete(null);
+        handleAction();
+    };
+
+    const handleUpdateClick = (item: Content) => {
+        setItemToUpdate(item);
+        updateFileRef.current?.click();
+    };
+
+    const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file && itemToUpdate) {
+            await contentService.updateFileContent(itemToUpdate.id, { name: file.name, size: file.size, mime: file.type });
+            await saveFileToDb(itemToUpdate.id, file);
+            setItemToUpdate(null);
+            handleAction();
+        }
+    };
+    
+    const handleDownloadClick = async (item: Content) => {
+        if (item.type !== 'FILE') return;
+        const file = await getFile(item.id);
+        if (file) {
+          const url = URL.createObjectURL(file);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = item.name;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        } else {
+          // Fallback for seeded images or if not in IndexedDB
+          if (item.metadata?.mime?.startsWith('image/')) {
+            const url = `https://picsum.photos/seed/${item.id}/1280/720`;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = item.name;
+            link.target = '_blank'; // Might be needed for cross-origin
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+          }
+        }
+    }
 
 
     return (
         <main className="flex-1 p-6 space-y-6 animate-fade-in flex flex-col">
+            <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
             <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: 'root' }} ancestors={[{ id: 'root', name: 'Home', type: 'FOLDER', parentId: null }]} />
 
             <h2 className="text-2xl font-bold text-white">
-                {loading ? 'Searching...' : `Found ${results.length} results for "${query}"`}
+                {loading && !results.length ? 'Searching...' : `Found ${results.length} results for "${query}"`}
             </h2>
 
-            {loading ? (
+            {loading && !results.length ? (
                 <div className="space-y-3">
                     <Skeleton className="h-16 w-full" />
                     <Skeleton className="h-16 w-full" />
@@ -89,19 +161,20 @@ function SearchResults() {
                                 transition={{ duration: 0.15, delay: index * 0.03 }}
                             >
                                 {item.type === 'FILE' && (
-                                     <Link href={`/folder/${item.parentId}?file=${item.id}`}>
-                                        <RecentFileCard
-                                            name={item.name}
-                                            size={item.metadata?.size ? `${(item.metadata.size / 1024).toFixed(1)} KB` : ''}
-                                            date={item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : ''}
-                                        />
-                                    </Link>
+                                     <FileCard
+                                        item={item}
+                                        onFileClick={() => setPreviewFile(item)}
+                                        onRename={() => setItemToRename(item)}
+                                        onDelete={() => setItemToDelete(item)}
+                                        onUpdate={() => handleUpdateClick(item)}
+                                        onDownload={() => handleDownloadClick(item)}
+                                     />
                                 )}
                                 {item.type === 'FOLDER' && (
                                      <FolderCard 
                                         item={item}
-                                        onRename={handleAction}
-                                        onDelete={handleAction}
+                                        onRename={() => setItemToRename(item)}
+                                        onDelete={() => setItemToDelete(item)}
                                     />
                                 )}
                                 {item.type === 'SUBJECT' && (
@@ -128,6 +201,31 @@ function SearchResults() {
                     )}
                 </div>
             )}
+             <FilePreviewModal
+                item={previewFile}
+                onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+              />
+
+              <RenameDialog 
+                item={itemToRename} 
+                onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
+                onRename={handleRename}
+              />
+
+              <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
+                <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+                  <AlertDialogHeader className="p-6 pb-0">
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete "{itemToDelete?.name}" and all its contents. This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter className="p-6 pt-4">
+                    <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
+                    <AlertDialogAction asChild><Button variant="destructive" onClick={handleDelete}>Delete</Button></AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
         </main>
     );
 }
@@ -140,3 +238,5 @@ export default function SearchPage() {
         </Suspense>
     )
 }
+
+    
