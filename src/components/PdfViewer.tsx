@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
+
 const options = {
   cMapUrl: '/cmaps/',
   standardFontDataUrl: '/standard_fonts/',
@@ -22,7 +23,7 @@ const ZOOM_STEP = 0.2;
 export default function PdfViewer({ file }: { file: string }) {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1.5); // Start with a slightly larger scale for better initial quality
+  const [scale, setScale] = useState(1.5);
   const { toast } = useToast();
 
   function onDocumentLoadSuccess({ numPages }: { numPages: number }): void {
@@ -56,12 +57,16 @@ export default function PdfViewer({ file }: { file: string }) {
             options={options}
             className="flex justify-center"
           >
-            <Page 
-              pageNumber={pageNumber} 
-              scale={scale} 
-              renderTextLayer={true}
-              devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
-            />
+            <div 
+              style={{ transform: `scale(${scale})` }}
+              className="transition-transform duration-300 ease-in-out"
+            >
+              <Page 
+                pageNumber={pageNumber} 
+                scale={1.5}
+                renderTextLayer={true}
+              />
+            </div>
           </Document>
         </div>
       </div>
