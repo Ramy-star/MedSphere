@@ -5,7 +5,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Button } from './ui/button';
-import { ChevronLeft, ChevronRight, Minus, Plus } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 pdfjs.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
@@ -65,7 +65,6 @@ export default function PdfViewer({ file }: { file: string }) {
                 pageNumber={pageNumber} 
                 renderTextLayer={true}
                 scale={1.5}
-                devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
               />
             </div>
           </Document>
@@ -74,25 +73,6 @@ export default function PdfViewer({ file }: { file: string }) {
 
       {numPages && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute left-[-100px] top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white/80 hover:bg-black/60 hover:text-white"
-            onClick={goToPrevPage}
-            disabled={pageNumber <= 1}
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            className="absolute right-[-100px] top-1/2 -translate-y-1/2 rounded-full bg-black/40 text-white/80 hover:bg-black/60 hover:text-white"
-            onClick={goToNextPage}
-            disabled={pageNumber >= (numPages ?? 0)}
-          >
-            <ChevronRight className="w-6 h-6" />
-          </Button>
-
           <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
             <span className="text-sm px-3">Page {pageNumber} / {numPages ?? '--'}</span>
             <div className="h-6 w-px bg-white/20"></div>
