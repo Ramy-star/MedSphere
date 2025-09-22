@@ -100,7 +100,7 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
 export default function FileExplorerHeader({ currentFolder, ancestors, onContentAdded }: { currentFolder?: ContentItem, ancestors?: ContentItem[], onContentAdded?: () => void }) {
   
   return (
-    <div className="mb-6">
+    <div className="mb-6 space-y-4">
       <div className="flex items-center justify-between">
         <Breadcrumbs ancestors={ancestors} />
         <div className="flex items-center gap-3">
@@ -108,11 +108,18 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
           <button onClick={() => window.history.forward()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowRight size={16} /></button>
         </div>
       </div>
-      {currentFolder && onContentAdded && (
-        <div className="flex justify-end mt-4">
-          <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />
-        </div>
-      )}
+      
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold text-white">
+          {currentFolder?.name}
+        </h1>
+        {currentFolder && onContentAdded && (
+          <div>
+            <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />
+          </div>
+        )}
+      </div>
+
     </div>
   );
 }
