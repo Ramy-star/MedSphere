@@ -9,14 +9,28 @@ import {
 import { Button } from '@/components/ui/button';
 import { FolderPlus, Plus, Upload } from 'lucide-react';
 import { NewFolderDialog } from './new-folder-dialog';
+import React, { useRef } from 'react';
 
 type AddContentMenuProps = {
   showNewFolderDialog: boolean;
   setShowNewFolderDialog: (show: boolean) => void;
   onAddFolder: (folderName: string) => void;
+  onUploadFile: (file: File) => void;
 }
 
-export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog, onAddFolder }: AddContentMenuProps) {
+export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog, onAddFolder, onUploadFile }: AddContentMenuProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      onUploadFile(file);
+    }
+  };
 
   const menuItems = [
       {
@@ -27,12 +41,18 @@ export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog, on
       {
           label: "Upload File",
           icon: Upload,
-          action: () => console.log("Upload file clicked"),
+          action: handleUploadClick,
       }
   ]
 
   return (
     <>
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileChange}
+        className="hidden" 
+      />
       <Popover>
         <PopoverTrigger asChild>
           <Button className="rounded-xl">

@@ -2,7 +2,7 @@
 'use client';
 
 import { Folder as FolderIcon, Folder } from 'lucide-react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
@@ -30,14 +30,32 @@ export default function SubjectPage({ params }: SubjectPageProps) {
   }, [subjectName, levelName, semesterName]);
 
   const [content, setContent] = useState<ContentItem[]>([]);
+  
+  // This is a placeholder. In a real app, you'd fetch this from your DB/API
+  // based on the subject.
+  useEffect(() => {
+    setContent([]);
+  }, [subject])
+
 
   if (!subject) {
     notFound();
   }
 
   const handleAddFolder = (folderName: string) => {
-    setContent(prevContent => [...prevContent, { name: folderName, type: 'folder' }]);
+    // In a real app, you would call an API to create the folder.
+    // Here we just add it to the local state for demonstration.
+    const newFolder = { name: folderName, type: 'folder' as const };
+    setContent(prevContent => [...prevContent, newFolder]);
   };
+
+  const handleUploadFile = (file: globalThis.File) => {
+    // In a real app, you would handle the file upload process.
+    console.log("Uploading file:", file.name);
+    // For now, we'll just add it to the list to show it in the UI.
+    const newFile = { name: file.name, size: `${(file.size / 1024).toFixed(1)} KB`, date: new Date().toLocaleDateString() };
+    setContent(prevContent => [...prevContent, newFile]);
+  }
   
   const { icon: SubjectIcon, color, name } = subject;
 
@@ -58,6 +76,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
           showNewFolderDialog={showNewFolderDialog} 
           setShowNewFolderDialog={setShowNewFolderDialog}
           onAddFolder={handleAddFolder}
+          onUploadFile={handleUploadFile}
         />
         </div>
 
@@ -76,7 +95,18 @@ export default function SubjectPage({ params }: SubjectPageProps) {
                   </Link>
                 )
               }
-              // TODO: Render files here
+              // Render files here
+              if ('size' in item) {
+                return (
+                   <div key={index} className="glass-card p-4 rounded-xl group hover:bg-white/10 transition-colors cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <FolderIcon className="w-6 h-6 text-blue-400" />
+                        <h3 className="text-lg font-semibold text-white truncate">{item.name}</h3>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-1 truncate">{item.size}</p>
+                    </div>
+                )
+              }
               return null;
             })}
         </div>
@@ -90,6 +120,7 @@ export default function SubjectPage({ params }: SubjectPageProps) {
                 showNewFolderDialog={showNewFolderDialog} 
                 setShowNewFolderDialog={setShowNewFolderDialog}
                 onAddFolder={handleAddFolder}
+                onUploadFile={handleUploadFile}
               />
             </div>
         </div>

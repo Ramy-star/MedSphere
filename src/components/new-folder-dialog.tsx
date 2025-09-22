@@ -41,8 +41,8 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    onAddFolder(values.folderName);
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    await onAddFolder(values.folderName);
     onOpenChange(false);
     form.reset();
   }

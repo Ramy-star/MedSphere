@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ArrowLeft, ArrowRight, Home, Folder as FolderIcon } from 'lucide-react';
 
-export default function FileExplorerHeader({ currentFolder }: { currentFolder?: { name: string, icon?: string } }) {
+export default function FileExplorerHeader({ currentFolder, children }: { currentFolder?: { name: string, icon?: string }, children?: React.ReactNode }) {
   const pathname = usePathname() || '/';
   const segments = pathname.split('/').filter(Boolean);
 
@@ -22,10 +22,19 @@ export default function FileExplorerHeader({ currentFolder }: { currentFolder?: 
             {segments.map((seg, i) => {
               const href = '/' + segments.slice(0, i + 1).join('/');
               const isLast = i === segments.length - 1;
+              // Don't create a link for the current page segment
+              if (isLast) {
+                 return (
+                  <span key={href} className="flex items-center gap-2">
+                    <span className="opacity-60">/</span>
+                    <span className="font-semibold text-white">{decodeURIComponent(seg)}</span>
+                  </span>
+                );
+              }
               return (
                 <span key={href} className="flex items-center gap-2">
                   <span className="opacity-60">/</span>
-                  <Link href={href} className={isLast ? "font-semibold text-white" : "hover:text-white"}>
+                  <Link href={href} className={"hover:text-white"}>
                     {decodeURIComponent(seg)} 
                   </Link>
                 </span>
@@ -33,6 +42,7 @@ export default function FileExplorerHeader({ currentFolder }: { currentFolder?: 
             })}
           </nav>
         </div>
+        <div>{children}</div>
       </div>
 
       {currentFolder && (
