@@ -51,7 +51,7 @@ export default function PdfViewer({ file }: { file: string }) {
   return (
     <div className="w-full h-full flex flex-col" ref={containerRef}>
       <div className="flex-1 w-full overflow-auto">
-        <div className="flex justify-center items-start p-4 min-h-full">
+        <div className="flex justify-center items-center p-4 min-h-full">
             <Document
               file={file}
               onLoadSuccess={onDocumentLoadSuccess}
