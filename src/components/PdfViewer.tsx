@@ -46,7 +46,7 @@ export default function PdfViewer({ file }: { file: string }) {
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
+    <div className="w-full h-full flex flex-col">
       <div className="flex-1 w-full overflow-auto">
         <div className="flex justify-center items-start min-h-full">
           <Document
@@ -57,7 +57,12 @@ export default function PdfViewer({ file }: { file: string }) {
             className="flex justify-center"
           >
             <div className="transition-transform duration-300 ease-in-out" style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}>
-              <Page pageNumber={pageNumber} scale={1} renderTextLayer={true} />
+              <Page 
+                pageNumber={pageNumber} 
+                scale={1} 
+                renderTextLayer={true}
+                devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
+              />
             </div>
           </Document>
         </div>
