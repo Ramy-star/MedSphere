@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { Minus, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-pdfjs.GlobalWorkerOptions.workerSrc = '//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 
 const options = {
@@ -43,10 +43,14 @@ export default function PdfViewer({ file }: { file: string }) {
   const zoomIn = () => setScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
+  const goToPrevPage = () => setPageNumber(prev => Math.max(1, prev - 1));
+  const goToNextPage = () => setPageNumber(prev => Math.min(numPages!, prev + 1));
+
+
   return (
     <div className="w-full h-full flex flex-col">
       <div className="flex-1 w-full overflow-auto">
-        <div className="flex justify-center items-center p-4 min-h-full">
+        <div className="flex justify-center items-start p-4 min-h-full">
           <Document
             file={file}
             onLoadSuccess={onDocumentLoadSuccess}
@@ -54,16 +58,12 @@ export default function PdfViewer({ file }: { file: string }) {
             options={options}
             className="flex justify-center"
           >
-            <div 
-              style={{ transform: `scale(${scale})` }}
-              className="transition-transform duration-300 ease-in-out"
-            >
-              <Page 
-                pageNumber={pageNumber} 
-                renderTextLayer={true}
-                devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
-              />
-            </div>
+            <Page 
+              pageNumber={pageNumber} 
+              scale={scale}
+              renderTextLayer={true}
+              devicePixelRatio={typeof window !== 'undefined' ? window.devicePixelRatio : 1}
+            />
           </Document>
         </div>
       </div>
@@ -71,8 +71,19 @@ export default function PdfViewer({ file }: { file: string }) {
       {numPages && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
            <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
-            <span className="text-sm px-3">Page {pageNumber} / {numPages ?? '--'}</span>
+            
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={goToPrevPage} disabled={pageNumber <= 1}>
+                &lt;
+            </Button>
+
+            <span className="text-sm px-3 tabular-nums">Page {pageNumber} / {numPages ?? '--'}</span>
+            
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={goToNextPage} disabled={pageNumber >= numPages}>
+                &gt;
+            </Button>
+
             <div className="h-6 w-px bg-white/20"></div>
+            
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
               <Minus className="w-4 h-4" />
             </Button>
@@ -85,4 +96,3 @@ export default function PdfViewer({ file }: { file: string }) {
     </div>
   );
 }
-
