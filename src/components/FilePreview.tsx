@@ -16,7 +16,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   }
   
   if (mime.startsWith('image/')) {
-    return <div className={`${mainContainerClasses} p-2`}><img src={url} alt={itemName} className="max-w-full max-h-full object-contain h-auto rounded-lg shadow-2xl" /></div>;
+    return <div className={`${mainContainerClasses} p-2`}><img src={url} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" /></div>;
   }
   
   if (mime === 'application/pdf') {
@@ -28,7 +28,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   }
   
   if (mime.startsWith('video/')) {
-    return <div className={`${mainContainerClasses} bg-black`}><video controls src={url} className="max-w-full max-h-full h-auto" /></div>;
+    return <div className={`${mainContainerClasses} bg-black`}><video controls src={url} className="max-w-full max-h-full" /></div>;
   }
 
   if (mime.startsWith('text/')) {
