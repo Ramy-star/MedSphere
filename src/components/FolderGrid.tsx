@@ -164,12 +164,15 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
     }
   };
 
+  const isSubjectView = items.length > 0 && items.every(it => it.type === 'SUBJECT');
 
   if (loading) {
+    const skeletonCount = isSubjectView ? 4 : 3;
+    const skeletonClass = isSubjectView ? "h-28" : "h-14";
     return (
-      <div className="space-y-2">
-        {[...Array(3)].map((_, i) => (
-          <Skeleton key={i} className="h-14 w-full rounded-xl" />
+      <div className={isSubjectView ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2"}>
+        {[...Array(skeletonCount)].map((_, i) => (
+          <Skeleton key={i} className={`${skeletonClass} w-full rounded-xl`} />
         ))}
       </div>
     );
@@ -195,10 +198,14 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
     )
   }
 
+  const containerClasses = isSubjectView 
+    ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+    : "flex flex-col gap-2";
+
   return (
     <div>
       <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
-      <div className="flex flex-col gap-2">
+      <div className={containerClasses}>
         <AnimatePresence>
           {items.map((it: Content, index) => (
             <motion.div key={it.id}
@@ -208,8 +215,6 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
               transition={{ duration: 0.15, delay: index * 0.02 }}
             >
               {it.type === 'SUBJECT' ? (
-                // SubjectCard might need a list-view variant too, but for now we focus on files/folders.
-                // Using FolderCard style for subjects for now.
                 <SubjectCard subject={it} />
               ) : it.type === 'FOLDER' ? (
                 <FolderCard 
