@@ -18,9 +18,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
+import { Folder as FolderIcon, Plus } from 'lucide-react';
 
-
-export function FolderGrid({ parentId }: { parentId: string | null }) {
+export function FolderGrid({ parentId, onAddContentClick }: { parentId: string | null, onAddContentClick?: () => void }) {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [previewFile, setPreviewFile] = useState<ContentItem | null>(null);
@@ -64,6 +64,22 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
         ))}
       </div>
     );
+  }
+
+  if (items.length === 0) {
+    return (
+      <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in flex flex-col items-center justify-center" style={{ animationDelay: '0.15s' }}>
+          <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
+          <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
+          <p className="mt-2 text-sm text-slate-400">Get started by adding folders or files.</p>
+          {onAddContentClick && (
+            <Button onClick={onAddContentClick} className="mt-6 rounded-xl">
+              <Plus className="mr-2 h-4 w-4" />
+              Add Content
+            </Button>
+          )}
+      </div>
+    )
   }
 
   return (

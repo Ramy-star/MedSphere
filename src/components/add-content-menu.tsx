@@ -16,9 +16,10 @@ type AddContentMenuProps = {
   setShowNewFolderDialog: (show: boolean) => void;
   onAddFolder: (folderName: string) => void;
   onUploadFile: (file: File) => void;
+  popoverRef?: React.RefObject<HTMLButtonElement>;
 }
 
-export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog, onAddFolder, onUploadFile }: AddContentMenuProps) {
+export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog, onAddFolder, onUploadFile, popoverRef }: AddContentMenuProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleUploadClick = () => {
@@ -55,7 +56,7 @@ export function AddContentMenu({ showNewFolderDialog, setShowNewFolderDialog, on
       />
       <Popover>
         <PopoverTrigger asChild>
-          <Button className="rounded-xl">
+          <Button className="rounded-xl" ref={popoverRef}>
             <Plus className="mr-2 h-4 w-4" />
             Add Content
           </Button>

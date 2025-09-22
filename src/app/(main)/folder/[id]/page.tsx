@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, use } from 'react';
+import { useEffect, useState, use, useRef } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
@@ -34,6 +34,9 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [forceUpdateKey, setForceUpdateKey] = useState(0);
 
+  const addContentPopoverRef = useRef<HTMLButtonElement>(null);
+
+
   useEffect(() => {
     async function fetchFolderData() {
       const fetchedFolder = await contentService.getById(id);
@@ -57,6 +60,10 @@ export default function FolderPage({ params }: { params: { id: string } }) {
     setForceUpdateKey(v => v + 1);
   };
 
+  const handleAddContentClick = () => {
+    addContentPopoverRef.current?.click();
+  }
+
   return (
     <main className="flex-1 p-6 glass-card">
        <FileExplorerHeader currentFolder={folder ?? undefined} ancestors={ancestors}>
@@ -65,9 +72,10 @@ export default function FolderPage({ params }: { params: { id: string } }) {
             setShowNewFolderDialog={setShowNewFolderDialog}
             onAddFolder={handleAddFolder}
             onUploadFile={handleUploadFile}
+            popoverRef={addContentPopoverRef}
           />
         </FileExplorerHeader>
-      <FolderGrid parentId={id} key={forceUpdateKey} />
+      <FolderGrid parentId={id} key={forceUpdateKey} onAddContentClick={handleAddContentClick}/>
     </main>
   );
 }
