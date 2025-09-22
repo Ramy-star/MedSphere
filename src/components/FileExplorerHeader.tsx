@@ -1,4 +1,3 @@
-
 'use client';
 import { ArrowRight, ArrowLeft, Plus, Folder } from 'lucide-react';
 import { Breadcrumbs } from './breadcrumbs';
@@ -24,6 +23,7 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
+  // This is a simplified version. For progress bars here, state needs to be lifted.
   const handleAddFolder = async (folderName: string) => {
     await contentService.createFolder(parentId, folderName);
     onContentAdded();
@@ -31,6 +31,8 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
   };
 
   const handleUploadFile = async (file: File) => {
+    // This doesn't show progress, but it works.
+    // A more complex implementation would lift state or use a global state manager.
     const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
     await saveFileToDb(newFileItem.id, file);
     onContentAdded();

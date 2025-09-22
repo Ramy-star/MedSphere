@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,28 +27,24 @@ import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { UploadProgress, UploadingFile } from './UploadProgress';
+import { v4 as uuidv4 } from 'uuid';
 
 
 type AddContentMenuProps = {
   parentId: string | null;
   onContentAdded: () => void;
+  onFileSelected: (file: File) => void;
   trigger: React.ReactNode;
 }
 
-function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuProps) {
+function AddContentMenu({ parentId, onContentAdded, onFileSelected, trigger }: AddContentMenuProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const handleAddFolder = async (folderName: string) => {
     await contentService.createFolder(parentId, folderName);
-    onContentAdded();
-    setPopoverOpen(false);
-  };
-
-  const handleUploadFile = async (file: File) => {
-    const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
-    await saveFileToDb(newFileItem.id, file);
     onContentAdded();
     setPopoverOpen(false);
   };
@@ -61,7 +56,8 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      handleUploadFile(file);
+      onFileSelected(file);
+      setPopoverOpen(false);
     }
   };
 
@@ -151,6 +147,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const updateFileRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -165,6 +162,57 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
+  
+  const processFileUpload = (file: File) => {
+    const uploadId = uuidv4();
+    const newUploadingFile: UploadingFile = {
+        id: uploadId,
+        name: file.name,
+        size: file.size,
+        progress: 0
+    };
+
+    setUploadingFiles(prev => [...prev, newUploadingFile]);
+
+    const uploadInterval = setInterval(() => {
+        setUploadingFiles(prev => prev.map(f => {
+            if (f.id === uploadId && f.progress < 100) {
+                const diff = Math.random() * 20;
+                return { ...f, progress: Math.min(f.progress + diff, 100) };
+            }
+            return f;
+        }));
+    }, 200);
+
+    const finishUpload = async () => {
+        clearInterval(uploadInterval);
+
+        setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress: 100 } : f));
+        
+        const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
+        await saveFileToDb(newFileItem.id, file);
+
+        setTimeout(async () => {
+            setUploadingFiles(prev => prev.filter(f => f.id !== uploadId));
+            await fetchItems();
+        }, 800);
+    };
+
+    // Check if progress is already 100 to avoid multiple `finishUpload` calls
+    let finished = false;
+    const progressCheckInterval = setInterval(() => {
+        setUploadingFiles(prev => {
+            const currentFile = prev.find(f => f.id === uploadId);
+            if (currentFile && currentFile.progress >= 100 && !finished) {
+                finished = true;
+                clearInterval(progressCheckInterval);
+                finishUpload();
+            }
+            return prev;
+        })
+    }, 100);
+  };
+
 
   const handleFileClick = (file: Content) => {
     setPreviewFile(file);
@@ -202,13 +250,12 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
     } else {
-      // Fallback for seeded images or if not in IndexedDB
       if (item.metadata?.mime?.startsWith('image/')) {
         const url = `https://picsum.photos/seed/${item.id}/1280/720`;
         const link = document.createElement('a');
         link.href = url;
         link.download = item.name;
-        link.target = '_blank'; // Might be needed for cross-origin
+        link.target = '_blank';
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -238,7 +285,6 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    // Check if the leave event is heading outside the drop zone area
     if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
         setIsDraggingOver(false);
     }
@@ -256,12 +302,9 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
 
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
-      setLoading(true);
       for (const file of Array.from(files)) {
-        const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
-        await saveFileToDb(newFileItem.id, file);
+        processFileUpload(file);
       }
-      await fetchItems(); // This already sets loading to false
     }
   };
   
@@ -307,7 +350,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
         </div>
       )}
 
-      {!loading && items.length === 0 && (
+      {!loading && items.length === 0 && uploadingFiles.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in flex flex-col items-center justify-center h-full" style={{ animationDelay: '0.15s' }}>
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
@@ -315,6 +358,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
               <AddContentMenu 
                 parentId={parentId}
                 onContentAdded={onContentAdded}
+                onFileSelected={processFileUpload}
                 trigger={
                   <Button className="mt-6 rounded-xl">
                     <Plus className="mr-2 h-4 w-4" />
@@ -325,7 +369,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
           </div>
       )}
       
-      {!loading && items.length > 0 && (
+      {(!loading || items.length > 0 || uploadingFiles.length > 0) && (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
               <div className={containerClasses}>
@@ -361,6 +405,16 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
                         </motion.div>
                     )
                   })}
+                  {uploadingFiles.map((file) => (
+                      <motion.div key={file.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 8 }}
+                            transition={{ duration: 0.15 }}
+                        >
+                          <UploadProgress file={file} />
+                      </motion.div>
+                  ))}
                 </AnimatePresence>
               </div>
             </SortableContext>
