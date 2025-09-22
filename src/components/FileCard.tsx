@@ -1,13 +1,12 @@
 
 'use client';
-import { File, MoreVertical, Edit, Trash2, Replace, MoreHorizontal } from 'lucide-react';
+import { File, MoreVertical, Edit, Trash2, Replace, Download } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
@@ -17,13 +16,15 @@ export function FileCard({
     onFileClick, 
     onRename, 
     onDelete, 
-    onUpdate 
+    onUpdate,
+    onDownload
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
     onUpdate: () => void,
+    onDownload: () => void,
 }) {
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
@@ -76,14 +77,13 @@ export function FileCard({
             <Replace className="mr-2 h-4 w-4" />
             <span>Update File</span>
           </DropdownMenuItem>
+           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDownload(); }} className="cursor-pointer">
+            <Download className="mr-2 h-4 w-4" />
+            <span>Download</span>
+          </DropdownMenuItem>
           <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onDelete(); }} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
             <Trash2 className="mr-2 h-4 w-4" />
             <span>Delete</span>
-          </DropdownMenuItem>
-          <DropdownMenuSeparator className="bg-white/10" />
-           <DropdownMenuItem disabled className="cursor-not-allowed">
-            <MoreHorizontal className="mr-2 h-4 w-4" />
-            <span>More actions</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

@@ -20,11 +20,14 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-import { Folder as FolderIcon, FolderPlus, Plus, Upload, UploadCloud } from 'lucide-react';
+import { Folder as FolderIcon, FolderPlus, Plus, Upload, UploadCloud, GripVertical } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { NewFolderDialog } from './new-folder-dialog';
-import { saveFile as saveFileToDb } from '@/lib/indexedDBService';
+import { saveFile as saveFileToDb, getFile } from '@/lib/indexedDBService';
 import { cn } from '@/lib/utils';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 
 type AddContentMenuProps = {
@@ -124,6 +127,21 @@ function DropZone({ isVisible }: { isVisible: boolean }) {
   );
 }
 
+const SortableItemWrapper = ({ id, children }: { id: string, children: React.ReactNode }) => {
+  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="flex items-center w-full">
+        <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />
+        <div className="flex-1">
+            {children}
+        </div>
+    </div>
+  );
+};
 
 export function FolderGrid({ parentId, onContentAdded }: { parentId: string | null, onContentAdded: () => void }) {
   const [items, setItems] = useState<Content[]>([]);
@@ -135,6 +153,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const updateFileRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const fetchItems = useCallback(async () => {
     setLoading(true);
@@ -169,6 +188,34 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
     setItemToUpdate(item);
     updateFileRef.current?.click();
   };
+  
+  const handleDownloadClick = async (item: Content) => {
+    if (item.type !== 'FILE') return;
+    const file = await getFile(item.id);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = item.name;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } else {
+      // Fallback for seeded images or if not in IndexedDB
+      if (item.metadata?.mime?.startsWith('image/')) {
+        const url = `https://picsum.photos/seed/${item.id}/1280/720`;
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = item.name;
+        link.target = '_blank'; // Might be needed for cross-origin
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+    }
+  }
+
 
   const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -217,6 +264,20 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
       await fetchItems(); // This already sets loading to false
     }
   };
+  
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (active.id !== over?.id) {
+      setItems((currentItems) => {
+        const oldIndex = currentItems.findIndex((item) => item.id === active.id);
+        const newIndex = currentItems.findIndex((item) => item.id === over?.id);
+        if (oldIndex === -1 || newIndex === -1) return currentItems;
+        return arrayMove(currentItems, oldIndex, newIndex);
+      });
+      // Here you would typically call a service to persist the new order.
+      // e.g., contentService.updateOrder(newlyOrderedItems);
+    }
+  };
 
   const isSubjectView = items.length > 0 && items.every(it => it.type === 'SUBJECT');
 
@@ -263,36 +324,45 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
       )}
       
       {!loading && items.length > 0 && (
-          <div className={containerClasses}>
-            <AnimatePresence>
-              {items.map((it: Content, index) => (
-                <motion.div key={it.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 8 }}
-                  transition={{ duration: 0.15, delay: index * 0.02 }}
-                >
-                  {it.type === 'SUBJECT' ? (
-                    <SubjectCard subject={it} />
-                  ) : it.type === 'FOLDER' ? (
-                    <FolderCard 
-                      item={it} 
-                      onRename={() => setItemToRename(it)}
-                      onDelete={() => setItemToDelete(it)}
-                    />
-                  ) : (
-                    <FileCard 
-                      item={it} 
-                      onFileClick={handleFileClick} 
-                      onRename={() => setItemToRename(it)}
-                      onDelete={() => setItemToDelete(it)}
-                      onUpdate={() => handleUpdateClick(it)}
-                    />
-                  )}
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+              <div className={containerClasses}>
+                <AnimatePresence>
+                  {items.map((it: Content, index) => {
+                    const content = it.type === 'SUBJECT' ? (
+                      <SubjectCard subject={it} />
+                    ) : it.type === 'FOLDER' ? (
+                      <FolderCard 
+                        item={it} 
+                        onRename={() => setItemToRename(it)}
+                        onDelete={() => setItemToDelete(it)}
+                      />
+                    ) : (
+                      <FileCard 
+                        item={it} 
+                        onFileClick={handleFileClick} 
+                        onRename={() => setItemToRename(it)}
+                        onDelete={() => setItemToDelete(it)}
+                        onUpdate={() => handleUpdateClick(it)}
+                        onDownload={() => handleDownloadClick(it)}
+                      />
+                    );
+
+                    return (
+                        <motion.div key={it.id}
+                            initial={{ opacity: 0, y: 8 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: 8 }}
+                            transition={{ duration: 0.15, delay: index * 0.02 }}
+                        >
+                            {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
+                        </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
+              </div>
+            </SortableContext>
+          </DndContext>
       )}
       
       <FilePreviewModal
