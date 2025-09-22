@@ -1,3 +1,4 @@
+
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -7,6 +8,9 @@ export default function FileExplorerHeader({ currentFolder, children }: { curren
   const pathname = usePathname() || '/';
   const segments = pathname.split('/').filter(Boolean);
 
+  // Filter out segments that we don't want in the breadcrumbs
+  const validSegments = segments.filter(seg => !['level', 'semester', 'subject'].includes(decodeURIComponent(seg).toLowerCase()));
+
   return (
     <div className="mb-6">
       <div className="flex items-center justify-between">
@@ -15,9 +19,12 @@ export default function FileExplorerHeader({ currentFolder, children }: { curren
               <Home size={14}/> 
               <span>Home</span>
           </Link>
-          {segments.map((seg, i) => {
-            const href = '/' + segments.slice(0, i + 1).join('/');
-            const isLast = i === segments.length - 1;
+          {validSegments.map((seg, i) => {
+            // Reconstruct href from original segments to ensure correct links
+            const originalIndex = segments.indexOf(seg);
+            const href = '/' + segments.slice(0, originalIndex + 1).join('/');
+            const isLast = i === validSegments.length - 1;
+            
             // Don't create a link for the current page segment
             if (isLast) {
                 return (
@@ -60,3 +67,4 @@ export default function FileExplorerHeader({ currentFolder, children }: { curren
     </div>
   );
 }
+
