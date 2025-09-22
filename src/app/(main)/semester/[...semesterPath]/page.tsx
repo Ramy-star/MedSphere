@@ -3,7 +3,7 @@
 'use client';
 
 import { Folder } from 'lucide-react';
-import React, { useMemo } from 'react';
+import React, { use, useMemo } from 'react';
 import { notFound } from 'next/navigation';
 import { subjectsBySemester } from '@/lib/file-data';
 import { SubjectCard } from '@/components/subject-card';
@@ -16,7 +16,7 @@ type SemesterPageProps = {
 };
 
 export default function SemesterPage({ params }: SemesterPageProps) {
-  const resolvedParams = React.use(params);
+  const resolvedParams = use(params);
   const { semesterPath } = resolvedParams;
   const [levelName, semesterName] = semesterPath.map(decodeURIComponent);
 

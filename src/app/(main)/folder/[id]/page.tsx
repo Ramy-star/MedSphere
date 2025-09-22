@@ -1,12 +1,16 @@
+
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, ContentItem } from '@/lib/contentService';
 import { AddContentMenu } from '@/components/add-content-menu';
 
 export default function FolderPage({ params }: { params: { id: string } }) {
+  const resolvedParams = use(params);
+  const { id } = resolvedParams;
+
   const [folder, setFolder] = useState<ContentItem | null>(null);
   const [content, setContent] = useState<ContentItem[]>([]);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
@@ -14,21 +18,21 @@ export default function FolderPage({ params }: { params: { id: string } }) {
 
   useEffect(() => {
     async function fetchFolder() {
-      const fetchedFolder = await contentService.getById(params.id);
+      const fetchedFolder = await contentService.getById(id);
       setFolder(fetchedFolder);
-      const children = await contentService.getChildren(params.id);
+      const children = await contentService.getChildren(id);
       setContent(children);
     }
     fetchFolder();
-  }, [params.id]);
+  }, [id]);
   
   const handleAddFolder = async (folderName: string) => {
-    await contentService.createFolder(params.id, folderName);
+    await contentService.createFolder(id, folderName);
     setForceUpdate(v => v + 1); // Force re-render of FolderGrid
   };
 
   const handleUploadFile = async (file: File) => {
-    await contentService.uploadFile(params.id, { name: file.name, size: file.size, mime: file.type });
+    await contentService.uploadFile(id, { name: file.name, size: file.size, mime: file.type });
     setForceUpdate(v => v + 1); // Force re-render of FolderGrid
   };
 
@@ -42,7 +46,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
             onUploadFile={handleUploadFile}
           />
         </FileExplorerHeader>
-      <FolderGrid parentId={params.id} key={_} />
+      <FolderGrid parentId={id} key={_} />
     </main>
   );
 }

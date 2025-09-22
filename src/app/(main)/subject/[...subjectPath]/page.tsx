@@ -2,7 +2,7 @@
 'use client';
 
 import { Folder as FolderIcon, Folder } from 'lucide-react';
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { use, useMemo, useState, useEffect } from 'react';
 import { notFound } from 'next/navigation';
 import { allSubjects, File } from '@/lib/file-data';
 import Link from 'next/link';
@@ -20,7 +20,7 @@ type ContentItem = File | { name: string; type: 'folder' };
 
 
 export default function SubjectPage({ params }: SubjectPageProps) {
-  const resolvedParams = React.use(params);
+  const resolvedParams = use(params);
   const { subjectPath } = resolvedParams;
   const [levelName, semesterName, subjectName] = subjectPath.map(decodeURIComponent);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
