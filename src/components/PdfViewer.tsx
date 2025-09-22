@@ -8,7 +8,7 @@ import { Button } from './ui/button';
 import { Minus, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 
 const options = {
@@ -18,7 +18,7 @@ const options = {
 
 const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
-const ZOOM_STEP = 0.2;
+const ZOOM_STEP = 0.05;
 
 export default function PdfViewer({ file }: { file: string }) {
   const [numPages, setNumPages] = useState<number>();
