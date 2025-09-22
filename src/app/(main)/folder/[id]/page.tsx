@@ -24,15 +24,11 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   
   const handleAddFolder = async (folderName: string) => {
     await contentService.createFolder(params.id, folderName);
-    const children = await contentService.getChildren(params.id);
-    setContent(children);
     setForceUpdate(v => v + 1); // Force re-render of FolderGrid
   };
 
   const handleUploadFile = async (file: File) => {
     await contentService.uploadFile(params.id, { name: file.name, size: file.size, mime: file.type });
-    const children = await contentService.getChildren(params.id);
-    setContent(children);
     setForceUpdate(v => v + 1); // Force re-render of FolderGrid
   };
 

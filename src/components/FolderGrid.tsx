@@ -16,6 +16,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Button } from './ui/button';
+import { Skeleton } from './ui/skeleton';
 
 
 export function FolderGrid({ parentId }: { parentId: string | null }) {
@@ -54,7 +56,15 @@ export function FolderGrid({ parentId }: { parentId: string | null }) {
     await fetchItems();
   };
 
-  if (loading && items.length === 0) return <div className="text-center text-slate-400">Loading...</div>;
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+        {[...Array(5)].map((_, i) => (
+          <Skeleton key={i} className="h-28 rounded-xl" />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div>
