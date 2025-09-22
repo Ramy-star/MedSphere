@@ -1,4 +1,3 @@
-
 'use client';
 
 import { FolderGrid } from '@/components/FolderGrid';
