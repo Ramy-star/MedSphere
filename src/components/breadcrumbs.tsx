@@ -49,7 +49,7 @@ export function Breadcrumbs({ ancestors, current }: { ancestors?: Content[], cur
         </span>
       ))}
 
-      {current && (
+      {current && current.id !== 'root' && (
         <span className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
             <span className="font-semibold text-white">{current.name}</span>
