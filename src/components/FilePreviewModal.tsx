@@ -56,10 +56,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   if (!item) return null;
 
   const handleDownload = () => {
-    if (fileUrl !== '#' && fileHandle) {
+    const urlToDownload = fileUrl === '#' && item?.metadata?.mime?.startsWith('image/') ? `https://picsum.photos/seed/${item.id}/800/600` : fileUrl;
+    if (urlToDownload !== '#') {
         const link = document.createElement('a');
-        link.href = fileUrl;
-        link.download = fileHandle.name;
+        link.href = urlToDownload;
+        link.download = item.name;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -73,13 +74,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           <DialogTitle className="truncate">{item.name}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-auto p-4">
-           <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} />
+           <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />
         </div>
         <DialogFooter className="p-4 border-t border-slate-800">
           <Button variant="ghost" onClick={() => onOpenChange(false)}>Close</Button>
-          <Button onClick={handleDownload} disabled={!fileHandle}>Download</Button>
+          <Button onClick={handleDownload} disabled={fileUrl === '#'}>Download</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
 }
+
