@@ -1,11 +1,11 @@
 
 'use client';
-import { useState, useMemo, useCallback } from 'react';
+import { useState } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Button } from './ui/button';
-import { Minus, Plus, ZoomIn } from 'lucide-react';
+import { Minus, Plus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
@@ -63,7 +63,7 @@ export default function PdfViewer({ file }: { file: string }) {
               >
                   <Page 
                     pageNumber={pageNumber} 
-                    scale={scale * devicePixelRatio}
+                    scale={MAX_ZOOM * devicePixelRatio}
                     renderTextLayer={true}
                   />
               </div>
