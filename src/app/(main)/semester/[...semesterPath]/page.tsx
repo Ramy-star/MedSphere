@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Folder } from 'lucide-react';
@@ -6,8 +7,7 @@ import React, { useMemo } from 'react';
 import { notFound } from 'next/navigation';
 import { subjectsBySemester } from '@/lib/file-data';
 import { SubjectCard } from '@/components/subject-card';
-import { NavHistory } from '@/components/nav-history';
-import { Breadcrumbs } from '@/components/breadcrumbs';
+import FileExplorerHeader from '@/components/FileExplorerHeader';
 
 type SemesterPageProps = {
   params: {
@@ -31,10 +31,7 @@ export default function SemesterPage({ params }: SemesterPageProps) {
 
   return (
     <main className="flex-1 p-6 glass-card">
-        <div className="flex items-center justify-between mb-6">
-          <Breadcrumbs />
-          <NavHistory />
-        </div>
+        <FileExplorerHeader />
         <div className="flex items-center justify-between mb-6 animate-fade-in" style={{ animationDelay: '0.1s' }}>
           <h1 className="text-2xl font-bold text-white">Subjects</h1>
         </div>
