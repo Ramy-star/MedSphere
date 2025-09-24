@@ -18,18 +18,37 @@ export type Content = {
 
 const KEY = 'app_content_v2';
 
+// In-memory cache
+let contentCache: Content[] | null = null;
+
 function loadAll(): Content[] {
   if (typeof window === 'undefined') return [];
+
+  // Use cache if available
+  if (contentCache) {
+    return contentCache;
+  }
+  
   const raw = localStorage.getItem(KEY);
   if (!raw) {
     localStorage.setItem(KEY, JSON.stringify(seedData));
+    contentCache = seedData;
     return seedData;
   }
-  return JSON.parse(raw);
+
+  const data = JSON.parse(raw);
+  contentCache = data;
+  return data;
 }
 
 function saveAll(items: Content[]) {
   localStorage.setItem(KEY, JSON.stringify(items));
+  // Invalidate cache
+  contentCache = items;
+}
+
+function invalidateCache() {
+    contentCache = null;
 }
 
 export const contentService = {

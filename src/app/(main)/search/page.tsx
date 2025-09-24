@@ -59,7 +59,6 @@ function SearchResults() {
     }, [query, allItems]);
     
     const reloadAllContent = useCallback(async () => {
-        setLoading(true);
         const allContent = await contentService.getAll();
         setAllItems(allContent);
     }, []);
@@ -74,9 +73,9 @@ function SearchResults() {
 
     const handleAction = useCallback(() => {
       reloadAllContent().then(() => {
-        // The search will be re-triggered by the useEffect watching allItems
+        performSearch();
       });
-    }, [reloadAllContent]);
+    }, [reloadAllContent, performSearch]);
     
     const handleRename = async (newName: string) => {
         if (!itemToRename) return;

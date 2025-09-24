@@ -39,7 +39,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   }, [id, fetchFolderData]);
   
   if (loading) {
-      return <main className="flex-1 p-6 glass-card flex flex-col">
+      return <main className="flex-1 p-6 glass-card flex flex-col h-full overflow-hidden">
         {/* Can add a skeleton loader here */}
       </main>
   }

@@ -4,7 +4,7 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { use, useEffect, useState } from 'react';
+import { use, useEffect, useState, useCallback } from 'react';
 import { contentService, Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';
@@ -18,23 +18,24 @@ export default function LevelPage({ params }: { params: { levelName: string } })
   const [semesters, setSemesters] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    async function fetchLevelData() {
-        setLoading(true);
-        const allLevels = await contentService.getChildren(null);
-        const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
-        
-        if (currentLevel) {
-            setLevel(currentLevel);
-            const levelSemesters = await contentService.getChildren(currentLevel.id);
-            setSemesters(levelSemesters.filter(s => s.type === 'SEMESTER'));
-        } else {
-            notFound();
-        }
-        setLoading(false);
+  const fetchLevelData = useCallback(async () => {
+    setLoading(true);
+    const allLevels = await contentService.getChildren(null);
+    const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
+    
+    if (currentLevel) {
+        setLevel(currentLevel);
+        const levelSemesters = await contentService.getChildren(currentLevel.id);
+        setSemesters(levelSemesters.filter(s => s.type === 'SEMESTER'));
+    } else {
+        notFound();
     }
-    fetchLevelData();
+    setLoading(false);
   }, [levelName]);
+
+  useEffect(() => {
+    fetchLevelData();
+  }, [fetchLevelData]);
 
 
   if (loading) {

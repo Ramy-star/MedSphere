@@ -10,7 +10,7 @@ import {
   Menu,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,63 +23,65 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
   const [activePath, setActivePath] = useState({ levelId: '', semesterId: '' });
   const [openLevelId, setOpenLevelId] = useState('');
   
-  useEffect(() => {
-    async function loadInitialData() {
-        const topLevels = await contentService.getChildren(null);
-        const allLevels = topLevels.filter(c => c.type === 'LEVEL');
-        setLevels(allLevels);
+  const loadInitialData = useCallback(async () => {
+    const topLevels = await contentService.getChildren(null);
+    const allLevels = topLevels.filter(c => c.type === 'LEVEL');
+    setLevels(allLevels);
 
-        const semestersMap: {[levelId: string]: Content[]} = {};
-        for (const level of allLevels) {
-            const levelSemesters = await contentService.getChildren(level.id);
-            semestersMap[level.id] = levelSemesters.filter(c => c.type === 'SEMESTER');
-        }
-        setSemestersByLevel(semestersMap);
+    const semestersMap: {[levelId: string]: Content[]} = {};
+    for (const level of allLevels) {
+        const levelSemesters = await contentService.getChildren(level.id);
+        semestersMap[level.id] = levelSemesters.filter(c => c.type === 'SEMESTER');
     }
-    loadInitialData();
+    setSemestersByLevel(semestersMap);
   }, []);
 
   useEffect(() => {
-    async function findActivePath() {
-        if (pathname === '/') {
-            setActivePath({ levelId: '', semesterId: '' });
-            setOpenLevelId('');
-            return;
-        }
+    loadInitialData();
+  }, [loadInitialData]);
 
-        const pathParts = pathname.split('/');
-        
-        if (pathParts[1] === 'folder' && pathParts.length >= 3) {
-            const currentId = pathParts[2];
-            const ancestors = await contentService.getAncestors(currentId);
-            const current = await contentService.getById(currentId);
-            const pathItems = [...ancestors, current].filter(Boolean) as Content[];
+  const findActivePath = useCallback(async () => {
+    if (pathname === '/') {
+        setActivePath({ levelId: '', semesterId: '' });
+        setOpenLevelId('');
+        return;
+    }
 
-            const level = pathItems.find(p => p.type === 'LEVEL');
-            const semester = pathItems.find(p => p.type === 'SEMESTER');
+    const pathParts = pathname.split('/');
+    
+    if (pathParts[1] === 'folder' && pathParts.length >= 3) {
+        const currentId = pathParts[2];
+        const ancestors = await contentService.getAncestors(currentId);
+        const current = await contentService.getById(currentId);
+        const pathItems = [...ancestors, current].filter(Boolean) as Content[];
 
-            if (level) {
-                setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
-                setOpenLevelId(level.id);
-            } else {
-                 setActivePath({ levelId: '', semesterId: '' });
-            }
-        } else if (pathParts[1] === 'level' && pathParts.length >= 3) {
-            const levelName = decodeURIComponent(pathParts[2]);
-            const allLevels = await contentService.getChildren(null);
-            const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
-            if (currentLevel) {
-                 setActivePath({ levelId: currentLevel.id, semesterId: '' });
-                 setOpenLevelId(currentLevel.id);
-            } else {
-                 setActivePath({ levelId: '', semesterId: '' });
-            }
+        const level = pathItems.find(p => p.type === 'LEVEL');
+        const semester = pathItems.find(p => p.type === 'SEMESTER');
+
+        if (level) {
+            setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
+            if (open) setOpenLevelId(level.id);
         } else {
              setActivePath({ levelId: '', semesterId: '' });
         }
+    } else if (pathParts[1] === 'level' && pathParts.length >= 3) {
+        const levelName = decodeURIComponent(pathParts[2]);
+        const allLevels = await contentService.getChildren(null);
+        const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
+        if (currentLevel) {
+             setActivePath({ levelId: currentLevel.id, semesterId: '' });
+             if (open) setOpenLevelId(currentLevel.id);
+        } else {
+             setActivePath({ levelId: '', semesterId: '' });
+        }
+    } else {
+         setActivePath({ levelId: '', semesterId: '' });
     }
+  }, [pathname, open]);
+
+  useEffect(() => {
     findActivePath();
-  }, [pathname]);
+  }, [findActivePath]);
 
   const handleLevelChange = (levelId: string) => {
     setOpenLevelId(prevOpenLevelId => (prevOpenLevelId === levelId ? '' : levelId));
