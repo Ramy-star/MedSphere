@@ -52,16 +52,16 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Ophthalmology: Eye,
     Otorhinolaryngology: Ear,
     'Community Medicine': Users,
-    'Economics': BarChart3,
+    Economics: BarChart3,
     'Medicine 2': Stethoscope,
     'Surgery 2': SurgeryIcon,
-    'Hospital Management & Health Economics': FolderKanban,
+    'Hospital Management': FolderKanban,
     'UE 2': Star,
     'Pediatrics 2': Baby,
     'Gynecology & Obstetrics 2': Dna,
     'Emergency Medicine': Ambulance,
     'Family Medicine': Home,
-    'Clinical Toxicology and Forensic Medicine': Scale,
+    'Toxicology & Forensics': Scale,
     'UE 3': Star,
     'Cardiology': Heart,
     'Neurology': Brain,
@@ -141,7 +141,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
   'Semester 9': [
     { name: 'Medicine 2', iconName: 'Medicine 2', color: 'text-blue-600', },
     { name: 'Surgery 2', iconName: 'Surgery 2', color: 'text-green-600', },
-    { name: 'Hospital Management & Health Economics', iconName: 'Hospital Management & Health Economics', color: 'text-gray-400', },
+    { name: 'Hospital Management', iconName: 'Hospital Management', color: 'text-gray-400', },
     { name: 'UE 2', iconName: 'UE 2', color: 'text-yellow-500', },
   ],
   'Semester 10': [
@@ -149,14 +149,16 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
     { name: 'Gynecology & Obstetrics 2', iconName: 'Gynecology & Obstetrics 2', color: 'text-red-500', },
     { name: 'Emergency Medicine', iconName: 'Emergency Medicine', color: 'text-red-600', },
     { name: 'Family Medicine', iconName: 'Family Medicine', color: 'text-green-500', },
-    { name: 'Clinical Toxicology and Forensic Medicine', iconName: 'Clinical Toxicology and Forensic Medicine', color: 'text-gray-500', },
+    { name: 'Toxicology & Forensics', iconName: 'Toxicology & Forensics', color: 'text-gray-500', },
     { name: 'UE 3', iconName: 'UE 3', color: 'text-yellow-600', },
   ],
 };
 
 function generateStableId(type: string, name: string, parentId: string | null = ''): string {
-    return `${type}_${name.replace(/\s+/g, '-').replace(/&/g, 'and')}_${parentId}`.toLowerCase();
+    const safeName = name.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-');
+    return `${type}_${safeName}_${parentId}`.toLowerCase();
 }
+
 
 export const allContent: Content[] = [];
 
