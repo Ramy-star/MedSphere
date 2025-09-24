@@ -103,24 +103,18 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <div className='flex flex-col h-full'>
-      <div className={cn("flex items-center justify-center mb-4 h-10 px-2.5")}>
+      <div className={cn("flex items-center justify-between mb-4 h-10 px-2.5")}>
         <div className="flex items-center gap-2 flex-1 overflow-hidden">
           <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
-            <AnimatePresence>
-              {open && (
-                <motion.div
-                  className="flex-1"
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: -10 }}
-                  transition={{ duration: 0.2 }}
-                >
-                  <h2 className="font-semibold text-white leading-none">
-                    Academic Structure
-                  </h2>
-                </motion.div>
-              )}
-            </AnimatePresence>
+          <motion.div
+            className="overflow-hidden"
+            animate={{ width: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            <h2 className="font-semibold text-white leading-none whitespace-nowrap">
+              Academic Structure
+            </h2>
+          </motion.div>
         </div>
         <div className={cn("flex items-center", open ? "justify-end" : "justify-center")}>
             <Button 
@@ -151,8 +145,10 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
                 transition={{ duration: 0.2 }}
             >
-                <motion.div layout="position" className="flex items-center gap-3 overflow-hidden">
-                    <Layers className="h-5 w-5 text-slate-400 shrink-0" />
+                <div className="flex items-center gap-3 overflow-hidden">
+                    <motion.div layout="position">
+                        <Layers className="h-5 w-5 text-slate-400 shrink-0" />
+                    </motion.div>
                     <AnimatePresence>
                     {open && (
                       <motion.span
@@ -166,11 +162,11 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                       </motion.span>
                     )}
                     </AnimatePresence>
-                </motion.div>
+                </div>
                  <AnimatePresence>
                     {!open && (
                          <motion.div
-                            className="w-full flex justify-center items-center flex-1"
+                            className="flex-1 flex justify-center items-center"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
