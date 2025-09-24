@@ -5,6 +5,7 @@ import {
     GraduationCap, HelpingHand, Globe, GitMerge, DnaIcon, Baby, CircleDot, Ambulance, Home, Scale, FolderKanban, Star, Eye, Ear, Folder as FolderIcon
 } from 'lucide-react';
 import type { Content } from './contentService';
+import { SurgeryIcon } from '@/components/icons/SurgeryIcon';
 
 export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Heart, Brain, Dna, Bone, Shield, FlaskConical, Stethoscope, Microscope,
@@ -43,7 +44,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Clinical 4': UserCheck,
     'Human Rights': HelpingHand,
     'Medicine 1': Stethoscope,
-    'Surgery 1': Stethoscope,
+    'Surgery 1': SurgeryIcon,
     'Leadership Skills': Star,
     'Biomedical Research': TestTube2,
     'Pediatrics 1': Baby,
@@ -53,7 +54,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Community Medicine': Users,
     'UE 1': Star,
     'Medicine 2': Stethoscope,
-    'Surgery 2': Stethoscope,
+    'Surgery 2': SurgeryIcon,
     'Hospital Management & Health Economics': FolderKanban,
     'UE 2': Star,
     'Pediatrics 2': Baby,
@@ -191,5 +192,6 @@ levelsRaw.forEach(level => {
         }
     });
 });
+
 
 
