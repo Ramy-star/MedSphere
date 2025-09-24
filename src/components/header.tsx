@@ -41,7 +41,7 @@ export const Header = () => {
     <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-10 py-3">
       <div className="flex items-center justify-between mx-auto">
         <Link href="/" className="flex items-center gap-3">
-          <Logo className="h-10 w-auto" />
+          <Logo className="h-12 w-auto" />
         </Link>
         <div className="flex items-center gap-4 w-full max-w-md">
           <div className="relative w-full">
