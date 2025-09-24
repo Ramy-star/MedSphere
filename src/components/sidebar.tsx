@@ -103,23 +103,24 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <div className='flex flex-col h-full'>
-       <div className={cn("flex items-center mb-4 transition-all", open ? "justify-between" : "justify-center")}>
+       <div className={cn("flex items-center mb-4 transition-all h-[40px]")}>
         <motion.div 
-            animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none' }}
+            animate={{ opacity: open ? 1 : 0, width: open ? 'auto' : 0 }}
             transition={{ duration: 0.2, delay: open ? 0.1 : 0 }}
-            className="flex items-center gap-2 pl-2"
+            className="flex items-center gap-2 pl-2 flex-1 min-w-0"
+            style={{ display: open ? 'flex' : 'none' }}
         >
           <GraduationCap className="text-green-400" size={24} />
           <h2 className="text-base font-semibold text-white whitespace-nowrap">
             Academic Structure
           </h2>
         </motion.div>
-        <div className={cn(!open && "w-full flex justify-center")}>
+        <div className={cn("flex", open ? "justify-end" : "justify-center w-full")}>
             <Button 
               variant="ghost" 
               size="icon" 
               onClick={() => setOpen(!open)} 
-              className={cn("text-white hover:bg-slate-700 hidden sm:flex", !useIsMobile() && open && "mr-2.5")}
+              className={cn("text-white hover:bg-slate-700 hidden sm:flex")}
             >
               <Menu size={24} />
             </Button>
