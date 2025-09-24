@@ -45,7 +45,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Human Rights': HelpingHand,
     'Medicine 1': Stethoscope,
     'Surgery 1': SurgeryIcon,
-    'Leadership Skills': Star,
+    'Leadership Skills': Users,
     'Biomedical Research': TestTube2,
     'Pediatrics 1': Baby,
     'Gynecology & Obstetrics 1': CircleDot,
@@ -192,6 +192,7 @@ levelsRaw.forEach(level => {
         }
     });
 });
+
 
 
 
