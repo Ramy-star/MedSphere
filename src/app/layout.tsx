@@ -29,6 +29,7 @@ export default function RootLayout({
       <head>
           <title>Medical Study Organizer</title>
           <meta name="description" content="Organize your medical education journey" />
+          <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
       </head>
       <body className={`${nunitoSans.className} h-full`}>
         <div className="flex flex-col h-full w-full">
