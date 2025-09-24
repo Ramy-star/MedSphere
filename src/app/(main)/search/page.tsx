@@ -40,12 +40,26 @@ function SearchResults() {
     const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
     const updateFileRef = React.useRef<HTMLInputElement>(null);
-
+    
+    // Load all content once on initial component mount
+    useEffect(() => {
+        const loadAllContent = async () => {
+            const allContent = await contentService.getAll();
+            setAllItems(allContent);
+        };
+        loadAllContent();
+    }, []);
+    
     const performSearch = useCallback(async () => {
-        if (!query || allItems.length === 0) {
+        if (!query) {
             setResults([]);
             return;
         }
+        if (allItems.length === 0) {
+            // Data is not loaded yet, wait for it
+            return;
+        }
+
         setLoading(true);
         try {
             const searchResults = await search(query, allItems);
@@ -58,37 +72,36 @@ function SearchResults() {
         }
     }, [query, allItems]);
     
-    const reloadAllContent = useCallback(async () => {
-        const allContent = await contentService.getAll();
-        setAllItems(allContent);
-    }, []);
-
-    useEffect(() => {
-        reloadAllContent();
-    }, [reloadAllContent]);
-
     useEffect(() => {
         performSearch();
     }, [performSearch]);
-
-    const handleAction = useCallback(() => {
-      reloadAllContent().then(() => {
-        performSearch();
-      });
-    }, [reloadAllContent, performSearch]);
+    
+    const handleAction = useCallback(async () => {
+      // Reload all content to reflect changes and then re-run search
+      setLoading(true);
+      const updatedContent = await contentService.getAll();
+      setAllItems(updatedContent);
+      if (query) {
+        const searchResults = await search(query, updatedContent);
+        setResults(searchResults);
+      } else {
+        setResults([]);
+      }
+      setLoading(false);
+    }, [query]);
     
     const handleRename = async (newName: string) => {
         if (!itemToRename) return;
         await contentService.rename(itemToRename.id, newName);
         setItemToRename(null);
-        handleAction();
+        await handleAction();
     };
 
     const handleDelete = async () => {
         if (!itemToDelete) return;
         await contentService.delete(itemToDelete.id);
         setItemToDelete(null);
-        handleAction();
+        await handleAction();
     };
 
     const handleUpdateClick = (item: Content) => {
@@ -102,7 +115,7 @@ function SearchResults() {
             await contentService.updateFileContent(itemToUpdate.id, { name: file.name, size: file.size, mime: file.type });
             await saveFileToDb(itemToUpdate.id, file);
             setItemToUpdate(null);
-            handleAction();
+            await handleAction();
         }
     };
     
@@ -140,7 +153,7 @@ function SearchResults() {
             <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: null }} ancestors={[]} />
 
             <h2 className="text-2xl font-bold text-white mt-6 mb-4">
-                {loading && !results.length ? 'Searching...' : `Found ${results.length} results for "${query}"`}
+                {loading ? 'Searching...' : `Found ${results.length} results for "${query}"`}
             </h2>
 
             <div className="flex-1 overflow-y-auto pr-2 -mr-2">
@@ -239,7 +252,3 @@ export default function SearchPage() {
         </Suspense>
     )
 }
-
-    
-
-    

@@ -4,12 +4,15 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense, use } from 'react';
 import { contentService, Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';
 
-function LevelPageContent({ levelName }: { levelName: string }) {
+function LevelPageContent({ params }: { params: Promise<{ levelName: string }> }) {
+  const { levelName: encodedLevelName } = use(params);
+  const levelName = decodeURIComponent(encodedLevelName);
+
   const [level, setLevel] = useState<Content | null>(null);
   const [semesters, setSemesters] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
@@ -85,8 +88,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
   );
 }
 
-export default function LevelPage({ params }: { params: { levelName: string } }) {
-  const levelName = decodeURIComponent(params.levelName);
+export default function LevelPage({ params }: { params: Promise<{ levelName: string }> }) {
   return (
     <Suspense fallback={
         <main className="flex-1 p-6 glass-card animate-fade-in">
@@ -100,7 +102,7 @@ export default function LevelPage({ params }: { params: { levelName: string } })
             </div>
         </main>
     }>
-      <LevelPageContent levelName={levelName} />
+      <LevelPageContent params={params} />
     </Suspense>
   )
 }

@@ -8,9 +8,6 @@ import type { Content } from './contentService';
 import { SurgeryIcon } from '@/components/icons/SurgeryIcon';
 
 export const allSubjectIcons: { [key: string]: LucideIcon } = {
-    Heart, Brain, Dna, Bone, Shield, FlaskConical, Stethoscope, Microscope,
-    Pill, Bug, Syringe, Activity, BarChart3, Lightbulb, Languages, BookOpen, UserCheck, Briefcase, Speech, Wind, HeartPulse, Airplay,
-    GraduationCap, HelpingHand, Globe, GitMerge, DnaIcon, Baby, CircleDot, Ambulance, Home, Scale, FolderKanban, Star, Eye, Ear,
     Anatomy: Bone,
     Histology: Microscope,
     Physiology: Activity,
@@ -63,11 +60,6 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Family Medicine': Home,
     toxicology: Scale,
     'UE 3': Star,
-    'Cardiology': Heart,
-    'Neurology': Brain,
-    'Genetics': Dna,
-    'Clinical Skills': Stethoscope,
-    'Folder': FolderIcon,
 };
 
 const levelsRaw = [
