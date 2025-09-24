@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -105,18 +106,21 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
       <div className={cn("flex items-center justify-center mb-4 h-10 px-2.5")}>
         <div className="flex items-center gap-2 flex-1 overflow-hidden">
           <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
-            <motion.div
-              className="flex-1"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: open ? 1 : 0, x: open ? 0 : -10 }}
-              transition={{ duration: 0.2 }}
-            >
+            <AnimatePresence>
               {open && (
-                <h2 className="font-semibold text-white leading-none">
-                  Academic Structure
-                </h2>
+                <motion.div
+                  className="flex-1"
+                  initial={{ opacity: 0, x: -10 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: -10 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <h2 className="font-semibold text-white leading-none">
+                    Academic Structure
+                  </h2>
+                </motion.div>
               )}
-            </motion.div>
+            </AnimatePresence>
         </div>
         <div className={cn("flex items-center", open ? "justify-end" : "justify-center")}>
             <Button 
@@ -147,24 +151,22 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
                 transition={{ duration: 0.2 }}
             >
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <motion.div layout="position" className="flex items-center gap-3">
-                         <Layers className="h-5 w-5 text-slate-400 shrink-0" />
-                        <AnimatePresence>
-                        {open && (
-                          <motion.span
-                            className="font-medium whitespace-nowrap leading-none"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10, transition: { duration: 0.1 } }}
-                            transition={{ duration: 0.2, delay: 0.1 }}
-                          >
-                            {level.name}
-                          </motion.span>
-                        )}
-                        </AnimatePresence>
-                    </motion.div>
-                </div>
+                <motion.div layout="position" className="flex items-center gap-3 overflow-hidden">
+                    <Layers className="h-5 w-5 text-slate-400 shrink-0" />
+                    <AnimatePresence>
+                    {open && (
+                      <motion.span
+                        className="font-medium whitespace-nowrap leading-none"
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        exit={{ opacity: 0, x: -10, transition: { duration: 0.1 } }}
+                        transition={{ duration: 0.2, delay: 0.1 }}
+                      >
+                        {level.name}
+                      </motion.span>
+                    )}
+                    </AnimatePresence>
+                </motion.div>
                  <AnimatePresence>
                     {!open && (
                          <motion.div
