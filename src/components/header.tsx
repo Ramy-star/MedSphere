@@ -49,8 +49,8 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               <Menu size={24} />
             </Button>
           )}
-          <Link href="/" className="flex gap-2 shrink-0 pointer-events-none">
-            <div className="flex items-center">
+          <Link href="/" className="flex shrink-0 pointer-events-none">
+            <div className="flex items-center gap-2">
               <Logo className="h-10 w-auto shrink-0" />
               <h1 className="text-xl font-['Nunito_Sans',_sans-serif] relative hidden sm:block" style={{ top: '1px' }}>
                 <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
