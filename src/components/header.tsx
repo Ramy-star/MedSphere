@@ -43,7 +43,7 @@ export const Header = () => {
       <div className="flex items-center justify-between mx-auto">
         <div className="flex items-center gap-2 pointer-events-none">
           <Logo className="h-10 w-auto" />
-          <h1 className="text-xl font-['Nunito_Sans',_sans-serif]">
+          <h1 className="text-xl font-['Nunito_Sans',_sans-serif] relative" style={{ top: '1px' }}>
             <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
             <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
           </h1>
@@ -55,7 +55,7 @@ export const Header = () => {
             />
             <Input
               placeholder="Search files, subjects, or content..."
-              className="pl-10 pr-10 bg-slate-800/60 border-slate-700 rounded-full"
+              className="pl-10 pr-10 bg-white/5 border-white/10 rounded-full"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
