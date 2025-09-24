@@ -52,7 +52,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Ophthalmology: Eye,
     Otorhinolaryngology: Ear,
     'Community Medicine': Users,
-    'UE 1': Star,
+    'Economics': BarChart3,
     'Medicine 2': Stethoscope,
     'Surgery 2': SurgeryIcon,
     'Hospital Management & Health Economics': FolderKanban,
@@ -61,7 +61,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Gynecology & Obstetrics 2': Dna,
     'Emergency Medicine': Ambulance,
     'Family Medicine': Home,
-    'Clinical Toxicology & Forensic Medicine': Scale,
+    'Clinical Toxicology and Forensic Medicine': Scale,
     'UE 3': Star,
     'Cardiology': Heart,
     'Neurology': Brain,
@@ -136,7 +136,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
     { name: 'Ophthalmology', iconName: 'Ophthalmology', color: 'text-blue-400', },
     { name: 'Otorhinolaryngology', iconName: 'Otorhinolaryngology', color: 'text-purple-400', },
     { name: 'Community Medicine', iconName: 'Community Medicine', color: 'text-green-400', },
-    { name: 'UE 1', iconName: 'UE 1', color: 'text-yellow-400', },
+    { name: 'Economics', iconName: 'Economics', color: 'text-yellow-400', },
   ],
   'Semester 9': [
     { name: 'Medicine 2', iconName: 'Medicine 2', color: 'text-blue-600', },
@@ -149,7 +149,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
     { name: 'Gynecology & Obstetrics 2', iconName: 'Gynecology & Obstetrics 2', color: 'text-red-500', },
     { name: 'Emergency Medicine', iconName: 'Emergency Medicine', color: 'text-red-600', },
     { name: 'Family Medicine', iconName: 'Family Medicine', color: 'text-green-500', },
-    { name: 'Clinical Toxicology & Forensic Medicine', iconName: 'Clinical Toxicology & Forensic Medicine', color: 'text-gray-500', },
+    { name: 'Clinical Toxicology and Forensic Medicine', iconName: 'Clinical Toxicology and Forensic Medicine', color: 'text-gray-500', },
     { name: 'UE 3', iconName: 'UE 3', color: 'text-yellow-600', },
   ],
 };
@@ -192,6 +192,7 @@ levelsRaw.forEach(level => {
         }
     });
 });
+
 
 
 
