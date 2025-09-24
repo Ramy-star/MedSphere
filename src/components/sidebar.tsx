@@ -119,11 +119,12 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <div className='flex flex-col h-full'>
-      <div className="flex items-center justify-between mb-4 h-10 px-2.5">
+      <div className={cn("flex items-center mb-4 h-10 px-2.5", open ? "justify-between" : "justify-center")}>
             <motion.div
                 className="flex items-center gap-2 overflow-hidden"
                 variants={headerVariants}
                 animate={open ? "open" : "closed"}
+                style={{ display: open ? 'flex' : 'none' }}
             >
                 <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
                 <h2 className="text-base font-semibold text-white whitespace-nowrap">
@@ -152,7 +153,8 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 <motion.button
                   onClick={() => handleLevelChange(level.id)}
                   className={cn(
-                    'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center justify-between',
+                    'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center',
+                    open ? 'justify-between' : 'justify-center',
                     (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
                     (!open && isPathActive) && 'bg-blue-500/20 text-white',
                   )}
@@ -164,6 +166,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                         className="flex items-center gap-3"
                         variants={itemVariants}
                         animate={open ? "open" : "closed"}
+                        style={{ display: open ? 'flex' : 'none' }}
                      >
                         <Layers className="h-5 w-5 text-slate-400 shrink-0" />
                         <span className="font-medium whitespace-nowrap">{level.name}</span>
@@ -176,7 +179,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                             animate="closed"
                             exit="open"
                             transition={{ type: 'spring', stiffness: 300, damping: 30, delay: open ? 0 : 0.1 }}
-                            className="items-center justify-center absolute left-2.5"
+                            className="items-center justify-center"
                         >
                            <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
                         </motion.div>
@@ -184,14 +187,14 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     </AnimatePresence>
                   </div>
                    <motion.div
-                     animate={{ opacity: open ? 1 : 0, rotate: isLevelActive ? 180 : 0 }}
+                     animate={{ opacity: open ? 1 : 0 }}
                      transition={{ duration: 0.2, ease: "easeInOut" }}
                      style={{ display: open ? 'flex' : 'none' }}
                    >
                     <ChevronDown
                       className={cn(
-                        "h-5 w-5 shrink-0 text-slate-400",
-                        isLevelActive ? 'text-white' : ''
+                        "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
+                        isLevelActive ? 'text-white rotate-180' : ''
                       )}
                       aria-hidden="true"
                     />
