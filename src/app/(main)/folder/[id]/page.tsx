@@ -44,7 +44,7 @@ function FolderPageContent({ params }: { params: Promise<{ id: string }> }) {
   }, [fetchFolderData]);
   
   if (loading) {
-      return <main className="flex-1 p-6 glass-card flex flex-col h-full overflow-hidden">
+      return <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
         <div className="mb-6 space-y-4">
             <Skeleton className="h-5 w-1/3" />
             <div className="flex items-center justify-between min-h-[40px]">
@@ -87,7 +87,7 @@ function FolderPageContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <main className="flex-1 p-6 glass-card flex flex-col h-full overflow-hidden">
+    <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
        <FileExplorerHeader currentFolder={extendedCurrent} ancestors={ancestors} onContentAdded={fetchFolderData} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
           <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
@@ -101,7 +101,7 @@ export default function FolderPage({ params }: { params: Promise<{ id: string }>
   // Use a Suspense boundary to handle client-side rendering issues
   return (
     <Suspense fallback={
-        <main className="flex-1 p-6 glass-card flex flex-col h-full overflow-hidden">
+        <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
             <div className="mb-6 space-y-4">
                 <Skeleton className="h-5 w-1/3" />
                 <div className="flex items-center justify-between min-h-[40px]">

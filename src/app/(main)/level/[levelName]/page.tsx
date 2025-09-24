@@ -45,12 +45,12 @@ function LevelPageContent({ params }: { params: Promise<{ levelName: string }> }
 
   if (loading) {
     return (
-        <main className="flex-1 p-6 glass-card animate-fade-in">
+        <main className="flex-1 p-4 md:p-6 glass-card animate-fade-in">
             <FileExplorerHeader />
             <div className="flex items-center justify-between mb-6">
               <Skeleton className="h-8 w-48" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 <Skeleton className="h-32" />
                 <Skeleton className="h-32" />
             </div>
@@ -71,9 +71,9 @@ function LevelPageContent({ params }: { params: Promise<{ levelName: string }> }
   }
 
   return (
-    <main className="flex-1 p-6 glass-card animate-fade-in">
+    <main className="flex-1 p-4 md:p-6 glass-card animate-fade-in">
         <FileExplorerHeader currentFolder={extendedLevel} ancestors={[]} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
             {semesters.map((semester, index) => (
                 <div key={semester.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.15}s` }}>
                      <Link href={`/folder/${semester.id}`}>
@@ -91,12 +91,12 @@ function LevelPageContent({ params }: { params: Promise<{ levelName: string }> }
 export default function LevelPage({ params }: { params: Promise<{ levelName: string }> }) {
   return (
     <Suspense fallback={
-        <main className="flex-1 p-6 glass-card animate-fade-in">
+        <main className="flex-1 p-4 md:p-6 glass-card animate-fade-in">
             <FileExplorerHeader />
             <div className="flex items-center justify-between mb-6">
               <Skeleton className="h-8 w-48" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 <Skeleton className="h-32" />
                 <Skeleton className="h-32" />
             </div>
