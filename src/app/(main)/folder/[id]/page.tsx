@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense, use } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, Content } from '@/lib/contentService';
@@ -11,8 +11,8 @@ import { LucideIcon, Folder, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
-function FolderPageContent({ params }: { params: { id: string } }) {
-  const { id } = params;
+function FolderPageContent({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [current, setCurrent] = useState<Content | null>(null);
   const [ancestors, setAncestors] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
@@ -97,7 +97,7 @@ function FolderPageContent({ params }: { params: { id: string } }) {
 }
 
 
-export default function FolderPage({ params }: { params: { id: string } }) {
+export default function FolderPage({ params }: { params: Promise<{ id: string }> }) {
   // Use a Suspense boundary to handle client-side rendering issues
   return (
     <Suspense fallback={
