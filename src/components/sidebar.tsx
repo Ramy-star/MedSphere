@@ -1,4 +1,3 @@
-
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -103,18 +102,23 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <div className='flex flex-col h-full'>
-      <div className={cn("flex items-center mb-4 h-10 px-2.5")}>
-          <motion.div
-              className="flex items-center gap-2 overflow-hidden"
-              animate={{ width: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
+      <div className={cn("flex items-center justify-center mb-4 h-10 px-2.5")}>
+        <div className="flex items-center gap-2 flex-1 overflow-hidden">
+          <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
+            <motion.div
+              className="flex-1"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: open ? 1 : 0, x: open ? 0 : -10 }}
               transition={{ duration: 0.2 }}
-          >
-              <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
-              <h2 className="text-base font-semibold text-white whitespace-nowrap">
-              Academic Structure
-              </h2>
-          </motion.div>
-        <div className={cn("flex items-center w-full", open ? "justify-end" : "justify-center")}>
+            >
+              {open && (
+                <h2 className="font-semibold text-white leading-none">
+                  Academic Structure
+                </h2>
+              )}
+            </motion.div>
+        </div>
+        <div className={cn("flex items-center", open ? "justify-end" : "justify-center")}>
             <Button 
                 variant="ghost" 
                 size="icon" 
@@ -146,29 +150,33 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 <div className="flex items-center gap-3 overflow-hidden">
                     <motion.div layout="position" className="flex items-center gap-3">
                          <Layers className="h-5 w-5 text-slate-400 shrink-0" />
-                        <motion.span
+                        <AnimatePresence>
+                        {open && (
+                          <motion.span
                             className="font-medium whitespace-nowrap leading-none"
                             initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: open ? 1 : 0, x: open ? 0 : -10, width: open ? 'auto' : 0 }}
-                            transition={{ duration: 0.2 }}
-                        >
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10, transition: { duration: 0.1 } }}
+                            transition={{ duration: 0.2, delay: 0.1 }}
+                          >
                             {level.name}
-                        </motion.span>
-                    </motion.div>
-                     <AnimatePresence>
-                        {!open && (
-                             <motion.div
-                                layout="position"
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                className="w-full flex justify-center items-center"
-                            >
-                               <span className="font-semibold text-sm whitespace-nowrap leading-none">{`Lvl ${index + 1}`}</span>
-                            </motion.div>
+                          </motion.span>
                         )}
-                    </AnimatePresence>
+                        </AnimatePresence>
+                    </motion.div>
                 </div>
+                 <AnimatePresence>
+                    {!open && (
+                         <motion.div
+                            className="w-full flex justify-center items-center flex-1"
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                          >
+                           <span className="font-semibold text-sm whitespace-nowrap leading-none">{`Lvl ${index + 1}`}</span>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
                 <AnimatePresence>
                 {open && (
                     <motion.div
@@ -263,5 +271,3 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
     </motion.aside>
   );
 }
-
-    
