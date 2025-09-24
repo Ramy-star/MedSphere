@@ -103,20 +103,25 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <div className='flex flex-col h-full'>
-      <div className={cn("flex items-center justify-between mb-4 h-10 px-2.5")}>
-        <div className="flex items-center gap-2 flex-1 overflow-hidden">
-          <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
-          <motion.div
-            className="overflow-hidden"
-            animate={{ width: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <h2 className="font-semibold text-white whitespace-nowrap">
-              Academic Structure
-            </h2>
-          </motion.div>
-        </div>
-        <div className={cn("flex items-center", open ? "justify-end" : "justify-center")}>
+      <div className={cn("flex items-center mb-4 h-10 px-2.5", open ? "justify-between" : "justify-center")}>
+        <AnimatePresence>
+            {open && (
+                <motion.div
+                    className="flex items-center gap-2 overflow-hidden"
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                >
+                    <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
+                    <h2 className="font-semibold text-white whitespace-nowrap">
+                        Academic Structure
+                    </h2>
+                </motion.div>
+            )}
+        </AnimatePresence>
+        
+        <div className={cn("flex items-center")}>
             <Button 
                 variant="ghost" 
                 size="icon" 
@@ -144,6 +149,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 )}
                 whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
                 transition={{ duration: 0.2 }}
+                layout
             >
                 <div className="flex items-center gap-3 overflow-hidden">
                     <motion.div layout="position">
