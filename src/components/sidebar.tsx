@@ -1,4 +1,3 @@
-
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -101,26 +100,10 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     }
   }
 
-  const headerVariants = {
-    open: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30, delay: 0.1 } },
-    closed: { opacity: 0, x: -10, transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  };
-
-  const itemVariants = {
-    open: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } },
-    closed: { opacity: 0, x: -10, transition: { type: 'spring', stiffness: 300, damping: 30 } },
-  };
-
-  const iconVariants = {
-    open: { opacity: 0, scale: 0.5, display: 'none' },
-    closed: { opacity: 1, scale: 1, display: 'block' },
-  };
-
-
   return (
     <div className='flex flex-col h-full'>
       <div className={cn("flex items-center justify-between mb-4 h-10 px-2.5")}>
-        <AnimatePresence>
+          <AnimatePresence>
             {open && (
                 <motion.div
                     className="flex items-center gap-2 overflow-hidden"
@@ -134,8 +117,8 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     </h2>
                 </motion.div>
             )}
-        </AnimatePresence>
-        <div className={cn("flex items-center", open ? "ml-auto" : "justify-center w-full")}>
+          </AnimatePresence>
+        <div className={cn("flex items-center w-full", open ? "justify-end" : "justify-center")}>
             <Button 
                 variant="ghost" 
                 size="icon" 
@@ -165,26 +148,29 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 transition={{ duration: 0.2 }}
             >
                 <div className="flex items-center gap-3 overflow-hidden">
-                <AnimatePresence>
+                <AnimatePresence mode="popLayout">
                     {open ? (
                         <motion.div
                             key={`lvl-open-text-${level.id}`}
+                            layout="position"
                             initial={{ opacity: 0, x: -20 }}
                             animate={{ opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut", delay: 0.1 } }}
                             exit={{ opacity: 0, x: -20, transition: { duration: 0.2, ease: "easeIn" } }}
                             className="flex items-center gap-3"
                         >
-                            <Layers layout="position" className="h-5 w-5 text-slate-400 shrink-0" />
+                            <Layers className="h-5 w-5 text-slate-400 shrink-0" />
                             <span className="font-medium whitespace-nowrap">{level.name}</span>
                         </motion.div>
                     ) : (
                         <motion.div
                             key={`lvl-closed-text-${level.id}`}
+                            layout="position"
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: "easeOut", delay: 0.1 } }}
                             exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2, ease: "easeIn" } }}
+                            className="w-full flex justify-center"
                         >
-                            <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
+                            <span className="font-semibold text-sm whitespace-nowrap">{`L${index + 1}`}</span>
                         </motion.div>
                     )}
                 </AnimatePresence>
