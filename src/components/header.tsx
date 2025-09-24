@@ -1,13 +1,13 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Brain, Search, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import Link from 'next/link';
+import { Logo } from './logo';
 
 
 export const Header = () => {
@@ -40,18 +40,9 @@ export const Header = () => {
   return (
     <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-10 py-3">
       <div className="flex items-center justify-between mx-auto">
-        <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-3">
-                <div className="bg-blue-500/10 text-blue-400 p-2 rounded-lg">
-                    <Brain />
-                </div>
-                <div>
-                    <h1 className="text-lg font-bold text-white">
-                    Medical Study Hub
-                    </h1>
-                </div>
-            </Link>
-        </div>
+        <Link href="/" className="flex items-center gap-3">
+          <Logo className="h-10 w-auto" />
+        </Link>
         <div className="flex items-center gap-4 w-full max-w-md">
           <div className="relative w-full">
             <Search
