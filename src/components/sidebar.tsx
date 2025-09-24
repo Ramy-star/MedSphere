@@ -119,7 +119,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <div className='flex flex-col h-full'>
-      <div className={cn("flex items-center mb-4 h-10 px-2.5", open ? "justify-between" : "justify-center")}>
+      <div className={cn("flex items-center mb-4 h-10 px-2.5")}>
             <AnimatePresence>
             {open && (
                 <motion.div
@@ -135,7 +135,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 </motion.div>
             )}
             </AnimatePresence>
-            <div className="flex items-center justify-center">
+            <div className={cn("flex items-center", open ? "ml-auto" : "justify-center w-full")}>
                 <Button 
                     variant="ghost" 
                     size="icon" 
@@ -147,13 +147,13 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
             </div>
       </div>
 
-      <nav className="flex-1 space-y-1 overflow-y-auto pr-1 -mr-1">
+      <nav className="flex-1 overflow-y-auto pr-1 -mr-1">
         <div className="w-full">
           {levels.map((level, index) => {
             const isLevelActive = openLevelId === level.id;
             const isPathActive = activePath.levelId === level.id;
             return (
-              <div key={level.id} className="w-full">
+              <div key={level.id} className="w-full mb-1 last:mb-0">
                 <motion.button
                   onClick={() => handleLevelChange(level.id)}
                   className={cn(
@@ -164,29 +164,26 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                   )}
                   whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
                   transition={{ duration: 0.2 }}
+                  layout
                 >
-                    <AnimatePresence>
-                     {open && (
+                    <AnimatePresence mode="popLayout">
+                     {open ? (
                          <motion.div
+                            key={`lvl-open-${level.id}`}
                             className="flex items-center gap-3 overflow-hidden"
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: -10 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut" } }}
+                            exit={{ opacity: 0, x: -20, transition: { duration: 0.2, ease: "easeIn" } }}
                          >
                             <Layers className="h-5 w-5 text-slate-400 shrink-0" />
                             <span className="font-medium whitespace-nowrap">{level.name}</span>
                          </motion.div>
-                     )}
-                     </AnimatePresence>
-                     <AnimatePresence>
-                     {!open && (
+                     ) : (
                          <motion.div
-                            key={`lvl-${level.id}`}
-                            initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.5 }}
-                            transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}
+                            key={`lvl-closed-${level.id}`}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: "easeOut" } }}
+                            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2, ease: "easeIn" } }}
                             className="flex items-center justify-center"
                         >
                            <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
@@ -196,10 +193,10 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     <AnimatePresence>
                    {open && (
                        <motion.div
+                        key={`chevron-${level.id}`}
                         initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                        animate={{ opacity: 1, transition: { delay: 0.2 } }}
+                        exit={{ opacity: 0, transition: { duration: 0.1 } }}
                        >
                         <ChevronDown
                           className={cn(
