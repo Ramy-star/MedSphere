@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -38,11 +39,15 @@ export const Header = () => {
   }
 
   return (
-    <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-10 py-3">
+    <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-10 py-1">
       <div className="flex items-center justify-between mx-auto">
-        <Link href="/" className="flex items-center gap-3">
-          <Logo className="h-12 w-auto" />
-        </Link>
+        <div className="flex items-center gap-2 pointer-events-none">
+          <Logo className="h-10 w-auto" />
+          <h1 className="text-xl font-bold">
+            <span style={{ color: '#FFFFFF' }}>Med</span>
+            <span style={{ color: '#4CAF50' }}>Sphere</span>
+          </h1>
+        </div>
         <div className="flex items-center gap-4 w-full max-w-md">
           <div className="relative w-full">
             <Search
