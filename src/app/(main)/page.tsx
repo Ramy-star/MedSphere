@@ -44,7 +44,7 @@ export default function HomePage() {
                     </div>
                 )}
             </div>
-            <div className="hidden md:block animate-fade-in border border-blue-400/30 bg-blue-900/10 rounded-xl p-6 mt-16" style={{ animationDelay: '0.5s' }}>
+            <div className="animate-fade-in border border-blue-400/30 bg-blue-900/10 rounded-xl p-6 mt-16" style={{ animationDelay: '0.5s' }}>
                 <blockquote className="text-center">
                     <p className="text-lg text-slate-300 italic max-w-2xl">
                         "The good doctor treats the disease; the great doctor treats the patient who has the disease."

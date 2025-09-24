@@ -7,6 +7,7 @@ import 'react-pdf/dist/esm/Page/TextLayer.css';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -23,7 +24,8 @@ const ZOOM_STEP = 0.05;
 export default function PdfViewer({ file }: { file: string }) {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(1);
+  const isMobile = useIsMobile();
+  const [scale, setScale] = useState(isMobile ? 0.25 : 1);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -41,6 +43,12 @@ export default function PdfViewer({ file }: { file: string }) {
       description: 'The file could not be loaded. It may be corrupted or in an unsupported format.',
     });
   }
+
+  useEffect(() => {
+    // Set initial scale based on device type
+    setScale(isMobile ? 0.25 : 1);
+  }, [isMobile]);
+
 
   useEffect(() => {
     const observer = new IntersectionObserver(

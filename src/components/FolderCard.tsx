@@ -18,10 +18,10 @@ export function FolderCard({ item, onRename, onDelete }: { item: Content, onRena
     
     return (
       <DropdownMenu>
-        <div className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors flex items-center justify-between">
-            <Link href={`/folder/${item.id}`} className="flex items-center gap-3 overflow-hidden flex-1">
-                <Folder className="w-6 h-6 text-yellow-400 shrink-0" />
-                <h3 className="text-sm font-medium text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</h3>
+        <div className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors flex items-start justify-between">
+            <Link href={`/folder/${item.id}`} className="flex items-start gap-3 overflow-hidden flex-1">
+                <Folder className="w-6 h-6 text-yellow-400 shrink-0 mt-1" />
+                <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
             </Link>
             
             <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">

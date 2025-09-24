@@ -49,24 +49,22 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               <Menu size={24} />
             </Button>
           )}
-          <Link href="/" className="flex shrink-0 pointer-events-none">
-            <div className="flex items-center gap-2">
-              <Logo className="h-10 w-auto shrink-0" />
-              <h1 className="text-xl font-['Nunito_Sans',_sans-serif] relative hidden sm:block" style={{ top: '1px' }}>
+          <Link href="/" className="flex items-center gap-2 pointer-events-none">
+              <Logo className="h-8 sm:h-10 w-auto shrink-0" />
+              <h1 className="text-lg sm:text-xl font-['Nunito_Sans',_sans-serif] relative" style={{ top: '1px' }}>
                 <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
                 <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
               </h1>
-            </div>
           </Link>
         </div>
-        <div className="flex items-center gap-4 w-full max-w-md">
+        <div className="flex items-center gap-4 w-full max-w-xs sm:max-w-md">
           <div className="relative w-full">
             <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400"
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400"
             />
             <Input
               placeholder="Search files, subjects..."
-              className="pl-10 pr-10 bg-black/10 border-white/10 rounded-full h-10"
+              className="pl-9 sm:pl-10 pr-10 bg-black/10 border-white/10 rounded-full h-9 sm:h-10"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
             />
