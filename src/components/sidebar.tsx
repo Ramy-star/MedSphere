@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -112,7 +113,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     exit={{ opacity: 0, x: -10, transition: { type: 'spring', stiffness: 300, damping: 30 } }}
                 >
                     <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
-                    <h2 className="text-base font-semibold text-white whitespace-nowrap">
+                    <h2 className="text-base font-semibold text-white">
                     Academic Structure
                     </h2>
                 </motion.div>
@@ -170,7 +171,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                             exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2, ease: "easeIn" } }}
                             className="w-full flex justify-center"
                         >
-                            <span className="font-semibold text-sm whitespace-nowrap">{`L${index + 1}`}</span>
+                            <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
                         </motion.div>
                     )}
                 </AnimatePresence>
