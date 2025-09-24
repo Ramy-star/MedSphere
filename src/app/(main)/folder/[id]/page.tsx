@@ -11,8 +11,7 @@ import { LucideIcon, Folder, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
-function FolderPageContent({ params }: { params: { id: string } }) {
-  const { id } = params;
+function FolderPageContent({ id }: { id: string }) {
   const [current, setCurrent] = useState<Content | null>(null);
   const [ancestors, setAncestors] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
@@ -118,7 +117,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
             </div>
         </main>
     }>
-      <FolderPageContent params={params} />
+      <FolderPageContent id={params.id} />
     </Suspense>
   )
 }
