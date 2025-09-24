@@ -16,7 +16,7 @@ export type Content = {
   color?: string;
 };
 
-const KEY = 'app_content_v2';
+const KEY = 'app_content_v3';
 
 // In-memory cache
 let contentCache: Content[] | null = null;

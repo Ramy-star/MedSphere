@@ -52,7 +52,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Ophthalmology: Eye,
     Otorhinolaryngology: Ear,
     'Community Medicine': Users,
-    Economics: BarChart3,
+    'Economics': BarChart3,
     'Medicine 2': Stethoscope,
     'Surgery 2': SurgeryIcon,
     'Hospital Management': FolderKanban,
