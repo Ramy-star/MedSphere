@@ -119,8 +119,8 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   return (
     <div className='flex flex-col h-full'>
-      <div className={cn("flex items-center mb-4 h-10 px-2.5")}>
-            <AnimatePresence>
+      <div className={cn("flex items-center justify-between mb-4 h-10 px-2.5")}>
+        <AnimatePresence>
             {open && (
                 <motion.div
                     className="flex items-center gap-2 overflow-hidden"
@@ -134,121 +134,119 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     </h2>
                 </motion.div>
             )}
-            </AnimatePresence>
-            <div className={cn("flex items-center", open ? "ml-auto" : "justify-center w-full")}>
-                <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    onClick={() => setOpen(!open)} 
-                    className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8"
-                >
-                    <Menu size={20} />
-                </Button>
-            </div>
+        </AnimatePresence>
+        <div className={cn("flex items-center", open ? "ml-auto" : "justify-center w-full")}>
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setOpen(!open)} 
+                className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8"
+            >
+                <Menu size={20} />
+            </Button>
+        </div>
       </div>
 
-      <nav className="flex-1 overflow-y-auto pr-1 -mr-1">
-        <div className="w-full">
-          {levels.map((level, index) => {
-            const isLevelActive = openLevelId === level.id;
-            const isPathActive = activePath.levelId === level.id;
-            return (
-              <div key={level.id} className="w-full mb-1 last:mb-0">
-                <motion.button
-                  onClick={() => handleLevelChange(level.id)}
-                  className={cn(
-                    'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center',
-                    open ? 'justify-between' : 'justify-center',
-                    (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
-                    (!open && isPathActive) && 'bg-blue-500/20 text-white',
-                  )}
-                  whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
-                  transition={{ duration: 0.2 }}
-                  layout
-                >
-                    <AnimatePresence mode="popLayout">
-                     {open ? (
-                         <motion.div
-                            key={`lvl-open-${level.id}`}
-                            className="flex items-center gap-3 overflow-hidden"
+      <nav className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1">
+        {levels.map((level, index) => {
+        const isLevelActive = openLevelId === level.id;
+        const isPathActive = activePath.levelId === level.id;
+        return (
+            <div key={level.id} className="w-full">
+            <motion.button
+                onClick={() => handleLevelChange(level.id)}
+                className={cn(
+                'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center',
+                open ? 'justify-between' : 'justify-center',
+                (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
+                (!open && isPathActive) && 'bg-blue-500/20 text-white',
+                )}
+                whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
+                transition={{ duration: 0.2 }}
+            >
+                <div className="flex items-center gap-3 overflow-hidden">
+                <AnimatePresence>
+                    {open ? (
+                        <motion.div
+                            key={`lvl-open-text-${level.id}`}
                             initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut" } }}
+                            animate={{ opacity: 1, x: 0, transition: { duration: 0.2, ease: "easeOut", delay: 0.1 } }}
                             exit={{ opacity: 0, x: -20, transition: { duration: 0.2, ease: "easeIn" } }}
-                         >
-                            <Layers className="h-5 w-5 text-slate-400 shrink-0" />
-                            <span className="font-medium whitespace-nowrap">{level.name}</span>
-                         </motion.div>
-                     ) : (
-                         <motion.div
-                            key={`lvl-closed-${level.id}`}
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: "easeOut" } }}
-                            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2, ease: "easeIn" } }}
-                            className="flex items-center justify-center"
+                            className="flex items-center gap-3"
                         >
-                           <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
+                            <Layers layout="position" className="h-5 w-5 text-slate-400 shrink-0" />
+                            <span className="font-medium whitespace-nowrap">{level.name}</span>
                         </motion.div>
-                     )}
-                    </AnimatePresence>
-                    <AnimatePresence>
-                   {open && (
-                       <motion.div
-                        key={`chevron-${level.id}`}
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1, transition: { delay: 0.2 } }}
-                        exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                       >
-                        <ChevronDown
-                          className={cn(
-                            "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
-                            isLevelActive ? 'text-white rotate-180' : ''
-                          )}
-                          aria-hidden="true"
-                        />
-                      </motion.div>
-                   )}
-                   </AnimatePresence>
-                </motion.button>
-                 <AnimatePresence initial={false}>
-                    {isLevelActive && open && (
-                    <motion.div
-                        key="content"
-                        initial="collapsed"
-                        animate="open"
-                        exit="collapsed"
-                        variants={{
-                           open: { opacity: 1, height: 'auto' },
-                           collapsed: { opacity: 0, height: 0 }
-                        }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="pl-4 pr-1 pt-1 space-y-1 overflow-hidden"
-                    >
-                      {(semestersByLevel[level.id] || []).map((semester) => {
-                        const isSemesterActive = activePath.semesterId === semester.id;
-                        return (
-                          <motion.button key={semester.id} onClick={() => handleLinkClick(`/folder/${semester.id}`)}
-                            className={cn(
-                              "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer text-left",
-                              isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                            )}
-                             initial={{ opacity: 0, x: -10 }}
-                             animate={{ opacity: 1, x: 0 }}
-                             transition={{ duration: 0.2, ease: 'easeOut' }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <Calendar size={18} className="text-green-400" />
-                              <span className="whitespace-nowrap">{semester.name}</span>
-                            </div>
-                          </motion.button>
-                        );
-                      })}
-                    </motion.div>
+                    ) : (
+                        <motion.div
+                            key={`lvl-closed-text-${level.id}`}
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: "easeOut", delay: 0.1 } }}
+                            exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2, ease: "easeIn" } }}
+                        >
+                            <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
+                        </motion.div>
                     )}
                 </AnimatePresence>
-              </div>
-            )
-          })}
-        </div>
+                </div>
+                <AnimatePresence>
+                {open && (
+                    <motion.div
+                    key={`chevron-${level.id}`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1, transition: { delay: 0.2 } }}
+                    exit={{ opacity: 0, transition: { duration: 0.1 } }}
+                    >
+                    <ChevronDown
+                        className={cn(
+                        "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
+                        isLevelActive ? 'text-white rotate-180' : ''
+                        )}
+                        aria-hidden="true"
+                    />
+                    </motion.div>
+                )}
+                </AnimatePresence>
+            </motion.button>
+                <AnimatePresence initial={false}>
+                {isLevelActive && open && (
+                <motion.div
+                    key="content"
+                    initial="collapsed"
+                    animate="open"
+                    exit="collapsed"
+                    variants={{
+                        open: { opacity: 1, height: 'auto' },
+                        collapsed: { opacity: 0, height: 0 }
+                    }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="pl-4 pr-1 pt-1 space-y-1 overflow-hidden"
+                >
+                    {(semestersByLevel[level.id] || []).map((semester) => {
+                    const isSemesterActive = activePath.semesterId === semester.id;
+                    return (
+                        <motion.button key={semester.id} onClick={() => handleLinkClick(`/folder/${semester.id}`)}
+                        className={cn(
+                            "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer text-left",
+                            isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
+                        )}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.2, ease: 'easeOut' }}
+                        >
+                        <div className="flex items-center gap-3">
+                            <Calendar size={18} className="text-green-400" />
+                            <span className="whitespace-nowrap">{semester.name}</span>
+                        </div>
+                        </motion.button>
+                    );
+                    })}
+                </motion.div>
+                )}
+            </AnimatePresence>
+            </div>
+        )
+        })}
       </nav>
     </div>
   )
