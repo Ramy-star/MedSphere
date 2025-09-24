@@ -102,125 +102,132 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
   }
 
   const headerVariants = {
-    open: { opacity: 1, transition: { delay: 0.1, duration: 0.2 } },
-    closed: { opacity: 0, transition: { duration: 0.1 } },
+    open: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30, delay: 0.1 } },
+    closed: { opacity: 0, x: -10, transition: { type: 'spring', stiffness: 300, damping: 30 } },
   };
 
-  const levelTextVariants = {
-      open: { opacity: 1, x: 0, transition: { duration: 0.2 } },
-      closed: { opacity: 0, x: -10, transition: { duration: 0.1 } },
+  const itemVariants = {
+    open: { opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30 } },
+    closed: { opacity: 0, x: -10, transition: { type: 'spring', stiffness: 300, damping: 30 } },
   };
 
-  const levelIconVariants = {
-      open: { opacity: 0, display: 'none', transition: { duration: 0.1 } },
-      closed: { opacity: 1, display: 'flex', transition: { delay: 0.1, duration: 0.2 } },
+  const iconVariants = {
+    open: { opacity: 0, scale: 0.5, display: 'none' },
+    closed: { opacity: 1, scale: 1, display: 'flex' },
   };
+
 
   return (
     <div className='flex flex-col h-full'>
-       <div className="flex items-center justify-between mb-4 h-10 px-2.5">
-          <motion.div
-            className="flex items-center gap-2 flex-1 min-w-0"
-            variants={headerVariants}
-            initial="closed"
-            animate={open ? "open" : "closed"}
-            style={{ display: open ? 'flex' : 'none' }}
-          >
-            <GraduationCap className="text-green-400" size={24} />
-            <h2 className="text-base font-semibold text-white whitespace-nowrap">
-              Academic Structure
-            </h2>
-          </motion.div>
-          
-          <div className={cn("flex items-center", !open && "w-full justify-center")}>
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setOpen(!open)} 
-                className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8"
+      <div className="flex items-center justify-between mb-4 h-10 px-2.5">
+            <motion.div
+                className="flex items-center gap-2 overflow-hidden"
+                variants={headerVariants}
+                animate={open ? "open" : "closed"}
             >
-                <Menu size={20} />
-            </Button>
-          </div>
+                <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
+                <h2 className="text-base font-semibold text-white whitespace-nowrap">
+                Academic Structure
+                </h2>
+            </motion.div>
+            <div className="flex items-center justify-center">
+                <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    onClick={() => setOpen(!open)} 
+                    className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8"
+                >
+                    <Menu size={20} />
+                </Button>
+            </div>
       </div>
 
-
-      <nav className="flex-1 space-y-2 overflow-y-auto">
+      <nav className="flex-1 space-y-1 overflow-y-auto pr-1 -mr-1">
         <div className="w-full">
           {levels.map((level, index) => {
             const isLevelActive = openLevelId === level.id;
             const isPathActive = activePath.levelId === level.id;
             return (
-              <div
-                key={level.id}
-                className={cn("border-none", !open && "mb-1")}
-              >
-                <button
+              <div key={level.id} className="w-full">
+                <motion.button
                   onClick={() => handleLevelChange(level.id)}
                   className={cn(
                     'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center justify-between',
                     (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
                     (!open && isPathActive) && 'bg-blue-500/20 text-white',
-                    !open && 'justify-center'
                   )}
+                  whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
+                  transition={{ duration: 0.2 }}
                 >
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center gap-3 overflow-hidden">
                      <motion.div
                         className="flex items-center gap-3"
-                        variants={levelTextVariants}
-                        initial="closed"
+                        variants={itemVariants}
                         animate={open ? "open" : "closed"}
-                        style={{ display: open ? 'flex' : 'none' }}
                      >
-                        <Layers className="h-5 w-5 text-slate-400" />
+                        <Layers className="h-5 w-5 text-slate-400 shrink-0" />
                         <span className="font-medium whitespace-nowrap">{level.name}</span>
                      </motion.div>
-                     <motion.div
-                        variants={levelIconVariants}
-                        initial="open"
-                        animate={open ? "open" : "closed"}
-                        className="items-center justify-center"
-                     >
-                       <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
-                    </motion.div>
+                     <AnimatePresence>
+                     {!open && (
+                         <motion.div
+                            variants={iconVariants}
+                            initial="open"
+                            animate="closed"
+                            exit="open"
+                            transition={{ type: 'spring', stiffness: 300, damping: 30, delay: open ? 0 : 0.1 }}
+                            className="items-center justify-center absolute left-2.5"
+                        >
+                           <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
+                        </motion.div>
+                     )}
+                    </AnimatePresence>
                   </div>
                    <motion.div
-                     animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none', rotate: isLevelActive ? 180 : 0 }}
-                     transition={{ duration: 0.25, ease: "easeInOut" }}
+                     animate={{ opacity: open ? 1 : 0, rotate: isLevelActive ? 180 : 0 }}
+                     transition={{ duration: 0.2, ease: "easeInOut" }}
+                     style={{ display: open ? 'flex' : 'none' }}
                    >
                     <ChevronDown
                       className={cn(
-                        "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
+                        "h-5 w-5 shrink-0 text-slate-400",
                         isLevelActive ? 'text-white' : ''
                       )}
                       aria-hidden="true"
                     />
                   </motion.div>
-                </button>
+                </motion.button>
                  <AnimatePresence initial={false}>
                     {isLevelActive && open && (
                     <motion.div
                         key="content"
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        transition={{ duration: 0.25, ease: 'easeInOut' }}
-                        className={cn("pl-4 pr-1 pt-1 space-y-2 overflow-hidden", !open && "hidden")}
+                        initial="collapsed"
+                        animate="open"
+                        exit="collapsed"
+                        variants={{
+                           open: { opacity: 1, height: 'auto' },
+                           collapsed: { opacity: 0, height: 0 }
+                        }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="pl-4 pr-1 pt-1 space-y-1 overflow-hidden"
                     >
                       {(semestersByLevel[level.id] || []).map((semester) => {
                         const isSemesterActive = activePath.semesterId === semester.id;
                         return (
-                          <button key={semester.id} onClick={() => handleLinkClick(`/folder/${semester.id}`)}
+                          <motion.button key={semester.id} onClick={() => handleLinkClick(`/folder/${semester.id}`)}
                             className={cn(
                               "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer text-left",
                               isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
                             )}
+                             initial={{ opacity: 0, x: -10 }}
+                             animate={{ opacity: 1, x: 0 }}
+                             transition={{ duration: 0.2, ease: 'easeOut' }}
                           >
                             <div className="flex items-center gap-3">
                               <Calendar size={18} className="text-green-400" />
-                              <span className={cn("whitespace-nowrap", !open && "hidden")}>{semester.name}</span>
+                              <span className="whitespace-nowrap">{semester.name}</span>
                             </div>
-                          </button>
+                          </motion.button>
                         );
                       })}
                     </motion.div>
@@ -256,8 +263,9 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
         width: desktopOpen ? 288 : 80,
       }}
       transition={{
-        duration: 0.2,
-        ease: "easeInOut",
+        type: 'spring',
+        stiffness: 400,
+        damping: 40,
       }}
       className={cn("relative h-full flex-col glass-card p-4 hidden md:flex z-10")}
     >
