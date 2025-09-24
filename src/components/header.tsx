@@ -41,7 +41,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   }
 
   return (
-    <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-3 min-h-[72px] flex items-center">
+    <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-3 min-h-[68px] flex items-center">
       <div className="flex items-center justify-between mx-auto gap-4 w-full">
         <div className="flex items-center gap-2">
           {isMobile && onMenuClick && (
