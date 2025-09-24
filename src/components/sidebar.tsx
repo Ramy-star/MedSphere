@@ -111,7 +111,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
             animate={{ width: open ? 'auto' : 0, opacity: open ? 1 : 0 }}
             transition={{ duration: 0.2 }}
           >
-            <h2 className="font-semibold text-white leading-none whitespace-nowrap">
+            <h2 className="font-semibold text-white whitespace-nowrap">
               Academic Structure
             </h2>
           </motion.div>
