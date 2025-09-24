@@ -12,7 +12,7 @@ import {
 import Link from 'next/link';
 import { useState, useEffect, useCallback } from 'react';
 import { Button } from './ui/button';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -23,6 +23,8 @@ import {
 
 function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const isMobile = useIsMobile();
   const [levels, setLevels] = useState<Content[]>([]);
   const [semestersByLevel, setSemestersByLevel] = useState<{[levelId: string]: Content[]}>({});
   const [activePath, setActivePath] = useState({ levelId: '', semesterId: '' });
@@ -92,8 +94,9 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     setOpenLevelId(prevOpenLevelId => (prevOpenLevelId === levelId ? '' : levelId));
   };
 
-  const handleLinkClick = () => {
-    if (useIsMobile()) {
+  const handleLinkClick = (path: string) => {
+    router.push(path);
+    if (isMobile) {
       setOpen(false);
     }
   }
@@ -184,19 +187,17 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                       {(semestersByLevel[level.id] || []).map((semester) => {
                         const isSemesterActive = activePath.semesterId === semester.id;
                         return (
-                          <Link key={semester.id} href={`/folder/${semester.id}`} passHref onClick={handleLinkClick}>
-                            <div
-                              className={cn(
-                                "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer",
-                                isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                              )}
-                            >
-                              <div className="flex items-center gap-3">
-                                <Calendar size={18} className="text-green-400" />
-                                <span className={cn("whitespace-nowrap", !open && "hidden")}>{semester.name}</span>
-                              </div>
+                          <button key={semester.id} onClick={() => handleLinkClick(`/folder/${semester.id}`)}
+                            className={cn(
+                              "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer text-left",
+                              isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
+                            )}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Calendar size={18} className="text-green-400" />
+                              <span className={cn("whitespace-nowrap", !open && "hidden")}>{semester.name}</span>
                             </div>
-                          </Link>
+                          </button>
                         );
                       })}
                     </motion.div>

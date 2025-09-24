@@ -49,12 +49,14 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               <Menu size={24} />
             </Button>
           )}
-          <Link href="/" className="flex items-center gap-2 shrink-0 pointer-events-none">
-            <Logo className="h-10 w-auto shrink-0" />
-            <h1 className="text-xl font-['Nunito_Sans',_sans-serif] relative hidden sm:block" style={{ top: '1px' }}>
-              <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
-              <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
-            </h1>
+          <Link href="/" className="flex gap-2 shrink-0 pointer-events-none">
+            <div className="flex items-center">
+              <Logo className="h-10 w-auto shrink-0" />
+              <h1 className="text-xl font-['Nunito_Sans',_sans-serif] relative hidden sm:block" style={{ top: '1px' }}>
+                <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
+                <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
+              </h1>
+            </div>
           </Link>
         </div>
         <div className="flex items-center gap-4 w-full max-w-md">
