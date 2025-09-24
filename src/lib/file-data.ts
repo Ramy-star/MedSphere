@@ -42,7 +42,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Urogenital: Dna,
     'Clinical 4': UserCheck,
     'Human Rights': HelpingHand,
-    'Medicine 1': BookOpen,
+    'Medicine 1': Stethoscope,
     'Surgery 1': Stethoscope,
     'Leadership Skills': Star,
     'Biomedical Research': TestTube2,
@@ -52,7 +52,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Otorhinolaryngology: Ear,
     'Community Medicine': Users,
     'UE 1': Star,
-    'Medicine 2': BookOpen,
+    'Medicine 2': Stethoscope,
     'Surgery 2': Stethoscope,
     'Hospital Management & Health Economics': FolderKanban,
     'UE 2': Star,
@@ -191,3 +191,4 @@ levelsRaw.forEach(level => {
         }
     });
 });
+
