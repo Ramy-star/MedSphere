@@ -52,7 +52,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Ophthalmology: Eye,
     Otorhinolaryngology: Ear,
     'Community Medicine': Users,
-    'Economics': BarChart3,
+    Economics: BarChart3,
     'Medicine 2': Stethoscope,
     'Surgery 2': SurgeryIcon,
     'Hospital Management': FolderKanban,
@@ -61,7 +61,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Gynecology 2': Dna,
     'Emergency Medicine': Ambulance,
     'Family Medicine': Home,
-    'Clinical Toxicology and Forensic Medicine': Scale,
+    'Toxicology': Scale,
     'UE 3': Star,
     'Cardiology': Heart,
     'Neurology': Brain,
@@ -149,7 +149,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
     { name: 'Gynecology 2', iconName: 'Gynecology 2', color: 'text-red-500', },
     { name: 'Emergency Medicine', iconName: 'Emergency Medicine', color: 'text-red-600', },
     { name: 'Family Medicine', iconName: 'Family Medicine', color: 'text-green-500', },
-    { name: 'Clinical Toxicology and Forensic Medicine', iconName: 'Clinical Toxicology and Forensic Medicine', color: 'text-gray-500', },
+    { name: 'Toxicology', iconName: 'Toxicology', color: 'text-gray-500', },
     { name: 'UE 3', iconName: 'UE 3', color: 'text-yellow-600', },
   ],
 };
@@ -194,3 +194,4 @@ levelsRaw.forEach(level => {
         }
     });
 });
+
