@@ -101,31 +101,49 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     }
   }
 
+  const headerVariants = {
+    open: { opacity: 1, transition: { delay: 0.1, duration: 0.2 } },
+    closed: { opacity: 0, transition: { duration: 0.1 } },
+  };
+
+  const levelTextVariants = {
+      open: { opacity: 1, x: 0, transition: { duration: 0.2 } },
+      closed: { opacity: 0, x: -10, transition: { duration: 0.1 } },
+  };
+
+  const levelIconVariants = {
+      open: { opacity: 0, display: 'none', transition: { duration: 0.1 } },
+      closed: { opacity: 1, display: 'flex', transition: { delay: 0.1, duration: 0.2 } },
+  };
+
   return (
     <div className='flex flex-col h-full'>
-       <div className={cn("flex items-center mb-4 transition-all h-[40px]")}>
-        <motion.div 
-            animate={{ opacity: open ? 1 : 0, width: open ? 'auto' : 0 }}
-            transition={{ duration: 0.2, delay: open ? 0.1 : 0 }}
-            className="flex items-center gap-2 pl-2 flex-1 min-w-0"
+       <div className="flex items-center justify-between mb-4 h-10 px-2.5">
+          <motion.div
+            className="flex items-center gap-2 flex-1 min-w-0"
+            variants={headerVariants}
+            initial="closed"
+            animate={open ? "open" : "closed"}
             style={{ display: open ? 'flex' : 'none' }}
-        >
-          <GraduationCap className="text-green-400" size={24} />
-          <h2 className="text-base font-semibold text-white whitespace-nowrap">
-            Academic Structure
-          </h2>
-        </motion.div>
-        <div className={cn("flex", open ? "justify-end" : "justify-center w-full")}>
+          >
+            <GraduationCap className="text-green-400" size={24} />
+            <h2 className="text-base font-semibold text-white whitespace-nowrap">
+              Academic Structure
+            </h2>
+          </motion.div>
+          
+          <div className={cn("flex items-center", !open && "w-full justify-center")}>
             <Button 
-              variant="ghost" 
-              size="icon" 
-              onClick={() => setOpen(!open)} 
-              className={cn("text-white hover:bg-slate-700 hidden sm:flex")}
+                variant="ghost" 
+                size="icon" 
+                onClick={() => setOpen(!open)} 
+                className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8"
             >
-              <Menu size={24} />
+                <Menu size={20} />
             </Button>
-        </div>
+          </div>
       </div>
+
 
       <nav className="flex-1 space-y-2 overflow-y-auto">
         <div className="w-full">
@@ -143,21 +161,25 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center justify-between',
                     (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
                     (!open && isPathActive) && 'bg-blue-500/20 text-white',
-                    !open && 'flex justify-center'
+                    !open && 'justify-center'
                   )}
                 >
                   <div className="flex items-center gap-3">
-                    <motion.div
-                        animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none' }}
-                        transition={{ duration: 0.2 }}
+                     <motion.div
                         className="flex items-center gap-3"
-                    >
+                        variants={levelTextVariants}
+                        initial="closed"
+                        animate={open ? "open" : "closed"}
+                        style={{ display: open ? 'flex' : 'none' }}
+                     >
                         <Layers className="h-5 w-5 text-slate-400" />
                         <span className="font-medium whitespace-nowrap">{level.name}</span>
-                    </motion.div>
+                     </motion.div>
                      <motion.div
-                        animate={{ opacity: open ? 0 : 1, display: open ? 'none' : 'flex' }}
-                        transition={{ duration: 0.2 }}
+                        variants={levelIconVariants}
+                        initial="open"
+                        animate={open ? "open" : "closed"}
+                        className="items-center justify-center"
                      >
                        <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
                     </motion.div>
