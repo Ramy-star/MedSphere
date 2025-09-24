@@ -7,11 +7,11 @@ export const Logo = ({ className }: { className?: string }) => (
     viewBox="0 0 200 200"
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
-    className={cn("h-8 w-8", className)}
+    className={cn("h-12 w-auto", className)}
   >
     <mask
       id="mask0_86_44"
-      style={{ maskType: 'alpha' }}
+      style={{ maskType: "alpha" }}
       maskUnits="userSpaceOnUse"
       x="0"
       y="0"
