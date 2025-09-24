@@ -15,8 +15,13 @@ import { Button } from './ui/button';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  Sheet,
+  SheetContent,
+} from "@/components/ui/sheet";
 
-export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
+function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const pathname = usePathname();
   const [levels, setLevels] = useState<Content[]>([]);
   const [semestersByLevel, setSemestersByLevel] = useState<{[levelId: string]: Content[]}>({});
@@ -87,19 +92,15 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
     setOpenLevelId(prevOpenLevelId => (prevOpenLevelId === levelId ? '' : levelId));
   };
 
+  const handleLinkClick = () => {
+    if (useIsMobile()) {
+      setOpen(false);
+    }
+  }
+
   return (
-    <motion.aside
-      animate={{
-        width: open ? 288 : 80,
-        opacity: open ? 1 : 0.8,
-      }}
-      transition={{
-        duration: 0.25,
-        ease: [0.25, 0.8, 0.25, 1],
-      }}
-      className={cn("relative h-full flex-col glass-card p-4 hidden md:flex z-10 overflow-hidden")}
-    >
-      <div className={cn("flex items-center mb-4 transition-all", open ? "justify-between" : "justify-center")}>
+    <div className='flex flex-col h-full'>
+       <div className={cn("flex items-center mb-4 transition-all", open ? "justify-between" : "justify-center")}>
         <motion.div 
             animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none' }}
             transition={{ duration: 0.2, delay: open ? 0.1 : 0 }}
@@ -115,14 +116,14 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
               variant="ghost" 
               size="icon" 
               onClick={() => setOpen(!open)} 
-              className={cn("text-white hover:bg-slate-700", open && "mr-2.5")}
+              className={cn("text-white hover:bg-slate-700", !useIsMobile() && open && "mr-2.5")}
             >
               <Menu size={24} />
             </Button>
         </div>
       </div>
 
-      <nav className="flex-1 space-y-2">
+      <nav className="flex-1 space-y-2 overflow-y-auto">
         <div className="w-full">
           {levels.map((level, index) => {
             const isLevelActive = openLevelId === level.id;
@@ -183,7 +184,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
                       {(semestersByLevel[level.id] || []).map((semester) => {
                         const isSemesterActive = activePath.semesterId === semester.id;
                         return (
-                          <Link key={semester.id} href={`/folder/${semester.id}`} passHref>
+                          <Link key={semester.id} href={`/folder/${semester.id}`} passHref onClick={handleLinkClick}>
                             <div
                               className={cn(
                                 "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer",
@@ -206,6 +207,37 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
           })}
         </div>
       </nav>
+    </div>
+  )
+}
+
+
+export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
+  const isMobile = useIsMobile();
+  const [desktopOpen, setDesktopOpen] = useState(true);
+
+  if (isMobile) {
+    return (
+      <Sheet open={open} onOpenChange={setOpen}>
+        <SheetContent side="left" className="glass-card p-4 !w-72">
+           <SidebarContent open={true} setOpen={setOpen} />
+        </SheetContent>
+      </Sheet>
+    )
+  }
+
+  return (
+    <motion.aside
+      animate={{
+        width: desktopOpen ? 288 : 80,
+      }}
+      transition={{
+        duration: 0.2,
+        ease: "easeInOut",
+      }}
+      className={cn("relative h-full flex-col glass-card p-4 hidden md:flex z-10")}
+    >
+      <SidebarContent open={desktopOpen} setOpen={setDesktopOpen} />
     </motion.aside>
   );
 }

@@ -24,8 +24,8 @@ export function FolderCard({ item, onRename, onDelete }: { item: Content, onRena
                 <h3 className="text-sm font-medium text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">{item.name}</h3>
             </Link>
             
-            <div className="flex items-center gap-4 shrink-0 ml-4">
-                <p className="text-xs text-slate-400 hidden md:block w-24 text-right">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
+                <p className="text-xs text-slate-400 hidden lg:block w-24 text-right">
                     {createdAt}
                 </p>
                 <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
@@ -62,5 +62,3 @@ export function FolderCard({ item, onRename, onDelete }: { item: Content, onRena
       </DropdownMenu>
     );
 }
-
-    
