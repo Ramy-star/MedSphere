@@ -135,71 +135,73 @@ function SearchResults() {
 
 
     return (
-        <main className="flex-1 p-6 space-y-6 animate-fade-in flex flex-col">
+        <main className="flex-1 p-6 animate-fade-in flex flex-col overflow-hidden">
             <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
             <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: null }} ancestors={[]} />
 
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-2xl font-bold text-white mt-6 mb-4">
                 {loading && !results.length ? 'Searching...' : `Found ${results.length} results for "${query}"`}
             </h2>
 
-            {loading && !results.length ? (
-                <div className="space-y-3">
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
-                    <Skeleton className="h-16 w-full" />
-                </div>
-            ) : (
-                <div className="space-y-3">
-                    {results.length > 0 ? (
-                        results.map((item, index) => (
-                             <motion.div
-                                key={`${item.id}-${index}`}
-                                initial={{ opacity: 0, y: 8 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ duration: 0.15, delay: index * 0.03 }}
-                            >
-                                {item.type === 'FILE' && (
-                                     <FileCard
-                                        item={item}
-                                        onFileClick={() => setPreviewFile(item)}
-                                        onRename={() => setItemToRename(item)}
-                                        onDelete={() => setItemToDelete(item)}
-                                        onUpdate={() => handleUpdateClick(item)}
-                                        onDownload={() => handleDownloadClick(item)}
-                                     />
-                                )}
-                                {item.type === 'FOLDER' && (
-                                     <FolderCard 
-                                        item={item}
-                                        onRename={() => setItemToRename(item)}
-                                        onDelete={() => setItemToDelete(item)}
-                                    />
-                                )}
-                                {item.type === 'SUBJECT' && (
-                                     <SubjectCard subject={item} />
-                                )}
-                                 {item.type === 'SEMESTER' && (
-                                     <Link href={`/folder/${item.id}`}>
-                                        <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
-                                            <h3 className="text-lg font-semibold text-white">{item.name}</h3>
-                                        </div>
-                                    </Link>
-                                )}
-                                {item.type === 'LEVEL' && (
-                                     <Link href={`/level/${encodeURIComponent(item.name)}`}>
-                                        <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
-                                            <h3 className="text-lg font-semibold text-white">{item.name}</h3>
-                                        </div>
-                                    </Link>
-                                )}
-                            </motion.div>
-                        ))
-                    ) : (
-                        !loading && query && <p className="text-slate-400">No results found.</p>
-                    )}
-                </div>
-            )}
+            <div className="flex-1 overflow-y-auto pr-2 -mr-2">
+                {loading && !results.length ? (
+                    <div className="space-y-3">
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                        <Skeleton className="h-16 w-full" />
+                    </div>
+                ) : (
+                    <div className="space-y-3">
+                        {results.length > 0 ? (
+                            results.map((item, index) => (
+                                 <motion.div
+                                    key={`${item.id}-${index}`}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ duration: 0.15, delay: index * 0.03 }}
+                                >
+                                    {item.type === 'FILE' && (
+                                         <FileCard
+                                            item={item}
+                                            onFileClick={() => setPreviewFile(item)}
+                                            onRename={() => setItemToRename(item)}
+                                            onDelete={() => setItemToDelete(item)}
+                                            onUpdate={() => handleUpdateClick(item)}
+                                            onDownload={() => handleDownloadClick(item)}
+                                         />
+                                    )}
+                                    {item.type === 'FOLDER' && (
+                                         <FolderCard 
+                                            item={item}
+                                            onRename={() => setItemToRename(item)}
+                                            onDelete={() => setItemToDelete(item)}
+                                        />
+                                    )}
+                                    {item.type === 'SUBJECT' && (
+                                         <SubjectCard subject={item} />
+                                    )}
+                                     {item.type === 'SEMESTER' && (
+                                         <Link href={`/folder/${item.id}`}>
+                                            <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
+                                                <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+                                            </div>
+                                        </Link>
+                                    )}
+                                    {item.type === 'LEVEL' && (
+                                         <Link href={`/level/${encodeURIComponent(item.name)}`}>
+                                            <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
+                                                <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+                                            </div>
+                                        </Link>
+                                    )}
+                                </motion.div>
+                            ))
+                        ) : (
+                            !loading && query && <p className="text-slate-400">No results found.</p>
+                        )}
+                    </div>
+                )}
+            </div>
              <FilePreviewModal
                 item={previewFile}
                 onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
@@ -237,5 +239,7 @@ export default function SearchPage() {
         </Suspense>
     )
 }
+
+    
 
     
