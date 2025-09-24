@@ -103,9 +103,9 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
         <motion.div 
             animate={{ opacity: open ? 1 : 0, display: open ? 'flex' : 'none' }}
             transition={{ duration: 0.2, delay: open ? 0.1 : 0 }}
-            className="flex items-center gap-3 pl-2.5"
+            className="flex items-center gap-2 pl-2"
         >
-          <GraduationCap className="text-blue-400" size={24} />
+          <GraduationCap className="text-green-400" size={24} />
           <h2 className="text-base font-semibold text-white whitespace-nowrap">
             Academic Structure
           </h2>
