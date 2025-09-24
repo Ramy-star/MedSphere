@@ -25,7 +25,7 @@ export default function HomePage() {
         <Breadcrumbs />
         <div className="flex-1 flex flex-col items-center justify-between pt-12 pb-16">
             <div className="w-full max-w-4xl text-center">
-                <h2 className="text-4xl font-bold mb-8 bg-gradient-to-r from-green-400 to-teal-300 text-transparent bg-clip-text" style={{'--tw-gradient-from': '#00D309 0%, var(--tw-gradient-from-position)', '--tw-gradient-to': 'rgb(82 209 183) 100%, var(--tw-gradient-to-position)'} as React.CSSProperties}>Your Study Levels</h2>
+                <h2 className="text-4xl font-bold mb-8 bg-gradient-to-r from-[#00D309] to-teal-300 text-transparent bg-clip-text">Your Study Levels</h2>
                 {loading ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
                         {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-28 rounded-xl" />)}
