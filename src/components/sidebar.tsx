@@ -113,24 +113,28 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   const iconVariants = {
     open: { opacity: 0, scale: 0.5, display: 'none' },
-    closed: { opacity: 1, scale: 1, display: 'flex' },
+    closed: { opacity: 1, scale: 1, display: 'block' },
   };
 
 
   return (
     <div className='flex flex-col h-full'>
       <div className={cn("flex items-center mb-4 h-10 px-2.5", open ? "justify-between" : "justify-center")}>
-            <motion.div
-                className="flex items-center gap-2 overflow-hidden"
-                variants={headerVariants}
-                animate={open ? "open" : "closed"}
-                style={{ display: open ? 'flex' : 'none' }}
-            >
-                <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
-                <h2 className="text-base font-semibold text-white whitespace-nowrap">
-                Academic Structure
-                </h2>
-            </motion.div>
+            <AnimatePresence>
+            {open && (
+                <motion.div
+                    className="flex items-center gap-2 overflow-hidden"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0, transition: { type: 'spring', stiffness: 300, damping: 30, delay: 0.1 } }}
+                    exit={{ opacity: 0, x: -10, transition: { type: 'spring', stiffness: 300, damping: 30 } }}
+                >
+                    <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
+                    <h2 className="text-base font-semibold text-white whitespace-nowrap">
+                    Academic Structure
+                    </h2>
+                </motion.div>
+            )}
+            </AnimatePresence>
             <div className="flex items-center justify-center">
                 <Button 
                     variant="ghost" 
@@ -161,44 +165,52 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                   whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="flex items-center gap-3 overflow-hidden">
-                     <motion.div
-                        className="flex items-center gap-3"
-                        variants={itemVariants}
-                        animate={open ? "open" : "closed"}
-                        style={{ display: open ? 'flex' : 'none' }}
-                     >
-                        <Layers className="h-5 w-5 text-slate-400 shrink-0" />
-                        <span className="font-medium whitespace-nowrap">{level.name}</span>
-                     </motion.div>
+                    <AnimatePresence>
+                     {open && (
+                         <motion.div
+                            className="flex items-center gap-3 overflow-hidden"
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: -10 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                         >
+                            <Layers className="h-5 w-5 text-slate-400 shrink-0" />
+                            <span className="font-medium whitespace-nowrap">{level.name}</span>
+                         </motion.div>
+                     )}
+                     </AnimatePresence>
                      <AnimatePresence>
                      {!open && (
                          <motion.div
-                            variants={iconVariants}
-                            initial="open"
-                            animate="closed"
-                            exit="open"
-                            transition={{ type: 'spring', stiffness: 300, damping: 30, delay: open ? 0 : 0.1 }}
-                            className="items-center justify-center"
+                            key={`lvl-${level.id}`}
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.1 }}
+                            className="flex items-center justify-center"
                         >
                            <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
                         </motion.div>
                      )}
                     </AnimatePresence>
-                  </div>
-                   <motion.div
-                     animate={{ opacity: open ? 1 : 0 }}
-                     transition={{ duration: 0.2, ease: "easeInOut" }}
-                     style={{ display: open ? 'flex' : 'none' }}
-                   >
-                    <ChevronDown
-                      className={cn(
-                        "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
-                        isLevelActive ? 'text-white rotate-180' : ''
-                      )}
-                      aria-hidden="true"
-                    />
-                  </motion.div>
+                    <AnimatePresence>
+                   {open && (
+                       <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.2, ease: "easeInOut" }}
+                       >
+                        <ChevronDown
+                          className={cn(
+                            "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
+                            isLevelActive ? 'text-white rotate-180' : ''
+                          )}
+                          aria-hidden="true"
+                        />
+                      </motion.div>
+                   )}
+                   </AnimatePresence>
                 </motion.button>
                  <AnimatePresence initial={false}>
                     {isLevelActive && open && (
