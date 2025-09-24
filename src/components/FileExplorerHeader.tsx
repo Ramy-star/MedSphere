@@ -117,10 +117,8 @@ export default function FileExplorerHeader({ currentFolder, ancestors, onContent
       
       <div className="flex items-center justify-between min-h-[40px]">
         {currentFolder && (
-             <div className="flex items-center gap-3">
-                <div className={`p-3 rounded-lg bg-slate-800 w-fit`}>
-                    <CurrentIcon className={`w-7 h-7 ${iconColor}`} />
-                </div>
+             <div className="flex items-center gap-4">
+                <CurrentIcon className={`w-10 h-10 ${iconColor}`} />
                 <h1 className="text-2xl font-bold text-white">
                     {currentFolder?.name}
                 </h1>
