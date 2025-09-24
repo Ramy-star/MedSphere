@@ -56,10 +56,10 @@ export function FileCard({
       <DropdownMenu>
         <div 
             onClick={() => onFileClick(item)}
-            className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer flex items-start justify-between"
+            className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-between"
         >
-            <div className="flex items-start gap-3 overflow-hidden flex-1">
-                <Icon className={`w-6 h-6 ${color} shrink-0 mt-1`} />
+            <div className="flex items-center gap-3 overflow-hidden flex-1">
+                <Icon className={`w-6 h-6 ${color} shrink-0`} />
                 <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
             </div>
             
