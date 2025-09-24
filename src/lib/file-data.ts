@@ -62,6 +62,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Emergency Medicine': Ambulance,
     'Family Medicine': Home,
     'Toxicology and Forensics': Scale,
+    'Clinical Toxicology and Forensic Medicine': Scale,
     'UE 3': Star,
     'Cardiology': Heart,
     'Neurology': Brain,
@@ -132,7 +133,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
   ],
   'Semester 8': [
     { name: 'Pediatrics 1', iconName: 'Pediatrics 1', color: 'text-pink-400', },
-    { name: 'Gynecology and Obstetrics 1', iconName: 'Gynecology and Obstetrics 1', color: 'text-red-400', },
+    { name: 'Gynecology 1', iconName: 'Gynecology and Obstetrics 1', color: 'text-red-400', },
     { name: 'Ophthalmology', iconName: 'Ophthalmology', color: 'text-blue-400', },
     { name: 'Otorhinolaryngology', iconName: 'Otorhinolaryngology', color: 'text-purple-400', },
     { name: 'Community Medicine', iconName: 'Community Medicine', color: 'text-green-400', },
@@ -146,10 +147,10 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
   ],
   'Semester 10': [
     { name: 'Pediatrics 2', iconName: 'Pediatrics 2', color: 'text-pink-500', },
-    { name: 'Gynecology and Obstetrics 2', iconName: 'Gynecology and Obstetrics 2', color: 'text-red-500', },
+    { name: 'Gynecology 2', iconName: 'Gynecology and Obstetrics 2', color: 'text-red-500', },
     { name: 'Emergency Medicine', iconName: 'Emergency Medicine', color: 'text-red-600', },
     { name: 'Family Medicine', iconName: 'Family Medicine', color: 'text-green-500', },
-    { name: 'Toxicology and Forensics', iconName: 'Toxicology and Forensics', color: 'text-gray-500', },
+    { name: 'Clinical Toxicology and Forensic Medicine', iconName: 'Clinical Toxicology and Forensic Medicine', color: 'text-gray-500', },
     { name: 'UE 3', iconName: 'UE 3', color: 'text-yellow-600', },
   ],
 };
