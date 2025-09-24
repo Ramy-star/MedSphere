@@ -4,7 +4,7 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { use, useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { contentService, Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';
@@ -56,6 +56,8 @@ function LevelPageContent({ levelName }: { levelName: string }) {
   }
 
   if (!level) {
+    // This should ideally not be reached if loading is false and fetch was successful.
+    // But as a fallback, we can show notFound.
     notFound();
   }
   

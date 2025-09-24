@@ -155,7 +155,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
 };
 
 function generateStableId(type: string, name: string, parentId: string | null = ''): string {
-    const safeName = name.replace(/[^a-zA-Z0-9-]/g, '').replace(/\s+/g, '-');
+    const safeName = name.replace(/[^a-zA-Z0-9-\s]/g, '').replace(/\s+/g, '-');
     return `${type}-${safeName}-${parentId}`.toLowerCase();
 }
 

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback, use, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, Content } from '@/lib/contentService';
@@ -62,6 +62,8 @@ function FolderPageContent({ id }: { id: string }) {
   }
 
   if (!current) {
+      // This should ideally not be reached if loading is false and fetch was successful.
+      // But as a fallback, we can either show notFound or a specific error message.
       notFound();
   }
 
