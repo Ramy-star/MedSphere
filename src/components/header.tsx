@@ -45,7 +45,7 @@ export const Header = () => {
           <Logo className="h-10 w-auto" />
           <h1 className="text-xl">
             <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
-            <span className="font-normal" style={{ color: '#4CAF50' }}>Sphere</span>
+            <span className="font-normal" style={{ color: '#388E3C' }}>Sphere</span>
           </h1>
         </div>
         <div className="flex items-center gap-4 w-full max-w-md">
