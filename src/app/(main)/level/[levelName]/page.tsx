@@ -4,33 +4,35 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { use, useEffect, useState, useCallback } from 'react';
+import { use, useEffect, useState, useCallback, Suspense } from 'react';
 import { contentService, Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';
 
-
-export default function LevelPage({ params }: { params: { levelName: string } }) {
-  const resolvedParams = use(params);
-  const levelName = decodeURIComponent(resolvedParams.levelName);
-
+function LevelPageContent({ levelName }: { levelName: string }) {
   const [level, setLevel] = useState<Content | null>(null);
   const [semesters, setSemesters] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchLevelData = useCallback(async () => {
     setLoading(true);
-    const allLevels = await contentService.getChildren(null);
-    const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
-    
-    if (currentLevel) {
-        setLevel(currentLevel);
-        const levelSemesters = await contentService.getChildren(currentLevel.id);
-        setSemesters(levelSemesters.filter(s => s.type === 'SEMESTER'));
-    } else {
-        notFound();
+    try {
+      const allLevels = await contentService.getChildren(null);
+      const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
+      
+      if (currentLevel) {
+          setLevel(currentLevel);
+          const levelSemesters = await contentService.getChildren(currentLevel.id);
+          setSemesters(levelSemesters.filter(s => s.type === 'SEMESTER'));
+      } else {
+          notFound();
+      }
+    } catch (error) {
+      console.error("Failed to fetch level data:", error);
+      notFound();
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [levelName]);
 
   useEffect(() => {
@@ -79,4 +81,24 @@ export default function LevelPage({ params }: { params: { levelName: string } })
         </div>
     </main>
   );
+}
+
+export default function LevelPage({ params }: { params: { levelName: string } }) {
+  const levelName = decodeURIComponent(params.levelName);
+  return (
+    <Suspense fallback={
+        <main className="flex-1 p-6 glass-card animate-fade-in">
+            <FileExplorerHeader />
+            <div className="flex items-center justify-between mb-6">
+              <Skeleton className="h-8 w-48" />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <Skeleton className="h-32" />
+                <Skeleton className="h-32" />
+            </div>
+        </main>
+    }>
+      <LevelPageContent levelName={levelName} />
+    </Suspense>
+  )
 }

@@ -48,7 +48,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Leadership Skills': Users,
     'Biomedical Research': TestTube2,
     'Pediatrics 1': Baby,
-    'Gynecology & Obstetrics 1': Dna,
+    'Gynecology and Obstetrics 1': Dna,
     Ophthalmology: Eye,
     Otorhinolaryngology: Ear,
     'Community Medicine': Users,
@@ -58,10 +58,10 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Hospital Management': FolderKanban,
     'UE 2': Star,
     'Pediatrics 2': Baby,
-    'Gynecology & Obstetrics 2': Dna,
+    'Gynecology and Obstetrics 2': Dna,
     'Emergency Medicine': Ambulance,
     'Family Medicine': Home,
-    'Toxicology & Forensics': Scale,
+    'Toxicology and Forensics': Scale,
     'UE 3': Star,
     'Cardiology': Heart,
     'Neurology': Brain,
@@ -132,7 +132,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
   ],
   'Semester 8': [
     { name: 'Pediatrics 1', iconName: 'Pediatrics 1', color: 'text-pink-400', },
-    { name: 'Gynecology & Obstetrics 1', iconName: 'Gynecology & Obstetrics 1', color: 'text-red-400', },
+    { name: 'Gynecology and Obstetrics 1', iconName: 'Gynecology and Obstetrics 1', color: 'text-red-400', },
     { name: 'Ophthalmology', iconName: 'Ophthalmology', color: 'text-blue-400', },
     { name: 'Otorhinolaryngology', iconName: 'Otorhinolaryngology', color: 'text-purple-400', },
     { name: 'Community Medicine', iconName: 'Community Medicine', color: 'text-green-400', },
@@ -146,17 +146,17 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
   ],
   'Semester 10': [
     { name: 'Pediatrics 2', iconName: 'Pediatrics 2', color: 'text-pink-500', },
-    { name: 'Gynecology & Obstetrics 2', iconName: 'Gynecology & Obstetrics 2', color: 'text-red-500', },
+    { name: 'Gynecology and Obstetrics 2', iconName: 'Gynecology and Obstetrics 2', color: 'text-red-500', },
     { name: 'Emergency Medicine', iconName: 'Emergency Medicine', color: 'text-red-600', },
     { name: 'Family Medicine', iconName: 'Family Medicine', color: 'text-green-500', },
-    { name: 'Toxicology & Forensics', iconName: 'Toxicology & Forensics', color: 'text-gray-500', },
+    { name: 'Toxicology and Forensics', iconName: 'Toxicology and Forensics', color: 'text-gray-500', },
     { name: 'UE 3', iconName: 'UE 3', color: 'text-yellow-600', },
   ],
 };
 
 function generateStableId(type: string, name: string, parentId: string | null = ''): string {
-    const safeName = name.replace(/[^a-zA-Z0-9\s-]/g, '').replace(/\s+/g, '-');
-    return `${type}_${safeName}_${parentId}`.toLowerCase();
+    const safeName = name.replace(/[^a-zA-Z0-9-]/g, '').replace(/\s+/g, '-');
+    return `${type}-${safeName}-${parentId}`.toLowerCase();
 }
 
 
