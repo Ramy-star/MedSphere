@@ -155,7 +155,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
 };
 
 function generateStableId(type: string, name: string, parentId: string | null = ''): string {
-    return `${type}_${name.replace(/\s+/g, '-')}_${parentId}`.toLowerCase();
+    return `${type}_${name.replace(/\s+/g, '-').replace(/&/g, 'and')}_${parentId}`.toLowerCase();
 }
 
 export const allContent: Content[] = [];
@@ -192,12 +192,3 @@ levelsRaw.forEach(level => {
         }
     });
 });
-
-
-
-
-
-
-
-
-
