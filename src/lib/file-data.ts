@@ -48,7 +48,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Leadership Skills': Users,
     'Biomedical Research': TestTube2,
     'Pediatrics 1': Baby,
-    'Gynecology & Obstetrics 1': Baby,
+    'Gynecology & Obstetrics 1': Dna,
     Ophthalmology: Eye,
     Otorhinolaryngology: Ear,
     'Community Medicine': Users,
@@ -58,7 +58,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Hospital Management & Health Economics': FolderKanban,
     'UE 2': Star,
     'Pediatrics 2': Baby,
-    'Gynecology & Obstetrics 2': Baby,
+    'Gynecology & Obstetrics 2': Dna,
     'Emergency Medicine': Ambulance,
     'Family Medicine': Home,
     'Clinical Toxicology & Forensic Medicine': Scale,
@@ -192,6 +192,7 @@ levelsRaw.forEach(level => {
         }
     });
 });
+
 
 
 
