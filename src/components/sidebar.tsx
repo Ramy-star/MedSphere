@@ -113,7 +113,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     exit={{ opacity: 0, x: -10, transition: { type: 'spring', stiffness: 300, damping: 30 } }}
                 >
                     <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
-                    <h2 className="text-base font-semibold text-white">
+                    <h2 className="text-base font-semibold text-white leading-none">
                     Academic Structure
                     </h2>
                 </motion.div>
@@ -160,7 +160,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                             className="flex items-center gap-3"
                         >
                             <Layers className="h-5 w-5 text-slate-400 shrink-0" />
-                            <span className="font-medium whitespace-nowrap">{level.name}</span>
+                            <span className="font-medium whitespace-nowrap leading-none">{level.name}</span>
                         </motion.div>
                     ) : (
                         <motion.div
@@ -169,9 +169,9 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                             initial={{ opacity: 0, scale: 0.8 }}
                             animate={{ opacity: 1, scale: 1, transition: { duration: 0.2, ease: "easeOut", delay: 0.1 } }}
                             exit={{ opacity: 0, scale: 0.8, transition: { duration: 0.2, ease: "easeIn" } }}
-                            className="w-full flex justify-center"
+                            className="w-full flex justify-center items-center"
                         >
-                            <span className="font-semibold text-sm whitespace-nowrap">{`Lvl ${index + 1}`}</span>
+                           <span className="font-semibold text-sm whitespace-nowrap leading-none">{`Lvl ${index + 1}`}</span>
                         </motion.div>
                     )}
                 </AnimatePresence>
