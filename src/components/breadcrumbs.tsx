@@ -3,10 +3,10 @@
 import Link from 'next/link';
 import { HomeIcon, ChevronRight } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
-import { useDoc } from '@/firebase/firestore/use-doc';
 import { useEffect, useState } from 'react';
-import { db } from '@/firebase';
 import { doc, getDoc } from 'firebase/firestore';
+import { useFirebase } from '@/firebase';
+
 
 function getLink(item: Content): string {
   switch (item.type) {
@@ -22,7 +22,7 @@ function getLink(item: Content): string {
 }
 
 
-async function fetchAncestors(currentId: string): Promise<Content[]> {
+async function fetchAncestors(db: any, currentId: string): Promise<Content[]> {
     if (currentId === 'root' || !db) return [];
     
     const ancestors: Content[] = [];
@@ -48,13 +48,14 @@ async function fetchAncestors(currentId: string): Promise<Content[]> {
 
 
 export function Breadcrumbs({ current }: { current?: Content }) {
+  const { db } = useFirebase();
   const [ancestors, setAncestors] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (current && current.id !== 'root') {
         setLoading(true);
-        fetchAncestors(current.id).then(fetchedAncestors => {
+        fetchAncestors(db, current.id).then(fetchedAncestors => {
             setAncestors(fetchedAncestors);
             setLoading(false);
         });
@@ -62,7 +63,7 @@ export function Breadcrumbs({ current }: { current?: Content }) {
         setAncestors([]);
         setLoading(false);
     }
-  }, [current]);
+  }, [current, db]);
 
   const homeElement = (
     <div className="flex items-center">

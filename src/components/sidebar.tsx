@@ -21,12 +21,15 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useDoc } from '@/firebase/firestore/use-doc';
+import { useFirebase } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+
 
 function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const isMobile = useIsMobile();
+  const { db } = useFirebase();
   
   const { data: levels } = useCollection<Content>('content', {
       where: ['type', '==', 'LEVEL'],
@@ -112,7 +115,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     } else {
          setActivePath({ levelId: '', semesterId: '' });
     }
-  }, [pathname, open, levels]);
+  }, [pathname, open, levels, db]);
 
   useEffect(() => {
     findActivePath();
@@ -303,7 +306,3 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
     </motion.aside>
   );
 }
-
-// Need to import doc and db to make getDoc work in findActivePath
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
