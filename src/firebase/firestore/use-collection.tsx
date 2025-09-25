@@ -73,7 +73,6 @@ export function useCollection<T>(path: string, options: CollectionOptions<T> = {
             const permissionError = new FirestorePermissionError({
                 path,
                 operation: 'list',
-                // You can add more context if available from the query options
             });
             errorEmitter.emit('permission-error', permissionError);
         }
