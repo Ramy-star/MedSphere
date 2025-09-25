@@ -1,17 +1,87 @@
-
+/**
+ * @fileoverview Firestore Security Rules for the application.
+ *
+ * Core Philosophy:
+ * This ruleset prioritizes strict access control based on user identity and document ownership.
+ * It leverages Firebase Authentication to secure data and prevent unauthorized access.
+ *
+ * Data Structure:
+ * - /content/{contentId}: Stores all content items in a flat structure. Public read, owner-only write.
+ * - /users/{userId}: Stores user profile information. Owner-only access.
+ *
+ * Key Security Decisions:
+ * - Users can only read public content.
+ * - Users can only create, update, and delete content they own.
+ * - User profiles are private and only accessible to the owning user.
+ * - Data shape is not strictly enforced in this prototype phase.
+ *
+ * Denormalization for Authorization:
+ *  - The content documents are expected to have a creatorId to indicate the owner of the document.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow public read access to all content
-    match /content/{contentId} {
-      allow get, list: if true;
-      allow create, update, delete: if request.auth != null; // Only authenticated users can write
+
+    /**
+     * @description Checks if the request is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
     }
 
-    // Users can only read and write their own profile
+    /**
+     * @description Checks if the authenticated user is the owner of the resource.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of the existing resource.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Stores all content items in a flat structure. Public read, owner-only write.
+     * @path /content/{contentId}
+     * @allow (get, list) - Any user can read content.
+     * @allow (create) - User with auth can create content if the creatorId matches their UID.
+     * @allow (update, delete) - User with auth can update or delete content if they are the owner (creatorId matches their UID) and the document exists.
+     * @deny (create) - User tries to create content with a mismatched creatorId.
+     * @deny (update, delete) - User tries to update or delete content they don't own.
+     * @principle Public read, owner-only write access for content. Validates creatorId on create, and enforces ownership on update and delete.
+     */
+    match /content/{contentId} {
+      allow get: if true;
+      allow list: if true;
+
+      allow create: if isSignedIn() && request.resource.data.creatorId == request.auth.uid;
+      allow update: if isSignedIn() && isExistingOwner(resource.data.creatorId);
+      allow delete: if isSignedIn() && isExistingOwner(resource.data.creatorId);
+
+      // Deny any other operation
+      allow read: if false;
+    }
+
+    /**
+     * @description Stores user profile information. Owner-only access.
+     * @path /users/{userId}
+     * @allow (create) - User can create their own profile if the userId matches their UID.
+     * @allow (get, list, update, delete) - User can only access their own profile data.
+     * @deny (create) - User tries to create a profile for a different user.
+     * @deny (get, list, update, delete) - User tries to access another user's profile.
+     * @principle Enforces strict user-ownership for profile data. Validates user ID on create and enforces ownership for all other operations.
+     */
     match /users/{userId} {
-      allow read, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow get: if isSignedIn() && isOwner(userId);
+      allow list: if isSignedIn() && isOwner(userId);
+
+      allow create: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isExistingOwner(userId);
+      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow read: if false;
     }
   }
 }
