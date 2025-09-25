@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, useCallback, Suspense, use } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { contentService, Content } from '@/lib/contentService';
@@ -11,8 +11,8 @@ import { LucideIcon, Folder, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 
-function FolderPageContent({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+function FolderPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const [current, setCurrent] = useState<Content | null>(null);
   const [ancestors, setAncestors] = useState<Content[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,19 +87,6 @@ function FolderPageContent({ params }: { params: Promise<{ id: string }> }) {
   }
 
   return (
-    <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
-       <FileExplorerHeader currentFolder={extendedCurrent} ancestors={ancestors} onContentAdded={fetchFolderData} />
-       <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-          <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
-       </div>
-    </main>
-  );
-}
-
-
-export default function FolderPage({ params }: { params: Promise<{ id: string }> }) {
-  // Use a Suspense boundary to handle client-side rendering issues
-  return (
     <Suspense fallback={
         <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
             <div className="mb-6 space-y-4">
@@ -118,7 +105,15 @@ export default function FolderPage({ params }: { params: Promise<{ id: string }>
             </div>
         </main>
     }>
-      <FolderPageContent params={params} />
+        <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
+           <FileExplorerHeader currentFolder={extendedCurrent} ancestors={ancestors} onContentAdded={fetchFolderData} />
+           <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
+              <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
+           </div>
+        </main>
     </Suspense>
-  )
+  );
 }
+
+
+export default FolderPage;

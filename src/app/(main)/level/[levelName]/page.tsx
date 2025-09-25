@@ -4,13 +4,13 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useEffect, useState, useCallback, Suspense, use } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { contentService, Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';
 
-function LevelPageContent({ params }: { params: Promise<{ levelName: string }> }) {
-  const { levelName: encodedLevelName } = use(params);
+function LevelPage({ params }: { params: { levelName: string } }) {
+  const { levelName: encodedLevelName } = params;
   const levelName = decodeURIComponent(encodedLevelName);
 
   const [level, setLevel] = useState<Content | null>(null);
@@ -59,8 +59,6 @@ function LevelPageContent({ params }: { params: Promise<{ levelName: string }> }
   }
 
   if (!level) {
-    // This should ideally not be reached if loading is false and fetch was successful.
-    // But as a fallback, we can show notFound.
     notFound();
   }
   
@@ -70,25 +68,6 @@ function LevelPageContent({ params }: { params: Promise<{ levelName: string }> }
       iconColor: 'text-blue-400'
   }
 
-  return (
-    <main className="flex-1 p-4 md:p-6 glass-card animate-fade-in">
-        <FileExplorerHeader currentFolder={extendedLevel} ancestors={[]} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
-            {semesters.map((semester, index) => (
-                <div key={semester.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.15}s` }}>
-                     <Link href={`/folder/${semester.id}`}>
-                        <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center">
-                            <h3 className="text-xl font-semibold text-white">{semester.name}</h3>
-                        </div>
-                    </Link>
-                </div>
-            ))}
-        </div>
-    </main>
-  );
-}
-
-export default function LevelPage({ params }: { params: Promise<{ levelName: string }> }) {
   return (
     <Suspense fallback={
         <main className="flex-1 p-4 md:p-6 glass-card animate-fade-in">
@@ -102,7 +81,22 @@ export default function LevelPage({ params }: { params: Promise<{ levelName: str
             </div>
         </main>
     }>
-      <LevelPageContent params={params} />
+        <main className="flex-1 p-4 md:p-6 glass-card animate-fade-in">
+            <FileExplorerHeader currentFolder={extendedLevel} ancestors={[]} />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
+                {semesters.map((semester, index) => (
+                    <div key={semester.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.15}s` }}>
+                         <Link href={`/folder/${semester.id}`}>
+                            <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center">
+                                <h3 className="text-xl font-semibold text-white">{semester.name}</h3>
+                            </div>
+                        </Link>
+                    </div>
+                ))}
+            </div>
+        </main>
     </Suspense>
-  )
+  );
 }
+
+export default LevelPage;
