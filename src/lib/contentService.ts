@@ -1,7 +1,7 @@
 
 'use client';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, getDoc, updateDoc, addDoc, runTransaction } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { naturalSort } from './sort';
@@ -28,10 +28,10 @@ export async function seedInitialData() {
         return;
     }
     const contentRef = collection(db, 'content');
-    const snapshot = await getDocs(query(contentRef));
+    const snapshot = await getDocs(query(contentRef, where('type', '==', 'LEVEL')));
 
     if (!snapshot.empty) {
-        console.log("Content collection already exists. Skipping seed.");
+        console.log("Content collection already has levels. Skipping seed.");
         return;
     }
 
@@ -92,7 +92,7 @@ export const contentService = {
         order: order
     };
     const docRef = doc(db, 'content', id);
-    await addDoc(collection(db, 'content'), item).catch(e => {
+    setDoc(docRef, item).catch(e => {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: `/content/${id}`,
@@ -122,7 +122,8 @@ export const contentService = {
         updatedAt: new Date().toISOString(),
         order: order
     };
-     await addDoc(collection(db, 'content'), item).catch(e => {
+    const docRef = doc(db, 'content', id);
+    setDoc(docRef, item).catch(e => {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: `/content/${id}`,
@@ -148,7 +149,7 @@ export const contentService = {
         updatedAt: new Date().toISOString()
     };
     
-    await updateDoc(docRef, updatedData).catch(e => {
+    updateDoc(docRef, updatedData).catch(e => {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: `/content/${id}`,
@@ -195,7 +196,7 @@ export const contentService = {
 
     const updatedData = { name, updatedAt: new Date().toISOString() };
     
-    await updateDoc(docRef, updatedData).catch(e => {
+    updateDoc(docRef, updatedData).catch(e => {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: `/content/${id}`,

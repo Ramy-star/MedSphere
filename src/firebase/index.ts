@@ -2,8 +2,8 @@
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth, connectAuthEmulator, signInAnonymously } from 'firebase/auth';
-import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getAuth, signInAnonymously } from 'firebase/auth';
+import { getFirestore }from 'firebase/firestore';
 
 let db: any;
 
@@ -14,18 +14,18 @@ export async function initializeFirebase(config: FirebaseOptions) {
   db = getFirestore(app);
 
   if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
-    const host = process.env.NEXT_PUBLIC_EMULATOR_HOST || '127.0.0.1';
-    // It's important to check if the emulators are already connected
-    // to avoid re-connecting on every hot-reload in development.
-    if (!(auth as any).emulatorConfig) {
-        connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
-    }
-    if (!(db as any)._settings.host) {
-        connectFirestoreEmulator(db, host, 8080);
-    }
+    // This logic is commented out but kept for reference
+    // const host = process.env.NEXT_PUBLIC_EMULATOR_HOST || '127.0.0.1';
+    // if (!(auth as any).emulatorConfig) {
+    //     connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
+    // }
+    // if (!(db as any)._settings.host) {
+    //     connectFirestoreEmulator(db, host, 8080);
+    // }
   }
 
   // Ensure user is signed in anonymously
+  // This requires Anonymous sign-in to be enabled in the Firebase console
   await signInAnonymously(auth);
 
   return { app, auth, db };
