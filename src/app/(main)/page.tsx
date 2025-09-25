@@ -8,29 +8,36 @@ import { Content, seedInitialData } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
+import { useFirebase } from '@/firebase';
 
 export default function HomePage() {
-  const [showSeedButton, setShowSeedButton] = useState(false);
-  
+  const { db } = useFirebase();
+  const [isSeeding, setIsSeeding] = useState(false);
   const { data: levels, loading } = useCollection<Content>('content', {
       where: ['type', '==', 'LEVEL'],
       orderBy: ['order', 'asc']
   });
 
   const handleSeed = async () => {
+    setIsSeeding(true);
     try {
       await seedInitialData();
-      setShowSeedButton(false);
+      // Data will refetch automatically via useCollection
     } catch (error) {
       console.error("Seeding failed:", error);
+    } finally {
+        setIsSeeding(false);
     }
   };
 
   useEffect(() => {
-    if (!loading && (!levels || levels.length === 0) && !showSeedButton) {
-      handleSeed();
+    // This effect runs once when the component mounts and the initial data check is done.
+    if (!loading && (!levels || levels.length === 0)) {
+        handleSeed();
     }
-  }, [loading, levels, showSeedButton]);
+    // We only want this to run based on the initial loading and data state.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [loading]);
   
   const renderContent = () => {
       if (loading) {
@@ -44,8 +51,10 @@ export default function HomePage() {
       if (!levels || levels.length === 0) {
            return (
                 <div className="text-center">
-                    <p className="text-lg text-slate-300 mb-4">Your study space is empty. Setting up initial data...</p>
-                    <Skeleton className="h-12 w-48 mx-auto" />
+                    <p className="text-lg text-slate-300 mb-4">Your study space is empty.</p>
+                     <Button onClick={handleSeed} disabled={isSeeding}>
+                        {isSeeding ? 'Setting up...' : 'Setup Initial Study Levels'}
+                    </Button>
                 </div>
             );
       }

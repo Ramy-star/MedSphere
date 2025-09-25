@@ -21,23 +21,27 @@ export function FirebaseClientProvider({
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    try {
-      const instances = initializeFirebase(config);
-      setFirebase(instances);
-    } catch (e: any) {
-      console.error("Firebase initialization error:", e);
-      setError(e);
-    } finally {
-      setLoading(false);
+    const init = async () => {
+        try {
+            const instances = await initializeFirebase(config);
+            setFirebase(instances);
+        } catch (e: any) {
+            console.error("Firebase initialization error:", e);
+            setError(e);
+        } finally {
+            setLoading(false);
+        }
     }
+    init();
   }, [config]);
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
         <div className="w-full max-w-md p-8 space-y-4">
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-40 w-full" />
+            <h1 className='text-center text-2xl font-bold text-white'>Connecting to MedSphere...</h1>
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-40 w-full" />
         </div>
       </div>
     );
