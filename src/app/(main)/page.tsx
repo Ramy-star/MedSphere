@@ -8,7 +8,7 @@ import { Content, seedInitialData } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 
 export default function HomePage() {
   const { db } = useFirebase();

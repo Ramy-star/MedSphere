@@ -5,37 +5,29 @@ import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/a
 import { getAuth, signInAnonymously } from 'firebase/auth';
 import { getFirestore }from 'firebase/firestore';
 
-let db: any;
+// Re-export hooks
+export { useFirebase } from './provider';
+
+
+// Initialize db as a variable that can be exported.
+export let db: Firestore;
 
 export async function initializeFirebase(config: FirebaseOptions) {
   const apps = getApps();
   const app = !apps.length ? initializeApp(config) : getApp();
   const auth = getAuth(app);
   db = getFirestore(app);
-
-  if (process.env.NEXT_PUBLIC_USE_EMULATOR === 'true') {
-    // This logic is commented out but kept for reference
-    // const host = process.env.NEXT_PUBLIC_EMULATOR_HOST || '127.0.0.1';
-    // if (!(auth as any).emulatorConfig) {
-    //     connectAuthEmulator(auth, `http://${host}:9099`, { disableWarnings: true });
-    // }
-    // if (!(db as any)._settings.host) {
-    //     connectFirestoreEmulator(db, host, 8080);
-    // }
+  
+  // Try to sign in anonymously, but don't let it block initialization.
+  // This helps debug if the issue is with auth setup in the Firebase console.
+  try {
+    await signInAnonymously(auth);
+    console.log("Signed in anonymously");
+  } catch (error) {
+    console.error("Anonymous sign-in failed. Please ensure it's enabled in the Firebase console.", error);
+    // We don't re-throw the error, allowing the app to initialize.
+    // Data-related operations will likely fail due to security rules.
   }
-
-  // Ensure user is signed in anonymously
-  // This requires Anonymous sign-in to be enabled in the Firebase console
-  await signInAnonymously(auth);
 
   return { app, auth, db };
 }
-
-export { db };
-
-// Export hooks and providers
-export { FirebaseProvider, useFirebase } from './provider';
-export { FirebaseClientProvider } from './client-provider';
-export { useCollection } from './firestore/use-collection';
-export { useDoc } from './firestore/use-doc';
-export { useUser } from './auth/use-user';
