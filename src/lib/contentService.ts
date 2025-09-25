@@ -3,6 +3,7 @@
 import { deleteFile } from './indexedDBService';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
+import { naturalSort } from './sort';
 
 
 export type Content = {
@@ -60,7 +61,9 @@ export const contentService = {
   async getChildren(parentId: string | null) {
     if (typeof window === 'undefined') return [];
     const all = loadAll();
-    return all.filter(i => (i.parentId ?? null) === (parentId ?? null));
+    const children = all.filter(i => (i.parentId ?? null) === (parentId ?? null));
+    // Sort children naturally by name
+    return children.sort((a, b) => naturalSort(a.name, b.name));
   },
 
   async createFolder(parentId: string | null, name: string) {
