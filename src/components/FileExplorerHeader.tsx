@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { FolderPlus, Upload } from 'lucide-react';
 import React, { useRef, useState } from 'react';
-import { saveFile as saveFileToDb } from '@/lib/indexedDBService';
 import { contentService } from '@/lib/contentService';
 import { LucideIcon } from 'lucide-react';
 import { NewFolderDialog } from './new-folder-dialog';
@@ -35,7 +34,8 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
     // This doesn't show progress, but it works.
     // A more complex implementation would lift state or use a global state manager.
     const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
-    await saveFileToDb(newFileItem.id, file);
+    // In a real app, you would now upload the file to Firebase Storage
+    // and save the URL in the Firestore document.
     onContentAdded();
     setPopoverOpen(false);
   };
@@ -102,13 +102,13 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
 
 type ExtendedContent = Content & { icon?: LucideIcon, iconColor?: string };
 
-export default function FileExplorerHeader({ currentFolder, ancestors, onContentAdded }: { currentFolder?: ExtendedContent, ancestors?: Content[], onContentAdded?: () => void }) {
+export default function FileExplorerHeader({ currentFolder, onContentAdded }: { currentFolder?: ExtendedContent, onContentAdded?: () => void }) {
   const CurrentIcon = currentFolder?.icon || Folder;
   const iconColor = currentFolder?.iconColor || 'text-yellow-400';
   return (
     <div className="mb-6 space-y-4">
       <div className="flex items-start justify-between">
-        <Breadcrumbs ancestors={ancestors} current={currentFolder} />
+        <Breadcrumbs current={currentFolder} />
         <div className="hidden md:flex items-center gap-3">
           <button onClick={() => window.history.back()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowLeft size={16} /></button>
           <button onClick={() => window.history.forward()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowRight size={16} /></button>

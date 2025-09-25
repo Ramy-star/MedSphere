@@ -25,15 +25,17 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button';
-import { saveFile as saveFileToDb, getFile } from '@/lib/indexedDBService';
+import { getFile } from '@/lib/indexedDBService';
 import React from 'react';
+import { useCollection } from '@/firebase/firestore/use-collection';
 
 function SearchResults() {
     const searchParams = useSearchParams();
     const query = searchParams.get('q');
     const [results, setResults] = useState<Content[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [allItems, setAllItems] = useState<Content[]>([]);
+    const [searching, setSearching] = useState(false);
+    
+    const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
 
     const [previewFile, setPreviewFile] = useState<Content | null>(null);
     const [itemToRename, setItemToRename] = useState<Content | null>(null);
@@ -41,26 +43,16 @@ function SearchResults() {
     const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
     const updateFileRef = React.useRef<HTMLInputElement>(null);
     
-    // Load all content once on initial component mount
-    useEffect(() => {
-        const loadAllContent = async () => {
-            const allContent = await contentService.getAll();
-            setAllItems(allContent);
-        };
-        loadAllContent();
-    }, []);
-    
     const performSearch = useCallback(async () => {
         if (!query) {
             setResults([]);
             return;
         }
-        if (allItems.length === 0) {
-            // Data is not loaded yet, wait for it
+        if (!allItems || allItems.length === 0) {
             return;
         }
 
-        setLoading(true);
+        setSearching(true);
         try {
             const searchResults = await search(query, allItems);
             setResults(searchResults);
@@ -68,7 +60,7 @@ function SearchResults() {
             console.error("Search failed:", error);
             setResults([]);
         } finally {
-            setLoading(false);
+            setSearching(false);
         }
     }, [query, allItems]);
     
@@ -77,31 +69,21 @@ function SearchResults() {
     }, [performSearch]);
     
     const handleAction = useCallback(async () => {
-      // Reload all content to reflect changes and then re-run search
-      setLoading(true);
-      const updatedContent = await contentService.getAll();
-      setAllItems(updatedContent);
-      if (query) {
-        const searchResults = await search(query, updatedContent);
-        setResults(searchResults);
-      } else {
-        setResults([]);
-      }
-      setLoading(false);
-    }, [query]);
+      // No need to manually refetch, useCollection handles it.
+      // The search will re-run automatically when `allItems` changes.
+    }, []);
     
     const handleRename = async (newName: string) => {
         if (!itemToRename) return;
         await contentService.rename(itemToRename.id, newName);
         setItemToRename(null);
-        await handleAction();
+        // `useCollection` will update `allItems`, triggering a re-search
     };
 
     const handleDelete = async () => {
         if (!itemToDelete) return;
         await contentService.delete(itemToDelete.id);
         setItemToDelete(null);
-        await handleAction();
     };
 
     const handleUpdateClick = (item: Content) => {
@@ -110,41 +92,16 @@ function SearchResults() {
     };
 
     const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        const file = event.target.files?.[0];
-        if (file && itemToUpdate) {
-            await contentService.updateFileContent(itemToUpdate.id, { name: file.name, size: file.size, mime: file.type });
-            await saveFileToDb(itemToUpdate.id, file);
-            setItemToUpdate(null);
-            await handleAction();
-        }
+        // This functionality needs to be adapted for Firebase Storage
+        console.log("File update needs implementation with Firebase Storage");
     };
     
     const handleDownloadClick = async (item: Content) => {
-        if (item.type !== 'FILE') return;
-        const file = await getFile(item.id);
-        if (file) {
-          const url = URL.createObjectURL(file);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = item.name;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
-        } else {
-          // Fallback for seeded images or if not in IndexedDB
-          if (item.metadata?.mime?.startsWith('image/')) {
-            const url = `https://picsum.photos/seed/${item.id}/1280/720`;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = item.name;
-            link.target = '_blank'; // Might be needed for cross-origin
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-          }
-        }
+       // This functionality needs to be adapted for Firebase Storage
+       console.log("File download needs implementation with Firebase Storage");
     }
+
+    const loading = searching || loadingAllItems;
 
 
     return (
@@ -200,7 +157,7 @@ function SearchResults() {
                                             </div>
                                         </Link>
                                     )}
-                                    {item.type === 'LEVEL' && (
+                                     {item.type === 'LEVEL' && (
                                          <Link href={`/level/${encodeURIComponent(item.name)}`}>
                                             <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
                                                 <h3 className="text-lg font-semibold text-white">{item.name}</h3>

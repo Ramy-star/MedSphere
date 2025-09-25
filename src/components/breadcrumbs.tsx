@@ -3,15 +3,16 @@
 import Link from 'next/link';
 import { HomeIcon, ChevronRight } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useEffect, useState } from 'react';
+import { db } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 
 function getLink(item: Content): string {
   switch (item.type) {
     case 'LEVEL':
       return `/level/${encodeURIComponent(item.name)}`;
     case 'SEMESTER':
-        // This requires finding the level parent, which is complex here.
-        // A simpler approach is to have a generic folder page.
-        return `/folder/${item.id}`;
     case 'SUBJECT':
     case 'FOLDER':
       return `/folder/${item.id}`;
@@ -20,7 +21,48 @@ function getLink(item: Content): string {
   }
 }
 
-export function Breadcrumbs({ ancestors, current }: { ancestors?: Content[], current?: Content }) {
+
+async function fetchAncestors(currentId: string): Promise<Content[]> {
+    if (currentId === 'root' || !db) return [];
+    
+    const ancestors: Content[] = [];
+    let parentId: string | null = null;
+    
+    const currentDoc = await getDoc(doc(db, 'content', currentId));
+    if (currentDoc.exists()) {
+        parentId = (currentDoc.data() as Content).parentId;
+    }
+
+    while (parentId) {
+        const parentDoc = await getDoc(doc(db, 'content', parentId));
+        if (parentDoc.exists()) {
+            const parentData = parentDoc.data() as Content;
+            ancestors.unshift(parentData);
+            parentId = parentData.parentId;
+        } else {
+            break;
+        }
+    }
+    return ancestors;
+}
+
+
+export function Breadcrumbs({ current }: { current?: Content }) {
+  const [ancestors, setAncestors] = useState<Content[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (current && current.id !== 'root') {
+        setLoading(true);
+        fetchAncestors(current.id).then(fetchedAncestors => {
+            setAncestors(fetchedAncestors);
+            setLoading(false);
+        });
+    } else {
+        setAncestors([]);
+        setLoading(false);
+    }
+  }, [current]);
 
   const homeElement = (
     <div className="flex items-center">
@@ -30,14 +72,12 @@ export function Breadcrumbs({ ancestors, current }: { ancestors?: Content[], cur
       </Link>
     </div>
   );
-
-  const pathToShow = ancestors || [];
   
   return (
      <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
       {homeElement}
       
-      {pathToShow.map((node) => (
+      {!loading && ancestors.map((node) => (
         <span key={node.id} className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
             <Link 

@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,13 +23,14 @@ import { Skeleton } from './ui/skeleton';
 import { Folder as FolderIcon, FolderPlus, Plus, Upload, UploadCloud, GripVertical } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { NewFolderDialog } from './new-folder-dialog';
-import { saveFile as saveFileToDb, getFile } from '@/lib/indexedDBService';
+import { getFile } from '@/lib/indexedDBService';
 import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { UploadProgress, UploadingFile } from './UploadProgress';
 import { v4 as uuidv4 } from 'uuid';
+import { useCollection } from '@/firebase/firestore/use-collection';
 
 
 type AddContentMenuProps = {
@@ -140,8 +142,12 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
 };
 
 export function FolderGrid({ parentId, onContentAdded }: { parentId: string | null, onContentAdded: () => void }) {
-  const [items, setItems] = useState<Content[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [orderedItems, setOrderedItems] = useState<Content[] | null>(null);
+  const { data: fetchedItems, loading } = useCollection<Content>('content', {
+      where: ['parentId', '==', parentId],
+      orderBy: ['order', 'asc']
+  });
+  
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
   const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
@@ -152,16 +158,13 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
-  const fetchItems = useCallback(async () => {
-    setLoading(true);
-    const fetchedItems = await contentService.getChildren(parentId);
-    setItems(fetchedItems);
-    setLoading(false);
-  }, [parentId]);
-
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    if (fetchedItems) {
+      setOrderedItems(fetchedItems);
+    }
+  }, [fetchedItems]);
+  
+  const items = orderedItems || [];
   
   const processFileUpload = (file: File) => {
     const uploadId = uuidv4();
@@ -174,6 +177,8 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
 
     setUploadingFiles(prev => [...prev, newUploadingFile]);
 
+    // This is a mock upload progress. For real implementation,
+    // you would use Firebase Storage's `on` state changed listener.
     const uploadInterval = setInterval(() => {
         setUploadingFiles(prev => prev.map(f => {
             if (f.id === uploadId && f.progress < 100) {
@@ -184,33 +189,19 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
         }));
     }, 200);
 
-    const finishUpload = async () => {
+    contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type })
+      .then(newFileItem => {
+         // In a real app, you'd upload the file to Firebase Storage here and save the URL.
+         console.log("File metadata created in Firestore:", newFileItem);
+      })
+      .finally(() => {
         clearInterval(uploadInterval);
-
         setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress: 100 } : f));
-        
-        const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
-        await saveFileToDb(newFileItem.id, file);
-
-        setTimeout(async () => {
+        setTimeout(() => {
             setUploadingFiles(prev => prev.filter(f => f.id !== uploadId));
-            await fetchItems();
+            onContentAdded(); // This will trigger a refetch in parent if needed
         }, 800);
-    };
-
-    // Check if progress is already 100 to avoid multiple `finishUpload` calls
-    let finished = false;
-    const progressCheckInterval = setInterval(() => {
-        setUploadingFiles(prev => {
-            const currentFile = prev.find(f => f.id === uploadId);
-            if (currentFile && currentFile.progress >= 100 && !finished) {
-                finished = true;
-                clearInterval(progressCheckInterval);
-                finishUpload();
-            }
-            return prev;
-        })
-    }, 100);
+      });
   };
 
 
@@ -222,14 +213,12 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
     if (!itemToRename) return;
     await contentService.rename(itemToRename.id, newName);
     setItemToRename(null);
-    await fetchItems();
   };
   
   const handleDelete = async () => {
     if (!itemToDelete) return;
     await contentService.delete(itemToDelete.id);
     setItemToDelete(null);
-    await fetchItems();
   };
   
   const handleUpdateClick = (item: Content) => {
@@ -239,28 +228,8 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   
   const handleDownloadClick = async (item: Content) => {
     if (item.type !== 'FILE') return;
-    const file = await getFile(item.id);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = item.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } else {
-      if (item.metadata?.mime?.startsWith('image/')) {
-        const url = `https://picsum.photos/seed/${item.id}/1280/720`;
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = item.name;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    }
+    // This needs to be adapted to download from Firebase Storage
+    console.log("Download clicked for", item.name);
   }
 
 
@@ -268,9 +237,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
     const file = event.target.files?.[0];
     if (file && itemToUpdate) {
       await contentService.updateFileContent(itemToUpdate.id, { name: file.name, size: file.size, mime: file.type });
-      await saveFileToDb(itemToUpdate.id, file);
       setItemToUpdate(null);
-      await fetchItems();
     }
   };
 
@@ -311,16 +278,17 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
-        const oldIndex = items.findIndex((item) => item.id === active.id);
-        const newIndex = items.findIndex((item) => item.id === over.id);
-
-        if (oldIndex !== -1 && newIndex !== -1) {
-            const newOrderedItems = arrayMove(items, oldIndex, newIndex);
-            setItems(newOrderedItems);
+        setOrderedItems(currentItems => {
+            if (!currentItems) return null;
+            const oldIndex = currentItems.findIndex((item) => item.id === active.id);
+            const newIndex = currentItems.findIndex((item) => item.id === over.id);
+            const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
             
             const orderedIds = newOrderedItems.map(item => item.id);
-            await contentService.updateOrder(parentId, orderedIds);
-        }
+            contentService.updateOrder(parentId, orderedIds); // Update in backend
+            
+            return newOrderedItems;
+        });
     }
   };
 

@@ -10,60 +10,42 @@ import {
 import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
-import { getFile } from '@/lib/indexedDBService';
 import { useEffect, useState } from 'react';
 import { X, Download, Share2, File as FileIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
+import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const [fileUrl, setFileUrl] = useState<string>('#');
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!item || item.type !== 'FILE') {
+    if (!item || item.type !== 'FILE' || !item.metadata?.storagePath) {
         setFileUrl('#');
         return;
     };
 
-    let objectUrl: string | null = null;
-
-    const loadFile = async () => {
-        const file = await getFile(item.id);
-        if (file) {
-            objectUrl = URL.createObjectURL(file);
-            setFileUrl(objectUrl);
-        } else {
-            if (item.metadata?.mime?.startsWith('image/')) {
-                setFileUrl(`https://picsum.photos/seed/${item.id}/1280/720`);
-            } else {
-                setFileUrl('#');
-            }
-        }
-    };
-
-    loadFile();
-
-    return () => {
-        if (objectUrl) {
-            URL.revokeObjectURL(objectUrl);
-        }
-    };
+    const storage = getStorage();
+    const fileRef = ref(storage, item.metadata.storagePath);
+    getDownloadURL(fileRef)
+      .then(url => setFileUrl(url))
+      .catch(error => {
+        console.error("Error getting file URL:", error);
+        setFileUrl('#');
+      });
   }, [item]);
 
 
   if (!item) return null;
 
   const handleDownload = () => {
-    const urlToDownload = fileUrl === '#' && item?.metadata?.mime?.startsWith('image/') 
-        ? `https://picsum.photos/seed/${item.id}/1280/720` 
-        : fileUrl;
-        
-    if (urlToDownload !== '#') {
+    if (fileUrl !== '#') {
         const link = document.createElement('a');
-        link.href = urlToDownload;
+        link.href = fileUrl;
         link.download = item.name;
+        link.target = '_blank'; // Open in new tab for direct download
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);

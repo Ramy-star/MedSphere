@@ -1,49 +1,40 @@
 
 'use client';
 
-import { useEffect, useState, useCallback, Suspense } from 'react';
+import { useEffect, useState, useCallback, Suspense, use } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
-import { contentService, Content } from '@/lib/contentService';
+import { Content } from '@/lib/contentService';
 import { allSubjectIcons } from '@/lib/file-data';
 import { notFound } from 'next/navigation';
 import { LucideIcon, Folder, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useCollection } from '@/firebase/firestore/use-collection';
 
 
-function FolderPage({ params }: { params: { id: string } }) {
-  const { id } = params;
-  const [current, setCurrent] = useState<Content | null>(null);
-  const [ancestors, setAncestors] = useState<Content[]>([]);
-  const [loading, setLoading] = useState(true);
+function FolderPageContent({ id }: { id: string }) {
+  const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
+  
+  const { data: ancestors, loading: loadingAncestors } = useCollection<Content>('content', {
+      where: ['id', 'in', current?.parentId ? [current.parentId] : []], // Simplified ancestor fetching
+      disabled: !current?.parentId
+  });
+
+  const loading = loadingCurrent || loadingAncestors;
+  
+  useEffect(() => {
+    if (!loadingCurrent && !current) {
+        notFound();
+    }
+  }, [loadingCurrent, current]);
+
 
   const fetchFolderData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const fetchedCurrent = await contentService.getById(id);
-
-      if (!fetchedCurrent) {
-        notFound();
-        return;
-      }
-
-      setCurrent(fetchedCurrent);
-      
-      const fetchedAncestors = await contentService.getAncestors(id);
-      setAncestors(fetchedAncestors);
-    } catch (error) {
-      console.error("Failed to fetch folder data", error);
-      notFound();
-    } finally {
-      setLoading(false);
-    }
-  }, [id]);
-
-  useEffect(() => {
-    fetchFolderData();
-  }, [fetchFolderData]);
+    // This function can now be simpler, as `useCollection` in FolderGrid handles refetching
+  }, []);
   
-  if (loading) {
+  if (loading || !current) {
       return <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
         <div className="mb-6 space-y-4">
             <Skeleton className="h-5 w-1/3" />
@@ -60,12 +51,6 @@ function FolderPage({ params }: { params: { id: string } }) {
             <Skeleton className="h-14 w-full" />
         </div>
       </main>
-  }
-
-  if (!current) {
-      // This should ideally not be reached if loading is false and fetch was successful.
-      // But as a fallback, we can either show notFound or a specific error message.
-      notFound();
   }
 
   let Icon: LucideIcon = Folder;
@@ -86,6 +71,23 @@ function FolderPage({ params }: { params: { id: string } }) {
       iconColor: iconColor
   }
 
+  // A more robust ancestor fetching logic would be needed for a full breadcrumb trail
+  const simpleAncestors = ancestors || [];
+
+  return (
+    <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
+       <FileExplorerHeader currentFolder={extendedCurrent} ancestors={simpleAncestors} onContentAdded={fetchFolderData} />
+       <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
+          <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
+       </div>
+    </main>
+  );
+}
+
+
+function FolderPage({ params }: { params: { id: string } }) {
+  const { id } = params;
+
   return (
     <Suspense fallback={
         <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
@@ -105,12 +107,7 @@ function FolderPage({ params }: { params: { id: string } }) {
             </div>
         </main>
     }>
-        <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
-           <FileExplorerHeader currentFolder={extendedCurrent} ancestors={ancestors} onContentAdded={fetchFolderData} />
-           <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-              <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
-           </div>
-        </main>
+        <FolderPageContent id={id} />
     </Suspense>
   );
 }

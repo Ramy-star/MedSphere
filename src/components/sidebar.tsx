@@ -14,38 +14,43 @@ import { useState, useEffect, useCallback } from 'react';
 import { Button } from './ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { contentService, Content } from '@/lib/contentService';
+import { Content } from '@/lib/contentService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet";
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useDoc } from '@/firebase/firestore/use-doc';
 
 function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const isMobile = useIsMobile();
-  const [levels, setLevels] = useState<Content[]>([]);
+  
+  const { data: levels } = useCollection<Content>('content', {
+      where: ['type', '==', 'LEVEL'],
+      orderBy: ['order', 'asc'],
+  });
+
+  const { data: allSemesters } = useCollection<Content>('content', {
+      where: ['type', '==', 'SEMESTER'],
+      orderBy: ['order', 'asc'],
+  });
+  
   const [semestersByLevel, setSemestersByLevel] = useState<{[levelId: string]: Content[]}>({});
   const [activePath, setActivePath] = useState({ levelId: '', semesterId: '' });
   const [openLevelId, setOpenLevelId] = useState('');
   
-  const loadInitialData = useCallback(async () => {
-    const topLevels = await contentService.getChildren(null);
-    const allLevels = topLevels.filter(c => c.type === 'LEVEL');
-    setLevels(allLevels);
-
-    const semestersMap: {[levelId: string]: Content[]} = {};
-    for (const level of allLevels) {
-        const levelSemesters = await contentService.getChildren(level.id);
-        semestersMap[level.id] = levelSemesters.filter(c => c.type === 'SEMESTER');
-    }
-    setSemestersByLevel(semestersMap);
-  }, []);
-
   useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    if (allSemesters && levels) {
+        const semesterMap: { [levelId: string]: Content[] } = {};
+        levels.forEach(level => {
+            semesterMap[level.id] = allSemesters.filter(s => s.parentId === level.id);
+        });
+        setSemestersByLevel(semesterMap);
+    }
+  }, [allSemesters, levels]);
 
   const findActivePath = useCallback(async () => {
     if (pathname === '/') {
@@ -58,12 +63,36 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     
     if (pathParts[1] === 'folder' && pathParts.length >= 3) {
         const currentId = pathParts[2];
-        const ancestors = await contentService.getAncestors(currentId);
-        const current = await contentService.getById(currentId);
-        const pathItems = [...ancestors, current].filter(Boolean) as Content[];
+        const docSnap = await getDoc(doc(db, 'content', currentId));
+        if (!docSnap.exists()) return;
 
-        const level = pathItems.find(p => p.type === 'LEVEL');
-        const semester = pathItems.find(p => p.type === 'SEMESTER');
+        const current = docSnap.data() as Content;
+        let level = null;
+        let semester = null;
+        
+        if (current.type === 'SEMESTER') {
+            semester = current;
+            const parentSnap = await getDoc(doc(db, 'content', current.parentId!));
+            if (parentSnap.exists() && parentSnap.data().type === 'LEVEL') {
+                level = parentSnap.data() as Content;
+            }
+        } else if (current.type === 'LEVEL') {
+            level = current;
+        } else {
+            // It's a folder or subject, need to find ancestors
+            let parentId = current.parentId;
+            while(parentId) {
+                const parentSnap = await getDoc(doc(db, 'content', parentId));
+                if (!parentSnap.exists()) break;
+                const parent = parentSnap.data() as Content;
+                if (parent.type === 'SEMESTER') semester = parent;
+                if (parent.type === 'LEVEL') {
+                    level = parent;
+                    break; 
+                }
+                parentId = parent.parentId;
+            }
+        }
 
         if (level) {
             setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
@@ -73,18 +102,17 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
         }
     } else if (pathParts[1] === 'level' && pathParts.length >= 3) {
         const levelName = decodeURIComponent(pathParts[2]);
-        const allLevels = await contentService.getChildren(null);
-        const currentLevel = allLevels.find(l => l.name === levelName && l.type === 'LEVEL');
-        if (currentLevel) {
-             setActivePath({ levelId: currentLevel.id, semesterId: '' });
-             if (open) setOpenLevelId(currentLevel.id);
+        const level = levels?.find(l => l.name === levelName);
+        if (level) {
+             setActivePath({ levelId: level.id, semesterId: '' });
+             if (open) setOpenLevelId(level.id);
         } else {
              setActivePath({ levelId: '', semesterId: '' });
         }
     } else {
          setActivePath({ levelId: '', semesterId: '' });
     }
-  }, [pathname, open]);
+  }, [pathname, open, levels]);
 
   useEffect(() => {
     findActivePath();
@@ -134,7 +162,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
       </div>
 
       <nav className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1">
-        {levels.map((level, index) => {
+        {levels && levels.map((level, index) => {
         const isLevelActive = openLevelId === level.id;
         const isPathActive = activePath.levelId === level.id;
         return (
@@ -275,3 +303,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
     </motion.aside>
   );
 }
+
+// Need to import doc and db to make getDoc work in findActivePath
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
