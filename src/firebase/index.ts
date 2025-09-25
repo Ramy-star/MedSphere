@@ -1,13 +1,11 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
 import { getAuth, signInAnonymously } from 'firebase/auth';
-import { getFirestore }from 'firebase/firestore';
+import { getFirestore, Firestore } from 'firebase/firestore';
 
 // Re-export hooks
 export { useFirebase } from './provider';
-
 
 // Initialize db as a variable that can be exported.
 export let db: Firestore;

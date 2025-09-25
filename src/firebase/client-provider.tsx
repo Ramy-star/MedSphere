@@ -1,12 +1,9 @@
-
 "use client";
 
-import { useEffect, useState, useMemo } from 'react';
-import type { FirebaseApp } from 'firebase/app';
-import type { Auth } from 'firebase/auth';
-import type { Firestore } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
-import { FirebaseProvider, type FirebaseContextType } from './provider';
+import { FirebaseProvider } from './provider';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export function FirebaseClientProvider({

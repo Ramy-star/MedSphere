@@ -1,6 +1,3 @@
-
-'use client';
-
 // This function is used to ensure that the config is only accessed on the client-side.
 export function getFirebaseConfig() {
     if (typeof window === "undefined") {
@@ -19,7 +16,8 @@ export function getFirebaseConfig() {
     
     // Simple validation
     if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-        throw new Error("Firebase config is not set. Please check your .env file.");
+        console.error("Firebase config is not set. Please check your .env file.");
+        return {};
     }
     return firebaseConfig;
 }
