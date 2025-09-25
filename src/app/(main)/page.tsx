@@ -17,27 +17,23 @@ export default function HomePage() {
       orderBy: ['order', 'asc']
   });
 
-  useEffect(() => {
-    // If loading is done and there are no levels, offer to seed the data.
-    if (!loading && (!levels || levels.length === 0)) {
-      const timer = setTimeout(() => setShowSeedButton(true), 1000); // Wait a second to avoid flash
-      return () => clearTimeout(timer);
-    }
-  }, [loading, levels]);
-
   const handleSeed = async () => {
     try {
       await seedInitialData();
-      // No need to manually refetch, useCollection will update automatically
       setShowSeedButton(false);
     } catch (error) {
       console.error("Seeding failed:", error);
-      // Error will be shown via the FirebaseErrorListener
     }
   };
+
+  useEffect(() => {
+    if (!loading && (!levels || levels.length === 0) && !showSeedButton) {
+      handleSeed();
+    }
+  }, [loading, levels, showSeedButton]);
   
   const renderContent = () => {
-      if (loading && !showSeedButton) {
+      if (loading) {
            return (
               <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
                   {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 md:h-28 rounded-xl" />)}
@@ -46,14 +42,12 @@ export default function HomePage() {
       }
       
       if (!levels || levels.length === 0) {
-           return showSeedButton ? (
+           return (
                 <div className="text-center">
-                    <p className="text-lg text-slate-300 mb-4">Your study space is empty.</p>
-                    <Button onClick={handleSeed} size="lg">
-                        Setup Initial Study Levels
-                    </Button>
+                    <p className="text-lg text-slate-300 mb-4">Your study space is empty. Setting up initial data...</p>
+                    <Skeleton className="h-12 w-48 mx-auto" />
                 </div>
-            ) : null; // Render nothing until we decide to show the button
+            );
       }
       
       return (
