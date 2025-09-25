@@ -1,7 +1,7 @@
 
 'use client';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, deleteDoc, runTransaction } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction } from 'firebase/firestore';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { naturalSort } from './sort';
@@ -269,3 +269,5 @@ export const contentService = {
     }
   }
 };
+
+    
