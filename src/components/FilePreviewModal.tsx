@@ -16,8 +16,10 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { useFirebase } from '@/firebase/provider';
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
+  const { app } = useFirebase(); // Get the initialized Firebase app
   const [fileUrl, setFileUrl] = useState<string>('#');
   const { toast } = useToast();
 
@@ -27,7 +29,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         return;
     };
 
-    const storage = getStorage();
+    const storage = getStorage(app); // Use the app instance to get storage
     const fileRef = ref(storage, item.metadata.storagePath);
     getDownloadURL(fileRef)
       .then(url => setFileUrl(url))
@@ -35,7 +37,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         console.error("Error getting file URL:", error);
         setFileUrl('#');
       });
-  }, [item]);
+  }, [item, app]);
 
 
   if (!item) return null;
