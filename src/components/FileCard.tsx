@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink,
-    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music
+    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music, GripVertical
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { contentService } from '@/lib/contentService';
+import { cn } from '@/lib/utils';
 
 const getIconForFileType = (fileName: string, mimeType?: string): { Icon: LucideIcon, color: string } => {
     const extension = fileName.split('.').pop()?.toLowerCase();
@@ -89,13 +90,17 @@ export function FileCard({
     onFileClick, 
     onRename, 
     onDelete, 
+    onUpdate,
+    showDragHandle = true,
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
+    onUpdate: () => void,
+    showDragHandle?: boolean,
 }) {
-
+    const isMobile = useIsMobile();
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
     const displaySize = sizeInKB < 1024 
         ? `${sizeInKB.toFixed(1)} KB` 
@@ -105,62 +110,90 @@ export function FileCard({
     
     const { Icon, color } = getIconForFileType(item.name, item.metadata?.mime);
 
-    return (
-      <DropdownMenu>
+    const fileContent = (
+      <>
         <div 
+            className="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer"
             onClick={(e) => {
-              if (!(e.target instanceof HTMLElement && e.target.closest('[data-radix-collection-item]'))) {
-                onFileClick(item);
-              }
-            }}
-            className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-between"
+                if (!(e.target instanceof HTMLElement && e.target.closest('[data-radix-collection-item]'))) {
+                  onFileClick(item);
+                }
+              }}
         >
-            <div className="flex items-center gap-3 overflow-hidden flex-1">
-                 <Icon className={`w-6 h-6 ${color} shrink-0`} />
-                <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
-            </div>
-            
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
-                 <p className="text-xs text-slate-400 hidden lg:block w-24 text-right">
-                    {createdAt}
-                </p>
-                <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
-                    {item.metadata?.size ? displaySize : ''}
-                </p>
-
-                <DropdownMenuTrigger asChild>
-                    <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="w-8 h-8 text-slate-400 hover:text-white hover:bg-slate-700"
-                    >
-                        <MoreVertical className="w-5 h-5" />
-                    </Button>
-                </DropdownMenuTrigger>
+            <Icon className={`w-6 h-6 ${color} shrink-0`} />
+            <div className="flex-1 overflow-hidden">
+                <h3 className={cn("text-sm font-medium text-white/90 break-words", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
+                    {item.name}
+                </h3>
+                {isMobile && (
+                     <p className="text-xs text-slate-400 mt-0.5">
+                        {item.metadata?.size ? `${displaySize} • ${createdAt}` : createdAt}
+                    </p>
+                )}
             </div>
         </div>
-        <DropdownMenuContent 
-          className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
-          align="end"
-        >
-          <DropdownMenuItem onClick={onRename} className="cursor-pointer">
-            <Edit className="mr-2 h-4 w-4" />
-            <span>Rename</span>
-          </DropdownMenuItem>
-           <DropdownMenuItem 
-                onClick={() => item.metadata?.storagePath && handleForceDownload(item.metadata.storagePath, item.name)} 
-                disabled={!item.metadata?.storagePath}
-                className="cursor-pointer"
-            >
-            <Download className="mr-2 h-4 w-4" />
-            <span>Download</span>
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
-            <Trash2 className="mr-2 h-4 w-4" />
-            <span>Delete</span>
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        
+        <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
+            <p className="text-xs text-slate-400 hidden lg:block w-24 text-right">
+                {createdAt}
+            </p>
+            <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
+                {item.metadata?.size ? displaySize : ''}
+            </p>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                  <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="w-8 h-8 text-slate-400 hover:text-white hover:bg-slate-700"
+                  >
+                      <MoreVertical className="w-5 h-5" />
+                  </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent 
+                className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
+                align="end"
+              >
+                <DropdownMenuItem onClick={onRename} className="cursor-pointer">
+                  <Edit className="mr-2 h-4 w-4" />
+                  <span>Rename</span>
+                </DropdownMenuItem>
+                 <DropdownMenuItem 
+                      onClick={() => item.metadata?.storagePath && handleForceDownload(item.metadata.storagePath, item.name)} 
+                      disabled={!item.metadata?.storagePath}
+                      className="cursor-pointer"
+                  >
+                  <Download className="mr-2 h-4 w-4" />
+                  <span>Download</span>
+                </DropdownMenuItem>
+                 <DropdownMenuItem onClick={() => window.open(item.metadata?.storagePath, '_blank')} disabled={!item.metadata?.storagePath} className="cursor-pointer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    <span>Open in new tab</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                  <Trash2 className="mr-2 h-4 w-4" />
+                  <span>Delete</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+        </div>
+      </>
+    );
+    
+    if(isMobile) {
+        return (
+            <div className="flex items-center w-full py-3 border-b border-white/10">
+                {fileContent}
+            </div>
+        )
+    }
+
+    return (
+      <div className="group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors flex items-center justify-between w-full">
+         {showDragHandle && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
+          {fileContent}
+      </div>
     );
 }
 
