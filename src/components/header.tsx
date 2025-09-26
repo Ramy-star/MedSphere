@@ -19,19 +19,24 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [debouncedQuery] = useDebounce(query, 500);
 
   useEffect(() => {
+    // Navigate to search results if there is a debounced query
     if (debouncedQuery) {
       router.push(`/search?q=${debouncedQuery}`);
-    } else {
-        // If the debounced query is empty and we are on the search page, navigate to home
-        if (pathname === '/search') {
-            router.push('/');
-        }
+    } 
+    // If the debounced query becomes empty AND we are on the search page, navigate home
+    else if (!debouncedQuery && pathname === '/search') {
+      router.push('/');
     }
   }, [debouncedQuery, router, pathname]);
   
   useEffect(() => {
-    // Sync query state with URL search params
-    setQuery(searchParams.get('q') || '');
+    // Sync query state with URL search params when they change (e.g., browser back/forward)
+    const currentQuery = searchParams.get('q');
+    if (currentQuery !== query) {
+        setQuery(currentQuery || '');
+    }
+    // We only want this to run when searchParams change, not when the local query state changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const handleClearSearch = () => {
