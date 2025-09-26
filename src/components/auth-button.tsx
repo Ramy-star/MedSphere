@@ -1,8 +1,8 @@
 
 'use client';
-import { useState } from 'react';
-import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
-import { useFirebase } from '@/firebase';
+import { useState, useEffect } from 'react';
+import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, setPersistence, browserLocalPersistence, getRedirectResult } from 'firebase/auth';
+import { useFirebase } from '@/firebase/provider';
 import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,6 +21,20 @@ export function AuthButton() {
   const { auth } = useFirebase();
   const { user, loading } = useUser();
   const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setBusy(true);
+    getRedirectResult(auth)
+      .then((result) => {
+        // User is redirected back from Google.
+        // The user state will be updated by onAuthStateChanged.
+      })
+      .catch((error) => {
+        console.error("Error getting redirect result:", error);
+      }).finally(() => {
+        setBusy(false);
+      });
+  }, [auth]);
 
   const handleLogin = async () => {
     setBusy(true);
@@ -42,7 +56,8 @@ export function AuthButton() {
       console.error('Login error', err);
       alert('Login failed: ' + (err?.message || 'An unknown error occurred.'));
     } finally {
-      setBusy(false);
+      // Don't set busy to false here for redirect flow
+      // as the page will navigate away.
     }
   };
 
@@ -50,7 +65,7 @@ export function AuthButton() {
     await signOut(auth);
   };
 
-  if (loading) {
+  if (loading || busy) {
     return <div className="h-9 w-20 rounded-full bg-slate-800 animate-pulse" />;
   }
 
