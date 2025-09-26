@@ -1,4 +1,3 @@
-
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
@@ -372,6 +371,7 @@ export const contentService = {
 
             const itemsToDelete: Content[] = [];
             const visited = new Set<string>();
+            const filesToDeleteFromCloudinary: string[] = [];
 
             function findRecursively(idToDelete: string) {
                 if(visited.has(idToDelete)) return;
@@ -380,17 +380,32 @@ export const contentService = {
                 const item = allContent.find(x => x.id === idToDelete);
                 if (item) {
                     itemsToDelete.push(item);
+                    if (item.type === 'FILE' && item.metadata?.cloudinaryPublicId) {
+                        filesToDeleteFromCloudinary.push(item.metadata.cloudinaryPublicId);
+                    }
                     const children = allContent.filter(x => x.parentId === idToDelete);
                     children.forEach(child => findRecursively(child.id));
                 }
             }
             findRecursively(id);
 
+            // Step 1: Delete files from Cloudinary via our API route
+            for (const publicId of filesToDeleteFromCloudinary) {
+                 const res = await fetch('/api/delete-cloudinary', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ publicId }),
+                });
+                if (!res.ok) {
+                    // Log the error but continue transaction to delete from Firestore anyway
+                    console.error(`Failed to delete ${publicId} from Cloudinary. Status: ${res.status}`);
+                }
+            }
+
+            // Step 2: Delete documents from Firestore
             for (const item of itemsToDelete) {
                 const docRef = doc(db, 'content', item.id);
                 transaction.delete(docRef);
-                // Note: This does not delete the file from Cloudinary.
-                // A server-side function would be needed for that.
             }
         });
     } catch (e: any) {
@@ -430,5 +445,3 @@ export const contentService = {
     }
   }
 };
-
-    
