@@ -25,15 +25,28 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   if (!item) return null;
 
-  const handleDownload = () => {
-    if (fileUrl) {
-        const link = document.createElement('a');
-        link.href = fileUrl;
-        link.target = "_blank"; // Open in new tab to let browser handle download
-        link.download = item.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+  const handleDownload = async () => {
+    if (!fileUrl || !item) return;
+    try {
+        const res = await fetch(fileUrl);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = item.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+        console.error("Download failed:", error);
+        toast({
+            variant: "destructive",
+            title: "Download Failed",
+            description: "Could not download the file.",
+        });
+        // Fallback to opening in new tab
+        window.open(fileUrl, '_blank');
     }
   }
 
