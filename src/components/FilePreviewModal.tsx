@@ -17,33 +17,43 @@ import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, getDownloadURL } from 'firebase/storage';
 import { useFirebase } from '@/firebase/provider';
+import { Skeleton } from './ui/skeleton';
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
-  const { app } = useFirebase(); // Get the initialized Firebase app
-  const [fileUrl, setFileUrl] = useState<string>('#');
+  const { app } = useFirebase();
+  const [fileUrl, setFileUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
     if (!item || item.type !== 'FILE' || !item.metadata?.storagePath) {
-        setFileUrl('#');
+        setFileUrl(null);
+        setLoading(false);
         return;
     };
-
-    const storage = getStorage(app); // Use the app instance to get storage
+    
+    setLoading(true);
+    const storage = getStorage(app);
     const fileRef = ref(storage, item.metadata.storagePath);
     getDownloadURL(fileRef)
-      .then(url => setFileUrl(url))
+      .then(url => {
+        setFileUrl(url)
+      })
       .catch(error => {
         console.error("Error getting file URL:", error);
-        setFileUrl('#');
+        toast({ variant: 'destructive', title: 'Error', description: "Could not load file from storage." });
+        setFileUrl(null);
+      })
+      .finally(() => {
+        setLoading(false);
       });
-  }, [item, app]);
+  }, [item, app, toast]);
 
 
   if (!item) return null;
 
   const handleDownload = () => {
-    if (fileUrl !== '#') {
+    if (fileUrl) {
         const link = document.createElement('a');
         link.href = fileUrl;
         link.download = item.name;
@@ -98,7 +108,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
           </div>
           <div className='flex items-center gap-2'>
-            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={fileUrl === '#'} className="text-slate-300 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10">
                 <Download className="w-5 h-5" />
             </Button>
              <Popover>
@@ -135,10 +145,19 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
         {/* Content */}
         <div className="flex-1 overflow-auto flex items-center justify-center">
-           <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />
+            {loading && <div className="w-full h-full flex items-center justify-center"><Skeleton className="h-64 w-96"/></div>}
+            {!loading && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />}
+            {!loading && !fileUrl && (
+              <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                  <p className="text-xl mb-3">File content not available.</p>
+                  <p className="text-sm text-slate-400">The file could not be loaded from storage. It might have been deleted or there was a network issue.</p>
+              </div>
+            )}
         </div>
 
       </DialogContent>
     </Dialog>
   );
 }
+
+    

@@ -5,17 +5,7 @@ import dynamic from 'next/dynamic';
 
 const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false });
 
-export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName: string }) {
-  
-  if (url === '#') {
-     return (
-        <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-            <p className="text-xl mb-3">File content not available for preview.</p>
-            <p className="text-sm text-slate-400">This might be because the file was part of the initial seeded data or could not be loaded from your browser's storage.</p>
-             <a href={url} download={itemName} className="mt-6 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">Download File</a>
-        </div>
-    );
-  }
+export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName:string }) {
   
   if (mime.startsWith('image/')) {
     return <img src={url} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />;
@@ -37,7 +27,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
     return <iframe src={url} className="w-full h-full border-2 border-slate-700 rounded-lg bg-slate-800 text-white shadow-lg" title={itemName} />
   }
 
-  // Use Office viewer for docx, xlsx, pptx if it's a public URL (won't work for blob URLs)
+  // Use Office viewer for docx, xlsx, pptx if it's a public URL (won't work for blob URLs from local storage)
   if (!url.startsWith('blob:') && (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation')) {
     return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`} className="w-full h-full border-0 rounded-lg shadow-2xl" title={itemName} />
   }
@@ -50,3 +40,5 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
     </div>
   );
 }
+
+    

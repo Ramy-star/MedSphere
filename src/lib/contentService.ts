@@ -89,7 +89,7 @@ export const contentService = {
     try {
       await runTransaction(db, async (transaction) => {
         const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
-        const childrenSnapshot = await getDocs(childrenQuery);
+        const childrenSnapshot = await transaction.get(childrenQuery);
         const order = childrenSnapshot.size;
 
         newFolderData = {
@@ -339,4 +339,5 @@ export const contentService = {
   }
 };
 
+    
     
