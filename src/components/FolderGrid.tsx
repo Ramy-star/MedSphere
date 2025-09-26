@@ -76,10 +76,8 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
-  const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const updateFileRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const { toast } = useToast();
@@ -107,28 +105,6 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
     await contentService.delete(itemToDelete.id);
     setItemToDelete(null);
   };
-
-  const handleUpdateClick = (item: Content) => {
-      setItemToUpdate(item);
-      updateFileRef.current?.click();
-  };
-
-  const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
-      if (!itemToUpdate || !event.target.files || event.target.files.length === 0) return;
-      const file = event.target.files[0];
-      try {
-        await contentService.updateFile(itemToUpdate.id, file);
-        toast({ title: 'File Updated', description: `"${itemToUpdate.name}" has been updated.`});
-      } catch (error: any) {
-         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-      }
-      setItemToUpdate(null);
-      // Reset file input
-      if (event.target) {
-          event.target.value = '';
-      }
-  };
-
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -199,7 +175,6 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
         onDrop={handleDrop}
         className={cn("h-full", isDraggingOver && "opacity-50")}
     >
-      <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
       <DropZone isVisible={isDraggingOver} />
       
       {loading && (
@@ -259,7 +234,6 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         onFileClick={handleFileClick} 
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
-                        onUpdate={() => handleUpdateClick(it)}
                       />
                     );
 

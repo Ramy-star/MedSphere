@@ -1,7 +1,7 @@
 
 'use client';
 import { 
-    MoreVertical, Edit, Trash2, Download, Upload,
+    MoreVertical, Edit, Trash2, Download,
     File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -85,13 +85,11 @@ export function FileCard({
     onFileClick, 
     onRename, 
     onDelete, 
-    onUpdate
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
-    onUpdate: () => void
 }) {
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
@@ -152,10 +150,6 @@ export function FileCard({
             >
             <Download className="mr-2 h-4 w-4" />
             <span>Download</span>
-          </DropdownMenuItem>
-           <DropdownMenuItem onClick={onUpdate} className="cursor-pointer">
-            <Upload className="mr-2 h-4 w-4" />
-            <span>Update File</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
             <Trash2 className="mr-2 h-4 w-4" />
