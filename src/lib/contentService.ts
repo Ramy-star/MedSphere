@@ -29,10 +29,9 @@ export type Content = {
 };
 
 export type UploadCallbacks = {
-  onStart: (id: string) => void;
-  onProgress: (id: string, progress: number) => void;
-  onSuccess: (id: string, content: Content) => void;
-  onError: (id: string, error: Error) => void;
+  onProgress: (progress: number) => void;
+  onSuccess: (content: Content) => void;
+  onError: (error: Error) => void;
 };
 
 
@@ -178,8 +177,6 @@ export const contentService = {
   },
   
   async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks): Promise<void> {
-    const tempId = `upload_${uuidv4()}`;
-    callbacks.onStart(tempId);
     
     try {
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
@@ -209,7 +206,7 @@ export const contentService = {
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
                 const progress = (event.loaded / event.total) * 100;
-                callbacks.onProgress(tempId, progress);
+                callbacks.onProgress(progress);
             }
         };
 
@@ -239,27 +236,24 @@ export const contentService = {
                 };
                 
                 await setDoc(doc(db, 'content', id), newFileContent);
-                callbacks.onSuccess(tempId, newFileContent);
+                callbacks.onSuccess(newFileContent);
 
             } else {
-                 callbacks.onError(tempId, new Error(`Cloudinary upload failed: ${xhr.statusText}`));
+                 callbacks.onError(new Error(`Cloudinary upload failed: ${xhr.statusText}`));
             }
         };
 
         xhr.onerror = () => {
-            callbacks.onError(tempId, new Error('Network error during upload.'));
+            callbacks.onError(new Error('Network error during upload.'));
         };
         
         xhr.send(formData);
     } catch(e: any) {
-        callbacks.onError(tempId, e);
+        callbacks.onError(e);
     }
   },
 
   async updateFile(id: string, newFile: File, callbacks: UploadCallbacks): Promise<void> {
-    const tempId = `upload_${uuidv4()}`;
-    callbacks.onStart(tempId);
-
     const docRef = doc(db, 'content', id);
 
     try {
@@ -299,7 +293,7 @@ export const contentService = {
         xhr.upload.onprogress = (event) => {
              if (event.lengthComputable) {
                 const progress = (event.loaded / event.total) * 100;
-                callbacks.onProgress(tempId, progress);
+                callbacks.onProgress(progress);
             }
         };
 
@@ -319,20 +313,20 @@ export const contentService = {
                     },
                 };
                 await updateDoc(docRef, updatedData);
-                callbacks.onSuccess(tempId, { ...existingContent, ...updatedData });
+                callbacks.onSuccess({ ...existingContent, ...updatedData });
             } else {
-                 callbacks.onError(tempId, new Error(`Cloudinary update failed: ${xhr.statusText}`));
+                 callbacks.onError(new Error(`Cloudinary update failed: ${xhr.statusText}`));
             }
         };
 
          xhr.onerror = () => {
-            callbacks.onError(tempId, new Error('Network error during file update.'));
+            callbacks.onError(new Error('Network error during file update.'));
         };
 
         xhr.send(formData);
 
     } catch (e: any) {
-        callbacks.onError(tempId, e);
+        callbacks.onError(e);
     }
   },
   
@@ -457,5 +451,3 @@ export const contentService = {
     }
   }
 };
-
-    

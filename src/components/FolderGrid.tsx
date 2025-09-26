@@ -71,7 +71,19 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
 };
 
 
-export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFileSelected }: { parentId: string, uploadingFiles: UploadingFile[], setUploadingFiles: Dispatch<SetStateAction<UploadingFile[]>>, onFileSelected: (file: File) => void }) {
+export function FolderGrid({ 
+    parentId, 
+    uploadingFiles, 
+    onFileSelected, 
+    onRetry, 
+    onRemove 
+}: { 
+    parentId: string, 
+    uploadingFiles: UploadingFile[], 
+    onFileSelected: (file: File) => void,
+    onRetry: (fileId: string) => void,
+    onRemove: (fileId: string) => void,
+}) {
   const [orderedItems, setOrderedItems] = useState<Content[] | null>(null);
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
@@ -249,7 +261,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         transition={{ duration: 0.15 }}
                         className={cn(isMobile ? "px-4" : "")}
                     >
-                        <UploadProgress file={file} />
+                        <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                     </motion.div>
                   ))}
                   {items.map((it: Content, index) => {

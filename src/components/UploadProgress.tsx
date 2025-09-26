@@ -1,10 +1,11 @@
 
 'use client';
 
-import { File, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { File as FileIcon, X, AlertTriangle, CheckCircle2, RotateCw } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
 import type { Content } from '@/lib/contentService';
+import { Button } from './ui/button';
 
 export type UploadingFile = {
   id: string;
@@ -12,17 +13,17 @@ export type UploadingFile = {
   size: number;
   progress: number;
   status: 'uploading' | 'success' | 'error';
+  file: File; // Keep the original file object for retries
 };
 
 export type UploadCallbacks = {
-  onStart: (id: string) => void;
-  onProgress: (id: string, progress: number) => void;
-  onSuccess: (id: string, content: Content) => void;
-  onError: (id: string, error: Error) => void;
+  onProgress: (progress: number) => void;
+  onSuccess: (content: Content) => void;
+  onError: (error: Error) => void;
 };
 
 
-export function UploadProgress({ file }: { file: UploadingFile }) {
+export function UploadProgress({ file, onRetry, onRemove }: { file: UploadingFile, onRetry: (id: string) => void, onRemove: (id: string) => void }) {
     const sizeInKB = file.size / 1024;
     const displaySize = sizeInKB < 1024 
         ? `${sizeInKB.toFixed(1)} KB` 
@@ -30,11 +31,11 @@ export function UploadProgress({ file }: { file: UploadingFile }) {
 
     return (
         <div className={cn("relative group glass-card p-3 rounded-lg flex items-center justify-between w-full transition-all", 
-            file.status === 'error' && "bg-red-500/10 border-red-500/30",
-            file.status === 'success' && "bg-green-500/10 border-green-500/30"
+            file.status === 'error' && "bg-red-900/20 border-red-500/30",
+            file.status === 'success' && "bg-green-900/20 border-green-500/30"
         )}>
             <div className="flex items-center gap-3 overflow-hidden flex-1">
-                <File className="w-6 h-6 text-blue-400 shrink-0" />
+                <FileIcon className="w-6 h-6 text-blue-400 shrink-0" />
                 <div className="flex-1 overflow-hidden">
                     <h3 className="text-sm font-medium text-white/90 whitespace-nowrap overflow-hidden text-ellipsis">{file.name}</h3>
                     {file.status === 'uploading' && (
@@ -58,11 +59,20 @@ export function UploadProgress({ file }: { file: UploadingFile }) {
                 </div>
             </div>
             
-            <div className="flex items-center gap-4 shrink-0 ml-4">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2 sm:ml-4">
+                 {file.status === 'error' && (
+                    <>
+                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-slate-300 hover:text-white" onClick={() => onRetry(file.id)} title="Retry">
+                            <RotateCw className="w-4 h-4" />
+                        </Button>
+                         <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-slate-300 hover:text-red-400" onClick={() => onRemove(file.id)} title="Remove">
+                            <X className="w-5 h-5" />
+                        </Button>
+                    </>
+                )}
                 <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
                     {displaySize}
                 </p>
-                {/* Cancel button can be added here in the future */}
             </div>
         </div>
     );

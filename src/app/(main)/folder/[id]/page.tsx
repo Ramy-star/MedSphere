@@ -28,21 +28,20 @@ function FolderPageContent({ id }: { id: string }) {
   const processFileUpload = useCallback(async (file: File) => {
     if (!current) return;
 
+    const tempId = `upload_${Date.now()}_${file.name}`;
+
     const callbacks: UploadCallbacks = {
-        onStart: (id) => {
-             setUploadingFiles(prev => [...prev, { id, name: file.name, size: file.size, progress: 0, status: 'uploading' }]);
+        onProgress: (progress) => {
+            setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
-        onProgress: (id, progress) => {
-            setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, progress } : f));
-        },
-        onSuccess: (id, content) => {
-             setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'success' } : f));
-             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== id)), 2000); // Remove after 2s
+        onSuccess: (content) => {
+             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success' } : f));
+             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 2000); // Remove after 2s
              toast({ title: "File Uploaded", description: `"${content.name}" has been uploaded.` });
         },
-        onError: (id, error) => {
+        onError: (error) => {
             console.error("Upload failed in component:", error);
-            setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error' } : f));
+            setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'error' } : f));
             toast({
                 variant: 'destructive',
                 title: 'Upload Failed',
@@ -51,8 +50,43 @@ function FolderPageContent({ id }: { id: string }) {
         }
     };
     
+    setUploadingFiles(prev => [...prev, { id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file }]);
     await contentService.createFile(current.id, file, callbacks);
+
   }, [current, toast]);
+
+  const handleRetryUpload = useCallback((fileId: string) => {
+    const fileToRetry = uploadingFiles.find(f => f.id === fileId);
+    if (fileToRetry && fileToRetry.file && current) {
+      // Optimistically set status to uploading
+      setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'uploading', progress: 0 } : f));
+
+      const callbacks: UploadCallbacks = {
+        onProgress: (progress) => {
+            setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, progress } : f));
+        },
+        onSuccess: (content) => {
+            setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'success' } : f));
+            setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== fileId)), 2000);
+            toast({ title: "File Uploaded", description: `"${content.name}" has been uploaded.` });
+        },
+        onError: (error) => {
+            setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'error' } : f));
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: error.message || `Could not upload ${fileToRetry.name}. Please try again.`
+            });
+        }
+      };
+
+      contentService.createFile(current.id, fileToRetry.file, callbacks);
+    }
+  }, [uploadingFiles, current, toast]);
+
+  const handleRemoveUpload = (fileId: string) => {
+      setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
+  };
   
   if (loadingCurrent || !current) {
       return <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
@@ -94,7 +128,13 @@ function FolderPageContent({ id }: { id: string }) {
     <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
        <FileExplorerHeader currentFolder={extendedCurrent} onFileSelected={processFileUpload} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-          <FolderGrid parentId={id} uploadingFiles={uploadingFiles} setUploadingFiles={setUploadingFiles} onFileSelected={processFileUpload} />
+          <FolderGrid 
+            parentId={id} 
+            uploadingFiles={uploadingFiles} 
+            onFileSelected={processFileUpload}
+            onRetry={handleRetryUpload}
+            onRemove={handleRemoveUpload}
+          />
        </div>
     </main>
   );
