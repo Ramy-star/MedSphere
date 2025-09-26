@@ -6,9 +6,10 @@ import { Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/header";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { getFirebaseConfig } from "@/firebase/config";
+import { WelcomeScreen } from "@/components/WelcomeScreen";
 
 const nunitoSans = Nunito_Sans({ subsets: ["latin"] });
 
@@ -19,12 +20,43 @@ const nunitoSans = Nunito_Sans({ subsets: ["latin"] });
 //   description: "Organize your medical education journey",
 // };
 
+const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
+
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const firebaseConfig = getFirebaseConfig();
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  useEffect(() => {
+    // Check localStorage only on the client side
+    const hasVisited = localStorage.getItem(WELCOME_SCREEN_KEY);
+    if (hasVisited) {
+      setShowWelcome(false);
+    }
+  }, []);
+
+  const handleGetStarted = () => {
+    localStorage.setItem(WELCOME_SCREEN_KEY, 'true');
+    setShowWelcome(false);
+  };
+
+  if (showWelcome) {
+    return (
+        <html lang="en" className="dark h-full">
+            <head>
+                <title>Welcome to MedSphere</title>
+                <meta name="description" content="Organize your medical education journey" />
+                <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
+            </head>
+            <body className={`${nunitoSans.className} h-full`}>
+                 <WelcomeScreen onGetStarted={handleGetStarted} />
+            </body>
+        </html>
+    );
+  }
 
   return (
     <html lang="en" className="dark h-full">
