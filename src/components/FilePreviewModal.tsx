@@ -11,7 +11,7 @@ import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { useEffect, useState } from 'react';
-import { X, Download, Share2, File as FileIcon } from 'lucide-react';
+import { X, Download, Share2, File as FileIcon, ExternalLink } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -53,6 +53,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handleClose = () => {
     onOpenChange(false);
   }
+  
+  const handleOpenInNewTab = () => {
+    if (!fileUrl) return;
+    window.open(fileUrl, '_blank');
+  };
 
   const handleCopyLink = () => {
     if(!fileUrl) return;
@@ -94,8 +99,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
           </div>
           <div className='flex items-center gap-2'>
-            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10">
+            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Download">
                 <Download className="w-5 h-5" />
+            </Button>
+             <Button variant="ghost" size="icon" onClick={handleOpenInNewTab} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Open in new tab">
+                <ExternalLink className="w-5 h-5" />
             </Button>
              <Popover>
                 <PopoverTrigger asChild>
@@ -141,3 +149,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    

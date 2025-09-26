@@ -27,6 +27,7 @@ import {
 import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { useToast } from '@/hooks/use-toast';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -41,6 +42,7 @@ function SearchResults() {
     const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
     const updateFileRef = React.useRef<HTMLInputElement>(null);
+    const { toast } = useToast();
     
     const performSearch = useCallback(async () => {
         if (!query || !allItems) {
@@ -82,7 +84,19 @@ function SearchResults() {
     };
 
     const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        console.log("File update needs implementation with Firebase Storage");
+        if (!itemToUpdate || !event.target.files || event.target.files.length === 0) return;
+        const file = event.target.files[0];
+        try {
+            await contentService.updateFile(itemToUpdate.id, file);
+            toast({ title: 'File Updated', description: `"${itemToUpdate.name}" has been updated.` });
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        }
+        setItemToUpdate(null);
+        // Reset file input
+        if (event.target) {
+            event.target.value = '';
+        }
     };
     
     const loading = isSearching || loadingAllItems;
@@ -192,3 +206,5 @@ export default function SearchPage() {
         </Suspense>
     )
 }
+
+    

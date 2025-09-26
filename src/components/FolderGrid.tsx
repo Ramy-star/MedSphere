@@ -123,6 +123,10 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
          toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
       }
       setItemToUpdate(null);
+      // Reset file input
+      if (event.target) {
+          event.target.value = '';
+      }
   };
 
 
@@ -304,3 +308,5 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
     </div>
   );
 }
+
+    
