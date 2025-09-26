@@ -91,7 +91,7 @@ export const contentService = {
       await runTransaction(db, async (transaction) => {
         const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
         
-        const childrenSnapshot = await transaction.get(childrenQuery);
+        const childrenSnapshot = await getDocs(childrenQuery);
         const order = childrenSnapshot.size;
 
         newFolderData = {
@@ -111,14 +111,15 @@ export const contentService = {
       return newFolderData;
 
     } catch (e: any) {
-      if (e.code === 'permission-denied') {
+      if (e && e.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `/content/${newFolderId}`,
             operation: 'create',
             requestResourceData: { name, parentId },
         }));
+      } else {
+        console.error("Transaction failed: ", e);
       }
-      console.error("Transaction failed: ", e);
       throw e;
     }
   },
