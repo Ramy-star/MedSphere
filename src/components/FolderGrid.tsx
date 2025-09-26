@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef, useCallback, Dispatch, SetStateAction } from 'react';
+import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -21,7 +21,7 @@ import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { Folder as FolderIcon, Plus, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, useSensor, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { UploadingFile, UploadProgress } from './UploadProgress';
@@ -247,6 +247,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         item={it} 
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
+                        displayAs={isSubjectView ? 'grid' : 'list'}
                       />;
                     } else if (it.type === 'FILE') {
                       content = <FileCard 
@@ -264,18 +265,10 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         return <motion.div key={itemKey} {...motionProps} className="px-4 border-b border-white/10">{content}</motion.div>
                     }
 
-                    if (isSubjectView) {
-                       return (
-                           <motion.div key={itemKey} {...motionProps}>
-                               {content}
-                           </motion.div>
-                       )
-                    }
-
                     return (
-                        <motion.div key={itemKey} {...motionProps}>
-                            <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>
-                        </motion.div>
+                      <motion.div key={itemKey} {...motionProps}>
+                        {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
+                      </motion.div>
                     )
                   })}
                 </AnimatePresence>
