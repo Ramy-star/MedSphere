@@ -21,7 +21,7 @@ import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { Folder as FolderIcon, Plus, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { DndContext, closestCenter, PointerSensor, useSensor, DragEndEvent } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { UploadingFile, UploadProgress } from './UploadProgress';
