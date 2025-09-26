@@ -25,12 +25,13 @@ import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { UploadingFile, UploadProgress, UploadCallbacks } from './UploadProgress';
+import { UploadingFile, UploadProgress } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { v4 as uuidv4 } from 'uuid';
+import type { UploadCallbacks } from '@/lib/contentService';
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -58,13 +59,7 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   );
 };
 
-type FolderGridProps = {
-    parentId: string | null;
-};
-
-
-export function FolderGrid({ parentId }: FolderGridProps) {
-  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
+export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFileSelected }: { parentId: string, uploadingFiles: UploadingFile[], setUploadingFiles: Dispatch<SetStateAction<UploadingFile[]>>, onFileSelected: (file: File) => void }) {
   const [orderedItems, setOrderedItems] = useState<Content[] | null>(null);
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
@@ -74,13 +69,11 @@ export function FolderGrid({ parentId }: FolderGridProps) {
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
-  const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-  const { toast } = useToast();
   const isMobile = useIsMobile();
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     if (fetchedItems) {
@@ -89,73 +82,6 @@ export function FolderGrid({ parentId }: FolderGridProps) {
   }, [fetchedItems]);
   
   const items = orderedItems || [];
-
-  const handleUpdateClick = (item: Content) => {
-    setItemToUpdate(item);
-    fileInputRef.current?.click();
-  };
-
-  const processFileUpload = useCallback(async (file: File) => {
-    if (itemToUpdate) {
-        // This is an update operation
-        const callbacks: UploadCallbacks = {
-            onStart: (id) => {
-                setUploadingFiles(prev => [...prev, { id, name: `Updating ${itemToUpdate.name}...`, size: file.size, progress: 0, status: 'uploading' }]);
-            },
-            onProgress: (id, progress) => {
-                setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, progress } : f));
-            },
-            onSuccess: (id, content) => {
-                setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'success', name: `Updated: ${content.name}` } : f));
-                setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== id)), 2000);
-                toast({ title: "File Updated", description: `"${content.name}" has been updated successfully.` });
-                setItemToUpdate(null); // Reset after success
-            },
-            onError: (id, error) => {
-                setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error' } : f));
-                toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-                setItemToUpdate(null); // Reset after error
-            }
-        };
-        await contentService.updateFile(itemToUpdate.id, file, callbacks);
-
-    } else {
-        // This is a create operation
-        const callbacks: UploadCallbacks = {
-            onStart: (id) => {
-                 setUploadingFiles(prev => [...prev, { id, name: file.name, size: file.size, progress: 0, status: 'uploading' }]);
-            },
-            onProgress: (id, progress) => {
-                setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, progress } : f));
-            },
-            onSuccess: (id, content) => {
-                 setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'success' } : f));
-                 setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== id)), 2000); // Remove after 2s
-                 toast({ title: "File Uploaded", description: `"${content.name}" has been uploaded.` });
-            },
-            onError: (id, error) => {
-                console.error("Upload failed in component:", error);
-                setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error' } : f));
-                toast({
-                    variant: 'destructive',
-                    title: 'Upload Failed',
-                    description: error.message || `Could not upload ${file.name}. Please try again.`
-                })
-            }
-        };
-        await contentService.createFile(parentId, file, callbacks);
-    }
-  }, [itemToUpdate, parentId, toast]);
-  
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      processFileUpload(file);
-    }
-    if(event.target) {
-        event.target.value = '';
-    }
-  };
 
   const handleFileClick = (file: Content) => {
     if (isMobile) {
@@ -170,12 +96,14 @@ export function FolderGrid({ parentId }: FolderGridProps) {
   const handleRename = async (newName: string) => {
     if (!itemToRename) return;
     await contentService.rename(itemToRename.id, newName);
+    toast({ title: "Renamed", description: `"${itemToRename.name}" was renamed to "${newName}".` });
     setItemToRename(null);
   };
   
   const handleDelete = async () => {
     if (!itemToDelete) return;
     await contentService.delete(itemToDelete.id);
+    toast({ title: "Deleted", description: `"${itemToDelete.name}" has been deleted.` });
     setItemToDelete(null);
   };
 
@@ -209,7 +137,7 @@ export function FolderGrid({ parentId }: FolderGridProps) {
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       for (const file of Array.from(files)) {
-        processFileUpload(file);
+        onFileSelected(file);
       }
     }
   };
@@ -237,7 +165,7 @@ export function FolderGrid({ parentId }: FolderGridProps) {
 
   const containerClasses = isSubjectView 
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-    : cn("flex flex-col", isMobile ? "" : "gap-2");
+    : cn("flex flex-col", isMobile ? "" : "gap-0");
 
 
   return (
@@ -249,12 +177,6 @@ export function FolderGrid({ parentId }: FolderGridProps) {
         onDrop={handleDrop}
         className={cn("h-full", isDraggingOver && "opacity-50")}
     >
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange}
-        className="hidden" 
-      />
       <DropZone isVisible={isDraggingOver} />
       
       {loading && (
@@ -272,7 +194,7 @@ export function FolderGrid({ parentId }: FolderGridProps) {
               <p className="mt-2 text-sm text-slate-400">Drag and drop files here, or use the button to add content.</p>
               <AddContentMenu 
                 parentId={parentId}
-                onFileSelected={processFileUpload}
+                onFileSelected={onFileSelected}
                 trigger={
                   <Button className="mt-6 rounded-xl">
                     <Plus className="mr-2 h-4 w-4" />
@@ -315,7 +237,6 @@ export function FolderGrid({ parentId }: FolderGridProps) {
                         onFileClick={handleFileClick} 
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
-                        onUpdate={() => handleUpdateClick(it)}
                         showDragHandle={!isMobile}
                       />
                     );
@@ -327,13 +248,20 @@ export function FolderGrid({ parentId }: FolderGridProps) {
                         exit:{ opacity: 0, y: 8 },
                         transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
                     };
+                    
+                    const wrapperClasses = cn(
+                        "relative", // Needed for motion exit animations
+                        it.type !== 'FOLDER' && 'border-b border-white/5',
+                         // Add bottom border to all but last item if not in subject view
+                        !isSubjectView && index === items.length - 1 && 'border-b-0'
+                    );
 
                     if (isMobile) {
-                        return <motion.div {...motionProps} className="px-4">{content}</motion.div>
+                        return <motion.div {...motionProps} className="px-4 border-b border-white/10">{content}</motion.div>
                     }
 
                     return (
-                        <motion.div {...motionProps}>
+                        <motion.div {...motionProps} className={wrapperClasses}>
                             {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
                         </motion.div>
                     )
@@ -372,5 +300,3 @@ export function FolderGrid({ parentId }: FolderGridProps) {
     </div>
   );
 }
-
-    

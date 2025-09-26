@@ -90,14 +90,12 @@ export function FileCard({
     onFileClick, 
     onRename, 
     onDelete, 
-    onUpdate,
     showDragHandle = true,
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
-    onUpdate: () => void,
     showDragHandle?: boolean,
 }) {
     const isMobile = useIsMobile();
@@ -112,6 +110,7 @@ export function FileCard({
 
     const fileContent = (
       <>
+        {showDragHandle && !isMobile && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
         <div 
             className="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer"
             onClick={(e) => {
@@ -181,20 +180,9 @@ export function FileCard({
       </>
     );
     
-    if(isMobile) {
-        return (
-            <div className="flex items-center w-full py-3 border-b border-white/10">
-                {fileContent}
-            </div>
-        )
-    }
-
     return (
-      <div className="group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors flex items-center justify-between w-full">
-         {showDragHandle && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
-          {fileContent}
-      </div>
-    );
+        <div className="group flex items-center w-full p-3 hover:bg-white/10 transition-colors rounded-lg">
+            {fileContent}
+        </div>
+    )
 }
-
-    
