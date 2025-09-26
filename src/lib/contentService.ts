@@ -21,6 +21,7 @@ export type Content = {
     cloudinaryResourceType?: 'image' | 'video' | 'raw'; // resource_type from cloudinary
     url?: string; // For LINK type
     iconURL?: string; // For custom folder icons
+    iconCloudinaryPublicId?: string; // public_id for the custom icon
   };
   createdAt?: string;
   updatedAt?: string;
@@ -179,14 +180,15 @@ export const contentService = {
   
   async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
+    const paramsToSign = {
+        folder: `content/${parentId || 'root'}`
+    };
     
     try {
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                folder: `content/${parentId || 'root'}`
-            })
+            body: JSON.stringify(paramsToSign)
         });
 
         if (!sigResponse.ok) {
@@ -201,7 +203,9 @@ export const contentService = {
         formData.append('api_key', apiKey);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);
-        formData.append('folder', `content/${parentId || 'root'}`);
+        Object.entries(paramsToSign).forEach(([key, value]) => {
+            formData.append(key, value);
+        });
 
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
 
@@ -264,28 +268,30 @@ export const contentService = {
 
   async uploadAndSetIcon(itemId: string, iconFile: File, callbacks: Omit<UploadCallbacks, 'onSuccess'> & { onSuccess: (url: string) => void }): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
+    const paramsToSign = { folder: 'icons' };
 
     try {
         const itemRef = doc(db, 'content', itemId);
         const itemSnap = await getDoc(itemRef);
         if (!itemSnap.exists()) throw new Error("Item not found");
         
-        // 1. Get signature for Cloudinary upload
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ folder: 'icons' }) // Store icons in a dedicated folder
+            body: JSON.stringify(paramsToSign)
         });
         if (!sigResponse.ok) throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
         const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
 
-        // 2. Upload file to Cloudinary
         const formData = new FormData();
         formData.append('file', iconFile);
         formData.append('api_key', apiKey);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);
-        formData.append('folder', 'icons');
+        Object.entries(paramsToSign).forEach(([key, value]) => {
+            formData.append(key, value);
+        });
+
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
@@ -298,10 +304,11 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 const iconURL = data.secure_url;
+                const iconPublicId = data.public_id;
 
-                // 3. Update Firestore document with the new icon URL
                 await updateDoc(itemRef, {
                     'metadata.iconURL': iconURL,
+                    'metadata.iconCloudinaryPublicId': iconPublicId,
                     updatedAt: new Date().toISOString()
                 });
                 callbacks.onSuccess(iconURL);
@@ -342,11 +349,13 @@ export const contentService = {
         if (!publicId) {
              throw new Error("Cannot update file without a Cloudinary public_id.");
         }
+        
+        const paramsToSign = { public_id: publicId, overwrite: true };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ public_id: publicId, overwrite: true })
+            body: JSON.stringify(paramsToSign)
         });
         
         if (!sigResponse.ok) {
@@ -359,8 +368,9 @@ export const contentService = {
         formData.append('api_key', apiKey);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);
-        formData.append('public_id', publicId);
-        formData.append('overwrite', 'true');
+        Object.entries(paramsToSign).forEach(([key, value]) => {
+            formData.append(key, String(value));
+        });
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
@@ -464,10 +474,11 @@ export const contentService = {
                             resourceType: item.metadata.cloudinaryResourceType || 'raw'
                         });
                     }
-                    if (item.type === 'FOLDER' && item.metadata?.iconURL) {
-                        // We need the public ID to delete the icon
-                        // For simplicity, let's assume icons are not deleted for now.
-                        // A more robust solution would store the public_id of the icon.
+                    if ((item.type === 'FOLDER' || item.type === 'SUBJECT') && item.metadata?.iconCloudinaryPublicId) {
+                         filesToDeleteFromCloudinary.push({
+                            publicId: item.metadata.iconCloudinaryPublicId,
+                            resourceType: 'image'
+                        });
                     }
                     const children = allContent.filter(x => x.parentId === idToDelete);
                     children.forEach(child => findRecursively(child.id));
@@ -531,3 +542,5 @@ export const contentService = {
     }
   }
 };
+
+    
