@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, Upload,
-    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, FileArchive 
+    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -15,29 +15,47 @@ import {
 import { Button } from './ui/button';
 import { format } from 'date-fns';
 
-const getIconForMimeType = (mimeType: string = 'application/octet-stream'): LucideIcon => {
-    if (mimeType.startsWith('image/')) return FileImage;
-    if (mimeType.startsWith('video/')) return FileVideo;
-    if (mimeType.startsWith('audio/')) return FileAudio;
+const getIconForFileType = (fileName: string, mimeType?: string): { Icon: LucideIcon, color: string } => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
 
-    switch (mimeType) {
-        case 'application/pdf':
-            return FileText;
-        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': // docx
-        case 'application/msword': // doc
-            return FileText;
-        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation': // pptx
-        case 'application/vnd.ms-powerpoint': // ppt
-            return FileImage; // Using FileImage for presentations as it's visually similar to a slide
-        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': // xlsx
-        case 'application/vnd.ms-excel': // xls
-            return FileSpreadsheet;
-        case 'application/zip':
-        case 'application/x-rar-compressed':
-        case 'application/x-7z-compressed':
-            return FileArchive;
+    if (mimeType?.startsWith('image/')) return { Icon: FileImage, color: 'text-purple-400' };
+    if (mimeType?.startsWith('video/')) return { Icon: FileVideo, color: 'text-red-400' };
+    if (mimeType?.startsWith('audio/')) return { Icon: Music, color: 'text-orange-400' };
+    
+    switch (extension) {
+        case 'pdf':
+            return { Icon: FileText, color: 'text-red-400' };
+        case 'docx':
+        case 'doc':
+            return { Icon: FileText, color: 'text-blue-500' };
+        case 'xlsx':
+        case 'xls':
+            return { Icon: FileSpreadsheet, color: 'text-green-500' };
+        case 'pptx':
+        case 'ppt':
+            return { Icon: Presentation, color: 'text-orange-500' };
+        case 'html':
+        case 'js':
+        case 'css':
+        case 'tsx':
+        case 'ts':
+            return { Icon: FileCode, color: 'text-gray-400' };
+        case 'txt':
+             return { Icon: FileText, color: 'text-gray-400' };
+        case 'mp3':
+        case 'wav':
+             return { Icon: Music, color: 'text-orange-400' };
+        case 'mp4':
+        case 'mov':
+             return { Icon: FileVideo, color: 'text-red-400' };
+        case 'png':
+        case 'jpg':
+        case 'jpeg':
+        case 'gif':
+        case 'svg':
+             return { Icon: FileImage, color: 'text-purple-400' };
         default:
-            return FileIcon;
+            return { Icon: FileIcon, color: 'text-gray-400' };
     }
 };
 
@@ -83,7 +101,7 @@ export function FileCard({
 
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     
-    const Icon = getIconForMimeType(item.metadata?.mime);
+    const { Icon, color } = getIconForFileType(item.name, item.metadata?.mime);
 
     return (
       <DropdownMenu>
@@ -96,7 +114,7 @@ export function FileCard({
             className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-between"
         >
             <div className="flex items-center gap-3 overflow-hidden flex-1">
-                 <Icon className="w-6 h-6 text-blue-400 shrink-0" />
+                 <Icon className={`w-6 h-6 ${color} shrink-0`} />
                 <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
             </div>
             
