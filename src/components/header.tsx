@@ -50,7 +50,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           </h1>
       </div>
       <div className="flex items-center justify-end flex-grow">
-        <div className="relative w-full max-w-[220px] sm:max-w-sm">
+        <div className="relative w-full max-w-[180px] sm:max-w-sm">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400"
           />
