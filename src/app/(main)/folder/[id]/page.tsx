@@ -16,12 +16,9 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 function FolderPageContent({ id }: { id: string }) {
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   
-  const { data: ancestors, loading: loadingAncestors } = useCollection<Content>('content', {
-      where: ['id', 'in', current?.parentId ? [current.parentId] : []], // Simplified ancestor fetching
-      disabled: !current?.parentId
-  });
-
-  const loading = loadingCurrent || loadingAncestors;
+  // This hook is not ideal for fetching a single document (the parent).
+  // A dedicated `useDoc` for the parent would be better if we needed more than just the name for a breadcrumb.
+  // For simplicity, we'll rely on the breadcrumb component's own fetching logic.
   
   useEffect(() => {
     if (!loadingCurrent && !current) {
@@ -31,10 +28,10 @@ function FolderPageContent({ id }: { id: string }) {
 
 
   const fetchFolderData = useCallback(async () => {
-    // This function can now be simpler, as `useCollection` in FolderGrid handles refetching
+    // This function is kept for prop consistency but is now managed by hooks.
   }, []);
   
-  if (loading || !current) {
+  if (loadingCurrent || !current) {
       return <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
         <div className="mb-6 space-y-4">
             <Skeleton className="h-5 w-1/3" />
@@ -71,12 +68,9 @@ function FolderPageContent({ id }: { id: string }) {
       iconColor: iconColor
   }
 
-  // A more robust ancestor fetching logic would be needed for a full breadcrumb trail
-  const simpleAncestors = ancestors || [];
-
   return (
     <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
-       <FileExplorerHeader currentFolder={extendedCurrent} ancestors={simpleAncestors} onContentAdded={fetchFolderData} />
+       <FileExplorerHeader currentFolder={extendedCurrent} onContentAdded={fetchFolderData} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
           <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
        </div>

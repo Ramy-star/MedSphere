@@ -4,22 +4,25 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useEffect, useState, useCallback, Suspense, useMemo } from 'react';
+import { useEffect, useMemo, Suspense } from 'react';
 import { Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 
 function LevelPageContent({ levelName }: { levelName: string }) {
+  // Firestore queries are case-sensitive. Decoding should be sufficient.
+  const decodedLevelName = decodeURIComponent(levelName);
+  
   const { data: levels, loading: loadingLevels } = useCollection<Content>('content', {
-    where: ['name', '==', levelName],
+    where: ['name', '==', decodedLevelName],
     limit: 1,
   });
   
   const level = useMemo(() => levels?.[0], [levels]);
 
   const { data: semesters, loading: loadingSemesters } = useCollection<Content>('content', {
-    where: ['parentId', '==', level?.id || ''],
+    where: ['parentId', '==', level?.id],
     orderBy: ['order', 'asc'],
     disabled: !level, // Disable query until level is found
   });
@@ -27,6 +30,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
   const loading = loadingLevels || (!!level && loadingSemesters);
 
   useEffect(() => {
+    // If after loading levels, no level is found, show 404.
     if (!loadingLevels && !level) {
       notFound();
     }
@@ -55,7 +59,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
 
   return (
     <main className="flex-1 p-4 md:p-6 glass-card animate-fade-in">
-        <FileExplorerHeader currentFolder={extendedLevel} ancestors={[]} />
+        <FileExplorerHeader currentFolder={extendedLevel} />
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
             {semesters && semesters.map((semester, index) => (
                 <div key={semester.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.15}s` }}>
@@ -72,8 +76,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
 }
 
 function LevelPage({ params }: { params: { levelName: string } }) {
-  const levelName = decodeURIComponent(params.levelName);
-
+  
   return (
     <Suspense fallback={
         <main className="flex-1 p-4 md:p-6 glass-card animate-fade-in">
@@ -87,7 +90,7 @@ function LevelPage({ params }: { params: { levelName: string } }) {
             </div>
         </main>
     }>
-      <LevelPageContent levelName={levelName} />
+      <LevelPageContent levelName={params.levelName} />
     </Suspense>
   )
 }

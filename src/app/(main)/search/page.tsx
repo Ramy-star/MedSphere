@@ -33,8 +33,11 @@ function SearchResults() {
     const searchParams = useSearchParams();
     const query = searchParams.get('q');
     const [results, setResults] = useState<Content[]>([]);
-    const [searching, setSearching] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
     
+    // Fetch all items once for client-side search.
+    // This is not ideal for very large datasets, but simple for this app's scale.
+    // A server-side search (e.g., with Algolia or a Firebase Function) would be more scalable.
     const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
 
     const [previewFile, setPreviewFile] = useState<Content | null>(null);
@@ -44,23 +47,21 @@ function SearchResults() {
     const updateFileRef = React.useRef<HTMLInputElement>(null);
     
     const performSearch = useCallback(async () => {
-        if (!query) {
+        if (!query || !allItems) {
             setResults([]);
             return;
         }
-        if (!allItems || allItems.length === 0) {
-            return;
-        }
 
-        setSearching(true);
+        setIsSearching(true);
         try {
+            // Using the existing client-side search flow
             const searchResults = await search(query, allItems);
             setResults(searchResults);
         } catch (error) {
             console.error("Search failed:", error);
             setResults([]);
         } finally {
-            setSearching(false);
+            setIsSearching(false);
         }
     }, [query, allItems]);
     
@@ -68,22 +69,18 @@ function SearchResults() {
         performSearch();
     }, [performSearch]);
     
-    const handleAction = useCallback(async () => {
-      // No need to manually refetch, useCollection handles it.
-      // The search will re-run automatically when `allItems` changes.
-    }, []);
-    
     const handleRename = async (newName: string) => {
         if (!itemToRename) return;
         await contentService.rename(itemToRename.id, newName);
         setItemToRename(null);
-        // `useCollection` will update `allItems`, triggering a re-search
+        // Data will refetch via useCollection, triggering performSearch
     };
 
     const handleDelete = async () => {
         if (!itemToDelete) return;
         await contentService.delete(itemToDelete.id);
         setItemToDelete(null);
+        // Data will refetch via useCollection, triggering performSearch
     };
 
     const handleUpdateClick = (item: Content) => {
@@ -94,6 +91,7 @@ function SearchResults() {
     const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
         // This functionality needs to be adapted for Firebase Storage
         console.log("File update needs implementation with Firebase Storage");
+        // After upload, you would call contentService to update the metadata.
     };
     
     const handleDownloadClick = async (item: Content) => {
@@ -101,13 +99,13 @@ function SearchResults() {
        console.log("File download needs implementation with Firebase Storage");
     }
 
-    const loading = searching || loadingAllItems;
+    const loading = isSearching || loadingAllItems;
 
 
     return (
         <main className="flex-1 p-6 animate-fade-in flex flex-col overflow-hidden">
             <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
-            <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: null }} ancestors={[]} />
+            <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: null }} />
 
             <h2 className="text-2xl font-bold text-white mt-6 mb-4">
                 {loading ? 'Searching...' : `Found ${results.length} results for "${query}"`}
@@ -125,7 +123,7 @@ function SearchResults() {
                         {results.length > 0 ? (
                             results.map((item, index) => (
                                  <motion.div
-                                    key={`${item.id}-${index}`}
+                                    key={item.id}
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.15, delay: index * 0.03 }}

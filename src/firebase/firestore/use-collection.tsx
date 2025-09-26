@@ -10,48 +10,62 @@ import {
   limit,
   onSnapshot,
   QueryConstraint,
+  Query,
+  DocumentData,
 } from 'firebase/firestore';
 import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
-type CollectionOptions<T> = {
-  where?: [string, any, any];
+type CollectionOptions = {
+  where?: [string, any, any] | [string, any, any][]; // Allow single or multiple where clauses
   orderBy?: [string, 'asc' | 'desc'];
   limit?: number;
   disabled?: boolean;
 };
 
-export function useCollection<T>(path: string, options: CollectionOptions<T> = {}) {
+
+export function useCollection<T>(path: string, options: CollectionOptions = {}) {
   const { db } = useFirebase();
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-
+  
   // Memoize options to prevent re-running the effect on every render.
-  // Using JSON.stringify is a simple way to deep-compare the options object.
   const memoizedOptions = useMemo(() => options, [
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    JSON.stringify(options)
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      JSON.stringify(options)
   ]);
-
 
   useEffect(() => {
     if (memoizedOptions.disabled || !db) {
-      setData(null);
       setLoading(false);
+      setData(null);
       return;
     }
     
     setLoading(true);
 
     try {
-        const constraints: QueryConstraint[] = [];
-        if (memoizedOptions.where) constraints.push(where(...memoizedOptions.where));
-        if (memoizedOptions.orderBy) constraints.push(orderBy(...memoizedOptions.orderBy));
-        if (memoizedOptions.limit) constraints.push(limit(memoizedOptions.limit));
-
-        const q = query(collection(db, path), ...constraints);
+        let q: Query<DocumentData> = collection(db, path);
+        
+        if (memoizedOptions.where) {
+            if (Array.isArray(memoizedOptions.where[0])) {
+                // It's an array of where clauses
+                (memoizedOptions.where as [string, any, any][]).forEach(w => {
+                    q = query(q, where(...w));
+                });
+            } else {
+                // It's a single where clause
+                q = query(q, where(...(memoizedOptions.where as [string, any, any])));
+            }
+        }
+        if (memoizedOptions.orderBy) {
+            q = query(q, orderBy(...memoizedOptions.orderBy));
+        }
+        if (memoizedOptions.limit) {
+            q = query(q, limit(memoizedOptions.limit));
+        }
 
         const unsubscribe = onSnapshot(
         q,

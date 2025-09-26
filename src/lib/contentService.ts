@@ -1,7 +1,7 @@
 
 'use client';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { naturalSort } from './sort';
@@ -78,33 +78,45 @@ export const contentService = {
 
   async createFolder(parentId: string | null, name: string): Promise<Content> {
     if (!db) throw new Error("Firestore not initialized");
-    const id = `folder_${uuidv4()}`;
-    const children = await this.getChildren(parentId);
-    const order = children.length;
-    
-    const item: Content = { 
-        id, 
-        name, 
-        type: 'FOLDER', 
-        parentId: parentId, 
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        order: order
-    };
-    const docRef = doc(db, 'content', id);
-    setDoc(docRef, item).catch(e => {
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: `/content/${id}`,
-                operation: 'create',
-                requestResourceData: item,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        }
-        throw e;
-    });
-    return item;
+
+    const newFolderId = `folder_${uuidv4()}`;
+    const newFolderRef = doc(db, 'content', newFolderId);
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        // To get the new order, we need to count existing children.
+        // This requires a read operation within the transaction.
+        const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+        const childrenSnapshot = await getDocs(childrenQuery); // Use getDocs, not transaction.get for this query
+        const order = childrenSnapshot.size;
+
+        const newFolderData: Content = {
+          id: newFolderId,
+          name: name,
+          type: 'FOLDER',
+          parentId: parentId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          order: order,
+        };
+
+        transaction.set(newFolderRef, newFolderData);
+      });
+      const docSnap = await getDoc(newFolderRef);
+      return docSnap.data() as Content;
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `/content/${newFolderId}`,
+            operation: 'create',
+            requestResourceData: { name, parentId },
+        }));
+      }
+      console.error("Transaction failed: ", e);
+      throw e;
+    }
   },
+
 
   async uploadFile(parentId: string | null, file: { name: string, size?: number, mime?: string }): Promise<Content> {
      if (!db) throw new Error("Firestore not initialized");
@@ -216,6 +228,9 @@ export const contentService = {
 
     try {
       await runTransaction(db, async (transaction) => {
+        // Since we can't query within a transaction, we fetch all content.
+        // This is not scalable for huge datasets but is fine for this app's scope.
+        // For a larger app, a Cloud Function would be needed for recursive deletion.
         const allContentSnapshot = await getDocs(collection(db, 'content'));
         const allContent = allContentSnapshot.docs.map(d => d.data() as Content);
         
@@ -261,7 +276,7 @@ export const contentService = {
     } catch (e: any) {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-                path: `/content (batch update)`,
+                path: `/content (batch update for reordering)`,
                 operation: 'update',
             });
             errorEmitter.emit('permission-error', permissionError);
