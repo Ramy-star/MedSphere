@@ -1,12 +1,44 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 
 const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false });
 
-export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName:string }) {
+export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName: string }) {
+  const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
+  const [isLoadingHtml, setIsLoadingHtml] = useState(false);
+
+  useEffect(() => {
+    if (mime === 'text/html') {
+      setIsLoadingHtml(true);
+      fetch(url)
+        .then(response => response.text())
+        .then(text => {
+          const blob = new Blob([text], { type: 'text/html' });
+          const objectUrl = URL.createObjectURL(blob);
+          setHtmlContentUrl(objectUrl);
+        })
+        .catch(error => {
+          console.error("Error fetching HTML for preview:", error);
+          setHtmlContentUrl(null); // Fallback
+        })
+        .finally(() => {
+            setIsLoadingHtml(false);
+        });
+
+      // Cleanup function to revoke the object URL
+      return () => {
+        if (htmlContentUrl) {
+          URL.revokeObjectURL(htmlContentUrl);
+        }
+      };
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url, mime]);
   
+
   if (mime.startsWith('image/')) {
     return <img src={url} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />;
   }
@@ -21,6 +53,15 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   
   if (mime.startsWith('video/')) {
     return <div className="w-full h-full flex items-center justify-center bg-black"><video controls src={url} className="max-w-full max-h-full" /></div>;
+  }
+
+  if (mime === 'text/html') {
+    if(isLoadingHtml) {
+        return <div className="text-white">Loading HTML preview...</div>
+    }
+    if (htmlContentUrl) {
+        return <iframe src={htmlContentUrl} className="w-full h-full border-2 border-slate-700 rounded-lg bg-white text-black shadow-lg" title={itemName} sandbox="" />;
+    }
   }
 
   if (mime.startsWith('text/')) {
@@ -40,5 +81,3 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
     </div>
   );
 }
-
-    
