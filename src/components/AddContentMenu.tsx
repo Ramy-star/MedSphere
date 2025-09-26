@@ -2,11 +2,12 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FolderPlus, Plus, Upload } from 'lucide-react';
+import { FolderPlus, Plus, Upload, Link as LinkIcon } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { contentService } from '@/lib/contentService';
 import { NewFolderDialog } from './new-folder-dialog';
 import { useToast } from '@/hooks/use-toast';
+import { NewLinkDialog } from './NewLinkDialog';
 
 type AddContentMenuProps = {
   parentId: string | null;
@@ -16,6 +17,7 @@ type AddContentMenuProps = {
 
 export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContentMenuProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const [showNewLinkDialog, setShowNewLinkDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const { toast } = useToast();
@@ -25,7 +27,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         await contentService.createFolder(parentId, folderName);
         toast({ title: 'Folder Created', description: `"${folderName}" has been created.` });
         setShowNewFolderDialog(false);
-        setPopoverOpen(false); // Close popover on success
+        setPopoverOpen(false);
     } catch(error: any) {
         console.error("Failed to create folder:", error);
         toast({ 
@@ -33,9 +35,24 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
             title: 'Error creating folder', 
             description: error.message || 'An unknown error occurred.' 
         });
-        // Do not close dialogs on error, allow user to retry
     }
   };
+
+  const handleAddLink = async (name: string, url: string) => {
+     try {
+        await contentService.createLink(parentId, name, url);
+        toast({ title: 'Link Created', description: `"${name}" has been created.` });
+        setShowNewLinkDialog(false);
+        setPopoverOpen(false);
+    } catch(error: any) {
+        console.error("Failed to create link:", error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Error creating link', 
+            description: error.message || 'An unknown error occurred.' 
+        });
+    }
+  }
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -47,7 +64,6 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       onFileSelected(file);
       setPopoverOpen(false);
     }
-    // Reset file input to allow uploading the same file again
     if(event.target) {
         event.target.value = '';
     }
@@ -63,6 +79,11 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           label: "Upload File",
           icon: Upload,
           action: handleUploadClick,
+      },
+      {
+          label: "Add Link",
+          icon: LinkIcon,
+          action: () => setShowNewLinkDialog(true),
       }
   ]
 
@@ -98,7 +119,9 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         </PopoverContent>
       </Popover>
       <NewFolderDialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog} onAddFolder={handleAddFolder} />
+      <NewLinkDialog open={showNewLinkDialog} onOpenChange={setShowNewLinkDialog} onAddLink={handleAddLink} />
     </>
   );
 }
+
     

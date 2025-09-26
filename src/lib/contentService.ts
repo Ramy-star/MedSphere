@@ -11,13 +11,14 @@ import { FirestorePermissionError } from '@/firebase/errors';
 export type Content = {
   id: string;
   name: string;
-  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE';
+  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK';
   parentId: string | null;
   metadata?: {
     size?: number;
     mime?: string;
     storagePath?: string; // secure_url from cloudinary
     cloudinaryPublicId?: string; // public_id from cloudinary
+    url?: string; // For LINK type
   };
   createdAt?: string;
   updatedAt?: string;
@@ -89,8 +90,10 @@ export const contentService = {
 
     try {
       await runTransaction(db, async (transaction) => {
-        const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
-        
+        const childrenQuery = parentId 
+            ? query(collection(db, 'content'), where('parentId', '==', parentId))
+            : query(collection(db, 'content'), where('parentId', '==', null));
+
         const childrenSnapshot = await getDocs(childrenQuery);
         const order = childrenSnapshot.size;
 
@@ -115,7 +118,56 @@ export const contentService = {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `/content/${newFolderId}`,
             operation: 'create',
-            requestResourceData: { name, parentId },
+            requestResourceData: { name, parentId, type: 'FOLDER' },
+        }));
+      } else {
+        console.error("Transaction failed: ", e);
+      }
+      throw e;
+    }
+  },
+
+  async createLink(parentId: string | null, name: string, url: string): Promise<Content> {
+    if (!db) throw new Error("Firestore not initialized");
+
+    const newLinkId = `link_${uuidv4()}`;
+    const newLinkRef = doc(db, 'content', newLinkId);
+    let newLinkData: Content | null = null;
+
+    try {
+      await runTransaction(db, async (transaction) => {
+        const childrenQuery = parentId 
+            ? query(collection(db, 'content'), where('parentId', '==', parentId))
+            : query(collection(db, 'content'), where('parentId', '==', null));
+
+        const childrenSnapshot = await getDocs(childrenQuery);
+        const order = childrenSnapshot.size;
+
+        newLinkData = {
+          id: newLinkId,
+          name: name,
+          type: 'LINK',
+          parentId: parentId,
+          metadata: {
+            url: url,
+          },
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          order: order,
+        };
+
+        transaction.set(newLinkRef, newLinkData);
+      });
+      
+      if (!newLinkData) throw new Error("Link creation failed within transaction.");
+      return newLinkData;
+
+    } catch (e: any) {
+      if (e && e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `/content/${newLinkId}`,
+            operation: 'create',
+            requestResourceData: { name, parentId, type: 'LINK', url },
         }));
       } else {
         console.error("Transaction failed: ", e);
@@ -378,3 +430,5 @@ export const contentService = {
     }
   }
 };
+
+    

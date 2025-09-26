@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -92,6 +93,13 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   const items = orderedItems || [];
 
   const handleFileClick = (file: Content) => {
+    if (file.type === 'LINK') {
+        if(file.metadata?.url) {
+            window.open(file.metadata.url, '_blank');
+        }
+        return;
+    }
+      
     if (isMobile) {
       if (file.metadata?.storagePath) {
         window.open(file.metadata.storagePath, '_blank');
@@ -249,7 +257,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         onDelete={() => setItemToDelete(it)}
                         displayAs={isSubjectView ? 'grid' : 'list'}
                       />;
-                    } else if (it.type === 'FILE') {
+                    } else if (it.type === 'FILE' || it.type === 'LINK') {
                       content = <FileCard
                         item={it}
                         onFileClick={handleFileClick}
@@ -260,7 +268,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                     } else {
                       content = null;
                     }
-
+                    
                     if (isMobile) {
                         return <motion.div key={itemKey} {...motionProps} className="px-4 border-b border-white/10">{content}</motion.div>
                     }
@@ -268,7 +276,10 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                     return (
                       <motion.div
                         key={itemKey}
-                        {...motionProps}
+                        initial={motionProps.initial}
+                        animate={motionProps.animate}
+                        exit={motionProps.exit}
+                        transition={motionProps.transition}
                         className={cn(!isSubjectView && "border-b border-white/10")}
                       >
                         {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
@@ -309,3 +320,5 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
     </div>
   );
 }
+
+    

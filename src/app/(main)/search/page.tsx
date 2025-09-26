@@ -29,12 +29,14 @@ import React from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function SearchResults() {
     const searchParams = useSearchParams();
     const query = searchParams.get('q');
     const [results, setResults] = useState<Content[]>([]);
     const [isSearching, setIsSearching] = useState(false);
+    const isMobile = useIsMobile();
     
     const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
 
@@ -64,6 +66,18 @@ function SearchResults() {
     useEffect(() => {
         performSearch();
     }, [performSearch]);
+
+    const handleFileClick = (item: Content) => {
+        if (item.type === 'LINK') {
+            if(item.metadata?.url) window.open(item.metadata.url, '_blank');
+            return;
+        }
+        if (isMobile) {
+            if(item.metadata?.storagePath) window.open(item.metadata.storagePath, '_blank');
+        } else {
+            setPreviewFile(item);
+        }
+    };
     
     const handleRename = async (newName: string) => {
         if (!itemToRename) return;
@@ -106,10 +120,10 @@ function SearchResults() {
                                     transition={{ duration: 0.15, delay: index * 0.03 }}
                                     className="border-b border-white/10"
                                 >
-                                    {item.type === 'FILE' && (
+                                    {(item.type === 'FILE' || item.type === 'LINK') && (
                                          <FileCard
                                             item={item}
-                                            onFileClick={() => setPreviewFile(item)}
+                                            onFileClick={() => handleFileClick(item)}
                                             onRename={() => setItemToRename(item)}
                                             onDelete={() => setItemToDelete(item)}
                                          />

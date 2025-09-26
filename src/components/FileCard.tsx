@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink,
-    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music, GripVertical
+    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music, GripVertical, Link as LinkIcon
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -20,7 +20,13 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { contentService } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 
-const getIconForFileType = (fileName: string, mimeType?: string): { Icon: LucideIcon, color: string } => {
+const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
+    if (item.type === 'LINK') {
+        return { Icon: LinkIcon, color: 'text-cyan-400' };
+    }
+
+    const fileName = item.name;
+    const mimeType = item.metadata?.mime;
     const extension = fileName.split('.').pop()?.toLowerCase();
 
     if (mimeType?.startsWith('image/')) return { Icon: FileImage, color: 'text-purple-400' };
@@ -79,7 +85,6 @@ const handleForceDownload = async (url: string, name: string) => {
         URL.revokeObjectURL(blobUrl);
     } catch (error) {
         console.error("Download failed:", error);
-        // Fallback to opening in new tab
         window.open(url, '_blank');
     }
 }
@@ -100,22 +105,37 @@ export function FileCard({
 }) {
     const isMobile = useIsMobile();
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
-    const displaySize = sizeInKB < 1024 
-        ? `${sizeInKB.toFixed(1)} KB` 
-        : `${(sizeInKB / 1024).toFixed(1)} MB`;
+    const displaySize = item.type === 'LINK' 
+        ? 'Link'
+        : item.metadata?.size 
+            ? sizeInKB < 1024 
+                ? `${sizeInKB.toFixed(1)} KB` 
+                : `${(sizeInKB / 1024).toFixed(1)} MB`
+            : '--';
 
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     
-    const { Icon, color } = getIconForFileType(item.name, item.metadata?.mime);
+    const { Icon, color } = getIconForFileType(item);
+    
+    const isLink = item.type === 'LINK';
+    const linkUrl = item.metadata?.url;
+    const storagePath = item.metadata?.storagePath;
+    const openUrl = isLink ? linkUrl : storagePath;
 
     const fileContent = (
       <>
-        {showDragHandle && !isMobile && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
+            {showDragHandle && !isMobile && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+        </div>
         <div 
             className="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer"
             onClick={(e) => {
                 if (!(e.target instanceof HTMLElement && e.target.closest('[data-radix-collection-item]'))) {
-                  onFileClick(item);
+                  if (isLink && linkUrl) {
+                      window.open(linkUrl, '_blank');
+                  } else {
+                      onFileClick(item);
+                  }
                 }
               }}
         >
@@ -126,7 +146,7 @@ export function FileCard({
                 </h3>
                 {isMobile && (
                      <p className="text-xs text-slate-400 mt-0.5">
-                        {item.metadata?.size ? `${displaySize} • ${createdAt}` : createdAt}
+                        {`${displaySize} • ${createdAt}`}
                     </p>
                 )}
             </div>
@@ -137,7 +157,7 @@ export function FileCard({
                 {createdAt}
             </p>
             <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
-                {item.metadata?.size ? displaySize : ''}
+                {displaySize}
             </p>
 
             <DropdownMenu>
@@ -158,15 +178,17 @@ export function FileCard({
                   <Edit className="mr-2 h-4 w-4" />
                   <span>Rename</span>
                 </DropdownMenuItem>
-                 <DropdownMenuItem 
-                      onClick={() => item.metadata?.storagePath && handleForceDownload(item.metadata.storagePath, item.name)} 
-                      disabled={!item.metadata?.storagePath}
-                      className="cursor-pointer"
-                  >
-                  <Download className="mr-2 h-4 w-4" />
-                  <span>Download</span>
-                </DropdownMenuItem>
-                 <DropdownMenuItem onClick={() => window.open(item.metadata?.storagePath, '_blank')} disabled={!item.metadata?.storagePath} className="cursor-pointer">
+                {!isLink && (
+                     <DropdownMenuItem 
+                          onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
+                          disabled={!storagePath}
+                          className="cursor-pointer"
+                      >
+                      <Download className="mr-2 h-4 w-4" />
+                      <span>Download</span>
+                    </DropdownMenuItem>
+                )}
+                 <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="cursor-pointer">
                     <ExternalLink className="mr-2 h-4 w-4" />
                     <span>Open in new tab</span>
                 </DropdownMenuItem>
@@ -181,8 +203,10 @@ export function FileCard({
     );
     
     return (
-        <div className="group flex items-center w-full p-3 hover:bg-white/10 transition-colors rounded-lg">
+        <div className="relative group flex items-center w-full p-3 hover:bg-white/10 transition-colors rounded-lg">
             {fileContent}
         </div>
     )
 }
+
+    
