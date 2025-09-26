@@ -28,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -95,7 +96,7 @@ function SearchResults() {
                         <Skeleton className="h-16 w-full" />
                     </div>
                 ) : (
-                    <div className="space-y-3">
+                    <div className="flex flex-col">
                         {results.length > 0 ? (
                             results.map((item, index) => (
                                  <motion.div
@@ -103,6 +104,7 @@ function SearchResults() {
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.15, delay: index * 0.03 }}
+                                    className="border-b border-white/10"
                                 >
                                     {item.type === 'FILE' && (
                                          <FileCard
@@ -117,21 +119,24 @@ function SearchResults() {
                                             item={item}
                                             onRename={() => setItemToRename(item)}
                                             onDelete={() => setItemToDelete(item)}
+                                            displayAs='list'
                                         />
                                     )}
                                     {item.type === 'SUBJECT' && (
-                                         <SubjectCard subject={item} />
+                                        <div className="py-2">
+                                            <SubjectCard subject={item} />
+                                        </div>
                                     )}
                                      {item.type === 'SEMESTER' && (
                                          <Link href={`/folder/${item.id}`}>
-                                            <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
+                                            <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer my-1.5">
                                                 <h3 className="text-lg font-semibold text-white">{item.name}</h3>
                                             </div>
                                         </Link>
                                     )}
                                      {item.type === 'LEVEL' && (
                                          <Link href={`/level/${encodeURIComponent(item.name)}`}>
-                                            <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer">
+                                            <div className="glass-card p-4 group hover:bg-white/10 transition-colors cursor-pointer my-1.5">
                                                 <h3 className="text-lg font-semibold text-white">{item.name}</h3>
                                             </div>
                                         </Link>
