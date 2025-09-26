@@ -1,4 +1,5 @@
-#  медична сфера  मेडस्फेयर MedSphere
+#  MedSphere
+
 
 <p align="center">
   <img src="public/logo.svg" alt="MedSphere Logo" width="120">
