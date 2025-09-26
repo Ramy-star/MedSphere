@@ -4,7 +4,7 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useEffect, useMemo, Suspense } from 'react';
+import { useEffect, useMemo, Suspense, use } from 'react';
 import { Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Layers } from 'lucide-react';

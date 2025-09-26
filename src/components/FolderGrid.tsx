@@ -24,6 +24,7 @@ import { Folder as FolderIcon, Plus, UploadCloud, GripVertical } from 'lucide-re
 import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { UploadProgress, UploadingFile } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
@@ -47,7 +48,7 @@ function DropZone({ isVisible }: { isVisible: boolean }) {
 const SortableItemWrapper = ({ id, children }: { id: string, children: React.ReactNode }) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   const style = {
-    transform: CSS.Transform.toString(transform),
+    transform: transform ? CSS.Transform.toString(transform) : undefined,
     transition,
   };
   return (
@@ -321,5 +322,3 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
     </div>
   );
 }
-
-    
