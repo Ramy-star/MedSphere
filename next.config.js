@@ -5,6 +5,7 @@ const nextConfig = {
     allowedDevOrigins: [
       "http://localhost:3000",
       "https://3000-firebase-medsphere-1758790904275.cluster-lu4mup47g5gm4rtyvhzpwbfadi.cloudworkstations.dev",
+      "https://6000-firebase-medsphere-1758790904275.cluster-lu4mup47g5gm4rtyvhzpwbfadi.cloudworkstations.dev",
     ],
   },
 };
