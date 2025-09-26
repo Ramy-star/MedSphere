@@ -1,7 +1,7 @@
 
 'use client';
 import { 
-    MoreVertical, Edit, Trash2, Download,
+    MoreVertical, Edit, Trash2, Download, ExternalLink,
     File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -14,6 +14,10 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
+import { useState } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { contentService } from '@/lib/contentService';
 
 const getIconForFileType = (fileName: string, mimeType?: string): { Icon: LucideIcon, color: string } => {
     const extension = fileName.split('.').pop()?.toLowerCase();

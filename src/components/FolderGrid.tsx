@@ -29,6 +29,7 @@ import { UploadingFile, UploadProgress } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -81,6 +82,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (fetchedItems) {
@@ -91,7 +93,13 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   const items = orderedItems || [];
   
   const handleFileClick = (file: Content) => {
-    setPreviewFile(file);
+    if (isMobile) {
+      if (file.metadata?.storagePath) {
+        window.open(file.metadata.storagePath, '_blank');
+      }
+    } else {
+      setPreviewFile(file);
+    }
   };
 
   const handleRename = async (newName: string) => {

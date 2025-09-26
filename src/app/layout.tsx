@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Metadata } from "next";
@@ -23,7 +24,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const firebaseConfig = getFirebaseConfig();
 
   return (
@@ -36,7 +36,7 @@ export default function RootLayout({
       <body className={`${nunitoSans.className} h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
           <div className="flex flex-col h-full w-full">
-            <Header onMenuClick={() => setSidebarOpen(true)} />
+            <Header />
             <main className="flex flex-1 w-full overflow-hidden">
               {children}
             </main>
