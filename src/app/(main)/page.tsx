@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -8,6 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/firebase/provider';
+import { cn } from '@/lib/utils';
 
 export default function HomePage() {
   const { db } = useFirebase();
@@ -58,17 +60,34 @@ export default function HomePage() {
             );
       }
       
+      const isOdd = levels.length % 2 !== 0;
+
       return (
            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-              {levels.map((level, index) => (
-                  <div key={level.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.05 + 0.25}s` }}>
-                      <Link href={`/level/${encodeURIComponent(level.name)}`}>
-                      <div className="glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center">
-                          <h3 className="text-base md:text-xl font-semibold text-white">{level.name}</h3>
-                      </div>
-                      </Link>
-                  </div>
-              ))}
+              {levels.map((level, index) => {
+                  const isLastItem = index === levels.length - 1;
+                  return (
+                    <div 
+                        key={level.id}
+                        className={cn(
+                            "animate-fade-in",
+                            // On mobile, if it's the last item and the total is odd, span 2 columns
+                            isLastItem && isOdd && "col-span-2 sm:col-span-1 md:col-span-1"
+                        )} 
+                        style={{ animationDelay: `${index * 0.05 + 0.25}s` }}
+                    >
+                        <Link href={`/level/${encodeURIComponent(level.name)}`}>
+                        <div className={cn(
+                            "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center",
+                            // Center the content if we are spanning 2 columns
+                            isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
+                        )}>
+                            <h3 className="text-base md:text-xl font-semibold text-white">{level.name}</h3>
+                        </div>
+                        </Link>
+                    </div>
+                  )
+                })}
           </div>
       )
   }
