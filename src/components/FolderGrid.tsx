@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useRef, useCallback, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -20,7 +19,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-import { Folder as FolderIcon, Plus, UploadCloud, GripVertical } from 'lucide-react';
+import { Folder as FolderIcon, Plus, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
@@ -30,9 +29,8 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { v4 as uuidv4 } from 'uuid';
-import type { UploadCallbacks } from '@/lib/contentService';
 import React from 'react';
+
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -53,9 +51,9 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
     transform: transform ? CSS.Transform.toString(transform) : undefined,
     transition,
   };
-
-  const isFolder = (children as React.ReactElement)?.props?.item?.type === 'FOLDER';
   
+  const isFolder = (children as React.ReactElement)?.props?.item?.type === 'FOLDER';
+
   const childrenWithProps = React.cloneElement(children as React.ReactElement, { 
     ...((children as React.ReactElement).props),
     showDragHandle: !isFolder,
@@ -67,6 +65,7 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
     </div>
   );
 };
+
 
 export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFileSelected }: { parentId: string, uploadingFiles: UploadingFile[], setUploadingFiles: Dispatch<SetStateAction<UploadingFile[]>>, onFileSelected: (file: File) => void }) {
   const [orderedItems, setOrderedItems] = useState<Content[] | null>(null);
@@ -174,7 +173,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
 
   const containerClasses = isSubjectView 
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-    : "flex flex-col";
+    : "flex flex-col space-y-2";
 
 
   return (
@@ -240,37 +239,42 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
                     };
                     
-                    const content = it.type === 'SUBJECT' ? (
-                      <SubjectCard subject={it} />
-                    ) : it.type === 'FOLDER' ? (
-                      <FolderCard 
+                    let content;
+                    if (it.type === 'SUBJECT') {
+                      content = <SubjectCard subject={it} />;
+                    } else if (it.type === 'FOLDER') {
+                       content = <FolderCard 
                         item={it} 
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
-                      />
-                    ) : (
-                      <FileCard 
+                      />;
+                    } else if (it.type === 'FILE') {
+                      content = <FileCard 
                         item={it} 
                         onFileClick={handleFileClick} 
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
                         showDragHandle={!isMobile}
-                      />
-                    );
-
-                    const wrapperClasses = cn(
-                        "relative",
-                         // Add bottom border to all but last item if not in subject view
-                        !isSubjectView && index < items.length - 1 && 'border-b border-white/5'
-                    );
+                      />;
+                    } else {
+                      content = null;
+                    }
 
                     if (isMobile) {
                         return <motion.div key={itemKey} {...motionProps} className="px-4 border-b border-white/10">{content}</motion.div>
                     }
 
+                    if (isSubjectView) {
+                       return (
+                           <motion.div key={itemKey} {...motionProps}>
+                               {content}
+                           </motion.div>
+                       )
+                    }
+
                     return (
-                        <motion.div key={itemKey} {...motionProps} className={wrapperClasses}>
-                            {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
+                        <motion.div key={itemKey} {...motionProps}>
+                            <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>
                         </motion.div>
                     )
                   })}
