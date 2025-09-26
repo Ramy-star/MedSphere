@@ -1,4 +1,6 @@
+<p align="center">
 #  MedSphere
+</p>
 
 <p align="center">
   <img src="public/logo.svg" alt="MedSphere Logo" width="120">
