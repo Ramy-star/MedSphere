@@ -22,6 +22,11 @@ export function FirebaseClientProvider({
   useEffect(() => {
     const init = async () => {
         try {
+            // Basic validation for production config
+            if (process.env.NODE_ENV === 'production' && (!config || !config.apiKey)) {
+              throw new Error("Firebase config is missing or incomplete for production environment. Ensure environment variables are set in your hosting provider.");
+            }
+
             const instances = await initializeFirebase(config);
             setFirebase(instances);
             
@@ -30,21 +35,20 @@ export function FirebaseClientProvider({
             // Handle redirect result first
             getRedirectResult(auth).catch(err => {
               // This can throw if there is no redirect result, which is fine.
-              // We log other errors.
+              // We log other errors as they might indicate a configuration issue.
               if (err.code !== 'auth/no-auth-event') {
-                console.error("Error getting redirect result:", err);
-                setError(err);
+                console.error("Firebase getRedirectResult error:", err);
+                setError(new Error(`Authentication redirect failed: ${err.message}`));
               }
             });
 
             // Then, set up the state listener
             const unsubscribe = onAuthStateChanged(auth, (user) => {
               setLoading(false); // Auth state is resolved, stop loading
-              // unsubscribe(); // We should not unsubscribe here, we want to listen for changes
             }, (error) => {
+              console.error("Firebase onAuthStateChanged error:", error);
               setError(error);
               setLoading(false);
-              // unsubscribe();
             });
 
             return unsubscribe;
@@ -83,10 +87,13 @@ export function FirebaseClientProvider({
 
   if (error) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center">
-        <div className="rounded-lg border border-destructive bg-card p-6 text-center text-destructive">
+      <div className="flex h-screen w-screen items-center justify-center p-4">
+        <div className="rounded-lg border border-destructive bg-card p-6 text-center text-destructive-foreground max-w-lg">
           <h2 className="text-lg font-semibold">Firebase Initialization Failed</h2>
-          <p className="text-sm">{error?.message || "An unknown error occurred."}</p>
+          <p className="text-sm mt-2 mb-4">{error?.message || "An unknown error occurred."}</p>
+          <code className="text-xs bg-destructive/20 p-2 rounded-md block text-left whitespace-pre-wrap">
+            {`Error details: ${error?.stack || 'No stack available.'}`}
+          </code>
         </div>
       </div>
     );
