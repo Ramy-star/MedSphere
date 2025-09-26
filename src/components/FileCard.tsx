@@ -1,6 +1,6 @@
 
 'use client';
-import { File, MoreVertical, Edit, Trash2, Download, FileText, Image, Presentation, Sheet, AudioWaveform, Video, LucideIcon } from 'lucide-react';
+import { File, MoreVertical, Edit, Trash2, Download, FileText, Image, Presentation, Sheet, AudioWaveform, Video, LucideIcon, Upload } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -32,13 +32,15 @@ export function FileCard({
     onFileClick, 
     onRename, 
     onDelete, 
-    onDownload
+    onDownload,
+    onUpdate
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
     onDownload: () => void,
+    onUpdate: () => void
 }) {
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
@@ -96,6 +98,10 @@ export function FileCard({
            <DropdownMenuItem onClick={onDownload} className="cursor-pointer">
             <Download className="mr-2 h-4 w-4" />
             <span>Download</span>
+          </DropdownMenuItem>
+           <DropdownMenuItem onClick={onUpdate} className="cursor-pointer">
+            <Upload className="mr-2 h-4 w-4" />
+            <span>Update File</span>
           </DropdownMenuItem>
           <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
             <Trash2 className="mr-2 h-4 w-4" />

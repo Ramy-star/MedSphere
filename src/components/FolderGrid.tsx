@@ -1,8 +1,8 @@
 
 'use client';
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { contentService, Content, UploadCallbacks } from '@/lib/contentService';
+import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
 import { FileCard } from './FileCard';
 import { SubjectCard } from './subject-card';
@@ -20,103 +20,16 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
-import { Folder as FolderIcon, FolderPlus, Plus, Upload, UploadCloud, GripVertical } from 'lucide-react';
-import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
-import { NewFolderDialog } from './new-folder-dialog';
-import { getFile } from '@/lib/indexedDBService';
+import { Folder as FolderIcon, Plus, UploadCloud, GripVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 import { UploadProgress, UploadingFile } from './UploadProgress';
-import { v4 as uuidv4 } from 'uuid';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
 import { useFirebase } from '@/firebase/provider';
-
-
-type AddContentMenuProps = {
-  parentId: string | null;
-  onFileSelected: (file: File) => void;
-  trigger: React.ReactNode;
-}
-
-function AddContentMenu({ parentId, onFileSelected, trigger }: AddContentMenuProps) {
-  const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const [popoverOpen, setPopoverOpen] = useState(false);
-
-  const handleAddFolder = async (folderName: string) => {
-    await contentService.createFolder(parentId, folderName);
-    // Refetch is handled by useCollection
-    setPopoverOpen(false);
-  };
-
-  const handleUploadClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file) {
-      onFileSelected(file);
-      setPopoverOpen(false);
-    }
-    // Reset file input to allow uploading the same file again
-    if(event.target) {
-        event.target.value = '';
-    }
-  };
-
-  const menuItems = [
-      {
-          label: "New Folder",
-          icon: FolderPlus,
-          action: () => setShowNewFolderDialog(true),
-      },
-      {
-          label: "Upload File",
-          icon: Upload,
-          action: handleUploadClick,
-      }
-  ]
-
-  return (
-    <>
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange}
-        className="hidden" 
-      />
-      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-        <PopoverTrigger asChild>
-          {trigger}
-        </PopoverTrigger>
-        <PopoverContent 
-          className="w-56 p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10" 
-          align="end"
-        >
-            <div className="p-2 space-y-1">
-              <p className="px-2 py-1 text-sm font-semibold text-slate-300">Create New</p>
-              {menuItems.map((item) => (
-                  <div 
-                      key={item.label}
-                      onClick={item.action}
-                      className="flex items-center gap-3 p-2 rounded-lg text-sm text-slate-200 hover:bg-white/10 cursor-pointer transition-colors"
-                  >
-                      <item.icon className="h-4 w-4 text-slate-400" />
-                      <span>{item.label}</span>
-                  </div>
-              ))}
-          </div>
-        </PopoverContent>
-      </Popover>
-      <NewFolderDialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog} onAddFolder={handleAddFolder} />
-    </>
-  );
-}
+import { AddContentMenu } from './AddContentMenu';
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -147,7 +60,15 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   );
 };
 
-export function FolderGrid({ parentId, onContentAdded }: { parentId: string | null, onContentAdded?: () => void }) {
+type FolderGridProps = {
+    parentId: string | null;
+    uploadingFiles: UploadingFile[];
+    setUploadingFiles: Dispatch<SetStateAction<UploadingFile[]>>;
+    onFileSelected: (file: File) => void;
+};
+
+
+export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFileSelected }: FolderGridProps) {
   const [orderedItems, setOrderedItems] = useState<Content[] | null>(null);
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
@@ -159,7 +80,6 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   const [itemToUpdate, setItemToUpdate] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
-  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const updateFileRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -174,44 +94,6 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   
   const items = orderedItems || [];
   
-  const processFileUpload = (file: File) => {
-    const uploadId = uuidv4();
-    const newUploadingFile: UploadingFile = {
-        id: uploadId,
-        name: file.name,
-        size: file.size,
-        progress: 0,
-        status: 'uploading',
-    };
-
-    setUploadingFiles(prev => [...prev, newUploadingFile]);
-    
-    const callbacks: UploadCallbacks = {
-        onProgress: (progress) => {
-            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress } : f));
-        },
-        onSuccess: (content) => {
-            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress: 100, status: 'success' } : f));
-            setTimeout(() => {
-                setUploadingFiles(prev => prev.filter(f => f.id !== uploadId));
-                // Data refetches from useCollection hook, no need for onContentAdded()
-            }, 1000);
-        },
-        onError: (error) => {
-            console.error("Upload failed in component:", error);
-            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, status: 'error' } : f));
-            toast({
-                variant: 'destructive',
-                title: 'Upload Failed',
-                description: `Could not upload ${file.name}. Please try again.`
-            })
-        }
-    };
-    
-    contentService.uploadFile(parentId, file, callbacks);
-  };
-
-
   const handleFileClick = (file: Content) => {
     setPreviewFile(file);
   };
@@ -250,6 +132,20 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
     }
   }
 
+  const handleUpdateClick = (item: Content) => {
+      setItemToUpdate(item);
+      updateFileRef.current?.click();
+  };
+
+  const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
+      if (!itemToUpdate || !event.target.files || event.target.files.length === 0) return;
+      const file = event.target.files[0];
+      await contentService.updateFile(itemToUpdate.id, file);
+      toast({ title: 'File Updated', description: `"${itemToUpdate.name}" has been updated.`});
+      setItemToUpdate(null);
+  };
+
+
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -279,7 +175,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
     const files = e.dataTransfer.files;
     if (files && files.length > 0) {
       for (const file of Array.from(files)) {
-        processFileUpload(file);
+        onFileSelected(file);
       }
     }
   };
@@ -316,6 +212,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
         onDrop={handleDrop}
         className={cn("h-full", isDraggingOver && "opacity-50")}
     >
+      <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
       <DropZone isVisible={isDraggingOver} />
       
       {loading && (
@@ -333,7 +230,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
               <p className="mt-2 text-sm text-slate-400">Drag and drop files here, or use the button to add content.</p>
               <AddContentMenu 
                 parentId={parentId}
-                onFileSelected={processFileUpload}
+                onFileSelected={onFileSelected}
                 trigger={
                   <Button className="mt-6 rounded-xl">
                     <Plus className="mr-2 h-4 w-4" />
@@ -365,6 +262,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
                         onDownload={() => handleDownloadClick(it)}
+                        onUpdate={() => handleUpdateClick(it)}
                       />
                     );
 

@@ -4,6 +4,7 @@
 import { File, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
+import { Content, UploadCallbacks } from '@/lib/contentService';
 
 export type UploadingFile = {
   id: string;
@@ -12,6 +13,8 @@ export type UploadingFile = {
   progress: number;
   status: 'uploading' | 'success' | 'error';
 };
+
+export { UploadCallbacks };
 
 export function UploadProgress({ file }: { file: UploadingFile }) {
     const sizeInKB = file.size / 1024;
@@ -58,5 +61,4 @@ export function UploadProgress({ file }: { file: UploadingFile }) {
         </div>
     );
 }
-
     

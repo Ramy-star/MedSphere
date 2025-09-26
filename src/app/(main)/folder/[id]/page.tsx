@@ -1,24 +1,23 @@
 
 'use client';
 
-import { useEffect, useState, useCallback, Suspense, use } from 'react';
+import { useEffect, useState, useCallback, Suspense } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
-import { Content } from '@/lib/contentService';
+import { Content, contentService } from '@/lib/contentService';
 import { allSubjectIcons } from '@/lib/file-data';
 import { notFound } from 'next/navigation';
 import { LucideIcon, Folder, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { useCollection } from '@/firebase/firestore/use-collection';
-
+import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '@/hooks/use-toast';
+import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 
 function FolderPageContent({ id }: { id: string }) {
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
-  
-  // This hook is not ideal for fetching a single document (the parent).
-  // A dedicated `useDoc` for the parent would be better if we needed more than just the name for a breadcrumb.
-  // For simplicity, we'll rely on the breadcrumb component's own fetching logic.
+  const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
+  const { toast } = useToast();
   
   useEffect(() => {
     if (!loadingCurrent && !current) {
@@ -26,10 +25,44 @@ function FolderPageContent({ id }: { id: string }) {
     }
   }, [loadingCurrent, current]);
 
+  const processFileUpload = useCallback((file: File) => {
+    if (!current) return;
 
-  const fetchFolderData = useCallback(async () => {
-    // This function is kept for prop consistency but is now managed by hooks.
-  }, []);
+    const uploadId = uuidv4();
+    const newUploadingFile: UploadingFile = {
+        id: uploadId,
+        name: file.name,
+        size: file.size,
+        progress: 0,
+        status: 'uploading',
+    };
+
+    setUploadingFiles(prev => [...prev, newUploadingFile]);
+    
+    const callbacks: UploadCallbacks = {
+        onProgress: (progress) => {
+            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress } : f));
+        },
+        onSuccess: (content) => {
+            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress: 100, status: 'success' } : f));
+            toast({ title: "Upload Complete", description: `"${content.name}" has been uploaded.` });
+            setTimeout(() => {
+                setUploadingFiles(prev => prev.filter(f => f.id !== uploadId));
+            }, 2000);
+        },
+        onError: (error) => {
+            console.error("Upload failed in component:", error);
+            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, status: 'error' } : f));
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: `Could not upload ${file.name}. Please try again.`
+            })
+        }
+    };
+    
+    contentService.uploadFile(current.id, file, callbacks);
+  }, [current, toast]);
   
   if (loadingCurrent || !current) {
       return <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
@@ -61,7 +94,6 @@ function FolderPageContent({ id }: { id: string }) {
       iconColor = 'text-green-400';
   }
 
-
   const extendedCurrent = {
       ...current,
       icon: Icon,
@@ -70,9 +102,9 @@ function FolderPageContent({ id }: { id: string }) {
 
   return (
     <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
-       <FileExplorerHeader currentFolder={extendedCurrent} onContentAdded={fetchFolderData} />
+       <FileExplorerHeader currentFolder={extendedCurrent} onFileSelected={processFileUpload} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-          <FolderGrid parentId={id} onContentAdded={fetchFolderData} />
+          <FolderGrid parentId={id} uploadingFiles={uploadingFiles} setUploadingFiles={setUploadingFiles} onFileSelected={processFileUpload} />
        </div>
     </main>
   );
