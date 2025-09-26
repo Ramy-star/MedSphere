@@ -51,10 +51,10 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
     transform: transform ? CSS.Transform.toString(transform) : undefined,
     transition,
   };
-  
+
   const isFolder = (children as React.ReactElement)?.props?.item?.type === 'FOLDER';
 
-  const childrenWithProps = React.cloneElement(children as React.ReactElement, { 
+  const childrenWithProps = React.cloneElement(children as React.ReactElement, {
     ...((children as React.ReactElement).props),
     showDragHandle: !isFolder,
   });
@@ -73,7 +73,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
       where: ['parentId', '==', parentId],
       orderBy: ['order', 'asc']
   });
-  
+
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
@@ -88,7 +88,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
       setOrderedItems(fetchedItems);
     }
   }, [fetchedItems]);
-  
+
   const items = orderedItems || [];
 
   const handleFileClick = (file: Content) => {
@@ -107,7 +107,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
     toast({ title: "Renamed", description: `"${itemToRename.name}" was renamed to "${newName}".` });
     setItemToRename(null);
   };
-  
+
   const handleDelete = async () => {
     if (!itemToDelete) return;
     await contentService.delete(itemToDelete.id);
@@ -149,7 +149,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
       }
     }
   };
-  
+
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -160,10 +160,10 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
             if (oldIndex === -1 || newIndex === -1) return currentItems;
 
             const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
-            
+
             const orderedIds = newOrderedItems.map(item => item.id);
             contentService.updateOrder(parentId, orderedIds);
-            
+
             return newOrderedItems;
         });
     }
@@ -171,13 +171,13 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
 
   const isSubjectView = items.length > 0 && items.every(it => it.type === 'SUBJECT');
 
-  const containerClasses = isSubjectView 
+  const containerClasses = isSubjectView
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-    : "flex flex-col space-y-2";
+    : "flex flex-col";
 
 
   return (
-    <div 
+    <div
         ref={dropZoneRef}
         onDragEnter={handleDragEnter}
         onDragLeave={handleDragLeave}
@@ -186,7 +186,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
         className={cn("h-full", isDraggingOver && "opacity-50")}
     >
       <DropZone isVisible={isDraggingOver} />
-      
+
       {loading && (
         <div className={isSubjectView ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2"}>
           {[...Array(isSubjectView ? 4 : 3)].map((_, i) => (
@@ -200,7 +200,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
               <p className="mt-2 text-sm text-slate-400">Drag and drop files here, or use the button to add content.</p>
-              <AddContentMenu 
+              <AddContentMenu
                 parentId={parentId}
                 onFileSelected={onFileSelected}
                 trigger={
@@ -212,7 +212,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
               />
           </div>
       )}
-      
+
       {(!loading || items.length > 0 || uploadingFiles.length > 0) && items && (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
@@ -238,21 +238,21 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         exit:{ opacity: 0, y: 8 },
                         transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
                     };
-                    
+
                     let content;
                     if (it.type === 'SUBJECT') {
                       content = <SubjectCard subject={it} />;
                     } else if (it.type === 'FOLDER') {
-                       content = <FolderCard 
-                        item={it} 
+                       content = <FolderCard
+                        item={it}
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
                         displayAs={isSubjectView ? 'grid' : 'list'}
                       />;
                     } else if (it.type === 'FILE') {
-                      content = <FileCard 
-                        item={it} 
-                        onFileClick={handleFileClick} 
+                      content = <FileCard
+                        item={it}
+                        onFileClick={handleFileClick}
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
                         showDragHandle={!isMobile}
@@ -266,7 +266,11 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                     }
 
                     return (
-                      <motion.div key={itemKey} {...motionProps}>
+                      <motion.div
+                        key={itemKey}
+                        {...motionProps}
+                        className={cn(!isSubjectView && "border-b border-white/10")}
+                      >
                         {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
                       </motion.div>
                     )
@@ -276,15 +280,15 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
             </SortableContext>
           </DndContext>
       )}
-      
+
       <FilePreviewModal
         item={previewFile}
         onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
       />
 
-      <RenameDialog 
-        item={itemToRename} 
-        onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
+      <RenameDialog
+        item={itemToRename}
+        onOpenChange={(isOpen) => !isOpen && setItemToRename(null)}
         onRename={handleRename}
       />
 
