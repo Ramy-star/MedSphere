@@ -1,23 +1,57 @@
 
 'use server';
 /**
- * @fileOverview A client-side utility for searching files.
+ * @fileOverview A client-side utility for searching files using Fuse.js for fuzzy search.
  */
 import type { Content } from '@/lib/contentService';
+import Fuse from 'fuse.js';
 
+let fuse: Fuse<Content> | null = null;
+let allItemsCache: Content[] = [];
 
 /**
- * Performs a case-insensitive search on an array of content items.
+ * Initializes the Fuse.js instance with the provided items.
+ * This should be called whenever the master list of items changes.
+ * @param items The array of Content items to build the search index from.
+ */
+function initializeFuse(items: Content[]) {
+  // Only re-initialize if the items have actually changed.
+  if (items === allItemsCache) {
+    return;
+  }
+  
+  allItemsCache = items;
+  fuse = new Fuse(items, {
+    keys: [
+      { name: 'name', weight: 0.7 }, // Give more weight to the name
+      { name: 'type', weight: 0.3 }  // Less weight to the type
+    ],
+    includeScore: true,
+    threshold: 0.4, // Adjust this value to make the search more or less strict
+    ignoreLocation: true,
+  });
+}
+
+/**
+ * Performs a fuzzy search on an array of content items using Fuse.js.
  * @param query The search query string.
  * @param items The array of Content items to search through.
- * @returns A promise that resolves to an array of matching Content items.
+ * @returns A promise that resolves to an array of matching Content items, sorted by relevance.
  */
 export async function search(query: string, items: Content[]): Promise<Content[]> {
-   if (!query) {
+  if (!query) {
     return [];
   }
-  const lowerCaseQuery = query.toLowerCase();
+
+  // Ensure Fuse is initialized with the latest items
+  initializeFuse(items);
   
-  // A simple client-side search implementation.
-  return items.filter(item => item.name.toLowerCase().includes(lowerCaseQuery));
+  if (!fuse) {
+      return [];
+  }
+
+  const results = fuse.search(query);
+  
+  // The result from Fuse.js includes the item and a score. We just need the item.
+  return results.map(result => result.item);
 }
