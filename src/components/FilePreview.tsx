@@ -4,6 +4,11 @@
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 
+// Import react-pdf styles here to ensure they are loaded with the dynamic component
+import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
+import 'react-pdf/dist/esm/Page/TextLayer.css';
+
+
 const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false });
 
 export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName: string }) {
