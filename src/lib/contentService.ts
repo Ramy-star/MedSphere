@@ -89,12 +89,7 @@ export const contentService = {
 
     try {
       await runTransaction(db, async (transaction) => {
-        let childrenQuery;
-        if (parentId) {
-            childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
-        } else {
-            childrenQuery = query(collection(db, 'content'), where('parentId', '==', null));
-        }
+        const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
         
         const childrenSnapshot = await transaction.get(childrenQuery);
         const order = childrenSnapshot.size;

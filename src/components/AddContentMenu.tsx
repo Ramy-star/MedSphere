@@ -24,12 +24,12 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
     try {
         await contentService.createFolder(parentId, folderName);
         toast({ title: 'Folder Created', description: `"${folderName}" has been created.` });
+        setShowNewFolderDialog(false);
+        setPopoverOpen(false);
     } catch(error) {
         console.error("Failed to create folder:", error);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to create folder.' });
-    } finally {
-        setShowNewFolderDialog(false);
-        setPopoverOpen(false);
+        // Do not close dialogs on error
     }
   };
 
@@ -97,5 +97,4 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
     </>
   );
 }
-
     
