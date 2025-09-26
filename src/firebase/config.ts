@@ -15,8 +15,16 @@ export function getFirebaseConfig() {
     };
     
     // Simple validation
-    if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
-        console.error("Firebase config is not set. Please check your .env file.");
+    if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.authDomain) {
+        console.error("Firebase config is not fully set. Please check your .env.local file for all NEXT_PUBLIC_FIREBASE_* variables.");
+        // Try to construct authDomain from projectId if it's missing
+        if(firebaseConfig.projectId && !firebaseConfig.authDomain) {
+            console.log(`Attempting to construct authDomain from projectId: ${firebaseConfig.projectId}.firebaseapp.com`);
+            return {
+                ...firebaseConfig,
+                authDomain: `${firebaseConfig.projectId}.firebaseapp.com`
+            }
+        }
         return {};
     }
     return firebaseConfig;
