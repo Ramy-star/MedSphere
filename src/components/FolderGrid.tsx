@@ -32,6 +32,7 @@ import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { v4 as uuidv4 } from 'uuid';
 import type { UploadCallbacks } from '@/lib/contentService';
+import React from 'react';
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -52,9 +53,17 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
     transform: transform ? CSS.Transform.toString(transform) : undefined,
     transition,
   };
+
+  const isFolder = (children as React.ReactElement)?.props?.item?.type === 'FOLDER';
+  
+  const childrenWithProps = React.cloneElement(children as React.ReactElement, { 
+    ...((children as React.ReactElement).props),
+    showDragHandle: !isFolder,
+  });
+
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="flex items-center w-full">
-        {children}
+        {childrenWithProps}
     </div>
   );
 };
@@ -165,7 +174,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
 
   const containerClasses = isSubjectView 
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-    : cn("flex flex-col", isMobile ? "" : "gap-0");
+    : "flex flex-col";
 
 
   return (
@@ -223,6 +232,14 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                     </motion.div>
                   ))}
                   {items.map((it: Content, index) => {
+                    const itemKey = it.id;
+                    const motionProps = {
+                        initial:{ opacity: 0, y: 8 },
+                        animate:{ opacity: 1, y: 0 },
+                        exit:{ opacity: 0, y: 8 },
+                        transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
+                    };
+                    
                     const content = it.type === 'SUBJECT' ? (
                       <SubjectCard subject={it} />
                     ) : it.type === 'FOLDER' ? (
@@ -241,27 +258,18 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                       />
                     );
 
-                    const motionProps = {
-                        key:it.id,
-                        initial:{ opacity: 0, y: 8 },
-                        animate:{ opacity: 1, y: 0 },
-                        exit:{ opacity: 0, y: 8 },
-                        transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
-                    };
-                    
                     const wrapperClasses = cn(
-                        "relative", // Needed for motion exit animations
-                        it.type !== 'FOLDER' && 'border-b border-white/5',
+                        "relative",
                          // Add bottom border to all but last item if not in subject view
-                        !isSubjectView && index === items.length - 1 && 'border-b-0'
+                        !isSubjectView && index < items.length - 1 && 'border-b border-white/5'
                     );
 
                     if (isMobile) {
-                        return <motion.div {...motionProps} className="px-4 border-b border-white/10">{content}</motion.div>
+                        return <motion.div key={itemKey} {...motionProps} className="px-4 border-b border-white/10">{content}</motion.div>
                     }
 
                     return (
-                        <motion.div {...motionProps} className={wrapperClasses}>
+                        <motion.div key={itemKey} {...motionProps} className={wrapperClasses}>
                             {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
                         </motion.div>
                     )
