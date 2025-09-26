@@ -1,31 +1,52 @@
+
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth, signInAnonymously } from 'firebase/auth';
-import { getFirestore, Firestore } from 'firebase/firestore';
+import { getAuth, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
+import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
+import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
-// Re-export hooks
+// Re-export provider hooks
 export { useFirebase } from './provider';
 
 // Initialize db as a variable that can be exported.
 export let db: Firestore;
+
+const EMULATORS_STARTED = 'EMULATORS_STARTED';
+function startEmulators(auth: any, db: any, storage: any) {
+    // @ts-ignore
+    if (global[EMULATORS_STARTED]) {
+        return;
+    }
+    // @ts-ignore
+    global[EMULATORS_STARTED] = true;
+    connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+    connectStorageEmulator(storage, "127.0.0.1", 9199);
+}
+
 
 export async function initializeFirebase(config: FirebaseOptions) {
   const apps = getApps();
   const app = !apps.length ? initializeApp(config) : getApp();
   const auth = getAuth(app);
   db = getFirestore(app);
+  const storage = getStorage(app);
+
+  if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_USE_EMULATORS === "true") {
+      startEmulators(auth, db, storage);
+  }
   
-  // Try to sign in anonymously, but don't let it block initialization.
-  // This helps debug if the issue is with auth setup in the Firebase console.
   try {
-    await signInAnonymously(auth);
-    console.log("Signed in anonymously");
+    if (auth.currentUser === null) {
+      await signInAnonymously(auth);
+      console.log("Signed in anonymously");
+    }
   } catch (error) {
     console.error("Anonymous sign-in failed. Please ensure it's enabled in the Firebase console.", error);
-    // We don't re-throw the error, allowing the app to initialize.
-    // Data-related operations will likely fail due to security rules.
   }
 
-  return { app, auth, db };
+  return { app, auth, db, storage };
 }
+
+    

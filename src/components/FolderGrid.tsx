@@ -2,7 +2,7 @@
 'use client';
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { contentService, Content } from '@/lib/contentService';
+import { contentService, Content, UploadCallbacks } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
 import { FileCard } from './FileCard';
 import { SubjectCard } from './subject-card';
@@ -31,23 +31,25 @@ import { CSS } from '@dnd-kit/utilities';
 import { UploadProgress, UploadingFile } from './UploadProgress';
 import { v4 as uuidv4 } from 'uuid';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { useToast } from '@/hooks/use-toast';
+import { getStorage, ref, getDownloadURL } from 'firebase/storage';
+import { useFirebase } from '@/firebase/provider';
 
 
 type AddContentMenuProps = {
   parentId: string | null;
-  onContentAdded: () => void;
   onFileSelected: (file: File) => void;
   trigger: React.ReactNode;
 }
 
-function AddContentMenu({ parentId, onContentAdded, onFileSelected, trigger }: AddContentMenuProps) {
+function AddContentMenu({ parentId, onFileSelected, trigger }: AddContentMenuProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
   const handleAddFolder = async (folderName: string) => {
     await contentService.createFolder(parentId, folderName);
-    onContentAdded();
+    // Refetch is handled by useCollection
     setPopoverOpen(false);
   };
 
@@ -60,6 +62,10 @@ function AddContentMenu({ parentId, onContentAdded, onFileSelected, trigger }: A
     if (file) {
       onFileSelected(file);
       setPopoverOpen(false);
+    }
+    // Reset file input to allow uploading the same file again
+    if(event.target) {
+        event.target.value = '';
     }
   };
 
@@ -141,7 +147,7 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   );
 };
 
-export function FolderGrid({ parentId, onContentAdded }: { parentId: string | null, onContentAdded: () => void }) {
+export function FolderGrid({ parentId, onContentAdded }: { parentId: string | null, onContentAdded?: () => void }) {
   const [orderedItems, setOrderedItems] = useState<Content[] | null>(null);
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
@@ -157,6 +163,8 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
   const updateFileRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const { toast } = useToast();
+  const { app } = useFirebase();
 
   useEffect(() => {
     if (fetchedItems) {
@@ -172,36 +180,35 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
         id: uploadId,
         name: file.name,
         size: file.size,
-        progress: 0
+        progress: 0,
+        status: 'uploading',
     };
 
     setUploadingFiles(prev => [...prev, newUploadingFile]);
-
-    // This is a mock upload progress. For real implementation,
-    // you would use Firebase Storage's `on` state changed listener.
-    const uploadInterval = setInterval(() => {
-        setUploadingFiles(prev => prev.map(f => {
-            if (f.id === uploadId && f.progress < 100) {
-                const diff = Math.random() * 20;
-                return { ...f, progress: Math.min(f.progress + diff, 100) };
-            }
-            return f;
-        }));
-    }, 200);
-
-    contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type })
-      .then(newFileItem => {
-         // In a real app, you'd upload the file to Firebase Storage here and save the URL.
-         console.log("File metadata created in Firestore:", newFileItem);
-      })
-      .finally(() => {
-        clearInterval(uploadInterval);
-        setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress: 100 } : f));
-        setTimeout(() => {
-            setUploadingFiles(prev => prev.filter(f => f.id !== uploadId));
-            onContentAdded(); // This will trigger a refetch in parent if needed
-        }, 800);
-      });
+    
+    const callbacks: UploadCallbacks = {
+        onProgress: (progress) => {
+            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress } : f));
+        },
+        onSuccess: (content) => {
+            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress: 100, status: 'success' } : f));
+            setTimeout(() => {
+                setUploadingFiles(prev => prev.filter(f => f.id !== uploadId));
+                // Data refetches from useCollection hook, no need for onContentAdded()
+            }, 1000);
+        },
+        onError: (error) => {
+            console.error("Upload failed in component:", error);
+            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, status: 'error' } : f));
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: `Could not upload ${file.name}. Please try again.`
+            })
+        }
+    };
+    
+    contentService.uploadFile(parentId, file, callbacks);
   };
 
 
@@ -221,25 +228,27 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
     setItemToDelete(null);
   };
   
-  const handleUpdateClick = (item: Content) => {
-    setItemToUpdate(item);
-    updateFileRef.current?.click();
-  };
-  
   const handleDownloadClick = async (item: Content) => {
-    if (item.type !== 'FILE') return;
-    // This needs to be adapted to download from Firebase Storage
-    console.log("Download clicked for", item.name);
-  }
-
-
-  const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
-    if (file && itemToUpdate) {
-      await contentService.updateFileContent(itemToUpdate.id, { name: file.name, size: file.size, mime: file.type });
-      setItemToUpdate(null);
+    if (!app || !item.metadata?.storagePath) {
+        toast({ variant: 'destructive', title: 'Download Failed', description: 'File path is not available.' });
+        return;
+    };
+    const storage = getStorage(app);
+    const fileRef = storageRef(storage, item.metadata.storagePath);
+    try {
+        const url = await getDownloadURL(fileRef);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = item.name;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    } catch(error) {
+        console.error("Error getting download URL:", error);
+        toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not get file URL.' });
     }
-  };
+  }
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -285,7 +294,7 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
             const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
             
             const orderedIds = newOrderedItems.map(item => item.id);
-            contentService.updateOrder(parentId, orderedIds); // Update in backend
+            contentService.updateOrder(parentId, orderedIds);
             
             return newOrderedItems;
         });
@@ -308,7 +317,6 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
         className={cn("h-full", isDraggingOver && "opacity-50")}
     >
       <DropZone isVisible={isDraggingOver} />
-      <input type="file" ref={updateFileRef} className="hidden" onChange={handleFileUpdate} />
       
       {loading && (
         <div className={isSubjectView ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2"}>
@@ -325,7 +333,6 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
               <p className="mt-2 text-sm text-slate-400">Drag and drop files here, or use the button to add content.</p>
               <AddContentMenu 
                 parentId={parentId}
-                onContentAdded={onContentAdded}
                 onFileSelected={processFileUpload}
                 trigger={
                   <Button className="mt-6 rounded-xl">
@@ -357,7 +364,6 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
                         onFileClick={handleFileClick} 
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
-                        onUpdate={() => handleUpdateClick(it)}
                         onDownload={() => handleDownloadClick(it)}
                       />
                     );
@@ -417,3 +423,5 @@ export function FolderGrid({ parentId, onContentAdded }: { parentId: string | nu
     </div>
   );
 }
+
+    

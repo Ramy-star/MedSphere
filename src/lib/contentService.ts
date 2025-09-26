@@ -2,9 +2,9 @@
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment } from 'firebase/firestore';
+import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
-import { naturalSort } from './sort';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -14,13 +14,24 @@ export type Content = {
   name: string;
   type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE';
   parentId: string | null;
-  metadata?: any;
+  metadata?: {
+    size?: number;
+    mime?: string;
+    storagePath?: string;
+  };
   createdAt?: string;
   updatedAt?: string;
   order?: number;
   iconName?: string;
   color?: string;
 };
+
+export type UploadCallbacks = {
+  onProgress: (progress: number) => void;
+  onSuccess: (content: Content) => void;
+  onError: (error: Error) => void;
+};
+
 
 export async function seedInitialData() {
     if (!db) {
@@ -54,20 +65,12 @@ export async function seedInitialData() {
         } else {
             console.error("Error seeding data:", e);
         }
-        // Re-throw the error to be caught by the caller if needed
         throw e;
     }
 }
 
 
 export const contentService = {
-  async getAll(): Promise<Content[]> {
-    if (!db) return [];
-    const q = query(collection(db, 'content'), orderBy('order'));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => doc.data() as Content);
-  },
-  
   async getChildren(parentId: string | null): Promise<Content[]> {
     if (!db) return [];
     const q = query(collection(db, 'content'), where('parentId', '==', parentId), orderBy('order'));
@@ -81,16 +84,15 @@ export const contentService = {
 
     const newFolderId = `folder_${uuidv4()}`;
     const newFolderRef = doc(db, 'content', newFolderId);
+    let newFolderData: Content | null = null;
 
     try {
       await runTransaction(db, async (transaction) => {
-        // To get the new order, we need to count existing children.
-        // This requires a read operation within the transaction.
         const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
-        const childrenSnapshot = await getDocs(childrenQuery); // Use getDocs, not transaction.get for this query
+        const childrenSnapshot = await getDocs(childrenQuery);
         const order = childrenSnapshot.size;
 
-        const newFolderData: Content = {
+        newFolderData = {
           id: newFolderId,
           name: name,
           type: 'FOLDER',
@@ -102,8 +104,10 @@ export const contentService = {
 
         transaction.set(newFolderRef, newFolderData);
       });
-      const docSnap = await getDoc(newFolderRef);
-      return docSnap.data() as Content;
+      
+      if (!newFolderData) throw new Error("Folder creation failed within transaction.");
+      return newFolderData;
+
     } catch (e: any) {
       if (e.code === 'permission-denied') {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
@@ -117,64 +121,66 @@ export const contentService = {
     }
   },
 
+  uploadFile(parentId: string | null, file: File, callbacks: UploadCallbacks) {
+    if (!db) {
+        const err = new Error("Firestore not initialized");
+        callbacks.onError(err);
+        return;
+    }
 
-  async uploadFile(parentId: string | null, file: { name: string, size?: number, mime?: string }): Promise<Content> {
-     if (!db) throw new Error("Firestore not initialized");
+    const storage = getStorage();
     const id = `file_${uuidv4()}`;
-    const children = await this.getChildren(parentId);
-    const order = children.length;
+    const filePath = `files/${parentId || 'root'}/${id}_${file.name}`;
+    const fileStorageRef = storageRef(storage, filePath);
 
-    const item: Content = { 
-        id, 
-        name: file.name, 
-        type: 'FILE', 
-        parentId: parentId, 
-        metadata: { size: file.size, mime: file.mime }, 
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        order: order
-    };
-    const docRef = doc(db, 'content', id);
-    setDoc(docRef, item).catch(e => {
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: `/content/${id}`,
-                operation: 'create',
-                requestResourceData: item,
-            });
-            errorEmitter.emit('permission-error', permissionError);
+    const uploadTask = uploadBytesResumable(fileStorageRef, file);
+
+    uploadTask.on('state_changed',
+        (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            callbacks.onProgress(progress);
+        },
+        (error) => {
+            console.error("Upload failed:", error);
+            callbacks.onError(error);
+        },
+        async () => {
+            try {
+                const children = await this.getChildren(parentId);
+                const order = children.length;
+
+                const newFileContent: Content = {
+                    id,
+                    name: file.name,
+                    type: 'FILE',
+                    parentId: parentId,
+                    metadata: {
+                        size: file.size,
+                        mime: file.type,
+                        storagePath: filePath,
+                    },
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString(),
+                    order: order
+                };
+                
+                await setDoc(doc(db, 'content', id), newFileContent);
+                callbacks.onSuccess(newFileContent);
+
+            } catch(e: any) {
+                if (e.code === 'permission-denied') {
+                    errorEmitter.emit('permission-error', new FirestorePermissionError({
+                        path: `/content/${id}`,
+                        operation: 'create',
+                        requestResourceData: { name: file.name },
+                    }));
+                }
+                callbacks.onError(e);
+            }
         }
-        throw e;
-    });
-    return item;
+    );
   },
   
-  async updateFileContent(id: string, file: { name: string, size?: number, mime?: string }): Promise<Content> {
-    if (!db) throw new Error("Firestore not initialized");
-    const docRef = doc(db, 'content', id);
-    const item = await this.getById(id);
-    if (!item || item.type !== 'FILE') throw new Error('File not found');
-
-    const updatedData = {
-        name: file.name,
-        metadata: { ...item.metadata, size: file.size, mime: file.mime },
-        updatedAt: new Date().toISOString()
-    };
-    
-    updateDoc(docRef, updatedData).catch(e => {
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: `/content/${id}`,
-                operation: 'update',
-                requestResourceData: updatedData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        }
-        throw e;
-    });
-    return { ...item, ...updatedData };
-  },
-
   async getById(id: string): Promise<Content | null> {
     if (!db) return null;
     if (id === 'root') {
@@ -185,30 +191,13 @@ export const contentService = {
     return docSnap.exists() ? docSnap.data() as Content : null;
   },
 
-  async getAncestors(id: string): Promise<Content[]> {
-    if (id === 'root' || !db) return [];
-    
-    const ancestors: Content[] = [];
-    let current = await this.getById(id);
-
-    while (current?.parentId) {
-        const parent = await this.getById(current.parentId);
-        if (!parent) break;
-        ancestors.unshift(parent);
-        current = parent;
-    }
-    return ancestors;
-  },
-
-  async rename(id: string, name: string): Promise<Content> {
+  async rename(id: string, name: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
     const docRef = doc(db, 'content', id);
-    const item = await this.getById(id);
-    if (!item) throw new Error('Item not found');
 
     const updatedData = { name, updatedAt: new Date().toISOString() };
     
-    updateDoc(docRef, updatedData).catch(e => {
+    await updateDoc(docRef, updatedData).catch(e => {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: `/content/${id}`,
@@ -219,35 +208,50 @@ export const contentService = {
         }
         throw e;
     });
-
-    return { ...item, ...updatedData };
   },
 
-  async delete(id: string): Promise<boolean> {
+  async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
 
     try {
-      await runTransaction(db, async (transaction) => {
-        // Since we can't query within a transaction, we fetch all content.
-        // This is not scalable for huge datasets but is fine for this app's scope.
-        // For a larger app, a Cloud Function would be needed for recursive deletion.
-        const allContentSnapshot = await getDocs(collection(db, 'content'));
-        const allContent = allContentSnapshot.docs.map(d => d.data() as Content);
-        
-        const itemsToDelete = new Set<string>();
-        function findRecursively(idToRemove: string) {
-          itemsToDelete.add(idToRemove);
-          const children = allContent.filter(x => x.parentId === idToRemove);
-          children.forEach(child => findRecursively(child.id));
-        }
-        findRecursively(id);
+        await runTransaction(db, async (transaction) => {
+            const allContentSnapshot = await getDocs(collection(db, 'content'));
+            const allContent = allContentSnapshot.docs.map(d => d.data() as Content);
+            const storage = getStorage();
 
-        itemsToDelete.forEach(itemId => {
-          const docRef = doc(db, 'content', itemId);
-          transaction.delete(docRef);
+            const itemsToDelete: Content[] = [];
+            const visited = new Set<string>();
+
+            function findRecursively(idToDelete: string) {
+                if(visited.has(idToDelete)) return;
+                visited.add(idToDelete);
+                
+                const item = allContent.find(x => x.id === idToDelete);
+                if (item) {
+                    itemsToDelete.push(item);
+                    const children = allContent.filter(x => x.parentId === idToDelete);
+                    children.forEach(child => findRecursively(child.id));
+                }
+            }
+            findRecursively(id);
+
+            for (const item of itemsToDelete) {
+                const docRef = doc(db, 'content', item.id);
+                transaction.delete(docRef);
+
+                if (item.type === 'FILE' && item.metadata?.storagePath) {
+                    const fileRef = storageRef(storage, item.metadata.storagePath);
+                    // Non-transactional, but best effort.
+                    // If this fails, the file becomes an orphan.
+                    await deleteObject(fileRef).catch(err => {
+                        // Ignore 'object-not-found' error
+                        if (err.code !== 'storage/object-not-found') {
+                           console.error(`Failed to delete file ${item.metadata?.storagePath}:`, err);
+                        }
+                    });
+                }
+            }
         });
-      });
-      return true;
     } catch (e: any) {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
@@ -285,3 +289,5 @@ export const contentService = {
     }
   }
 };
+
+    

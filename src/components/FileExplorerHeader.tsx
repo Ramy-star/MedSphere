@@ -10,35 +10,34 @@ import React, { useRef, useState } from 'react';
 import { contentService } from '@/lib/contentService';
 import { LucideIcon } from 'lucide-react';
 import { NewFolderDialog } from './new-folder-dialog';
+import { useToast } from '@/hooks/use-toast';
 
 
 type AddContentMenuProps = {
   parentId: string | null;
-  onContentAdded: () => void;
+  onFileSelected: (file: File) => void;
   trigger?: React.ReactNode;
 }
 
-function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuProps) {
+function AddContentMenu({ parentId, onFileSelected, trigger }: AddContentMenuProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const { toast } = useToast();
 
-  // This is a simplified version. For progress bars here, state needs to be lifted.
   const handleAddFolder = async (folderName: string) => {
-    await contentService.createFolder(parentId, folderName);
-    onContentAdded();
-    setPopoverOpen(false);
+    try {
+        await contentService.createFolder(parentId, folderName);
+        toast({ title: 'Folder Created', description: `"${folderName}" has been created.` });
+    } catch(error) {
+        console.error("Failed to create folder:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to create folder.' });
+    } finally {
+        setShowNewFolderDialog(false);
+        setPopoverOpen(false);
+    }
   };
 
-  const handleUploadFile = async (file: File) => {
-    // This doesn't show progress, but it works.
-    // A more complex implementation would lift state or use a global state manager.
-    const newFileItem = await contentService.uploadFile(parentId, { name: file.name, size: file.size, mime: file.type });
-    // In a real app, you would now upload the file to Firebase Storage
-    // and save the URL in the Firestore document.
-    onContentAdded();
-    setPopoverOpen(false);
-  };
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -47,7 +46,12 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      handleUploadFile(file);
+      onFileSelected(file);
+      setPopoverOpen(false);
+    }
+    // Reset file input to allow uploading the same file again
+    if(event.target) {
+        event.target.value = '';
     }
   };
 
@@ -102,7 +106,7 @@ function AddContentMenu({ parentId, onContentAdded, trigger }: AddContentMenuPro
 
 type ExtendedContent = Content & { icon?: LucideIcon, iconColor?: string };
 
-export default function FileExplorerHeader({ currentFolder, onContentAdded }: { currentFolder?: ExtendedContent, onContentAdded?: () => void }) {
+export default function FileExplorerHeader({ currentFolder, onContentAdded }: { currentFolder?: ExtendedContent, onContentAdded?: (file: File) => void }) {
   const CurrentIcon = currentFolder?.icon || Folder;
   const iconColor = currentFolder?.iconColor || 'text-yellow-400';
   return (
@@ -126,7 +130,7 @@ export default function FileExplorerHeader({ currentFolder, onContentAdded }: { 
         )}
         {onContentAdded && currentFolder && currentFolder.type !== 'SEMESTER' && (
           <div>
-            <AddContentMenu parentId={currentFolder.id} onContentAdded={onContentAdded} />
+            <AddContentMenu parentId={currentFolder.id} onFileSelected={onContentAdded} />
           </div>
         )}
       </div>
@@ -134,3 +138,5 @@ export default function FileExplorerHeader({ currentFolder, onContentAdded }: { 
     </div>
   );
 }
+
+    
