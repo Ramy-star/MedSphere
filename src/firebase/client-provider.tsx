@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState } from 'react';
@@ -5,7 +6,7 @@ import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
 import { FirebaseProvider } from './provider';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
+import { getAuth, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 
 export function FirebaseClientProvider({
   children,
@@ -23,26 +24,48 @@ export function FirebaseClientProvider({
         try {
             const instances = await initializeFirebase(config);
             setFirebase(instances);
-
-            // Check auth state before declaring initialization "finished"
+            
             const auth = getAuth(instances.app);
+
+            // Handle redirect result first
+            getRedirectResult(auth).catch(err => {
+              // This can throw if there is no redirect result, which is fine.
+              // We log other errors.
+              if (err.code !== 'auth/no-auth-event') {
+                console.error("Error getting redirect result:", err);
+                setError(err);
+              }
+            });
+
+            // Then, set up the state listener
             const unsubscribe = onAuthStateChanged(auth, (user) => {
               setLoading(false); // Auth state is resolved, stop loading
-              unsubscribe(); // We only need this for the initial load
+              // unsubscribe(); // We should not unsubscribe here, we want to listen for changes
             }, (error) => {
               setError(error);
               setLoading(false);
-              unsubscribe();
+              // unsubscribe();
             });
 
+            return unsubscribe;
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
             setError(e);
             setLoading(false);
         }
     }
+    
+    let unsubscribe: (() => void) | undefined;
     if (!firebase) {
-      init();
+      init().then(unsub => {
+        if (unsub) unsubscribe = unsub;
+      });
+    }
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
     }
   }, [config, firebase]);
 

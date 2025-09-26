@@ -22,20 +22,6 @@ export function AuthButton() {
   const { user, loading } = useUser();
   const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    setBusy(true);
-    getRedirectResult(auth)
-      .then((result) => {
-        // User is redirected back from Google.
-        // The user state will be updated by onAuthStateChanged.
-      })
-      .catch((error) => {
-        console.error("Error getting redirect result:", error);
-      }).finally(() => {
-        setBusy(false);
-      });
-  }, [auth]);
-
   const handleLogin = async () => {
     setBusy(true);
     try {
