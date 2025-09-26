@@ -42,18 +42,16 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
 
   return (
     <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-3 min-h-[68px] flex items-center">
-      <div className="flex items-center justify-between mx-auto gap-4 w-full">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 cursor-default select-none">
-              <Logo className="h-8 sm:h-10 w-auto shrink-0" />
-              <h1 className="text-lg sm:text-xl font-['Nunito_Sans',_sans-serif] relative" style={{ top: '1px' }}>
-                <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
-                <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
-              </h1>
-          </div>
+      <div className="flex items-center gap-4 w-full">
+        <div className="flex items-center gap-2 cursor-default select-none">
+            <Logo className="h-8 sm:h-10 w-auto shrink-0" />
+            <h1 className="text-lg sm:text-xl font-['Nunito_Sans',_sans-serif] relative" style={{ top: '1px' }}>
+              <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
+              <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
+            </h1>
         </div>
-        <div className="flex items-center gap-4 w-full max-w-[280px] sm:max-w-sm">
-          <div className="relative w-full">
+        <div className="flex items-center justify-end flex-grow w-full">
+          <div className="relative w-full max-w-[220px] sm:max-w-sm">
             <Search
               className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400"
             />
