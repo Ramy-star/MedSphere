@@ -2,12 +2,13 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FolderPlus, Plus, Upload, Link as LinkIcon } from 'lucide-react';
+import { FolderPlus, Plus, Upload } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { contentService } from '@/lib/contentService';
 import { NewFolderDialog } from './new-folder-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { NewLinkDialog } from './NewLinkDialog';
+import { Link2Icon } from './icons/Link2Icon';
 
 type AddContentMenuProps = {
   parentId: string | null;
@@ -82,7 +83,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       },
       {
           label: "Add Link",
-          icon: LinkIcon,
+          icon: Link2Icon,
           action: () => setShowNewLinkDialog(true),
       }
   ]
@@ -123,5 +124,3 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
     </>
   );
 }
-
-    

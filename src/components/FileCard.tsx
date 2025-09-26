@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink,
-    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music, GripVertical, Link as LinkIcon
+    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music, GripVertical
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -19,10 +19,11 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { contentService } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
+import { Link2Icon } from './icons/Link2Icon';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
     if (item.type === 'LINK') {
-        return { Icon: LinkIcon, color: 'text-cyan-400' };
+        return { Icon: Link2Icon, color: 'text-cyan-400' };
     }
 
     const fileName = item.name;
@@ -208,5 +209,3 @@ export function FileCard({
         </div>
     )
 }
-
-    
