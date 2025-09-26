@@ -32,6 +32,7 @@ import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import React from 'react';
 import { useUser } from '@/firebase/auth/use-user';
+import { ChangeIconDialog } from './ChangeIconDialog';
 
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
@@ -93,6 +94,7 @@ export function FolderGrid({
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
+  const [itemForIconChange, setItemForIconChange] = useState<Content | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -281,6 +283,7 @@ export function FolderGrid({
                         item={it}
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
+                        onIconChange={() => setItemForIconChange(it)}
                         displayAs={isSubjectView ? 'grid' : 'list'}
                       />;
                     } else if (it.type === 'FILE' || it.type === 'LINK') {
@@ -329,6 +332,11 @@ export function FolderGrid({
             item={itemToRename}
             onOpenChange={(isOpen) => !isOpen && setItemToRename(null)}
             onRename={handleRename}
+          />
+
+          <ChangeIconDialog 
+            item={itemForIconChange}
+            onOpenChange={(isOpen) => !isOpen && setItemForIconChange(null)}
           />
 
           <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>

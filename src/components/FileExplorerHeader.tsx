@@ -6,14 +6,33 @@ import type { Content } from '@/lib/contentService';
 import { LucideIcon } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
 import { useUser } from '@/firebase/auth/use-user';
+import Image from 'next/image';
 
 type ExtendedContent = Content & { icon?: LucideIcon, iconColor?: string };
 
 export default function FileExplorerHeader({ currentFolder, onFileSelected }: { currentFolder?: ExtendedContent, onFileSelected?: (file: File) => void }) {
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
-  const CurrentIcon = currentFolder?.icon || Folder;
-  const iconColor = currentFolder?.iconColor || 'text-yellow-400';
+  
+  const renderIcon = () => {
+    if (currentFolder?.metadata?.iconURL) {
+      return (
+        <div className="relative w-8 h-8 sm:w-10 sm:h-10">
+          <Image
+            src={currentFolder.metadata.iconURL}
+            alt={currentFolder.name}
+            fill
+            className="object-cover rounded-md"
+            sizes="(max-width: 640px) 32px, 40px"
+          />
+        </div>
+      );
+    }
+    const CurrentIcon = currentFolder?.icon || Folder;
+    const iconColor = currentFolder?.iconColor || 'text-yellow-400';
+    return <CurrentIcon className={`w-8 h-8 sm:w-10 sm:h-10 ${iconColor}`} />;
+  };
+
   return (
     <div className="mb-6 space-y-4">
       <div className="flex items-start justify-between">
@@ -27,7 +46,7 @@ export default function FileExplorerHeader({ currentFolder, onFileSelected }: { 
       <div className="flex items-center justify-between min-h-[40px] flex-wrap gap-4">
         {currentFolder && (
              <div className="flex items-center gap-4">
-                <CurrentIcon className={`w-8 h-8 sm:w-10 sm:h-10 ${iconColor}`} />
+                {renderIcon()}
                 <h1 className="text-xl sm:text-2xl font-bold text-white">
                     {currentFolder?.name}
                 </h1>
