@@ -27,7 +27,7 @@ function initializeFuse(items: Content[]) {
       { name: 'type', weight: 0.3 }  // Less weight to the type
     ],
     includeScore: true,
-    threshold: 0.4, // Adjust this value to make the search more or less strict
+    threshold: 0.2, // Adjust this value to make the search more or less strict
     ignoreLocation: true,
   });
 }
@@ -55,3 +55,4 @@ export async function search(query: string, items: Content[]): Promise<Content[]
   // The result from Fuse.js includes the item and a score. We just need the item.
   return results.map(result => result.item);
 }
+
