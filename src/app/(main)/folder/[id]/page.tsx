@@ -4,7 +4,8 @@
 import { useEffect, useState, useCallback, Suspense, use } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
-import { Content, contentService } from '@/lib/contentService';
+import type { Content } from '@/lib/contentService';
+import { contentService } from '@/lib/contentService';
 import { allSubjectIcons } from '@/lib/file-data';
 import { notFound } from 'next/navigation';
 import { LucideIcon, Folder, Calendar } from 'lucide-react';

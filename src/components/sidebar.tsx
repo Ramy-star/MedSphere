@@ -21,7 +21,7 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 import { doc, getDoc } from 'firebase/firestore';
 
 

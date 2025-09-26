@@ -3,7 +3,7 @@
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Content, seedInitialData } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -19,7 +19,7 @@ export default function HomePage() {
       orderBy: ['order', 'asc']
   });
 
-  const handleSeed = async () => {
+  const handleSeed = useCallback(async () => {
     setIsSeeding(true);
     try {
       await seedInitialData();
@@ -29,7 +29,7 @@ export default function HomePage() {
     } finally {
         setIsSeeding(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     // This effect runs once when the component mounts and the initial data check is done.
@@ -37,8 +37,7 @@ export default function HomePage() {
         handleSeed();
     }
     // We only want this to run based on the initial loading and data state.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, db, levels]);
+  }, [loading, db, levels, handleSeed]);
   
   const renderContent = () => {
       if (loading) {

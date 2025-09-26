@@ -5,7 +5,7 @@ import { HomeIcon, ChevronRight } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
-import { useFirebase } from '@/firebase';
+import { useFirebase } from '@/firebase/provider';
 
 
 function getLink(item: Content): string {

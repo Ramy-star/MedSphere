@@ -81,17 +81,19 @@ function SearchResults() {
         }
     };
     
-    const handleRename = async (newName: string) => {
+    const handleRename = useCallback(async (newName: string) => {
         if (!itemToRename) return;
         await contentService.rename(itemToRename.id, newName);
+        toast({ title: "Renamed", description: `"${itemToRename.name}" was renamed to "${newName}".` });
         setItemToRename(null);
-    };
+    }, [itemToRename, toast]);
 
-    const handleDelete = async () => {
+    const handleDelete = useCallback(async () => {
         if (!itemToDelete) return;
         await contentService.delete(itemToDelete.id);
+        toast({ title: "Deleted", description: `"${itemToDelete.name}" has been deleted.` });
         setItemToDelete(null);
-    };
+    }, [itemToDelete, toast]);
 
     const loading = isSearching || loadingAllItems;
 
