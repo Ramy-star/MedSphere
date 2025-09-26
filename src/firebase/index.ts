@@ -39,3 +39,4 @@ export async function initializeFirebase(config: FirebaseOptions) {
 
   return { app, auth, db, storage };
 }
+
