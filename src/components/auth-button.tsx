@@ -52,7 +52,7 @@ export function AuthButton() {
   };
 
   if (loading || busy) {
-    return <div className="h-9 w-20 rounded-full bg-slate-800 animate-pulse" />;
+    return <div className="h-9 w-9 rounded-full bg-slate-800 animate-pulse" />;
   }
 
   if (user && !user.isAnonymous) {
@@ -90,8 +90,8 @@ export function AuthButton() {
   }
 
   return (
-    <Button onClick={handleLogin} disabled={busy} className="rounded-full" variant="outline">
-       {busy ? '...' : <><LogIn className="mr-2 h-4 w-4" /> Log In</>}
+    <Button onClick={handleLogin} disabled={busy} size="icon" className="rounded-full h-9 w-9" variant="outline">
+       {busy ? '...' : <LogIn className="h-4 w-4" />}
     </Button>
   );
 }
