@@ -22,36 +22,13 @@ export function FirebaseClientProvider({
   useEffect(() => {
     const init = async () => {
         try {
-            // Basic validation for production config
             if (process.env.NODE_ENV === 'production' && (!config || !config.apiKey)) {
               throw new Error("Firebase config is missing or incomplete for production environment. Ensure environment variables are set in your hosting provider.");
             }
 
             const instances = await initializeFirebase(config);
             setFirebase(instances);
-            
-            const auth = getAuth(instances.app);
-
-            // Handle redirect result first
-            getRedirectResult(auth).catch(err => {
-              // This can throw if there is no redirect result, which is fine.
-              // We log other errors as they might indicate a configuration issue.
-              if (err.code !== 'auth/no-auth-event') {
-                console.error("Firebase getRedirectResult error:", err);
-                setError(new Error(`Authentication redirect failed: ${err.message}`));
-              }
-            });
-
-            // Then, set up the state listener
-            const unsubscribe = onAuthStateChanged(auth, (user) => {
-              setLoading(false); // Auth state is resolved, stop loading
-            }, (error) => {
-              console.error("Firebase onAuthStateChanged error:", error);
-              setError(error);
-              setLoading(false);
-            });
-
-            return unsubscribe;
+            setLoading(false); // Set loading to false once initialized
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
             setError(e);
@@ -59,21 +36,35 @@ export function FirebaseClientProvider({
         }
     }
     
-    let unsubscribe: (() => void) | undefined;
     if (!firebase) {
-      init().then(unsub => {
-        if (unsub) unsubscribe = unsub;
-      });
+      init();
     }
+  }, [config, firebase]); // Keep dependencies to re-init if config changes
 
-    return () => {
-      if (unsubscribe) {
-        unsubscribe();
+   useEffect(() => {
+    if (!firebase) return;
+
+    const auth = getAuth(firebase.app);
+
+    // Handle redirect result first
+    getRedirectResult(auth).catch(err => {
+      if (err.code !== 'auth/no-auth-event') {
+        console.error("Firebase getRedirectResult error:", err);
       }
-    }
-  }, [config, firebase]);
+    });
 
-  if (loading || !firebase) {
+    // Then, set up the state listener
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      // The useUser hook will handle the user state
+    }, (error) => {
+      console.error("Firebase onAuthStateChanged error:", error);
+    });
+
+    return () => unsubscribe();
+  }, [firebase]);
+
+
+  if (loading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
         <div className="w-full max-w-md p-8 space-y-4">
@@ -97,6 +88,10 @@ export function FirebaseClientProvider({
         </div>
       </div>
     );
+  }
+  
+  if (!firebase) {
+      return <div>Something went wrong. Firebase is not available.</div>;
   }
 
   return <FirebaseProvider {...firebase}>{children}</FirebaseProvider>;
