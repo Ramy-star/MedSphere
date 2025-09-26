@@ -1,6 +1,10 @@
 
 'use client';
-import { MoreVertical, Edit, Trash2, Download, Upload } from 'lucide-react';
+import { 
+    MoreVertical, Edit, Trash2, Download, Upload,
+    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, FileArchive 
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -10,23 +14,33 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
-import Image from 'next/image';
 
-const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+const getIconForMimeType = (mimeType: string = 'application/octet-stream'): LucideIcon => {
+    if (mimeType.startsWith('image/')) return FileImage;
+    if (mimeType.startsWith('video/')) return FileVideo;
+    if (mimeType.startsWith('audio/')) return FileAudio;
 
-const getThumbnail = (item: Content): string => {
-    const mime = item.metadata?.mime || '';
-    const publicId = item.metadata?.cloudinaryPublicId;
-    const url = item.metadata?.storagePath;
-
-    if (mime.startsWith('image/') && url) {
-        return url;
+    switch (mimeType) {
+        case 'application/pdf':
+            return FileText;
+        case 'application/vnd.openxmlformats-officedocument.wordprocessingml.document': // docx
+        case 'application/msword': // doc
+            return FileText;
+        case 'application/vnd.openxmlformats-officedocument.presentationml.presentation': // pptx
+        case 'application/vnd.ms-powerpoint': // ppt
+            return FileImage; // Using FileImage for presentations as it's visually similar to a slide
+        case 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': // xlsx
+        case 'application/vnd.ms-excel': // xls
+            return FileSpreadsheet;
+        case 'application/zip':
+        case 'application/x-rar-compressed':
+        case 'application/x-7z-compressed':
+            return FileArchive;
+        default:
+            return FileIcon;
     }
-    if (mime === 'application/pdf' && publicId && cloudName) {
-        return `https://res.cloudinary.com/${cloudName}/image/upload/pg_1/${publicId}.jpg`;
-    }
-    return '/icons/file-icon.svg';
 };
+
 
 const handleForceDownload = async (url: string, name: string) => {
     try {
@@ -69,7 +83,7 @@ export function FileCard({
 
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     
-    const thumbnailUrl = getThumbnail(item);
+    const Icon = getIconForMimeType(item.metadata?.mime);
 
     return (
       <DropdownMenu>
@@ -82,15 +96,7 @@ export function FileCard({
             className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-between"
         >
             <div className="flex items-center gap-3 overflow-hidden flex-1">
-                 <Image 
-                    src={thumbnailUrl} 
-                    alt={item.name} 
-                    width={24} 
-                    height={24} 
-                    className="w-6 h-6 object-cover rounded-sm shrink-0 bg-slate-700" 
-                    // Handle image loading errors by falling back to the default icon
-                    onError={(e) => (e.currentTarget.src = '/icons/file-icon.svg')}
-                />
+                 <Icon className="w-6 h-6 text-blue-400 shrink-0" />
                 <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
             </div>
             
@@ -141,3 +147,5 @@ export function FileCard({
       </DropdownMenu>
     );
 }
+
+    
