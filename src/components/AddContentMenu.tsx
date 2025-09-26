@@ -25,11 +25,15 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         await contentService.createFolder(parentId, folderName);
         toast({ title: 'Folder Created', description: `"${folderName}" has been created.` });
         setShowNewFolderDialog(false);
-        setPopoverOpen(false);
-    } catch(error) {
+        setPopoverOpen(false); // Close popover on success
+    } catch(error: any) {
         console.error("Failed to create folder:", error);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to create folder.' });
-        // Do not close dialogs on error
+        toast({ 
+            variant: 'destructive', 
+            title: 'Error creating folder', 
+            description: error.message || 'An unknown error occurred.' 
+        });
+        // Do not close dialogs on error, allow user to retry
     }
   };
 
