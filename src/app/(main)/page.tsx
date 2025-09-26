@@ -31,12 +31,12 @@ export default function HomePage() {
 
   useEffect(() => {
     // This effect runs once when the component mounts and the initial data check is done.
-    if (!loading && (!levels || levels.length === 0)) {
+    if (!loading && db && (!levels || levels.length === 0)) {
         handleSeed();
     }
     // We only want this to run based on the initial loading and data state.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading]);
+  }, [loading, db, levels]);
   
   const renderContent = () => {
       if (loading) {
