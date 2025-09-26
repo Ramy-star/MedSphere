@@ -178,6 +178,18 @@ levelsRaw.forEach(level => {
                     type: 'SUBJECT',
                     parentId: semesterId
                 });
+
+                if (subject.name === 'Medicine 1') {
+                    const medicineSubjects = ['GIT', 'Tropical', 'Cardiology', 'Chest', 'Hematology'];
+                    medicineSubjects.forEach(medSubject => {
+                         allContent.push({
+                            id: uuidv4(),
+                            name: medSubject,
+                            type: 'FOLDER',
+                            parentId: subjectId
+                        });
+                    });
+                }
             });
         }
     });
