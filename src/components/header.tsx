@@ -44,13 +44,13 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
     <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-3 min-h-[68px] flex items-center">
       <div className="flex items-center justify-between mx-auto gap-4 w-full">
         <div className="flex items-center gap-2">
-          <Link href="/" className="flex items-center gap-2">
+          <div className="flex items-center gap-2 cursor-default select-none">
               <Logo className="h-8 sm:h-10 w-auto shrink-0" />
               <h1 className="text-lg sm:text-xl font-['Nunito_Sans',_sans-serif] relative" style={{ top: '1px' }}>
                 <span className="font-bold" style={{ color: '#FFFFFF' }}>Med</span>
                 <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
               </h1>
-          </Link>
+          </div>
         </div>
         <div className="flex items-center gap-4 w-full max-w-xs sm:max-w-md">
           <div className="relative w-full">
