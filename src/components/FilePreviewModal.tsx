@@ -15,39 +15,50 @@ import { X, Download, Share2, File as FileIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { getStorage, ref, getDownloadURL } from 'firebase/storage';
-import { useFirebase } from '@/firebase/provider';
 import { Skeleton } from './ui/skeleton';
+import { getFile } from '@/lib/indexedDBService';
+
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
-  const { app } = useFirebase();
   const [fileUrl, setFileUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!item || item.type !== 'FILE' || !item.metadata?.storagePath) {
+    let objectUrl: string | null = null;
+    
+    if (!item || item.type !== 'FILE') {
         setFileUrl(null);
         setLoading(false);
         return;
     };
     
     setLoading(true);
-    const storage = getStorage(app);
-    const fileRef = ref(storage, item.metadata.storagePath);
-    getDownloadURL(fileRef)
-      .then(url => {
-        setFileUrl(url)
+    getFile(item.id)
+      .then(file => {
+        if (file) {
+          objectUrl = URL.createObjectURL(file);
+          setFileUrl(objectUrl);
+        } else {
+          toast({ variant: 'destructive', title: 'Error', description: "Could not load file from local storage." });
+          setFileUrl(null);
+        }
       })
       .catch(error => {
-        console.error("Error getting file URL:", error);
-        toast({ variant: 'destructive', title: 'Error', description: "Could not load file from storage." });
+        console.error("Error getting file from IndexedDB:", error);
+        toast({ variant: 'destructive', title: 'Error', description: "Could not load file from local storage." });
         setFileUrl(null);
       })
       .finally(() => {
         setLoading(false);
       });
-  }, [item, app, toast]);
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+      }
+    };
+  }, [item, toast]);
 
 
   if (!item) return null;
@@ -57,7 +68,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         const link = document.createElement('a');
         link.href = fileUrl;
         link.download = item.name;
-        link.target = '_blank'; // Open in new tab for direct download
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -73,14 +83,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     navigator.clipboard.writeText(link).then(() => {
         toast({
             title: "Link Copied!",
-            description: "The link to this page has been copied to your clipboard.",
+            description: "A shareable link to this page has been copied.",
         })
     }).catch(err => {
         console.error('Failed to copy: ', err);
         toast({
             variant: "destructive",
             title: "Failed to Copy",
-            description: "Could not copy the link to your clipboard.",
+            description: "Could not copy the link.",
         })
     });
   }
@@ -113,7 +123,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </Button>
              <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant='default' className='rounded-full'>
+                    <Button variant='default' className='rounded-full' disabled>
                         <Share2 className="w-5 h-5 mr-2" />
                         Share
                     </Button>
@@ -121,21 +131,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <PopoverContent className="w-80 border-slate-700 rounded-xl bg-slate-800 text-white shadow-lg mr-4">
                     <div className="grid gap-4">
                         <div className="space-y-2">
-                            <h4 className="font-medium leading-none">Copy Link</h4>
+                            <h4 className="font-medium leading-none">Sharing Not Available</h4>
                             <p className="text-sm text-slate-400">
-                                Anyone with the link can view this page.
+                                Files are stored locally on your device and cannot be shared.
                             </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Input
-                                value={typeof window !== 'undefined' ? window.location.href : ''}
-                                readOnly
-                                className="h-9 bg-slate-700 border-slate-600"
-                            />
-                            <Button onClick={handleCopyLink} size="sm" className="px-3">
-                                <span className="sr-only">Copy</span>
-                                Copy
-                            </Button>
                         </div>
                     </div>
                 </PopoverContent>
@@ -150,7 +149,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             {!loading && !fileUrl && (
               <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
                   <p className="text-xl mb-3">File content not available.</p>
-                  <p className="text-sm text-slate-400">The file could not be loaded from storage. It might have been deleted or there was a network issue.</p>
+                  <p className="text-sm text-slate-400">The file could not be loaded from your browser's storage. It might have been deleted or there was a network issue.</p>
               </div>
             )}
         </div>
@@ -159,5 +158,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    

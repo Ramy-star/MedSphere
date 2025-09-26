@@ -4,7 +4,7 @@
 import { File, X, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Progress } from './ui/progress';
 import { cn } from '@/lib/utils';
-import { Content, UploadCallbacks } from '@/lib/contentService';
+import type { Content } from '@/lib/contentService';
 
 export type UploadingFile = {
   id: string;
@@ -14,7 +14,12 @@ export type UploadingFile = {
   status: 'uploading' | 'success' | 'error';
 };
 
-export { UploadCallbacks };
+// This type is kept for compatibility, but the local-first approach doesn't use all callbacks.
+export type UploadCallbacks = {
+  onProgress?: (progress: number) => void;
+  onSuccess: (content: Content) => void;
+  onError: (error: Error) => void;
+};
 
 export function UploadProgress({ file }: { file: UploadingFile }) {
     const sizeInKB = file.size / 1024;
@@ -40,7 +45,7 @@ export function UploadProgress({ file }: { file: UploadingFile }) {
                     {file.status === 'error' && (
                         <div className="flex items-center gap-2 mt-1 text-red-400">
                            <AlertTriangle className="w-4 h-4" />
-                           <span className="text-xs">Upload failed</span>
+                           <span className="text-xs">Save failed</span>
                         </div>
                     )}
                      {file.status === 'success' && (
@@ -61,4 +66,3 @@ export function UploadProgress({ file }: { file: UploadingFile }) {
         </div>
     );
 }
-    

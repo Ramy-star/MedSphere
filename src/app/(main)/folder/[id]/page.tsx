@@ -10,7 +10,6 @@ import { notFound } from 'next/navigation';
 import { LucideIcon, Folder, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 
@@ -25,43 +24,26 @@ function FolderPageContent({ id }: { id: string }) {
     }
   }, [loadingCurrent, current]);
 
-  const processFileUpload = useCallback((file: File) => {
+  const processFileUpload = useCallback(async (file: File) => {
     if (!current) return;
 
-    const uploadId = uuidv4();
-    const newUploadingFile: UploadingFile = {
-        id: uploadId,
-        name: file.name,
-        size: file.size,
-        progress: 0,
-        status: 'uploading',
-    };
-
-    setUploadingFiles(prev => [...prev, newUploadingFile]);
-    
-    const callbacks: UploadCallbacks = {
-        onProgress: (progress) => {
-            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress } : f));
+    // With IndexedDB, the "upload" is instant, so we can skip the progress UI
+    // and just show a success message.
+    const callbacks = {
+        onSuccess: (content: Content) => {
+            toast({ title: "File Saved", description: `"${content.name}" has been saved to your browser.` });
         },
-        onSuccess: (content) => {
-            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, progress: 100, status: 'success' } : f));
-            toast({ title: "Upload Complete", description: `"${content.name}" has been uploaded.` });
-            setTimeout(() => {
-                setUploadingFiles(prev => prev.filter(f => f.id !== uploadId));
-            }, 2000);
-        },
-        onError: (error) => {
-            console.error("Upload failed in component:", error);
-            setUploadingFiles(prev => prev.map(f => f.id === uploadId ? { ...f, status: 'error' } : f));
+        onError: (error: Error) => {
+            console.error("Save failed in component:", error);
             toast({
                 variant: 'destructive',
-                title: 'Upload Failed',
-                description: `Could not upload ${file.name}. Please try again.`
+                title: 'Save Failed',
+                description: `Could not save ${file.name}. Please try again.`
             })
         }
     };
     
-    contentService.uploadFile(current.id, file, callbacks);
+    await contentService.createFile(current.id, file, callbacks);
   }, [current, toast]);
   
   if (loadingCurrent || !current) {
@@ -104,7 +86,8 @@ function FolderPageContent({ id }: { id: string }) {
     <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
        <FileExplorerHeader currentFolder={extendedCurrent} onFileSelected={processFileUpload} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-          <FolderGrid parentId={id} uploadingFiles={uploadingFiles} setUploadingFiles={setUploadingFiles} onFileSelected={processFileUpload} />
+          {/* We pass an empty array for uploadingFiles as IndexedDB is instant */}
+          <FolderGrid parentId={id} uploadingFiles={[]} setUploadingFiles={() => {}} onFileSelected={processFileUpload} />
        </div>
     </main>
   );
@@ -112,7 +95,7 @@ function FolderPageContent({ id }: { id: string }) {
 
 
 function FolderPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const { id } = use(params);
 
   return (
     <Suspense fallback={
@@ -140,5 +123,3 @@ function FolderPage({ params }: { params: { id: string } }) {
 
 
 export default FolderPage;
-
-    

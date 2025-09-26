@@ -28,8 +28,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { UploadProgress, UploadingFile } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
-import { getStorage, ref as storageRef, getDownloadURL } from 'firebase/storage';
-import { useFirebase } from '@/firebase/provider';
+import { getFile } from '@/lib/indexedDBService';
 import { AddContentMenu } from './AddContentMenu';
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
@@ -38,8 +37,8 @@ function DropZone({ isVisible }: { isVisible: boolean }) {
     <div className="absolute inset-0 bg-blue-900/10 backdrop-blur-sm flex items-center justify-center border-4 border-dashed border-blue-500 rounded-2xl z-10 pointer-events-none">
         <div className="text-center text-white">
             <UploadCloud className="mx-auto h-16 w-16 mb-4" />
-            <h3 className="text-2xl font-bold">Drop files to upload</h3>
-            <p className="text-blue-200">Release to start uploading your files</p>
+            <h3 className="text-2xl font-bold">Drop files to save</h3>
+            <p className="text-blue-200">Release to save files to your browser</p>
         </div>
     </div>
   );
@@ -85,7 +84,6 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const { toast } = useToast();
-  const { app } = useFirebase();
 
   useEffect(() => {
     if (fetchedItems) {
@@ -112,25 +110,19 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   };
   
   const handleDownloadClick = async (item: Content) => {
-    if (!app || !item.metadata?.storagePath) {
-        toast({ variant: 'destructive', title: 'Download Failed', description: 'File path is not available.' });
-        return;
-    };
-    const storage = getStorage(app);
-    const fileRef = storageRef(storage, item.metadata.storagePath);
-    try {
-        const url = await getDownloadURL(fileRef);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = item.name;
-        link.target = '_blank';
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    } catch(error) {
-        console.error("Error getting download URL:", error);
-        toast({ variant: 'destructive', title: 'Download Failed', description: 'Could not get file URL.' });
+    const file = await getFile(item.id);
+    if (!file) {
+      toast({ variant: 'destructive', title: 'Download Failed', description: 'File not found in local storage.'});
+      return;
     }
+    const url = URL.createObjectURL(file);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = item.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   }
 
   const handleUpdateClick = (item: Content) => {
@@ -158,7 +150,9 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    if (dropZoneRef.current && !dropZoneRef.current.contains(e.relatedTarget as Node)) {
+    // Check if the related target is outside the drop zone
+    const dropZoneNode = dropZoneRef.current;
+    if (dropZoneNode && !dropZoneNode.contains(e.relatedTarget as Node)) {
         setIsDraggingOver(false);
     }
   };
@@ -188,6 +182,8 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
             if (!currentItems) return null;
             const oldIndex = currentItems.findIndex((item) => item.id === active.id);
             const newIndex = currentItems.findIndex((item) => item.id === over.id);
+            if (oldIndex === -1 || newIndex === -1) return currentItems;
+
             const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
             
             const orderedIds = newOrderedItems.map(item => item.id);
@@ -242,7 +238,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
           </div>
       )}
       
-      {(!loading || items.length > 0 || uploadingFiles.length > 0) && (
+      {(!loading || items.length > 0 || uploadingFiles.length > 0) && items && (
           <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
               <div className={containerClasses}>
@@ -278,16 +274,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         </motion.div>
                     )
                   })}
-                  {uploadingFiles.map((file) => (
-                      <motion.div key={file.id}
-                            initial={{ opacity: 0, y: 8 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: 8 }}
-                            transition={{ duration: 0.15 }}
-                        >
-                          <UploadProgress file={file} />
-                      </motion.div>
-                  ))}
+                  {/* Upload progress UI is no longer needed as local saving is instant */}
                 </AnimatePresence>
               </div>
             </SortableContext>
@@ -310,7 +297,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
           <AlertDialogHeader className="p-6 pb-0">
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{itemToDelete?.name}" and all its contents. This action cannot be undone.
+              This will permanently delete "{itemToDelete?.name}" and all its contents from your browser. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="p-6 pt-4">

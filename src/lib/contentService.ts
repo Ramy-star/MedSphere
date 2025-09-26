@@ -1,8 +1,8 @@
 
 'use client';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc } from 'firebase/firestore';
-import { getStorage, ref as storageRef, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
+import { saveFile as saveFileToDb, deleteFile as deleteFileFromDb } from './indexedDBService';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -17,7 +17,8 @@ export type Content = {
   metadata?: {
     size?: number;
     mime?: string;
-    storagePath?: string;
+    // storagePath is no longer used for IndexedDB solution, but kept for schema consistency
+    storagePath?: string; 
   };
   createdAt?: string;
   updatedAt?: string;
@@ -26,8 +27,8 @@ export type Content = {
   color?: string;
 };
 
+// This type is now simplified as we don't have real upload progress
 export type UploadCallbacks = {
-  onProgress: (progress: number) => void;
   onSuccess: (content: Content) => void;
   onError: (error: Error) => void;
 };
@@ -121,113 +122,82 @@ export const contentService = {
     }
   },
 
-  uploadFile(parentId: string | null, file: File, callbacks: UploadCallbacks) {
+  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks): Promise<void> {
     if (!db) {
         const err = new Error("Firestore not initialized");
         callbacks.onError(err);
         return;
     }
 
-    const storage = getStorage();
     const id = `file_${uuidv4()}`;
-    const filePath = `files/${parentId || 'root'}/${id}_${file.name}`;
-    const fileStorageRef = storageRef(storage, filePath);
 
-    const uploadTask = uploadBytesResumable(fileStorageRef, file);
+    try {
+        // Save file to IndexedDB first
+        await saveFileToDb(id, file);
 
-    uploadTask.on('state_changed',
-        (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            callbacks.onProgress(progress);
-        },
-        (error) => {
-            console.error("Upload failed:", error);
-            callbacks.onError(error);
-        },
-        async () => {
-            try {
-                const children = await this.getChildren(parentId);
-                const order = children.length;
+        const children = await this.getChildren(parentId);
+        const order = children.length;
 
-                const newFileContent: Content = {
-                    id,
-                    name: file.name,
-                    type: 'FILE',
-                    parentId: parentId,
-                    metadata: {
-                        size: file.size,
-                        mime: file.type,
-                        storagePath: filePath,
-                    },
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString(),
-                    order: order
-                };
-                
-                await setDoc(doc(db, 'content', id), newFileContent);
-                callbacks.onSuccess(newFileContent);
+        const newFileContent: Content = {
+            id,
+            name: file.name,
+            type: 'FILE',
+            parentId: parentId,
+            metadata: {
+                size: file.size,
+                mime: file.type,
+            },
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            order: order
+        };
+        
+        await setDoc(doc(db, 'content', id), newFileContent);
+        callbacks.onSuccess(newFileContent);
 
-            } catch(e: any) {
-                if (e.code === 'permission-denied') {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({
-                        path: `/content/${id}`,
-                        operation: 'create',
-                        requestResourceData: { name: file.name },
-                    }));
-                }
-                callbacks.onError(e);
-            }
+    } catch(e: any) {
+        // If something fails, try to clean up IndexedDB
+        await deleteFileFromDb(id).catch(err => console.error("Cleanup failed", err));
+
+        if (e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${id}`,
+                operation: 'create',
+                requestResourceData: { name: file.name },
+            }));
         }
-    );
+        callbacks.onError(e);
+    }
   },
 
   async updateFile(id: string, file: File): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
     const docRef = doc(db, 'content', id);
-    const docSnap = await getDoc(docRef);
-    if (!docSnap.exists() || docSnap.data().type !== 'FILE') {
-        throw new Error("File not found or invalid type");
-    }
-
-    const content = docSnap.data() as Content;
-    const storage = getStorage();
-    const filePath = content.metadata?.storagePath || `files/${content.parentId || 'root'}/${id}_${file.name}`;
-    const fileStorageRef = storageRef(storage, filePath);
-
-    const uploadTask = uploadBytesResumable(fileStorageRef, file);
     
-    return new Promise((resolve, reject) => {
-        uploadTask.on('state_changed', 
-            () => {}, // progress can be handled here if needed
-            (error) => {
-                console.error("File update upload failed:", error);
-                reject(error);
-            },
-            async () => {
-                try {
-                    const updatedMetadata = {
-                        size: file.size,
-                        mime: file.type,
-                        storagePath: filePath,
-                    };
-                    await updateDoc(docRef, {
-                        metadata: updatedMetadata,
-                        updatedAt: new Date().toISOString()
-                    });
-                    resolve();
-                } catch(e: any) {
-                     if (e.code === 'permission-denied') {
-                        errorEmitter.emit('permission-error', new FirestorePermissionError({
-                            path: `/content/${id}`,
-                            operation: 'update',
-                            requestResourceData: { metadata: updatedMetadata },
-                        }));
-                    }
-                    reject(e);
-                }
-            }
-        );
-    });
+    try {
+        // Overwrite the file in IndexedDB
+        await saveFileToDb(id, file);
+
+        const updatedMetadata = {
+            size: file.size,
+            mime: file.type,
+        };
+        
+        await updateDoc(docRef, {
+            metadata: updatedMetadata,
+            name: file.name,
+            updatedAt: new Date().toISOString()
+        });
+    } catch(e: any) {
+         if (e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${id}`,
+                operation: 'update',
+                requestResourceData: { metadata: { size: file.size, mime: file.type } },
+            }));
+        }
+        throw e;
+    }
   },
   
   async getById(id: string): Promise<Content | null> {
@@ -266,7 +236,6 @@ export const contentService = {
         await runTransaction(db, async (transaction) => {
             const allContentSnapshot = await getDocs(collection(db, 'content'));
             const allContent = allContentSnapshot.docs.map(d => d.data() as Content);
-            const storage = getStorage();
 
             const itemsToDelete: Content[] = [];
             const visited = new Set<string>();
@@ -288,16 +257,9 @@ export const contentService = {
                 const docRef = doc(db, 'content', item.id);
                 transaction.delete(docRef);
 
-                if (item.type === 'FILE' && item.metadata?.storagePath) {
-                    const fileRef = storageRef(storage, item.metadata.storagePath);
+                if (item.type === 'FILE') {
                     // Non-transactional, but best effort.
-                    // If this fails, the file becomes an orphan.
-                    await deleteObject(fileRef).catch(err => {
-                        // Ignore 'object-not-found' error
-                        if (err.code !== 'storage/object-not-found') {
-                           console.error(`Failed to delete file ${item.metadata?.storagePath}:`, err);
-                        }
-                    });
+                    await deleteFileFromDb(item.id);
                 }
             }
         });
@@ -338,6 +300,3 @@ export const contentService = {
     }
   }
 };
-
-    
-    
