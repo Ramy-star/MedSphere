@@ -1,12 +1,9 @@
 
 'use client';
-import {
-  signInWithPopup,
-  GoogleAuthProvider,
-  signOut,
-} from 'firebase/auth';
-import { useUser } from '@/firebase/auth/use-user';
+import { useState } from 'react';
+import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, setPersistence, browserLocalPersistence } from 'firebase/auth';
 import { useFirebase } from '@/firebase';
+import { useUser } from '@/firebase/auth/use-user';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -19,32 +16,45 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LogIn, LogOut, User as UserIcon } from 'lucide-react';
 
+
 export function AuthButton() {
   const { auth } = useFirebase();
   const { user, loading } = useUser();
+  const [busy, setBusy] = useState(false);
 
   const handleLogin = async () => {
-    const provider = new GoogleAuthProvider();
+    setBusy(true);
     try {
-      await signInWithPopup(auth, provider);
-    } catch (error) {
-      console.error('Login failed', error);
+      await setPersistence(auth, browserLocalPersistence);
+      const provider = new GoogleAuthProvider();
+      
+      try {
+        await signInWithPopup(auth, provider);
+      } catch (popupErr: any) {
+        console.warn('Popup sign-in failed, falling back to redirect:', popupErr?.code);
+        if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/operation-not-allowed'].includes(popupErr?.code)) {
+          await signInWithRedirect(auth, provider);
+        } else {
+          throw popupErr;
+        }
+      }
+    } catch (err: any) {
+      console.error('Login error', err);
+      alert('Login failed: ' + (err?.message || 'An unknown error occurred.'));
+    } finally {
+      setBusy(false);
     }
   };
 
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-    } catch (error) {
-      console.error('Logout failed', error);
-    }
+    await signOut(auth);
   };
 
   if (loading) {
     return <div className="h-9 w-20 rounded-full bg-slate-800 animate-pulse" />;
   }
 
-  if (user) {
+  if (user && !user.isAnonymous) {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -79,9 +89,8 @@ export function AuthButton() {
   }
 
   return (
-    <Button onClick={handleLogin} className="rounded-full" variant="outline">
-      <LogIn className="mr-2 h-4 w-4" />
-      Log In
+    <Button onClick={handleLogin} disabled={busy} className="rounded-full" variant="outline">
+       {busy ? '...' : <><LogIn className="mr-2 h-4 w-4" /> Log In</>}
     </Button>
   );
 }

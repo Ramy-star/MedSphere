@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useFirebase } from '../provider';
 
 export function useUser() {
@@ -16,7 +16,14 @@ export function useUser() {
     const unsubscribe = onAuthStateChanged(
       auth,
       (user) => {
-        setUser(user);
+        if (user?.isAnonymous) {
+          // If we find an anonymous user, sign them out.
+          // This prevents the UI from showing a "logged in" state for anonymous users.
+          signOut(auth);
+          setUser(null);
+        } else {
+          setUser(user);
+        }
         setLoading(false);
       },
       (error) => {
@@ -30,4 +37,3 @@ export function useUser() {
 
   return { user, loading, error };
 }
-

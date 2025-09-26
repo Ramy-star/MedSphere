@@ -5,6 +5,7 @@ import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
 import { FirebaseProvider } from './provider';
 import { Skeleton } from '@/components/ui/skeleton';
+import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 export function FirebaseClientProvider({
   children,
@@ -22,17 +23,30 @@ export function FirebaseClientProvider({
         try {
             const instances = await initializeFirebase(config);
             setFirebase(instances);
+
+            // Check auth state before declaring initialization "finished"
+            const auth = getAuth(instances.app);
+            const unsubscribe = onAuthStateChanged(auth, (user) => {
+              setLoading(false); // Auth state is resolved, stop loading
+              unsubscribe(); // We only need this for the initial load
+            }, (error) => {
+              setError(error);
+              setLoading(false);
+              unsubscribe();
+            });
+
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
             setError(e);
-        } finally {
             setLoading(false);
         }
     }
-    init();
-  }, [config]);
+    if (!firebase) {
+      init();
+    }
+  }, [config, firebase]);
 
-  if (loading) {
+  if (loading || !firebase) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
         <div className="w-full max-w-md p-8 space-y-4">
@@ -44,7 +58,7 @@ export function FirebaseClientProvider({
     );
   }
 
-  if (error || !firebase) {
+  if (error) {
     return (
       <div className="flex h-screen w-screen items-center justify-center">
         <div className="rounded-lg border border-destructive bg-card p-6 text-center text-destructive">
