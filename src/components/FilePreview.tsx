@@ -60,7 +60,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
         return <div className="text-white">Loading HTML preview...</div>
     }
     if (htmlContentUrl) {
-        return <iframe src={htmlContentUrl} className="w-full h-full border-2 border-slate-700 rounded-lg bg-white text-black shadow-lg" title={itemName} sandbox="" />;
+        return <iframe src={htmlContentUrl} className="w-full h-full border-2 border-slate-700 rounded-lg bg-white text-black shadow-lg" title={itemName} sandbox="allow-scripts" />;
     }
   }
 
