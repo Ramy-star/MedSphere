@@ -89,7 +89,13 @@ export const contentService = {
 
     try {
       await runTransaction(db, async (transaction) => {
-        const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+        let childrenQuery;
+        if (parentId) {
+            childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+        } else {
+            childrenQuery = query(collection(db, 'content'), where('parentId', '==', null));
+        }
+        
         const childrenSnapshot = await transaction.get(childrenQuery);
         const order = childrenSnapshot.size;
 
@@ -200,85 +206,83 @@ export const contentService = {
     }
   },
 
-  async updateFile(id: string, newFile: File): Promise<void> {
-    if (!db) throw new Error("Firestore not initialized");
+  async updateFile(id: string, newFile: File, callbacks: UploadCallbacks): Promise<void> {
+    const tempId = `upload_${uuidv4()}`;
+    callbacks.onStart(tempId);
 
     const docRef = doc(db, 'content', id);
-    const docSnap = await getDoc(docRef);
 
-    if (!docSnap.exists()) {
-        throw new Error("File to update does not exist.");
-    }
-
-    const existingContent = docSnap.data() as Content;
-    const publicId = existingContent.metadata?.cloudinaryPublicId;
-
-    if (!publicId) {
-        // Fallback for older files: just upload as new and update path
-        console.warn("No public_id found. Uploading as new file instead of overwriting.");
-        // This part would need a full upload flow, for now we require public_id
-        throw new Error("Cannot update file without a Cloudinary public_id.");
-    }
-
-    // 1. Get signature for overwriting the file
-    const sigResponse = await fetch('/api/sign-cloudinary-params', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            public_id: publicId,
-            overwrite: true,
-        }),
-    });
-
-    if (!sigResponse.ok) {
-        throw new Error(`Failed to get Cloudinary signature for update: ${sigResponse.statusText}`);
-    }
-
-    const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
-
-    // 2. Upload the new file to Cloudinary, overwriting the old one
-    const formData = new FormData();
-    formData.append('file', newFile);
-    formData.append('api_key', apiKey);
-    formData.append('timestamp', timestamp);
-    formData.append('signature', signature);
-    formData.append('public_id', publicId);
-    formData.append('overwrite', 'true');
-
-    const uploadRes = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`, {
-        method: 'POST',
-        body: formData,
-    });
-
-    if (!uploadRes.ok) {
-        throw new Error(`Cloudinary update failed: ${uploadRes.statusText}`);
-    }
-
-    const data = await uploadRes.json();
-    
-    // 3. Update Firestore document
-    const updatedMetadata = {
-        name: newFile.name,
-        updatedAt: new Date().toISOString(),
-        metadata: {
-            ...existingContent.metadata,
-            size: data.bytes,
-            mime: newFile.type || 'application/octet-stream',
-            storagePath: data.secure_url, // URL might change
-            cloudinaryPublicId: data.public_id, // Should be the same
-        },
-    };
-
-    await updateDoc(docRef, updatedMetadata).catch(e => {
-        if (e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `/content/${id}`,
-                operation: 'update',
-                requestResourceData: updatedMetadata,
-            }));
+    try {
+        const docSnap = await getDoc(docRef);
+        if (!docSnap.exists()) {
+            throw new Error("File to update does not exist.");
         }
-        throw e;
-    });
+        const existingContent = docSnap.data() as Content;
+
+        const publicId = existingContent.metadata?.cloudinaryPublicId;
+        if (!publicId) {
+             throw new Error("Cannot update file without a Cloudinary public_id.");
+        }
+
+        const sigResponse = await fetch('/api/sign-cloudinary-params', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ public_id: publicId, overwrite: true })
+        });
+        
+        if (!sigResponse.ok) {
+            throw new Error(`Failed to get Cloudinary signature for update: ${sigResponse.statusText}`);
+        }
+        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
+
+        const formData = new FormData();
+        formData.append('file', newFile);
+        formData.append('api_key', apiKey);
+        formData.append('timestamp', timestamp);
+        formData.append('signature', signature);
+        formData.append('public_id', publicId);
+        formData.append('overwrite', 'true');
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
+        
+        xhr.upload.onprogress = (event) => {
+             if (event.lengthComputable) {
+                const progress = (event.loaded / event.total) * 100;
+                callbacks.onProgress(tempId, progress);
+            }
+        };
+
+        xhr.onload = async () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const data = JSON.parse(xhr.responseText);
+                const updatedData = {
+                    name: newFile.name,
+                    updatedAt: new Date().toISOString(),
+                    metadata: {
+                        ...existingContent.metadata,
+                        size: data.bytes,
+                        mime: newFile.type || 'application/octet-stream',
+                        storagePath: data.secure_url,
+                        cloudinaryPublicId: data.public_id,
+                    },
+                };
+                await updateDoc(docRef, updatedData);
+                callbacks.onSuccess(tempId, { ...existingContent, ...updatedData });
+            } else {
+                 callbacks.onError(tempId, new Error(`Cloudinary update failed: ${xhr.statusText}`));
+            }
+        };
+
+         xhr.onerror = () => {
+            callbacks.onError(tempId, new Error('Network error during file update.'));
+        };
+
+        xhr.send(formData);
+
+    } catch (e: any) {
+        callbacks.onError(tempId, e);
+    }
   },
   
   async getById(id: string): Promise<Content | null> {
@@ -378,5 +382,3 @@ export const contentService = {
     }
   }
 };
-
-    
