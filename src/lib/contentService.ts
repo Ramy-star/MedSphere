@@ -190,7 +190,8 @@ export const contentService = {
         });
 
         if (!sigResponse.ok) {
-            throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
+            const errorBody = await sigResponse.text();
+            throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}. Body: ${errorBody}`);
         }
 
         const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
@@ -268,8 +269,7 @@ export const contentService = {
         const itemRef = doc(db, 'content', itemId);
         const itemSnap = await getDoc(itemRef);
         if (!itemSnap.exists()) throw new Error("Item not found");
-        const item = itemSnap.data() as Content;
-
+        
         // 1. Get signature for Cloudinary upload
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
