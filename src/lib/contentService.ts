@@ -16,15 +16,8 @@ export type Content = {
   metadata?: {
     size?: number;
     mime?: string;
-    storagePath?: string; 
-    cloudinary?: {
-        public_id: string;
-        version: number;
-        signature: string;
-    };
-    thumbnail?: string;
-    originalUrl?: string;
-    fileType?: string;
+    storagePath?: string; // secure_url from cloudinary
+    cloudinaryPublicId?: string; // public_id from cloudinary
   };
   createdAt?: string;
   updatedAt?: string;
@@ -134,7 +127,6 @@ export const contentService = {
     callbacks.onStart(tempId);
     
     try {
-        // 1. Get signature from our API
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -144,12 +136,11 @@ export const contentService = {
         });
 
         if (!sigResponse.ok) {
-            throw new Error('Failed to get Cloudinary signature.');
+            throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
         }
 
         const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
         
-        // 2. Upload to Cloudinary
         const formData = new FormData();
         formData.append('file', file);
         formData.append('api_key', apiKey);
@@ -171,7 +162,6 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                // 3. Save metadata to Firestore
                 const id = `file_${uuidv4()}`;
                 const children = await this.getChildren(parentId);
                 const order = children.length;
@@ -183,18 +173,9 @@ export const contentService = {
                     parentId: parentId,
                     metadata: {
                         size: data.bytes,
-                        mime: data.resource_type === 'raw' ? file.type : `${data.resource_type}/${data.format}`,
+                        mime: file.type || 'application/octet-stream',
                         storagePath: data.secure_url,
-                        cloudinary: {
-                           public_id: data.public_id,
-                           version: data.version,
-                           signature: data.signature,
-                        },
-                        thumbnail: data.resource_type === 'image'
-                          ? data.secure_url
-                          : `https://res.cloudinary.com/${cloudName}/image/upload/pg_1/${data.public_id}.jpg`,
-                        originalUrl: data.secure_url,
-                        fileType: file.type,
+                        cloudinaryPublicId: data.public_id,
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
@@ -220,9 +201,6 @@ export const contentService = {
   },
 
   async updateFile(id: string, file: File): Promise<void> {
-     // This is more complex with an external storage like Cloudinary.
-     // It would involve deleting the old file and uploading a new one.
-     // For simplicity, we will just delete and the user can re-upload.
      console.warn("Update file not implemented for Cloudinary. Please delete and re-upload.");
      throw new Error("Update file not implemented.");
   },
@@ -234,7 +212,7 @@ export const contentService = {
     }
     const docRef = doc(db, 'content', id);
     const docSnap = await getDoc(docRef);
-    return docSnap.exists() ? docSnap.data() as Content : null;
+    return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Content : null;
   },
 
   async rename(id: string, name: string): Promise<void> {
@@ -259,15 +237,10 @@ export const contentService = {
   async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
 
-    // Important: Deleting from Cloudinary requires a backend-signed request.
-    // This frontend-only implementation will only delete the Firestore record.
-    // The file will remain in your Cloudinary account (orphaned).
-    // A robust solution would involve a Firebase Function to handle deletion.
-
     try {
         await runTransaction(db, async (transaction) => {
             const allContentSnapshot = await getDocs(collection(db, 'content'));
-            const allContent = allContentSnapshot.docs.map(d => d.data() as Content);
+            const allContent = allContentSnapshot.docs.map(d => ({ id: d.id, ...d.data() }) as Content);
 
             const itemsToDelete: Content[] = [];
             const visited = new Set<string>();
@@ -288,7 +261,8 @@ export const contentService = {
             for (const item of itemsToDelete) {
                 const docRef = doc(db, 'content', item.id);
                 transaction.delete(docRef);
-                // We do not delete from Cloudinary here.
+                // Note: This does not delete the file from Cloudinary.
+                // A server-side function would be needed for that.
             }
         });
     } catch (e: any) {

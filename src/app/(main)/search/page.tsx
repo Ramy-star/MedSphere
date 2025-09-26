@@ -25,7 +25,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button';
-import { getFile } from '@/lib/indexedDBService';
 import React from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 
@@ -35,9 +34,6 @@ function SearchResults() {
     const [results, setResults] = useState<Content[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     
-    // Fetch all items once for client-side search.
-    // This is not ideal for very large datasets, but simple for this app's scale.
-    // A server-side search (e.g., with Algolia or a Firebase Function) would be more scalable.
     const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
 
     const [previewFile, setPreviewFile] = useState<Content | null>(null);
@@ -54,7 +50,6 @@ function SearchResults() {
 
         setIsSearching(true);
         try {
-            // Using the existing client-side search flow
             const searchResults = await search(query, allItems);
             setResults(searchResults);
         } catch (error) {
@@ -73,14 +68,12 @@ function SearchResults() {
         if (!itemToRename) return;
         await contentService.rename(itemToRename.id, newName);
         setItemToRename(null);
-        // Data will refetch via useCollection, triggering performSearch
     };
 
     const handleDelete = async () => {
         if (!itemToDelete) return;
         await contentService.delete(itemToDelete.id);
         setItemToDelete(null);
-        // Data will refetch via useCollection, triggering performSearch
     };
 
     const handleUpdateClick = (item: Content) => {
@@ -89,16 +82,9 @@ function SearchResults() {
     };
 
     const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
-        // This functionality needs to be adapted for Firebase Storage
         console.log("File update needs implementation with Firebase Storage");
-        // After upload, you would call contentService to update the metadata.
     };
     
-    const handleDownloadClick = async (item: Content) => {
-       // This functionality needs to be adapted for Firebase Storage
-       console.log("File download needs implementation with Firebase Storage");
-    }
-
     const loading = isSearching || loadingAllItems;
 
 
@@ -135,7 +121,6 @@ function SearchResults() {
                                             onRename={() => setItemToRename(item)}
                                             onDelete={() => setItemToDelete(item)}
                                             onUpdate={() => handleUpdateClick(item)}
-                                            onDownload={() => handleDownloadClick(item)}
                                          />
                                     )}
                                     {item.type === 'FOLDER' && (

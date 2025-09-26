@@ -1,6 +1,6 @@
 
 'use client';
-import { File, MoreVertical, Edit, Trash2, Download, FileText, Image, Presentation, Sheet, AudioWaveform, Video, LucideIcon, Upload } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, Download, Upload } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -10,21 +10,42 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
+import Image from 'next/image';
 
-const getIconForFileMime = (mimeType?: string): { Icon: LucideIcon; color: string } => {
-    if (!mimeType) return { Icon: File, color: 'text-slate-400' };
+const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 
-    if (mimeType.startsWith('image/')) return { Icon: Image, color: 'text-purple-400' };
-    if (mimeType.startsWith('audio/')) return { Icon: AudioWaveform, color: 'text-orange-400' };
-    if (mimeType.startsWith('video/')) return { Icon: Video, color: 'text-red-400' };
-    if (mimeType === 'application/pdf') return { Icon: FileText, color: 'text-red-500' };
-    if (mimeType === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return { Icon: FileText, color: 'text-blue-500' };
-    if (mimeType === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') return { Icon: Presentation, color: 'text-orange-500' };
-    if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') return { Icon: Sheet, color: 'text-green-500' };
-    if (mimeType.startsWith('text/')) return { Icon: FileText, color: 'text-gray-400' };
+const getThumbnail = (item: Content): string => {
+    const mime = item.metadata?.mime || '';
+    const publicId = item.metadata?.cloudinaryPublicId;
+    const url = item.metadata?.storagePath;
 
-    return { Icon: File, color: 'text-slate-400' };
+    if (mime.startsWith('image/') && url) {
+        return url;
+    }
+    if (mime === 'application/pdf' && publicId && cloudName) {
+        return `https://res.cloudinary.com/${cloudName}/image/upload/pg_1/${publicId}.jpg`;
+    }
+    return '/icons/file-icon.svg';
 };
+
+const handleForceDownload = async (url: string, name: string) => {
+    try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+        console.error("Download failed:", error);
+        // Fallback to opening in new tab
+        window.open(url, '_blank');
+    }
+}
 
 
 export function FileCard({ 
@@ -32,14 +53,12 @@ export function FileCard({
     onFileClick, 
     onRename, 
     onDelete, 
-    onDownload,
     onUpdate
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
-    onDownload: (item: Content) => void,
     onUpdate: () => void
 }) {
 
@@ -50,13 +69,12 @@ export function FileCard({
 
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     
-    const { Icon, color } = getIconForFileMime(item.metadata?.mime);
+    const thumbnailUrl = getThumbnail(item);
 
     return (
       <DropdownMenu>
         <div 
             onClick={(e) => {
-              // Only trigger card click if not clicking on the dropdown trigger
               if (!(e.target instanceof HTMLElement && e.target.closest('[data-radix-collection-item]'))) {
                 onFileClick(item);
               }
@@ -64,7 +82,15 @@ export function FileCard({
             className="relative group glass-card p-3 rounded-lg hover:bg-white/10 transition-colors cursor-pointer flex items-center justify-between"
         >
             <div className="flex items-center gap-3 overflow-hidden flex-1">
-                <Icon className={`w-6 h-6 ${color} shrink-0`} />
+                 <Image 
+                    src={thumbnailUrl} 
+                    alt={item.name} 
+                    width={24} 
+                    height={24} 
+                    className="w-6 h-6 object-cover rounded-sm shrink-0 bg-slate-700" 
+                    // Handle image loading errors by falling back to the default icon
+                    onError={(e) => (e.currentTarget.src = '/icons/file-icon.svg')}
+                />
                 <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
             </div>
             
@@ -95,7 +121,11 @@ export function FileCard({
             <Edit className="mr-2 h-4 w-4" />
             <span>Rename</span>
           </DropdownMenuItem>
-           <DropdownMenuItem onClick={() => onDownload(item)} className="cursor-pointer">
+           <DropdownMenuItem 
+                onClick={() => item.metadata?.storagePath && handleForceDownload(item.metadata.storagePath, item.name)} 
+                disabled={!item.metadata?.storagePath}
+                className="cursor-pointer"
+            >
             <Download className="mr-2 h-4 w-4" />
             <span>Download</span>
           </DropdownMenuItem>
@@ -111,5 +141,3 @@ export function FileCard({
       </DropdownMenu>
     );
 }
-
-    

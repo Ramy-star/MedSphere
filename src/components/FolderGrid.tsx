@@ -107,14 +107,6 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
     await contentService.delete(itemToDelete.id);
     setItemToDelete(null);
   };
-  
-  const handleDownloadClick = (item: Content) => {
-    if (item.metadata?.storagePath) {
-        window.open(item.metadata.storagePath, '_blank');
-    } else {
-        toast({ variant: 'destructive', title: 'Download Failed', description: 'File URL not found.'});
-    }
-  }
 
   const handleUpdateClick = (item: Content) => {
       setItemToUpdate(item);
@@ -145,7 +137,6 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    // Check if the related target is outside the drop zone
     const dropZoneNode = dropZoneRef.current;
     if (dropZoneNode && !dropZoneNode.contains(e.relatedTarget as Node)) {
         setIsDraggingOver(false);
@@ -264,7 +255,6 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         onFileClick={handleFileClick} 
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
-                        onDownload={handleDownloadClick}
                         onUpdate={() => handleUpdateClick(it)}
                       />
                     );
