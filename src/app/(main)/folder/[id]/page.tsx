@@ -35,13 +35,13 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
         onSuccess: (content) => {
-             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success' } : f));
+             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success', xhr: undefined } : f));
              setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 2000); // Remove after 2s
              toast({ title: "File Uploaded", description: `"${content.name}" has been uploaded.` });
         },
         onError: (error) => {
             console.error("Upload failed in component:", error);
-            setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'error' } : f));
+            setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'error', xhr: undefined } : f));
             toast({
                 variant: 'destructive',
                 title: 'Upload Failed',
@@ -50,12 +50,12 @@ function FolderPageContent({ id }: { id: string }) {
         }
     };
     
-    setUploadingFiles(prev => [...prev, { id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file }]);
-    await contentService.createFile(current.id, file, callbacks);
+    const xhr = await contentService.createFile(current.id, file, callbacks);
+    setUploadingFiles(prev => [...prev, { id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file, xhr }]);
 
   }, [current, toast]);
 
-  const handleRetryUpload = useCallback((fileId: string) => {
+  const handleRetryUpload = useCallback(async (fileId: string) => {
     const fileToRetry = uploadingFiles.find(f => f.id === fileId);
     if (fileToRetry && fileToRetry.file && current) {
       // Optimistically set status to uploading
@@ -66,12 +66,12 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, progress } : f));
         },
         onSuccess: (content) => {
-            setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'success' } : f));
+            setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'success', xhr: undefined } : f));
             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== fileId)), 2000);
             toast({ title: "File Uploaded", description: `"${content.name}" has been uploaded.` });
         },
         onError: (error) => {
-            setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'error' } : f));
+            setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'error', xhr: undefined } : f));
             toast({
                 variant: 'destructive',
                 title: 'Upload Failed',
@@ -80,11 +80,16 @@ function FolderPageContent({ id }: { id: string }) {
         }
       };
 
-      contentService.createFile(current.id, fileToRetry.file, callbacks);
+      const newXhr = await contentService.createFile(current.id, fileToRetry.file, callbacks);
+      setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, xhr: newXhr } : f));
     }
   }, [uploadingFiles, current, toast]);
 
   const handleRemoveUpload = (fileId: string) => {
+      const fileToRemove = uploadingFiles.find(f => f.id === fileId);
+      if (fileToRemove && fileToRemove.xhr) {
+          fileToRemove.xhr.abort();
+      }
       setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
   };
   

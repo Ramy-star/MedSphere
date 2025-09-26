@@ -176,7 +176,8 @@ export const contentService = {
     }
   },
   
-  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks): Promise<void> {
+  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest> {
+    const xhr = new XMLHttpRequest();
     
     try {
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
@@ -200,7 +201,6 @@ export const contentService = {
         formData.append('signature', signature);
         formData.append('folder', `content/${parentId || 'root'}`);
 
-        const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
 
         xhr.upload.onprogress = (event) => {
@@ -246,11 +246,18 @@ export const contentService = {
         xhr.onerror = () => {
             callbacks.onError(new Error('Network error during upload.'));
         };
+
+        xhr.onabort = () => {
+            // Don't treat user-initiated abort as an error
+            console.log("Upload aborted by user.");
+        };
         
         xhr.send(formData);
     } catch(e: any) {
         callbacks.onError(e);
     }
+
+    return xhr;
   },
 
   async updateFile(id: string, newFile: File, callbacks: UploadCallbacks): Promise<void> {

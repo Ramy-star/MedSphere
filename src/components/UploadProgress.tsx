@@ -14,6 +14,7 @@ export type UploadingFile = {
   progress: number;
   status: 'uploading' | 'success' | 'error';
   file: File; // Keep the original file object for retries
+  xhr?: XMLHttpRequest;
 };
 
 export type UploadCallbacks = {
@@ -28,6 +29,8 @@ export function UploadProgress({ file, onRetry, onRemove }: { file: UploadingFil
     const displaySize = sizeInKB < 1024 
         ? `${sizeInKB.toFixed(1)} KB` 
         : `${(sizeInKB / 1024).toFixed(1)} MB`;
+
+    const showRemoveButton = file.status === 'uploading' || file.status === 'error';
 
     return (
         <div className={cn("relative group glass-card p-3 rounded-lg flex items-center justify-between w-full transition-all", 
@@ -61,15 +64,15 @@ export function UploadProgress({ file, onRetry, onRemove }: { file: UploadingFil
             
             <div className="flex items-center gap-1 sm:gap-2 shrink-0 ml-2 sm:ml-4">
                  {file.status === 'error' && (
-                    <>
-                        <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-slate-300 hover:text-white" onClick={() => onRetry(file.id)} title="Retry">
-                            <RotateCw className="w-4 h-4" />
-                        </Button>
-                         <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-slate-300 hover:text-red-400" onClick={() => onRemove(file.id)} title="Remove">
-                            <X className="w-5 h-5" />
-                        </Button>
-                    </>
+                    <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-slate-300 hover:text-white" onClick={() => onRetry(file.id)} title="Retry">
+                        <RotateCw className="w-4 h-4" />
+                    </Button>
                 )}
+                 {showRemoveButton && (
+                    <Button variant="ghost" size="icon" className="w-8 h-8 rounded-full text-slate-300 hover:text-red-400" onClick={() => onRemove(file.id)} title="Remove">
+                        <X className="w-5 h-5" />
+                    </Button>
+                 )}
                 <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
                     {displaySize}
                 </p>
