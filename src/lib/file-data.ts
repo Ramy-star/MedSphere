@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import type { Content } from './contentService';
 import { SurgeryIcon } from '@/components/icons/SurgeryIcon';
+import { v4 as uuidv4 } from 'uuid';
 
 export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Anatomy: Bone,
@@ -146,16 +147,11 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
   ],
 };
 
-function generateStableId(type: string, name: string, parentId: string | null = ''): string {
-    const safeName = name.replace(/[^a-zA-Z0-9-\s]/g, '').replace(/\s+/g, '-');
-    return `${type}-${safeName}-${parentId}`.toLowerCase();
-}
-
 
 export const allContent: Content[] = [];
 
 levelsRaw.forEach(level => {
-    const levelId = generateStableId('level', level.name);
+    const levelId = uuidv4();
     allContent.push({
         id: levelId,
         name: level.name,
@@ -164,7 +160,7 @@ levelsRaw.forEach(level => {
     });
 
     level.semesters.forEach(semesterName => {
-        const semesterId = generateStableId('semester', semesterName, levelId);
+        const semesterId = uuidv4();
         allContent.push({
             id: semesterId,
             name: semesterName,
@@ -175,7 +171,7 @@ levelsRaw.forEach(level => {
         const subjects = subjectsBySemesterRaw[semesterName];
         if (subjects) {
             subjects.forEach(subject => {
-                const subjectId = generateStableId('subject', subject.name, semesterId);
+                const subjectId = uuidv4();
                 allContent.push({
                     id: subjectId,
                     ...subject,

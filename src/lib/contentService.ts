@@ -85,7 +85,7 @@ export const contentService = {
   async createFolder(parentId: string | null, name: string): Promise<Content> {
     if (!db) throw new Error("Firestore not initialized");
 
-    const newFolderId = `folder_${uuidv4()}`;
+    const newFolderId = uuidv4();
     const newFolderRef = doc(db, 'content', newFolderId);
     let newFolderData: Content | null = null;
 
@@ -131,7 +131,7 @@ export const contentService = {
   async createLink(parentId: string | null, name: string, url: string): Promise<Content> {
     if (!db) throw new Error("Firestore not initialized");
 
-    const newLinkId = `link_${uuidv4()}`;
+    const newLinkId = uuidv4();
     const newLinkRef = doc(db, 'content', newLinkId);
     let newLinkData: Content | null = null;
 
@@ -217,7 +217,7 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                const id = `file_${uuidv4()}`;
+                const id = uuidv4();
                 const children = await this.getChildren(parentId);
                 const order = children.length;
 
