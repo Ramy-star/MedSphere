@@ -213,34 +213,35 @@ export const contentService = {
 
   async delete(id: string): Promise<boolean> {
     if (!db) throw new Error("Firestore not initialized");
-    
-    const batch = writeBatch(db);
-    const itemsToDelete = new Set<string>();
-    const allContent = await this.getAll();
-    
-    function findRecursively(idToRemove: string) {
-        itemsToDelete.add(idToRemove);
-        const children = allContent.filter(x => x.parentId === idToRemove);
-        children.forEach(child => findRecursively(child.id));
-    }
-
-    findRecursively(id);
-    
-    itemsToDelete.forEach(itemId => {
-        const docRef = doc(db, 'content', itemId);
-        batch.delete(docRef);
-    });
 
     try {
-        await batch.commit();
-        return true;
-    } catch(e: any) {
+      await runTransaction(db, async (transaction) => {
+        const allContentSnapshot = await getDocs(collection(db, 'content'));
+        const allContent = allContentSnapshot.docs.map(d => d.data() as Content);
+        
+        const itemsToDelete = new Set<string>();
+        function findRecursively(idToRemove: string) {
+          itemsToDelete.add(idToRemove);
+          const children = allContent.filter(x => x.parentId === idToRemove);
+          children.forEach(child => findRecursively(child.id));
+        }
+        findRecursively(id);
+
+        itemsToDelete.forEach(itemId => {
+          const docRef = doc(db, 'content', itemId);
+          transaction.delete(docRef);
+        });
+      });
+      return true;
+    } catch (e: any) {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-                path: `/content (batch delete)`,
+                path: `/content (transactional delete starting from ${id})`,
                 operation: 'delete',
             });
             errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error(`Transaction failed: ${e.message}`);
         }
         throw e;
     }
@@ -269,5 +270,3 @@ export const contentService = {
     }
   }
 };
-
-    
