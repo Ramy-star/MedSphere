@@ -53,7 +53,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400"
           />
           <Input
-            placeholder="Search files, subjects..."
+            placeholder="Search files..."
             className="pl-9 sm:pl-10 pr-10 bg-black/10 border-white/10 rounded-full h-9 sm:h-10"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
