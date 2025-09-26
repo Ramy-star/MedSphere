@@ -2,7 +2,7 @@
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth, signInAnonymously, connectAuthEmulator } from 'firebase/auth';
+import { getAuth, connectAuthEmulator } from 'firebase/auth';
 import { getFirestore, Firestore, connectFirestoreEmulator } from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
@@ -36,17 +36,6 @@ export async function initializeFirebase(config: FirebaseOptions) {
   if (process.env.NODE_ENV === "development" && process.env.NEXT_PUBLIC_USE_EMULATORS === "true") {
       startEmulators(auth, db, storage);
   }
-  
-  try {
-    if (auth.currentUser === null) {
-      await signInAnonymously(auth);
-      console.log("Signed in anonymously");
-    }
-  } catch (error) {
-    console.error("Anonymous sign-in failed. Please ensure it's enabled in the Firebase console.", error);
-  }
 
   return { app, auth, db, storage };
 }
-
-    

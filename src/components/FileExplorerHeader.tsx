@@ -3,13 +3,15 @@
 import { ArrowRight, ArrowLeft, Plus, Folder } from 'lucide-react';
 import { Breadcrumbs } from './breadcrumbs';
 import type { Content } from '@/lib/contentService';
-import { Button } from '@/components/ui/button';
 import { LucideIcon } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
+import { useUser } from '@/firebase/auth/use-user';
 
 type ExtendedContent = Content & { icon?: LucideIcon, iconColor?: string };
 
 export default function FileExplorerHeader({ currentFolder, onFileSelected }: { currentFolder?: ExtendedContent, onFileSelected?: (file: File) => void }) {
+  const { user } = useUser();
+  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   const CurrentIcon = currentFolder?.icon || Folder;
   const iconColor = currentFolder?.iconColor || 'text-yellow-400';
   return (
@@ -31,7 +33,7 @@ export default function FileExplorerHeader({ currentFolder, onFileSelected }: { 
                 </h1>
             </div>
         )}
-        {onFileSelected && currentFolder && currentFolder.type !== 'SEMESTER' && (
+        {isAdmin && onFileSelected && currentFolder && currentFolder.type !== 'SEMESTER' && (
           <div>
             <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
           </div>

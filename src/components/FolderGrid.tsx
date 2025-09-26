@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import React from 'react';
+import { useUser } from '@/firebase/auth/use-user';
 
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
@@ -52,17 +53,19 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
     transform: transform ? CSS.Transform.toString(transform) : undefined,
     transition,
   };
-
+  const { user } = useUser();
+  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  
   const isFolder = (children as React.ReactElement)?.props?.item?.type === 'FOLDER';
 
   const childrenWithProps = React.cloneElement(children as React.ReactElement, {
     ...((children as React.ReactElement).props),
-    showDragHandle: !isFolder,
+    showDragHandle: !isFolder && isAdmin,
   });
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="flex items-center w-full">
-        {childrenWithProps}
+    <div ref={setNodeRef} style={style} {...attributes} {...(isAdmin ? listeners : {})}>
+      {childrenWithProps}
     </div>
   );
 };
@@ -83,6 +86,8 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const isMobile = useIsMobile();
   const { toast } = useToast();
+  const { user } = useUser();
+  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
   useEffect(() => {
     if (fetchedItems) {
@@ -124,6 +129,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   };
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
@@ -132,6 +138,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     const dropZoneNode = dropZoneRef.current;
@@ -141,11 +148,13 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+    if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(false);
@@ -159,6 +168,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
+    if (!isAdmin) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
         setOrderedItems(currentItems => {
@@ -207,22 +217,26 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in flex flex-col items-center justify-center h-full" style={{ animationDelay: '0.15s' }}>
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
-              <p className="mt-2 text-sm text-slate-400">Drag and drop files here, or use the button to add content.</p>
-              <AddContentMenu
-                parentId={parentId}
-                onFileSelected={onFileSelected}
-                trigger={
-                  <Button className="mt-6 rounded-xl">
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Content
-                  </Button>
-                }
-              />
+              <p className="mt-2 text-sm text-slate-400">
+                {isAdmin ? "Drag and drop files here, or use the button to add content." : "No content has been added to this folder yet."}
+              </p>
+              {isAdmin && (
+                <AddContentMenu
+                  parentId={parentId}
+                  onFileSelected={onFileSelected}
+                  trigger={
+                    <Button className="mt-6 rounded-xl">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Content
+                    </Button>
+                  }
+                />
+              )}
           </div>
       )}
 
       {(!loading || items.length > 0 || uploadingFiles.length > 0) && items && (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} disabled={!isAdmin}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
               <div className={containerClasses}>
                 <AnimatePresence>
@@ -320,5 +334,3 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
     </div>
   );
 }
-
-    

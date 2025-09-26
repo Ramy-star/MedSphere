@@ -16,9 +16,12 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
+import { useUser } from '@/firebase/auth/use-user';
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
+  const { user } = useUser();
+  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   
   const fileUrl = item?.metadata?.storagePath;
   const loading = false; // No loading needed for direct URL
@@ -105,6 +108,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
              <Button variant="ghost" size="icon" onClick={handleOpenInNewTab} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Open in new tab">
                 <ExternalLink className="w-5 h-5" />
             </Button>
+            {isAdmin && (
              <Popover>
                 <PopoverTrigger asChild>
                     <Button variant='default' className='rounded-full' disabled={!fileUrl}>
@@ -130,6 +134,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </div>
                 </PopoverContent>
             </Popover>
+            )}
           </div>
         </header>
 
@@ -149,5 +154,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    

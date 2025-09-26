@@ -28,8 +28,8 @@ import { Button } from '@/components/ui/button';
 import React from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
-import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useUser } from '@/firebase/auth/use-user';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -37,6 +37,8 @@ function SearchResults() {
     const [results, setResults] = useState<Content[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const isMobile = useIsMobile();
+    const { user } = useUser();
+    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     
     const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
 
@@ -167,27 +169,31 @@ function SearchResults() {
                 item={previewFile}
                 onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
               />
+              
+              {isAdmin && (
+                <>
+                  <RenameDialog 
+                    item={itemToRename} 
+                    onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
+                    onRename={handleRename}
+                  />
 
-              <RenameDialog 
-                item={itemToRename} 
-                onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
-                onRename={handleRename}
-              />
-
-              <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
-                <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
-                  <AlertDialogHeader className="p-6 pb-0">
-                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will permanently delete "{itemToDelete?.name}" and all its contents. This action cannot be undone.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter className="p-6 pt-4">
-                    <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
-                    <AlertDialogAction asChild><Button variant="destructive" onClick={handleDelete}>Delete</Button></AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                  <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
+                    <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+                      <AlertDialogHeader className="p-6 pb-0">
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          This will permanently delete "{itemToDelete?.name}" and all its contents. This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter className="p-6 pt-4">
+                        <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
+                        <AlertDialogAction asChild><Button variant="destructive" onClick={handleDelete}>Delete</Button></AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                </>
+              )}
         </main>
     );
 }
@@ -200,5 +206,3 @@ export default function SearchPage() {
         </Suspense>
     )
 }
-
-    

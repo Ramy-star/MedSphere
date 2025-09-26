@@ -17,9 +17,10 @@ import { format } from 'date-fns';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { contentService } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 import { Link2Icon } from './icons/Link2Icon';
+import { useUser } from '@/firebase/auth/use-user';
+import { DropdownMenuSeparator } from './ui/dropdown-menu';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
     if (item.type === 'LINK') {
@@ -105,6 +106,9 @@ export function FileCard({
     showDragHandle?: boolean,
 }) {
     const isMobile = useIsMobile();
+    const { user } = useUser();
+    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
     const displaySize = item.type === 'LINK' 
         ? 'Link'
@@ -126,7 +130,7 @@ export function FileCard({
     const fileContent = (
       <>
         <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
-            {showDragHandle && !isMobile && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+            {showDragHandle && !isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
         </div>
         <div 
             className="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer"
@@ -160,7 +164,7 @@ export function FileCard({
             <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
                 {displaySize}
             </p>
-
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                   <Button 
@@ -175,10 +179,19 @@ export function FileCard({
                 className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
                 align="end"
               >
-                <DropdownMenuItem onClick={onRename} className="cursor-pointer">
-                  <Edit className="mr-2 h-4 w-4" />
-                  <span>Rename</span>
-                </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuItem onClick={onRename} className="cursor-pointer">
+                      <Edit className="mr-2 h-4 w-4" />
+                      <span>Rename</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                  </>
+                )}
                 {!isLink && (
                      <DropdownMenuItem 
                           onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
@@ -192,10 +205,6 @@ export function FileCard({
                  <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="cursor-pointer">
                     <ExternalLink className="mr-2 h-4 w-4" />
                     <span>Open in new tab</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                  <Trash2 className="mr-2 h-4 w-4" />
-                  <span>Delete</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>

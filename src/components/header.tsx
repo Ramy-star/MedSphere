@@ -7,9 +7,8 @@ import { Search, X, Menu } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
-import Link from 'next/link';
 import { Logo } from './logo';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { AuthButton } from './auth-button';
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -18,7 +17,6 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [debouncedQuery] = useDebounce(query, 300);
-  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -49,7 +47,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
             <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
           </h1>
       </div>
-      <div className="flex items-center justify-end flex-grow">
+      <div className="flex items-center justify-end flex-grow gap-4">
         <div className="relative w-full max-w-[180px] sm:max-w-sm">
           <Search
             className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400"
@@ -71,6 +69,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               </Button>
           )}
         </div>
+        <AuthButton />
       </div>
     </header>
   );
