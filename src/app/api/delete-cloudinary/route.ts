@@ -1,3 +1,4 @@
+
 // src/app/api/delete-cloudinary/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { v2 as cloudinary } from 'cloudinary';
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Method Not Allowed' }, { status: 405 });
     }
 
-    const { publicId } = await req.json();
+    const { publicId, resourceType } = await req.json();
     if (!publicId) {
       return NextResponse.json({ error: 'Missing publicId' }, { status: 400 });
     }
@@ -35,11 +36,13 @@ export async function POST(req: NextRequest) {
     }
     
     // Call Cloudinary's destroy method to delete the asset
-    const result = await cloudinary.uploader.destroy(publicId);
+    const result = await cloudinary.uploader.destroy(publicId, {
+      resource_type: resourceType || 'raw',
+    });
 
     // Check the result from Cloudinary
     if (result.result !== 'ok' && result.result !== 'not found') {
-        throw new Error(`Cloudinary deletion failed: ${result.result}`);
+        throw new Error(`Cloudinary deletion failed for public_id ${publicId} with resource_type ${resourceType}: ${result.result}`);
     }
 
     return NextResponse.json({ success: true, result }, { status: 200 });
@@ -49,3 +52,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error', details: err.message }, { status: 500 });
   }
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
@@ -17,6 +18,7 @@ export type Content = {
     mime?: string;
     storagePath?: string; // secure_url from cloudinary
     cloudinaryPublicId?: string; // public_id from cloudinary
+    cloudinaryResourceType?: 'image' | 'video' | 'raw'; // resource_type from cloudinary
     url?: string; // For LINK type
   };
   createdAt?: string;
@@ -229,6 +231,7 @@ export const contentService = {
                         mime: file.type || 'application/octet-stream',
                         storagePath: data.secure_url,
                         cloudinaryPublicId: data.public_id,
+                        cloudinaryResourceType: data.resource_type,
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
@@ -312,6 +315,7 @@ export const contentService = {
                         mime: newFile.type || 'application/octet-stream',
                         storagePath: data.secure_url,
                         cloudinaryPublicId: data.public_id,
+                        cloudinaryResourceType: data.resource_type,
                     },
                 };
                 await updateDoc(docRef, updatedData);
@@ -364,6 +368,11 @@ export const contentService = {
   async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
 
+    type FileToDelete = {
+        publicId: string;
+        resourceType: 'image' | 'video' | 'raw';
+    };
+
     try {
         await runTransaction(db, async (transaction) => {
             const allContentSnapshot = await getDocs(collection(db, 'content'));
@@ -371,7 +380,7 @@ export const contentService = {
 
             const itemsToDelete: Content[] = [];
             const visited = new Set<string>();
-            const filesToDeleteFromCloudinary: string[] = [];
+            const filesToDeleteFromCloudinary: FileToDelete[] = [];
 
             function findRecursively(idToDelete: string) {
                 if(visited.has(idToDelete)) return;
@@ -381,7 +390,10 @@ export const contentService = {
                 if (item) {
                     itemsToDelete.push(item);
                     if (item.type === 'FILE' && item.metadata?.cloudinaryPublicId) {
-                        filesToDeleteFromCloudinary.push(item.metadata.cloudinaryPublicId);
+                        filesToDeleteFromCloudinary.push({
+                            publicId: item.metadata.cloudinaryPublicId,
+                            resourceType: item.metadata.cloudinaryResourceType || 'raw'
+                        });
                     }
                     const children = allContent.filter(x => x.parentId === idToDelete);
                     children.forEach(child => findRecursively(child.id));
@@ -390,15 +402,15 @@ export const contentService = {
             findRecursively(id);
 
             // Step 1: Delete files from Cloudinary via our API route
-            for (const publicId of filesToDeleteFromCloudinary) {
+            for (const file of filesToDeleteFromCloudinary) {
                  const res = await fetch('/api/delete-cloudinary', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ publicId }),
+                    body: JSON.stringify(file),
                 });
                 if (!res.ok) {
                     // Log the error but continue transaction to delete from Firestore anyway
-                    console.error(`Failed to delete ${publicId} from Cloudinary. Status: ${res.status}`);
+                    console.error(`Failed to delete ${file.publicId} from Cloudinary. Status: ${res.status}`);
                 }
             }
 
@@ -445,3 +457,5 @@ export const contentService = {
     }
   }
 };
+
+    
