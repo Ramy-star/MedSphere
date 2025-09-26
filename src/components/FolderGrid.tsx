@@ -25,10 +25,9 @@ import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { UploadProgress, UploadingFile } from './UploadProgress';
+import { UploadingFile, UploadProgress } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
-import { getFile } from '@/lib/indexedDBService';
 import { AddContentMenu } from './AddContentMenu';
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
@@ -37,8 +36,8 @@ function DropZone({ isVisible }: { isVisible: boolean }) {
     <div className="absolute inset-0 bg-blue-900/10 backdrop-blur-sm flex items-center justify-center border-4 border-dashed border-blue-500 rounded-2xl z-10 pointer-events-none">
         <div className="text-center text-white">
             <UploadCloud className="mx-auto h-16 w-16 mb-4" />
-            <h3 className="text-2xl font-bold">Drop files to save</h3>
-            <p className="text-blue-200">Release to save files to your browser</p>
+            <h3 className="text-2xl font-bold">Drop files to upload</h3>
+            <p className="text-blue-200">Release to start uploading files</p>
         </div>
     </div>
   );
@@ -109,20 +108,12 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
     setItemToDelete(null);
   };
   
-  const handleDownloadClick = async (item: Content) => {
-    const file = await getFile(item.id);
-    if (!file) {
-      toast({ variant: 'destructive', title: 'Download Failed', description: 'File not found in local storage.'});
-      return;
+  const handleDownloadClick = (item: Content) => {
+    if (item.metadata?.storagePath) {
+        window.open(item.metadata.storagePath, '_blank');
+    } else {
+        toast({ variant: 'destructive', title: 'Download Failed', description: 'File URL not found.'});
     }
-    const url = URL.createObjectURL(file);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = item.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   }
 
   const handleUpdateClick = (item: Content) => {
@@ -133,8 +124,12 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
   const handleFileUpdate = async (event: React.ChangeEvent<HTMLInputElement>) => {
       if (!itemToUpdate || !event.target.files || event.target.files.length === 0) return;
       const file = event.target.files[0];
-      await contentService.updateFile(itemToUpdate.id, file);
-      toast({ title: 'File Updated', description: `"${itemToUpdate.name}" has been updated.`});
+      try {
+        await contentService.updateFile(itemToUpdate.id, file);
+        toast({ title: 'File Updated', description: `"${itemToUpdate.name}" has been updated.`});
+      } catch (error: any) {
+         toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      }
       setItemToUpdate(null);
   };
 
@@ -243,6 +238,17 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
               <div className={containerClasses}>
                 <AnimatePresence>
+                  {uploadingFiles.map(file => (
+                    <motion.div
+                       key={file.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.15 }}
+                    >
+                        <UploadProgress file={file} />
+                    </motion.div>
+                  ))}
                   {items.map((it: Content, index) => {
                     const content = it.type === 'SUBJECT' ? (
                       <SubjectCard subject={it} />
@@ -258,7 +264,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                         onFileClick={handleFileClick} 
                         onRename={() => setItemToRename(it)}
                         onDelete={() => setItemToDelete(it)}
-                        onDownload={() => handleDownloadClick(it)}
+                        onDownload={handleDownloadClick}
                         onUpdate={() => handleUpdateClick(it)}
                       />
                     );
@@ -268,13 +274,12 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
                             initial={{ opacity: 0, y: 8 }}
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, y: 8 }}
-                            transition={{ duration: 0.15, delay: index * 0.02 }}
+                            transition={{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) }}
                         >
                             {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
                         </motion.div>
                     )
                   })}
-                  {/* Upload progress UI is no longer needed as local saving is instant */}
                 </AnimatePresence>
               </div>
             </SortableContext>
@@ -297,7 +302,7 @@ export function FolderGrid({ parentId, uploadingFiles, setUploadingFiles, onFile
           <AlertDialogHeader className="p-6 pb-0">
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete "{itemToDelete?.name}" and all its contents from your browser. This action cannot be undone.
+              This will permanently delete "{itemToDelete?.name}". The file will remain in your Cloudinary account. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="p-6 pt-4">

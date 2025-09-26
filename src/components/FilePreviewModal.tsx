@@ -16,50 +16,12 @@ import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
-import { getFile } from '@/lib/indexedDBService';
-
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
-  const [fileUrl, setFileUrl] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
-
-  useEffect(() => {
-    let objectUrl: string | null = null;
-    
-    if (!item || item.type !== 'FILE') {
-        setFileUrl(null);
-        setLoading(false);
-        return;
-    };
-    
-    setLoading(true);
-    getFile(item.id)
-      .then(file => {
-        if (file) {
-          objectUrl = URL.createObjectURL(file);
-          setFileUrl(objectUrl);
-        } else {
-          toast({ variant: 'destructive', title: 'Error', description: "Could not load file from local storage." });
-          setFileUrl(null);
-        }
-      })
-      .catch(error => {
-        console.error("Error getting file from IndexedDB:", error);
-        toast({ variant: 'destructive', title: 'Error', description: "Could not load file from local storage." });
-        setFileUrl(null);
-      })
-      .finally(() => {
-        setLoading(false);
-      });
-
-    return () => {
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [item, toast]);
-
+  
+  const fileUrl = item?.metadata?.storagePath;
+  const loading = false; // No loading needed for direct URL
 
   if (!item) return null;
 
@@ -67,6 +29,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (fileUrl) {
         const link = document.createElement('a');
         link.href = fileUrl;
+        link.target = "_blank"; // Open in new tab to let browser handle download
         link.download = item.name;
         document.body.appendChild(link);
         link.click();
@@ -79,11 +42,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }
 
   const handleCopyLink = () => {
-    const link = window.location.href;
-    navigator.clipboard.writeText(link).then(() => {
+    if(!fileUrl) return;
+    navigator.clipboard.writeText(fileUrl).then(() => {
         toast({
             title: "Link Copied!",
-            description: "A shareable link to this page has been copied.",
+            description: "A shareable link to this file has been copied.",
         })
     }).catch(err => {
         console.error('Failed to copy: ', err);
@@ -123,7 +86,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </Button>
              <Popover>
                 <PopoverTrigger asChild>
-                    <Button variant='default' className='rounded-full' disabled>
+                    <Button variant='default' className='rounded-full' disabled={!fileUrl}>
                         <Share2 className="w-5 h-5 mr-2" />
                         Share
                     </Button>
@@ -131,10 +94,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <PopoverContent className="w-80 border-slate-700 rounded-xl bg-slate-800 text-white shadow-lg mr-4">
                     <div className="grid gap-4">
                         <div className="space-y-2">
-                            <h4 className="font-medium leading-none">Sharing Not Available</h4>
+                            <h4 className="font-medium leading-none">Share File</h4>
                             <p className="text-sm text-slate-400">
-                                Files are stored locally on your device and cannot be shared.
+                                Anyone with this link can view the file.
                             </p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                            <Input defaultValue={fileUrl} readOnly className="h-8"/>
+                            <Button size="sm" className="px-3" onClick={handleCopyLink}>
+                                <span className="sr-only">Copy</span>
+                                <Share2 className="h-4 w-4" />
+                            </Button>
                         </div>
                     </div>
                 </PopoverContent>
@@ -149,7 +119,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             {!loading && !fileUrl && (
               <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
                   <p className="text-xl mb-3">File content not available.</p>
-                  <p className="text-sm text-slate-400">The file could not be loaded from your browser's storage. It might have been deleted or there was a network issue.</p>
+                  <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
               </div>
             )}
         </div>

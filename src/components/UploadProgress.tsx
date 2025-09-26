@@ -14,12 +14,13 @@ export type UploadingFile = {
   status: 'uploading' | 'success' | 'error';
 };
 
-// This type is kept for compatibility, but the local-first approach doesn't use all callbacks.
 export type UploadCallbacks = {
-  onProgress?: (progress: number) => void;
-  onSuccess: (content: Content) => void;
-  onError: (error: Error) => void;
+  onStart: (id: string) => void;
+  onProgress: (id: string, progress: number) => void;
+  onSuccess: (id: string, content: Content) => void;
+  onError: (id: string, error: Error) => void;
 };
+
 
 export function UploadProgress({ file }: { file: UploadingFile }) {
     const sizeInKB = file.size / 1024;
@@ -45,7 +46,7 @@ export function UploadProgress({ file }: { file: UploadingFile }) {
                     {file.status === 'error' && (
                         <div className="flex items-center gap-2 mt-1 text-red-400">
                            <AlertTriangle className="w-4 h-4" />
-                           <span className="text-xs">Save failed</span>
+                           <span className="text-xs">Upload failed</span>
                         </div>
                     )}
                      {file.status === 'success' && (

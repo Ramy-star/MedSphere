@@ -27,18 +27,25 @@ function FolderPageContent({ id }: { id: string }) {
   const processFileUpload = useCallback(async (file: File) => {
     if (!current) return;
 
-    // With IndexedDB, the "upload" is instant, so we can skip the progress UI
-    // and just show a success message.
-    const callbacks = {
-        onSuccess: (content: Content) => {
-            toast({ title: "File Saved", description: `"${content.name}" has been saved to your browser.` });
+    const callbacks: UploadCallbacks = {
+        onStart: (id) => {
+             setUploadingFiles(prev => [...prev, { id, name: file.name, size: file.size, progress: 0, status: 'uploading' }]);
         },
-        onError: (error: Error) => {
-            console.error("Save failed in component:", error);
+        onProgress: (id, progress) => {
+            setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, progress } : f));
+        },
+        onSuccess: (id, content) => {
+             setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'success' } : f));
+             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== id)), 2000); // Remove after 2s
+             toast({ title: "File Uploaded", description: `"${content.name}" has been uploaded.` });
+        },
+        onError: (id, error) => {
+            console.error("Upload failed in component:", error);
+            setUploadingFiles(prev => prev.map(f => f.id === id ? { ...f, status: 'error' } : f));
             toast({
                 variant: 'destructive',
-                title: 'Save Failed',
-                description: `Could not save ${file.name}. Please try again.`
+                title: 'Upload Failed',
+                description: error.message || `Could not upload ${file.name}. Please try again.`
             })
         }
     };
@@ -86,8 +93,7 @@ function FolderPageContent({ id }: { id: string }) {
     <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
        <FileExplorerHeader currentFolder={extendedCurrent} onFileSelected={processFileUpload} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-          {/* We pass an empty array for uploadingFiles as IndexedDB is instant */}
-          <FolderGrid parentId={id} uploadingFiles={[]} setUploadingFiles={() => {}} onFileSelected={processFileUpload} />
+          <FolderGrid parentId={id} uploadingFiles={uploadingFiles} setUploadingFiles={setUploadingFiles} onFileSelected={processFileUpload} />
        </div>
     </main>
   );

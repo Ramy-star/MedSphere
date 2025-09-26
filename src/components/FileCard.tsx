@@ -39,7 +39,7 @@ export function FileCard({
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
-    onDownload: () => void,
+    onDownload: (item: Content) => void,
     onUpdate: () => void
 }) {
 
@@ -95,7 +95,7 @@ export function FileCard({
             <Edit className="mr-2 h-4 w-4" />
             <span>Rename</span>
           </DropdownMenuItem>
-           <DropdownMenuItem onClick={onDownload} className="cursor-pointer">
+           <DropdownMenuItem onClick={() => onDownload(item)} className="cursor-pointer">
             <Download className="mr-2 h-4 w-4" />
             <span>Download</span>
           </DropdownMenuItem>

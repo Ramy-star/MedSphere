@@ -2,7 +2,6 @@
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
-import { saveFile as saveFileToDb, deleteFile as deleteFileFromDb } from './indexedDBService';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -17,8 +16,12 @@ export type Content = {
   metadata?: {
     size?: number;
     mime?: string;
-    // storagePath is no longer used for IndexedDB solution, but kept for schema consistency
     storagePath?: string; 
+    cloudinary?: {
+        public_id: string;
+        version: number;
+        signature: string;
+    }
   };
   createdAt?: string;
   updatedAt?: string;
@@ -27,10 +30,11 @@ export type Content = {
   color?: string;
 };
 
-// This type is now simplified as we don't have real upload progress
 export type UploadCallbacks = {
-  onSuccess: (content: Content) => void;
-  onError: (error: Error) => void;
+  onStart: (id: string) => void;
+  onProgress: (id: string, progress: number) => void;
+  onSuccess: (id: string, content: Content) => void;
+  onError: (id: string, error: Error) => void;
 };
 
 
@@ -121,83 +125,98 @@ export const contentService = {
       throw e;
     }
   },
-
+  
   async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks): Promise<void> {
-    if (!db) {
-        const err = new Error("Firestore not initialized");
-        callbacks.onError(err);
-        return;
-    }
-
-    const id = `file_${uuidv4()}`;
-
+    const tempId = `upload_${uuidv4()}`;
+    callbacks.onStart(tempId);
+    
     try {
-        // Save file to IndexedDB first
-        await saveFileToDb(id, file);
+        // 1. Get signature from our API
+        const sigResponse = await fetch('/api/sign-cloudinary-params', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                folder: `content/${parentId || 'root'}`
+            })
+        });
 
-        const children = await this.getChildren(parentId);
-        const order = children.length;
+        if (!sigResponse.ok) {
+            throw new Error('Failed to get Cloudinary signature.');
+        }
 
-        const newFileContent: Content = {
-            id,
-            name: file.name,
-            type: 'FILE',
-            parentId: parentId,
-            metadata: {
-                size: file.size,
-                mime: file.type,
-            },
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            order: order
+        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
+        
+        // 2. Upload to Cloudinary
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('api_key', apiKey);
+        formData.append('timestamp', timestamp);
+        formData.append('signature', signature);
+        formData.append('folder', `content/${parentId || 'root'}`);
+
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
+
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const progress = (event.loaded / event.total) * 100;
+                callbacks.onProgress(tempId, progress);
+            }
+        };
+
+        xhr.onload = async () => {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                const data = JSON.parse(xhr.responseText);
+                
+                // 3. Save metadata to Firestore
+                const id = `file_${uuidv4()}`;
+                const children = await this.getChildren(parentId);
+                const order = children.length;
+
+                const newFileContent: Content = {
+                    id,
+                    name: file.name,
+                    type: 'FILE',
+                    parentId: parentId,
+                    metadata: {
+                        size: data.bytes,
+                        mime: data.resource_type === 'raw' ? file.type : `${data.resource_type}/${data.format}`,
+                        storagePath: data.secure_url,
+                        cloudinary: {
+                           public_id: data.public_id,
+                           version: data.version,
+                           signature: data.signature,
+                        }
+                    },
+                    createdAt: new Date(data.created_at).toISOString(),
+                    updatedAt: new Date(data.created_at).toISOString(),
+                    order: order
+                };
+                
+                await setDoc(doc(db, 'content', id), newFileContent);
+                callbacks.onSuccess(tempId, newFileContent);
+
+            } else {
+                 callbacks.onError(tempId, new Error(`Cloudinary upload failed: ${xhr.statusText}`));
+            }
+        };
+
+        xhr.onerror = () => {
+            callbacks.onError(tempId, new Error('Network error during upload.'));
         };
         
-        await setDoc(doc(db, 'content', id), newFileContent);
-        callbacks.onSuccess(newFileContent);
-
+        xhr.send(formData);
     } catch(e: any) {
-        // If something fails, try to clean up IndexedDB
-        await deleteFileFromDb(id).catch(err => console.error("Cleanup failed", err));
-
-        if (e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `/content/${id}`,
-                operation: 'create',
-                requestResourceData: { name: file.name },
-            }));
-        }
-        callbacks.onError(e);
+        callbacks.onError(tempId, e);
     }
   },
 
   async updateFile(id: string, file: File): Promise<void> {
-    if (!db) throw new Error("Firestore not initialized");
-    const docRef = doc(db, 'content', id);
-    
-    try {
-        // Overwrite the file in IndexedDB
-        await saveFileToDb(id, file);
-
-        const updatedMetadata = {
-            size: file.size,
-            mime: file.type,
-        };
-        
-        await updateDoc(docRef, {
-            metadata: updatedMetadata,
-            name: file.name,
-            updatedAt: new Date().toISOString()
-        });
-    } catch(e: any) {
-         if (e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `/content/${id}`,
-                operation: 'update',
-                requestResourceData: { metadata: { size: file.size, mime: file.type } },
-            }));
-        }
-        throw e;
-    }
+     // This is more complex with an external storage like Cloudinary.
+     // It would involve deleting the old file and uploading a new one.
+     // For simplicity, we will just delete and the user can re-upload.
+     console.warn("Update file not implemented for Cloudinary. Please delete and re-upload.");
+     throw new Error("Update file not implemented.");
   },
   
   async getById(id: string): Promise<Content | null> {
@@ -232,6 +251,11 @@ export const contentService = {
   async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
 
+    // Important: Deleting from Cloudinary requires a backend-signed request.
+    // This frontend-only implementation will only delete the Firestore record.
+    // The file will remain in your Cloudinary account (orphaned).
+    // A robust solution would involve a Firebase Function to handle deletion.
+
     try {
         await runTransaction(db, async (transaction) => {
             const allContentSnapshot = await getDocs(collection(db, 'content'));
@@ -256,11 +280,7 @@ export const contentService = {
             for (const item of itemsToDelete) {
                 const docRef = doc(db, 'content', item.id);
                 transaction.delete(docRef);
-
-                if (item.type === 'FILE') {
-                    // Non-transactional, but best effort.
-                    await deleteFileFromDb(item.id);
-                }
+                // We do not delete from Cloudinary here.
             }
         });
     } catch (e: any) {
