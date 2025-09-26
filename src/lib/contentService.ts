@@ -21,7 +21,10 @@ export type Content = {
         public_id: string;
         version: number;
         signature: string;
-    }
+    };
+    thumbnail?: string;
+    originalUrl?: string;
+    fileType?: string;
   };
   createdAt?: string;
   updatedAt?: string;
@@ -186,7 +189,12 @@ export const contentService = {
                            public_id: data.public_id,
                            version: data.version,
                            signature: data.signature,
-                        }
+                        },
+                        thumbnail: data.resource_type === 'image'
+                          ? data.secure_url
+                          : `https://res.cloudinary.com/${cloudName}/image/upload/pg_1/${data.public_id}.jpg`,
+                        originalUrl: data.secure_url,
+                        fileType: file.type,
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
