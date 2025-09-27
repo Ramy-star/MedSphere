@@ -16,7 +16,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
-  const [debouncedQuery] = useDebounce(query, 500);
+  const [debouncedQuery] = useDebounce(query, 1000);
 
   useEffect(() => {
     // Navigate to search results if there is a debounced query
@@ -24,10 +24,10 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       router.push(`/search?q=${debouncedQuery}`);
     } 
     // If the debounced query becomes empty AND we are on the search page, navigate home
-    else if (!debouncedQuery && pathname === '/search') {
+    else if (!query && pathname === '/search') {
       router.push('/');
     }
-  }, [debouncedQuery, router, pathname]);
+  }, [debouncedQuery, query, router, pathname]);
   
   useEffect(() => {
     // Sync query state with URL search params when they change (e.g., browser back/forward)
