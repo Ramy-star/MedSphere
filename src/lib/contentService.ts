@@ -7,6 +7,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sha256file } from './hashFile';
+import { nanoid } from 'nanoid';
 
 
 export type Content = {
@@ -23,6 +24,7 @@ export type Content = {
     url?: string; // For LINK type
     iconURL?: string; // For custom folder icons
     iconCloudinaryPublicId?: string; // public_id for the custom icon
+    shortId?: string; // For short URLs
   };
   createdAt?: string;
   updatedAt?: string;
@@ -153,6 +155,7 @@ export const contentService = {
           parentId: parentId,
           metadata: {
             url: url,
+            shortId: nanoid(10),
           },
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
@@ -184,7 +187,7 @@ export const contentService = {
     
     try {
         const hash = await sha256file(file);
-        const folder = `content/${parentId || 'root'}`;
+        const folder = 'content';
         const public_id = `${folder}/${hash}`;
         
         const paramsToSign = {
@@ -244,16 +247,15 @@ export const contentService = {
                 const children = await this.getChildren(parentId);
                 const order = children.length;
                 
+                const shortId = nanoid(10);
                 const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
                 let finalFileUrl: string;
 
-                if (!filesBaseUrl || !data.secure_url) {
-                    console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set or secure_url is missing. Falling back to Cloudinary direct URL.");
+                if (!filesBaseUrl) {
+                    console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to Cloudinary direct URL.");
                     finalFileUrl = data.secure_url;
                 } else {
-                    const cloudinaryUrl = new URL(data.secure_url);
-                    const pathWithParams = `${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
-                    finalFileUrl = `${filesBaseUrl}${pathWithParams.substring(pathWithParams.indexOf('/' + data.resource_type))}`;
+                    finalFileUrl = `${filesBaseUrl}/${shortId}`;
                 }
 
 
@@ -268,6 +270,7 @@ export const contentService = {
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
+                        shortId: shortId,
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
@@ -344,23 +347,23 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
-
+                
+                const shortId = nanoid(10);
                 const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
                 let iconURL : string;
 
-                if (!filesBaseUrl || !data.secure_url) {
-                     console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set or secure_url is missing. Falling back to Cloudinary direct URL for icon.");
+                if (!filesBaseUrl) {
+                     console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to Cloudinary direct URL for icon.");
                     iconURL = data.secure_url;
                 } else {
-                     const cloudinaryUrl = new URL(data.secure_url);
-                     const pathWithParams = `${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
-                     iconURL = `${filesBaseUrl}${pathWithParams.substring(pathWithParams.indexOf('/' + data.resource_type))}`;
+                     iconURL = `${filesBaseUrl}/${shortId}`;
                 }
 
 
                 await updateDoc(itemRef, {
                     'metadata.iconURL': iconURL,
                     'metadata.iconCloudinaryPublicId': data.public_id,
+                    'metadata.shortId': shortId,
                     updatedAt: new Date().toISOString()
                 });
                 callbacks.onSuccess(iconURL);
@@ -442,15 +445,15 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
+                
+                const shortId = existingContent.metadata?.shortId || nanoid(10);
                 const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
                 let finalFileUrl: string;
 
-                if (!filesBaseUrl || !data.secure_url) {
+                if (!filesBaseUrl) {
                     finalFileUrl = data.secure_url;
                 } else {
-                    const cloudinaryUrl = new URL(data.secure_url);
-                    const pathWithParams = `${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
-                    finalFileUrl = `${filesBaseUrl}${pathWithParams.substring(pathWithParams.indexOf('/' + data.resource_type))}`;
+                    finalFileUrl = `${filesBaseUrl}/${shortId}`;
                 }
 
                 const updatedData = {
@@ -463,6 +466,7 @@ export const contentService = {
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
+                        shortId: shortId,
                     },
                 };
                 await updateDoc(docRef, updatedData);
@@ -610,5 +614,3 @@ export const contentService = {
     }
   }
 };
-
-    
