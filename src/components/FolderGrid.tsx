@@ -261,7 +261,7 @@ export function FolderGrid({
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: 8 }}
                         transition={{ duration: 0.15 }}
-                        className={cn(isMobile ? "px-4" : "")}
+                        className={cn(isMobile && "px-4")}
                     >
                         <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                     </motion.div>
@@ -299,7 +299,7 @@ export function FolderGrid({
                     }
                     
                     if (isMobile) {
-                        return <motion.div key={itemKey} {...motionProps} className="px-4 border-b border-white/10">{content}</motion.div>
+                        return <motion.div key={itemKey} {...motionProps} className="border-b border-white/10">{content}</motion.div>
                     }
 
                     return (

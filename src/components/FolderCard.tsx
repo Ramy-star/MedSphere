@@ -15,6 +15,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
 import { useRef } from 'react';
+import { cn } from '@/lib/utils';
 
 export function FolderCard({ item, onRename, onDelete, onIconChange, displayAs = 'grid' }: { item: Content, onRename: () => void, onDelete: () => void, onIconChange: (item: Content) => void, displayAs?: 'grid' | 'list' }) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
@@ -41,7 +42,7 @@ export function FolderCard({ item, onRename, onDelete, onIconChange, displayAs =
     
     if (displayAs === 'list') {
         return (
-             <div className="relative group flex items-center w-full p-3 hover:bg-white/10 transition-colors rounded-lg">
+             <div className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg md:px-3 px-4">
                 {!isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
                 <Link href={`/folder/${item.id}`} className="flex items-center gap-3 overflow-hidden flex-1">
                     {item.metadata?.iconURL ? (

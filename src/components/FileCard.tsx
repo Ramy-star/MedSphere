@@ -213,7 +213,7 @@ export function FileCard({
     );
     
     return (
-        <div className="relative group flex items-center w-full p-3 hover:bg-white/10 transition-colors rounded-lg">
+        <div className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg md:px-3 px-4">
             {fileContent}
         </div>
     )
