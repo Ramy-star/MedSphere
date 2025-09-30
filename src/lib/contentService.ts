@@ -203,8 +203,8 @@ export const contentService = {
         });
 
         if (!sigResponse.ok) {
-            const errorBody = await sigResponse.text();
-            throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}. Body: ${errorBody}`);
+            const errorBody = await sigResponse.json();
+            throw new Error(`Failed to get Cloudinary signature: ${errorBody.error || sigResponse.statusText}`);
         }
 
         const { signature, apiKey, cloudName } = await sigResponse.json();
