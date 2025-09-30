@@ -75,7 +75,8 @@ function LevelPageContent({ levelName }: { levelName: string }) {
   );
 }
 
-function LevelPage({ params }: { params: { levelName: string } }) {
+function LevelPage({ params }: { params: Promise<{ levelName: string }> }) {
+  const { levelName } = use(params);
   
   return (
     <Suspense fallback={
@@ -90,7 +91,7 @@ function LevelPage({ params }: { params: { levelName: string } }) {
             </div>
         </main>
     }>
-      <LevelPageContent levelName={params.levelName} />
+      <LevelPageContent levelName={levelName} />
     </Suspense>
   )
 }

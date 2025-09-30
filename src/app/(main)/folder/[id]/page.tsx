@@ -146,7 +146,7 @@ function FolderPageContent({ id }: { id: string }) {
 }
 
 
-function FolderPage({ params }: { params: { id: string } }) {
+function FolderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
 
   return (
