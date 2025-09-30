@@ -6,6 +6,7 @@ import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { sha256file } from './hashFile';
 
 
 export type Content = {
@@ -16,7 +17,7 @@ export type Content = {
   metadata?: {
     size?: number;
     mime?: string;
-    storagePath?: string; // secure_url from cloudinary
+    storagePath?: string; // This will now be the Cloudflare URL
     cloudinaryPublicId?: string; // public_id from cloudinary
     cloudinaryResourceType?: 'image' | 'video' | 'raw'; // resource_type from cloudinary
     url?: string; // For LINK type
@@ -180,11 +181,17 @@ export const contentService = {
   
   async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
-    const paramsToSign = {
-        folder: `content/${parentId || 'root'}`
-    };
     
     try {
+        const hash = await sha256file(file);
+        const folder = `content/${parentId || 'root'}`;
+        const public_id = `${folder}/${hash}`;
+        
+        const paramsToSign = {
+            public_id,
+            folder,
+        };
+
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -203,9 +210,12 @@ export const contentService = {
         formData.append('api_key', apiKey);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);
-        Object.entries(paramsToSign).forEach(([key, value]) => {
-            formData.append(key, value);
-        });
+        formData.append('public_id', public_id);
+        formData.append('folder', folder);
+        
+        formData.append('use_filename', 'false');
+        formData.append('unique_filename', 'false');
+        formData.append('overwrite', 'false');
 
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
 
@@ -220,9 +230,29 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
+                const q = query(collection(db, 'content'), where('metadata.cloudinaryPublicId', '==', data.public_id), where('parentId', '==', parentId));
+                const existingDocs = await getDocs(q);
+
+                if (!existingDocs.empty) {
+                    console.log("File with this content already exists in this folder.");
+                    callbacks.onSuccess(existingDocs.docs[0].data() as Content);
+                    return;
+                }
+
                 const id = uuidv4();
                 const children = await this.getChildren(parentId);
                 const order = children.length;
+                
+                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
+                let finalFileUrl: string;
+
+                if (!filesBaseUrl) {
+                    console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to Cloudinary direct URL.");
+                    finalFileUrl = data.secure_url;
+                } else {
+                    finalFileUrl = `${filesBaseUrl.endsWith('/') ? filesBaseUrl : filesBaseUrl + '/'}${data.public_id}`;
+                }
+
 
                 const newFileContent: Content = {
                     id,
@@ -232,7 +262,7 @@ export const contentService = {
                     metadata: {
                         size: data.bytes,
                         mime: file.type || 'application/octet-stream',
-                        storagePath: data.secure_url,
+                        storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
                     },
@@ -254,7 +284,6 @@ export const contentService = {
         };
 
         xhr.onabort = () => {
-            // Don't treat user-initiated abort as an error
             console.log("Upload aborted by user.");
         };
         
@@ -268,13 +297,18 @@ export const contentService = {
 
   async uploadAndSetIcon(itemId: string, iconFile: File, callbacks: Omit<UploadCallbacks, 'onSuccess'> & { onSuccess: (url: string) => void }): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
-    const paramsToSign = { folder: 'icons' };
 
     try {
         const itemRef = doc(db, 'content', itemId);
         const itemSnap = await getDoc(itemRef);
         if (!itemSnap.exists()) throw new Error("Item not found");
+
+        const hash = await sha256file(iconFile);
+        const folder = 'icons';
+        const public_id = `${folder}/${hash}`;
         
+        const paramsToSign = { public_id, folder };
+
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -288,9 +322,11 @@ export const contentService = {
         formData.append('api_key', apiKey);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);
-        Object.entries(paramsToSign).forEach(([key, value]) => {
-            formData.append(key, value);
-        });
+        formData.append('public_id', public_id);
+        formData.append('folder', folder);
+        formData.append('use_filename', 'false');
+        formData.append('unique_filename', 'false');
+        formData.append('overwrite', 'false');
 
 
         const xhr = new XMLHttpRequest();
@@ -303,12 +339,21 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
-                const iconURL = data.secure_url;
-                const iconPublicId = data.public_id;
+
+                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
+                let iconURL : string;
+
+                if (!filesBaseUrl) {
+                     console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to Cloudinary direct URL for icon.");
+                    iconURL = data.secure_url;
+                } else {
+                     iconURL = `${filesBaseUrl.endsWith('/') ? filesBaseUrl : filesBaseUrl + '/'}${data.public_id}`;
+                }
+
 
                 await updateDoc(itemRef, {
                     'metadata.iconURL': iconURL,
-                    'metadata.iconCloudinaryPublicId': iconPublicId,
+                    'metadata.iconCloudinaryPublicId': data.public_id,
                     updatedAt: new Date().toISOString()
                 });
                 callbacks.onSuccess(iconURL);
@@ -385,6 +430,16 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
+                
+                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
+                let finalFileUrl: string;
+
+                if (!filesBaseUrl) {
+                    finalFileUrl = data.secure_url;
+                } else {
+                    finalFileUrl = `${filesBaseUrl.endsWith('/') ? filesBaseUrl : filesBaseUrl + '/'}${data.public_id}`;
+                }
+
                 const updatedData = {
                     name: newFile.name,
                     updatedAt: new Date().toISOString(),
@@ -392,7 +447,7 @@ export const contentService = {
                         ...existingContent.metadata,
                         size: data.bytes,
                         mime: newFile.type || 'application/octet-stream',
-                        storagePath: data.secure_url,
+                        storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
                     },
