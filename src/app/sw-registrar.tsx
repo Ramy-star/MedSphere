@@ -20,7 +20,7 @@ export default function SWRegistrar() {
         // Register the service worker
         wb.register()
           .then(registration => {
-            console.log('Service Worker registered with scope:', registration.scope);
+            console.log('Service Worker registered with scope:', registration?.scope);
           })
           .catch(error => {
             console.error('Service Worker registration failed:', error);
