@@ -18,7 +18,7 @@ const withPWA = require('next-pwa')({
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
         },
         cacheableResponse: {
-          statuses: [0, 200],
+          statuses: [0, 200], // Important for cross-origin requests (like Cloudinary)
         },
       },
     },
