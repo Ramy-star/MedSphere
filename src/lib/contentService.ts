@@ -246,11 +246,12 @@ export const contentService = {
                 const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
                 let finalFileUrl: string;
 
-                if (!filesBaseUrl) {
-                    console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to Cloudinary direct URL.");
+                if (!filesBaseUrl || !data.secure_url) {
+                    console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set or secure_url is missing. Falling back to Cloudinary direct URL.");
                     finalFileUrl = data.secure_url;
                 } else {
-                    finalFileUrl = `${filesBaseUrl.endsWith('/') ? filesBaseUrl : filesBaseUrl + '/'}${data.public_id}`;
+                    const cloudinaryUrl = new URL(data.secure_url);
+                    finalFileUrl = `${filesBaseUrl}${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
                 }
 
 
@@ -343,11 +344,12 @@ export const contentService = {
                 const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
                 let iconURL : string;
 
-                if (!filesBaseUrl) {
-                     console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to Cloudinary direct URL for icon.");
+                if (!filesBaseUrl || !data.secure_url) {
+                     console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set or secure_url is missing. Falling back to Cloudinary direct URL for icon.");
                     iconURL = data.secure_url;
                 } else {
-                     iconURL = `${filesBaseUrl.endsWith('/') ? filesBaseUrl : filesBaseUrl + '/'}${data.public_id}`;
+                     const cloudinaryUrl = new URL(data.secure_url);
+                     iconURL = `${filesBaseUrl}${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
                 }
 
 
@@ -430,14 +432,14 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
-                
                 const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
                 let finalFileUrl: string;
 
-                if (!filesBaseUrl) {
+                if (!filesBaseUrl || !data.secure_url) {
                     finalFileUrl = data.secure_url;
                 } else {
-                    finalFileUrl = `${filesBaseUrl.endsWith('/') ? filesBaseUrl : filesBaseUrl + '/'}${data.public_id}`;
+                    const cloudinaryUrl = new URL(data.secure_url);
+                    finalFileUrl = `${filesBaseUrl}${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
                 }
 
                 const updatedData = {
