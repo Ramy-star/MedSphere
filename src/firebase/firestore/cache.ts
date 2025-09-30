@@ -58,3 +58,4 @@ export async function clearCache(): Promise<void> {
         console.error('Failed to clear IndexedDB cache:', error);
     }
 }
+

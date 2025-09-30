@@ -75,3 +75,4 @@ export function useDoc<T extends { id: string }>(collectionPath: string, docId?:
 
   return { data, loading, error };
 }
+
