@@ -1,88 +1,60 @@
-
-import createNextPwa from 'next-pwa';
-
-const withPWA = createNextPwa({
-  dest: 'public',
-  register: true,
-  skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development',
-  runtimeCaching: [
-    {
-      urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'cloudinary-images',
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-        },
-      },
-    },
-    {
-      urlPattern: /^https:\/\/picsum\.photos\/.*/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'picsum-images',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:pdf|png|jpg|jpeg|svg|gif|ico)$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-assets',
-        expiration: {
-          maxEntries: 100,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-        },
-      },
-    },
-  ],
-});
+// @ts-check
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  typescript: {
-    ignoreBuildErrors: true,
-  },
-  eslint: {
-    ignoreDuringBuilds: true,
-  },
-  images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'placehold.co',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'picsum.photos',
-        port: '',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-        port: '',
-        pathname: '/**',
-      }
-    ],
-  },
-  webpack: (config) => {
-    config.resolve.alias.canvas = false;
-    return config;
-  },
+    reactStrictMode: true,
+    typescript: {
+        ignoreBuildErrors: true,
+    }
 };
 
-export default withPWA(nextConfig);
+/** @type {import('next-pwa').PWAConfig} */
+const pwaConfig = {
+    dest: 'public',
+    disable: process.env.NODE_ENV === 'development',
+    register: true,
+    skipWaiting: true,
+    runtimeCaching: [
+        {
+            urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+                cacheName: 'cloudinary-images',
+                expiration: {
+                    maxEntries: 100,
+                    maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+                },
+            },
+        },
+        {
+            urlPattern: /^https:\/\/medsphere\.roumio777\.workers\.dev\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+                cacheName: 'file-cache',
+                expiration: {
+                    maxEntries: 200,
+                    maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
+                },
+            },
+        },
+        {
+            urlPattern: ({ url }) => {
+                return url.pathname.startsWith('/_next/static');
+            },
+            handler: 'CacheFirst',
+            options: {
+                cacheName: 'next-static',
+                expiration: {
+                    maxEntries: 32,
+                    maxAgeSeconds: 24 * 60 * 60, // 24 hours
+                },
+            },
+        },
+    ],
+}
+
+
+// @ts-ignore - next-pwa is not updated for Next 14 yet
+import withPWA from 'next-pwa';
+
+export default withPWA(pwaConfig)(nextConfig);

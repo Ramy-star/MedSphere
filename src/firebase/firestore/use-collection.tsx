@@ -9,33 +9,34 @@ import {
   orderBy,
   limit,
   onSnapshot,
-  QueryConstraint,
   Query,
   DocumentData,
 } from 'firebase/firestore';
 import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
+import { getFromCache, saveToCache } from './cache';
 
 type CollectionOptions = {
-  where?: [string, any, any] | [string, any, any][]; // Allow single or multiple where clauses
+  where?: [string, any, any] | [string, any, any][];
   orderBy?: [string, 'asc' | 'desc'];
   limit?: number;
   disabled?: boolean;
 };
 
 
-export function useCollection<T>(path: string, options: CollectionOptions = {}) {
+export function useCollection<T extends { id: string }>(path: string, options: CollectionOptions = {}) {
   const { db } = useFirebase();
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  // Memoize options to prevent re-running the effect on every render.
   const memoizedOptions = useMemo(() => options, [
       // eslint-disable-next-line react-hooks/exhaustive-deps
       JSON.stringify(options)
   ]);
+  
+  const cacheKey = useMemo(() => `collection-${path}-${JSON.stringify(memoizedOptions)}`, [path, memoizedOptions]);
 
   useEffect(() => {
     if (memoizedOptions.disabled || !db) {
@@ -45,18 +46,26 @@ export function useCollection<T>(path: string, options: CollectionOptions = {}) 
     }
     
     setLoading(true);
+    let isMounted = true;
 
+    // 1. Try to get data from cache first
+    getFromCache<T[]>(cacheKey).then(cachedData => {
+      if (isMounted && cachedData) {
+        setData(cachedData);
+        setLoading(false); // We have data, so stop initial loading indicator
+      }
+    });
+
+    // 2. Set up the realtime listener
     try {
         let q: Query<DocumentData> = collection(db, path);
         
         if (memoizedOptions.where) {
             if (Array.isArray(memoizedOptions.where[0])) {
-                // It's an array of where clauses
                 (memoizedOptions.where as [string, any, any][]).forEach(w => {
                     q = query(q, where(...w));
                 });
             } else {
-                // It's a single where clause
                 q = query(q, where(...(memoizedOptions.where as [string, any, any])));
             }
         }
@@ -70,15 +79,18 @@ export function useCollection<T>(path: string, options: CollectionOptions = {}) 
         const unsubscribe = onSnapshot(
         q,
         (snapshot) => {
+            if (!isMounted) return;
             const result: T[] = [];
             snapshot.forEach((doc) => {
-            result.push({ id: doc.id, ...doc.data() } as T);
+              result.push({ id: doc.id, ...doc.data() } as T);
             });
             setData(result);
-            setLoading(false);
+            saveToCache(cacheKey, result); // Update cache
+            setLoading(false); // Final loading state
             setError(null);
         },
         (err) => {
+            if (!isMounted) return;
             console.error(`Error fetching collection ${path}:`, err);
             
             if (err.code === 'permission-denied') {
@@ -91,18 +103,21 @@ export function useCollection<T>(path: string, options: CollectionOptions = {}) 
             } else {
                  setError(err);
             }
-
             setLoading(false);
         }
         );
 
-        return () => unsubscribe();
+        return () => {
+          isMounted = false;
+          unsubscribe();
+        };
     } catch (e: any) {
+        if (!isMounted) return;
         console.error("Error setting up collection listener:", e);
         setError(e);
         setLoading(false);
     }
-  }, [db, path, memoizedOptions]);
+  }, [db, path, memoizedOptions, cacheKey]);
 
   return { data, loading, error };
 }
