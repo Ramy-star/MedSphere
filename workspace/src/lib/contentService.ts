@@ -17,7 +17,7 @@ export type Content = {
   metadata?: {
     size?: number;
     mime?: string;
-    storagePath?: string; // secure_url from cloudinary
+    storagePath?: string; // This will now be the Cloudflare URL
     cloudinaryPublicId?: string; // public_id from cloudinary
     cloudinaryResourceType?: 'image' | 'video' | 'raw'; // resource_type from cloudinary
     url?: string; // For LINK type
@@ -184,9 +184,8 @@ export const contentService = {
     
     try {
         const hash = await sha256file(file);
-        const ext = file.name.split('.').pop() || '';
-        const public_id = `content/${hash}`;
         const folder = `content/${parentId || 'root'}`;
+        const public_id = `${folder}/${hash}`;
         
         const paramsToSign = {
             public_id,
@@ -214,9 +213,9 @@ export const contentService = {
         formData.append('public_id', public_id);
         formData.append('folder', folder);
         
-        // This tells Cloudinary not to add random characters to the public_id
         formData.append('use_filename', 'false');
         formData.append('unique_filename', 'false');
+        formData.append('overwrite', 'false');
 
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
 
@@ -231,20 +230,22 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                // Check if a document with this public_id already exists
-                const q = query(collection(db, 'content'), where('metadata.cloudinaryPublicId', '==', data.public_id));
+                const q = query(collection(db, 'content'), where('metadata.cloudinaryPublicId', '==', data.public_id), where('parentId', '==', parentId));
                 const existingDocs = await getDocs(q);
 
                 if (!existingDocs.empty) {
-                    console.log("File with this content already exists.");
-                    // We can either return the existing one or handle as needed
-                    // For simplicity, we'll proceed to create a new Firestore entry
-                    // but point to the same Cloudinary asset.
+                    console.log("File with this content already exists in this folder.");
+                    callbacks.onSuccess(existingDocs.docs[0].data() as Content);
+                    return;
                 }
 
                 const id = uuidv4();
                 const children = await this.getChildren(parentId);
                 const order = children.length;
+                
+                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL || `https://res.cloudinary.com/${cloudName}`;
+                const finalFileUrl = `${filesBaseUrl}/${data.resource_type}/upload/${data.public_id}`;
+
 
                 const newFileContent: Content = {
                     id,
@@ -254,7 +255,7 @@ export const contentService = {
                     metadata: {
                         size: data.bytes,
                         mime: file.type || 'application/octet-stream',
-                        storagePath: data.secure_url,
+                        storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
                     },
@@ -276,7 +277,6 @@ export const contentService = {
         };
 
         xhr.onabort = () => {
-            // Don't treat user-initiated abort as an error
             console.log("Upload aborted by user.");
         };
         
@@ -297,8 +297,8 @@ export const contentService = {
         if (!itemSnap.exists()) throw new Error("Item not found");
 
         const hash = await sha256file(iconFile);
-        const public_id = `icons/${hash}`;
         const folder = 'icons';
+        const public_id = `${folder}/${hash}`;
         
         const paramsToSign = { public_id, folder };
 
@@ -319,6 +319,7 @@ export const contentService = {
         formData.append('folder', folder);
         formData.append('use_filename', 'false');
         formData.append('unique_filename', 'false');
+        formData.append('overwrite', 'false');
 
 
         const xhr = new XMLHttpRequest();
@@ -331,12 +332,13 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
-                const iconURL = data.secure_url;
-                const iconPublicId = data.public_id;
+
+                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL || `https://res.cloudinary.com/${cloudName}`;
+                const iconURL = `${filesBaseUrl}/image/upload/${data.public_id}`;
 
                 await updateDoc(itemRef, {
                     'metadata.iconURL': iconURL,
-                    'metadata.iconCloudinaryPublicId': iconPublicId,
+                    'metadata.iconCloudinaryPublicId': data.public_id,
                     updatedAt: new Date().toISOString()
                 });
                 callbacks.onSuccess(iconURL);
@@ -413,6 +415,9 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
+                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL || `https://res.cloudinary.com/${cloudName}`;
+                const finalFileUrl = `${filesBaseUrl}/${data.resource_type}/upload/${data.public_id}`;
+
                 const updatedData = {
                     name: newFile.name,
                     updatedAt: new Date().toISOString(),
@@ -420,7 +425,7 @@ export const contentService = {
                         ...existingContent.metadata,
                         size: data.bytes,
                         mime: newFile.type || 'application/octet-stream',
-                        storagePath: data.secure_url,
+                        storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
                     },
