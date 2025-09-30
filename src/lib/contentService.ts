@@ -190,6 +190,9 @@ export const contentService = {
         const paramsToSign = {
             public_id,
             folder,
+            use_filename: false,
+            unique_filename: false,
+            overwrite: false,
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
@@ -210,12 +213,11 @@ export const contentService = {
         formData.append('api_key', apiKey);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);
-        formData.append('public_id', public_id);
-        formData.append('folder', folder);
         
-        formData.append('use_filename', 'false');
-        formData.append('unique_filename', 'false');
-        formData.append('overwrite', 'false');
+        // Append all signed parameters to the form data
+        Object.entries(paramsToSign).forEach(([key, value]) => {
+            formData.append(key, String(value));
+        });
 
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
 
@@ -251,7 +253,8 @@ export const contentService = {
                     finalFileUrl = data.secure_url;
                 } else {
                     const cloudinaryUrl = new URL(data.secure_url);
-                    finalFileUrl = `${filesBaseUrl}${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
+                    const pathWithParams = `${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
+                    finalFileUrl = `${filesBaseUrl}${pathWithParams.substring(pathWithParams.indexOf('/' + data.resource_type))}`;
                 }
 
 
@@ -308,7 +311,13 @@ export const contentService = {
         const folder = 'icons';
         const public_id = `${folder}/${hash}`;
         
-        const paramsToSign = { public_id, folder };
+        const paramsToSign = { 
+            public_id, 
+            folder,
+            use_filename: false,
+            unique_filename: false,
+            overwrite: false,
+        };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
@@ -323,11 +332,10 @@ export const contentService = {
         formData.append('api_key', apiKey);
         formData.append('timestamp', timestamp);
         formData.append('signature', signature);
-        formData.append('public_id', public_id);
-        formData.append('folder', folder);
-        formData.append('use_filename', 'false');
-        formData.append('unique_filename', 'false');
-        formData.append('overwrite', 'false');
+        
+        Object.entries(paramsToSign).forEach(([key, value]) => {
+            formData.append(key, String(value));
+        });
 
 
         const xhr = new XMLHttpRequest();
@@ -349,7 +357,8 @@ export const contentService = {
                     iconURL = data.secure_url;
                 } else {
                      const cloudinaryUrl = new URL(data.secure_url);
-                     iconURL = `${filesBaseUrl}${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
+                     const pathWithParams = `${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
+                     iconURL = `${filesBaseUrl}${pathWithParams.substring(pathWithParams.indexOf('/' + data.resource_type))}`;
                 }
 
 
@@ -439,7 +448,8 @@ export const contentService = {
                     finalFileUrl = data.secure_url;
                 } else {
                     const cloudinaryUrl = new URL(data.secure_url);
-                    finalFileUrl = `${filesBaseUrl}${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
+                    const pathWithParams = `${cloudinaryUrl.pathname}${cloudinaryUrl.search}`;
+                    finalFileUrl = `${filesBaseUrl}${pathWithParams.substring(pathWithParams.indexOf('/' + data.resource_type))}`;
                 }
 
                 const updatedData = {

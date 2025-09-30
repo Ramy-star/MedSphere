@@ -4,13 +4,16 @@ import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 
 /**
- * تأكد من أن المتغيرات التالية موجودة في .env.local:
+ * This API route signs parameters for a direct upload to Cloudinary.
+ * It expects a POST request with a JSON body containing the parameters
+ * that need to be signed.
+ *
+ * Make sure the following environment variables are set:
  * CLOUDINARY_CLOUD_NAME
  * CLOUDINARY_API_KEY
  * CLOUDINARY_API_SECRET
  */
 
-// إعداد Cloudinary (يقوم فقط بقراءة القيم، لا يكشف الـ secret للعميل)
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -19,14 +22,12 @@ cloudinary.config({
 
 export async function POST(req: NextRequest) {
   try {
-    // ضمان استقبال طلب POST فقط
     if (req.method !== "POST") {
       return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
     }
 
-    const body = await req.json().catch(() => ({} as Record<string, any>));
+    const body = await req.json();
 
-    // تحقق من إعدادات البيئة
     if (
       !process.env.CLOUDINARY_API_SECRET ||
       !process.env.CLOUDINARY_API_KEY ||
@@ -39,18 +40,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // timestamp صالح لوقت قصير
+    // A short-lived timestamp is required for the signature
     const timestamp = Math.floor(Date.now() / 1000);
 
+    // Combine the parameters from the request body with the timestamp
     const paramsToSign: Record<string, any> = {
       ...body,
       timestamp
     };
 
-    // توليد التوقيع باستخدام مكتبة cloudinary
+    // Generate the signature using Cloudinary's utility function
     const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
 
-    // إرجاع التوقيع وبيانات مفيدة أخرى إلى العميل
+    // Return the signature and other useful data to the client
     return NextResponse.json(
       {
         signature,
