@@ -21,7 +21,7 @@
 -   **🖱️ Drag & Drop Interface:** Easily reorder files and folders with a smooth, intuitive drag-and-drop experience.
 -   **🔍 Powerful Search:** Quickly find any file or folder across your entire library.
 -   **📱 Fully Responsive:** Access and manage your study materials on any device, whether it's a desktop, tablet, or smartphone.
--   **🤖 AI-Powered (Coming Soon):** Future-proofed with Genkit integration for upcoming AI features.
+-   **🤖 AI-Powered:** Future-proofed with Genkit integration for upcoming AI features.
 
 ---
 
