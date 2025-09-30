@@ -9,7 +9,10 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
 
-const PdfViewer = dynamic(() => import('./PdfViewer'), { ssr: false });
+const PdfViewer = dynamic(() => import('./PdfViewer'), { 
+  ssr: false,
+  loading: () => <div className="text-white">Loading PDF viewer...</div>
+});
 
 export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName: string }) {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
@@ -45,6 +48,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   
 
   if (mime.startsWith('image/')) {
+    // eslint-disable-next-line @next/next/no-img-element
     return <img src={url} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-2xl" />;
   }
   
