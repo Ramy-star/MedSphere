@@ -15,13 +15,6 @@ import SWRegistrar from "./sw-registrar";
 
 const nunitoSans = Nunito_Sans({ subsets: ["latin"] });
 
-// Metadata object can't be used in a client component.
-// We can move it to a layout file on the server if needed.
-// export const metadata: Metadata = {
-//   title: "Medical Study Organizer",
-//   description: "Organize your medical education journey",
-// };
-
 const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
 
 export default function RootLayout({
@@ -54,6 +47,7 @@ export default function RootLayout({
                 <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
                 <link rel="manifest" href="/manifest.json" />
                 <meta name="theme-color" content="#0F172A" />
+                <link rel="apple-touch-icon" href="/icon-192.png" />
             </head>
             <body className={`${nunitoSans.className} h-full`}>
                  <WelcomeScreen onGetStarted={handleGetStarted} />
@@ -70,6 +64,7 @@ export default function RootLayout({
           <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
           <link rel="manifest" href="/manifest.json" />
           <meta name="theme-color" content="#0F172A" />
+          <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={`${nunitoSans.className} h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
