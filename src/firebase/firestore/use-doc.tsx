@@ -6,7 +6,6 @@ import { doc, onSnapshot } from 'firebase/firestore';
 import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
-import { getFromCache, saveToCache } from './cache';
 
 export function useDoc<T extends { id: string }>(collectionPath: string, docId?: string) {
   const { db } = useFirebase();
@@ -14,27 +13,16 @@ export function useDoc<T extends { id: string }>(collectionPath: string, docId?:
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
-  const cacheKey = useMemo(() => docId ? `${collectionPath}-${docId}` : null, [collectionPath, docId]);
-
   useEffect(() => {
-    if (!docId || !db || !cacheKey) {
+    if (!docId || !db) {
       setData(null);
       setLoading(false);
       return;
     }
     
     setLoading(true);
-
-    // 1. Try to get data from cache first
     let isMounted = true;
-    getFromCache<T>(cacheKey).then(cachedData => {
-        if (isMounted && cachedData) {
-            setData(cachedData);
-            setLoading(false); // We have data, so stop initial loading indicator
-        }
-    });
 
-    // 2. Set up the realtime listener
     const docRef = doc(db, collectionPath, docId);
     const unsubscribe = onSnapshot(
       docRef,
@@ -44,12 +32,10 @@ export function useDoc<T extends { id: string }>(collectionPath: string, docId?:
         if (doc.exists()) {
           const fetchedData = { id: doc.id, ...doc.data() } as T;
           setData(fetchedData);
-          saveToCache(cacheKey, fetchedData); // Update cache
         } else {
           setData(null);
-          saveToCache(cacheKey, null); // Clear cache if doc is deleted
         }
-        setLoading(false); // Final loading state
+        setLoading(false);
         setError(null);
       },
       (err) => {
@@ -71,8 +57,7 @@ export function useDoc<T extends { id: string }>(collectionPath: string, docId?:
         isMounted = false;
         unsubscribe();
     };
-  }, [db, collectionPath, docId, cacheKey]);
+  }, [db, collectionPath, docId]);
 
   return { data, loading, error };
 }
-
