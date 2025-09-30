@@ -1,5 +1,7 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from 'next';
+import type { Configuration } from 'webpack';
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -12,10 +14,15 @@ const nextConfig = {
       }
     ],
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config: Configuration, { isServer }: { isServer: boolean }) => {
     // This is to prevent the "Module not found: Can't resolve 'canvas'" error during build
     if (isServer) {
-      config.externals.push('canvas');
+      if (!config.externals) {
+        config.externals = [];
+      }
+      if (Array.isArray(config.externals)) {
+        config.externals.push('canvas');
+      }
     }
     return config;
   },
