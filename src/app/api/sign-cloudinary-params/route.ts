@@ -1,15 +1,19 @@
+
 // src/app/api/sign-cloudinary-params/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
 
 /**
- * تأكد من أن المتغيرات التالية موجودة في .env.local:
+ * This API route signs parameters for a direct upload to Cloudinary.
+ * It expects a POST request with a JSON body containing the parameters
+ * that need to be signed.
+ *
+ * Make sure the following environment variables are set:
  * CLOUDINARY_CLOUD_NAME
  * CLOUDINARY_API_KEY
  * CLOUDINARY_API_SECRET
  */
 
-// إعداد Cloudinary (يقوم فقط بقراءة القيم، لا يكشف الـ secret للعميل)
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
@@ -18,16 +22,12 @@ cloudinary.config({
 
 export async function POST(req: NextRequest) {
   try {
-    // ضمان استقبال طلب POST فقط
     if (req.method !== "POST") {
       return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
     }
 
-    // قراءة بيانات الطلب (client قد يرسل folder أو upload_preset أو غيرها من المعلمات)
-    const body = await req.json().catch(() => ({} as Record<string, any>));
-    const { folder, upload_preset } = body ?? {};
+    const paramsToSign = await req.json();
 
-    // تحقق من إعدادات البيئة
     if (
       !process.env.CLOUDINARY_API_SECRET ||
       !process.env.CLOUDINARY_API_KEY ||
@@ -39,23 +39,14 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-
-    // timestamp صالح لوقت قصير
-    const timestamp = Math.floor(Date.now() / 1000);
-
-    // بناء الـ params التي سنوقعها
-    const paramsToSign: Record<string, string | number> = { timestamp };
-    if (folder) paramsToSign.folder = folder;
-    if (upload_preset) paramsToSign.upload_preset = upload_preset;
-
-    // توليد التوقيع باستخدام مكتبة cloudinary
+    
+    // Generate the signature using Cloudinary's utility function
     const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
 
-    // إرجاع التوقيع وبيانات مفيدة أخرى إلى العميل
+    // Return the signature and other useful data to the client
     return NextResponse.json(
       {
         signature,
-        timestamp,
         apiKey: process.env.CLOUDINARY_API_KEY,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       },
@@ -66,3 +57,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 }
+
+    
