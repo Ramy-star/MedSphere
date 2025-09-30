@@ -30,6 +30,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser } from '@/firebase/auth/use-user';
+import { ChangeIconDialog } from '@/components/ChangeIconDialog';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -45,6 +46,7 @@ function SearchResults() {
     const [previewFile, setPreviewFile] = useState<Content | null>(null);
     const [itemToRename, setItemToRename] = useState<Content | null>(null);
     const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
+    const [itemForIconChange, setItemForIconChange] = useState<Content | null>(null);
     const { toast } = useToast();
     
     const performSearch = useCallback(async () => {
@@ -137,6 +139,7 @@ function SearchResults() {
                                             item={item}
                                             onRename={() => setItemToRename(item)}
                                             onDelete={() => setItemToDelete(item)}
+                                            onIconChange={() => setItemForIconChange(item)}
                                             displayAs='list'
                                         />
                                     )}
@@ -179,6 +182,11 @@ function SearchResults() {
                     onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
                     onRename={handleRename}
                   />
+
+                   <ChangeIconDialog 
+                        item={itemForIconChange}
+                        onOpenChange={(isOpen) => !isOpen && setItemForIconChange(null)}
+                    />
 
                   <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
                     <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
