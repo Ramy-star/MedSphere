@@ -50,6 +50,8 @@ export default function RootLayout({
                 <title>Welcome to MedSphere</title>
                 <meta name="description" content="Organize your medical education journey" />
                 <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
+                <link rel="manifest" href="/manifest.json" />
+                <meta name="theme-color" content="#0F172A" />
             </head>
             <body className={`${nunitoSans.className} h-full`}>
                  <WelcomeScreen onGetStarted={handleGetStarted} />
@@ -64,6 +66,8 @@ export default function RootLayout({
           <title>Medical Study Organizer</title>
           <meta name="description" content="Organize your medical education journey" />
           <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
+          <link rel="manifest" href="/manifest.json" />
+          <meta name="theme-color" content="#0F172A" />
       </head>
       <body className={`${nunitoSans.className} h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
