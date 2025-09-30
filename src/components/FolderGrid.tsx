@@ -49,10 +49,12 @@ function DropZone({ isVisible }: { isVisible: boolean }) {
 }
 
 const SortableItemWrapper = ({ id, children }: { id: string, children: React.ReactNode }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
     transform: transform ? CSS.Transform.toString(transform) : undefined,
     transition,
+    zIndex: isDragging ? 1 : 0,
+    position: 'relative' as const,
   };
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
@@ -250,7 +252,7 @@ export function FolderGrid({
       )}
 
       {(!loading || items.length > 0 || uploadingFiles.length > 0) && items && (
-          <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} disabled={!isAdmin}>
+          <DndContext sensors={isAdmin ? sensors : undefined} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
               <div className={containerClasses}>
                 <AnimatePresence>
@@ -358,3 +360,5 @@ export function FolderGrid({
     </div>
   );
 }
+
+    
