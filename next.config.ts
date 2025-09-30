@@ -23,7 +23,7 @@ const withPWA = require('next-pwa')({
       },
     },
     {
-      urlPattern: ({ url }) => {
+      urlPattern: ({ url }: { url: URL }) => {
         return url.pathname.startsWith('/api');
       },
       handler: 'NetworkFirst',
