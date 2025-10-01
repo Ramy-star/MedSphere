@@ -43,21 +43,23 @@ export type UploadCallbacks = {
 
 /**
  * Constructs a proxied URL through the Cloudflare worker.
- * It takes the pathname from the Cloudinary URL and prepends the worker base URL.
- * e.g., /image/upload/v123/folder/hash.jpg
- * becomes https://worker.dev/image/upload/v123/folder/hash.jpg
- * @param cloudinaryUrl The full URL returned by Cloudinary.
- * @returns The proxied URL.
+ * @param cloudinaryPath The path segment from the Cloudinary URL (e.g., /image/upload/v123/folder/hash.jpg).
+ * @returns The full proxied URL.
  */
 function createProxiedUrl(cloudinaryPath: string): string {
     const workerBase = (process.env.NEXT_PUBLIC_FILES_BASE_URL || '').replace(/\/+$/, '');
     if (!workerBase) {
-        console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Returning original Cloudinary path.");
-        return cloudinaryPath;
+        console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. URLs will not be proxied.");
+        // Fallback to a direct Cloudinary URL structure if worker base is missing
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        if (cloudName) {
+            return `https://res.cloudinary.com/${cloudName}${cloudinaryPath}`;
+        }
+        // If all else fails, return a path that is clearly broken
+        return `/error-missing-config${cloudinaryPath}`;
     }
 
     const cleanPath = cloudinaryPath.replace(/^\/+/, '');
-    
     return `${workerBase}/${cleanPath}`;
 }
 
@@ -591,6 +593,4 @@ export const contentService = {
   }
 };
 
-    
-    
     
