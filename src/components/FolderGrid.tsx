@@ -46,6 +46,21 @@ function DropZone({ isVisible }: { isVisible: boolean }) {
   );
 }
 
+const listVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.05,
+    },
+  },
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: -10 },
+  visible: { opacity: 1, y: 0 },
+};
+
 const SortableItemWrapper = ({ id, children }: { id: string, children: React.ReactNode }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   const style = {
@@ -65,9 +80,9 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   });
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...(isAdmin ? listeners : {})}>
+    <motion.div ref={setNodeRef} style={style} {...attributes} {...(isAdmin ? listeners : {})} variants={itemVariants}>
       {childrenWithProps}
-    </div>
+    </motion.div>
   );
 };
 
@@ -101,15 +116,13 @@ const SortableList = ({
     return (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                <div className={containerClasses}>
+                <motion.div className={containerClasses} variants={listVariants} initial="hidden" animate="visible">
                     <AnimatePresence>
                         {uploadingFiles.map(file => (
                           <motion.div
                              key={file.id}
-                              initial={{ opacity: 0, y: 8 }}
-                              animate={{ opacity: 1, y: 0 }}
+                              variants={itemVariants}
                               exit={{ opacity: 0, y: 8 }}
-                              transition={{ duration: 0.15 }}
                               className={cn(isMobile && "px-4")}
                           >
                               {/* This component is not sortable, so it's outside the SortableItemWrapper */}
@@ -146,10 +159,8 @@ const SortableList = ({
                                 return (
                                    <motion.div
                                       key={itemKey}
-                                      initial={{ opacity: 0, y: 8 }}
-                                      animate={{ opacity: 1, y: 0 }}
+                                      variants={itemVariants}
                                       exit={{ opacity: 0, y: 8 }}
-                                      transition={{ duration: 0.15 }}
                                       className="border-b border-white/10"
                                     >
                                       {content}
@@ -160,18 +171,16 @@ const SortableList = ({
                             return (
                                 <motion.div
                                     key={itemKey}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
+                                    variants={itemVariants}
                                     exit={{ opacity: 0, y: 8 }}
-                                    transition={{ duration: 0.15 }}
                                     className={cn(!isSubjectView && "border-b border-white/10")}
                                 >
-                                    {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
+                                    {isSubjectView ? <motion.div variants={itemVariants}>{content}</motion.div> : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
                                 </motion.div>
                             )
                         })}
                     </AnimatePresence>
-                </div>
+                </motion.div>
             </SortableContext>
         </DndContext>
     )
@@ -201,15 +210,13 @@ const NonSortableList = ({
         : "flex flex-col";
     
     return (
-        <div className={containerClasses}>
+        <motion.div className={containerClasses} variants={listVariants} initial="hidden" animate="visible">
             <AnimatePresence>
                 {uploadingFiles.map(file => (
                     <motion.div
                         key={file.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
+                        variants={itemVariants}
                         exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.15 }}
                         className={cn(isMobile && "px-4")}
                     >
                         <UploadProgress file={file} onRetry={() => {}} onRemove={() => {}} />
@@ -244,10 +251,8 @@ const NonSortableList = ({
                      return (
                          <motion.div
                              key={itemKey}
-                             initial={{ opacity: 0, y: 8 }}
-                             animate={{ opacity: 1, y: 0 }}
+                             variants={itemVariants}
                              exit={{ opacity: 0, y: 8 }}
-                             transition={{ duration: 0.15 }}
                              className={cn(!isSubjectView && "border-b border-white/10", isMobile && "px-4 border-b-0")}
                          >
                              {content}
@@ -255,7 +260,7 @@ const NonSortableList = ({
                      );
                 })}
             </AnimatePresence>
-        </div>
+        </motion.div>
     );
 };
 
