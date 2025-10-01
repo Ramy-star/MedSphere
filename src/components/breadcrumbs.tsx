@@ -16,9 +16,7 @@ type Crumb = {
   path: string;
 };
 
-// A simple in-memory cache for ancestor paths
-const ancestorCache = new Map<string, Crumb[]>();
-// A cache for item names to avoid re-fetching
+// A simple in-memory cache for item names to avoid re-fetching
 const nameCache = new Map<string, string>();
 
 
@@ -43,10 +41,6 @@ async function fetchItemName(db: any, id: string): Promise<string> {
 async function fetchAncestors(db: any, currentId: string | null): Promise<Crumb[]> {
     if (!currentId || currentId === 'root') {
         return [];
-    }
-
-    if (ancestorCache.has(currentId)) {
-        return ancestorCache.get(currentId)!;
     }
 
     let ancestors: Crumb[] = [];
@@ -81,7 +75,6 @@ async function fetchAncestors(db: any, currentId: string | null): Promise<Crumb[
         }
     }
     
-    ancestorCache.set(currentId, ancestors);
     return ancestors;
 }
 
