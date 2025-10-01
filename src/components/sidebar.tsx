@@ -118,14 +118,6 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     }
   }
 
-  const sidebarIcons: { [key: string]: LucideIcon } = {
-    'Level 1': Bone,
-    'Level 2': HeartPulse,
-    'Level 3': Brain,
-    'Level 4': Brain,
-    'Level 5': Brain,
-  };
-
 
   return (
     <div className='flex flex-col h-full'>
@@ -163,7 +155,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
         {levels && levels.map((level, index) => {
         const isLevelActive = openLevelId === level.id;
         const isPathActive = activePath.levelId === level.id;
-        const Icon = sidebarIcons[level.name] || Layers;
+        const Icon = Layers;
         return (
             <div key={level.id} className="w-full">
             <motion.button

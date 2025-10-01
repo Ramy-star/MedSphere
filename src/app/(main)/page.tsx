@@ -42,12 +42,21 @@ export default function HomePage() {
   }, [loading, db, levels, handleSeed]);
 
   
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, path: string) => {
+    // Use middle mouse button for new tab, or if ctrl/cmd is pressed
+    if (e.button === 1 || e.ctrlKey || e.metaKey) {
+      window.open(path, '_blank');
+    } else if (e.button === 0) { // Left click
+      router.push(path);
+    }
+  };
+
   const renderContent = () => {
       if (loading && (!levels || levels.length === 0)) {
            return <div className="w-full min-h-[16rem] md:min-h-0" />; // Reserve space on mobile
       }
       
-      if (levels.length === 0) {
+      if (!levels || levels.length === 0) {
            return (
                 <div className="text-center min-h-[16rem] md:min-h-0 flex flex-col justify-center items-center">
                     <p className="text-lg text-slate-300 mb-4">Your study space is empty.</p>
@@ -71,16 +80,15 @@ export default function HomePage() {
                             // On mobile, if it's the last item and the total is odd, span 2 columns
                             isLastItem && isOdd && "col-span-2 sm:col-span-1 md:col-span-1"
                         )} 
+                        onMouseDown={(e) => handleMouseDown(e, `/level/${encodeURIComponent(level.name)}`)}
                     >
-                        <Link href={`/level/${encodeURIComponent(level.name)}`}>
-                            <div className={cn(
-                                "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center",
-                                // Center the content if we are spanning 2 columns
-                                isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
-                            )}>
-                                <h3 className="text-base md:text-xl font-semibold text-white">{level.name}</h3>
-                            </div>
-                        </Link>
+                        <div className={cn(
+                            "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center",
+                            // Center the content if we are spanning 2 columns
+                            isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
+                        )}>
+                            <h3 className="text-base md:text-xl font-semibold text-white">{level.name}</h3>
+                        </div>
                     </div>
                   )
                 })}
