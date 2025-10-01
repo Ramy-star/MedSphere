@@ -27,7 +27,7 @@ const nextConfig: NextConfig = {
       }
     }
 
-    // Generate service worker in production
+    // Generate service worker in production for the client
     if (!isServer && !dev) {
         config.plugins.push(
             new WorkboxPlugin.GenerateSW({
