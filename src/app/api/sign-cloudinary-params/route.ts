@@ -23,46 +23,30 @@ cloudinary.config({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    const { paramsToSign } = body;
 
-    if (
-      !process.env.CLOUDINARY_API_SECRET ||
-      !process.env.CLOUDINARY_API_KEY ||
-      !process.env.CLOUDINARY_CLOUD_NAME
-    ) {
-      console.error("Missing Cloudinary env vars");
+    if (!process.env.CLOUDINARY_API_SECRET) {
+      console.error("Missing Cloudinary API secret");
       return NextResponse.json(
-        { error: "Server misconfiguration: missing Cloudinary environment variables" },
+        { error: "Server misconfiguration: missing Cloudinary API secret" },
         { status: 500 }
       );
     }
-
-    // A short-lived timestamp is required for the signature
-    const timestamp = Math.round((new Date()).getTime() / 1000);
-
-    // Combine the parameters from the request body with the timestamp
-    const paramsToSign: Record<string, any> = {
-      ...body,
-      timestamp
-    };
-
+    
     // Generate the signature using Cloudinary's utility function
     const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
 
     // Return the signature and other useful data to the client
-    return NextResponse.json(
-      {
+    return NextResponse.json({ 
         signature,
-        timestamp,
+        timestamp: paramsToSign.timestamp,
         apiKey: process.env.CLOUDINARY_API_KEY,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
-      },
-      { status: 200 }
-    );
+    });
+
   } catch (err) {
     console.error("Cloudinary sign endpoint error:", err);
     const error = err as Error;
     return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
   }
 }
-
-    

@@ -42,6 +42,19 @@ export type UploadCallbacks = {
 };
 
 
+function createProxiedUrl(cloudinaryPath: string): string {
+    const workerBase = process.env.NEXT_PUBLIC_FILES_BASE_URL;
+    if (!workerBase) {
+        console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to direct Cloudinary URL.");
+        // In case the worker is not set up, we construct a direct URL
+        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+        return `https://res.cloudinary.com/${cloudName}/${cloudinaryPath}`;
+    }
+    // The path from Cloudinary is like 'image/upload/v12345/folder/hash.jpg'
+    return `${workerBase}/${cloudinaryPath}`;
+}
+
+
 export const contentService = {
   async seedInitialData() {
       if (!db) {
@@ -239,6 +252,11 @@ export const contentService = {
                 const id = uuidv4();
                 const children = await this.getChildren(parentId);
                 const order = children.length;
+                
+                // Construct the proxied URL for storage
+                const urlObject = new URL(data.secure_url);
+                const cloudinaryPath = `${data.resource_type}/upload/v${data.version}/${data.public_id}.${data.format}`;
+                const finalFileUrl = createProxiedUrl(cloudinaryPath);
 
                 const newFileContent: Content = {
                     id,
@@ -248,7 +266,7 @@ export const contentService = {
                     metadata: {
                         size: data.bytes,
                         mime: file.type || 'application/octet-stream',
-                        storagePath: data.secure_url,
+                        storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type
                     },
@@ -321,12 +339,15 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
 
+                const cloudinaryPath = `image/upload/v${data.version}/${data.public_id}.${data.format}`;
+                const finalIconUrl = createProxiedUrl(cloudinaryPath);
+
                 await updateDoc(itemRef, {
-                    'metadata.iconURL': data.secure_url,
+                    'metadata.iconURL': finalIconUrl,
                     'metadata.iconCloudinaryPublicId': data.public_id,
                     updatedAt: new Date().toISOString()
                 });
-                callbacks.onSuccess(data.secure_url);
+                callbacks.onSuccess(finalIconUrl);
             } else {
                 callbacks.onError(new Error(`Cloudinary upload failed: ${xhr.statusText}`));
             }
@@ -403,6 +424,9 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
+                
+                const cloudinaryPath = `${data.resource_type}/upload/v${data.version}/${data.public_id}.${data.format}`;
+                const finalFileUrl = createProxiedUrl(cloudinaryPath);
 
                 const updatedData = {
                     name: newFile.name,
@@ -411,7 +435,7 @@ export const contentService = {
                         ...existingContent.metadata,
                         size: data.bytes,
                         mime: newFile.type || 'application/octet-stream',
-                        storagePath: data.secure_url,
+                        storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
                     },

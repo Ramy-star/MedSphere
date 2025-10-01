@@ -11,6 +11,10 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'files.yourdomain.com', // Add your worker domain here
+      },
+      {
+        protocol: 'https',
         hostname: 'picsum.photos',
       },
     ],
