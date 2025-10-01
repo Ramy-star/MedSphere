@@ -287,11 +287,11 @@ export function FolderGrid({
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
 }) {
-  const [items, setItems] = useState<Content[] | null>(null);
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
       orderBy: ['order', 'asc']
   });
+  const [items, setItems] = useState<Content[] | null>(fetchedItems);
 
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
@@ -310,7 +310,7 @@ export function FolderGrid({
     }
   }, [fetchedItems]);
 
-  const currentItems = items || fetchedItems || [];
+  const currentItems = items || [];
 
   const handleFileClick = (file: Content) => {
     if (file.type === 'LINK') {

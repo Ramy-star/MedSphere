@@ -94,7 +94,7 @@ function FolderPageContent({ id }: { id: string }) {
     <motion.main 
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ duration: 0.1 }}
         className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden"
     >
        <FileExplorerHeader onFileSelected={processFileUpload} />
@@ -114,9 +114,6 @@ function FolderPageContent({ id }: { id: string }) {
 
 function FolderPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-
-  // The Suspense wrapper is removed to allow for instant rendering
-  // of the page structure, and the FolderGrid will handle its own content rendering.
   return <FolderPageContent id={id} />;
 }
 

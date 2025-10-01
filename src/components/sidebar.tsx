@@ -1,4 +1,3 @@
-
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -10,7 +9,7 @@ import {
   Menu,
 } from 'lucide-react';
 import Link from 'next/link';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from './ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,41 +20,35 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useFirebase } from '@/firebase/provider';
-import { doc, getDoc } from 'firebase/firestore';
-
 
 function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const isMobile = useIsMobile();
-  const { db } = useFirebase();
   
-  const { data: levels } = useCollection<Content>('content', {
-      where: ['type', '==', 'LEVEL'],
-      orderBy: ['order', 'asc'],
-  });
+  const { data: allItems } = useCollection<Content>('content');
 
-  const { data: allSemesters } = useCollection<Content>('content', {
-      where: ['type', '==', 'SEMESTER'],
-      orderBy: ['order', 'asc'],
-  });
-  
-  const [semestersByLevel, setSemestersByLevel] = useState<{[levelId: string]: Content[]}>({});
+  const { levels, semestersByLevel, itemMap } = useMemo(() => {
+    if (!allItems) {
+      return { levels: [], semestersByLevel: {}, itemMap: new Map() };
+    }
+    const levels = allItems.filter(item => item.type === 'LEVEL').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    const semesters = allItems.filter(item => item.type === 'SEMESTER').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    
+    const semesterMap: { [levelId: string]: Content[] } = {};
+    levels.forEach(level => {
+        semesterMap[level.id] = semesters.filter(s => s.parentId === level.id);
+    });
+
+    const map = new Map(allItems.map(item => [item.id, item]));
+
+    return { levels, semestersByLevel: semesterMap, itemMap: map };
+  }, [allItems]);
+
   const [activePath, setActivePath] = useState({ levelId: '', semesterId: '' });
   const [openLevelId, setOpenLevelId] = useState('');
   
-  useEffect(() => {
-    if (allSemesters && levels) {
-        const semesterMap: { [levelId: string]: Content[] } = {};
-        levels.forEach(level => {
-            semesterMap[level.id] = allSemesters.filter(s => s.parentId === level.id);
-        });
-        setSemestersByLevel(semesterMap);
-    }
-  }, [allSemesters, levels]);
-
-  const findActivePath = useCallback(async () => {
+  const findActivePath = useCallback(() => {
     if (pathname === '/') {
         setActivePath({ levelId: '', semesterId: '' });
         setOpenLevelId('');
@@ -63,63 +56,51 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     }
 
     const pathParts = pathname.split('/');
+    let currentId: string | null = null;
     
     if (pathParts[1] === 'folder' && pathParts.length >= 3) {
-        const currentId = pathParts[2];
-        const docSnap = await getDoc(doc(db, 'content', currentId));
-        if (!docSnap.exists()) return;
-
-        const current = docSnap.data() as Content;
-        let level = null;
-        let semester = null;
-        
-        if (current.type === 'SEMESTER') {
-            semester = current;
-            const parentSnap = await getDoc(doc(db, 'content', current.parentId!));
-            if (parentSnap.exists() && parentSnap.data().type === 'LEVEL') {
-                level = parentSnap.data() as Content;
-            }
-        } else if (current.type === 'LEVEL') {
-            level = current;
-        } else {
-            // It's a folder or subject, need to find ancestors
-            let parentId = current.parentId;
-            while(parentId) {
-                const parentSnap = await getDoc(doc(db, 'content', parentId));
-                if (!parentSnap.exists()) break;
-                const parent = parentSnap.data() as Content;
-                if (parent.type === 'SEMESTER') semester = parent;
-                if (parent.type === 'LEVEL') {
-                    level = parent;
-                    break; 
-                }
-                parentId = parent.parentId;
-            }
-        }
-
-        if (level) {
-            setActivePath({ levelId: level.id, semesterId: semester?.id || '' });
-            if (open) setOpenLevelId(level.id);
-        } else {
-             setActivePath({ levelId: '', semesterId: '' });
-        }
+        currentId = pathParts[2];
     } else if (pathParts[1] === 'level' && pathParts.length >= 3) {
         const levelName = decodeURIComponent(pathParts[2]);
         const level = levels?.find(l => l.name === levelName);
         if (level) {
-             setActivePath({ levelId: level.id, semesterId: '' });
-             if (open) setOpenLevelId(level.id);
-        } else {
-             setActivePath({ levelId: '', semesterId: '' });
+            currentId = level.id;
         }
+    }
+
+    if (!currentId) {
+      setActivePath({ levelId: '', semesterId: '' });
+      return;
+    }
+
+    let levelId = '';
+    let semesterId = '';
+    let tempItem = itemMap.get(currentId);
+
+    while (tempItem) {
+        if (tempItem.type === 'SEMESTER') {
+            semesterId = tempItem.id;
+        }
+        if (tempItem.type === 'LEVEL') {
+            levelId = tempItem.id;
+            break;
+        }
+        tempItem = tempItem.parentId ? itemMap.get(tempItem.parentId) : undefined;
+    }
+
+    if (levelId) {
+        setActivePath({ levelId, semesterId });
+        if (open) setOpenLevelId(levelId);
     } else {
          setActivePath({ levelId: '', semesterId: '' });
     }
-  }, [pathname, open, levels, db]);
+  }, [pathname, open, levels, itemMap]);
 
   useEffect(() => {
-    findActivePath();
-  }, [findActivePath]);
+    if(allItems) {
+      findActivePath();
+    }
+  }, [findActivePath, allItems]);
 
   const handleLevelChange = (levelId: string) => {
     setOpenLevelId(prevOpenLevelId => (prevOpenLevelId === levelId ? '' : levelId));
