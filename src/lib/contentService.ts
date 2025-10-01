@@ -18,7 +18,7 @@ export type Content = {
   metadata?: {
     size?: number;
     mime?: string;
-    storagePath?: string; // This will now be the Cloudflare URL
+    storagePath?: string; // This will now be the Cloudinary URL
     cloudinaryPublicId?: string; // public_id from cloudinary
     cloudinaryResourceType?: 'image' | 'video' | 'raw'; // resource_type from cloudinary
     url?: string; // For LINK type
@@ -577,3 +577,5 @@ export const contentService = {
     }
   }
 };
+
+    
