@@ -61,7 +61,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark h-full">
       <head>
-          <title>Medical Study Organizer</title>
+          <title>MedSphere</title>
           <meta name="description" content="Organize your medical education journey" />
           <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
           <link rel="manifest" href="/manifest.json" />

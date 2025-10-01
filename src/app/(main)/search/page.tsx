@@ -100,7 +100,7 @@ function SearchResults() {
 
     return (
         <motion.main 
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -5 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.1 }}
             className="flex-1 p-6 flex flex-col overflow-hidden"
