@@ -12,7 +12,10 @@ import { getFirebaseConfig } from "@/firebase/config";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 
 
-const nunitoSans = Nunito_Sans({ subsets: ["latin"] });
+const nunitoSans = Nunito_Sans({ 
+  subsets: ["latin"],
+  display: 'swap',
+});
 
 const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
 

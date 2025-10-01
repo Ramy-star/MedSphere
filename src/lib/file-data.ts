@@ -1,8 +1,8 @@
 
 import { 
-    Book, FileText, Presentation, TestTube2, Users, type LucideIcon, Heart, Brain, Dna, Bone, Shield, FlaskConical, Stethoscope, Microscope,
-    Pill, Bug, Syringe, Activity, BarChart3, Lightbulb, Languages, BookOpen, UserCheck, Briefcase, Speech, Wind, HeartPulse, Airplay,
-    GraduationCap, HelpingHand, Globe, GitMerge, DnaIcon, Baby, CircleDot, Ambulance, Home, Scale, FolderKanban, Star, Eye, Ear, Folder as FolderIcon
+    Bone, Microscope, Activity, FlaskConical, Brain, BarChart3, Lightbulb, Languages, Pill, Bug, Shield, DnaIcon, Syringe, Stethoscope,
+    Wind, HeartPulse, UserCheck, Briefcase, Speech, GitMerge, Airplay, Globe, Dna, HelpingHand, Users, TestTube2, Baby, Eye, Ear,
+    FolderKanban, Star, Ambulance, Home, Scale, Folder as FolderIcon, type LucideIcon
 } from 'lucide-react';
 import type { Content } from './contentService';
 import { SurgeryIcon } from '@/components/icons/SurgeryIcon';
