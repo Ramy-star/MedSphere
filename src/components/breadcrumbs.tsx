@@ -26,6 +26,7 @@ export function Breadcrumbs() {
 
   useEffect(() => {
     if (!allItems) {
+      setCrumbs([]);
       return;
     }
 
@@ -86,19 +87,16 @@ export function Breadcrumbs() {
     </div>
   );
 
-  // While the initial fetch of all items is happening, show a simple loading state.
-  // After this initial load, navigation will be instantaneous.
-  if (loadingAllItems && crumbs.length === 0 && pathname !== '/') {
+  // If loading, render the home element and nothing else.
+  // This avoids showing a skeleton or an incomplete path.
+  if (loadingAllItems && pathname !== '/') {
     return (
-      <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap min-h-[20px]">
-        {homeElement}
-        <ChevronRight className="w-4 h-4 opacity-60" />
-        <Skeleton className="h-5 w-24" />
-        <ChevronRight className="w-4 h-4 opacity-60" />
-        <Skeleton className="h-5 w-32" />
-      </nav>
+        <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap min-h-[20px]">
+         {homeElement}
+       </nav>
     );
   }
+
 
   return (
     <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap min-h-[20px]">
