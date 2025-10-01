@@ -29,7 +29,7 @@ import { UploadingFile, UploadProgress } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import React from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { ChangeIconDialog } from './ChangeIconDialog';
@@ -74,6 +74,189 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
 };
 
 
+const SortableList = ({
+    items,
+    uploadingFiles,
+    onItemClick,
+    onRenameClick,
+    onDeleteClick,
+    onIconChangeClick,
+    isSubjectView,
+    isMobile,
+    onDragEnd
+}: {
+    items: Content[];
+    uploadingFiles: UploadingFile[];
+    onItemClick: (item: Content) => void;
+    onRenameClick: (item: Content) => void;
+    onDeleteClick: (item: Content) => void;
+    onIconChangeClick: (item: Content) => void;
+    isSubjectView: boolean;
+    isMobile: boolean;
+    onDragEnd: (event: DragEndEvent) => void;
+}) => {
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+    const containerClasses = isSubjectView
+        ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+        : "flex flex-col";
+
+    return (
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
+            <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                <div className={containerClasses}>
+                    <AnimatePresence>
+                        {uploadingFiles.map(file => (
+                          <motion.div
+                             key={file.id}
+                              initial={{ opacity: 0, y: 8 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, y: 8 }}
+                              transition={{ duration: 0.15 }}
+                              className={cn(isMobile && "px-4")}
+                          >
+                              {/* This component is not sortable, so it's outside the SortableItemWrapper */}
+                              <UploadProgress file={file} onRetry={() => {}} onRemove={() => {}} />
+                          </motion.div>
+                        ))}
+                        {items.map((it: Content, index) => {
+                            const itemKey = it.id;
+                            const motionProps = {
+                                initial:{ opacity: 0, y: 8 },
+                                animate:{ opacity: 1, y: 0 },
+                                exit:{ opacity: 0, y: 8 },
+                                transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
+                            };
+
+                            let content;
+                            if (it.type === 'SUBJECT') {
+                                content = <SubjectCard subject={it} />;
+                            } else if (it.type === 'FOLDER') {
+                                content = <FolderCard
+                                    item={it}
+                                    onRename={() => onRenameClick(it)}
+                                    onDelete={() => onDeleteClick(it)}
+                                    onIconChange={() => onIconChangeClick(it)}
+                                    displayAs={isSubjectView ? 'grid' : 'list'}
+                                />;
+                            } else if (it.type === 'FILE' || it.type === 'LINK') {
+                                content = <FileCard
+                                    item={it}
+                                    onFileClick={onItemClick}
+                                    onRename={() => onRenameClick(it)}
+                                    onDelete={() => onDeleteClick(it)}
+                                    showDragHandle={!isMobile}
+                                />;
+                            } else {
+                                content = null;
+                            }
+                            
+                             if (isMobile) {
+                                return <motion.div key={itemKey} {...motionProps} className="border-b border-white/10">{content}</motion.div>
+                            }
+
+                            return (
+                                <motion.div
+                                    key={itemKey}
+                                    {...motionProps}
+                                    className={cn(!isSubjectView && "border-b border-white/10")}
+                                >
+                                    {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
+                                </motion.div>
+                            )
+                        })}
+                    </AnimatePresence>
+                </div>
+            </SortableContext>
+        </DndContext>
+    )
+}
+
+const NonSortableList = ({
+    items,
+    uploadingFiles,
+    onItemClick,
+    onRenameClick,
+    onDeleteClick,
+    onIconChangeClick,
+    isSubjectView,
+    isMobile,
+}: {
+    items: Content[];
+    uploadingFiles: UploadingFile[];
+    onItemClick: (item: Content) => void;
+    onRenameClick: (item: Content) => void;
+    onDeleteClick: (item: Content) => void;
+    onIconChangeClick: (item: Content) => void;
+    isSubjectView: boolean;
+    isMobile: boolean;
+}) => {
+    const containerClasses = isSubjectView
+        ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+        : "flex flex-col";
+    
+    return (
+        <div className={containerClasses}>
+            <AnimatePresence>
+                {uploadingFiles.map(file => (
+                    <motion.div
+                        key={file.id}
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 8 }}
+                        transition={{ duration: 0.15 }}
+                        className={cn(isMobile && "px-4")}
+                    >
+                        <UploadProgress file={file} onRetry={() => {}} onRemove={() => {}} />
+                    </motion.div>
+                ))}
+                {items.map((it, index) => {
+                     const itemKey = it.id;
+                     const motionProps = {
+                         initial:{ opacity: 0, y: 8 },
+                         animate:{ opacity: 1, y: 0 },
+                         exit:{ opacity: 0, y: 8 },
+                         transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
+                     };
+ 
+                     let content;
+                     if (it.type === 'SUBJECT') {
+                         content = <SubjectCard subject={it} />;
+                     } else if (it.type === 'FOLDER') {
+                         content = <FolderCard
+                             item={it}
+                             onRename={() => onRenameClick(it)}
+                             onDelete={() => onDeleteClick(it)}
+                             onIconChange={() => onIconChangeClick(it)}
+                             displayAs={isSubjectView ? 'grid' : 'list'}
+                         />;
+                     } else if (it.type === 'FILE' || it.type === 'LINK') {
+                         content = <FileCard
+                             item={it}
+                             onFileClick={onItemClick}
+                             onRename={() => onRenameClick(it)}
+                             onDelete={() => onDeleteClick(it)}
+                             showDragHandle={false} // No drag handle for non-admins
+                         />;
+                     } else {
+                         content = null;
+                     }
+ 
+                     return (
+                         <motion.div
+                             key={itemKey}
+                             {...motionProps}
+                             className={cn(!isSubjectView && "border-b border-white/10", isMobile && "px-4 border-b-0")}
+                         >
+                             {content}
+                         </motion.div>
+                     );
+                })}
+            </AnimatePresence>
+        </div>
+    );
+};
+
+
 export function FolderGrid({ 
     parentId, 
     uploadingFiles, 
@@ -99,7 +282,6 @@ export function FolderGrid({
   const [itemForIconChange, setItemForIconChange] = useState<Content | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const dropZoneRef = useRef<HTMLDivElement>(null);
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { user } = useUser();
@@ -204,10 +386,24 @@ export function FolderGrid({
   };
 
   const isSubjectView = items.length > 0 && items.every(it => it.type === 'SUBJECT');
-
-  const containerClasses = isSubjectView
-    ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-    : "flex flex-col";
+  
+  const renderList = () => {
+    const listProps = {
+        items,
+        uploadingFiles,
+        onItemClick: handleFileClick,
+        onRenameClick: (item: Content) => setItemToRename(item),
+        onDeleteClick: (item: Content) => setItemToDelete(item),
+        onIconChangeClick: (item: Content) => setItemForIconChange(item),
+        isSubjectView,
+        isMobile,
+    };
+    
+    if (isAdmin) {
+      return <SortableList {...listProps} onDragEnd={handleDragEnd} />;
+    }
+    return <NonSortableList {...listProps} />;
+  }
 
 
   return (
@@ -251,77 +447,7 @@ export function FolderGrid({
           </div>
       )}
 
-      {(!loading || items.length > 0 || uploadingFiles.length > 0) && items && (
-          <DndContext sensors={isAdmin ? sensors : []} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-            <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-              <div className={containerClasses}>
-                <AnimatePresence>
-                  {uploadingFiles.map(file => (
-                    <motion.div
-                       key={file.id}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 8 }}
-                        transition={{ duration: 0.15 }}
-                        className={cn(isMobile && "px-4")}
-                    >
-                        <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
-                    </motion.div>
-                  ))}
-                  {items.map((it: Content, index) => {
-                    const itemKey = it.id;
-                    const motionProps = {
-                        initial:{ opacity: 0, y: 8 },
-                        animate:{ opacity: 1, y: 0 },
-                        exit:{ opacity: 0, y: 8 },
-                        transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
-                    };
-
-                    let content;
-                    if (it.type === 'SUBJECT') {
-                      content = <SubjectCard subject={it} />;
-                    } else if (it.type === 'FOLDER') {
-                       content = <FolderCard
-                        item={it}
-                        onRename={() => setItemToRename(it)}
-                        onDelete={() => setItemToDelete(it)}
-                        onIconChange={() => setItemForIconChange(it)}
-                        displayAs={isSubjectView ? 'grid' : 'list'}
-                      />;
-                    } else if (it.type === 'FILE' || it.type === 'LINK') {
-                      content = <FileCard
-                        item={it}
-                        onFileClick={handleFileClick}
-                        onRename={() => setItemToRename(it)}
-                        onDelete={() => setItemToDelete(it)}
-                        showDragHandle={!isMobile}
-                      />;
-                    } else {
-                      content = null;
-                    }
-                    
-                    if (isMobile) {
-                        return <motion.div key={itemKey} {...motionProps} className="border-b border-white/10">{content}</motion.div>
-                    }
-
-                    return (
-                      <motion.div
-                        key={itemKey}
-                        initial={motionProps.initial}
-                        animate={motionProps.animate}
-                        exit={motionProps.exit}
-                        transition={motionProps.transition}
-                        className={cn(!isSubjectView && "border-b border-white/10")}
-                      >
-                        {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
-                      </motion.div>
-                    )
-                  })}
-                </AnimatePresence>
-              </div>
-            </SortableContext>
-          </DndContext>
-      )}
+      {(!loading || items.length > 0 || uploadingFiles.length > 0) && items && renderList()}
 
       <FilePreviewModal
         item={previewFile}
