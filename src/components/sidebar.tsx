@@ -1,3 +1,4 @@
+
 'use client';
 
 import { cn } from '@/lib/utils';
@@ -29,13 +30,13 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
   const { data: allItems } = useCollection<Content>('content');
 
   const { levels, semestersByLevel, itemMap } = useMemo(() => {
+    const semesterMap: { [levelId: string]: Content[] } = {};
     if (!allItems) {
-      return { levels: [], semestersByLevel: {}, itemMap: new Map() };
+      return { levels: [], semestersByLevel: semesterMap, itemMap: new Map() };
     }
     const levels = allItems.filter(item => item.type === 'LEVEL').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const semesters = allItems.filter(item => item.type === 'SEMESTER').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     
-    const semesterMap: { [levelId: string]: Content[] } = {};
     levels.forEach(level => {
         semesterMap[level.id] = semesters.filter(s => s.parentId === level.id);
     });
