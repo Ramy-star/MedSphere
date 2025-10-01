@@ -7,7 +7,6 @@ import { notFound } from 'next/navigation';
 import { useEffect, useMemo, Suspense, use } from 'react';
 import { Content } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Layers } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 
 function LevelPageContent({ levelName }: { levelName: string }) {
@@ -36,41 +35,30 @@ function LevelPageContent({ levelName }: { levelName: string }) {
     }
   }, [loadingLevels, level]);
 
-  if (loading || !level) {
-    return (
-        <main className="flex-1 p-4 md:p-6 glass-card">
-            <FileExplorerHeader />
-            <div className="flex items-center justify-between mb-6">
-              <Skeleton className="h-8 w-48" />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
-                <Skeleton className="h-32" />
-                <Skeleton className="h-32" />
-            </div>
-        </main>
-    );
-  }
-  
-  const extendedLevel = {
-      ...level,
-      icon: Layers,
-      iconColor: 'text-blue-400'
-  }
-
   return (
     <main className="flex-1 p-4 md:p-6 glass-card">
-        <FileExplorerHeader currentFolder={extendedLevel} />
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
-            {semesters && semesters.map((semester, index) => (
-                <div key={semester.id}>
-                     <Link href={`/folder/${semester.id}`}>
-                        <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center">
-                            <h3 className="text-xl font-semibold text-white">{semester.name}</h3>
-                        </div>
-                    </Link>
-                </div>
-            ))}
-        </div>
+        <FileExplorerHeader currentFolder={level} />
+        
+        {loading && (
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
+                <Skeleton className="h-32" />
+                <Skeleton className="h-32" />
+            </div>
+        )}
+
+        {!loading && semesters && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
+                {semesters.map((semester) => (
+                    <div key={semester.id}>
+                        <Link href={`/folder/${semester.id}`}>
+                            <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center">
+                                <h3 className="text-xl font-semibold text-white">{semester.name}</h3>
+                            </div>
+                        </Link>
+                    </div>
+                ))}
+            </div>
+        )}
     </main>
   );
 }
@@ -81,11 +69,16 @@ function LevelPage({ params }: { params: Promise<{ levelName: string }> }) {
   return (
     <Suspense fallback={
         <main className="flex-1 p-4 md:p-6 glass-card">
-            <FileExplorerHeader />
-            <div className="flex items-center justify-between mb-6">
-              <Skeleton className="h-8 w-48" />
+            <div className="mb-6 space-y-4">
+                <Skeleton className="h-5 w-1/3" />
+                <div className="flex items-center justify-between min-h-[40px]">
+                    <div className="flex items-center gap-4">
+                        <Skeleton className="w-10 h-10 rounded-lg" />
+                        <Skeleton className="h-8 w-48" />
+                    </div>
+                </div>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
+             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
                 <Skeleton className="h-32" />
                 <Skeleton className="h-32" />
             </div>

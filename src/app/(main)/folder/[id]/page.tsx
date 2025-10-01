@@ -6,9 +6,7 @@ import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
-import { allSubjectIcons } from '@/lib/file-data';
 import { notFound } from 'next/navigation';
-import { LucideIcon, Folder, Calendar } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useToast } from '@/hooks/use-toast';
@@ -93,29 +91,9 @@ function FolderPageContent({ id }: { id: string }) {
       setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
   };
   
-  let Icon: LucideIcon = Folder;
-  let iconColor = 'text-yellow-400';
-  let extendedCurrent;
-
-  if (current) {
-      if (current.type === 'SUBJECT' && current.iconName) {
-          Icon = allSubjectIcons[current.iconName] || Folder;
-          iconColor = current.color || 'text-yellow-400';
-      } else if (current.type === 'SEMESTER') {
-          Icon = Calendar;
-          iconColor = 'text-green-400';
-      }
-
-      extendedCurrent = {
-          ...current,
-          icon: Icon,
-          iconColor: iconColor
-      }
-  }
-
   return (
     <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
-       <FileExplorerHeader currentFolder={extendedCurrent} onFileSelected={processFileUpload} />
+       <FileExplorerHeader currentFolder={current} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
           <FolderGrid 
             parentId={id} 
