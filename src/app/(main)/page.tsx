@@ -96,14 +96,16 @@ export default function HomePage() {
     <motion.main 
         initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={{ duration: 0.1, ease: 'easeOut' }}
         className="flex-1 p-4 md:p-6 space-y-6 flex flex-col"
     >
         <Breadcrumbs />
         <div className="flex-1 flex flex-col items-center justify-between pt-8 md:pt-12 pb-16">
             <div className="w-full max-w-4xl text-center">
                 <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-[#00D309] to-teal-300 text-transparent bg-clip-text">Your Study Levels</h2>
-                {renderContent()}
+                <div className="min-h-[16rem]">
+                  {renderContent()}
+                </div>
             </div>
             <div className="border border-blue-400/30 bg-blue-900/10 rounded-xl p-6 mt-16">
                 <blockquote className="text-center">
