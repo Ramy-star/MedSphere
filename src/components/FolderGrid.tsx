@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,7 +18,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
-import { Skeleton } from './ui/skeleton';
 import { Folder as FolderIcon, Plus, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
@@ -120,12 +118,6 @@ const SortableList = ({
                         ))}
                         {items.map((it: Content) => {
                             const itemKey = it.id;
-                            const motionProps = {
-                                initial:{ opacity: 0, y: 8 },
-                                animate:{ opacity: 1, y: 0 },
-                                exit:{ opacity: 0, y: 8 },
-                                transition:{ duration: 0.15 },
-                            };
 
                             let content;
                             if (it.type === 'SUBJECT') {
@@ -151,16 +143,31 @@ const SortableList = ({
                             }
                             
                              if (isMobile) {
-                                return <div key={itemKey} className="border-b border-white/10">{content}</div>
+                                return (
+                                   <motion.div
+                                      key={itemKey}
+                                      initial={{ opacity: 0, y: 8 }}
+                                      animate={{ opacity: 1, y: 0 }}
+                                      exit={{ opacity: 0, y: 8 }}
+                                      transition={{ duration: 0.15 }}
+                                      className="border-b border-white/10"
+                                    >
+                                      {content}
+                                    </motion.div>
+                                );
                             }
 
                             return (
-                                <div
+                                <motion.div
                                     key={itemKey}
+                                    initial={{ opacity: 0, y: 8 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    exit={{ opacity: 0, y: 8 }}
+                                    transition={{ duration: 0.15 }}
                                     className={cn(!isSubjectView && "border-b border-white/10")}
                                 >
                                     {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
-                                </div>
+                                </motion.div>
                             )
                         })}
                     </AnimatePresence>
@@ -235,12 +242,16 @@ const NonSortableList = ({
                      }
  
                      return (
-                         <div
+                         <motion.div
                              key={itemKey}
+                             initial={{ opacity: 0, y: 8 }}
+                             animate={{ opacity: 1, y: 0 }}
+                             exit={{ opacity: 0, y: 8 }}
+                             transition={{ duration: 0.15 }}
                              className={cn(!isSubjectView && "border-b border-white/10", isMobile && "px-4 border-b-0")}
                          >
                              {content}
-                         </div>
+                         </motion.div>
                      );
                 })}
             </AnimatePresence>
