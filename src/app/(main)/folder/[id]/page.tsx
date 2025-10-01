@@ -24,7 +24,7 @@ function FolderPageContent({ id }: { id: string }) {
   }, [loadingCurrent, current]);
 
   const processFileUpload = useCallback(async (file: File) => {
-    if (!current) return;
+    if (!id) return;
 
     const tempId = `upload_${Date.now()}_${file.name}`;
 
@@ -48,14 +48,14 @@ function FolderPageContent({ id }: { id: string }) {
         }
     };
     
-    const xhr = await contentService.createFile(current.id, file, callbacks);
+    const xhr = await contentService.createFile(id, file, callbacks);
     setUploadingFiles(prev => [...prev, { id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file, xhr }]);
 
-  }, [current, toast]);
+  }, [id, toast]);
 
   const handleRetryUpload = useCallback(async (fileId: string) => {
     const fileToRetry = uploadingFiles.find(f => f.id === fileId);
-    if (fileToRetry && fileToRetry.file && current) {
+    if (fileToRetry && fileToRetry.file && id) {
       // Optimistically set status to uploading
       setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'uploading', progress: 0 } : f));
 
@@ -65,7 +65,7 @@ function FolderPageContent({ id }: { id: string }) {
         },
         onSuccess: (content) => {
             setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'success', xhr: undefined } : f));
-            setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== fileId)), 2000);
+            setTimeout(() => setUploading_Files(prev => prev.filter(f => f.id !== fileId)), 2000);
             toast({ title: "File Uploaded", description: `"${content.name}" has been uploaded.` });
         },
         onError: (error) => {
@@ -78,10 +78,10 @@ function FolderPageContent({ id }: { id: string }) {
         }
       };
 
-      const newXhr = await contentService.createFile(current.id, fileToRetry.file, callbacks);
+      const newXhr = await contentService.createFile(id, fileToRetry.file, callbacks);
       setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, xhr: newXhr } : f));
     }
-  }, [uploadingFiles, current, toast]);
+  }, [uploadingFiles, id, toast]);
 
   const handleRemoveUpload = (fileId: string) => {
       const fileToRemove = uploadingFiles.find(f => f.id === fileId);
@@ -93,7 +93,7 @@ function FolderPageContent({ id }: { id: string }) {
   
   return (
     <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
-       <FileExplorerHeader currentFolder={current} />
+       <FileExplorerHeader currentFolder={current} onFileSelected={processFileUpload} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
           <FolderGrid 
             parentId={id} 

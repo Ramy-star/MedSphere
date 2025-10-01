@@ -10,7 +10,7 @@ import Image from 'next/image';
 import { allSubjectIcons } from '@/lib/file-data';
 import { Skeleton } from './ui/skeleton';
 
-export default function FileExplorerHeader({ currentFolder }: { currentFolder?: Content | null }) {
+export default function FileExplorerHeader({ currentFolder, onFileSelected }: { currentFolder?: Content | null, onFileSelected?: (file: File) => void }) {
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   
@@ -89,4 +89,5 @@ export default function FileExplorerHeader({ currentFolder }: { currentFolder?: 
     
 
     
+
 
