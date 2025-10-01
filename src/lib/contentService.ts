@@ -43,41 +43,22 @@ export type UploadCallbacks = {
 
 /**
  * Constructs a proxied URL through the Cloudflare worker.
- * It takes a full Cloudinary URL and extracts the path part after `/upload/`
- * to append it to the worker URL.
- * e.g., https://res.cloudinary.com/cloud/image/upload/v123/folder/hash.jpg
- * becomes https://worker.dev/v123/folder/hash.jpg
+ * It takes the pathname from the Cloudinary URL and prepends the worker base URL.
+ * e.g., /image/upload/v123/folder/hash.jpg
+ * becomes https://worker.dev/image/upload/v123/folder/hash.jpg
  * @param cloudinaryUrl The full URL returned by Cloudinary.
  * @returns The proxied URL.
  */
-function createProxiedUrl(cloudinaryUrl: string): string {
+function createProxiedUrl(cloudinaryPath: string): string {
     const workerBase = (process.env.NEXT_PUBLIC_FILES_BASE_URL || '').replace(/\/+$/, '');
     if (!workerBase) {
-        console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Returning original Cloudinary URL.");
-        return cloudinaryUrl;
+        console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Returning original Cloudinary path.");
+        return cloudinaryPath;
     }
 
-    try {
-        const urlObject = new URL(cloudinaryUrl);
-        // The path part will be like '/<cloud_name>/image/upload/v12345/content/hash.jpg'
-        // We need to extract the path segment starting from the resource type (image, video, raw).
-        const pathSegments = urlObject.pathname.split('/');
-        const uploadIndex = pathSegments.indexOf('upload');
-
-        if (uploadIndex === -1 || uploadIndex === 0) {
-             console.warn("Unexpected Cloudinary URL format, could not create proxied URL:", cloudinaryUrl);
-             return cloudinaryUrl;
-        }
-
-        // The path we want is from 'upload' onwards.
-        const pathPart = pathSegments.slice(uploadIndex).join('/');
-
-        return `${workerBase}/${pathPart}`;
-
-    } catch (e) {
-        console.error("Error creating proxied URL from:", cloudinaryUrl, e);
-        return cloudinaryUrl; // Fallback to original URL on error
-    }
+    const cleanPath = cloudinaryPath.replace(/^\/+/, '');
+    
+    return `${workerBase}/${cleanPath}`;
 }
 
 
@@ -209,16 +190,16 @@ export const contentService = {
       return newLinkData;
 
     } catch (e: any) {
-      if (e && e.code === 'permission-denied') {
-        errorEmitter.emit('permission-error', new FirestorePermissionError({
-            path: `/content/${newLinkId}`,
-            operation: 'create',
-            requestResourceData: { name, parentId, type: 'LINK', url },
-        }));
-      } else {
-        console.error("Transaction failed: ", e);
-      }
-      throw e;
+        if (e && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${newLinkId}`,
+                operation: 'create',
+                requestResourceData: { name, parentId, type: 'LINK', url },
+            }));
+        } else {
+            console.error("Transaction failed: ", e);
+        }
+        throw e;
     }
   },
   
@@ -279,7 +260,8 @@ export const contentService = {
                 const children = await this.getChildren(parentId);
                 const order = children.length;
                 
-                const finalFileUrl = createProxiedUrl(data.secure_url);
+                const urlObject = new URL(data.secure_url);
+                const finalFileUrl = createProxiedUrl(urlObject.pathname);
 
                 const newFileContent: Content = {
                     id,
@@ -362,7 +344,8 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                const iconURL = createProxiedUrl(data.secure_url);
+                const urlObject = new URL(data.secure_url);
+                const iconURL = createProxiedUrl(urlObject.pathname);
 
                 await updateDoc(itemRef, {
                     'metadata.iconURL': iconURL,
@@ -447,7 +430,8 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                const finalFileUrl = createProxiedUrl(data.secure_url);
+                const urlObject = new URL(data.secure_url);
+                const finalFileUrl = createProxiedUrl(urlObject.pathname);
 
                 const updatedData = {
                     name: newFile.name,
