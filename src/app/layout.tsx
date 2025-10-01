@@ -10,7 +10,6 @@ import { useState, useEffect } from "react";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { getFirebaseConfig } from "@/firebase/config";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
-import SWRegistrar from "./sw-registrar";
 
 
 const nunitoSans = Nunito_Sans({ subsets: ["latin"] });
@@ -68,7 +67,6 @@ export default function RootLayout({
       </head>
       <body className={`${nunitoSans.className} h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
-          <SWRegistrar />
           <div className="flex flex-col h-full w-full">
             <Header />
             <main className="flex flex-1 w-full overflow-hidden">
