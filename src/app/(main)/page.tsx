@@ -52,11 +52,7 @@ export default function HomePage() {
   };
 
   const renderContent = () => {
-      if (loading && (!levels || levels.length === 0)) {
-           return <div className="w-full min-h-[16rem] md:min-h-0" />; // Reserve space on mobile
-      }
-      
-      if (!levels || levels.length === 0) {
+      if (!loading && (!levels || levels.length === 0)) {
            return (
                 <div className="text-center min-h-[16rem] md:min-h-0 flex flex-col justify-center items-center">
                     <p className="text-lg text-slate-300 mb-4">Your study space is empty.</p>
@@ -67,11 +63,11 @@ export default function HomePage() {
             );
       }
       
-      const isOdd = levels.length % 2 !== 0;
+      const isOdd = levels ? levels.length % 2 !== 0 : false;
 
       return (
            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
-              {levels.map((level, index) => {
+              {levels && levels.map((level, index) => {
                   const isLastItem = index === levels.length - 1;
                   return (
                     <div 
@@ -104,7 +100,7 @@ export default function HomePage() {
         className="flex-1 p-4 md:p-6 space-y-6 flex flex-col"
     >
         <Breadcrumbs />
-        <div className="flex-1 flex flex-col items-center justify-center md:justify-between pt-8 md:pt-12 pb-16">
+        <div className="flex-1 flex flex-col items-center justify-between pt-8 md:pt-12 pb-16">
             <div className="w-full max-w-4xl text-center">
                 <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-[#00D309] to-teal-300 text-transparent bg-clip-text">Your Study Levels</h2>
                 {renderContent()}
