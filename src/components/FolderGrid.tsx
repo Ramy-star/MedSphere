@@ -46,21 +46,21 @@ function DropZone({ isVisible }: { isVisible: boolean }) {
   );
 }
 
-const listVariants = {
+const listVariants = (isMobile: boolean) => ({
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.02,
+      staggerChildren: isMobile ? undefined : 0.02,
     },
   },
-};
+});
 
-const itemVariants = {
-  hidden: { opacity: 0, y: 8 },
+const itemVariants = (isMobile: boolean) => ({
+  hidden: { opacity: 0, y: isMobile ? 0 : 8 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.15 } },
-  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } }
-};
+  exit: { opacity: 0, y: isMobile ? 0 : -8, transition: { duration: 0.15 } }
+});
 
 const SortableItemWrapper = ({ id, children }: { id: string, children: React.ReactNode }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -121,12 +121,12 @@ const SortableList = ({
     return (
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                <motion.div className={containerClasses} variants={listVariants} initial="hidden" animate="visible">
+                <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
                     <AnimatePresence>
                         {uploadingFiles.map(file => (
                           <motion.div
                              key={file.id}
-                              variants={itemVariants}
+                              variants={itemVariants(isMobile)}
                               exit="exit"
                               className={cn(isMobile && "px-4")}
                           >
@@ -162,25 +162,23 @@ const SortableList = ({
                             
                              if (isMobile) {
                                 return (
-                                   <motion.div
+                                   <div
                                       key={itemKey}
-                                      variants={itemVariants}
-                                      exit="exit"
                                       className="border-b border-white/10"
                                     >
                                       {content}
-                                    </motion.div>
+                                    </div>
                                 );
                             }
 
                             return (
                                 <motion.div
                                     key={itemKey}
-                                    variants={itemVariants}
+                                    variants={itemVariants(isMobile)}
                                     exit="exit"
                                     className={cn(!isSubjectView && "border-b border-white/10")}
                                 >
-                                    {isSubjectView ? <motion.div variants={itemVariants}>{content}</motion.div> : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
+                                    {isSubjectView ? <motion.div variants={itemVariants(isMobile)}>{content}</motion.div> : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
                                 </motion.div>
                             )
                         })}
@@ -219,12 +217,12 @@ const NonSortableList = ({
         : "flex flex-col";
     
     return (
-        <motion.div className={containerClasses} variants={listVariants} initial="hidden" animate="visible">
+        <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
             <AnimatePresence>
                 {uploadingFiles.map(file => (
                     <motion.div
                         key={file.id}
-                        variants={itemVariants}
+                        variants={itemVariants(isMobile)}
                         exit="exit"
                         className={cn(isMobile && "px-4")}
                     >
@@ -260,7 +258,7 @@ const NonSortableList = ({
                      return (
                          <motion.div
                              key={itemKey}
-                             variants={itemVariants}
+                             variants={itemVariants(isMobile)}
                              exit="exit"
                              className={cn(!isSubjectView && "border-b border-white/10", isMobile && "px-4 border-b-0")}
                          >
@@ -291,7 +289,7 @@ export function FolderGrid({
       where: ['parentId', '==', parentId],
       orderBy: ['order', 'asc']
   });
-  const [items, setItems] = useState<Content[]>(fetchedItems || []);
+  const [items, setItems] = useState<Content[]>([]);
 
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
@@ -307,6 +305,8 @@ export function FolderGrid({
   useEffect(() => {
     if (fetchedItems) {
       setItems(fetchedItems);
+    } else {
+      setItems([]);
     }
   }, [fetchedItems]);
 

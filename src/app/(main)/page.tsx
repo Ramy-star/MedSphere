@@ -10,6 +10,7 @@ import { useFirebase } from '@/firebase/provider';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import React from 'react';
+import Link from 'next/link';
 
 export default function HomePage() {
   const { db } = useFirebase();
@@ -40,12 +41,6 @@ export default function HomePage() {
     // We only want this to run based on the initial loading and data state.
   }, [loading, db, levels, handleSeed]);
 
-  const handleMouseDown = (path: string) => (e: React.MouseEvent) => {
-    if (e.button === 0) { // Main button (left-click)
-      e.preventDefault();
-      router.push(path);
-    }
-  };
   
   const renderContent = () => {
       if (!levels || (loading && levels.length === 0)) {
@@ -77,15 +72,15 @@ export default function HomePage() {
                             isLastItem && isOdd && "col-span-2 sm:col-span-1 md:col-span-1"
                         )} 
                     >
-                        <a href={`/level/${encodeURIComponent(level.name)}`} onMouseDown={handleMouseDown(`/level/${encodeURIComponent(level.name)}`)}>
-                        <div className={cn(
-                            "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center",
-                            // Center the content if we are spanning 2 columns
-                            isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
-                        )}>
-                            <h3 className="text-base md:text-xl font-semibold text-white">{level.name}</h3>
-                        </div>
-                        </a>
+                        <Link href={`/level/${encodeURIComponent(level.name)}`}>
+                            <div className={cn(
+                                "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center",
+                                // Center the content if we are spanning 2 columns
+                                isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
+                            )}>
+                                <h3 className="text-base md:text-xl font-semibold text-white">{level.name}</h3>
+                            </div>
+                        </Link>
                     </div>
                   )
                 })}

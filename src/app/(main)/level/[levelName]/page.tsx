@@ -36,13 +36,6 @@ function LevelPageContent({ levelName }: { levelName: string }) {
     }
   }, [loadingLevels, level]);
   
-  const handleMouseDown = (path: string) => (e: React.MouseEvent) => {
-    if (e.button === 0) { // Main button (left-click)
-      e.preventDefault();
-      router.push(path);
-    }
-  };
-
   return (
     <motion.main 
         initial={{ opacity: 0, y: -5 }}
@@ -56,11 +49,11 @@ function LevelPageContent({ levelName }: { levelName: string }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
                 {semesters.map((semester) => (
                     <div key={semester.id}>
-                        <a href={`/folder/${semester.id}`} onMouseDown={handleMouseDown(`/folder/${semester.id}`)}>
+                        <Link href={`/folder/${semester.id}`} className="block h-full">
                             <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center">
                                 <h3 className="text-xl font-semibold text-white">{semester.name}</h3>
                             </div>
-                        </a>
+                        </Link>
                     </div>
                 ))}
             </div>
