@@ -1,5 +1,4 @@
 
-      
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
@@ -41,19 +40,36 @@ export type UploadCallbacks = {
 };
 
 
-function createProxiedUrl(cloudinaryPath: string): string {
+/**
+ * Creates a proxied URL through the Cloudflare worker if configured,
+ * otherwise returns the direct Cloudinary URL.
+ * @param secureUrl The full secure_url from Cloudinary.
+ * @returns The final URL to be used in the app.
+ */
+function createProxiedUrl(secureUrl: string): string {
     const workerBase = process.env.NEXT_PUBLIC_FILES_BASE_URL;
-    if (!workerBase) {
-        console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to direct Cloudinary URL.");
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-        return `https://res.cloudinary.com/${cloudName}/${cloudinaryPath}`;
-    }
-    
-    // Ensure workerBase doesn't have a trailing slash and path has a leading one
-    const cleanWorkerBase = workerBase.endsWith('/') ? workerBase.slice(0, -1) : workerBase;
-    const cleanCloudinaryPath = cloudinaryPath.startsWith('/') ? cloudinaryPath : `/${cloudinaryPath}`;
 
-    return `${cleanWorkerBase}${cleanCloudinaryPath}`;
+    // If the worker URL is not configured or is the placeholder, return the direct URL.
+    if (!workerBase || workerBase.includes('files.yourdomain.com')) {
+        return secureUrl;
+    }
+
+    try {
+        const urlObject = new URL(secureUrl);
+        // The path we need is everything after the cloud name, e.g., /image/upload/v123...
+        const pathParts = urlObject.pathname.split('/');
+        // The path starts with a '/', so the cloud name is at index 1.
+        // We want the parts after the cloud name.
+        const pathAfterCloudName = pathParts.slice(2).join('/');
+        
+        // Ensure workerBase doesn't have a trailing slash.
+        const cleanWorkerBase = workerBase.endsWith('/') ? workerBase.slice(0, -1) : workerBase;
+
+        return `${cleanWorkerBase}/${pathAfterCloudName}`;
+    } catch (error) {
+        console.error("Error creating proxied URL, falling back to direct URL:", error);
+        return secureUrl;
+    }
 }
 
 
@@ -256,8 +272,7 @@ export const contentService = {
                 const children = await this.getChildren(parentId);
                 const order = children.length;
                 
-                const cloudinaryPath = `${data.resource_type}/upload/v${data.version}/${data.public_id}.${data.format}`;
-                const finalFileUrl = createProxiedUrl(cloudinaryPath);
+                const finalFileUrl = createProxiedUrl(data.secure_url);
 
                 const newFileContent: Content = {
                     id,
@@ -343,8 +358,7 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
 
-                const cloudinaryPath = `image/upload/v${data.version}/${data.public_id}.${data.format}`;
-                const finalIconUrl = createProxiedUrl(cloudinaryPath);
+                const finalIconUrl = createProxiedUrl(data.secure_url);
 
                 await updateDoc(itemRef, {
                     'metadata.iconURL': finalIconUrl,
@@ -431,8 +445,7 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                const cloudinaryPath = `${data.resource_type}/upload/v${data.version}/${data.public_id}.${data.format}`;
-                const finalFileUrl = createProxiedUrl(cloudinaryPath);
+                const finalFileUrl = createProxiedUrl(data.secure_url);
 
                 const updatedData = {
                     name: newFile.name,
