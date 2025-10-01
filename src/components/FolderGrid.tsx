@@ -285,7 +285,8 @@ export function FolderGrid({
     }
   }, [fetchedItems]);
 
-  const items = orderedItems || [];
+  // Use fetchedItems directly if orderedItems is not yet set, to allow for faster initial render
+  const items = orderedItems || fetchedItems || [];
 
   const handleFileClick = (file: Content) => {
     if (file.type === 'LINK') {
@@ -409,11 +410,9 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
 
-      {loading && (
-        <div className={isSubjectView ? "grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2"}>
-          {[...Array(isSubjectView ? 4 : 3)].map((_, i) => (
-            <Skeleton key={i} className={`${isSubjectView ? "h-28" : "h-14"} w-full rounded-xl`} />
-          ))}
+      {loading && items.length === 0 && (
+         <div className="text-center py-16">
+            {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
@@ -439,7 +438,7 @@ export function FolderGrid({
           </div>
       )}
 
-      {(!loading || items.length > 0 || uploadingFiles.length > 0) && items && renderList()}
+      {(items.length > 0 || uploadingFiles.length > 0) && renderList()}
 
       <FilePreviewModal
         item={previewFile}
@@ -478,5 +477,3 @@ export function FolderGrid({
     </div>
   );
 }
-
-    
