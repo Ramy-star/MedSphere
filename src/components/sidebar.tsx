@@ -10,6 +10,7 @@ import {
   HeartPulse,
   Brain,
   Bone,
+  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -34,7 +35,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 
   const { levels, semestersByLevel, itemMap } = useMemo(() => {
     if (!allItems) {
-      return { levels: [], semestersByLevel: {}, itemMap: new Map() };
+      return { levels: [], semestersByLevel: {} as { [levelId: string]: Content[] }, itemMap: new Map() };
     }
     const levels = allItems.filter(item => item.type === 'LEVEL').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const semesters = allItems.filter(item => item.type === 'SEMESTER').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
