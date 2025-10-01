@@ -93,40 +93,24 @@ function FolderPageContent({ id }: { id: string }) {
       setUploadingFiles(prev => prev.filter(f => f.id !== fileId));
   };
   
-  if (loadingCurrent || !current) {
-      return <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
-        <div className="mb-6 space-y-4">
-            <Skeleton className="h-5 w-1/3" />
-            <div className="flex items-center justify-between min-h-[40px]">
-                <div className="flex items-center gap-4">
-                    <Skeleton className="w-10 h-10 rounded-lg" />
-                    <Skeleton className="h-8 w-48" />
-                </div>
-            </div>
-        </div>
-        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2 space-y-2">
-            <Skeleton className="h-14 w-full" />
-            <Skeleton className="h-14 w-full" />
-            <Skeleton className="h-14 w-full" />
-        </div>
-      </main>
-  }
-
   let Icon: LucideIcon = Folder;
   let iconColor = 'text-yellow-400';
+  let extendedCurrent;
 
-  if (current.type === 'SUBJECT' && current.iconName) {
-      Icon = allSubjectIcons[current.iconName] || Folder;
-      iconColor = current.color || 'text-yellow-400';
-  } else if (current.type === 'SEMESTER') {
-      Icon = Calendar;
-      iconColor = 'text-green-400';
-  }
+  if (current) {
+      if (current.type === 'SUBJECT' && current.iconName) {
+          Icon = allSubjectIcons[current.iconName] || Folder;
+          iconColor = current.color || 'text-yellow-400';
+      } else if (current.type === 'SEMESTER') {
+          Icon = Calendar;
+          iconColor = 'text-green-400';
+      }
 
-  const extendedCurrent = {
-      ...current,
-      icon: Icon,
-      iconColor: iconColor
+      extendedCurrent = {
+          ...current,
+          icon: Icon,
+          iconColor: iconColor
+      }
   }
 
   return (
