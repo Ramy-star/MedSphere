@@ -1,39 +1,49 @@
 /** @type {import('next').NextConfig} */
-import withPWA from 'next-pwa';
 
-const pwaConfig = withPWA({
+import type { NextConfig } from 'next';
+import type { Configuration } from 'webpack';
+import createPWA from 'next-pwa';
+
+const withPWA = createPWA({
   dest: 'public',
-  register: true,
-  skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
-      urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
+      urlPattern: ({ url }) => {
+        return url.hostname === 'medsphere.roumio777.workers.dev';
+      },
+      handler: 'NetworkOnly',
+    },
+    {
+      urlPattern: /\.(?:png|gif|jpg|jpeg|svg|ico)$/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'cloudinary-images',
+        cacheName: 'images',
         expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
         },
       },
     },
     {
-      urlPattern: /^https:\/\/picsum\.photos\/.*/i,
-      handler: 'CacheFirst',
+      urlPattern: /\.(?:js|css)$/i,
+      handler: 'StaleWhileRevalidate',
       options: {
-        cacheName: 'picsum-images',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 days
-        },
+        cacheName: 'static-resources',
+      },
+    },
+    {
+      urlPattern: ({ request }) => request.mode === 'navigate',
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'pages-cache',
       },
     },
   ],
 });
 
-const nextConfig = {
-  ...pwaConfig,
+
+const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       {
@@ -44,16 +54,24 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'picsum.photos',
       },
+      {
+        protocol: 'https',
+        hostname: 'medsphere.roumio777.workers.dev',
+      }
     ],
   },
-  webpack: (config, { isServer }) => {
-    // This is the fix for the 'canvas' module not found error with react-pdf.
-    // It tells webpack to not try to bundle the 'canvas' module on the server.
+  webpack: (config: Configuration, { isServer, dev }) => {
+    // This is to prevent the "Module not found: Can't resolve 'canvas'" error during build
     if (isServer) {
+      if (!config.externals) {
+        config.externals = [];
+      }
+      if (Array.isArray(config.externals)) {
         config.externals.push('canvas');
+      }
     }
     return config;
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
