@@ -6,6 +6,7 @@ import type { Content } from '@/lib/contentService';
 import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import { useFirebase } from '@/firebase/provider';
+import { Skeleton } from './ui/skeleton';
 
 
 function getLink(item: Content): string {
@@ -73,11 +74,28 @@ export function Breadcrumbs({ current }: { current?: Content }) {
       </Link>
     </div>
   );
+
+  const renderSkeletons = () => (
+    <>
+      {[...Array(2)].map((_, i) => (
+         <span key={`skeleton-${i}`} className="flex items-center gap-2">
+           <ChevronRight className="w-4 h-4 opacity-60" />
+           <Skeleton className="h-4 w-20" />
+         </span>
+      ))}
+      <span className="flex items-center gap-2">
+        <ChevronRight className="w-4 h-4 opacity-60" />
+        <Skeleton className="h-5 w-24" />
+      </span>
+    </>
+  );
   
   return (
-     <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap">
+     <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap min-h-[20px]">
       {homeElement}
       
+      {loading && current && renderSkeletons()}
+
       {!loading && ancestors.map((node) => (
         <span key={node.id} className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
@@ -90,7 +108,7 @@ export function Breadcrumbs({ current }: { current?: Content }) {
         </span>
       ))}
 
-      {current && current.id !== 'root' && (
+      {!loading && current && current.id !== 'root' && (
         <span className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
             <span className="font-semibold text-white">{current.name}</span>
