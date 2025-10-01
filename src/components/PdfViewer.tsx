@@ -42,6 +42,21 @@ export default function PdfViewer({ file }: { file: string }) {
     });
   }
 
+  const onRenderError = (error: Error) => {
+    // This is a common warning in react-pdf when a render is cancelled.
+    // We can safely ignore it to keep the console clean.
+    if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
+        return;
+    }
+    console.error('Failed to render PDF page:', error);
+    toast({
+        variant: 'destructive',
+        title: 'PDF Render Error',
+        description: 'A page could not be displayed correctly.',
+    });
+  }
+
+
   useEffect(() => {
     // Set initial scale based on device type
     setScale(isMobile ? 0.25 : 1);
@@ -99,6 +114,7 @@ export default function PdfViewer({ file }: { file: string }) {
                       pageNumber={page} 
                       scale={scale * devicePixelRatio}
                       renderTextLayer={true}
+                      onRenderError={onRenderError}
                     />
                   </div>
               ))}
