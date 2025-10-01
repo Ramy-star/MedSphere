@@ -18,7 +18,7 @@ export type Content = {
   metadata?: {
     size?: number;
     mime?: string;
-    storagePath?: string; // This will now be the Cloudinary URL
+    storagePath?: string; // This will now be the Cloudflare Worker proxied URL
     cloudinaryPublicId?: string; // public_id from cloudinary
     cloudinaryResourceType?: 'image' | 'video' | 'raw'; // resource_type from cloudinary
     url?: string; // For LINK type
@@ -38,6 +38,19 @@ export type UploadCallbacks = {
   onSuccess: (content: Content) => void;
   onError: (error: Error) => void;
 };
+
+
+const CLOUDFLARE_WORKER_URL = 'https://medsphere.roumio777.workers.dev';
+
+function createProxiedUrl(cloudinaryUrl: string): string {
+  // Ensure we don't double-proxy
+  if (cloudinaryUrl.startsWith(CLOUDFLARE_WORKER_URL)) {
+    return cloudinaryUrl;
+  }
+  // The worker expects the URL to be appended directly after the worker URL.
+  // e.g., https://worker.com/https://res.cloudinary.com/...
+  return `${CLOUDFLARE_WORKER_URL}/${cloudinaryUrl}`;
+}
 
 
 export async function seedInitialData() {
@@ -190,7 +203,6 @@ export const contentService = {
         const folder = 'content';
         const public_id = `${folder}/${hash}`;
         
-        // Params sent to our server to be signed
         const paramsToSign = {
             public_id,
             folder,
@@ -214,7 +226,6 @@ export const contentService = {
         formData.append('api_key', apiKey);
         formData.append('signature', signature);
         formData.append('timestamp', timestamp);
-        // We also need to send the params that were signed
         formData.append('public_id', public_id);
         formData.append('folder', folder);
 
@@ -244,8 +255,7 @@ export const contentService = {
                 const children = await this.getChildren(parentId);
                 const order = children.length;
                 
-                // Use the direct cloudinary url
-                const finalFileUrl = data.secure_url;
+                const finalFileUrl = createProxiedUrl(data.secure_url);
 
 
                 const newFileContent: Content = {
@@ -333,7 +343,7 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                const iconURL = data.secure_url;
+                const iconURL = createProxiedUrl(data.secure_url);
 
                 await updateDoc(itemRef, {
                     'metadata.iconURL': iconURL,
@@ -418,7 +428,7 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                const finalFileUrl = data.secure_url;
+                const finalFileUrl = createProxiedUrl(data.secure_url);
 
                 const updatedData = {
                     name: newFile.name,
