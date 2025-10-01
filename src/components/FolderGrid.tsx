@@ -252,7 +252,7 @@ export function FolderGrid({
       )}
 
       {(!loading || items.length > 0 || uploadingFiles.length > 0) && items && (
-          <DndContext sensors={isAdmin ? sensors : undefined} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext sensors={isAdmin ? sensors : []} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
               <div className={containerClasses}>
                 <AnimatePresence>
