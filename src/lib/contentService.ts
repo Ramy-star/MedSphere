@@ -18,13 +18,13 @@ export type Content = {
   metadata?: {
     size?: number;
     mime?: string;
-    storagePath?: string; // This will now be the Cloudflare Worker proxied URL
-    cloudinaryPublicId?: string; // public_id from cloudinary
-    cloudinaryResourceType?: 'image' | 'video' | 'raw'; // resource_type from cloudinary
+    storagePath?: string; 
+    cloudinaryPublicId?: string; 
+    cloudinaryResourceType?: 'image' | 'video' | 'raw';
     url?: string; // For LINK type
     iconURL?: string; // For custom folder icons
-    iconCloudinaryPublicId?: string; // public_id for the custom icon
-    shortId?: string; // For short URLs
+    iconCloudinaryPublicId?: string; 
+    shortId?: string;
   };
   createdAt?: string;
   updatedAt?: string;
@@ -43,54 +43,50 @@ export type UploadCallbacks = {
 const CLOUDFLARE_WORKER_URL = 'https://medsphere.roumio777.workers.dev';
 
 function createProxiedUrl(cloudinaryUrl: string): string {
-  // Ensure we don't double-proxy
   if (cloudinaryUrl.startsWith(CLOUDFLARE_WORKER_URL)) {
     return cloudinaryUrl;
   }
-  // The worker expects the URL to be appended directly after the worker URL.
-  // e.g., https://worker.com/https://res.cloudinary.com/...
   return `${CLOUDFLARE_WORKER_URL}/${cloudinaryUrl}`;
 }
 
 
-export async function seedInitialData() {
-    if (!db) {
-        console.error("Firestore is not initialized.");
-        return;
-    }
-    const contentRef = collection(db, 'content');
-    const snapshot = await getDocs(query(contentRef, where('type', '==', 'LEVEL')));
-
-    if (!snapshot.empty) {
-        console.log("Content collection already has levels. Skipping seed.");
-        return;
-    }
-
-    try {
-        await runTransaction(db, async (transaction) => {
-            seedData.forEach((item, index) => {
-                const docRef = doc(contentRef, item.id);
-                transaction.set(docRef, { ...item, order: index, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-            });
-        });
-        console.log('Initial data seeded successfully.');
-    } catch (e: any) {
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: '/content (batch write)',
-                operation: 'write',
-                requestResourceData: { note: "Seeding multiple documents" }
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error("Error seeding data:", e);
-        }
-        throw e;
-    }
-}
-
-
 export const contentService = {
+  async seedInitialData() {
+      if (!db) {
+          console.error("Firestore is not initialized.");
+          return;
+      }
+      const contentRef = collection(db, 'content');
+      const snapshot = await getDocs(query(contentRef, where('type', '==', 'LEVEL')));
+  
+      if (!snapshot.empty) {
+          console.log("Content collection already has levels. Skipping seed.");
+          return;
+      }
+  
+      try {
+          await runTransaction(db, async (transaction) => {
+              seedData.forEach((item, index) => {
+                  const docRef = doc(contentRef, item.id);
+                  transaction.set(docRef, { ...item, order: index, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+              });
+          });
+          console.log('Initial data seeded successfully.');
+      } catch (e: any) {
+          if (e.code === 'permission-denied') {
+              const permissionError = new FirestorePermissionError({
+                  path: '/content (batch write)',
+                  operation: 'write',
+                  requestResourceData: { note: "Seeding multiple documents" }
+              });
+              errorEmitter.emit('permission-error', permissionError);
+          } else {
+              console.error("Error seeding data:", e);
+          }
+          throw e;
+      }
+  },
+  
   async getChildren(parentId: string | null): Promise<Content[]> {
     if (!db) return [];
     const q = query(collection(db, 'content'), where('parentId', '==', parentId), orderBy('order'));
@@ -587,5 +583,3 @@ export const contentService = {
     }
   }
 };
-
-    

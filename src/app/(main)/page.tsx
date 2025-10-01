@@ -4,7 +4,7 @@
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
-import { Content, seedInitialData } from '@/lib/contentService';
+import { Content, contentService } from '@/lib/contentService';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
@@ -22,7 +22,7 @@ export default function HomePage() {
   const handleSeed = useCallback(async () => {
     setIsSeeding(true);
     try {
-      await seedInitialData();
+      await contentService.seedInitialData();
       // Data will refetch automatically via useCollection
     } catch (error) {
       console.error("Seeding failed:", error);
