@@ -123,7 +123,7 @@ function SearchResults() {
                                     key={item.id}
                                     initial={{ opacity: 0, y: 8 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.15, delay: index * 0.03 }}
+                                    transition={{ duration: 0.15 }}
                                     className="border-b border-white/10"
                                 >
                                     {(item.type === 'FILE' || item.type === 'LINK') && (

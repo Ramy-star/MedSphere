@@ -75,12 +75,6 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
-      keyframes: {
-        
-      },
-      animation: {
-        
-      },
       boxShadow: {
         'neon-accent': '0 0 10px hsl(var(--accent))',
       },

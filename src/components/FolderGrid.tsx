@@ -124,7 +124,7 @@ const SortableList = ({
                                 initial:{ opacity: 0, y: 8 },
                                 animate:{ opacity: 1, y: 0 },
                                 exit:{ opacity: 0, y: 8 },
-                                transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
+                                transition:{ duration: 0.15 },
                             };
 
                             let content;
@@ -215,7 +215,7 @@ const NonSortableList = ({
                          initial:{ opacity: 0, y: 8 },
                          animate:{ opacity: 1, y: 0 },
                          exit:{ opacity: 0, y: 8 },
-                         transition:{ duration: 0.15, delay: (uploadingFiles.length * 0.02) + (index * 0.02) },
+                         transition:{ duration: 0.15 },
                      };
  
                      let content;

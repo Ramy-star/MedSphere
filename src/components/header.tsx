@@ -16,7 +16,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
-  const [debouncedQuery] = useDebounce(query, 1000);
+  const [debouncedQuery] = useDebounce(query, 300);
 
   useEffect(() => {
     // Navigate to search results if there is a debounced query
