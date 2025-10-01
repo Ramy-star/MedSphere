@@ -38,19 +38,21 @@ export async function initializeFirebase(config: FirebaseOptions) {
   const app = !apps.length ? initializeApp(config) : getApp();
   const auth = getAuth(app);
   
-  if (typeof window !== 'undefined') {
-    try {
-      db = initializeFirestore(app, {
-        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-      });
-      console.log("Firestore offline persistence enabled with multi-tab support.");
-    } catch (err: any) {
-      console.error("Firestore persistence initialization failed.", err);
-      // Fallback to in-memory persistence if multi-tab fails
+  if (!db) { // Check if db is already initialized
+    if (typeof window !== 'undefined') {
+      try {
+        db = initializeFirestore(app, {
+          localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+        });
+        console.log("Firestore offline persistence enabled with multi-tab support.");
+      } catch (err: any) {
+        console.error("Firestore persistence initialization failed.", err);
+        // Fallback to in-memory persistence if multi-tab fails
+        db = getFirestore(app);
+      }
+    } else {
       db = getFirestore(app);
     }
-  } else {
-    db = getFirestore(app);
   }
   
   const storage = getStorage(app);
