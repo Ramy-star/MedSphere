@@ -1,4 +1,3 @@
-
 'use client';
 
 import { File as FileIcon, X, AlertTriangle, CheckCircle2, RotateCw } from 'lucide-react';
@@ -33,7 +32,7 @@ export function UploadProgress({ file, onRetry, onRemove }: { file: UploadingFil
     const showRemoveButton = file.status === 'uploading' || file.status === 'error';
 
     return (
-        <div className={cn("relative group glass-card p-3 rounded-lg flex items-center justify-between w-full transition-all", 
+        <div className={cn("relative group glass-card p-3 rounded-lg flex items-center justify-between w-full transition-all mb-2", 
             file.status === 'error' && "bg-red-900/20 border-red-500/30",
             file.status === 'success' && "bg-green-900/20 border-green-500/30"
         )}>

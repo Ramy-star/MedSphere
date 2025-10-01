@@ -51,14 +51,15 @@ const listVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.05,
+      staggerChildren: 0.03,
     },
   },
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: -10 },
-  visible: { opacity: 1, y: 0 },
+  hidden: { opacity: 0, y: -8 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.15 } },
+  exit: { opacity: 0, y: 8, transition: { duration: 0.15 } }
 };
 
 const SortableItemWrapper = ({ id, children }: { id: string, children: React.ReactNode }) => {
@@ -80,9 +81,9 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   });
 
   return (
-    <motion.div ref={setNodeRef} style={style} {...attributes} {...(isAdmin ? listeners : {})} variants={itemVariants}>
+    <div ref={setNodeRef} style={style} {...attributes} {...(isAdmin ? listeners : {})}>
       {childrenWithProps}
-    </motion.div>
+    </div>
   );
 };
 
@@ -96,7 +97,9 @@ const SortableList = ({
     onIconChangeClick,
     isSubjectView,
     isMobile,
-    onDragEnd
+    onDragEnd,
+    onRetry,
+    onRemove
 }: {
     items: Content[];
     uploadingFiles: UploadingFile[];
@@ -107,6 +110,8 @@ const SortableList = ({
     isSubjectView: boolean;
     isMobile: boolean;
     onDragEnd: (event: DragEndEvent) => void;
+    onRetry: (fileId: string) => void;
+    onRemove: (fileId: string) => void;
 }) => {
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
     const containerClasses = isSubjectView
@@ -122,11 +127,11 @@ const SortableList = ({
                           <motion.div
                              key={file.id}
                               variants={itemVariants}
-                              exit={{ opacity: 0, y: 8 }}
+                              exit="exit"
                               className={cn(isMobile && "px-4")}
                           >
                               {/* This component is not sortable, so it's outside the SortableItemWrapper */}
-                              <UploadProgress file={file} onRetry={() => {}} onRemove={() => {}} />
+                              <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                           </motion.div>
                         ))}
                         {items.map((it: Content) => {
@@ -160,7 +165,7 @@ const SortableList = ({
                                    <motion.div
                                       key={itemKey}
                                       variants={itemVariants}
-                                      exit={{ opacity: 0, y: 8 }}
+                                      exit="exit"
                                       className="border-b border-white/10"
                                     >
                                       {content}
@@ -172,7 +177,7 @@ const SortableList = ({
                                 <motion.div
                                     key={itemKey}
                                     variants={itemVariants}
-                                    exit={{ opacity: 0, y: 8 }}
+                                    exit="exit"
                                     className={cn(!isSubjectView && "border-b border-white/10")}
                                 >
                                     {isSubjectView ? <motion.div variants={itemVariants}>{content}</motion.div> : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
@@ -195,6 +200,8 @@ const NonSortableList = ({
     onIconChangeClick,
     isSubjectView,
     isMobile,
+    onRetry,
+    onRemove
 }: {
     items: Content[];
     uploadingFiles: UploadingFile[];
@@ -204,6 +211,8 @@ const NonSortableList = ({
     onIconChangeClick: (item: Content) => void;
     isSubjectView: boolean;
     isMobile: boolean;
+    onRetry: (fileId: string) => void;
+    onRemove: (fileId: string) => void;
 }) => {
     const containerClasses = isSubjectView
         ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
@@ -216,10 +225,10 @@ const NonSortableList = ({
                     <motion.div
                         key={file.id}
                         variants={itemVariants}
-                        exit={{ opacity: 0, y: 8 }}
+                        exit="exit"
                         className={cn(isMobile && "px-4")}
                     >
-                        <UploadProgress file={file} onRetry={() => {}} onRemove={() => {}} />
+                        <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                     </motion.div>
                 ))}
                 {items.map((it) => {
@@ -252,7 +261,7 @@ const NonSortableList = ({
                          <motion.div
                              key={itemKey}
                              variants={itemVariants}
-                             exit={{ opacity: 0, y: 8 }}
+                             exit="exit"
                              className={cn(!isSubjectView && "border-b border-white/10", isMobile && "px-4 border-b-0")}
                          >
                              {content}
@@ -278,7 +287,7 @@ export function FolderGrid({
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
 }) {
-  const [orderedItems, setOrderedItems] = useState<Content[] | null>(null);
+  const [items, setItems] = useState<Content[] | null>(null);
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
       orderBy: ['order', 'asc']
@@ -297,12 +306,11 @@ export function FolderGrid({
 
   useEffect(() => {
     if (fetchedItems) {
-      setOrderedItems(fetchedItems);
+      setItems(fetchedItems);
     }
   }, [fetchedItems]);
 
-  // Use fetchedItems directly if orderedItems is not yet set, to allow for faster initial render
-  const items = orderedItems || fetchedItems || [];
+  const currentItems = items || fetchedItems || [];
 
   const handleFileClick = (file: Content) => {
     if (file.type === 'LINK') {
@@ -378,7 +386,7 @@ export function FolderGrid({
     if (!isAdmin) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
-        setOrderedItems(currentItems => {
+        setItems(currentItems => {
             if (!currentItems) return null;
             const oldIndex = currentItems.findIndex((item) => item.id === active.id);
             const newIndex = currentItems.findIndex((item) => item.id === over.id);
@@ -394,11 +402,11 @@ export function FolderGrid({
     }
   };
 
-  const isSubjectView = items.length > 0 && items.every(it => it.type === 'SUBJECT');
+  const isSubjectView = currentItems.length > 0 && currentItems.every(it => it.type === 'SUBJECT');
   
   const renderList = () => {
     const listProps = {
-        items,
+        items: currentItems,
         uploadingFiles,
         onItemClick: handleFileClick,
         onRenameClick: (item: Content) => setItemToRename(item),
@@ -406,6 +414,8 @@ export function FolderGrid({
         onIconChangeClick: (item: Content) => setItemForIconChange(item),
         isSubjectView,
         isMobile,
+        onRetry,
+        onRemove,
     };
     
     if (isAdmin) {
@@ -426,13 +436,13 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
 
-      {loading && items.length === 0 && (
+      {loading && currentItems.length === 0 && (
          <div className="text-center py-16">
             {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
-      {!loading && items.length === 0 && uploadingFiles.length === 0 && (
+      {!loading && currentItems.length === 0 && uploadingFiles.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
@@ -454,7 +464,7 @@ export function FolderGrid({
           </div>
       )}
 
-      {(items.length > 0 || uploadingFiles.length > 0) && renderList()}
+      {(currentItems.length > 0 || uploadingFiles.length > 0) && renderList()}
 
       <FilePreviewModal
         item={previewFile}
