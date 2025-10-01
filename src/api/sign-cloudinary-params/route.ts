@@ -36,7 +36,12 @@ export async function POST(req: NextRequest) {
     const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
 
     // Return the signature and other useful data to the client
-    return NextResponse.json({ signature });
+    return NextResponse.json({ 
+        signature,
+        timestamp: paramsToSign.timestamp,
+        apiKey: process.env.CLOUDINARY_API_KEY,
+        cloudName: process.env.CLOUDINARY_CLOUD_NAME,
+    });
 
   } catch (err) {
     console.error("Cloudinary sign endpoint error:", err);
@@ -44,5 +49,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
   }
 }
-
-    
