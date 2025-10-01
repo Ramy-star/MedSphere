@@ -1,4 +1,5 @@
 
+      
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
@@ -42,13 +43,38 @@ export type UploadCallbacks = {
 
 const CLOUDFLARE_WORKER_URL = 'https://medsphere.roumio777.workers.dev';
 
+/**
+ * Constructs a proxied URL through the Cloudflare worker.
+ * It takes a full Cloudinary URL and extracts the path part after `/upload/`
+ * to append it to the worker URL.
+ * e.g., https://res.cloudinary.com/cloud/image/upload/v123/folder/hash.jpg
+ * becomes https://worker.dev/v123/folder/hash.jpg
+ * @param cloudinaryUrl The full URL returned by Cloudinary.
+ * @returns The proxied URL.
+ */
 function createProxiedUrl(cloudinaryUrl: string): string {
-    if (cloudinaryUrl.startsWith(CLOUDFLARE_WORKER_URL)) {
-        return cloudinaryUrl;
+    try {
+        const urlObject = new URL(cloudinaryUrl);
+        // Find the part of the path after '/upload/' which includes version, public_id, and format
+        const uploadMarker = '/upload/';
+        const uploadIndex = urlObject.pathname.indexOf(uploadMarker);
+        
+        if (uploadIndex === -1) {
+            // If the URL format is unexpected, fallback to the original URL but warn.
+            console.warn("Unexpected Cloudinary URL format, could not create proxied URL:", cloudinaryUrl);
+            return cloudinaryUrl;
+        }
+
+        // Path part will be something like 'v12345/content/hash.jpg'
+        const pathPart = urlObject.pathname.substring(uploadIndex + uploadMarker.length);
+        
+        // Return the worker base URL + the dynamic path part
+        return `${CLOUDFLARE_WORKER_URL}/${pathPart}`;
+
+    } catch (e) {
+        console.error("Error creating proxied URL from:", cloudinaryUrl, e);
+        return cloudinaryUrl; // Fallback to original URL on error
     }
-    const urlObject = new URL(cloudinaryUrl);
-    // This creates the URL for the worker, e.g., https://worker/https://res.cloudinary.com/etc
-    return `${CLOUDFLARE_WORKER_URL}/${urlObject.protocol}//${urlObject.hostname}${urlObject.pathname}`;
 }
 
 
@@ -199,13 +225,14 @@ export const contentService = {
     try {
         const hash = await sha256file(file);
         const folder = 'content';
-        const public_id = `${folder}/${hash}`; // Correct: NO file extension
+        const public_id = `${folder}/${hash}`; 
         
-        // Get signature from server
+        const paramsToSign = { public_id, folder };
+
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ folder, public_id })
+            body: JSON.stringify(paramsToSign)
         });
 
         if (!sigResponse.ok) {
@@ -250,7 +277,6 @@ export const contentService = {
                 const order = children.length;
                 
                 const finalFileUrl = createProxiedUrl(data.secure_url);
-
 
                 const newFileContent: Content = {
                     id,
@@ -303,12 +329,12 @@ export const contentService = {
 
         const hash = await sha256file(iconFile);
         const folder = 'icons';
-        const public_id = `${folder}/${hash}`; // Correct: NO file extension
+        const public_id = `${folder}/${hash}`;
         
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ folder, public_id })
+            body: JSON.stringify({ public_id, folder })
         });
         if (!sigResponse.ok) throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
         
@@ -578,4 +604,5 @@ export const contentService = {
   }
 };
 
+    
     
