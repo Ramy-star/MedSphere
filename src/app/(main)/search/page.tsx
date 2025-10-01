@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -30,6 +28,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser } from '@/firebase/auth/use-user';
 import { ChangeIconDialog } from '@/components/ChangeIconDialog';
+import { motion } from 'framer-motion';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -100,7 +99,12 @@ function SearchResults() {
 
 
     return (
-        <main className="flex-1 p-6 flex flex-col overflow-hidden">
+        <motion.main 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+            className="flex-1 p-6 flex flex-col overflow-hidden"
+        >
             <Breadcrumbs />
 
             <h2 className="text-2xl font-bold text-white mt-6 mb-4">
@@ -196,7 +200,7 @@ function SearchResults() {
                   </AlertDialog>
                 </>
               )}
-        </main>
+        </motion.main>
     );
 }
 

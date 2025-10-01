@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import FileExplorerHeader from '@/components/FileExplorerHeader';
@@ -8,6 +6,7 @@ import { notFound } from 'next/navigation';
 import { useEffect, useMemo, use } from 'react';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { motion } from 'framer-motion';
 
 function LevelPageContent({ levelName }: { levelName: string }) {
   // Firestore queries are case-sensitive. Decoding should be sufficient.
@@ -36,7 +35,12 @@ function LevelPageContent({ levelName }: { levelName: string }) {
   }, [loadingLevels, level]);
 
   return (
-    <main className="flex-1 p-4 md:p-6 glass-card">
+    <motion.main 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex-1 p-4 md:p-6 glass-card"
+    >
         <FileExplorerHeader />
         
         {!loading && semesters && (
@@ -52,7 +56,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
                 ))}
             </div>
         )}
-    </main>
+    </motion.main>
   );
 }
 

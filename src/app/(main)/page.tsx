@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -10,6 +8,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/firebase/provider';
 import { cn } from '@/lib/utils';
+import { motion } from 'framer-motion';
 
 export default function HomePage() {
   const { db } = useFirebase();
@@ -86,7 +85,12 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex-1 p-4 md:p-6 space-y-6 flex flex-col">
+    <motion.main 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        className="flex-1 p-4 md:p-6 space-y-6 flex flex-col"
+    >
         <Breadcrumbs />
         <div className="flex-1 flex flex-col items-center justify-center md:justify-between pt-8 md:pt-12 pb-16">
             <div className="w-full max-w-4xl text-center">
@@ -102,6 +106,6 @@ export default function HomePage() {
                 </blockquote>
             </div>
         </div>
-    </main>
+    </motion.main>
   );
 }
