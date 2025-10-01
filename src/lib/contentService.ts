@@ -1,5 +1,4 @@
 
-
       
 'use client';
 import { db } from '@/firebase';
@@ -46,12 +45,15 @@ function createProxiedUrl(cloudinaryPath: string): string {
     const workerBase = process.env.NEXT_PUBLIC_FILES_BASE_URL;
     if (!workerBase) {
         console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to direct Cloudinary URL.");
-        // In case the worker is not set up, we construct a direct URL
         const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
         return `https://res.cloudinary.com/${cloudName}/${cloudinaryPath}`;
     }
-    // The path from Cloudinary is like 'image/upload/v12345/folder/hash.jpg'
-    return `${workerBase}/${cloudinaryPath}`;
+    
+    // Ensure workerBase doesn't have a trailing slash and path has a leading one
+    const cleanWorkerBase = workerBase.endsWith('/') ? workerBase.slice(0, -1) : workerBase;
+    const cleanCloudinaryPath = cloudinaryPath.startsWith('/') ? cloudinaryPath : `/${cloudinaryPath}`;
+
+    return `${cleanWorkerBase}${cleanCloudinaryPath}`;
 }
 
 
@@ -204,12 +206,13 @@ export const contentService = {
         const folder = 'content';
         const public_id = `${folder}/${hash}`; 
         
-        const paramsToSign = { public_id, folder };
+        const timestamp = Math.floor(Date.now() / 1000);
+        const paramsToSign = { public_id, folder, timestamp };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramsToSign)
+            body: JSON.stringify({ paramsToSign })
         });
 
         if (!sigResponse.ok) {
@@ -217,7 +220,7 @@ export const contentService = {
             throw new Error(`Failed to get Cloudinary signature: ${errorBody.error || sigResponse.statusText}`);
         }
 
-        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
+        const { signature, apiKey, cloudName } = await sigResponse.json();
 
         const formData = new FormData();
         formData.append('file', file);
@@ -253,8 +256,6 @@ export const contentService = {
                 const children = await this.getChildren(parentId);
                 const order = children.length;
                 
-                // Construct the proxied URL for storage
-                const urlObject = new URL(data.secure_url);
                 const cloudinaryPath = `${data.resource_type}/upload/v${data.version}/${data.public_id}.${data.format}`;
                 const finalFileUrl = createProxiedUrl(cloudinaryPath);
 
@@ -311,14 +312,17 @@ export const contentService = {
         const folder = 'icons';
         const public_id = `${folder}/${hash}`;
         
+        const timestamp = Math.floor(Date.now() / 1000);
+        const paramsToSign = { public_id, folder, timestamp };
+
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ public_id, folder })
+            body: JSON.stringify({ paramsToSign })
         });
         if (!sigResponse.ok) throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
         
-        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
+        const { signature, apiKey, cloudName } = await sigResponse.json();
 
         const formData = new FormData();
         formData.append('file', iconFile);
@@ -386,21 +390,23 @@ export const contentService = {
              throw new Error("Cannot update file without a Cloudinary public_id.");
         }
         
+        const timestamp = Math.floor(Date.now() / 1000);
         const paramsToSign = { 
           public_id: publicId, 
           overwrite: true,
+          timestamp,
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramsToSign)
+            body: JSON.stringify({ paramsToSign })
         });
         
         if (!sigResponse.ok) {
             throw new Error(`Failed to get Cloudinary signature for update: ${sigResponse.statusText}`);
         }
-        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
+        const { signature, apiKey, cloudName } = await sigResponse.json();
 
         const formData = new FormData();
         formData.append('file', newFile);
@@ -585,4 +591,5 @@ export const contentService = {
     }
   }
 };
+    
     
