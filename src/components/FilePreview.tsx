@@ -1,20 +1,19 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
 
 // Import react-pdf styles here to ensure they are loaded with the dynamic component
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
-
 const PdfViewer = dynamic(() => import('./PdfViewer'), { 
   ssr: false,
   loading: () => <div className="text-white">Loading PDF viewer...</div>
 });
 
-export default function FilePreview({ url, mime, itemName }: { url: string, mime: string, itemName: string }) {
+const FilePreview = forwardRef(({ url, mime, itemName, pdfViewerRef }: { url: string, mime: string, itemName: string, pdfViewerRef?: React.Ref<any> }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
 
@@ -53,7 +52,7 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer file={url} />;
+    return <PdfViewer file={url} ref={pdfViewerRef} />;
   }
   
   if (mime.startsWith('audio/')) {
@@ -89,4 +88,8 @@ export default function FilePreview({ url, mime, itemName }: { url: string, mime
         <a href={url} download={itemName} className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">Download File</a>
     </div>
   );
-}
+});
+
+FilePreview.displayName = 'FilePreview';
+
+export default FilePreview;

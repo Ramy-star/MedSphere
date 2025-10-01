@@ -1,14 +1,17 @@
 
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+  'pdfjs-dist/build/pdf.worker.min.mjs',
+  import.meta.url,
+).toString();
 
 const options = {
   cMapUrl: '/cmaps/',
@@ -19,9 +22,10 @@ const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.05;
 
-export default function PdfViewer({ file }: { file: string }) {
+const PdfViewer = forwardRef(({ file }: { file: string }, ref) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
+  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const isMobile = useIsMobile();
   const [scale, setScale] = useState(isMobile ? 0.25 : 1);
   const { toast } = useToast();
@@ -29,8 +33,24 @@ export default function PdfViewer({ file }: { file: string }) {
   
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
-  function onDocumentLoadSuccess({ numPages: nextNumPages }: { numPages: number }): void {
-    setNumPages(nextNumPages);
+  useImperativeHandle(ref, () => ({
+    async extractText() {
+      if (!pdf) {
+        throw new Error("PDF document not loaded.");
+      }
+      let fullText = '';
+      for (let i = 1; i <= pdf.numPages; i++) {
+        const page = await pdf.getPage(i);
+        const textContent = await page.getTextContent();
+        fullText += textContent.items.map(item => ('str' in item ? item.str : '')).join(' ') + '\n';
+      }
+      return fullText;
+    }
+  }));
+
+  function onDocumentLoadSuccess(loadedPdf: PDFDocumentProxy): void {
+    setPdf(loadedPdf);
+    setNumPages(loadedPdf.numPages);
   }
 
   function onDocumentLoadError(error: Error) {
@@ -56,12 +76,10 @@ export default function PdfViewer({ file }: { file: string }) {
     });
   }
 
-
   useEffect(() => {
     // Set initial scale based on device type
     setScale(isMobile ? 0.25 : 1);
   }, [isMobile]);
-
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -156,4 +174,7 @@ export default function PdfViewer({ file }: { file: string }) {
       )}
     </div>
   );
-}
+});
+
+PdfViewer.displayName = "PdfViewer";
+export default PdfViewer;

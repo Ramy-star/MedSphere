@@ -11,7 +11,7 @@ import {
 import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { X, Download, Share2, File as FileIcon, ExternalLink, Sparkles, MessageCircle, Send } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
@@ -19,20 +19,27 @@ import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Textarea } from './ui/textarea';
-import { contentService } from '@/lib/contentService';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import { Skeleton } from './ui/skeleton';
+
+// Define a type for the ref to hold the text extraction function
+type PdfViewerRef = {
+  extractText: () => Promise<string>;
+};
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const pdfViewerRef = useRef<PdfViewerRef>(null);
   
   const [showChat, setShowChat] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model', text: string }[]>([]);
   const [chatInput, setChatInput] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [documentText, setDocumentText] = useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = useState(false);
+
 
   const fileUrl = item?.metadata?.storagePath;
   const loading = false; // No loading needed for direct URL
@@ -43,19 +50,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setChatHistory([]);
     setChatInput('');
     setDocumentText(null);
+    setIsExtracting(false);
   }, [item]);
 
-  useEffect(() => {
-    // Pre-fetch document text if it's a PDF when the modal opens
-    if (item && item.metadata?.mime === 'application/pdf') {
-      contentService.getPdfText(item.id)
-        .then(text => setDocumentText(text))
-        .catch(err => {
-          console.error("Failed to extract PDF text:", err);
-          toast({ variant: 'destructive', title: 'Could not read PDF', description: 'AI features will be unavailable for this file.' });
-        });
-    }
-  }, [item, toast]);
 
   if (!item) return null;
 
@@ -112,7 +109,30 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleChatSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
-    if (!chatInput.trim() || !documentText) return;
+    if (!chatInput.trim()) return;
+
+    let currentDocText = documentText;
+
+    // If text hasn't been extracted yet, extract it now.
+    if (!currentDocText && pdfViewerRef.current) {
+      setIsExtracting(true);
+      try {
+        currentDocText = await pdfViewerRef.current.extractText();
+        setDocumentText(currentDocText);
+      } catch (err) {
+        console.error("Failed to extract PDF text on demand:", err);
+        toast({ variant: 'destructive', title: 'Could not read PDF', description: 'AI features are unavailable for this file.' });
+        setIsExtracting(false);
+        return;
+      }
+      setIsExtracting(false);
+    }
+    
+    if (!currentDocText) {
+       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content.' });
+       return;
+    }
+
 
     const newQuestion = chatInput;
     setChatHistory(prev => [...prev, { role: 'user', text: newQuestion }]);
@@ -120,7 +140,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(true);
 
     try {
-        const answer = await chatAboutDocument({ question: newQuestion, documentContent: documentText });
+        const answer = await chatAboutDocument({ question: newQuestion, documentContent: currentDocText });
         setChatHistory(prev => [...prev, { role: 'model', text: answer }]);
     } catch (error) {
         console.error("AI chat error:", error);
@@ -130,7 +150,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }
 
-  const isChatGptAvailable = item.metadata?.mime === 'application/pdf';
+  const isChatAvailable = item.metadata?.mime === 'application/pdf';
 
 
   return (
@@ -156,7 +176,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
           </div>
           <div className='flex items-center gap-2'>
-            {isChatGptAvailable && (
+            {isChatAvailable && (
               <Button variant="outline" onClick={() => setShowChat(!showChat)}>
                 <MessageCircle className="mr-2 h-4 w-4"/>
                 Chat
@@ -201,7 +221,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         {/* Content */}
         <main className="flex-1 flex overflow-hidden">
             <div className="flex-1 overflow-auto flex items-center justify-center">
-                {!loading && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />}
+                {!loading && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
                 {!loading && !fileUrl && (
                   <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
                       <p className="text-xl mb-3">File content not available.</p>
@@ -230,6 +250,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         </div>
 
                         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                           {isExtracting && (
+                                <div className="flex justify-center items-center text-slate-400 text-sm">
+                                  <p>Analyzing PDF for chat...</p>
+                                </div>
+                            )}
+
                             {chatHistory.map((msg, index) => (
                                 <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                     <div className={`p-3 rounded-xl max-w-sm ${msg.role === 'user' ? 'bg-blue-600 text-white' : 'bg-slate-700 text-slate-200'}`}>
@@ -263,8 +289,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                             handleChatSubmit();
                                         }
                                     }}
+                                    disabled={isExtracting}
                                 />
-                                <Button type="submit" size="icon" disabled={isAiThinking || !chatInput.trim()}>
+                                <Button type="submit" size="icon" disabled={isAiThinking || !chatInput.trim() || isExtracting}>
                                     <Send className="w-5 h-5" />
                                 </Button>
                             </form>

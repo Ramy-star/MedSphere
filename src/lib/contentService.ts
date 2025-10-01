@@ -7,8 +7,6 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sha256file } from './hashFile';
 import { nanoid } from 'nanoid';
-import pdfParse from 'pdf-parse/lib/pdf-parse';
-
 
 export type Content = {
   id: string;
@@ -485,26 +483,6 @@ export const contentService = {
     const docRef = doc(db, 'content', id);
     const docSnap = await getDoc(docRef);
     return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as Content : null;
-  },
-
-  async getPdfText(id: string): Promise<string> {
-    const item = await this.getById(id);
-    if (!item || !item.metadata?.storagePath || item.metadata.mime !== 'application/pdf') {
-      throw new Error('Item is not a valid PDF file.');
-    }
-
-    try {
-      const response = await fetch(item.metadata.storagePath);
-      if (!response.ok) {
-        throw new Error(`Failed to fetch PDF file: ${response.statusText}`);
-      }
-      const buffer = await response.arrayBuffer();
-      const data = await pdfParse(buffer as Buffer);
-      return data.text;
-    } catch (error) {
-      console.error('Error parsing PDF:', error);
-      throw new Error('Failed to parse PDF content.');
-    }
   },
 
   async rename(id: string, name: string): Promise<void> {
