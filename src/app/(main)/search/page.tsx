@@ -6,7 +6,6 @@ import { useEffect, useState, Suspense, useCallback } from 'react';
 import { search } from '@/ai/flows/search-flow';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Breadcrumbs } from '@/components/breadcrumbs';
-import { motion } from 'framer-motion';
 import { FileCard } from '@/components/FileCard';
 import { FolderCard } from '@/components/FolderCard';
 import { SubjectCard } from '@/components/subject-card';
@@ -101,7 +100,7 @@ function SearchResults() {
 
 
     return (
-        <main className="flex-1 p-6 animate-fade-in flex flex-col overflow-hidden">
+        <main className="flex-1 p-6 flex flex-col overflow-hidden">
             <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: null }} />
 
             <h2 className="text-2xl font-bold text-white mt-6 mb-4">
@@ -118,12 +117,9 @@ function SearchResults() {
                 ) : (
                     <div className="flex flex-col">
                         {results.length > 0 ? (
-                            results.map((item, index) => (
-                                 <motion.div
+                            results.map((item) => (
+                                 <div
                                     key={item.id}
-                                    initial={{ opacity: 0, y: 8 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ duration: 0.15 }}
                                     className="border-b border-white/10"
                                 >
                                     {(item.type === 'FILE' || item.type === 'LINK') && (
@@ -162,7 +158,7 @@ function SearchResults() {
                                             </div>
                                         </Link>
                                     )}
-                                </motion.div>
+                                </div>
                             ))
                         ) : (
                             !loading && query && <p className="text-slate-400">No results found.</p>

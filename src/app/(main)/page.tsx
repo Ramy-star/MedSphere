@@ -69,11 +69,9 @@ export default function HomePage() {
                     <div 
                         key={level.id}
                         className={cn(
-                            "animate-fade-in",
                             // On mobile, if it's the last item and the total is odd, span 2 columns
                             isLastItem && isOdd && "col-span-2 sm:col-span-1 md:col-span-1"
                         )} 
-                        style={{ animationDelay: `${index * 0.05 + 0.25}s` }}
                     >
                         <Link href={`/level/${encodeURIComponent(level.name)}`}>
                         <div className={cn(
@@ -92,14 +90,14 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex-1 p-4 md:p-6 space-y-6 animate-fade-in flex flex-col">
+    <main className="flex-1 p-4 md:p-6 space-y-6 flex flex-col">
         <Breadcrumbs />
         <div className="flex-1 flex flex-col items-center justify-center md:justify-between pt-8 md:pt-12 pb-16">
             <div className="w-full max-w-4xl text-center">
                 <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-[#00D309] to-teal-300 text-transparent bg-clip-text">Your Study Levels</h2>
                 {renderContent()}
             </div>
-            <div className="animate-fade-in border border-blue-400/30 bg-blue-900/10 rounded-xl p-6 mt-16" style={{ animationDelay: '0.5s' }}>
+            <div className="border border-blue-400/30 bg-blue-900/10 rounded-xl p-6 mt-16">
                 <blockquote className="text-center">
                     <p className="text-lg text-slate-300 italic max-w-2xl">
                         "The good doctor treats the disease; the great doctor treats the patient who has the disease."

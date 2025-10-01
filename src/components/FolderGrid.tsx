@@ -118,7 +118,7 @@ const SortableList = ({
                               <UploadProgress file={file} onRetry={() => {}} onRemove={() => {}} />
                           </motion.div>
                         ))}
-                        {items.map((it: Content, index) => {
+                        {items.map((it: Content) => {
                             const itemKey = it.id;
                             const motionProps = {
                                 initial:{ opacity: 0, y: 8 },
@@ -151,17 +151,16 @@ const SortableList = ({
                             }
                             
                              if (isMobile) {
-                                return <motion.div key={itemKey} {...motionProps} className="border-b border-white/10">{content}</motion.div>
+                                return <div key={itemKey} className="border-b border-white/10">{content}</div>
                             }
 
                             return (
-                                <motion.div
+                                <div
                                     key={itemKey}
-                                    {...motionProps}
                                     className={cn(!isSubjectView && "border-b border-white/10")}
                                 >
                                     {isSubjectView ? content : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
-                                </motion.div>
+                                </div>
                             )
                         })}
                     </AnimatePresence>
@@ -209,14 +208,8 @@ const NonSortableList = ({
                         <UploadProgress file={file} onRetry={() => {}} onRemove={() => {}} />
                     </motion.div>
                 ))}
-                {items.map((it, index) => {
+                {items.map((it) => {
                      const itemKey = it.id;
-                     const motionProps = {
-                         initial:{ opacity: 0, y: 8 },
-                         animate:{ opacity: 1, y: 0 },
-                         exit:{ opacity: 0, y: 8 },
-                         transition:{ duration: 0.15 },
-                     };
  
                      let content;
                      if (it.type === 'SUBJECT') {
@@ -242,13 +235,12 @@ const NonSortableList = ({
                      }
  
                      return (
-                         <motion.div
+                         <div
                              key={itemKey}
-                             {...motionProps}
                              className={cn(!isSubjectView && "border-b border-white/10", isMobile && "px-4 border-b-0")}
                          >
                              {content}
-                         </motion.div>
+                         </div>
                      );
                 })}
             </AnimatePresence>
@@ -426,7 +418,7 @@ export function FolderGrid({
       )}
 
       {!loading && items.length === 0 && uploadingFiles.length === 0 && (
-         <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl animate-fade-in flex flex-col items-center justify-center h-full" style={{ animationDelay: '0.15s' }}>
+         <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
               <p className="mt-2 text-sm text-slate-400">
