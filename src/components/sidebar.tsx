@@ -1,13 +1,15 @@
 
 'use client';
 
-import { cn } from '@/lib/utils';
 import {
   Calendar,
   ChevronDown,
   GraduationCap,
   Layers,
   Menu,
+  HeartPulse,
+  Brain,
+  Bone,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -21,6 +23,7 @@ import {
   SheetContent,
 } from "@/components/ui/sheet";
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { cn } from '@/lib/utils';
 
 function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const pathname = usePathname();
@@ -114,6 +117,15 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     }
   }
 
+  const sidebarIcons: { [key: string]: LucideIcon } = {
+    'Level 1': Bone,
+    'Level 2': HeartPulse,
+    'Level 3': Brain,
+    'Level 4': Brain,
+    'Level 5': Brain,
+  };
+
+
   return (
     <div className='flex flex-col h-full'>
       <div className={cn("flex items-center mb-4 h-10 px-2.5", open ? "justify-between" : "justify-center")}>
@@ -150,6 +162,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
         {levels && levels.map((level, index) => {
         const isLevelActive = openLevelId === level.id;
         const isPathActive = activePath.levelId === level.id;
+        const Icon = sidebarIcons[level.name] || Layers;
         return (
             <div key={level.id} className="w-full">
             <motion.button
@@ -166,7 +179,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
             >
                 <div className="flex items-center gap-3 overflow-hidden">
                     <motion.div layout="position">
-                        <Layers className="h-5 w-5 text-slate-400 shrink-0" />
+                        <Icon className="h-5 w-5 text-slate-400 shrink-0" />
                     </motion.div>
                     <AnimatePresence>
                     {open && (
