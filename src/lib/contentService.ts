@@ -190,16 +190,16 @@ export const contentService = {
       return newLinkData;
 
     } catch (e: any) {
-        if (e && e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `/content/${newLinkId}`,
-                operation: 'create',
-                requestResourceData: { name, parentId, type: 'LINK', url },
-            }));
-        } else {
-            console.error("Transaction failed: ", e);
-        }
-        throw e;
+      if (e && e.code === 'permission-denied') {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: `/content/${newLinkId}`,
+            operation: 'create',
+            requestResourceData: { name, parentId, type: 'LINK', url },
+        }));
+      } else {
+        console.error("Transaction failed: ", e);
+      }
+      throw e;
     }
   },
   
