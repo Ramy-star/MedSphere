@@ -101,7 +101,7 @@ function SearchResults() {
 
     return (
         <main className="flex-1 p-6 flex flex-col overflow-hidden">
-            <Breadcrumbs current={{ id: 'search', name: `Search: "${query}"`, type: 'FOLDER', parentId: null }} />
+            <Breadcrumbs />
 
             <h2 className="text-2xl font-bold text-white mt-6 mb-4">
                 {loading ? 'Searching...' : `Found ${results.length} results for "${query}"`}
