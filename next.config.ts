@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
                 swDest: 'sw.js',
                 runtimeCaching: [
                     {
-                        urlPattern: ({ url }) => url.hostname === 'res.cloudinary.com',
+                        urlPattern: ({ url }) => url.hostname === 'res.cloudinary.com' || url.hostname === 'medsphere.roumio777.workers.dev',
                         handler: 'CacheFirst',
                         options: {
                             cacheName: 'cloudinary-images',
@@ -66,3 +66,5 @@ const nextConfig: NextConfig = {
 };
 
 export default nextConfig;
+
+    

@@ -43,10 +43,13 @@ export type UploadCallbacks = {
 const CLOUDFLARE_WORKER_URL = 'https://medsphere.roumio777.workers.dev';
 
 function createProxiedUrl(cloudinaryUrl: string): string {
-  if (cloudinaryUrl.startsWith(CLOUDFLARE_WORKER_URL)) {
-    return cloudinaryUrl;
-  }
-  return `${CLOUDFLARE_WORKER_URL}/${cloudinaryUrl}`;
+    // This function wraps a Cloudinary URL with the Cloudflare Worker URL
+    // e.g., https://res.cloudinary.com/demo/image/upload/sample.jpg becomes
+    // https://medsphere.roumio777.workers.dev/https://res.cloudinary.com/demo/image/upload/sample.jpg
+    if (cloudinaryUrl.startsWith(CLOUDFLARE_WORKER_URL)) {
+        return cloudinaryUrl;
+    }
+    return `${CLOUDFLARE_WORKER_URL}/${cloudinaryUrl}`;
 }
 
 
@@ -199,15 +202,19 @@ export const contentService = {
         const folder = 'content';
         const public_id = `${folder}/${hash}`;
         
+        // Prepare params for signing
+        const timestamp = Math.floor(Date.now() / 1000);
         const paramsToSign = {
             public_id,
             folder,
+            timestamp,
         };
 
+        // Get signature from server
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramsToSign)
+            body: JSON.stringify({ paramsToSign })
         });
 
         if (!sigResponse.ok) {
@@ -215,17 +222,21 @@ export const contentService = {
             throw new Error(`Failed to get Cloudinary signature: ${errorBody.error || sigResponse.statusText}`);
         }
 
-        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
+        const { signature } = await sigResponse.json();
         
+        if (!process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+            throw new Error("Cloudinary public config is missing from environment variables.");
+        }
+
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('api_key', apiKey);
+        formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY);
         formData.append('signature', signature);
-        formData.append('timestamp', timestamp);
+        formData.append('timestamp', String(timestamp));
         formData.append('public_id', public_id);
         formData.append('folder', folder);
 
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`);
 
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
@@ -251,6 +262,7 @@ export const contentService = {
                 const children = await this.getChildren(parentId);
                 const order = children.length;
                 
+                // Use the Cloudflare worker URL
                 const finalFileUrl = createProxiedUrl(data.secure_url);
 
 
@@ -307,29 +319,35 @@ export const contentService = {
         const folder = 'icons';
         const public_id = `${folder}/${hash}`;
         
+        const timestamp = Math.floor(Date.now() / 1000);
         const paramsToSign = { 
             public_id, 
             folder,
+            timestamp,
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramsToSign)
+            body: JSON.stringify({ paramsToSign })
         });
         if (!sigResponse.ok) throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
-        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
+        const { signature } = await sigResponse.json();
+
+        if (!process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+            throw new Error("Cloudinary public config is missing from environment variables.");
+        }
 
         const formData = new FormData();
         formData.append('file', iconFile);
-        formData.append('api_key', apiKey);
+        formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY);
         formData.append('signature', signature);
-        formData.append('timestamp', timestamp);
+        formData.append('timestamp', String(timestamp));
         formData.append('public_id', public_id);
         formData.append('folder', folder);
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`);
         
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) callbacks.onProgress((event.loaded / event.total) * 100);
@@ -339,6 +357,7 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
+                // Use the Cloudflare worker URL
                 const iconURL = createProxiedUrl(data.secure_url);
 
                 await updateDoc(itemRef, {
@@ -385,33 +404,39 @@ export const contentService = {
              throw new Error("Cannot update file without a Cloudinary public_id.");
         }
         
+        const timestamp = Math.floor(Date.now() / 1000);
         const paramsToSign = { 
           public_id: publicId, 
           overwrite: true,
+          timestamp,
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramsToSign)
+            body: JSON.stringify({ paramsToSign })
         });
         
         if (!sigResponse.ok) {
             throw new Error(`Failed to get Cloudinary signature for update: ${sigResponse.statusText}`);
         }
-        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
+        const { signature } = await sigResponse.json();
+
+        if (!process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME) {
+            throw new Error("Cloudinary public config is missing from environment variables.");
+        }
 
         const formData = new FormData();
         formData.append('file', newFile);
-        formData.append('api_key', apiKey);
-        formData.append('timestamp', timestamp);
+        formData.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY);
+        formData.append('timestamp', String(timestamp));
         formData.append('signature', signature);
-        Object.entries(paramsToSign).forEach(([key, value]) => {
-            formData.append(key, String(value));
-        });
+        formData.append('public_id', publicId);
+        formData.append('overwrite', 'true');
+
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/auto/upload`);
         
         xhr.upload.onprogress = (event) => {
              if (event.lengthComputable) {
@@ -424,6 +449,7 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
+                // Use the Cloudflare worker URL
                 const finalFileUrl = createProxiedUrl(data.secure_url);
 
                 const updatedData = {
@@ -583,3 +609,5 @@ export const contentService = {
     }
   }
 };
+
+    
