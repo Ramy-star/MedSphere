@@ -190,10 +190,10 @@ export const contentService = {
         const folder = 'content';
         const public_id = `${folder}/${hash}`;
         
+        // Params sent to our server to be signed
         const paramsToSign = {
             public_id,
             folder,
-            timestamp: Math.floor(Date.now() / 1000)
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
@@ -207,19 +207,16 @@ export const contentService = {
             throw new Error(`Failed to get Cloudinary signature: ${errorBody.error || sigResponse.statusText}`);
         }
 
-        const { signature, apiKey, cloudName } = await sigResponse.json();
+        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
         
         const formData = new FormData();
         formData.append('file', file);
         formData.append('api_key', apiKey);
-
-        // Append all signed parameters to the form data
-        Object.entries(paramsToSign).forEach(([key, value]) => {
-            formData.append(key, String(value));
-        });
-        
         formData.append('signature', signature);
-
+        formData.append('timestamp', timestamp);
+        // We also need to send the params that were signed
+        formData.append('public_id', public_id);
+        formData.append('folder', folder);
 
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
 
@@ -307,7 +304,6 @@ export const contentService = {
         const paramsToSign = { 
             public_id, 
             folder,
-            timestamp: Math.floor(Date.now() / 1000)
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
@@ -316,17 +312,15 @@ export const contentService = {
             body: JSON.stringify(paramsToSign)
         });
         if (!sigResponse.ok) throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
-        const { signature, apiKey, cloudName } = await sigResponse.json();
+        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
 
         const formData = new FormData();
         formData.append('file', iconFile);
         formData.append('api_key', apiKey);
-        
-        Object.entries(paramsToSign).forEach(([key, value]) => {
-            formData.append(key, String(value));
-        });
         formData.append('signature', signature);
-
+        formData.append('timestamp', timestamp);
+        formData.append('public_id', public_id);
+        formData.append('folder', folder);
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
@@ -388,7 +382,6 @@ export const contentService = {
         const paramsToSign = { 
           public_id: publicId, 
           overwrite: true,
-          timestamp: Math.floor(Date.now() / 1000)
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
@@ -400,17 +393,16 @@ export const contentService = {
         if (!sigResponse.ok) {
             throw new Error(`Failed to get Cloudinary signature for update: ${sigResponse.statusText}`);
         }
-        const { signature, apiKey, cloudName } = await sigResponse.json();
+        const { signature, timestamp, apiKey, cloudName } = await sigResponse.json();
 
         const formData = new FormData();
         formData.append('file', newFile);
         formData.append('api_key', apiKey);
-        
+        formData.append('timestamp', timestamp);
+        formData.append('signature', signature);
         Object.entries(paramsToSign).forEach(([key, value]) => {
             formData.append(key, String(value));
         });
-        formData.append('signature', signature);
-
 
         const xhr = new XMLHttpRequest();
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
