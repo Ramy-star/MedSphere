@@ -45,7 +45,6 @@ const withPWA = require('next-pwa')({
 
 
 const nextConfig: NextConfig = {
-  swcMinify: true,
   images: {
     remotePatterns: [
       {

@@ -65,7 +65,7 @@ function FolderPageContent({ id }: { id: string }) {
         },
         onSuccess: (content) => {
             setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'success', xhr: undefined } : f));
-            setTimeout(() => setUploading_Files(prev => prev.filter(f => f.id !== fileId)), 2000);
+            setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== fileId)), 2000);
             toast({ title: "File Uploaded", description: `"${content.name}" has been uploaded.` });
         },
         onError: (error) => {
