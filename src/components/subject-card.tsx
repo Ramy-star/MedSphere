@@ -1,13 +1,15 @@
 
 'use client';
 
-import { LucideIcon, Folder } from 'lucide-react';
+import { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { allSubjectIcons } from '@/lib/file-data';
 import type { Content } from '@/lib/contentService';
+import { Folder } from 'lucide-react';
+import React from 'react';
 
 
-export function SubjectCard({ subject }: { subject: Content }) {
+export const SubjectCard = React.memo(function SubjectCard({ subject }: { subject: Content }) {
   const { id, name, iconName, color } = subject;
   const subjectPath = `/folder/${id}`;
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
@@ -20,4 +22,4 @@ export function SubjectCard({ subject }: { subject: Content }) {
       <h3 className="text-lg font-semibold text-white">{name}</h3>
     </Link>
   );
-}
+});

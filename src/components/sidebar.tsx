@@ -30,13 +30,13 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
   const { data: allItems } = useCollection<Content>('content');
 
   const { levels, semestersByLevel, itemMap } = useMemo(() => {
-    const semesterMap: { [levelId: string]: Content[] } = {};
     if (!allItems) {
-      return { levels: [], semestersByLevel: semesterMap, itemMap: new Map() };
+      return { levels: [], semestersByLevel: {}, itemMap: new Map() };
     }
     const levels = allItems.filter(item => item.type === 'LEVEL').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     const semesters = allItems.filter(item => item.type === 'SEMESTER').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     
+    const semesterMap: { [levelId: string]: Content[] } = {};
     levels.forEach(level => {
         semesterMap[level.id] = semesters.filter(s => s.parentId === level.id);
     });
@@ -50,7 +50,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
   const [openLevelId, setOpenLevelId] = useState('');
   
   const findActivePath = useCallback(() => {
-    if (pathname === '/') {
+    if (!allItems || pathname === '/') {
         setActivePath({ levelId: '', semesterId: '' });
         setOpenLevelId('');
         return;
@@ -63,7 +63,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
         currentId = pathParts[2];
     } else if (pathParts[1] === 'level' && pathParts.length >= 3) {
         const levelName = decodeURIComponent(pathParts[2]);
-        const level = levels?.find(l => l.name === levelName);
+        const level = allItems.find(l => l.name === levelName);
         if (level) {
             currentId = level.id;
         }
@@ -95,7 +95,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
     } else {
          setActivePath({ levelId: '', semesterId: '' });
     }
-  }, [pathname, open, levels, itemMap]);
+  }, [pathname, open, allItems, itemMap]);
 
   useEffect(() => {
     if(allItems) {

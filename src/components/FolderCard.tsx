@@ -1,7 +1,7 @@
 
 'use client';
 import Link from 'next/link';
-import { Folder, MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -14,10 +14,10 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
-import { useRef } from 'react';
+import React from 'react';
 import { cn } from '@/lib/utils';
 
-export function FolderCard({ item, onRename, onDelete, onIconChange, displayAs = 'grid' }: { item: Content, onRename: () => void, onDelete: () => void, onIconChange: (item: Content) => void, displayAs?: 'grid' | 'list' }) {
+export const FolderCard = React.memo(function FolderCard({ item, onRename, onDelete, onIconChange, displayAs = 'grid' }: { item: Content, onRename: () => void, onDelete: () => void, onIconChange: (item: Content) => void, displayAs?: 'grid' | 'list' }) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
     const { user } = useUser();
@@ -146,4 +146,4 @@ export function FolderCard({ item, onRename, onDelete, onIconChange, displayAs =
         </div>
       </Link>
     );
-}
+});

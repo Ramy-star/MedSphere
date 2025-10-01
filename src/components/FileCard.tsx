@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink,
-    File as FileIcon, FileText, FileImage, FileVideo, FileAudio, FileSpreadsheet, Presentation, FileCode, Music, GripVertical
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
-import { useState } from 'react';
+import React from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -92,7 +92,7 @@ const handleForceDownload = async (url: string, name: string) => {
 }
 
 
-export function FileCard({ 
+export const FileCard = React.memo(function FileCard({ 
     item, 
     onFileClick, 
     onRename, 
@@ -217,4 +217,4 @@ export function FileCard({
             {fileContent}
         </div>
     )
-}
+});
