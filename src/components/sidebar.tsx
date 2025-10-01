@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -25,6 +26,8 @@ import {
 } from "@/components/ui/sheet";
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { cn } from '@/lib/utils';
+import { prefetcher } from '@/lib/prefetchService';
+
 
 function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
   const pathname = usePathname();
@@ -160,6 +163,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
             <div key={level.id} className="w-full">
             <motion.button
                 onClick={() => handleLevelChange(level.id)}
+                onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
                 className={cn(
                 'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center',
                 open ? 'justify-between' : 'justify-center',
@@ -236,11 +240,14 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                     {(semestersByLevel[level.id] || []).map((semester) => {
                     const isSemesterActive = activePath.semesterId === semester.id;
                     return (
-                        <motion.button key={semester.id} onClick={() => handleLinkClick(`/folder/${semester.id}`)}
-                        className={cn(
+                        <motion.button 
+                          key={semester.id} 
+                          onClick={() => handleLinkClick(`/folder/${semester.id}`)}
+                          onMouseEnter={() => prefetcher.prefetchChildren(semester.id)}
+                          className={cn(
                             "flex w-full items-center justify-between p-3 rounded-xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer text-left",
                             isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                        )}
+                          )}
                             initial={{ opacity: 0, x: -10 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ duration: 0.2, ease: 'easeOut' }}

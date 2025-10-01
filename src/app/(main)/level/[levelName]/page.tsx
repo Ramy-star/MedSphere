@@ -8,6 +8,8 @@ import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { motion } from 'framer-motion';
 import React from 'react';
+import { prefetcher } from '@/lib/prefetchService';
+
 
 function LevelPageContent({ levelName }: { levelName: string }) {
   const router = useRouter();
@@ -48,7 +50,10 @@ function LevelPageContent({ levelName }: { levelName: string }) {
         {!loading && semesters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
                 {semesters.map((semester) => (
-                    <div key={semester.id}>
+                    <div 
+                      key={semester.id}
+                      onMouseEnter={() => prefetcher.prefetchChildren(semester.id)}
+                    >
                         <Link href={`/folder/${semester.id}`} className="block h-full">
                             <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center">
                                 <h3 className="text-xl font-semibold text-white">{semester.name}</h3>

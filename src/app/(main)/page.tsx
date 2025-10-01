@@ -11,6 +11,8 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import React from 'react';
 import Link from 'next/link';
+import { prefetcher } from '@/lib/prefetchService';
+
 
 export default function HomePage() {
   const { db } = useFirebase();
@@ -77,6 +79,7 @@ export default function HomePage() {
                             isLastItem && isOdd && "col-span-2 sm:col-span-1 md:col-span-1"
                         )} 
                         onMouseDown={(e) => handleMouseDown(e, `/level/${encodeURIComponent(level.name)}`)}
+                        onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
                     >
                         <div className={cn(
                             "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center",
