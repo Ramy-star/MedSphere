@@ -57,9 +57,9 @@ const listVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: -8 },
+  hidden: { opacity: 0, y: 8 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.15 } },
-  exit: { opacity: 0, y: 8, transition: { duration: 0.15 } }
+  exit: { opacity: 0, y: -8, transition: { duration: 0.15 } }
 };
 
 const SortableItemWrapper = ({ id, children }: { id: string, children: React.ReactNode }) => {
@@ -291,7 +291,7 @@ export function FolderGrid({
       where: ['parentId', '==', parentId],
       orderBy: ['order', 'asc']
   });
-  const [items, setItems] = useState<Content[] | null>(fetchedItems);
+  const [items, setItems] = useState<Content[]>(fetchedItems || []);
 
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
@@ -309,8 +309,6 @@ export function FolderGrid({
       setItems(fetchedItems);
     }
   }, [fetchedItems]);
-
-  const currentItems = items || [];
 
   const handleFileClick = (file: Content) => {
     if (file.type === 'LINK') {
@@ -387,7 +385,6 @@ export function FolderGrid({
     const { active, over } = event;
     if (over && active.id !== over.id) {
         setItems(currentItems => {
-            if (!currentItems) return null;
             const oldIndex = currentItems.findIndex((item) => item.id === active.id);
             const newIndex = currentItems.findIndex((item) => item.id === over.id);
             if (oldIndex === -1 || newIndex === -1) return currentItems;
@@ -402,11 +399,11 @@ export function FolderGrid({
     }
   };
 
-  const isSubjectView = currentItems.length > 0 && currentItems.every(it => it.type === 'SUBJECT');
+  const isSubjectView = items.length > 0 && items.every(it => it.type === 'SUBJECT');
   
   const renderList = () => {
     const listProps = {
-        items: currentItems,
+        items: items,
         uploadingFiles,
         onItemClick: handleFileClick,
         onRenameClick: (item: Content) => setItemToRename(item),
@@ -436,13 +433,13 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
 
-      {loading && currentItems.length === 0 && (
+      {loading && items.length === 0 && (
          <div className="text-center py-16">
             {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
-      {!loading && currentItems.length === 0 && uploadingFiles.length === 0 && (
+      {!loading && items.length === 0 && uploadingFiles.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
@@ -464,7 +461,7 @@ export function FolderGrid({
           </div>
       )}
 
-      {(currentItems.length > 0 || uploadingFiles.length > 0) && renderList()}
+      {(items.length > 0 || uploadingFiles.length > 0) && renderList()}
 
       <FilePreviewModal
         item={previewFile}
