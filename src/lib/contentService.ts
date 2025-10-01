@@ -41,8 +41,6 @@ export type UploadCallbacks = {
 };
 
 
-const CLOUDFLARE_WORKER_URL = 'https://medsphere.roumio777.workers.dev';
-
 /**
  * Constructs a proxied URL through the Cloudflare worker.
  * It takes a full Cloudinary URL and extracts the path part after `/upload/`
@@ -53,23 +51,28 @@ const CLOUDFLARE_WORKER_URL = 'https://medsphere.roumio777.workers.dev';
  * @returns The proxied URL.
  */
 function createProxiedUrl(cloudinaryUrl: string): string {
+    const workerBase = (process.env.NEXT_PUBLIC_FILES_BASE_URL || '').replace(/\/+$/, '');
+    if (!workerBase) {
+        console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Returning original Cloudinary URL.");
+        return cloudinaryUrl;
+    }
+
     try {
         const urlObject = new URL(cloudinaryUrl);
-        // Find the part of the path after '/upload/' which includes version, public_id, and format
-        const uploadMarker = '/upload/';
-        const uploadIndex = urlObject.pathname.indexOf(uploadMarker);
-        
-        if (uploadIndex === -1) {
-            // If the URL format is unexpected, fallback to the original URL but warn.
-            console.warn("Unexpected Cloudinary URL format, could not create proxied URL:", cloudinaryUrl);
-            return cloudinaryUrl;
+        // The path part will be like '/<cloud_name>/image/upload/v12345/content/hash.jpg'
+        // We need to extract the path segment starting from the resource type (image, video, raw).
+        const pathSegments = urlObject.pathname.split('/');
+        const uploadIndex = pathSegments.indexOf('upload');
+
+        if (uploadIndex === -1 || uploadIndex === 0) {
+             console.warn("Unexpected Cloudinary URL format, could not create proxied URL:", cloudinaryUrl);
+             return cloudinaryUrl;
         }
 
-        // Path part will be something like 'v12345/content/hash.jpg'
-        const pathPart = urlObject.pathname.substring(uploadIndex + uploadMarker.length);
-        
-        // Return the worker base URL + the dynamic path part
-        return `${CLOUDFLARE_WORKER_URL}/${pathPart}`;
+        // The path we want is from 'upload' onwards.
+        const pathPart = pathSegments.slice(uploadIndex).join('/');
+
+        return `${workerBase}/${pathPart}`;
 
     } catch (e) {
         console.error("Error creating proxied URL from:", cloudinaryUrl, e);
@@ -604,5 +607,6 @@ export const contentService = {
   }
 };
 
+    
     
     
