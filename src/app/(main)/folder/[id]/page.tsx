@@ -1,13 +1,13 @@
 
+
 'use client';
 
-import { useEffect, useState, useCallback, Suspense, use } from 'react';
+import { useEffect, useState, useCallback, use } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import { notFound } from 'next/navigation';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useToast } from '@/hooks/use-toast';
 import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
@@ -93,7 +93,7 @@ function FolderPageContent({ id }: { id: string }) {
   
   return (
     <main className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden">
-       <FileExplorerHeader currentFolder={current} onFileSelected={processFileUpload} />
+       <FileExplorerHeader onFileSelected={processFileUpload} />
        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
           <FolderGrid 
             parentId={id} 

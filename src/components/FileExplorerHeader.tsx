@@ -1,6 +1,7 @@
 
+
 'use client';
-import { ArrowRight, ArrowLeft, Plus, Folder, Layers, Calendar } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Folder, Layers, Calendar } from 'lucide-react';
 import { Breadcrumbs } from './breadcrumbs';
 import type { Content } from '@/lib/contentService';
 import { LucideIcon } from 'lucide-react';
@@ -9,14 +10,38 @@ import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
 import { allSubjectIcons } from '@/lib/file-data';
 import { Skeleton } from './ui/skeleton';
+import { usePathname } from 'next/navigation';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useMemo } from 'react';
 
-export default function FileExplorerHeader({ currentFolder, onFileSelected }: { currentFolder?: Content | null, onFileSelected?: (file: File) => void }) {
+export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?: (file: File) => void }) {
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const pathname = usePathname();
   
+  const { data: allItems } = useCollection<Content>('content');
+
+  const itemMap = useMemo(() => {
+    if (!allItems) return new Map<string, Content>();
+    return new Map(allItems.map(item => [item.id, item]));
+  }, [allItems]);
+  
+  const pathSegments = pathname.split('/').filter(Boolean);
+  let currentFolder: Content | undefined | null = null;
+  
+  if (allItems) {
+    if (pathSegments[0] === 'folder' && pathSegments[1]) {
+      currentFolder = itemMap.get(pathSegments[1]);
+    } else if (pathSegments[0] === 'level' && pathSegments[1]) {
+      const levelName = decodeURIComponent(pathSegments[1]);
+      currentFolder = allItems.find(item => item.type === 'LEVEL' && item.name === levelName);
+    }
+  }
+
+
   const renderIcon = () => {
     if (!currentFolder) {
-      return <Skeleton className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg" />
+      return <Skeleton className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg" />;
     }
 
     if (currentFolder.metadata?.iconURL) {
@@ -86,8 +111,3 @@ export default function FileExplorerHeader({ currentFolder, onFileSelected }: { 
     </div>
   );
 }
-    
-
-    
-
-
