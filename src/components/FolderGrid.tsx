@@ -224,7 +224,7 @@ const NonSortableList = ({
                         key={file.id}
                         variants={itemVariants(isMobile)}
                         exit="exit"
-                        className={cn(isMobile && "px-4")}
+                        // No extra padding on mobile for non-sortable list either
                     >
                         <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                     </motion.div>
@@ -260,7 +260,8 @@ const NonSortableList = ({
                              key={itemKey}
                              variants={itemVariants(isMobile)}
                              exit="exit"
-                             className={cn(!isSubjectView && "border-b border-white/10", isMobile && "px-4 border-b-0")}
+                             // Add border here for mobile consistency
+                             className={cn("border-b border-white/10", isSubjectView && "border-b-0")}
                          >
                              {content}
                          </motion.div>

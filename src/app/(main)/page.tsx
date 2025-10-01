@@ -43,13 +43,13 @@ export default function HomePage() {
 
   
   const renderContent = () => {
-      if (!levels || (loading && levels.length === 0)) {
-           return null;
+      if (loading && (!levels || levels.length === 0)) {
+           return <div className="w-full min-h-[16rem] md:min-h-0" />; // Reserve space on mobile
       }
       
       if (levels.length === 0) {
            return (
-                <div className="text-center">
+                <div className="text-center min-h-[16rem] md:min-h-0 flex flex-col justify-center items-center">
                     <p className="text-lg text-slate-300 mb-4">Your study space is empty.</p>
                      <Button onClick={handleSeed} disabled={isSeeding}>
                         {isSeeding ? 'Setting up...' : 'Setup Initial Study Levels'}
@@ -61,7 +61,7 @@ export default function HomePage() {
       const isOdd = levels.length % 2 !== 0;
 
       return (
-           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
+           <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
               {levels.map((level, index) => {
                   const isLastItem = index === levels.length - 1;
                   return (
