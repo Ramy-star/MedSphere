@@ -1,4 +1,5 @@
 
+
       
 'use client';
 import { db } from '@/firebase';
@@ -43,21 +44,30 @@ export type UploadCallbacks = {
 
 /**
  * Constructs a proxied URL through the Cloudflare worker.
- * Ensures there is always a single slash between the base and the path.
- * @param cloudinaryPath The path segment from the Cloudinary URL (e.g., /image/upload/v123/folder/hash.jpg).
+ * It removes the cloud name from the path, as the worker will add it.
+ * @param cloudinaryPath The full path segment from the Cloudinary URL (e.g., /<cloud_name>/image/upload/v123/folder/hash.jpg).
  * @returns The full proxied URL.
  */
 function createProxiedUrl(cloudinaryPath: string): string {
     const workerBase = (process.env.NEXT_PUBLIC_FILES_BASE_URL || '').replace(/\/+$/, '');
-    if (!workerBase) {
-        console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. URLs will not be proxied.");
-        const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-        if (cloudName) {
-            return `https://res.cloudinary.com/${cloudName}${cloudinaryPath}`;
-        }
-        return `/error-missing-config${cloudinaryPath}`;
+    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
+
+    if (!workerBase || !cloudName) {
+        console.warn("NEXT_PUBLIC_FILES_BASE_URL or NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not set.");
+        // Fallback to direct Cloudinary URL if config is missing
+        return `https://res.cloudinary.com/${cloudName}${cloudinaryPath}`;
     }
 
+    // The path from Cloudinary's secure_url is /<cloud_name>/<resource_type>/...
+    // The worker expects the path *without* the cloud_name.
+    // So we remove the first part of the path segment.
+    const pathParts = cloudinaryPath.split('/');
+    if (pathParts.length > 2 && pathParts[1] === cloudName) {
+        const pathWithoutCloudName = pathParts.slice(2).join('/');
+        return `${workerBase}/${pathWithoutCloudName}`;
+    }
+
+    // Fallback if the path doesn't match the expected format
     const cleanPath = cloudinaryPath.startsWith('/') ? cloudinaryPath : `/${cloudinaryPath}`;
     return `${workerBase}${cleanPath}`;
 }
