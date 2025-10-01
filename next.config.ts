@@ -1,7 +1,6 @@
 
 import type { NextConfig } from 'next';
 import type { Configuration } from 'webpack';
-import WorkboxPlugin from 'workbox-webpack-plugin';
 
 const nextConfig: NextConfig = {
   images: {
@@ -27,44 +26,8 @@ const nextConfig: NextConfig = {
       }
     }
 
-    // Generate service worker in production for the client
-    if (!isServer && !dev) {
-        config.plugins.push(
-            new WorkboxPlugin.GenerateSW({
-                clientsClaim: true,
-                skipWaiting: true,
-                swDest: 'sw.js',
-                runtimeCaching: [
-                    {
-                        urlPattern: ({ url }) => (url.hostname === 'res.cloudinary.com' || url.hostname === 'medsphere.roumio777.workers.dev'),
-                        handler: 'CacheFirst',
-                        options: {
-                            cacheName: 'cloudinary-images',
-                            expiration: {
-                                maxEntries: 60,
-                                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
-                            },
-                            cacheableResponse: {
-                                statuses: [0, 200],
-                            },
-                        },
-                    },
-                    {
-                        urlPattern: ({ request }) => request.destination === 'document' || request.destination === 'script' || request.destination === 'style',
-                        handler: 'StaleWhileRevalidate',
-                        options: {
-                            cacheName: 'pages-assets',
-                        },
-                    },
-                ],
-            })
-        );
-    }
-
     return config;
   },
 };
 
 export default nextConfig;
-
-    
