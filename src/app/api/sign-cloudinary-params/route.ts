@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     }
 
     // A short-lived timestamp is required for the signature
-    const timestamp = Math.floor(Date.now() / 1000);
+    const timestamp = Math.round((new Date()).getTime() / 1000);
 
     // Combine the parameters from the request body with the timestamp
     const paramsToSign: Record<string, any> = {

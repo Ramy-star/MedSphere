@@ -43,13 +43,12 @@ export type UploadCallbacks = {
 const CLOUDFLARE_WORKER_URL = 'https://medsphere.roumio777.workers.dev';
 
 function createProxiedUrl(cloudinaryUrl: string): string {
-    // This function wraps a Cloudinary URL with the Cloudflare Worker URL
-    // e.g., https://res.cloudinary.com/demo/image/upload/sample.jpg becomes
-    // https://medsphere.roumio777.workers.dev/https://res.cloudinary.com/demo/image/upload/sample.jpg
     if (cloudinaryUrl.startsWith(CLOUDFLARE_WORKER_URL)) {
         return cloudinaryUrl;
     }
-    return `${CLOUDFLARE_WORKER_URL}/${cloudinaryUrl}`;
+    const urlObject = new URL(cloudinaryUrl);
+    // This creates the URL for the worker, e.g., https://worker/https://res.cloudinary.com/etc
+    return `${CLOUDFLARE_WORKER_URL}/${urlObject.protocol}//${urlObject.hostname}${urlObject.pathname}`;
 }
 
 
@@ -200,19 +199,13 @@ export const contentService = {
     try {
         const hash = await sha256file(file);
         const folder = 'content';
-        const public_id = `${folder}/${hash}`;
+        const public_id = `${folder}/${hash}`; // Correct: NO file extension
         
-        // Prepare params for signing
-        const paramsToSign = {
-            public_id,
-            folder,
-        };
-
         // Get signature from server
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramsToSign)
+            body: JSON.stringify({ folder, public_id })
         });
 
         if (!sigResponse.ok) {
@@ -256,7 +249,6 @@ export const contentService = {
                 const children = await this.getChildren(parentId);
                 const order = children.length;
                 
-                // Use the Cloudflare worker URL
                 const finalFileUrl = createProxiedUrl(data.secure_url);
 
 
@@ -311,17 +303,12 @@ export const contentService = {
 
         const hash = await sha256file(iconFile);
         const folder = 'icons';
-        const public_id = `${folder}/${hash}`;
+        const public_id = `${folder}/${hash}`; // Correct: NO file extension
         
-        const paramsToSign = { 
-            public_id, 
-            folder,
-        };
-
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(paramsToSign)
+            body: JSON.stringify({ folder, public_id })
         });
         if (!sigResponse.ok) throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
         
@@ -346,7 +333,6 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                // Use the Cloudflare worker URL
                 const iconURL = createProxiedUrl(data.secure_url);
 
                 await updateDoc(itemRef, {
@@ -432,7 +418,6 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                // Use the Cloudflare worker URL
                 const finalFileUrl = createProxiedUrl(data.secure_url);
 
                 const updatedData = {
