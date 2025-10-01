@@ -72,6 +72,27 @@ const nextConfig: NextConfig = {
       }
     }
 
+    // This is to prevent the "Module not found: Can't resolve 'fs'" error from pdf-parse during build
+    if (!isServer) {
+        config.resolve.fallback = {
+            ...(config.resolve.fallback || {}),
+            "fs": false,
+            "child_process": false,
+            "net": false,
+            "tls": false,
+        };
+    }
+    
+    // Add rule to handle pdf-parse specifically
+    config.module?.rules?.push({
+      test: /node_modules\/pdf-parse\/lib\/pdf-parse\.js/,
+      loader: 'string-replace-loader',
+      options: {
+        search: "require('pdf.js/lib/pdf.js')",
+        replace: "require('pdfjs-dist/legacy/build/pdf.js')"
+      }
+    });
+
     return config;
   },
 };
