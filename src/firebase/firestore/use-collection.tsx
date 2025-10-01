@@ -15,7 +15,6 @@ import {
 import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
-import { getFromCache, saveToCache } from './cache';
 
 type CollectionOptions = {
   where?: [string, any, any] | [string, any, any][];
@@ -35,8 +34,6 @@ export function useCollection<T extends { id: string }>(path: string, options: C
       // eslint-disable-next-line react-hooks/exhaustive-deps
       JSON.stringify(options)
   ]);
-  
-  const cacheKey = useMemo(() => `collection-${path}-${JSON.stringify(memoizedOptions)}`, [path, memoizedOptions]);
 
   useEffect(() => {
     if (memoizedOptions.disabled || !db) {
@@ -48,15 +45,6 @@ export function useCollection<T extends { id: string }>(path: string, options: C
     setLoading(true);
     let isMounted = true;
 
-    // 1. Try to get data from cache first
-    getFromCache<T[]>(cacheKey).then(cachedData => {
-      if (isMounted && cachedData) {
-        setData(cachedData);
-        setLoading(false); // We have data, so stop initial loading indicator
-      }
-    });
-
-    // 2. Set up the realtime listener
     try {
         let q: Query<DocumentData> = collection(db, path);
         
@@ -85,8 +73,7 @@ export function useCollection<T extends { id: string }>(path: string, options: C
               result.push({ id: doc.id, ...doc.data() } as T);
             });
             setData(result);
-            saveToCache(cacheKey, result); // Update cache
-            setLoading(false); // Final loading state
+            setLoading(false);
             setError(null);
         },
         (err) => {
@@ -117,7 +104,7 @@ export function useCollection<T extends { id: string }>(path: string, options: C
         setError(e);
         setLoading(false);
     }
-  }, [db, path, memoizedOptions, cacheKey]);
+  }, [db, path, memoizedOptions]);
 
   return { data, loading, error };
 }

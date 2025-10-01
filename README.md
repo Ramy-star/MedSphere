@@ -17,7 +17,7 @@
 
 -   **🗂️ Hierarchical Organization:** Structure your content by academic levels, semesters, and subjects.
 -   **📤 Seamless File Uploads:** Upload files of any type directly to your folders, powered by Cloudinary.
--   **👁️ Rich File Previews:** Instantly preview PDFs, images, videos, and even HTML files directly within the app.
+-   **👁️ Rich File Previews:** Instantly preview PDFs, images, videos, office, and even HTML files directly within the app.
 -   **🖱️ Drag & Drop Interface:** Easily reorder files and folders with a smooth, intuitive drag-and-drop experience.
 -   **🔍 Powerful Search:** Quickly find any file or folder across your entire library.
 -   **📱 Fully Responsive:** Access and manage your study materials on any device, whether it's a desktop, tablet, or smartphone.

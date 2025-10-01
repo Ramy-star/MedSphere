@@ -21,3 +21,4 @@ export class FirestorePermissionError extends Error {
     }, null, 2)}`;
   }
 }
+

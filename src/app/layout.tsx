@@ -45,7 +45,7 @@ export default function RootLayout({
                 <meta name="description" content="Organize your medical education journey" />
                 <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
                 <link rel="manifest" href="/manifest.json" />
-                <meta name="theme-color" content="#0F172A" />
+                <meta name="theme-color" content="#0B0F12" />
                 <link rel="apple-touch-icon" href="/icon-192.png" />
             </head>
             <body className={`${nunitoSans.className} h-full`}>
@@ -62,7 +62,7 @@ export default function RootLayout({
           <meta name="description" content="Organize your medical education journey" />
           <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
           <link rel="manifest" href="/manifest.json" />
-          <meta name="theme-color" content="#0F172A" />
+          <meta name="theme-color" content="#0B0F12" />
           <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={`${nunitoSans.className} h-full`}>

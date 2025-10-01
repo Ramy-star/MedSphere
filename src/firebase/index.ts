@@ -3,7 +3,14 @@
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
 import { getAuth, connectAuthEmulator } from 'firebase/auth';
-import { getFirestore, Firestore, connectFirestoreEmulator, enableIndexedDbPersistence } from 'firebase/firestore';
+import { 
+  getFirestore, 
+  Firestore, 
+  connectFirestoreEmulator, 
+  initializeFirestore, 
+  persistentLocalCache, 
+  persistentMultipleTabManager 
+} from 'firebase/firestore';
 import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
 // Re-export provider hooks
@@ -30,20 +37,20 @@ export async function initializeFirebase(config: FirebaseOptions) {
   const apps = getApps();
   const app = !apps.length ? initializeApp(config) : getApp();
   const auth = getAuth(app);
-  db = getFirestore(app);
   
-  // Enable offline persistence
   if (typeof window !== 'undefined') {
     try {
-        await enableIndexedDbPersistence(db);
-        console.log("Firestore offline persistence enabled.");
+      db = initializeFirestore(app, {
+        localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
+      });
+      console.log("Firestore offline persistence enabled with multi-tab support.");
     } catch (err: any) {
-        if (err.code === 'failed-precondition') {
-            console.warn('Firestore persistence failed: Multiple tabs open, persistence can only be enabled in one tab at a time.');
-        } else if (err.code === 'unimplemented') {
-            console.warn('Firestore persistence is not available in this browser.');
-        }
+      console.error("Firestore persistence initialization failed.", err);
+      // Fallback to in-memory persistence if multi-tab fails
+      db = getFirestore(app);
     }
+  } else {
+    db = getFirestore(app);
   }
   
   const storage = getStorage(app);
