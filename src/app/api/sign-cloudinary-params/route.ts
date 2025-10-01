@@ -1,3 +1,4 @@
+
 // src/app/api/sign-cloudinary-params/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
@@ -25,7 +26,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
     }
 
-    const paramsToSign = await req.json();
+    const body = await req.json();
 
     if (
       !process.env.CLOUDINARY_API_SECRET ||
@@ -38,7 +39,16 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-    
+
+    // A short-lived timestamp is required for the signature
+    const timestamp = Math.floor(Date.now() / 1000);
+
+    // Combine the parameters from the request body with the timestamp
+    const paramsToSign: Record<string, any> = {
+      ...body,
+      timestamp
+    };
+
     // Generate the signature using Cloudinary's utility function
     const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
 
@@ -46,6 +56,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         signature,
+        timestamp,
         apiKey: process.env.CLOUDINARY_API_KEY,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
       },

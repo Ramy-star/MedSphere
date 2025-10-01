@@ -247,16 +247,8 @@ export const contentService = {
                 const children = await this.getChildren(parentId);
                 const order = children.length;
                 
-                const shortId = nanoid(10);
-                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
-                let finalFileUrl: string;
-
-                if (!filesBaseUrl) {
-                    console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to Cloudinary direct URL.");
-                    finalFileUrl = data.secure_url;
-                } else {
-                    finalFileUrl = `${filesBaseUrl}/${shortId}`;
-                }
+                // Use the direct cloudinary url
+                const finalFileUrl = data.secure_url;
 
 
                 const newFileContent: Content = {
@@ -269,8 +261,7 @@ export const contentService = {
                         mime: file.type || 'application/octet-stream',
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
-                        cloudinaryResourceType: data.resource_type,
-                        shortId: shortId,
+                        cloudinaryResourceType: data.resource_type
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
@@ -348,22 +339,11 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                const shortId = nanoid(10);
-                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
-                let iconURL : string;
-
-                if (!filesBaseUrl) {
-                     console.warn("NEXT_PUBLIC_FILES_BASE_URL is not set. Falling back to Cloudinary direct URL for icon.");
-                    iconURL = data.secure_url;
-                } else {
-                     iconURL = `${filesBaseUrl}/${shortId}`;
-                }
-
+                const iconURL = data.secure_url;
 
                 await updateDoc(itemRef, {
                     'metadata.iconURL': iconURL,
                     'metadata.iconCloudinaryPublicId': data.public_id,
-                    'metadata.shortId': shortId,
                     updatedAt: new Date().toISOString()
                 });
                 callbacks.onSuccess(iconURL);
@@ -446,15 +426,7 @@ export const contentService = {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
                 
-                const shortId = existingContent.metadata?.shortId || nanoid(10);
-                const filesBaseUrl = process.env.NEXT_PUBLIC_FILES_BASE_URL;
-                let finalFileUrl: string;
-
-                if (!filesBaseUrl) {
-                    finalFileUrl = data.secure_url;
-                } else {
-                    finalFileUrl = `${filesBaseUrl}/${shortId}`;
-                }
+                const finalFileUrl = data.secure_url;
 
                 const updatedData = {
                     name: newFile.name,
@@ -466,7 +438,6 @@ export const contentService = {
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
-                        shortId: shortId,
                     },
                 };
                 await updateDoc(docRef, updatedData);
