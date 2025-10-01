@@ -42,37 +42,6 @@ export type UploadCallbacks = {
 };
 
 
-/**
- * Constructs a proxied URL through the Cloudflare worker.
- * It removes the cloud name from the path, as the worker will add it.
- * @param cloudinaryPath The full path segment from the Cloudinary URL (e.g., /<cloud_name>/image/upload/v123/folder/hash.jpg).
- * @returns The full proxied URL.
- */
-function createProxiedUrl(cloudinaryPath: string): string {
-    const workerBase = (process.env.NEXT_PUBLIC_FILES_BASE_URL || '').replace(/\/+$/, '');
-    const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
-
-    if (!workerBase || !cloudName) {
-        console.warn("NEXT_PUBLIC_FILES_BASE_URL or NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME is not set.");
-        // Fallback to direct Cloudinary URL if config is missing
-        return `https://res.cloudinary.com/${cloudName}${cloudinaryPath}`;
-    }
-
-    // The path from Cloudinary's secure_url is /<cloud_name>/<resource_type>/...
-    // The worker expects the path *without* the cloud_name.
-    // So we remove the first part of the path segment.
-    const pathParts = cloudinaryPath.split('/');
-    if (pathParts.length > 2 && pathParts[1] === cloudName) {
-        const pathWithoutCloudName = pathParts.slice(2).join('/');
-        return `${workerBase}/${pathWithoutCloudName}`;
-    }
-
-    // Fallback if the path doesn't match the expected format
-    const cleanPath = cloudinaryPath.startsWith('/') ? cloudinaryPath : `/${cloudinaryPath}`;
-    return `${workerBase}${cleanPath}`;
-}
-
-
 export const contentService = {
   async seedInitialData() {
       if (!db) {
@@ -270,9 +239,6 @@ export const contentService = {
                 const id = uuidv4();
                 const children = await this.getChildren(parentId);
                 const order = children.length;
-                
-                const urlObject = new URL(data.secure_url);
-                const finalFileUrl = createProxiedUrl(urlObject.pathname);
 
                 const newFileContent: Content = {
                     id,
@@ -282,7 +248,7 @@ export const contentService = {
                     metadata: {
                         size: data.bytes,
                         mime: file.type || 'application/octet-stream',
-                        storagePath: finalFileUrl,
+                        storagePath: data.secure_url,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type
                     },
@@ -354,16 +320,13 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
-                
-                const urlObject = new URL(data.secure_url);
-                const iconURL = createProxiedUrl(urlObject.pathname);
 
                 await updateDoc(itemRef, {
-                    'metadata.iconURL': iconURL,
+                    'metadata.iconURL': data.secure_url,
                     'metadata.iconCloudinaryPublicId': data.public_id,
                     updatedAt: new Date().toISOString()
                 });
-                callbacks.onSuccess(iconURL);
+                callbacks.onSuccess(data.secure_url);
             } else {
                 callbacks.onError(new Error(`Cloudinary upload failed: ${xhr.statusText}`));
             }
@@ -440,9 +403,6 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
-                
-                const urlObject = new URL(data.secure_url);
-                const finalFileUrl = createProxiedUrl(urlObject.pathname);
 
                 const updatedData = {
                     name: newFile.name,
@@ -451,7 +411,7 @@ export const contentService = {
                         ...existingContent.metadata,
                         size: data.bytes,
                         mime: newFile.type || 'application/octet-stream',
-                        storagePath: finalFileUrl,
+                        storagePath: data.secure_url,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: data.resource_type,
                     },
