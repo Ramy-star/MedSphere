@@ -12,7 +12,7 @@ const withPWA = require('next-pwa')({
       urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
       handler: 'CacheFirst',
       options: {
-        cacheName: 'cloudinary-cache',
+        cacheName: 'cloudinary-images',
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
@@ -22,17 +22,18 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-    {
+     {
       urlPattern: ({ url }: { url: URL }) => {
-        return url.pathname.startsWith('/api');
+        const workerBase = process.env.NEXT_PUBLIC_FILES_BASE_URL;
+        if (!workerBase) return false;
+        return url.origin === workerBase;
       },
-      handler: 'NetworkFirst',
+      handler: 'CacheFirst',
       options: {
-        cacheName: 'api-cache',
-        networkTimeoutSeconds: 10,
+        cacheName: 'cloudinary-files-via-worker',
         expiration: {
-          maxEntries: 32,
-          maxAgeSeconds: 24 * 60 * 60, // 24 hours
+          maxEntries: 100,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
         },
         cacheableResponse: {
           statuses: [0, 200],
@@ -52,11 +53,15 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
+        hostname: 'files.yourdomain.com', // Add your worker domain here
+      },
+      {
+        protocol: 'https',
         hostname: 'picsum.photos',
-      }
+      },
     ],
   },
-  webpack: (config: Configuration, { isServer }: { isServer: boolean }) => {
+  webpack: (config: Configuration, { isServer, dev }) => {
     // This is to prevent the "Module not found: Can't resolve 'canvas'" error during build
     if (isServer) {
       if (!config.externals) {
@@ -66,6 +71,7 @@ const nextConfig: NextConfig = {
         config.externals.push('canvas');
       }
     }
+
     return config;
   },
 };
