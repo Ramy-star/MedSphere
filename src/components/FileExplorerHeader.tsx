@@ -9,7 +9,6 @@ import { AddContentMenu } from './AddContentMenu';
 import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
 import { allSubjectIcons } from '@/lib/file-data';
-import { Skeleton } from './ui/skeleton';
 import { usePathname } from 'next/navigation';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useMemo } from 'react';
@@ -41,7 +40,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
 
   const renderIcon = () => {
     if (!currentFolder) {
-      return <Skeleton className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg" />;
+      return null;
     }
 
     if (currentFolder.metadata?.iconURL) {
@@ -98,7 +97,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
         <div className="flex items-center gap-4">
           {renderIcon()}
           <h1 className="text-xl sm:text-2xl font-bold text-white">
-            {currentFolder ? currentFolder.name : <Skeleton className="h-8 w-48" />}
+            {currentFolder ? currentFolder.name : ''}
           </h1>
         </div>
         {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'SEMESTER' && (

@@ -5,9 +5,8 @@
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { useEffect, useMemo, Suspense, use } from 'react';
+import { useEffect, useMemo, use } from 'react';
 import { Content } from '@/lib/contentService';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection } from '@/firebase/firestore/use-collection';
 
 function LevelPageContent({ levelName }: { levelName: string }) {
@@ -40,13 +39,6 @@ function LevelPageContent({ levelName }: { levelName: string }) {
     <main className="flex-1 p-4 md:p-6 glass-card">
         <FileExplorerHeader />
         
-        {loading && (
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
-                <Skeleton className="h-32" />
-                <Skeleton className="h-32" />
-            </div>
-        )}
-
         {!loading && semesters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
                 {semesters.map((semester) => (
@@ -67,27 +59,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
 function LevelPage({ params }: { params: Promise<{ levelName: string }> }) {
   const { levelName } = use(params);
   
-  return (
-    <Suspense fallback={
-        <main className="flex-1 p-4 md:p-6 glass-card">
-            <div className="mb-6 space-y-4">
-                <Skeleton className="h-5 w-1/3" />
-                <div className="flex items-center justify-between min-h-[40px]">
-                    <div className="flex items-center gap-4">
-                        <Skeleton className="w-10 h-10 rounded-lg" />
-                        <Skeleton className="h-8 w-48" />
-                    </div>
-                </div>
-            </div>
-             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
-                <Skeleton className="h-32" />
-                <Skeleton className="h-32" />
-            </div>
-        </main>
-    }>
-      <LevelPageContent levelName={levelName} />
-    </Suspense>
-  )
+  return <LevelPageContent levelName={levelName} />;
 }
 
 export default LevelPage;

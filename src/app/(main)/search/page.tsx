@@ -1,10 +1,10 @@
 
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
 import { useEffect, useState, Suspense, useCallback } from 'react';
 import { search } from '@/ai/flows/search-flow';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { FileCard } from '@/components/FileCard';
 import { FolderCard } from '@/components/FolderCard';
@@ -109,11 +109,7 @@ function SearchResults() {
 
             <div className="flex-1 overflow-y-auto pr-2 -mr-2">
                 {loading && !results.length ? (
-                    <div className="space-y-3">
-                        <Skeleton className="h-16 w-full" />
-                        <Skeleton className="h-16 w-full" />
-                        <Skeleton className="h-16 w-full" />
-                    </div>
+                    <div className="text-center text-slate-400">Searching...</div>
                 ) : (
                     <div className="flex flex-col">
                         {results.length > 0 ? (
@@ -207,7 +203,7 @@ function SearchResults() {
 // Need to wrap with suspense for useSearchParams
 export default function SearchPage() {
     return (
-        <Suspense fallback={<div className="flex-1 p-6"><Skeleton className="h-8 w-48 mb-6" /><Skeleton className="h-40 w-full" /></div>}>
+        <Suspense fallback={null}>
             <SearchResults />
         </Suspense>
     )

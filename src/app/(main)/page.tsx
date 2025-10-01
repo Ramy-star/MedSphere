@@ -1,11 +1,11 @@
 
+
 'use client';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import Link from 'next/link';
 import { useEffect, useState, useCallback } from 'react';
 import { Content, contentService } from '@/lib/contentService';
-import { Skeleton } from '@/components/ui/skeleton';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/firebase/provider';
@@ -41,11 +41,7 @@ export default function HomePage() {
   
   const renderContent = () => {
       if (loading) {
-           return (
-              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6">
-                  {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 md:h-28 rounded-xl" />)}
-              </div>
-          );
+           return null;
       }
       
       if (!levels || levels.length === 0) {

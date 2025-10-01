@@ -1,4 +1,5 @@
 
+
 'use client';
 import {
   Dialog,
@@ -15,7 +16,6 @@ import { X, Download, Share2, File as FileIcon, ExternalLink } from 'lucide-reac
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from './ui/skeleton';
 import { useUser } from '@/firebase/auth/use-user';
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
@@ -140,7 +140,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
         {/* Content */}
         <div className="flex-1 overflow-auto flex items-center justify-center">
-            {loading && <div className="w-full h-full flex items-center justify-center"><Skeleton className="h-64 w-96"/></div>}
             {!loading && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} />}
             {!loading && !fileUrl && (
               <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">

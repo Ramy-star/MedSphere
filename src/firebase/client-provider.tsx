@@ -5,8 +5,8 @@ import { useEffect, useState } from 'react';
 import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
 import { FirebaseProvider } from './provider';
-import { Skeleton } from '@/components/ui/skeleton';
 import { getAuth, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
+import { Logo } from '@/components/logo';
 
 export function FirebaseClientProvider({
   children,
@@ -67,10 +67,9 @@ export function FirebaseClientProvider({
   if (loading) {
     return (
       <div className="flex h-screen w-screen items-center justify-center bg-background">
-        <div className="w-full max-w-md p-8 space-y-4">
-            <h1 className='text-center text-2xl font-bold text-white'>Connecting to MedSphere...</h1>
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-40 w-full" />
+        <div className="flex flex-col items-center gap-4">
+            <Logo className="h-16 w-16 animate-pulse" />
+            <p className="text-slate-400">Connecting to MedSphere...</p>
         </div>
       </div>
     );
