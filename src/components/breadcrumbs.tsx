@@ -3,10 +3,8 @@
 import Link from 'next/link';
 import { HomeIcon, ChevronRight } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
-import { useEffect, useState, useRef } from 'react';
-import { doc, getDoc } from 'firebase/firestore';
-import { useFirebase } from '@/firebase/provider';
-import { Skeleton } from './ui/skeleton';
+import { useEffect, useState, useMemo } from 'react';
+import { useCollection } from '@/firebase/firestore/use-collection';
 
 function getLink(item: Content): string {
   switch (item.type) {
@@ -21,69 +19,36 @@ function getLink(item: Content): string {
   }
 }
 
-// Cache to store fetched ancestor paths to avoid re-fetching
-const ancestorCache = new Map<string, Content[]>();
-
-async function fetchAncestorsWithCache(db: any, currentId: string): Promise<Content[]> {
-    if (currentId === 'root' || !db) return [];
-    if (ancestorCache.has(currentId)) {
-        return ancestorCache.get(currentId)!;
-    }
-
-    const ancestors: Content[] = [];
-    let parentId: string | null = null;
-
-    const currentDocRef = doc(db, 'content', currentId);
-    const currentDoc = await getDoc(currentDocRef);
-    if (currentDoc.exists()) {
-        parentId = (currentDoc.data() as Content).parentId;
-    }
-
-    while (parentId) {
-        const parentDocRef = doc(db, 'content', parentId);
-        const parentDoc = await getDoc(parentDocRef);
-        if (parentDoc.exists()) {
-            const parentData = { id: parentDoc.id, ...parentDoc.data() } as Content;
-            ancestors.unshift(parentData);
-            
-            // Cache the sub-path for the parent to speed up future lookups
-            if (!ancestorCache.has(parentId)) {
-                 ancestorCache.set(parentId, ancestors.slice(0, -1));
-            }
-            parentId = parentData.parentId;
-        } else {
-            break;
-        }
-    }
-    
-    ancestorCache.set(currentId, ancestors);
-    return ancestors;
-}
-
-
 export function Breadcrumbs({ current }: { current?: Content }) {
-  const { db } = useFirebase();
+  const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
   const [ancestors, setAncestors] = useState<Content[]>([]);
-  const [loading, setLoading] = useState(true);
-  
-  // Use a ref to keep the previous ancestors during loading of new ones
-  const previousAncestorsRef = useRef<Content[]>([]);
-  if (!loading) {
-    previousAncestorsRef.current = ancestors;
-  }
+
+  const itemsMap = useMemo(() => {
+    if (!allItems) return new Map<string, Content>();
+    const map = new Map<string, Content>();
+    allItems.forEach(item => map.set(item.id, item));
+    return map;
+  }, [allItems]);
 
   useEffect(() => {
-    if (current && current.id !== 'root') {
-        setLoading(true);
-        fetchAncestorsWithCache(db, current.id).then(fetchedAncestors => {
-            setAncestors(fetchedAncestors);
-            setLoading(false);
-        });
-    } else {
-        setAncestors([]);
-        setLoading(false);
+    if (!current || !allItems || itemsMap.size === 0) {
+      setAncestors([]);
+      return;
     }
-  }, [current, db]);
+
+    const buildAncestors = () => {
+      const path: Content[] = [];
+      let parentId = current.parentId;
+      while (parentId && itemsMap.has(parentId)) {
+        const parent = itemsMap.get(parentId)!;
+        path.unshift(parent);
+        parentId = parent.parentId;
+      }
+      setAncestors(path);
+    };
+
+    buildAncestors();
+  }, [current, allItems, itemsMap]);
 
   const homeElement = (
     <div className="flex items-center">
@@ -94,29 +59,17 @@ export function Breadcrumbs({ current }: { current?: Content }) {
     </div>
   );
   
-  // Use previous ancestors for skeleton to prevent flicker and show context
-  const skeletonPath = previousAncestorsRef.current;
+  const loading = loadingAllItems && !current;
 
   return (
      <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap min-h-[20px]">
       {homeElement}
       
-      {loading && current && (
-         <>
-          {skeletonPath.map(node => (
-            <span key={`skel-anc-${node.id}`} className="flex items-center gap-2">
-                <ChevronRight className="w-4 h-4 opacity-60" />
-                 <Link href={getLink(node)} className="hover:text-white">
-                    {node.name}
-                 </Link>
-            </span>
-          ))}
-          {/* Skeleton for the part that is currently loading */}
-          <span className="flex items-center gap-2">
+      {loading && (
+        <span className="flex items-center gap-2">
             <ChevronRight className="w-4 h-4 opacity-60" />
-            <Skeleton className="h-4 w-24" />
-          </span>
-         </>
+            <div className="h-4 w-24 bg-muted animate-pulse rounded-md" />
+        </span>
       )}
 
       {!loading && ancestors.map((node) => (
@@ -137,7 +90,6 @@ export function Breadcrumbs({ current }: { current?: Content }) {
             <span className="font-semibold text-white">{current.name}</span>
         </span>
       )}
-
     </nav>
   )
 }
