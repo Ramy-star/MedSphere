@@ -30,7 +30,7 @@ import {
 import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Textarea } from './ui/textarea';
@@ -317,8 +317,7 @@ setError(null);
                     <X className="w-6 h-6" />
                 </Button>
                 <div className="flex items-center gap-3 overflow-hidden">
-                <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
-                <span className="text-white font-medium truncate sr-only">{item.name}</span>
+                    <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
                 </div>
             </div>
             <div className='flex items-center gap-1 sm:gap-2'>
