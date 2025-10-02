@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, Share2, File as FileIcon, ExternalLink, Sparkles, Send, RefreshCw, Bot, User } from 'lucide-react';
+import { X, Download, Share2, File as FileIcon, ExternalLink, Sparkles, Send, RefreshCw, Bot, User, Copy, Check } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -40,6 +40,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [documentText, setDocumentText] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState(false);
+
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -92,6 +94,21 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         window.open(fileUrl, '_blank');
     }
   }
+  
+  const handleCopyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+        setCopiedMessage(true);
+        setTimeout(() => setCopiedMessage(false), 2000); // Reset after 2s
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        toast({
+            variant: "destructive",
+            title: "Failed to Copy",
+            description: "Could not copy the message.",
+        })
+    });
+  }
+
 
   const handleClose = () => {
     setShowChat(false); // Also close chat on modal close
@@ -284,19 +301,22 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             {chatHistory.map((msg, index) => {
                                 if (msg.role === 'user') {
                                     return (
-                                        <div key={index} className="flex justify-end items-start gap-4 ml-10">
+                                        <div key={index} className="flex justify-end items-start gap-4">
                                             <div className="rounded-xl border border-blue-500/20 bg-blue-900/40 p-4 backdrop-blur-lg max-w-2xl">
                                                 <p className="text-slate-200">{msg.text}</p>
                                             </div>
-                                            <Avatar className="h-10 w-10 flex-shrink-0">
-                                                <AvatarImage src={user?.photoURL ?? ''} alt={user?.displayName ?? 'User'} />
-                                                <AvatarFallback><User /></AvatarFallback>
-                                            </Avatar>
                                         </div>
                                     )
                                 }
                                 return (
-                                    <div key={index} className="prose prose-sm max-w-full text-slate-200">
+                                    <div key={index} className="prose prose-sm max-w-full text-slate-200 group relative">
+                                        <button 
+                                            onClick={() => handleCopyToClipboard(msg.text)}
+                                            className="absolute top-0 right-0 p-1.5 bg-slate-700/50 rounded-full text-slate-300 hover:bg-slate-700 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                            title="Copy message"
+                                        >
+                                            {copiedMessage ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                        </button>
                                         <ReactMarkdown
                                           components={{
                                             h2: ({node, ...props}) => <h2 className="text-white" {...props} />,

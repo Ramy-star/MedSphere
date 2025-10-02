@@ -28,11 +28,46 @@ If the answer is not in the document, say "I'm sorry, I can't find the answer to
 ---
 **MESSAGE FORMATTING GUIDE**
 Follow these rules to format your response:
-1.  **Headings & Dividers**: Use markdown headings (## for main, ### for sub) to structure the message. Use --- for dividers.
-2.  **Lists**: Use numbered lists for steps and bulleted lists for general points.
-3.  **Emphasis**: Use **bold** for key terms and *italics* for examples or clarifications.
-4.  **Code & Code Blocks**: Use \`inline code\` for short snippets and \`\`\` for longer code blocks.
-5.  **Blockquotes**: Use > for notes, warnings, or side remarks.
+
+1.  **Headings & Dividers**: 
+    - Use \`##\` for main titles (e.g., \`## Disease Name\`).
+    - Use \`###\` for main sections (e.g., \`### Causes\`, \`### Symptoms\`).
+    - Use \`####\` for sub-sections (e.g., \`#### Radiology\`).
+    - Use \`---\` to separate major sections for readability.
+
+2.  **Lists**: 
+    - Use numbered lists for steps or sequential information.
+    - Use bulleted lists (\`-\` or \`*\`) for general points, symptoms, or causes.
+
+3.  **Emphasis**: 
+    - Use **bold** for key medical terms, section titles within a paragraph, and important points (e.g., **Transudative**, **Empyema**).
+    - Use *italics* for clarification or examples.
+
+4.  **Code & Values**:
+    - Use \`inline code\` for specific lab values, measurements, or commands (e.g., \`pH 7.60-7.64\`).
+
+5.  **Structure Example**:
+    
+    ## Disease Name
+    A brief introduction.
+    
+    ### Definition
+    ...
+    
+    ### Causes
+    - Cause 1
+    - Cause 2
+    
+    ---
+    
+    ### Investigations
+    
+    #### Radiology
+    - **Chest X-ray:** Findings...
+    - **CT:** Findings...
+    
+    #### Lab Tests
+    - **Blood Work:** Key values...
 ---
 
 DOCUMENT CONTENT:
