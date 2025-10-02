@@ -32,12 +32,6 @@ import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sparkles } from 'lucide-react';
 
-
-// Define a type for the ref to hold the text extraction function
-type PdfViewerRef = {
-  extractText: () => Promise<string>;
-};
-
 type ChatMessageProps = {
     msg: { role: 'user' | 'model', text: string };
     onCopy: (text: string, id: string) => void;
@@ -192,17 +186,22 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       setIsExtracting(false);
     } else {
       console.error("Failed to extract PDF text.");
+      toast({ variant: 'destructive', title: 'Text Extraction Failed', description: 'Could not read the document content.' });
       setIsExtracting(false);
     }
-  }, []);
+  }, [toast]);
   
   useEffect(() => {
     // Reset state when a new item is opened.
     startNewChat();
     setDocumentText(null); // Clear old document text
     setShowChat(false); // Close chat panel
+    setError(null);
+    setLoading(false);
     if (item?.metadata?.mime === 'application/pdf') {
         setIsExtracting(true);
+    } else {
+        setIsExtracting(false);
     }
   }, [item, startNewChat]);
 
@@ -296,7 +295,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   
-  const previewContainerClass = isMobile && showChat ? "opacity-0 pointer-events-none" : "opacity-100";
+  const filePreviewContainerStyle: React.CSSProperties = (isMobile && showChat) ? { opacity: 0, pointerEvents: 'none' } : { opacity: 1 };
 
 
   return (
@@ -312,9 +311,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           </DialogDescription>
         </DialogHeader>
         
-        <div className="flex-1 h-full w-full relative">
-            {/* File Previewer - always mounted but conditionally visible on mobile */}
-            <div className={`absolute inset-0 flex flex-col h-full bg-slate-900 transition-opacity duration-300 ${isMobile && showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+        <div className="flex-1 h-full w-full relative overflow-hidden">
+            {/* File Previewer */}
+            <div 
+              className={`absolute inset-0 flex flex-col h-full bg-slate-900 transition-opacity duration-300`}
+              style={filePreviewContainerStyle}
+            >
                 <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
                     <div className="flex items-center gap-2 overflow-hidden">
                         <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
@@ -350,8 +352,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <FilePreview 
                         url={fileUrl} 
                         mime={item.metadata?.mime ?? 'application/octet-stream'} 
-                        itemName={item.name} 
-                        onPdfTextExtracted={handlePdfTextExtracted}
+                        itemName={item.name}
+                        onPdfLoadSuccess={handlePdfTextExtracted}
                     />
                     )}
                     {!loading && !fileUrl && (
@@ -363,11 +365,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </main>
             </div>
 
-            {/* Chat Panel - conditionally rendered */}
+            {/* Chat Panel */}
             <AnimatePresence>
               {showChat && (
-                <motion.aside
-                    key="chat"
+                <motion.div
+                    key="chat-panel"
                     initial={{ y: '100%' }}
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
@@ -375,7 +377,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20 md:w-[448px] md:relative"
                     aria-label="AI Chat Panel"
                 >
-                     <header className="flex items-center justify-end whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16">
+                     <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16">
+                        <div className="flex items-center gap-2">
+                            <Sparkles className="h-6 w-6 text-purple-400" />
+                            <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+                        </div>
                         <div className="flex items-center">
                             <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
                                 <RefreshCw className="w-4 h-4" />
@@ -390,7 +396,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             
                             {chatHistory.length === 0 && !isAiThinking && (
                                 <div className="prose prose-sm max-w-full text-slate-200">
-                                    {isExtracting ? <p>Analyzing document...</p> : <p>Hello! I am your AI assistant. Ask me anything about this document.</p>}
+                                    {isExtracting ? (
+                                      <div className="flex items-center gap-2">
+                                        <Skeleton className="h-5 w-5 rounded-full" />
+                                        <p>Analyzing document...</p>
+                                      </div>
+                                    ) : documentText ? (
+                                      <p>Hello! I am your AI assistant. Ask me anything about this document.</p>
+                                    ) : (
+                                      <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                                    )}
                                 </div>
                             )}
 
@@ -423,15 +438,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     placeholder="Ask anything"
                                     value={chatInput}
                                     onChange={(e) => setChatInput(e.target.value)}
-                                    disabled={isExtracting || isAiThinking}
+                                    disabled={isExtracting || isAiThinking || !documentText}
                                 />
-                                <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting} aria-label="Send message">
+                                <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
                                     <Send className="w-5 h-5" />
                                 </Button>
                             </form>
                         </div>
                     </div>
-                </motion.aside>
+                </motion.div>
               )}
             </AnimatePresence>
         </div>
