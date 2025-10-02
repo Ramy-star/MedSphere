@@ -20,13 +20,6 @@ const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.1;
 
-const getDistance = (touches: React.TouchList) => {
-    return Math.sqrt(
-        Math.pow(touches[0].clientX - touches[1].clientX, 2) +
-        Math.pow(touches[0].clientY - touches[1].clientY, 2)
-    );
-};
-
 
 const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf: PDFDocumentProxy) => void }) => {
   const [numPages, setNumPages] = useState<number>();
@@ -35,9 +28,6 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
   const [scale, setScale] = useState(isMobile ? 0.5 : 1);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  const initialPinchDistance = useRef<number | null>(null);
-  const initialScale = useRef<number>(1);
   
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
@@ -113,35 +103,10 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
   const zoomIn = () => setScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length === 2) {
-        e.preventDefault();
-        initialPinchDistance.current = getDistance(e.touches);
-        initialScale.current = scale;
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-      if (e.touches.length === 2 && initialPinchDistance.current) {
-          e.preventDefault();
-          const newDistance = getDistance(e.touches);
-          const newScale = initialScale.current * (newDistance / initialPinchDistance.current);
-          setScale(Math.max(MIN_ZOOM, Math.min(newScale, MAX_ZOOM)));
-      }
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-      if (e.touches.length < 2) {
-          initialPinchDistance.current = null;
-      }
-  };
 
   return (
     <div 
       className="w-full h-full flex flex-col items-center justify-start"
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
     >
       <div ref={containerRef} className="flex-1 w-full overflow-auto">
         <div className="flex justify-center items-start min-h-full">
@@ -168,31 +133,31 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
 
       {numPages && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-           <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
+           <div className="flex items-center gap-1 bg-black/80 text-white rounded-full p-1 shadow-lg">
             
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(Math.max(pageNumber - 1, 1))} disabled={pageNumber <= 1}>
-                <ChevronLeft className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="rounded-full w-7 h-7" onClick={() => goToPage(Math.max(pageNumber - 1, 1))} disabled={pageNumber <= 1}>
+                <ChevronLeft className="w-4 h-4" />
                 <span className="sr-only">Previous Page</span>
             </Button>
             
-            <span className="text-sm px-3 tabular-nums">Page {pageNumber} / {numPages ?? '--'}</span>
+            <span className="text-xs px-2 tabular-nums">Page {pageNumber} / {numPages ?? '--'}</span>
             
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(Math.min(pageNumber + 1, numPages))} disabled={pageNumber >= numPages}>
-                <ChevronRight className="w-5 h-5" />
+            <Button variant="ghost" size="icon" className="rounded-full w-7 h-7" onClick={() => goToPage(Math.min(pageNumber + 1, numPages))} disabled={pageNumber >= numPages}>
+                <ChevronRight className="w-4 h-4" />
                 <span className="sr-only">Next Page</span>
             </Button>
 
-            <div className="h-6 w-px bg-white/20"></div>
+            <div className="h-5 w-px bg-white/20 mx-1"></div>
             
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
+            <Button variant="ghost" size="icon" className="rounded-full w-7 h-7" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
               <Minus className="w-4 h-4" />
             </Button>
 
-            <span className='text-sm w-12 text-center font-mono'>
+            <span className='text-xs w-10 text-center font-mono'>
                 {`${Math.round(scale * 100)}%`}
             </span>
 
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
+            <Button variant="ghost" size="icon" className="rounded-full w-7 h-7" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
               <Plus className="w-4 h-4" />
             </Button>
           </div>
