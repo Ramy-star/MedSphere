@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, Sparkles, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
+import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
@@ -339,7 +339,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </Button>
                     {isChatAvailable && (
                     <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
-                        <Sparkles className="mr-2 h-4 w-4"/>
+                        <AiAssistantIcon className="mr-2 h-4 w-4"/>
                         Chat with AI
                     </Button>
                     )}
@@ -386,12 +386,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </header>
                     <div className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
                         <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
-                             {isExtracting && (
-                               <div className="w-full mt-2">
-                                    <div className="h-1 bg-blue-500/50 animate-pulse rounded"></div>
-                                    <p className="text-center text-xs text-slate-400 mt-1">Analyzing PDF...</p>
-                                </div>
-                            )}
                             
                             {chatHistory.length === 0 && !isAiThinking && !isExtracting && (
                                 <div className="prose prose-sm max-w-full text-slate-200">
@@ -409,7 +403,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 />
                             ))}
 
-                            {isAiThinking && !isExtracting && (
+                            {(isAiThinking || isExtracting) && (
                                 <div className="space-y-2">
                                     <Skeleton className="h-4 w-[80%] rounded-lg" />
                                     <Skeleton className="h-4 w-[95%] rounded-lg" />
