@@ -148,7 +148,6 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
-  const pdfViewerRef = useRef<PdfViewerRef>(null);
   
   const [showChat, setShowChat] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model', text: string }[]>([]);
@@ -173,7 +172,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const startNewChat = useCallback(() => {
     setChatHistory([]);
-    setDocumentText(null); // Allow re-extraction if needed
+    // Do not reset documentText here. It should persist for the open file.
     setIsAiThinking(false);
     setShowConfirmNewChat(false);
   }, []);
@@ -186,27 +185,25 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [chatHistory.length, startNewChat]);
 
-  // Pre-extract PDF text as soon as the modal is opened
-  const preExtractText = useCallback(async () => {
-    if (item?.metadata?.mime !== 'application/pdf' || documentText || !pdfViewerRef.current) {
-      return;
-    }
-    setIsExtracting(true);
-    try {
-      const text = await pdfViewerRef.current.extractText();
+  // This function will now receive the extracted text from the PdfViewer component
+  const handlePdfTextExtracted = useCallback((text: string | null) => {
+    if (text) {
       setDocumentText(text);
-    } catch (err) {
-      console.error("Failed to pre-extract PDF text:", err);
-      // Don't show a toast here, it might be aggressive. We'll handle it if they try to chat.
-    } finally {
+      setIsExtracting(false);
+    } else {
+      console.error("Failed to extract PDF text.");
       setIsExtracting(false);
     }
-  }, [item, documentText]);
+  }, []);
   
-
   useEffect(() => {
-    // Reset state when a new item is opened, but don't close the chat panel
+    // Reset state when a new item is opened.
     startNewChat();
+    setDocumentText(null); // Clear old document text
+    setShowChat(false); // Close chat panel
+    if (item?.metadata?.mime === 'application/pdf') {
+        setIsExtracting(true);
+    }
   }, [item, startNewChat]);
 
   useEffect(() => {
@@ -275,9 +272,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     e?.preventDefault();
     if (!chatInput.trim() || isAiThinking) return;
 
-    // Use pre-extracted text
     if (!documentText) {
-       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading.' });
+       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
        return;
     }
 
@@ -315,60 +311,59 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             Previewing file {item.name}. You can download, share, or chat with the document if supported.
           </DialogDescription>
         </DialogHeader>
-
-        <div className="flex flex-1 overflow-hidden h-full">
-            <div className={`flex-1 flex flex-col h-full bg-transparent transition-opacity duration-300 ${previewContainerClass}`}>
-                {!showChat && (
-                  <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                            <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
-                                <X className="w-6 h-6" />
-                            </Button>
-                            <div className="flex items-center gap-3 overflow-hidden">
-                              <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
-                              <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
-                            </div>
+        
+        <div className="flex-1 h-full w-full relative">
+            {/* File Previewer - always mounted but conditionally visible on mobile */}
+            <div className={`absolute inset-0 flex flex-col h-full bg-slate-900 transition-opacity duration-300 ${isMobile && showChat ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
+                <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
+                            <X className="w-6 h-6" />
+                        </Button>
+                        <div className="flex items-center gap-3 overflow-hidden">
+                          <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
+                          <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
                         </div>
-                        <div className='flex items-center gap-1 sm:gap-2'>
-                            {!isLink && (
-                                <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Download">
-                                    <Download className="w-5 h-5" />
-                                </Button>
-                            )}
-                            <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Open in new tab">
-                                <ExternalLink className="w-5 h-5" />
+                    </div>
+                    <div className='flex items-center gap-1 sm:gap-2'>
+                        {!isLink && (
+                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Download">
+                                <Download className="w-5 h-5" />
                             </Button>
-                            {isChatAvailable && (
-                            <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 w-9 sm:h-auto sm:w-auto sm:px-4">
-                                <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                                <span className="hidden sm:inline">Chat</span>
-                            </Button>
-                            )}
-                        </div>
-                    </header>
-                  )}
+                        )}
+                        <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Open in new tab">
+                            <ExternalLink className="w-5 h-5" />
+                        </Button>
+                        {isChatAvailable && (
+                        <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 w-9 sm:h-auto sm:w-auto sm:px-4">
+                            <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
+                            <span className="hidden sm:inline">Chat</span>
+                        </Button>
+                        )}
+                    </div>
+                </header>
 
-                  <main className="flex-1 overflow-auto flex items-center justify-center relative">
-                      {loading && <div className="text-white">Loading...</div>}
-                      {error && <div className="text-red-400">Error: {error}</div>}
-                      {!loading && !error && fileUrl && (
-                        <FilePreview 
-                            url={fileUrl} 
-                            mime={item.metadata?.mime ?? 'application/octet-stream'} 
-                            itemName={item.name} 
-                            pdfViewerRef={pdfViewerRef} 
-                            onPdfLoadSuccess={preExtractText}
-                        />
-                      )}
-                      {!loading && !fileUrl && (
-                      <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                          <p className="text-xl mb-3">File content not available.</p>
-                          <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
-                      </div>
-                      )}
-                  </main>
-              </div>
+                <main className="flex-1 overflow-auto flex items-center justify-center relative">
+                    {loading && <div className="text-white">Loading...</div>}
+                    {error && <div className="text-red-400">Error: {error}</div>}
+                    {!loading && !error && fileUrl && (
+                    <FilePreview 
+                        url={fileUrl} 
+                        mime={item.metadata?.mime ?? 'application/octet-stream'} 
+                        itemName={item.name} 
+                        onPdfTextExtracted={handlePdfTextExtracted}
+                    />
+                    )}
+                    {!loading && !fileUrl && (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                        <p className="text-xl mb-3">File content not available.</p>
+                        <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+                    </div>
+                    )}
+                </main>
+            </div>
 
+            {/* Chat Panel - conditionally rendered */}
             <AnimatePresence>
               {showChat && (
                 <motion.aside
@@ -377,14 +372,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ y: 0 }}
                     exit={{ y: '100%' }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full md:w-[448px] w-full absolute inset-0 md:relative"
+                    className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20 md:w-[448px] md:relative"
                     aria-label="AI Chat Panel"
                 >
-                     <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
-                        <div className="flex items-center gap-3 text-white">
-                            <Sparkles className="w-5 h-5 text-purple-400 md:hidden"/>
-                             <h2 className="text-lg font-bold hidden md:block">AI Assistant</h2>
-                        </div>
+                     <header className="flex items-center justify-end whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16">
                         <div className="flex items-center">
                             <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
                                 <RefreshCw className="w-4 h-4" />

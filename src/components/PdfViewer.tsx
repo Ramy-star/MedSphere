@@ -1,6 +1,5 @@
-
 'use client';
-import { useState, useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import { useState, useRef, useEffect, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Button } from './ui/button';
@@ -22,10 +21,9 @@ const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.05;
 
-const PdfViewer = forwardRef(({ file, onLoadSuccess: onLoadSuccessProp }: { file: string, onLoadSuccess?: () => void }, ref) => {
+const PdfViewer = forwardRef(({ file, onTextExtracted }: { file: string, onTextExtracted?: (text: string | null) => void }, ref) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const isMobile = useIsMobile();
   const [scale, setScale] = useState(isMobile ? 0.25 : 1);
   const { toast } = useToast();
@@ -33,25 +31,33 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess: onLoadSuccessProp }: { file
   
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
-  useImperativeHandle(ref, () => ({
-    async extractText() {
-      if (!pdf) {
-        throw new Error("PDF document not loaded.");
-      }
-      let fullText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        fullText += textContent.items.map(item => ('str' in item ? item.str : '')).join(' ') + '\n';
-      }
-      return fullText;
+  async function extractTextFromPdf(pdf: PDFDocumentProxy) {
+    let fullText = '';
+    for (let i = 1; i <= pdf.numPages; i++) {
+        try {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            fullText += textContent.items.map(item => ('str' in item ? item.str : '')).join(' ') + '\n';
+        } catch (error) {
+            console.error(`Error extracting text from page ${i}:`, error);
+            // Continue to next page
+        }
     }
-  }));
+    return fullText;
+  }
 
-  function onDocumentLoadSuccess(loadedPdf: PDFDocumentProxy): void {
-    setPdf(loadedPdf);
+  async function onDocumentLoadSuccess(loadedPdf: PDFDocumentProxy): Promise<void> {
     setNumPages(loadedPdf.numPages);
-    onLoadSuccessProp?.();
+    
+    if (onTextExtracted) {
+        try {
+            const text = await extractTextFromPdf(loadedPdf);
+            onTextExtracted(text);
+        } catch (error) {
+            console.error("Failed to extract text from PDF:", error);
+            onTextExtracted(null);
+        }
+    }
   }
 
   function onDocumentLoadError(error: Error) {
@@ -61,11 +67,11 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess: onLoadSuccessProp }: { file
       title: 'Error loading PDF',
       description: 'The file could not be loaded. It may be corrupted or in an unsupported format.',
     });
+    // Notify parent that text extraction failed
+    onTextExtracted?.(null);
   }
 
   const onRenderError = (error: Error) => {
-    // This is a common warning in react-pdf when a render is cancelled.
-    // We can safely ignore it to keep the console clean.
     if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
         return;
     }
@@ -78,7 +84,6 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess: onLoadSuccessProp }: { file
   }
 
   useEffect(() => {
-    // Set initial scale based on device type
     setScale(isMobile ? 0.25 : 1);
   }, [isMobile]);
 

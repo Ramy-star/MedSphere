@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, forwardRef } from 'react';
@@ -13,7 +12,7 @@ const PdfViewer = dynamic(() => import('./PdfViewer'), {
   loading: () => <div className="text-white">Loading PDF viewer...</div>
 });
 
-const FilePreview = forwardRef(({ url, mime, itemName, pdfViewerRef, onPdfLoadSuccess }: { url: string, mime: string, itemName: string, pdfViewerRef?: React.Ref<any>, onPdfLoadSuccess?: () => void }, ref) => {
+const FilePreview = forwardRef(({ url, mime, itemName, onPdfTextExtracted }: { url: string, mime: string, itemName: string, onPdfTextExtracted?: (text: string | null) => void }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
 
@@ -52,7 +51,7 @@ const FilePreview = forwardRef(({ url, mime, itemName, pdfViewerRef, onPdfLoadSu
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer file={url} ref={pdfViewerRef} onLoadSuccess={onPdfLoadSuccess} />;
+    return <PdfViewer file={url} onTextExtracted={onPdfTextExtracted} />;
   }
   
   if (mime.startsWith('audio/')) {
