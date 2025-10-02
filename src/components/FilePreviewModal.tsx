@@ -1,5 +1,4 @@
 
-
 'use client';
 import {
   Dialog,
@@ -173,10 +172,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         hideCloseButton={true}
       >
         {/* Main container for preview and chat */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1 overflow-hidden h-full">
 
             {/* File Preview */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col h-full">
                 {/* Header */}
                 <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
                 <div className="flex items-center gap-4">
@@ -251,9 +250,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 448, opacity: 1 }} // 28rem
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col bg-white/5 border-l border-white/10 overflow-hidden h-full"
+                    className="flex flex-col border-l border-white/10 overflow-hidden h-full bg-white/5 backdrop-blur-lg"
                 >
-                    <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 backdrop-blur-sm">
+                     <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
                             <Sparkles className="w-5 h-5 text-blue-400" />
                             <h2 className="text-lg font-bold">AI Study Assistant</h2>
@@ -280,7 +279,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                         <Bot />
                                     </div>
-                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-2xl">
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
                                         <p className="text-slate-300">Hello! I am your AI assistant. Ask me anything about this document.</p>
                                     </div>
                                 </div>
@@ -290,8 +289,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 if (msg.role === 'user') {
                                     return (
                                         <div key={index} className="flex justify-end items-start gap-4 ml-10">
-                                            <div className="rounded-xl border border-blue-500/20 bg-blue-900/40 p-4 max-w-2xl backdrop-blur-lg">
-                                                <p className="text-slate-200">{msg.text}</p>
+                                            <div className="rounded-xl border border-blue-500/10 bg-blue-500/10 p-4 max-w-2xl">
+                                                <p className="text-slate-300">{msg.text}</p>
                                             </div>
                                             <Avatar className="h-10 w-10 flex-shrink-0">
                                                 <AvatarImage src={user?.photoURL ?? ''} alt={user?.displayName ?? 'User'} />
@@ -302,10 +301,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 }
                                 return (
                                     <div key={index} className="flex items-start gap-4 mr-10">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                             <Bot />
                                         </div>
-                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-2xl">
+                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
                                             <p className="text-slate-300 whitespace-pre-wrap">{msg.text}</p>
                                         </div>
                                     </div>
@@ -314,10 +313,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
                             {isAiThinking && (
                                 <div className="flex items-start gap-4 mr-10">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                         <Bot />
                                     </div>
-                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 max-w-sm w-full backdrop-blur-lg">
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 max-w-sm w-full">
                                         <div className="space-y-2">
                                             <Skeleton className="h-3 w-4/5" />
                                             <Skeleton className="h-3 w-full" />
@@ -330,7 +329,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <div className="mt-8">
                             <form onSubmit={handleChatSubmit} className="relative">
                                 <Input 
-                                    className="w-full rounded-full border border-white/10 bg-white/5 py-4 pl-6 pr-16 text-white placeholder-slate-400 backdrop-blur-lg focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary h-14 text-base"
+                                    className="w-full rounded-full border border-white/10 bg-white/5 py-4 pl-6 pr-16 text-white placeholder-slate-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary h-14 text-base backdrop-blur-lg"
                                     placeholder="Type your message..."
                                     value={chatInput}
                                     onChange={(e) => setChatInput(e.target.value)}
