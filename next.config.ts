@@ -72,6 +72,19 @@ const nextConfig: NextConfig = {
       }
     }
     
+    // Copy the PDF.js worker to the static folder
+    config.plugins = config.plugins || [];
+    config.plugins.push(
+      new (require('copy-webpack-plugin'))({
+        patterns: [
+          {
+            from: 'node_modules/pdfjs-dist/build/pdf.worker.min.mjs',
+            to: 'static/chunks/pdf.worker.min.mjs',
+          },
+        ],
+      })
+    );
+
     return config;
   },
 };

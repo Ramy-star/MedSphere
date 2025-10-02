@@ -182,7 +182,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [chatHistory.length, startNewChat]);
 
   const handlePdfTextExtracted = useCallback(async (pdf: PDFDocumentProxy) => {
-    if (documentText) return; // Already extracted
+    if (documentText) return; // Already extracted or in progress
 
     setIsExtracting(true);
     setDocumentText(null);

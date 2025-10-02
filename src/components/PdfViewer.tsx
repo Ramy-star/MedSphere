@@ -1,13 +1,14 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Document, Page, pdfjs, type PDFDocumentProxy } from 'react-pdf';
+import { Document, Page, pdfjs } from 'react-pdf';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+pdfjs.GlobalWorkerOptions.workerSrc = '/_next/static/chunks/pdf.worker.min.mjs';
 
 
 const options = {
@@ -46,7 +47,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }
 
   const onRenderError = (error: Error) => {
-    if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
+    if (error.name === 'AbortException' || (error.message && error.message.includes('TextLayer task cancelled'))) {
         // This error is expected when the user scrolls quickly or closes the modal.
         // We can safely ignore it.
         return;
