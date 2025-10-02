@@ -371,11 +371,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full md:w-[448px] w-full"
                     aria-label="AI Chat Panel"
+                    style={{ willChange: 'transform' }}
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
-                            <Sparkles className="w-5 h-5" />
-                            <h2 className="text-lg font-bold">AI Assistant</h2>
+                            <h2 className="text-lg font-bold"> </h2>
                         </div>
                         <div className="flex items-center">
                             <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
