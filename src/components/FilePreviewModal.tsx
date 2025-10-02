@@ -172,77 +172,78 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className="max-w-none w-screen h-screen rounded-none p-0 flex flex-col bg-slate-900/80 backdrop-blur-sm border-0"
         hideCloseButton={true}
       >
-        <DialogHeader className="hidden">
-            <DialogTitle>File Preview: {item.name}</DialogTitle>
-            <DialogDescription>Content of the file {item.name}.</DialogDescription>
-        </DialogHeader>
+        {/* Main container for preview and chat */}
+        <div className="flex flex-1 overflow-hidden">
 
-        {/* Header */}
-        <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10">
-                <X className="w-6 h-6" />
-            </Button>
-            <div className='flex items-center gap-3'>
-                <FileIcon className='w-5 h-5 text-slate-400' />
-                <span className="font-medium text-white truncate">{item.name}</span>
-            </div>
-          </div>
-          <div className='flex items-center gap-2'>
-            {isChatAvailable && (
-              <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
-                <Sparkles className="mr-2 h-4 w-4"/>
-                Chat with AI
-              </Button>
-            )}
-            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Download">
-                <Download className="w-5 h-5" />
-            </Button>
-             <Button variant="ghost" size="icon" onClick={handleOpenInNewTab} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Open in new tab">
-                <ExternalLink className="w-5 h-5" />
-            </Button>
-            {isAdmin && (
-             <Popover>
-                <PopoverTrigger asChild>
-                    <Button variant='default' className='rounded-full' disabled={!fileUrl}>
-                        <Share2 className="w-5 h-5 mr-2" />
-                        Share
+            {/* File Preview */}
+            <div className="flex-1 flex flex-col">
+                {/* Header */}
+                <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+                <div className="flex items-center gap-4">
+                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10">
+                        <X className="w-6 h-6" />
                     </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-80 border-slate-700 rounded-xl bg-slate-800 text-white shadow-lg mr-4">
-                    <div className="grid gap-4">
-                        <div className="space-y-2">
-                            <h4 className="font-medium leading-none">Share File</h4>
-                            <p className="text-sm text-slate-400">
-                                Anyone with this link can view the file.
-                            </p>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                            <Input defaultValue={fileUrl} readOnly className="h-8"/>
-                            <Button size="sm" className="px-3" onClick={handleCopyLink}>
-                                <span className="sr-only">Copy</span>
-                                <Share2 className="h-4 w-4" />
-                            </Button>
-                        </div>
+                    <div className='flex items-center gap-3'>
+                        <FileIcon className='w-5 h-5 text-slate-400' />
+                        <span className="font-medium text-white truncate">{item.name}</span>
                     </div>
-                </PopoverContent>
-            </Popover>
-            )}
-          </div>
-        </header>
+                </div>
+                <div className='flex items-center gap-2'>
+                    {isChatAvailable && (
+                    <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
+                        <Sparkles className="mr-2 h-4 w-4"/>
+                        Chat with AI
+                    </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Download">
+                        <Download className="w-5 h-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={handleOpenInNewTab} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Open in new tab">
+                        <ExternalLink className="w-5 h-5" />
+                    </Button>
+                    {isAdmin && (
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant='default' className='rounded-full' disabled={!fileUrl}>
+                                <Share2 className="w-5 h-5 mr-2" />
+                                Share
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-80 border-slate-700 rounded-xl bg-slate-800 text-white shadow-lg mr-4">
+                            <div className="grid gap-4">
+                                <div className="space-y-2">
+                                    <h4 className="font-medium leading-none">Share File</h4>
+                                    <p className="text-sm text-slate-400">
+                                        Anyone with this link can view the file.
+                                    </p>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Input defaultValue={fileUrl} readOnly className="h-8"/>
+                                    <Button size="sm" className="px-3" onClick={handleCopyLink}>
+                                        <span className="sr-only">Copy</span>
+                                        <Share2 className="h-4 w-4" />
+                                    </Button>
+                                </div>
+                            </div>
+                        </PopoverContent>
+                    </Popover>
+                    )}
+                </div>
+                </header>
 
-        {/* Content */}
-        <main className="flex-1 flex overflow-hidden">
-            <div className="flex-1 overflow-auto flex items-center justify-center relative">
-                {!loading && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
-                {!loading && !fileUrl && (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                      <p className="text-xl mb-3">File content not available.</p>
-                      <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
-                  </div>
-                )}
+                {/* Content */}
+                <main className="flex-1 overflow-auto flex items-center justify-center relative">
+                    {!loading && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
+                    {!loading && !fileUrl && (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                        <p className="text-xl mb-3">File content not available.</p>
+                        <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+                    </div>
+                    )}
+                </main>
             </div>
 
+            {/* AI Chat Sidebar */}
             <AnimatePresence>
               {showChat && (
                 <motion.aside
@@ -250,9 +251,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 448, opacity: 1 }} // 28rem
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col bg-white/5 border-l border-white/10 overflow-hidden"
+                    className="flex flex-col bg-white/5 border-l border-white/10 overflow-hidden h-full"
                 >
-                    <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
+                    <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 backdrop-blur-sm">
                         <div className="flex items-center gap-3 text-white">
                             <Sparkles className="w-5 h-5 text-blue-400" />
                             <h2 className="text-lg font-bold">AI Study Assistant</h2>
@@ -266,8 +267,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             </Button>
                         </div>
                     </header>
-                    <div className="flex-1 flex flex-col p-4 overflow-hidden">
-                        <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-2 -mr-2">
+                    <div className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
+                        <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
                             {isExtracting && (
                                 <div className="flex justify-center items-center text-slate-400 text-sm p-4">
                                     <p>Analyzing PDF for chat...</p>
@@ -289,7 +290,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 if (msg.role === 'user') {
                                     return (
                                         <div key={index} className="flex justify-end items-start gap-4 ml-10">
-                                            <div className="rounded-xl border border-blue-500/20 bg-blue-900/40 p-4 max-w-2xl">
+                                            <div className="rounded-xl border border-blue-500/20 bg-blue-900/40 p-4 max-w-2xl backdrop-blur-lg">
                                                 <p className="text-slate-200">{msg.text}</p>
                                             </div>
                                             <Avatar className="h-10 w-10 flex-shrink-0">
@@ -316,7 +317,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                         <Bot />
                                     </div>
-                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 max-w-sm w-full">
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 max-w-sm w-full backdrop-blur-lg">
                                         <div className="space-y-2">
                                             <Skeleton className="h-3 w-4/5" />
                                             <Skeleton className="h-3 w-full" />
@@ -326,7 +327,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 </div>
                             )}
                         </div>
-                        <div className="mt-4">
+                        <div className="mt-8">
                             <form onSubmit={handleChatSubmit} className="relative">
                                 <Input 
                                     className="w-full rounded-full border border-white/10 bg-white/5 py-4 pl-6 pr-16 text-white placeholder-slate-400 backdrop-blur-lg focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary h-14 text-base"
@@ -344,10 +345,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </motion.aside>
               )}
             </AnimatePresence>
-        </main>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
-
-
