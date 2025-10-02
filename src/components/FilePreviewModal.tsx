@@ -16,7 +16,7 @@ import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
 import { AnimatePresence, motion } from 'framer-motion';
-import { chatAboutDocument } from '@/ai/flows/chat-flow';
+import { chatAboutDocumentStream } from '@/ai/flows/chat-flow';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -203,23 +203,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     window.open(fileUrl, '_blank');
   };
 
-  const handleCopyLink = () => {
-    if(!fileUrl) return;
-    navigator.clipboard.writeText(fileUrl).then(() => {
-        toast({
-            title: "Link Copied!",
-            description: "A shareable link to this file has been copied.",
-        })
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
-        toast({
-            variant: "destructive",
-            title: "Failed to Copy",
-            description: "Could not copy the link.",
-        })
-    });
-  }
-
   const handleChatSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
     if (!chatInput.trim() || isAiThinking) return;
@@ -227,18 +210,18 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     let currentDocText = documentText;
 
     if (!currentDocText && pdfViewerRef.current) {
-        setIsExtracting(true);
-        try {
-            currentDocText = await pdfViewerRef.current.extractText();
-            setDocumentText(currentDocText);
-        } catch (err) {
-            console.error("Failed to extract PDF text on demand:", err);
-            toast({ variant: 'destructive', title: 'Could not read PDF', description: 'AI features are unavailable for this file.' });
-            setIsExtracting(false);
-            return;
-        } finally {
-            setIsExtracting(false);
-        }
+      setIsExtracting(true);
+      try {
+        currentDocText = await pdfViewerRef.current.extractText();
+        setDocumentText(currentDocText);
+      } catch (err) {
+        console.error("Failed to extract PDF text on demand:", err);
+        toast({ variant: 'destructive', title: 'Could not read PDF', description: 'AI features are unavailable for this file.' });
+        setIsExtracting(false);
+        return;
+      } finally {
+        setIsExtracting(false);
+      }
     }
     
     if (!currentDocText) {
@@ -253,8 +236,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(true);
     
     try {
-        const response = await chatAboutDocument({ question: newQuestion, documentContent: currentDocText });
-        setChatHistory(prev => [...prev, { role: 'model', text: response }]);
+      const responseStream = await chatAboutDocumentStream({ question: newQuestion, documentContent: currentDocText });
+      
+      let aiResponse = '';
+      setChatHistory(prev => [...prev, { role: 'model', text: '' }]);
+
+      for await (const chunk of responseStream) {
+        aiResponse += chunk;
+        setChatHistory(prev => {
+          const newHistory = [...prev];
+          newHistory[newHistory.length - 1] = { role: 'model', text: aiResponse };
+          return newHistory;
+        });
+      }
+
     } catch (error: any) {
         console.error("AI chat error:", error);
         setChatHistory(prev => [...prev, { role: 'model', text: error.message || 'Sorry, I encountered an error. Please try again.' }]);
@@ -294,44 +289,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </div>
                 </div>
                 <div className='flex items-center gap-2'>
-                    {isChatAvailable && (
-                    <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full" aria-label={showChat ? "Close AI chat" : "Open AI chat"}>
-                        <Sparkles className="mr-2 h-4 w-4"/>
-                        Chat with AI
-                    </Button>
-                    )}
                     <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10" title="Download">
                         <Download className="w-5 h-5" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={handleOpenInNewTab} disabled={!fileUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Open in new tab">
                         <ExternalLink className="w-5 h-5" />
                     </Button>
-                    {isAdmin && (
-                    <Popover>
-                        <PopoverTrigger asChild>
-                            <Button variant='default' className='rounded-full' disabled={!fileUrl}>
-                                <Share2 className="w-5 h-5 mr-2" />
-                                Share
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-80 border-slate-700 rounded-xl bg-slate-800 text-white shadow-lg mr-4">
-                            <div className="grid gap-4">
-                                <div className="space-y-2">
-                                    <h4 className="font-medium leading-none">Share File</h4>
-                                    <p className="text-sm text-slate-400">
-                                        Anyone with this link can view the file.
-                                    </p>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                    <Input defaultValue={fileUrl} readOnly className="h-8"/>
-                                    <Button size="sm" className="px-3" onClick={handleCopyLink} aria-label="Copy shareable link">
-                                        <span className="sr-only">Copy</span>
-                                        <Share2 className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            </div>
-                        </PopoverContent>
-                    </Popover>
+                    {isChatAvailable && (
+                    <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full" aria-label={showChat ? "Close AI chat" : "Open AI chat"}>
+                        <Sparkles className="mr-2 h-4 w-4"/>
+                        Chat with AI
+                    </Button>
                     )}
                 </div>
                 </header>
@@ -398,7 +366,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 />
                             ))}
 
-                            {isAiThinking && (
+                            {isAiThinking && chatHistory[chatHistory.length - 1]?.role !== 'model' && (
                                 <div className="w-full">
                                     <div className="h-1 bg-blue-500/50 animate-pulse rounded"></div>
                                 </div>
