@@ -10,10 +10,10 @@ import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, Sparkles, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
+import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { AnimatePresence, motion, useDragControls } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -30,6 +30,8 @@ import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Sparkles } from 'lucide-react';
+import { AiAssistantIcon } from './icons/AiAssistantIcon';
 
 
 // Define a type for the ref to hold the text extraction function
@@ -148,7 +150,6 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const pdfViewerRef = useRef<PdfViewerRef>(null);
-  const dragControls = useDragControls();
   
   const [showChat, setShowChat] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model', text: string }[]>([]);
@@ -161,7 +162,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const [chatHeight, setChatHeight] = useState(isMobile ? '50%' : '100%');
 
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -189,12 +189,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   useEffect(() => {
     // Reset state when a new item is opened, but don't close the chat panel
-    setChatHistory([]);
-    setDocumentText(null);
-    setIsAiThinking(false);
-    setShowConfirmNewChat(false);
-    setChatHeight(isMobile ? '50%' : '100%');
-  }, [item, isMobile]);
+    startNewChat();
+  }, [item, startNewChat]);
 
   useEffect(() => {
     // Scroll to bottom of chat history when it updates
@@ -321,6 +317,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <motion.div 
                 key="preview"
                 className="flex-1 flex flex-col h-full bg-transparent"
+                animate={{ width: showChat && isMobile ? 0 : '100%' }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
                 <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
@@ -335,11 +332,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </div>
                     <div className='flex items-center gap-1 sm:gap-2'>
                         {!isLink && (
-                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Download">
+                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Download">
                                 <Download className="w-5 h-5" />
                             </Button>
                         )}
-                        <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Open in new tab">
+                        <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Open in new tab">
                             <ExternalLink className="w-5 h-5" />
                         </Button>
                         {isChatAvailable && (
@@ -369,32 +366,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <motion.aside
                     key="chat"
                     initial={isMobile ? { y: '100%' } : { x: '100%' }}
-                    animate={isMobile ? { y: 0, height: chatHeight } : { x: 0 }}
+                    animate={isMobile ? { y: 0 } : { x: 0 }}
                     exit={isMobile ? { y: '100%' } : { x: '100%' }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden bg-[#1A1A1A] w-full absolute bottom-0 right-0 md:static md:h-full md:w-[448px] rounded-t-2xl md:rounded-none"
+                    className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full md:w-[448px] w-full"
                     aria-label="AI Chat Panel"
-                    drag={isMobile ? "y" : false}
-                    dragControls={dragControls}
-                    dragListener={false}
-                    dragConstraints={{ top: 0, bottom: 0 }}
-                    dragElastic={{ top: 0.1, bottom: 1 }}
-                    style={{ willChange: 'transform' }}
-                    onDragEnd={(event, info) => {
-                      if (info.offset.y > 100 && info.velocity.y > 200) {
-                        setShowChat(false);
-                      } else if (info.offset.y < -50) {
-                        setChatHeight('90%');
-                      } else {
-                        setChatHeight('50%');
-                      }
-                    }}
                 >
-                    {isMobile && (
-                      <div onPointerDown={(e) => dragControls.start(e)} className="w-full flex justify-center py-2 cursor-grab touch-none">
-                        <div className="w-12 h-1.5 bg-slate-600 rounded-full" />
-                      </div>
-                    )}
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
                             <Sparkles className="w-5 h-5" />
