@@ -30,7 +30,8 @@ import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Sparkles } from 'lucide-react';
+import { AiAssistantIcon } from './icons/AiAssistantIcon';
+
 
 type ChatMessageProps = {
     msg: { role: 'user' | 'model', text: string };
@@ -222,7 +223,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (!fileUrl || !item) return;
     try {
         setLoading(true);
-        setError(null);
+setError(null);
         const res = await fetch(fileUrl);
         if (!res.ok) throw new Error(`Failed to fetch file: ${res.statusText}`);
         const blob = await res.blob();
@@ -295,7 +296,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   
-  const filePreviewContainerStyle: React.CSSProperties = (isMobile && showChat) ? { opacity: 0, pointerEvents: 'none' } : { opacity: 1 };
+  const filePreviewContainerStyle = (isMobile && showChat) ? { opacity: 0, pointerEvents: 'none' as const } : { opacity: 1 };
 
 
   return (
@@ -313,73 +314,82 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         
         <div className="flex-1 h-full w-full relative overflow-hidden">
             {/* File Previewer */}
-            <div 
-              className={`absolute inset-0 flex flex-col h-full bg-slate-900 transition-opacity duration-300`}
-              style={filePreviewContainerStyle}
-            >
-                <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-                    <div className="flex items-center gap-2 overflow-hidden">
-                        <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
-                            <X className="w-6 h-6" />
-                        </Button>
-                        <div className="flex items-center gap-3 overflow-hidden">
-                          <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
-                          <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
-                        </div>
-                    </div>
-                    <div className='flex items-center gap-1 sm:gap-2'>
-                        {!isLink && (
-                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Download">
-                                <Download className="w-5 h-5" />
-                            </Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Open in new tab">
-                            <ExternalLink className="w-5 h-5" />
-                        </Button>
-                        {isChatAvailable && (
-                        <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 w-9 sm:h-auto sm:w-auto sm:px-4">
-                            <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                            <span className="hidden sm:inline">Chat</span>
-                        </Button>
-                        )}
-                    </div>
-                </header>
+            <AnimatePresence>
+                {!showChat || !isMobile ? (
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className={`absolute inset-0 flex flex-col h-full bg-slate-900 transition-opacity duration-300`}
+                        style={filePreviewContainerStyle}
+                    >
+                        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                                <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
+                                    <X className="w-6 h-6" />
+                                </Button>
+                                <div className="flex items-center gap-3 overflow-hidden">
+                                <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
+                                <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
+                                </div>
+                            </div>
+                            <div className='flex items-center gap-1 sm:gap-2'>
+                                {!isLink && (
+                                    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Download">
+                                        <Download className="w-5 h-5" />
+                                    </Button>
+                                )}
+                                <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Open in new tab">
+                                    <ExternalLink className="w-5 h-5" />
+                                </Button>
+                                {isChatAvailable && (
+                                <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
+                                    <AiAssistantIcon className="mr-0 sm:mr-2 h-4 w-4"/>
+                                    <span className="hidden sm:inline">Chat</span>
+                                </Button>
+                                )}
+                            </div>
+                        </header>
 
-                <main className="flex-1 overflow-auto flex items-center justify-center relative">
-                    {loading && <div className="text-white">Loading...</div>}
-                    {error && <div className="text-red-400">Error: {error}</div>}
-                    {!loading && !error && fileUrl && (
-                    <FilePreview 
-                        url={fileUrl} 
-                        mime={item.metadata?.mime ?? 'application/octet-stream'} 
-                        itemName={item.name}
-                        onPdfLoadSuccess={handlePdfTextExtracted}
-                    />
-                    )}
-                    {!loading && !fileUrl && (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                        <p className="text-xl mb-3">File content not available.</p>
-                        <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
-                    </div>
-                    )}
-                </main>
-            </div>
+                        <main className="flex-1 overflow-auto flex items-center justify-center relative">
+                            {loading && <div className="text-white">Loading...</div>}
+                            {error && <div className="text-red-400">Error: {error}</div>}
+                            {!loading && !error && fileUrl && (
+                            <FilePreview 
+                                url={fileUrl} 
+                                mime={item.metadata?.mime ?? 'application/octet-stream'} 
+                                itemName={item.name}
+                                onPdfTextExtracted={handlePdfTextExtracted}
+                            />
+                            )}
+                            {!loading && !fileUrl && (
+                            <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                                <p className="text-xl mb-3">File content not available.</p>
+                                <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+                            </div>
+                            )}
+                        </main>
+                    </motion.div>
+                 ) : null}
+            </AnimatePresence>
+
 
             {/* Chat Panel */}
             <AnimatePresence>
               {showChat && (
                 <motion.div
                     key="chat-panel"
-                    initial={{ y: '100%' }}
-                    animate={{ y: 0 }}
-                    exit={{ y: '100%' }}
+                    initial={{ y: isMobile ? '100%' : 0, x: isMobile ? 0 : '100%' }}
+                    animate={{ y: 0, x: 0 }}
+                    exit={{ y: isMobile ? '100%' : 0, x: isMobile ? 0 : '100%' }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20 md:w-[448px] md:relative"
+                    className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20 md:w-[448px] md:h-auto md:relative md:border-l md:border-slate-800"
                     aria-label="AI Chat Panel"
+                    style={{ willChange: 'transform' }}
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16">
                         <div className="flex items-center gap-2">
-                            <Sparkles className="h-6 w-6 text-purple-400" />
+                            <AiAssistantIcon className="h-6 w-6" />
                             <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
                         </div>
                         <div className="flex items-center">
