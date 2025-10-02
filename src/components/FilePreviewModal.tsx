@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -31,6 +30,7 @@ import {
 import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
+import { Skeleton } from './ui/skeleton';
 
 
 // Define a type for the ref to hold the text extraction function
@@ -410,8 +410,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             ))}
 
                             {isAiThinking && !isExtracting && (
-                                <div className="w-full mt-4">
-                                    <div className="h-1 bg-blue-500/50 animate-pulse rounded"></div>
+                                <div className="space-y-2">
+                                    <Skeleton className="h-4 w-[80%] rounded-lg" />
+                                    <Skeleton className="h-4 w-[95%] rounded-lg" />
+                                    <Skeleton className="h-4 w-[60%] rounded-lg" />
                                 </div>
                             )}
                         </div>
