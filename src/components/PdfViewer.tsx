@@ -43,6 +43,8 @@ const PdfViewer = ({ file }: { file: string }) => {
 
   const onRenderError = (error: Error) => {
     if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
+        // This error is expected when the user scrolls quickly or closes the modal.
+        // We can safely ignore it.
         return;
     }
     console.error('Failed to render PDF page:', error);
