@@ -170,7 +170,7 @@ export const FileCard = React.memo(function FileCard({
                   <Button 
                   variant="ghost" 
                   size="icon" 
-                  className="w-8 h-8 text-slate-400 hover:text-white hover:bg-slate-700"
+                  className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
                   >
                       <MoreVertical className="w-5 h-5" />
                   </Button>
@@ -180,17 +180,10 @@ export const FileCard = React.memo(function FileCard({
                 align="end"
               >
                 {isAdmin && (
-                  <>
                     <DropdownMenuItem onClick={onRename} className="cursor-pointer">
                       <Edit className="mr-2 h-4 w-4" />
                       <span>Rename</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Delete</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                  </>
                 )}
                 {!isLink && (
                      <DropdownMenuItem 
@@ -206,6 +199,15 @@ export const FileCard = React.memo(function FileCard({
                     <ExternalLink className="mr-2 h-4 w-4" />
                     <span>Open in new tab</span>
                 </DropdownMenuItem>
+                {isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
+                  </>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
         </div>

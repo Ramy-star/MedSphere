@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
 import React from 'react';
@@ -76,7 +76,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                             <Button 
                                 variant="ghost" 
                                 size="icon" 
-                                className="w-8 h-8 text-slate-400 hover:text-white hover:bg-slate-700"
+                                className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </Button>
@@ -121,7 +121,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                               <Button 
                                   variant="ghost" 
                                   size="icon" 
-                                  className="absolute top-2 right-2 w-8 h-8 text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity"
+                                  className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity"
                                   onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                               >
                                   <MoreVertical className="w-5 h-5" />
