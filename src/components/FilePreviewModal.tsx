@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import FilePreview from './FilePreview';
@@ -23,7 +24,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
+  AlertDialogDescription as AlertDialogDesc,
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
@@ -421,9 +422,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
               <AlertDialogHeader className="p-6 pb-0">
                 <AlertDialogTitle>Start New Chat?</AlertDialogTitle>
-                <AlertDialogDescription>
+                <AlertDialogDesc>
                   Are you sure you want to start a new chat? Your current conversation history will be cleared.
-                </AlertDialogDescription>
+                </AlertDialogDesc>
               </AlertDialogHeader>
               <AlertDialogFooter className="p-6 pt-4">
                 <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
@@ -435,3 +436,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
