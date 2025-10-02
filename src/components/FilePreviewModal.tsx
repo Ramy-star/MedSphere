@@ -276,13 +276,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             )}
                             
                             {chatHistory.length === 0 && !isAiThinking && !isExtracting && (
-                                <div className="flex items-start gap-4 mr-10">
-                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                                        <Bot />
-                                    </div>
-                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg">
-                                        <p className="text-slate-200">Hello! I am your AI assistant. Ask me anything about this document.</p>
-                                    </div>
+                                <div className="prose prose-sm max-w-full text-slate-200">
+                                    <p>Hello! I am your AI assistant. Ask me anything about this document.</p>
                                 </div>
                             )}
 
@@ -301,42 +296,32 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     )
                                 }
                                 return (
-                                    <div key={index} className="flex items-start gap-4 mr-10">
-                                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                                            <Bot />
-                                        </div>
-                                        <div className="prose prose-sm max-w-full text-slate-200 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg">
-                                            <ReactMarkdown
-                                              components={{
-                                                h2: ({node, ...props}) => <h2 className="text-white" {...props} />,
-                                                h3: ({node, ...props}) => <h3 className="text-white" {...props} />,
-                                                p: ({node, ...props}) => <p className="text-slate-200" {...props} />,
-                                                strong: ({node, ...props}) => <strong className="text-white" {...props} />,
-                                                ul: ({node, ...props}) => <ul className="text-slate-200" {...props} />,
-                                                ol: ({node, ...props}) => <ol className="text-slate-200" {...props} />,
-                                                li: ({node, ...props}) => <li className="text-slate-200" {...props} />,
-                                                code: ({node, ...props}) => <code className="text-amber-300 bg-black/50 rounded-sm px-1" {...props} />,
-                                                pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
-                                              }}
-                                            >
-                                                {msg.text}
-                                            </ReactMarkdown>
-                                        </div>
+                                    <div key={index} className="prose prose-sm max-w-full text-slate-200">
+                                        <ReactMarkdown
+                                          components={{
+                                            h2: ({node, ...props}) => <h2 className="text-white" {...props} />,
+                                            h3: ({node, ...props}) => <h3 className="text-white" {...props} />,
+                                            p: ({node, ...props}) => <p className="text-slate-200" {...props} />,
+                                            strong: ({node, ...props}) => <strong className="text-white" {...props} />,
+                                            ul: ({node, ...props}) => <ul className="text-slate-200" {...props} />,
+                                            ol: ({node, ...props}) => <ol className="text-slate-200" {...props} />,
+                                            li: ({node, ...props}) => <li className="text-slate-200" {...props} />,
+                                            code: ({node, ...props}) => <code className="text-amber-300 bg-black/50 rounded-sm px-1" {...props} />,
+                                            pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
+                                          }}
+                                        >
+                                            {msg.text}
+                                        </ReactMarkdown>
                                     </div>
                                 )
                             })}
 
                             {isAiThinking && (
-                                <div className="flex items-start gap-4 mr-10">
-                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                                        <Bot />
-                                    </div>
-                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-sm w-full">
-                                        <div className="space-y-2">
-                                            <Skeleton className="h-3 w-4/5" />
-                                            <Skeleton className="h-3 w-full" />
-                                            <Skeleton className="h-3 w-3/4" />
-                                        </div>
+                                <div className="w-full">
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-3 w-4/5" />
+                                        <Skeleton className="h-3 w-full" />
+                                        <Skeleton className="h-3 w-3/4" />
                                     </div>
                                 </div>
                             )}
