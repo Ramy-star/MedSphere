@@ -13,7 +13,6 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { X, Download, Sparkles, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase/auth/use-user';
 import { AnimatePresence, motion, useDragControls } from 'framer-motion';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
@@ -330,7 +329,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             <X className="w-6 h-6" />
                         </Button>
                         <div className="flex items-center gap-3 overflow-hidden">
-                           <Icon className="w-6 h-6 shrink-0" color={color} />
+                           <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
                            <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
                         </div>
                     </div>
@@ -344,7 +343,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             <ExternalLink className="w-5 h-5" />
                         </Button>
                         {isChatAvailable && (
-                        <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full px-3 sm:px-4">
+                        <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full px-3 h-9 w-9 sm:h-auto sm:w-auto sm:px-4">
                             <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
                             <span className="hidden sm:inline">Chat</span>
                         </Button>
@@ -380,6 +379,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     dragListener={false}
                     dragConstraints={{ top: 0, bottom: 0 }}
                     dragElastic={{ top: 0.1, bottom: 1 }}
+                    style={{ willChange: 'transform' }}
                     onDragEnd={(event, info) => {
                       if (info.offset.y > 100 && info.velocity.y > 200) {
                         setShowChat(false);
