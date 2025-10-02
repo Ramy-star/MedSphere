@@ -22,7 +22,7 @@ const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.05;
 
-const PdfViewer = forwardRef(({ file }: { file: string }, ref) => {
+const PdfViewer = forwardRef(({ file, onLoadSuccess: onLoadSuccessProp }: { file: string, onLoadSuccess?: () => void }, ref) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
@@ -51,6 +51,7 @@ const PdfViewer = forwardRef(({ file }: { file: string }, ref) => {
   function onDocumentLoadSuccess(loadedPdf: PDFDocumentProxy): void {
     setPdf(loadedPdf);
     setNumPages(loadedPdf.numPages);
+    onLoadSuccessProp?.();
   }
 
   function onDocumentLoadError(error: Error) {

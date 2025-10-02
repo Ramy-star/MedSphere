@@ -186,6 +186,24 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [chatHistory.length, startNewChat]);
 
+  // Pre-extract PDF text as soon as the modal is opened
+  const preExtractText = useCallback(async () => {
+    if (item?.metadata?.mime !== 'application/pdf' || documentText || !pdfViewerRef.current) {
+      return;
+    }
+    setIsExtracting(true);
+    try {
+      const text = await pdfViewerRef.current.extractText();
+      setDocumentText(text);
+    } catch (err) {
+      console.error("Failed to pre-extract PDF text:", err);
+      // Don't show a toast here, it might be aggressive. We'll handle it if they try to chat.
+    } finally {
+      setIsExtracting(false);
+    }
+  }, [item, documentText]);
+  
+
   useEffect(() => {
     // Reset state when a new item is opened, but don't close the chat panel
     startNewChat();
@@ -257,25 +275,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     e?.preventDefault();
     if (!chatInput.trim() || isAiThinking) return;
 
-    let currentDocText = documentText;
-
-    if (!currentDocText && pdfViewerRef.current) {
-      setIsExtracting(true);
-      try {
-        currentDocText = await pdfViewerRef.current.extractText();
-        setDocumentText(currentDocText);
-      } catch (err) {
-        console.error("Failed to extract PDF text on demand:", err);
-        toast({ variant: 'destructive', title: 'Could not read PDF', description: 'AI features are unavailable for this file.' });
-        setIsExtracting(false);
-        return;
-      } finally {
-        setIsExtracting(false);
-      }
-    }
-    
-    if (!currentDocText) {
-       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content.' });
+    // Use pre-extracted text
+    if (!documentText) {
+       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading.' });
        return;
     }
 
@@ -286,7 +288,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(true);
     
     try {
-      const aiResponse = await chatAboutDocument({ question: newQuestion, documentContent: currentDocText });
+      const aiResponse = await chatAboutDocument({ question: newQuestion, documentContent: documentText });
       setChatHistory(prev => [...prev, { role: 'model', text: aiResponse }]);
     } catch (error: any) {
         console.error("AI chat error:", error);
@@ -297,9 +299,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
+  
+  const previewContainerClass = isMobile && showChat ? "opacity-0 pointer-events-none" : "opacity-100";
 
-  const shouldShowPreview = !isMobile || !showChat;
-  const shouldShowChat = (isMobile && showChat) || (!isMobile);
 
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
@@ -315,45 +317,49 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </DialogHeader>
 
         <div className="flex flex-1 overflow-hidden h-full">
-            {shouldShowPreview && (
-              <motion.div 
-                  key="preview"
-                  className="flex-1 flex flex-col h-full bg-transparent"
-                  animate={{ width: showChat ? '100%' : '100%' }}
-                  transition={{ duration: 0.3, ease: 'easeInOut' }}
-              >
-                <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-                      <div className="flex items-center gap-2 overflow-hidden">
-                          <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
-                              <X className="w-6 h-6" />
-                          </Button>
-                          <div className="flex items-center gap-3 overflow-hidden">
-                            <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
-                            <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
-                          </div>
-                      </div>
-                      <div className='flex items-center gap-1 sm:gap-2'>
-                          {!isLink && (
-                              <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Download">
-                                  <Download className="w-5 h-5" />
-                              </Button>
-                          )}
-                          <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Open in new tab">
-                              <ExternalLink className="w-5 h-5" />
-                          </Button>
-                          {isChatAvailable && (
-                          <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full px-3 h-9 w-9 sm:h-auto sm:w-auto sm:px-4">
-                              <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                              <span className="hidden sm:inline">Chat</span>
-                          </Button>
-                          )}
-                      </div>
-                  </header>
+            <div className={`flex-1 flex flex-col h-full bg-transparent transition-opacity duration-300 ${previewContainerClass}`}>
+                {!showChat && (
+                  <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
+                                <X className="w-6 h-6" />
+                            </Button>
+                            <div className="flex items-center gap-3 overflow-hidden">
+                              <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
+                              <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
+                            </div>
+                        </div>
+                        <div className='flex items-center gap-1 sm:gap-2'>
+                            {!isLink && (
+                                <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Download">
+                                    <Download className="w-5 h-5" />
+                                </Button>
+                            )}
+                            <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 sm:h-auto sm:w-auto" title="Open in new tab">
+                                <ExternalLink className="w-5 h-5" />
+                            </Button>
+                            {isChatAvailable && (
+                            <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 w-9 sm:h-auto sm:w-auto sm:px-4">
+                                <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
+                                <span className="hidden sm:inline">Chat</span>
+                            </Button>
+                            )}
+                        </div>
+                    </header>
+                  )}
 
                   <main className="flex-1 overflow-auto flex items-center justify-center relative">
                       {loading && <div className="text-white">Loading...</div>}
                       {error && <div className="text-red-400">Error: {error}</div>}
-                      {!loading && !error && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
+                      {!loading && !error && fileUrl && (
+                        <FilePreview 
+                            url={fileUrl} 
+                            mime={item.metadata?.mime ?? 'application/octet-stream'} 
+                            itemName={item.name} 
+                            pdfViewerRef={pdfViewerRef} 
+                            onPdfLoadSuccess={preExtractText}
+                        />
+                      )}
                       {!loading && !fileUrl && (
                       <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
                           <p className="text-xl mb-3">File content not available.</p>
@@ -361,16 +367,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                       </div>
                       )}
                   </main>
-              </motion.div>
-            )}
+              </div>
 
             <AnimatePresence>
-              {showChat && shouldShowChat && (
+              {showChat && (
                 <motion.aside
                     key="chat"
-                    initial={isMobile ? { y: '100%' } : { x: '100%' }}
-                    animate={isMobile ? { y: 0 } : { x: 0 }}
-                    exit={isMobile ? { y: '100%' } : { x: '100%' }}
+                    initial={{ y: '100%' }}
+                    animate={{ y: 0 }}
+                    exit={{ y: '100%' }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                     className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full md:w-[448px] w-full absolute inset-0 md:relative"
                     aria-label="AI Chat Panel"
@@ -378,7 +383,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
                             <Sparkles className="w-5 h-5 text-purple-400 md:hidden"/>
-                            <h2 className="text-lg font-bold hidden md:block">AI Assistant</h2>
+                             <h2 className="text-lg font-bold hidden md:block">AI Assistant</h2>
                         </div>
                         <div className="flex items-center">
                             <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
@@ -392,9 +397,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <div className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
                         <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
                             
-                            {chatHistory.length === 0 && !isAiThinking && !isExtracting && (
+                            {chatHistory.length === 0 && !isAiThinking && (
                                 <div className="prose prose-sm max-w-full text-slate-200">
-                                    <p>Hello! I am your AI assistant. Ask me anything about this document.</p>
+                                    {isExtracting ? <p>Analyzing document...</p> : <p>Hello! I am your AI assistant. Ask me anything about this document.</p>}
                                 </div>
                             )}
 

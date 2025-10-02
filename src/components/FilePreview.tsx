@@ -13,7 +13,7 @@ const PdfViewer = dynamic(() => import('./PdfViewer'), {
   loading: () => <div className="text-white">Loading PDF viewer...</div>
 });
 
-const FilePreview = forwardRef(({ url, mime, itemName, pdfViewerRef }: { url: string, mime: string, itemName: string, pdfViewerRef?: React.Ref<any> }, ref) => {
+const FilePreview = forwardRef(({ url, mime, itemName, pdfViewerRef, onPdfLoadSuccess }: { url: string, mime: string, itemName: string, pdfViewerRef?: React.Ref<any>, onPdfLoadSuccess?: () => void }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
 
@@ -52,7 +52,7 @@ const FilePreview = forwardRef(({ url, mime, itemName, pdfViewerRef }: { url: st
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer file={url} ref={pdfViewerRef} />;
+    return <PdfViewer file={url} ref={pdfViewerRef} onLoadSuccess={onPdfLoadSuccess} />;
   }
   
   if (mime.startsWith('audio/')) {
