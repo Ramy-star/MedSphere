@@ -12,17 +12,16 @@ import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, Share2, File as FileIcon, ExternalLink, Sparkles, MessageCircle, Send, RefreshCw, Bot } from 'lucide-react';
+import { X, Download, Share2, File as FileIcon, ExternalLink, Sparkles, Send, RefreshCw, Bot, User } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
 import { AnimatePresence, motion } from 'framer-motion';
-import { Textarea } from './ui/textarea';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { User } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 
 // Define a type for the ref to hold the text extraction function
@@ -56,9 +55,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, []);
 
   useEffect(() => {
-    // Reset state when a new item is opened or chat is toggled
+    // Reset state when a new item is opened
     handleNewChat();
-  }, [item, showChat, handleNewChat]);
+    // Do not close chat when item changes, user might want to keep it open
+  }, [item, handleNewChat]);
 
   useEffect(() => {
     // Scroll to bottom of chat history when it updates
@@ -95,6 +95,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }
 
   const handleClose = () => {
+    setShowChat(false); // Also close chat on modal close
     onOpenChange(false);
   }
   
@@ -171,110 +172,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className="max-w-none w-screen h-screen rounded-none p-0 flex flex-col bg-slate-900/80 backdrop-blur-sm border-0"
         hideCloseButton={true}
       >
-        <AnimatePresence>
-            {showChat && (
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }}
-                    className="absolute inset-0 z-20 flex flex-col bg-background"
-                >
-                    <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-6 py-3 bg-white/5 shrink-0">
-                        <div className="flex items-center gap-2 text-white">
-                            <Sparkles className="w-5 h-5 text-blue-400" />
-                            <h2 className="text-lg font-bold">AI Study Assistant</h2>
-                        </div>
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10" title="Start New Chat">
-                                <RefreshCw className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10" title="Close Chat">
-                                <X className="w-5 h-5" />
-                            </Button>
-                        </div>
-                    </header>
-                    <main className="flex-1 flex flex-col px-4 py-8 sm:px-6 lg:px-8 overflow-hidden">
-                        <div className="mx-auto w-full max-w-4xl flex-1 flex flex-col">
-                            <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
-                                {isExtracting && (
-                                    <div className="flex justify-center items-center text-slate-400 text-sm p-4">
-                                        <p>Analyzing PDF for chat...</p>
-                                    </div>
-                                )}
-                                
-                                {chatHistory.length === 0 && !isAiThinking && !isExtracting && (
-                                    <div className="flex items-start gap-4 mr-16">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                                            <Bot />
-                                        </div>
-                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-2xl">
-                                            <p className="text-slate-300">Hello! I am your AI assistant. Ask me anything about this document.</p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {chatHistory.map((msg, index) => {
-                                    if (msg.role === 'user') {
-                                        return (
-                                            <div key={index} className="flex justify-end items-start gap-4 ml-16">
-                                                <div className="rounded-xl border border-blue-500/10 bg-blue-500/10 p-4 backdrop-blur-lg max-w-2xl">
-                                                    <p className="text-slate-200">{msg.text}</p>
-                                                </div>
-                                                <Avatar className="h-10 w-10 flex-shrink-0">
-                                                    <AvatarImage src={user?.photoURL ?? ''} alt={user?.displayName ?? 'User'} />
-                                                    <AvatarFallback><User /></AvatarFallback>
-                                                </Avatar>
-                                            </div>
-                                        )
-                                    }
-                                    return (
-                                        <div key={index} className="flex items-start gap-4 mr-16">
-                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                                                <Bot />
-                                            </div>
-                                            <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-2xl">
-                                                <p className="text-slate-300 whitespace-pre-wrap">{msg.text}</p>
-                                            </div>
-                                        </div>
-                                    )
-                                })}
-
-                                {isAiThinking && (
-                                    <div className="flex items-start gap-4 mr-16">
-                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
-                                            <Bot />
-                                        </div>
-                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-sm w-full">
-                                            <div className="space-y-2">
-                                                <Skeleton className="h-3 w-4/5" />
-                                                <Skeleton className="h-3 w-full" />
-                                                <Skeleton className="h-3 w-3/4" />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="mt-8">
-                                <form onSubmit={handleChatSubmit} className="relative">
-                                    <Input 
-                                        className="w-full rounded-full border border-white/10 bg-white/5 py-4 pl-6 pr-16 text-white placeholder-slate-400 backdrop-blur-lg focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary h-14 text-base"
-                                        placeholder="Type your message here..."
-                                        value={chatInput}
-                                        onChange={(e) => setChatInput(e.target.value)}
-                                        disabled={isExtracting || isAiThinking}
-                                    />
-                                    <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white hover:bg-primary/80" disabled={isAiThinking || !chatInput.trim() || isExtracting}>
-                                        <Send className="w-5 h-5" />
-                                    </Button>
-                                </form>
-                            </div>
-                        </div>
-                    </main>
-                </motion.div>
-            )}
-        </AnimatePresence>
-
         <DialogHeader className="hidden">
             <DialogTitle>File Preview: {item.name}</DialogTitle>
             <DialogDescription>Content of the file {item.name}.</DialogDescription>
@@ -293,8 +190,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           </div>
           <div className='flex items-center gap-2'>
             {isChatAvailable && (
-              <Button variant="outline" onClick={() => setShowChat(!showChat)} className="rounded-full">
-                <Sparkles className="mr-2 h-4 w-4 text-blue-400"/>
+              <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
+                <Sparkles className="mr-2 h-4 w-4"/>
                 Chat with AI
               </Button>
             )}
@@ -336,7 +233,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
         {/* Content */}
         <main className="flex-1 flex overflow-hidden">
-            <div className="flex-1 overflow-auto flex items-center justify-center">
+            <div className="flex-1 overflow-auto flex items-center justify-center relative">
                 {!loading && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
                 {!loading && !fileUrl && (
                   <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
@@ -345,6 +242,108 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   </div>
                 )}
             </div>
+
+            <AnimatePresence>
+              {showChat && (
+                <motion.aside
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 448, opacity: 1 }} // 28rem
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="flex flex-col glass-card border-l border-white/10 overflow-hidden"
+                >
+                    <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
+                        <div className="flex items-center gap-3 text-white">
+                            <Sparkles className="w-5 h-5 text-blue-400" />
+                            <h2 className="text-lg font-bold">AI Study Assistant</h2>
+                        </div>
+                        <div className="flex items-center">
+                            <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat">
+                                <RefreshCw className="w-4 h-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Close Chat">
+                                <X className="w-5 h-5" />
+                            </Button>
+                        </div>
+                    </header>
+                    <div className="flex-1 flex flex-col p-4 overflow-hidden">
+                        <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-2 -mr-2">
+                            {isExtracting && (
+                                <div className="flex justify-center items-center text-slate-400 text-sm p-4">
+                                    <p>Analyzing PDF for chat...</p>
+                                </div>
+                            )}
+                            
+                            {chatHistory.length === 0 && !isAiThinking && !isExtracting && (
+                                <div className="flex items-start gap-4 mr-10">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                                        <Bot />
+                                    </div>
+                                    <div className="rounded-xl glass-card p-4 backdrop-blur-lg max-w-2xl">
+                                        <p className="text-slate-300">Hello! I am your AI assistant. Ask me anything about this document.</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {chatHistory.map((msg, index) => {
+                                if (msg.role === 'user') {
+                                    return (
+                                        <div key={index} className="flex justify-end items-start gap-4 ml-10">
+                                            <div className="rounded-xl bg-blue-900/40 border border-blue-500/20 p-4 max-w-2xl">
+                                                <p className="text-slate-200">{msg.text}</p>
+                                            </div>
+                                            <Avatar className="h-10 w-10 flex-shrink-0">
+                                                <AvatarImage src={user?.photoURL ?? ''} alt={user?.displayName ?? 'User'} />
+                                                <AvatarFallback><User /></AvatarFallback>
+                                            </Avatar>
+                                        </div>
+                                    )
+                                }
+                                return (
+                                    <div key={index} className="flex items-start gap-4 mr-10">
+                                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                                            <Bot />
+                                        </div>
+                                        <div className="rounded-xl glass-card p-4 backdrop-blur-lg max-w-2xl">
+                                            <p className="text-slate-300 whitespace-pre-wrap">{msg.text}</p>
+                                        </div>
+                                    </div>
+                                )
+                            })}
+
+                            {isAiThinking && (
+                                <div className="flex items-start gap-4 mr-10">
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
+                                        <Bot />
+                                    </div>
+                                    <div className="rounded-xl glass-card p-4 max-w-sm w-full">
+                                        <div className="space-y-2">
+                                            <Skeleton className="h-3 w-4/5" />
+                                            <Skeleton className="h-3 w-full" />
+                                            <Skeleton className="h-3 w-3/4" />
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="mt-4">
+                            <form onSubmit={handleChatSubmit} className="relative">
+                                <Input 
+                                    className="w-full rounded-full border border-white/10 bg-white/5 py-4 pl-6 pr-16 text-white placeholder-slate-400 backdrop-blur-lg focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary h-14 text-base"
+                                    placeholder="Type your message..."
+                                    value={chatInput}
+                                    onChange={(e) => setChatInput(e.target.value)}
+                                    disabled={isExtracting || isAiThinking}
+                                />
+                                <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-primary text-white hover:bg-primary/80" disabled={isAiThinking || !chatInput.trim() || isExtracting}>
+                                    <Send className="w-5 h-5" />
+                                </Button>
+                            </form>
+                        </div>
+                    </div>
+                </motion.aside>
+              )}
+            </AnimatePresence>
         </main>
       </DialogContent>
     </Dialog>
