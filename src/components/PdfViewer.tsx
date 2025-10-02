@@ -1,7 +1,7 @@
 'use client';
-import { useState, useRef, useEffect, forwardRef } from 'react';
+import { useState, useRef, useEffect, forwardRef, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -28,12 +28,13 @@ const PdfViewer = forwardRef(({ file, onTextExtracted }: { file: string, onTextE
   
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
-  async function extractTextFromPdf(pdf: PDFDocumentProxy) {
+  const extractTextFromPdf = useCallback(async (pdf: PDFDocumentProxy) => {
     let fullText = '';
     for (let i = 1; i <= pdf.numPages; i++) {
         try {
-            const page = await pdf.getPage(i);
+            const page: PDFPageProxy = await pdf.getPage(i);
             const textContent = await page.getTextContent();
+            // textContent.items can be either TextItem or TextMarkedContent
             fullText += textContent.items.map(item => ('str' in item ? item.str : '')).join(' ') + '\n';
         } catch (error) {
             console.error(`Error extracting text from page ${i}:`, error);
@@ -41,7 +42,7 @@ const PdfViewer = forwardRef(({ file, onTextExtracted }: { file: string, onTextE
         }
     }
     return fullText;
-  }
+  }, []);
 
   async function onDocumentLoadSuccess(loadedPdf: PDFDocumentProxy): Promise<void> {
     setNumPages(loadedPdf.numPages);
