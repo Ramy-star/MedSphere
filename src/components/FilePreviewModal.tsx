@@ -11,7 +11,7 @@ import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
+import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -331,8 +331,8 @@ setError(null);
                 </Button>
                 {isChatAvailable && (
                 <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
-                    <span className="sm:hidden">✨ Chat with AI</span>
-                    <span className="hidden sm:inline"><AiAssistantIcon className="mr-0 sm:mr-2 h-4 w-4"/></span>
+                    <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
+                    <span className="sm:hidden">Chat with AI</span>
                     <span className="hidden sm:inline">Chat</span>
                 </Button>
                 )}
