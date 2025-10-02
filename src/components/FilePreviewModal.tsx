@@ -9,6 +9,7 @@ import {
 import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
+import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -29,7 +30,7 @@ import {
 import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 
 
@@ -167,7 +168,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const startNewChat = useCallback(() => {
     setChatHistory([]);
-    // Do not reset documentText here. It should persist for the open file.
     setIsAiThinking(false);
     setShowConfirmNewChat(false);
   }, []);
@@ -180,34 +180,36 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [chatHistory.length, startNewChat]);
 
-  // This function will now receive the extracted text from the PdfViewer component
-  const handlePdfTextExtracted = useCallback((text: string | null) => {
-    if (text) {
-      setDocumentText(text);
-      setIsExtracting(false);
-    } else {
-      console.error("Failed to extract PDF text.");
-      toast({ variant: 'destructive', title: 'Text Extraction Failed', description: 'Could not read the document content.' });
-      setIsExtracting(false);
-    }
-  }, [toast]);
-  
-  useEffect(() => {
-    // Reset state when a new item is opened.
-    startNewChat();
-    setDocumentText(null); // Clear old document text
-    setShowChat(false); // Close chat panel
-    setError(null);
-    setLoading(false);
-    if (item?.metadata?.mime === 'application/pdf') {
-        setIsExtracting(true);
-    } else {
+  const preExtractText = useCallback(async () => {
+    if (!item || item.metadata?.mime !== 'application/pdf' || !item.metadata.storagePath || documentText) return;
+
+    setIsExtracting(true);
+    setDocumentText(null);
+    try {
+        const text = await contentService.extractTextFromPdfUrl(item.metadata.storagePath);
+        setDocumentText(text);
+    } catch (err: any) {
+        console.error("Failed to extract PDF text:", err);
+        toast({ variant: 'destructive', title: 'Text Extraction Failed', description: 'Could not read the document content.' });
+    } finally {
         setIsExtracting(false);
     }
-  }, [item, startNewChat]);
+  }, [item, documentText, toast]);
+  
+  useEffect(() => {
+    startNewChat();
+    setDocumentText(null); 
+    setShowChat(false); 
+    setError(null);
+    setLoading(false);
+    setIsExtracting(false);
+
+    if (item?.metadata?.mime === 'application/pdf' && item?.metadata?.storagePath) {
+        preExtractText();
+    }
+  }, [item, startNewChat, preExtractText]);
 
   useEffect(() => {
-    // Scroll to bottom of chat history when it updates
     if (chatContainerRef.current) {
         chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
@@ -296,7 +298,142 @@ setError(null);
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   
-  const filePreviewContainerStyle = (isMobile && showChat) ? { opacity: 0, pointerEvents: 'none' as const } : { opacity: 1 };
+  const renderFilePreview = () => (
+    <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="absolute inset-0 flex flex-col h-full bg-slate-900"
+    >
+        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+            <div className="flex items-center gap-2 overflow-hidden">
+                <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
+                    <X className="w-6 h-6" />
+                </Button>
+                <div className="flex items-center gap-3 overflow-hidden">
+                <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
+                <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
+                </div>
+            </div>
+            <div className='flex items-center gap-1 sm:gap-2'>
+                {!isLink && (
+                    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Download">
+                        <Download className="w-5 h-5" />
+                    </Button>
+                )}
+                <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Open in new tab">
+                    <ExternalLink className="w-5 h-5" />
+                </Button>
+                {isChatAvailable && (
+                <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
+                    <AiAssistantIcon className="mr-0 sm:mr-2 h-4 w-4"/>
+                    <span className="hidden sm:inline">Chat</span>
+                </Button>
+                )}
+            </div>
+        </header>
+
+        <main className="flex-1 overflow-auto flex items-center justify-center relative">
+            {loading && <div className="text-white">Loading...</div>}
+            {error && <div className="text-red-400">Error: {error}</div>}
+            {!loading && !error && fileUrl && (
+            <FilePreview 
+                url={fileUrl} 
+                mime={item.metadata?.mime ?? 'application/octet-stream'} 
+                itemName={item.name}
+            />
+            )}
+            {!loading && !fileUrl && (
+            <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                <p className="text-xl mb-3">File content not available.</p>
+                <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+            </div>
+            )}
+        </main>
+    </motion.div>
+  );
+
+  const renderChatView = () => (
+    <motion.div
+        key="chat-panel"
+        initial={{ y: '100%' }}
+        animate={{ y: 0 }}
+        exit={{ y: '100%' }}
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20 md:w-[448px] md:h-auto md:relative md:border-l md:border-slate-800"
+        aria-label="AI Chat Panel"
+    >
+        <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16">
+            <div className="flex items-center gap-2">
+                <AiAssistantIcon className="h-6 w-6" />
+                <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+            </div>
+            <div className="flex items-center">
+                <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
+                    <RefreshCw className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Close Chat" aria-label="Close chat panel">
+                    <X className="w-5 h-5" />
+                </Button>
+            </div>
+        </header>
+        <div className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
+            <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
+                
+                {chatHistory.length === 0 && !isAiThinking && (
+                    <div className="prose prose-sm max-w-full text-slate-200">
+                        {isExtracting ? (
+                            <div className="flex items-center gap-2">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <p>Analyzing document...</p>
+                            </div>
+                        ) : documentText ? (
+                            <p>Hello! I am your AI assistant. Ask me anything about this document.</p>
+                        ) : (
+                            <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                        )}
+                    </div>
+                )}
+
+                {chatHistory.map((msg, index) => (
+                    <ChatMessage
+                        key={`msg-${index}`}
+                        messageId={`msg-${index}`}
+                        msg={msg}
+                        onCopy={handleCopyToClipboard}
+                        copiedMessageId={copiedMessage}
+                    />
+                ))}
+
+                    {isAiThinking && (
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-[80%] rounded-lg" />
+                            <Skeleton className="h-4 w-[95%] rounded-lg" />
+                            <Skeleton className="h-4 w-[60%] rounded-lg" />
+                        </div>
+                    </div>
+                )}
+            </div>
+            <div className="mt-8">
+                <form onSubmit={handleChatSubmit} className="relative">
+                    <Input 
+                        className="w-full rounded-full border-none bg-[#343541] py-4 pl-6 pr-16 text-white placeholder-[#9A9A9A] 
+                        focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 !ring-0 !shadow-none h-14 text-base"
+                        
+                        placeholder="Ask anything"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        disabled={isExtracting || isAiThinking || !documentText}
+                    />
+                    <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
+                        <Send className="w-5 h-5" />
+                    </Button>
+                </form>
+            </div>
+        </div>
+    </motion.div>
+  );
 
 
   return (
@@ -313,151 +450,15 @@ setError(null);
         </DialogHeader>
         
         <div className="flex-1 h-full w-full relative overflow-hidden">
-            {/* File Previewer */}
             <AnimatePresence>
-                {!showChat || !isMobile ? (
-                    <motion.div 
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className={`absolute inset-0 flex flex-col h-full bg-slate-900 transition-opacity duration-300`}
-                        style={filePreviewContainerStyle}
-                    >
-                        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                                <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
-                                    <X className="w-6 h-6" />
-                                </Button>
-                                <div className="flex items-center gap-3 overflow-hidden">
-                                <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
-                                <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
-                                </div>
-                            </div>
-                            <div className='flex items-center gap-1 sm:gap-2'>
-                                {!isLink && (
-                                    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Download">
-                                        <Download className="w-5 h-5" />
-                                    </Button>
-                                )}
-                                <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Open in new tab">
-                                    <ExternalLink className="w-5 h-5" />
-                                </Button>
-                                {isChatAvailable && (
-                                <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
-                                    <AiAssistantIcon className="mr-0 sm:mr-2 h-4 w-4"/>
-                                    <span className="hidden sm:inline">Chat</span>
-                                </Button>
-                                )}
-                            </div>
-                        </header>
-
-                        <main className="flex-1 overflow-auto flex items-center justify-center relative">
-                            {loading && <div className="text-white">Loading...</div>}
-                            {error && <div className="text-red-400">Error: {error}</div>}
-                            {!loading && !error && fileUrl && (
-                            <FilePreview 
-                                url={fileUrl} 
-                                mime={item.metadata?.mime ?? 'application/octet-stream'} 
-                                itemName={item.name}
-                                onPdfTextExtracted={handlePdfTextExtracted}
-                            />
-                            )}
-                            {!loading && !fileUrl && (
-                            <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                                <p className="text-xl mb-3">File content not available.</p>
-                                <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
-                            </div>
-                            )}
-                        </main>
-                    </motion.div>
-                 ) : null}
-            </AnimatePresence>
-
-
-            {/* Chat Panel */}
-            <AnimatePresence>
-              {showChat && (
-                <motion.div
-                    key="chat-panel"
-                    initial={{ y: isMobile ? '100%' : 0, x: isMobile ? 0 : '100%' }}
-                    animate={{ y: 0, x: 0 }}
-                    exit={{ y: isMobile ? '100%' : 0, x: isMobile ? 0 : '100%' }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20 md:w-[448px] md:h-auto md:relative md:border-l md:border-slate-800"
-                    aria-label="AI Chat Panel"
-                    style={{ willChange: 'transform' }}
-                >
-                     <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16">
-                        <div className="flex items-center gap-2">
-                            <AiAssistantIcon className="h-6 w-6" />
-                            <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
-                        </div>
-                        <div className="flex items-center">
-                            <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
-                                <RefreshCw className="w-4 h-4" />
-                            </Button>
-                            <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Close Chat" aria-label="Close chat panel">
-                                <X className="w-5 h-5" />
-                            </Button>
-                        </div>
-                    </header>
-                    <div className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
-                        <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
-                            
-                            {chatHistory.length === 0 && !isAiThinking && (
-                                <div className="prose prose-sm max-w-full text-slate-200">
-                                    {isExtracting ? (
-                                      <div className="flex items-center gap-2">
-                                        <Skeleton className="h-5 w-5 rounded-full" />
-                                        <p>Analyzing document...</p>
-                                      </div>
-                                    ) : documentText ? (
-                                      <p>Hello! I am your AI assistant. Ask me anything about this document.</p>
-                                    ) : (
-                                      <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
-                                    )}
-                                </div>
-                            )}
-
-                            {chatHistory.map((msg, index) => (
-                                <ChatMessage
-                                    key={`msg-${index}`}
-                                    messageId={`msg-${index}`}
-                                    msg={msg}
-                                    onCopy={handleCopyToClipboard}
-                                    copiedMessageId={copiedMessage}
-                                />
-                            ))}
-
-                             {isAiThinking && (
-                                <div className="space-y-4">
-                                    <div className="space-y-2">
-                                        <Skeleton className="h-4 w-[80%] rounded-lg" />
-                                        <Skeleton className="h-4 w-[95%] rounded-lg" />
-                                        <Skeleton className="h-4 w-[60%] rounded-lg" />
-                                    </div>
-                                </div>
-                            )}
-                        </div>
-                        <div className="mt-8">
-                            <form onSubmit={handleChatSubmit} className="relative">
-                                <Input 
-                                    className="w-full rounded-full border-none bg-[#343541] py-4 pl-6 pr-16 text-white placeholder-[#9A9A9A] 
-                                    focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 !ring-0 !shadow-none h-14 text-base"
-                                    
-                                    placeholder="Ask anything"
-                                    value={chatInput}
-                                    onChange={(e) => setChatInput(e.target.value)}
-                                    disabled={isExtracting || isAiThinking || !documentText}
-                                />
-                                <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
-                                    <Send className="w-5 h-5" />
-                                </Button>
-                            </form>
-                        </div>
-                    </div>
-                </motion.div>
-              )}
+                {isMobile ? (
+                    showChat ? renderChatView() : renderFilePreview()
+                ) : (
+                    <>
+                        {renderFilePreview()}
+                        {showChat && renderChatView()}
+                    </>
+                )}
             </AnimatePresence>
         </div>
         <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>

@@ -7,6 +7,9 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sha256file } from './hashFile';
 import { nanoid } from 'nanoid';
+import * as pdfjs from 'pdfjs-dist';
+
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
 
 export type Content = {
   id: string;
@@ -72,6 +75,23 @@ function createProxiedUrl(secureUrl: string): string {
 
 
 export const contentService = {
+  async extractTextFromPdfUrl(url: string): Promise<string> {
+    try {
+        const loadingTask = pdfjs.getDocument(url);
+        const pdf = await loadingTask.promise;
+        let fullText = '';
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            fullText += textContent.items.map(item => (item as any).str).join(' ') + '\n';
+        }
+        return fullText;
+    } catch (error) {
+        console.error('Error extracting text from PDF:', error);
+        throw new Error('Failed to extract text from PDF.');
+    }
+  },
+  
   async seedInitialData() {
       if (!db) {
           console.error("Firestore is not initialized.");
