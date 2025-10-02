@@ -30,9 +30,10 @@ import {
 import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { Textarea } from './ui/textarea';
 
 
 type ChatMessageProps = {
@@ -317,7 +318,7 @@ setError(null);
                 </Button>
                 <div className="flex items-center gap-3 overflow-hidden">
                 <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
-                <span className="text-white font-medium truncate">{item.name}</span>
+                <span className="text-white font-medium truncate sr-only">{item.name}</span>
                 </div>
             </div>
             <div className='flex items-center gap-1 sm:gap-2'>
@@ -331,9 +332,8 @@ setError(null);
                 </Button>
                 {isChatAvailable && (
                 <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
-                    <span className="sm:hidden">✨</span>
+                    <span className="sm:hidden">✨ Chat with AI</span>
                     <span className="hidden sm:inline"><AiAssistantIcon className="mr-0 sm:mr-2 h-4 w-4"/></span>
-                    <span className="sm:hidden">Chat with AI</span>
                     <span className="hidden sm:inline">Chat</span>
                 </Button>
                 )}
@@ -425,13 +425,19 @@ setError(null);
             </div>
             <div className="mt-8">
                 <form onSubmit={handleChatSubmit} className="relative">
-                    <Input 
-                        className="w-full rounded-full border-none bg-[#343541] py-4 pl-6 pr-16 text-white placeholder-[#9A9A9A] 
-                        focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 !ring-0 !shadow-none h-14 text-base"
-                        
+                    <Textarea 
+                        className="w-full rounded-2xl border-none bg-[#343541] py-4 pl-6 pr-16 text-white placeholder-[#9A9A9A] 
+                        focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 !ring-0 !shadow-none text-base resize-none"
+                        rows={1}
                         placeholder="Ask anything"
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleChatSubmit();
+                            }
+                        }}
                         disabled={isExtracting || isAiThinking || !documentText}
                     />
                     <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
@@ -481,3 +487,5 @@ setError(null);
     </Dialog>
   );
 }
+
+    
