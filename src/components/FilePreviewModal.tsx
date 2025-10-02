@@ -14,7 +14,7 @@ import { X, Download, Sparkles, Send, RefreshCw, Copy, Check, ExternalLink, File
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
-import { AnimatePresence, motion } from 'framer-motion';
+import { AnimatePresence, motion, useDragControls } from 'framer-motion';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -109,6 +109,14 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
 
     return (
         <div className="prose prose-sm max-w-full text-slate-200 relative group">
+             <button
+                onClick={() => onCopy(msg.text, messageId)}
+                className="absolute top-0 right-0 p-1.5 rounded-full text-slate-400 hover:bg-slate-700 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                title="Copy message"
+                aria-label="Copy AI response to clipboard"
+            >
+                {copiedMessageId === messageId ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </button>
             <ReactMarkdown
               components={{
                 h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3" {...props} />,
@@ -132,16 +140,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
             >
                 {msg.text}
             </ReactMarkdown>
-            <div className="text-right mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button
-                    onClick={() => onCopy(msg.text, messageId)}
-                    className="p-1.5 rounded-full text-slate-300 hover:bg-slate-700 hover:text-white"
-                    title="Copy message"
-                    aria-label="Copy AI response to clipboard"
-                >
-                    {copiedMessageId === messageId ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                </button>
-            </div>
+           
         </div>
     );
 });
@@ -150,6 +149,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const pdfViewerRef = useRef<PdfViewerRef>(null);
+  const dragControls = useDragControls();
   
   const [showChat, setShowChat] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model', text: string }[]>([]);
@@ -162,6 +162,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const [chatHeight, setChatHeight] = useState(isMobile ? '50%' : '100%');
+
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -192,7 +194,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setDocumentText(null);
     setIsAiThinking(false);
     setShowConfirmNewChat(false);
-  }, [item]);
+    setChatHeight(isMobile ? '50%' : '100%');
+  }, [item, isMobile]);
 
   useEffect(() => {
     // Scroll to bottom of chat history when it updates
@@ -316,70 +319,82 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </DialogHeader>
 
         <div className="flex flex-1 overflow-hidden h-full">
-          <AnimatePresence initial={false}>
-            {(!isMobile || !showChat) && (
-               <motion.div 
-                    key="preview"
-                    className="flex-1 flex flex-col h-full bg-transparent"
-                    initial={isMobile ? { x: '-100%' } : { opacity: 1 }}
-                    animate={isMobile ? { x: 0 } : { opacity: 1 }}
-                    exit={isMobile ? { x: '-100%' } : { opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                >
-                    <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-                        <div className="flex items-center gap-2 overflow-hidden">
-                            <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
-                                <X className="w-6 h-6" />
-                            </Button>
-                            <div className="flex items-center gap-3 overflow-hidden">
-                               <Icon className={`w-6 h-6 ${color} shrink-0`} />
-                               <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
-                            </div>
+            <motion.div 
+                key="preview"
+                className="flex-1 flex flex-col h-full bg-transparent"
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+            >
+                <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
+                            <X className="w-6 h-6" />
+                        </Button>
+                        <div className="flex items-center gap-3 overflow-hidden">
+                           <Icon className="w-6 h-6 shrink-0" color={color} />
+                           <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
                         </div>
-                        <div className='flex items-center gap-1 sm:gap-2'>
-                            {!isLink && (
-                                <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Download">
-                                    <Download className="w-5 h-5" />
-                                </Button>
-                            )}
-                            <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Open in new tab">
-                                <ExternalLink className="w-5 h-5" />
+                    </div>
+                    <div className='flex items-center gap-1 sm:gap-2'>
+                        {!isLink && (
+                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Download">
+                                <Download className="w-5 h-5" />
                             </Button>
-                            {isChatAvailable && (
-                            <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full px-3 sm:px-4">
-                                <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                                <span className="hidden sm:inline">Chat</span>
-                            </Button>
-                            )}
-                        </div>
-                    </header>
-
-                    <main className="flex-1 overflow-auto flex items-center justify-center relative">
-                        {loading && <div className="text-white">Loading...</div>}
-                        {error && <div className="text-red-400">Error: {error}</div>}
-                        {!loading && !error && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
-                        {!loading && !fileUrl && (
-                        <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                            <p className="text-xl mb-3">File content not available.</p>
-                            <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
-                        </div>
                         )}
-                    </main>
-                </motion.div>
-            )}
-            </AnimatePresence>
+                        <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Open in new tab">
+                            <ExternalLink className="w-5 h-5" />
+                        </Button>
+                        {isChatAvailable && (
+                        <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full px-3 sm:px-4">
+                            <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
+                            <span className="hidden sm:inline">Chat</span>
+                        </Button>
+                        )}
+                    </div>
+                </header>
+
+                <main className="flex-1 overflow-auto flex items-center justify-center relative">
+                    {loading && <div className="text-white">Loading...</div>}
+                    {error && <div className="text-red-400">Error: {error}</div>}
+                    {!loading && !error && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
+                    {!loading && !fileUrl && (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                        <p className="text-xl mb-3">File content not available.</p>
+                        <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+                    </div>
+                    )}
+                </main>
+            </motion.div>
 
             <AnimatePresence>
               {showChat && (
                 <motion.aside
                     key="chat"
-                    initial={{ x: '100%' }}
-                    animate={{ x: 0 }}
-                    exit={{ x: '100%' }}
+                    initial={isMobile ? { y: '100%' } : { x: '100%' }}
+                    animate={isMobile ? { y: 0, height: chatHeight } : { x: 0 }}
+                    exit={isMobile ? { y: '100%' } : { x: '100%' }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden h-full bg-[#1A1A1A] w-full absolute md:static top-0 right-0 md:w-[448px]"
+                    className="flex flex-col overflow-hidden bg-[#1A1A1A] w-full absolute bottom-0 right-0 md:static md:h-full md:w-[448px] rounded-t-2xl md:rounded-none"
                     aria-label="AI Chat Panel"
+                    drag={isMobile ? "y" : false}
+                    dragControls={dragControls}
+                    dragListener={false}
+                    dragConstraints={{ top: 0, bottom: 0 }}
+                    dragElastic={{ top: 0.1, bottom: 1 }}
+                    onDragEnd={(event, info) => {
+                      if (info.offset.y > 100 && info.velocity.y > 200) {
+                        setShowChat(false);
+                      } else if (info.offset.y < -50) {
+                        setChatHeight('90%');
+                      } else {
+                        setChatHeight('50%');
+                      }
+                    }}
                 >
+                    {isMobile && (
+                      <div onPointerDown={(e) => dragControls.start(e)} className="w-full flex justify-center py-2 cursor-grab touch-none">
+                        <div className="w-12 h-1.5 bg-slate-600 rounded-full" />
+                      </div>
+                    )}
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
                             <Sparkles className="w-5 h-5" />
@@ -413,11 +428,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 />
                             ))}
 
-                            {(isAiThinking || isExtracting) && (
-                                <div className="space-y-2">
-                                    <Skeleton className="h-4 w-[80%] rounded-lg" />
-                                    <Skeleton className="h-4 w-[95%] rounded-lg" />
-                                    <Skeleton className="h-4 w-[60%] rounded-lg" />
+                             {isAiThinking && (
+                                <div className="space-y-4">
+                                    <div className="space-y-2">
+                                        <Skeleton className="h-4 w-[80%] rounded-lg" />
+                                        <Skeleton className="h-4 w-[95%] rounded-lg" />
+                                        <Skeleton className="h-4 w-[60%] rounded-lg" />
+                                    </div>
                                 </div>
                             )}
                         </div>
