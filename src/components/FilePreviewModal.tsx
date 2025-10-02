@@ -16,7 +16,7 @@ import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
 import { AnimatePresence, motion } from 'framer-motion';
-import { chatAboutDocumentStream } from '@/ai/flows/chat-flow';
+import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -252,20 +252,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setChatInput('');
     setIsAiThinking(true);
     
-    setChatHistory(prev => [...prev, { role: 'model', text: '' }]);
-
     try {
-        const stream = chatAboutDocumentStream({ question: newQuestion, documentContent: currentDocText });
-        for await (const chunk of stream) {
-            setChatHistory(prev => {
-                const newHistory = [...prev];
-                const lastMessage = newHistory[newHistory.length - 1];
-                if (lastMessage.role === 'model') {
-                    lastMessage.text += chunk;
-                }
-                return newHistory;
-            });
-        }
+        const response = await chatAboutDocument({ question: newQuestion, documentContent: currentDocText });
+        setChatHistory(prev => [...prev, { role: 'model', text: response }]);
     } catch (error: any) {
         console.error("AI chat error:", error);
         setChatHistory(prev => [...prev, { role: 'model', text: error.message || 'Sorry, I encountered an error. Please try again.' }]);
@@ -280,13 +269,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-screen rounded-none p-0 flex flex-col bg-slate-900 border-0"
+        className="max-w-none w-screen h-screen p-0 flex flex-col bg-slate-900 border-0"
         hideCloseButton={true}
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>File Preview: {item.name}</DialogTitle>
+          <DialogDescription>
+            Previewing file {item.name}. You can download, share, or chat with the document if supported.
+          </DialogDescription>
+        </DialogHeader>
+
         <div className="flex flex-1 overflow-hidden h-full">
 
             {/* File Preview */}
-            <div className="flex-1 flex flex-col h-full">
+            <div className="flex-1 flex flex-col h-full bg-slate-900">
                 <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10" aria-label="Close file preview">
@@ -402,7 +398,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 />
                             ))}
 
-                            {isAiThinking && chatHistory[chatHistory.length - 1]?.text === '' && (
+                            {isAiThinking && (
                                 <div className="w-full">
                                     <div className="h-1 bg-blue-500/50 animate-pulse rounded"></div>
                                 </div>
