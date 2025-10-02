@@ -170,6 +170,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className="max-w-none w-screen h-screen rounded-none p-0 flex flex-col bg-slate-900/80 backdrop-blur-sm border-0"
         hideCloseButton={true}
       >
+        <DialogTitle className="sr-only">File Preview: {item.name}</DialogTitle>
         {/* Main container for preview and chat */}
         <div className="flex flex-1 overflow-hidden h-full">
 
