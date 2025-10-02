@@ -170,6 +170,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const linkUrl = item?.metadata?.url;
   const openUrl = isLink ? linkUrl : fileUrl;
 
+  const startNewChat = useCallback(() => {
+    setChatHistory([]);
+    setDocumentText(null); // Allow re-extraction if needed
+    setIsAiThinking(false);
+    setShowConfirmNewChat(false);
+  }, []);
+
   const handleNewChat = useCallback(() => {
     if (chatHistory.length > 0) {
         setShowConfirmNewChat(true);
@@ -177,13 +184,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         startNewChat();
     }
   }, [chatHistory.length, startNewChat]);
-  
-  const startNewChat = useCallback(() => {
-    setChatHistory([]);
-    setDocumentText(null); // Allow re-extraction if needed
-    setIsAiThinking(false);
-    setShowConfirmNewChat(false);
-  }, []);
 
   useEffect(() => {
     // Reset state when a new item is opened, but don't close the chat panel
@@ -320,7 +320,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <div className="flex-1 flex flex-col h-full bg-transparent">
                 <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
                 <div className="flex items-center gap-4 overflow-hidden">
-                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 flex-shrink-0 rounded-full" aria-label="Close file preview">
+                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
                         <X className="w-6 h-6" />
                     </Button>
                     <div className="flex items-center gap-3 overflow-hidden">
