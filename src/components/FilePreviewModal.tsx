@@ -9,7 +9,7 @@ import {
 import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, from 'react';
 import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -149,20 +149,20 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
-  const pdfViewerRef = useRef<PdfViewerRef>(null);
+  const pdfViewerRef = React.useRef<PdfViewerRef>(null);
   
-  const [showChat, setShowChat] = useState(false);
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model', text: string }[]>([]);
-  const [chatInput, setChatInput] = useState('');
-  const [isAiThinking, setIsAiThinking] = useState(false);
-  const [documentText, setDocumentText] = useState<string | null>(null);
-  const [isExtracting, setIsExtracting] = useState(false);
-  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
-  const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [showChat, setShowChat] = React.useState(false);
+  const [chatHistory, setChatHistory] = React.useState<{ role: 'user' | 'model', text: string }[]>([]);
+  const [chatInput, setChatInput] = React.useState('');
+  const [isAiThinking, setIsAiThinking] = React.useState(false);
+  const [documentText, setDocumentText] = React.useState<string | null>(null);
+  const [isExtracting, setIsExtracting] = React.useState(false);
+  const [copiedMessage, setCopiedMessage] = React.useState<string | null>(null);
+  const [showConfirmNewChat, setShowConfirmNewChat] = React.useState(false);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = React.useRef<HTMLDivElement>(null);
 
 
   const fileUrl = item?.metadata?.storagePath;
@@ -170,7 +170,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const linkUrl = item?.metadata?.url;
   const openUrl = isLink ? linkUrl : fileUrl;
 
-  const handleNewChat = useCallback(() => {
+  const handleNewChat = React.useCallback(() => {
     if (chatHistory.length > 0) {
         setShowConfirmNewChat(true);
     } else {
@@ -178,14 +178,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [chatHistory.length]);
   
-  const startNewChat = useCallback(() => {
+  const startNewChat = React.useCallback(() => {
     setChatHistory([]);
     setDocumentText(null); // Allow re-extraction if needed
     setIsAiThinking(false);
     setShowConfirmNewChat(false);
   }, []);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Reset state when a new item is opened, but don't close the chat panel
     setChatHistory([]);
     setDocumentText(null);
@@ -193,7 +193,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setShowConfirmNewChat(false);
   }, [item]);
 
-  useEffect(() => {
+  React.useEffect(() => {
     // Scroll to bottom of chat history when it updates
     if (chatContainerRef.current) {
         chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
