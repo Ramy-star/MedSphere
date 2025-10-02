@@ -2,7 +2,7 @@
 
 import { useEffect, useState, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'react-pdf';
 
 
 // Import react-pdf styles here to ensure they are loaded with the dynamic component
