@@ -56,7 +56,7 @@ const nextConfig: NextConfig = {
         hostname: 'files.yourdomain.com', // Add your worker domain here
       },
       {
-        protocol: 'https',
+        protocol: 'https' as const,
         hostname: 'picsum.photos',
       },
     ],
@@ -71,6 +71,13 @@ const nextConfig: NextConfig = {
         config.externals.push('canvas');
       }
     }
+    
+    // Fix for react-pdf worker
+    config.resolve!.alias = {
+        ...config.resolve!.alias,
+        'pdfjs-dist/build/pdf.worker.min.mjs': require.resolve('pdfjs-dist/build/pdf.worker.min.mjs'),
+    };
+
     return config;
   },
 };

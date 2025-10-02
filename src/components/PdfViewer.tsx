@@ -7,10 +7,7 @@ import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-pdfjs.GlobalWorkerOptions.workerSrc = new URL(
-  'pdfjs-dist/build/pdf.worker.min.mjs',
-  import.meta.url,
-).toString();
+pdfjs.GlobalWorkerOptions.workerSrc = require('pdfjs-dist/build/pdf.worker.min.mjs');
 
 const options = {
   cMapUrl: '/cmaps/',
@@ -72,6 +69,8 @@ const PdfViewer = forwardRef(({ file, onTextExtracted }: { file: string, onTextE
   }
 
   const onRenderError = (error: Error) => {
+    // AbortException is thrown when a render is canceled, e.g., by quickly
+    // scrolling or unmounting the component. It's safe to ignore.
     if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
         return;
     }
