@@ -140,7 +140,7 @@ const PdfViewer = forwardRef(({ file }: { file: string }, ref) => {
         </div>
       </div>
 
-      {numPages && (
+      {numPages && !isMobile && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
            <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
             
