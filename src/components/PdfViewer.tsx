@@ -1,12 +1,14 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Document, Page, pdfjs, type PDFDocumentProxy, type OnDocumentLoadSuccess } from 'react-pdf';
+import { Document, Page, pdfjs, type PDFDocumentProxy } from 'react-pdf';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
+pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
 
 const options = {
   cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
@@ -18,6 +20,14 @@ const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.1;
 
+const getDistance = (touches: React.TouchList) => {
+    return Math.sqrt(
+        Math.pow(touches[0].clientX - touches[1].clientX, 2) +
+        Math.pow(touches[0].clientY - touches[1].clientY, 2)
+    );
+};
+
+
 const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf: PDFDocumentProxy) => void }) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
@@ -26,9 +36,12 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   
+  const initialPinchDistance = useRef<number | null>(null);
+  const initialScale = useRef<number>(1);
+  
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
-  const onDocumentLoadSuccessInternal: OnDocumentLoadSuccess = (loadedPdf) => {
+  const onDocumentLoadSuccessInternal = (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
     if(onLoadSuccess) {
       onLoadSuccess(loadedPdf);
@@ -50,7 +63,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
 
   const onRenderError = (error: Error) => {
     if (error.name === 'AbortException' || (error.message && error.message.includes('TextLayer task cancelled'))) {
-        return;
+        return; // Ignore AbortExceptions as they are expected on rapid interaction.
     }
     console.error('Failed to render PDF page:', error);
     toast({
@@ -100,8 +113,36 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
   const zoomIn = () => setScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        initialPinchDistance.current = getDistance(e.touches);
+        initialScale.current = scale;
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+      if (e.touches.length === 2 && initialPinchDistance.current) {
+          e.preventDefault();
+          const newDistance = getDistance(e.touches);
+          const newScale = initialScale.current * (newDistance / initialPinchDistance.current);
+          setScale(Math.max(MIN_ZOOM, Math.min(newScale, MAX_ZOOM)));
+      }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
+      if (e.touches.length < 2) {
+          initialPinchDistance.current = null;
+      }
+  };
+
   return (
-    <div className="w-full h-full flex flex-col items-center justify-start">
+    <div 
+      className="w-full h-full flex flex-col items-center justify-start"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+    >
       <div ref={containerRef} className="flex-1 w-full overflow-auto">
         <div className="flex justify-center items-start min-h-full">
             <Document
@@ -125,7 +166,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
         </div>
       </div>
 
-      {numPages && !isMobile && (
+      {numPages && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
            <div className="flex items-center gap-2 bg-black/80 text-white rounded-full p-2 shadow-lg">
             
