@@ -16,7 +16,7 @@ import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
 import { AnimatePresence, motion } from 'framer-motion';
-import { chatAboutDocument } from '@/ai/flows/chat-flow';
+import { chatAboutDocumentStream } from '@/ai/flows/chat-flow';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import ReactMarkdown from 'react-markdown';
 import {
@@ -26,8 +26,8 @@ import {
   AlertDialogContent,
   AlertDialogDescription as AlertDialogDesc,
   AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialogHeader as AlertDialogHeader2,
+  AlertDialogTitle as AlertDialogTitle2,
 } from "@/components/ui/alert-dialog"
 
 
@@ -69,6 +69,12 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
                 code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1" {...props} />,
                 pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                 hr: ({node, ...props}) => <hr className="border-slate-700 my-4" {...props} />,
+                 table: ({node, ...props}) => <table className="w-full border-collapse border border-slate-700" {...props} />,
+                thead: ({node, ...props}) => <thead className="bg-slate-800" {...props} />,
+                tbody: ({node, ...props}) => <tbody {...props} />,
+                tr: ({node, ...props}) => <tr className="border-b border-slate-700" {...props} />,
+                th: ({node, ...props}) => <th className="p-2 border-r border-slate-700 text-left text-white" {...props} />,
+                td: ({node, ...props}) => <td className="p-2 border-r border-slate-700" {...props} />,
               }}
             >
                 {msg.text}
@@ -216,24 +222,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleChatSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
-    if (!chatInput.trim()) return;
+    if (!chatInput.trim() || isAiThinking) return;
 
     let currentDocText = documentText;
 
-    // Step 1: Extract text if not already extracted
     if (!currentDocText && pdfViewerRef.current) {
-      setIsExtracting(true);
-      try {
-        currentDocText = await pdfViewerRef.current.extractText();
-        setDocumentText(currentDocText);
-      } catch (err) {
-        console.error("Failed to extract PDF text on demand:", err);
-        toast({ variant: 'destructive', title: 'Could not read PDF', description: 'AI features are unavailable for this file.' });
-        setIsExtracting(false);
-        return;
-      } finally {
-        setIsExtracting(false);
-      }
+        setIsExtracting(true);
+        try {
+            currentDocText = await pdfViewerRef.current.extractText();
+            setDocumentText(currentDocText);
+        } catch (err) {
+            console.error("Failed to extract PDF text on demand:", err);
+            toast({ variant: 'destructive', title: 'Could not read PDF', description: 'AI features are unavailable for this file.' });
+            setIsExtracting(false);
+            return;
+        } finally {
+            setIsExtracting(false);
+        }
     }
     
     if (!currentDocText) {
@@ -241,15 +246,26 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
        return;
     }
 
-    // Step 2: Add user message and get AI response
     const newQuestion = chatInput;
-    setChatHistory(prev => [...prev, { role: 'user', text: newQuestion }]);
+    const currentChatHistory = [...chatHistory, { role: 'user' as const, text: newQuestion }];
+    setChatHistory(currentChatHistory);
     setChatInput('');
     setIsAiThinking(true);
+    
+    setChatHistory(prev => [...prev, { role: 'model', text: '' }]);
 
     try {
-        const answer = await chatAboutDocument({ question: newQuestion, documentContent: currentDocText });
-        setChatHistory(prev => [...prev, { role: 'model', text: answer }]);
+        const stream = chatAboutDocumentStream({ question: newQuestion, documentContent: currentDocText });
+        for await (const chunk of stream) {
+            setChatHistory(prev => {
+                const newHistory = [...prev];
+                const lastMessage = newHistory[newHistory.length - 1];
+                if (lastMessage.role === 'model') {
+                    lastMessage.text += chunk;
+                }
+                return newHistory;
+            });
+        }
     } catch (error: any) {
         console.error("AI chat error:", error);
         setChatHistory(prev => [...prev, { role: 'model', text: error.message || 'Sorry, I encountered an error. Please try again.' }]);
@@ -264,16 +280,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-screen rounded-none p-0 flex flex-col bg-slate-900/80 backdrop-blur-sm border-0"
+        className="max-w-none w-screen h-screen rounded-none p-0 flex flex-col bg-slate-900 border-0"
         hideCloseButton={true}
       >
-        <DialogHeader>
-          <DialogTitle className="sr-only">File Preview: {item.name}</DialogTitle>
-          <DialogDescription className="sr-only">
-            Previewing file {item.name}. You can download, share, or chat with the document if supported.
-          </DialogDescription>
-        </DialogHeader>
-
         <div className="flex flex-1 overflow-hidden h-full">
 
             {/* File Preview */}
@@ -351,7 +360,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 448, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden h-full bg-slate-900 border-l border-slate-800"
+                    className="flex flex-col overflow-hidden h-full bg-slate-900"
                     aria-label="AI Chat Panel"
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
@@ -371,7 +380,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <div className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
                         <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
                             {isExtracting && (
-                                <div className="w-full mt-2">
+                               <div className="w-full mt-2">
                                     <div className="h-1 bg-blue-500/50 animate-pulse rounded"></div>
                                     <p className="text-center text-xs text-slate-400 mt-1">Analyzing PDF...</p>
                                 </div>
@@ -393,7 +402,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 />
                             ))}
 
-                            {isAiThinking && (
+                            {isAiThinking && chatHistory[chatHistory.length - 1]?.text === '' && (
                                 <div className="w-full">
                                     <div className="h-1 bg-blue-500/50 animate-pulse rounded"></div>
                                 </div>
@@ -420,12 +429,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </div>
         <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
             <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
-              <AlertDialogHeader className="p-6 pb-0">
-                <AlertDialogTitle>Start New Chat?</AlertDialogTitle>
+              <AlertDialogHeader2 className="p-6 pb-0">
+                <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
                 <AlertDialogDesc>
                   Are you sure you want to start a new chat? Your current conversation history will be cleared.
                 </AlertDialogDesc>
-              </AlertDialogHeader>
+              </AlertDialogHeader2>
               <AlertDialogFooter className="p-6 pt-4">
                 <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
                 <AlertDialogAction asChild><Button variant="destructive" onClick={startNewChat}>New Chat</Button></AlertDialogAction>
@@ -436,5 +445,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
