@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
+import { X, Download, Sparkles, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
@@ -339,7 +339,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </Button>
                     {isChatAvailable && (
                     <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
-                        <AiAssistantIcon className="mr-2 h-4 w-4"/>
+                        <Sparkles className="mr-2 h-4 w-4"/>
                         Chat with AI
                     </Button>
                     )}

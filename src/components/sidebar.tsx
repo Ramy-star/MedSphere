@@ -147,7 +147,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 variant="ghost" 
                 size="icon" 
                 onClick={() => setOpen(!open)} 
-                className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8"
+                className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8 rounded-full"
             >
                 <Menu size={20} />
             </Button>
