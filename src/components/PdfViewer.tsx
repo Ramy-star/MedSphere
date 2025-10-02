@@ -25,7 +25,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const isMobile = useIsMobile();
-  const [scale, setScale] = useState(isMobile ? 0.5 : 1);
+  const [scale, setScale] = useState(isMobile ? 0.25 : 1);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   
@@ -64,7 +64,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }
 
   useEffect(() => {
-    setScale(isMobile ? 0.5 : 1);
+    setScale(isMobile ? 0.25 : 1);
   }, [isMobile]);
 
   useEffect(() => {

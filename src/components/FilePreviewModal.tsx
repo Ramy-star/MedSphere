@@ -317,7 +317,7 @@ setError(null);
                 </Button>
                 <div className="flex items-center gap-3 overflow-hidden">
                 <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
-                <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
+                <span className="text-white font-medium truncate">{item.name}</span>
                 </div>
             </div>
             <div className='flex items-center gap-1 sm:gap-2'>
@@ -331,7 +331,9 @@ setError(null);
                 </Button>
                 {isChatAvailable && (
                 <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
-                    <AiAssistantIcon className="mr-0 sm:mr-2 h-4 w-4"/>
+                    <span className="sm:hidden">✨</span>
+                    <span className="hidden sm:inline"><AiAssistantIcon className="mr-0 sm:mr-2 h-4 w-4"/></span>
+                    <span className="sm:hidden">Chat with AI</span>
                     <span className="hidden sm:inline">Chat</span>
                 </Button>
                 )}
