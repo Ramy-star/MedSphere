@@ -12,6 +12,7 @@ import { allSubjectIcons } from '@/lib/file-data';
 import { usePathname } from 'next/navigation';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useMemo } from 'react';
+import { Button } from './ui/button';
 
 export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?: (file: File) => void }) {
   const { user } = useUser();
@@ -87,9 +88,9 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
     <div className="mb-6 space-y-4">
       <div className="flex items-start justify-between">
         <Breadcrumbs />
-        <div className="hidden md:flex items-center gap-3">
-          <button onClick={() => window.history.back()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowLeft size={16} /></button>
-          <button onClick={() => window.history.forward()} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors"><ArrowRight size={16} /></button>
+        <div className="hidden md:flex items-center gap-1">
+          <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full"><ArrowLeft size={16} /></Button>
+          <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full"><ArrowRight size={16} /></Button>
         </div>
       </div>
       

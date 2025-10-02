@@ -320,7 +320,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <div className="flex-1 flex flex-col h-full bg-transparent">
                 <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
                 <div className="flex items-center gap-4 overflow-hidden">
-                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 flex-shrink-0" aria-label="Close file preview">
+                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 flex-shrink-0 rounded-full" aria-label="Close file preview">
                         <X className="w-6 h-6" />
                     </Button>
                     <div className="flex items-center gap-3 overflow-hidden">
@@ -330,11 +330,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
                 <div className='flex items-center gap-2'>
                     {!isLink && (
-                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10" title="Download">
+                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Download">
                             <Download className="w-5 h-5" />
                         </Button>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Open in new tab">
+                    <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Open in new tab">
                         <ExternalLink className="w-5 h-5" />
                     </Button>
                     {isChatAvailable && (

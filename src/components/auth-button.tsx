@@ -90,7 +90,7 @@ export function AuthButton() {
   }
 
   return (
-    <Button onClick={handleLogin} disabled={busy} size="icon" className="rounded-full h-9 w-9" variant="outline">
+    <Button onClick={handleLogin} disabled={busy} size="icon" className="rounded-full h-9 w-9" variant="ghost">
        {busy ? '...' : <LogIn className="h-4 w-4" />}
     </Button>
   );
