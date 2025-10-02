@@ -278,8 +278,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                         <Bot />
                                     </div>
-                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                        <p className="text-slate-300">Hello! I am your AI assistant. Ask me anything about this document.</p>
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg">
+                                        <p className="text-slate-200">Hello! I am your AI assistant. Ask me anything about this document.</p>
                                     </div>
                                 </div>
                             )}
@@ -288,8 +288,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 if (msg.role === 'user') {
                                     return (
                                         <div key={index} className="flex justify-end items-start gap-4 ml-10">
-                                            <div className="rounded-xl border border-blue-500/10 bg-blue-500/10 p-4 max-w-2xl">
-                                                <p className="text-slate-300">{msg.text}</p>
+                                            <div className="rounded-xl border border-blue-500/20 bg-blue-900/40 p-4 backdrop-blur-lg max-w-2xl">
+                                                <p className="text-slate-200">{msg.text}</p>
                                             </div>
                                             <Avatar className="h-10 w-10 flex-shrink-0">
                                                 <AvatarImage src={user?.photoURL ?? ''} alt={user?.displayName ?? 'User'} />
@@ -303,8 +303,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                             <Bot />
                                         </div>
-                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4">
-                                            <p className="text-slate-300 whitespace-pre-wrap">{msg.text}</p>
+                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg">
+                                            <p className="text-slate-200 whitespace-pre-wrap">{msg.text}</p>
                                         </div>
                                     </div>
                                 )
@@ -315,7 +315,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                         <Bot />
                                     </div>
-                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 max-w-sm w-full">
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-sm w-full">
                                         <div className="space-y-2">
                                             <Skeleton className="h-3 w-4/5" />
                                             <Skeleton className="h-3 w-full" />
