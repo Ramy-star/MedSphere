@@ -40,7 +40,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [documentText, setDocumentText] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
-  const [copiedMessage, setCopiedMessage] = useState(false);
+  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -95,10 +95,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }
   
-  const handleCopyToClipboard = (text: string) => {
+  const handleCopyToClipboard = (text: string, messageId: string) => {
     navigator.clipboard.writeText(text).then(() => {
-        setCopiedMessage(true);
-        setTimeout(() => setCopiedMessage(false), 2000); // Reset after 2s
+        setCopiedMessage(messageId);
+        setTimeout(() => setCopiedMessage(null), 2000); // Reset after 2s
     }).catch(err => {
         console.error('Failed to copy: ', err);
         toast({
@@ -189,12 +189,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         hideCloseButton={true}
       >
         <DialogTitle className="sr-only">File Preview: {item.name}</DialogTitle>
-        {/* Main container for preview and chat */}
         <div className="flex flex-1 overflow-hidden h-full">
 
             {/* File Preview */}
             <div className="flex-1 flex flex-col h-full">
-                {/* Header */}
                 <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10">
@@ -248,7 +246,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
                 </header>
 
-                {/* Content */}
                 <main className="flex-1 overflow-auto flex items-center justify-center relative">
                     {!loading && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
                     {!loading && !fileUrl && (
@@ -260,15 +257,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </main>
             </div>
 
-            {/* AI Chat Sidebar */}
             <AnimatePresence>
               {showChat && (
                 <motion.aside
                     initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 448, opacity: 1 }} // 28rem
+                    animate={{ width: 448, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden h-full bg-white/5 backdrop-blur-lg border-l border-white/10"
+                    className="flex flex-col overflow-hidden h-full bg-slate-900/50 backdrop-blur-lg border-l border-white/10"
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
@@ -299,24 +295,18 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             )}
 
                             {chatHistory.map((msg, index) => {
+                                const messageId = `msg-${index}`;
                                 if (msg.role === 'user') {
                                     return (
-                                        <div key={index} className="flex justify-end items-start gap-4">
-                                            <div className="rounded-xl border border-blue-500/20 bg-blue-900/40 p-4 backdrop-blur-lg max-w-2xl">
+                                        <div key={messageId} className="flex justify-end">
+                                            <div className="rounded-full bg-blue-900/80 px-4 py-2 inline-block">
                                                 <p className="text-slate-200">{msg.text}</p>
                                             </div>
                                         </div>
                                     )
                                 }
                                 return (
-                                    <div key={index} className="prose prose-sm max-w-full text-slate-200 group relative">
-                                        <button 
-                                            onClick={() => handleCopyToClipboard(msg.text)}
-                                            className="absolute top-0 right-0 p-1.5 bg-slate-700/50 rounded-full text-slate-300 hover:bg-slate-700 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                                            title="Copy message"
-                                        >
-                                            {copiedMessage ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                                        </button>
+                                    <div key={messageId} className="prose prose-sm max-w-full text-slate-200 relative">
                                         <ReactMarkdown
                                           components={{
                                             h2: ({node, ...props}) => <h2 className="text-white" {...props} />,
@@ -326,12 +316,21 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                             ul: ({node, ...props}) => <ul className="text-slate-200" {...props} />,
                                             ol: ({node, ...props}) => <ol className="text-slate-200" {...props} />,
                                             li: ({node, ...props}) => <li className="text-slate-200" {...props} />,
-                                            code: ({node, ...props}) => <code className="text-amber-300 bg-black/50 rounded-sm px-1" {...props} />,
+                                            code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1" {...props} />,
                                             pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                                           }}
                                         >
                                             {msg.text}
                                         </ReactMarkdown>
+                                        <div className="text-right mt-2">
+                                            <button 
+                                                onClick={() => handleCopyToClipboard(msg.text, messageId)}
+                                                className="p-1.5 bg-slate-700/50 rounded-full text-slate-300 hover:bg-slate-700 hover:text-white transition-opacity"
+                                                title="Copy message"
+                                            >
+                                                {copiedMessage === messageId ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                                            </button>
+                                        </div>
                                     </div>
                                 )
                             })}
