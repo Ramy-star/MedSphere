@@ -20,6 +20,7 @@ import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import { Skeleton } from './ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
 
 
 // Define a type for the ref to hold the text extraction function
@@ -304,8 +305,22 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                             <Bot />
                                         </div>
-                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg">
-                                            <p className="text-slate-200 whitespace-pre-wrap">{msg.text}</p>
+                                        <div className="prose prose-sm max-w-full text-slate-200 rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg">
+                                            <ReactMarkdown
+                                              components={{
+                                                h2: ({node, ...props}) => <h2 className="text-white" {...props} />,
+                                                h3: ({node, ...props}) => <h3 className="text-white" {...props} />,
+                                                p: ({node, ...props}) => <p className="text-slate-200" {...props} />,
+                                                strong: ({node, ...props}) => <strong className="text-white" {...props} />,
+                                                ul: ({node, ...props}) => <ul className="text-slate-200" {...props} />,
+                                                ol: ({node, ...props}) => <ol className="text-slate-200" {...props} />,
+                                                li: ({node, ...props}) => <li className="text-slate-200" {...props} />,
+                                                code: ({node, ...props}) => <code className="text-amber-300 bg-black/50 rounded-sm px-1" {...props} />,
+                                                pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
+                                              }}
+                                            >
+                                                {msg.text}
+                                            </ReactMarkdown>
                                         </div>
                                     </div>
                                 )
