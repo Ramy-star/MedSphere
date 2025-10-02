@@ -1,4 +1,3 @@
-
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
