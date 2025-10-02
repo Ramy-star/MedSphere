@@ -1,15 +1,13 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteFirestoreDoc } from 'firebase/firestore';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sha256file } from './hashFile';
 import { nanoid } from 'nanoid';
-import * as pdfjs from 'pdfjs-dist';
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 export type Content = {
   id: string;
@@ -75,13 +73,13 @@ function createProxiedUrl(secureUrl: string): string {
 
 
 export const contentService = {
-  async extractTextFromPdf(pdf: pdfjs.PDFDocumentProxy): Promise<string> {
+  async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
     try {
         let fullText = '';
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
-            fullText += textContent.items.map(item => (item as any).str).join(' ') + '\n';
+            fullText += textContent.items.map(item => ('str' in item ? item.str : '')).join(' ') + '\n';
         }
         return fullText;
     } catch (error) {

@@ -1,13 +1,14 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { Document, Page, pdfjs, type PDFDocumentProxy } from 'react-pdf';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
+
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.mjs`;
+
 
 const options = {
   cMapUrl: '/cmaps/',
