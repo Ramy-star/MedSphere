@@ -306,7 +306,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-screen p-0 flex flex-col bg-transparent border-0"
+        className="max-w-none w-screen h-[100dvh] p-0 flex flex-col bg-transparent border-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
