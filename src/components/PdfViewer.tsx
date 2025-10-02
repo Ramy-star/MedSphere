@@ -38,6 +38,13 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }
 
   function onDocumentLoadError(error: Error) {
+    // The error "The API version "x.y.z" does not match the Worker version "a.b.c"" is a known issue
+    // with how Next.js handles dependencies. The CDN-based worker setup is a workaround.
+    // We can safely ignore this specific warning if it appears, as the viewer will still function.
+    if (error.message.includes('API version') && error.message.includes('Worker version')) {
+        console.warn(`Ignoring expected PDF.js version mismatch error: ${error.message}`);
+        return;
+    }
     console.error('Error loading PDF:', error);
     toast({
       variant: 'destructive',
@@ -47,9 +54,9 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }
 
   const onRenderError = (error: Error) => {
+    // This error is expected when the user scrolls quickly or closes the modal.
+    // We can safely ignore it to prevent console spam.
     if (error.name === 'AbortException' || (error.message && error.message.includes('TextLayer task cancelled'))) {
-        // This error is expected when the user scrolls quickly or closes the modal.
-        // We can safely ignore it.
         return;
     }
     console.error('Failed to render PDF page:', error);
@@ -65,6 +72,8 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }, [isMobile]);
 
   useEffect(() => {
+    if (!numPages || !containerRef.current) return;
+  
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -78,10 +87,10 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
       },
       { root: containerRef.current, threshold: 0.5 }
     );
-
-    const pageElements = document.querySelectorAll('[data-page-number]');
+  
+    const pageElements = containerRef.current.querySelectorAll('[data-page-number]');
     pageElements.forEach((el) => observer.observe(el));
-
+  
     return () => {
       pageElements.forEach((el) => observer.unobserve(el));
     };

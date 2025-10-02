@@ -181,21 +181,25 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [chatHistory.length, startNewChat]);
 
-  const handlePdfTextExtracted = useCallback(async (pdf: PDFDocumentProxy) => {
-    if (documentText) return; // Already extracted or in progress
+  const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
+    if (documentText || isExtracting) return;
 
     setIsExtracting(true);
-    setDocumentText(null);
     try {
-        const text = await contentService.extractTextFromPdf(pdf);
-        setDocumentText(text);
+      const text = await contentService.extractTextFromPdf(pdf);
+      setDocumentText(text);
     } catch (err: any) {
-        console.error("Failed to extract PDF text:", err);
-        toast({ variant: 'destructive', title: 'Text Extraction Failed', description: 'Could not read the document content.' });
+      console.error("Failed to extract PDF text:", err);
+      setDocumentText(null); // Ensure it's null on failure
+      toast({ 
+        variant: 'destructive', 
+        title: 'Text Extraction Failed', 
+        description: err.message || 'Could not read document content for chat.' 
+      });
     } finally {
-        setIsExtracting(false);
+      setIsExtracting(false);
     }
-  }, [documentText, toast]);
+  }, [documentText, isExtracting, toast]);
   
   useEffect(() => {
     startNewChat();
@@ -342,7 +346,7 @@ setError(null);
                   url={fileUrl} 
                   mime={item.metadata?.mime ?? 'application/octet-stream'} 
                   itemName={item.name}
-                  onPdfLoadSuccess={handlePdfTextExtracted}
+                  onPdfLoadSuccess={handlePdfLoadSuccess}
               />
             )}
             {!loading && !fileUrl && (
