@@ -74,11 +74,7 @@ function SearchResults() {
             if(item.metadata?.url) window.open(item.metadata.url, '_blank');
             return;
         }
-        if (isMobile) {
-            if(item.metadata?.storagePath) window.open(item.metadata.storagePath, '_blank');
-        } else {
-            setPreviewFile(item);
-        }
+        setPreviewFile(item);
     };
     
     const handleRename = useCallback(async (newName: string) => {

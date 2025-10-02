@@ -1,4 +1,3 @@
-
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink,
@@ -134,13 +133,15 @@ export const FileCard = React.memo(function FileCard({
         </div>
         <div 
             className="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer"
-            onClick={(e) => {
-                if (!(e.target instanceof HTMLElement && e.target.closest('[data-radix-collection-item]'))) {
-                  if (isLink && linkUrl) {
-                      window.open(linkUrl, '_blank');
-                  } else {
-                      onFileClick(item);
-                  }
+             onClick={(e) => {
+                // Prevent dropdown trigger from also triggering this
+                if (e.target instanceof HTMLElement && e.target.closest('[data-radix-collection-item]')) {
+                    return;
+                }
+                if (isLink && linkUrl) {
+                    window.open(linkUrl, '_blank');
+                } else {
+                    onFileClick(item);
                 }
               }}
         >

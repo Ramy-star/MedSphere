@@ -31,6 +31,7 @@ import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import { Skeleton } from './ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 // Define a type for the ref to hold the text extraction function
@@ -161,6 +162,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isMobile = useIsMobile();
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
@@ -315,59 +317,68 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </DialogHeader>
 
         <div className="flex flex-1 overflow-hidden h-full">
-
-            {/* File Preview */}
-            <div className="flex-1 flex flex-col h-full bg-transparent">
-                <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-                <div className="flex items-center gap-4 overflow-hidden">
-                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
-                        <X className="w-6 h-6" />
-                    </Button>
-                    <div className="flex items-center gap-3 overflow-hidden">
-                       <Icon className={`w-6 h-6 ${color} shrink-0`} />
-                       <span className="text-white font-medium truncate">{item.name}</span>
-                    </div>
-                </div>
-                <div className='flex items-center gap-2'>
-                    {!isLink && (
-                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Download">
-                            <Download className="w-5 h-5" />
+          <AnimatePresence initial={false}>
+            {(!isMobile || !showChat) && (
+               <motion.div 
+                    key="preview"
+                    className="flex-1 flex flex-col h-full bg-transparent"
+                    initial={isMobile ? { x: '-100%' } : { opacity: 1 }}
+                    animate={isMobile ? { x: 0 } : { opacity: 1 }}
+                    exit={isMobile ? { x: '-100%' } : { opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                >
+                    <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+                    <div className="flex items-center gap-4 overflow-hidden">
+                        <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
+                            <X className="w-6 h-6" />
                         </Button>
-                    )}
-                    <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Open in new tab">
-                        <ExternalLink className="w-5 h-5" />
-                    </Button>
-                    {isChatAvailable && (
-                    <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
-                        <Sparkles className="mr-2 h-4 w-4"/>
-                        Chat with AI
-                    </Button>
-                    )}
-                </div>
-                </header>
-
-                <main className="flex-1 overflow-auto flex items-center justify-center relative">
-                    {loading && <div className="text-white">Loading...</div>}
-                    {error && <div className="text-red-400">Error: {error}</div>}
-                    {!loading && !error && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
-                    {!loading && !fileUrl && (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                        <p className="text-xl mb-3">File content not available.</p>
-                        <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+                        <div className="flex items-center gap-3 overflow-hidden">
+                           <Icon className={`w-6 h-6 ${color} shrink-0`} />
+                           <span className="text-white font-medium truncate">{item.name}</span>
+                        </div>
                     </div>
-                    )}
-                </main>
-            </div>
+                    <div className='flex items-center gap-2'>
+                        {!isLink && (
+                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Download">
+                                <Download className="w-5 h-5" />
+                            </Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Open in new tab">
+                            <ExternalLink className="w-5 h-5" />
+                        </Button>
+                        {isChatAvailable && (
+                        <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
+                            <Sparkles className="mr-2 h-4 w-4"/>
+                            Chat with AI
+                        </Button>
+                        )}
+                    </div>
+                    </header>
+
+                    <main className="flex-1 overflow-auto flex items-center justify-center relative">
+                        {loading && <div className="text-white">Loading...</div>}
+                        {error && <div className="text-red-400">Error: {error}</div>}
+                        {!loading && !error && fileUrl && <FilePreview url={fileUrl} mime={item.metadata?.mime ?? 'application/octet-stream'} itemName={item.name} pdfViewerRef={pdfViewerRef} />}
+                        {!loading && !fileUrl && (
+                        <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                            <p className="text-xl mb-3">File content not available.</p>
+                            <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+                        </div>
+                        )}
+                    </main>
+                </motion.div>
+            )}
+            </AnimatePresence>
 
             <AnimatePresence>
               {showChat && (
                 <motion.aside
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 448, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
+                    key="chat"
+                    initial={isMobile ? { x: '100%' } : { width: 0, opacity: 0 }}
+                    animate={isMobile ? { x: 0 } : { width: 448, opacity: 1 }}
+                    exit={isMobile ? { x: '100%' } : { width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden h-full"
-                    style={{ backgroundColor: '#1A1A1A' }}
+                    className="flex flex-col overflow-hidden h-full bg-[#1A1A1A] w-full md:w-[448px] absolute md:static top-0 right-0"
                     aria-label="AI Chat Panel"
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">

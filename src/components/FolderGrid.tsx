@@ -318,14 +318,8 @@ export function FolderGrid({
         }
         return;
     }
-      
-    if (isMobile) {
-      if (file.metadata?.storagePath) {
-        window.open(file.metadata.storagePath, '_blank');
-      }
-    } else {
-      setPreviewFile(file);
-    }
+    // Always open in-app preview now
+    setPreviewFile(file);
   };
 
   const handleRename = async (newName: string) => {
