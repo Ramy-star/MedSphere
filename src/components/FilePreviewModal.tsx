@@ -10,11 +10,12 @@ import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, Sparkles, Send, RefreshCw, Copy, Check } from 'lucide-react';
+import { X, Download, Sparkles, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/auth/use-user';
 import { AnimatePresence, motion } from 'framer-motion';
-import { chatAboutDocumentStream } from '@/ai/flows/chat-flow';
+import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
 import {
   AlertDialog,
@@ -27,6 +28,7 @@ import {
   AlertDialogTitle as AlertDialogTitle2,
 } from "@/components/ui/alert-dialog"
 import { Input } from './ui/input';
+import { Link2Icon } from './icons/Link2Icon';
 
 
 // Define a type for the ref to hold the text extraction function
@@ -40,6 +42,57 @@ type ChatMessageProps = {
     copiedMessageId: string | null;
     messageId: string;
 };
+
+const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
+    if (item.type === 'LINK') {
+        return { Icon: Link2Icon, color: 'text-cyan-400' };
+    }
+
+    const fileName = item.name;
+    const mimeType = item.metadata?.mime;
+    const extension = fileName.split('.').pop()?.toLowerCase();
+
+    if (mimeType?.startsWith('image/')) return { Icon: FileImage, color: 'text-purple-400' };
+    if (mimeType?.startsWith('video/')) return { Icon: FileVideo, color: 'text-red-400' };
+    if (mimeType?.startsWith('audio/')) return { Icon: Music, color: 'text-orange-400' };
+    
+    switch (extension) {
+        case 'pdf':
+            return { Icon: FileText, color: 'text-red-400' };
+        case 'docx':
+        case 'doc':
+            return { Icon: FileText, color: 'text-blue-500' };
+        case 'xlsx':
+        case 'xls':
+            return { Icon: FileSpreadsheet, color: 'text-green-500' };
+        case 'pptx':
+        case 'ppt':
+            return { Icon: Presentation, color: 'text-orange-500' };
+        case 'html':
+        case 'js':
+        case 'css':
+        case 'tsx':
+        case 'ts':
+            return { Icon: FileCode, color: 'text-gray-400' };
+        case 'txt':
+             return { Icon: FileText, color: 'text-gray-400' };
+        case 'mp3':
+        case 'wav':
+             return { Icon: Music, color: 'text-orange-400' };
+        case 'mp4':
+        case 'mov':
+             return { Icon: FileVideo, color: 'text-red-400' };
+        case 'png':
+        case 'jpg':
+        case 'jpeg':
+        case 'gif':
+        case 'svg':
+             return { Icon: FileImage, color: 'text-purple-400' };
+        default:
+            return { Icon: FileIcon, color: 'text-gray-400' };
+    }
+};
+
 
 const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessageId, messageId }: ChatMessageProps) {
     if (msg.role === 'user') {
@@ -111,6 +164,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
 
   const fileUrl = item?.metadata?.storagePath;
+  const isLink = item?.type === 'LINK';
+  const linkUrl = item?.metadata?.url;
+  const openUrl = isLink ? linkUrl : fileUrl;
 
   const handleNewChat = useCallback(() => {
     if (chatHistory.length > 0) {
@@ -144,6 +200,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
 
   if (!item) return null;
+  
+  const { Icon, color } = getIconForFileType(item);
+
 
   const handleDownload = async () => {
     if (!fileUrl || !item) return;
@@ -227,33 +286,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(true);
     
     try {
-      const responseStream = await chatAboutDocumentStream({ question: newQuestion, documentContent: currentDocText });
-      
-      let aiResponse = '';
-      setChatHistory(prev => [...prev, { role: 'model', text: '' }]);
-
-      for await (const chunk of responseStream) {
-        aiResponse += chunk;
-        setChatHistory(prev => {
-          const newHistory = [...prev];
-          newHistory[newHistory.length - 1] = { role: 'model', text: aiResponse };
-          return newHistory;
-        });
-      }
-
+      const aiResponse = await chatAboutDocument({ question: newQuestion, documentContent: currentDocText });
+      setChatHistory(prev => [...prev, { role: 'model', text: aiResponse }]);
     } catch (error: any) {
         console.error("AI chat error:", error);
-        const errorMessage = error.message || 'Sorry, I encountered an error. Please try again.';
-        setChatHistory(prev => {
-            const newHistory = [...prev];
-            const lastMessage = newHistory[newHistory.length - 1];
-            if (lastMessage && lastMessage.role === 'model' && lastMessage.text === '') {
-                 newHistory[newHistory.length - 1] = { role: 'model', text: errorMessage };
-            } else {
-                 newHistory.push({ role: 'model', text: errorMessage });
-            }
-            return newHistory;
-        });
+        setChatHistory(prev => [...prev, { role: 'model', text: error.message || 'Sorry, I encountered an error. Please try again.' }]);
     } finally {
         setIsAiThinking(false);
     }
@@ -265,7 +302,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-screen p-0 flex flex-col bg-slate-900/80 border-0"
+        className="max-w-none w-screen h-screen p-0 flex flex-col bg-slate-900 border-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
@@ -280,14 +317,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             {/* File Preview */}
             <div className="flex-1 flex flex-col h-full bg-transparent">
                 <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-                <div className="flex items-center gap-4">
-                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10" aria-label="Close file preview">
+                <div className="flex items-center gap-4 overflow-hidden">
+                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 flex-shrink-0" aria-label="Close file preview">
                         <X className="w-6 h-6" />
                     </Button>
+                    <div className="flex items-center gap-3 overflow-hidden">
+                       <Icon className={`w-6 h-6 ${color} shrink-0`} />
+                       <span className="text-white font-medium truncate">{item.name}</span>
+                    </div>
                 </div>
                 <div className='flex items-center gap-2'>
-                    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10" title="Download">
-                        <Download className="w-5 h-5" />
+                    {!isLink && (
+                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10" title="Download">
+                            <Download className="w-5 h-5" />
+                        </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10" title="Open in new tab">
+                        <ExternalLink className="w-5 h-5" />
                     </Button>
                     {isChatAvailable && (
                     <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full" aria-label={showChat ? "Close AI chat" : "Open AI chat"}>
@@ -360,7 +406,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 />
                             ))}
 
-                            {isAiThinking && (
+                            {isAiThinking && !isExtracting && (
                                 <div className="w-full mt-4">
                                     <div className="h-1 bg-blue-500/50 animate-pulse rounded"></div>
                                 </div>
