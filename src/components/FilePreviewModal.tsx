@@ -250,7 +250,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 448, opacity: 1 }} // 28rem
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col glass-card border-l border-white/10 overflow-hidden"
+                    className="flex flex-col bg-white/5 border-l border-white/10 overflow-hidden"
                 >
                     <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
@@ -279,7 +279,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                         <Bot />
                                     </div>
-                                    <div className="rounded-xl glass-card p-4 backdrop-blur-lg max-w-2xl">
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-2xl">
                                         <p className="text-slate-300">Hello! I am your AI assistant. Ask me anything about this document.</p>
                                     </div>
                                 </div>
@@ -289,7 +289,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 if (msg.role === 'user') {
                                     return (
                                         <div key={index} className="flex justify-end items-start gap-4 ml-10">
-                                            <div className="rounded-xl bg-blue-900/40 border border-blue-500/20 p-4 max-w-2xl">
+                                            <div className="rounded-xl border border-blue-500/20 bg-blue-900/40 p-4 max-w-2xl">
                                                 <p className="text-slate-200">{msg.text}</p>
                                             </div>
                                             <Avatar className="h-10 w-10 flex-shrink-0">
@@ -304,7 +304,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                             <Bot />
                                         </div>
-                                        <div className="rounded-xl glass-card p-4 backdrop-blur-lg max-w-2xl">
+                                        <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-lg max-w-2xl">
                                             <p className="text-slate-300 whitespace-pre-wrap">{msg.text}</p>
                                         </div>
                                     </div>
@@ -316,7 +316,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary flex-shrink-0">
                                         <Bot />
                                     </div>
-                                    <div className="rounded-xl glass-card p-4 max-w-sm w-full">
+                                    <div className="rounded-xl border border-white/10 bg-white/5 p-4 max-w-sm w-full">
                                         <div className="space-y-2">
                                             <Skeleton className="h-3 w-4/5" />
                                             <Skeleton className="h-3 w-full" />
@@ -349,4 +349,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
 
