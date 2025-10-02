@@ -309,15 +309,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     <div key={messageId} className="prose prose-sm max-w-full text-slate-200 relative">
                                         <ReactMarkdown
                                           components={{
-                                            h2: ({node, ...props}) => <h2 className="text-white" {...props} />,
-                                            h3: ({node, ...props}) => <h3 className="text-white" {...props} />,
-                                            p: ({node, ...props}) => <p className="text-slate-200" {...props} />,
+                                            h2: ({node, ...props}) => <h2 className="text-white mt-4 mb-2" {...props} />,
+                                            h3: ({node, ...props}) => <h3 className="text-white mt-3 mb-1" {...props} />,
+                                            h4: ({node, ...props}) => <h4 className="text-white mt-2 mb-1" {...props} />,
+                                            p: ({node, ...props}) => <p className="text-slate-200 my-2" {...props} />,
                                             strong: ({node, ...props}) => <strong className="text-white" {...props} />,
-                                            ul: ({node, ...props}) => <ul className="text-slate-200" {...props} />,
-                                            ol: ({node, ...props}) => <ol className="text-slate-200" {...props} />,
-                                            li: ({node, ...props}) => <li className="text-slate-200" {...props} />,
+                                            ul: ({node, ...props}) => <ul className="text-slate-200 my-2 ml-4 list-disc" {...props} />,
+                                            ol: ({node, ...props}) => <ol className="text-slate-200 my-2 ml-4 list-decimal" {...props} />,
+                                            li: ({node, ...props}) => <li className="text-slate-200 mb-1" {...props} />,
                                             code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1" {...props} />,
                                             pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
+                                            hr: ({node, ...props}) => <hr className="border-slate-700 my-4" {...props} />,
                                           }}
                                         >
                                             {msg.text}
