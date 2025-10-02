@@ -8,10 +8,11 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
 import React from 'react';
@@ -95,6 +96,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                                         <ImageIcon className="mr-2 h-4 w-4" />
                                         <span>Change Icon</span>
                                     </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
                                     <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(); }} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         <span>Delete</span>
@@ -140,7 +142,8 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                                   <ImageIcon className="mr-2 h-4 w-4" />
                                   <span>Change Icon</span>
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); epreventDefault(); onDelete(); }} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                               <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(); }} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                   <Trash2 className="mr-2 h-4 w-4" />
                                   <span>Delete</span>
                               </DropdownMenuItem>
