@@ -302,7 +302,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-screen p-0 flex flex-col bg-slate-900 border-0"
+        className="max-w-none w-screen h-screen p-0 flex flex-col bg-transparent border-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
@@ -336,7 +336,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <ExternalLink className="w-5 h-5" />
                     </Button>
                     {isChatAvailable && (
-                    <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full" aria-label={showChat ? "Close AI chat" : "Open AI chat"}>
+                    <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
                         <Sparkles className="mr-2 h-4 w-4"/>
                         Chat with AI
                     </Button>
