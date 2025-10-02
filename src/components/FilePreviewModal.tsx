@@ -29,7 +29,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
-import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -327,32 +326,32 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     exit={isMobile ? { x: '-100%' } : { opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
                 >
-                    <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-                    <div className="flex items-center gap-4 overflow-hidden">
-                        <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
-                            <X className="w-6 h-6" />
-                        </Button>
-                        <div className="flex items-center gap-3 overflow-hidden">
-                           <Icon className={`w-6 h-6 ${color} shrink-0`} />
-                           <span className="text-white font-medium truncate">{item.name}</span>
-                        </div>
-                    </div>
-                    <div className='flex items-center gap-2'>
-                        {!isLink && (
-                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Download">
-                                <Download className="w-5 h-5" />
+                    <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                            <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
+                                <X className="w-6 h-6" />
                             </Button>
-                        )}
-                        <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Open in new tab">
-                            <ExternalLink className="w-5 h-5" />
-                        </Button>
-                        {isChatAvailable && (
-                        <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full">
-                            <Sparkles className="mr-2 h-4 w-4"/>
-                            Chat with AI
-                        </Button>
-                        )}
-                    </div>
+                            <div className="flex items-center gap-3 overflow-hidden">
+                               <Icon className={`w-6 h-6 ${color} shrink-0`} />
+                               <span className="text-white font-medium truncate hidden sm:inline">{item.name}</span>
+                            </div>
+                        </div>
+                        <div className='flex items-center gap-1 sm:gap-2'>
+                            {!isLink && (
+                                <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Download">
+                                    <Download className="w-5 h-5" />
+                                </Button>
+                            )}
+                            <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full" title="Open in new tab">
+                                <ExternalLink className="w-5 h-5" />
+                            </Button>
+                            {isChatAvailable && (
+                            <Button variant={showChat ? 'default' : 'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full px-3 sm:px-4">
+                                <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
+                                <span className="hidden sm:inline">Chat</span>
+                            </Button>
+                            )}
+                        </div>
                     </header>
 
                     <main className="flex-1 overflow-auto flex items-center justify-center relative">
@@ -374,16 +373,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               {showChat && (
                 <motion.aside
                     key="chat"
-                    initial={isMobile ? { x: '100%' } : { width: 0, opacity: 0 }}
-                    animate={isMobile ? { x: 0 } : { width: 448, opacity: 1 }}
-                    exit={isMobile ? { x: '100%' } : { width: 0, opacity: 0 }}
+                    initial={{ x: '100%' }}
+                    animate={{ x: 0 }}
+                    exit={{ x: '100%' }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden h-full bg-[#1A1A1A] w-full md:w-[448px] absolute md:static top-0 right-0"
+                    className="flex flex-col overflow-hidden h-full bg-[#1A1A1A] w-full absolute md:static top-0 right-0 md:w-[448px]"
                     aria-label="AI Chat Panel"
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
-                            <AiAssistantIcon className="w-5 h-5" />
+                            <Sparkles className="w-5 h-5" />
                             <h2 className="text-lg font-bold">AI Assistant</h2>
                         </div>
                         <div className="flex items-center">
