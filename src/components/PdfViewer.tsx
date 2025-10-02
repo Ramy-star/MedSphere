@@ -21,7 +21,7 @@ const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.1;
 
 
-const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf: PDFDocumentProxy) => void }) => {
+const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const isMobile = useIsMobile();
@@ -114,6 +114,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
               file={file}
               onLoadSuccess={onDocumentLoadSuccessInternal}
               onLoadError={onDocumentLoadError}
+              onRenderError={onRenderError}
               options={options}
               className="flex flex-col items-center"
             >
@@ -133,23 +134,23 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
 
       {numPages && (
         <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-           <div className="flex items-center gap-1 bg-black/80 text-white rounded-full p-1 shadow-lg">
+           <div className="flex items-center gap-0 md:gap-1 bg-black/80 text-white rounded-full p-1 shadow-lg">
             
-            <Button variant="ghost" size="icon" className="rounded-full w-7 h-7" onClick={() => goToPage(Math.max(pageNumber - 1, 1))} disabled={pageNumber <= 1}>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 md:w-7 md:h-7" onClick={() => goToPage(Math.max(pageNumber - 1, 1))} disabled={pageNumber <= 1}>
                 <ChevronLeft className="w-4 h-4" />
                 <span className="sr-only">Previous Page</span>
             </Button>
             
-            <span className="text-xs px-2 tabular-nums">Page {pageNumber} / {numPages ?? '--'}</span>
+            <span className="text-xs px-2 tabular-nums">{pageNumber} / {numPages ?? '--'}</span>
             
-            <Button variant="ghost" size="icon" className="rounded-full w-7 h-7" onClick={() => goToPage(Math.min(pageNumber + 1, numPages))} disabled={pageNumber >= numPages}>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 md:w-7 md:h-7" onClick={() => goToPage(Math.min(pageNumber + 1, numPages))} disabled={pageNumber >= numPages}>
                 <ChevronRight className="w-4 h-4" />
                 <span className="sr-only">Next Page</span>
             </Button>
 
-            <div className="h-5 w-px bg-white/20 mx-1"></div>
+            <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
             
-            <Button variant="ghost" size="icon" className="rounded-full w-7 h-7" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 md:w-7 md:h-7" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
               <Minus className="w-4 h-4" />
             </Button>
 
@@ -157,7 +158,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf:
                 {`${Math.round(scale * 100)}%`}
             </span>
 
-            <Button variant="ghost" size="icon" className="rounded-full w-7 h-7" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 md:w-7 md:h-7" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
               <Plus className="w-4 h-4" />
             </Button>
           </div>
