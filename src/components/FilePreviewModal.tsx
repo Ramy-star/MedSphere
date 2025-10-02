@@ -424,19 +424,11 @@ setError(null);
             </div>
             <div className="mt-8">
                 <form onSubmit={handleChatSubmit} className="relative">
-                    <Textarea 
-                        className="w-full rounded-2xl border-none bg-[#343541] py-4 pl-6 pr-16 text-white placeholder-[#9A9A9A] 
-                        focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 !ring-0 !shadow-none text-base resize-none"
-                        rows={1}
-                        placeholder="Ask anything"
+                    <Input
+                        className="w-full rounded-full border-none bg-[#343541] py-4 pl-6 pr-16 text-white placeholder-[#9A9A9A] h-14"
+                        placeholder="Ask anything..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleChatSubmit();
-                            }
-                        }}
                         disabled={isExtracting || isAiThinking || !documentText}
                     />
                     <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
