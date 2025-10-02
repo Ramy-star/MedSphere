@@ -264,7 +264,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 448, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden h-full bg-slate-900 border-l border-white/10"
+                    className="flex flex-col overflow-hidden h-full bg-slate-900"
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
