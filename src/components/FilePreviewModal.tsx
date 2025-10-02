@@ -30,7 +30,7 @@ import {
 import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 
 
@@ -304,6 +304,10 @@ setError(null);
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         className="absolute inset-0 flex flex-col h-full bg-slate-900"
+        style={{
+            opacity: (isMobile && showChat) ? 0 : 1,
+            pointerEvents: (isMobile && showChat) ? 'none' : 'auto'
+        }}
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
             <div className="flex items-center gap-2 overflow-hidden">
@@ -356,9 +360,9 @@ setError(null);
   const renderChatView = () => (
     <motion.div
         key="chat-panel"
-        initial={{ y: '100%' }}
-        animate={{ y: 0 }}
-        exit={{ y: '100%' }}
+        initial={{ y: isMobile ? '100%' : 0, x: isMobile ? 0 : '100%' }}
+        animate={{ y: 0, x: 0 }}
+        exit={{ y: isMobile ? '100%' : 0, x: isMobile ? 0 : '100%' }}
         transition={{ duration: 0.3, ease: 'easeInOut' }}
         className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20 md:w-[448px] md:h-auto md:relative md:border-l md:border-slate-800"
         aria-label="AI Chat Panel"
@@ -451,14 +455,8 @@ setError(null);
         
         <div className="flex-1 h-full w-full relative overflow-hidden">
             <AnimatePresence>
-                {isMobile ? (
-                    showChat ? renderChatView() : renderFilePreview()
-                ) : (
-                    <>
-                        {renderFilePreview()}
-                        {showChat && renderChatView()}
-                    </>
-                )}
+                {(!isMobile || !showChat) && renderFilePreview()}
+                {showChat && renderChatView()}
             </AnimatePresence>
         </div>
         <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
