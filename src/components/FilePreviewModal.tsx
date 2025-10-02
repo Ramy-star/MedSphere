@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -29,6 +30,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from './ui/input';
 import { Link2Icon } from './icons/Link2Icon';
+import { AiAssistantIcon } from './icons/AiAssistantIcon';
 
 
 // Define a type for the ref to hold the text extraction function
@@ -370,8 +372,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
-                            <Sparkles className="w-5 h-5 text-blue-400" />
-                            <h2 className="text-lg font-bold">AI Study Assistant</h2>
+                            <AiAssistantIcon className="w-5 h-5" />
+                            <h2 className="text-lg font-bold">AI Assistant</h2>
                         </div>
                         <div className="flex items-center">
                             <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
