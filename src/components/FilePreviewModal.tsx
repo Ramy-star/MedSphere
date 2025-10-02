@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -250,7 +249,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 448, opacity: 1 }} // 28rem
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col border-l border-white/10 overflow-hidden h-full bg-white/5 backdrop-blur-lg"
+                    className="flex flex-col overflow-hidden h-full bg-white/5 backdrop-blur-lg border-l border-white/10"
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
                         <div className="flex items-center gap-3 text-white">
