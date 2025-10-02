@@ -364,7 +364,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 448, opacity: 1 }}
                     exit={{ width: 0, opacity: 0 }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden h-full bg-slate-900"
+                    className="flex flex-col overflow-hidden h-full"
+                    style={{ backgroundColor: '#1A1A1A' }}
                     aria-label="AI Chat Panel"
                 >
                      <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0">
@@ -415,7 +416,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <div className="mt-8">
                             <form onSubmit={handleChatSubmit} className="relative">
                                 <Input 
-                                    className="w-full rounded-full border-none bg-slate-800 py-4 pl-6 pr-16 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 h-14 text-base"
+                                    className="w-full rounded-full border-none bg-[#343541] py-4 pl-6 pr-16 text-white placeholder-[#9A9A9A] 
+                                    focus:outline-none focus-visible:outline-none focus:ring-0 focus:ring-offset-0 !ring-0 !shadow-none h-14 text-base"
+                                    
                                     placeholder="Ask anything"
                                     value={chatInput}
                                     onChange={(e) => setChatInput(e.target.value)}
