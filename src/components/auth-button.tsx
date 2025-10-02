@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn, LogOut, User as UserIcon } from 'lucide-react';
+import { LogIn, LogOut, User } from 'lucide-react';
 
 
 export function AuthButton() {
@@ -63,7 +63,7 @@ export function AuthButton() {
             <Avatar className="h-9 w-9">
               <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} />
               <AvatarFallback>
-                <UserIcon className="h-5 w-5" />
+                <User className="h-5 w-5" />
               </AvatarFallback>
             </Avatar>
           </Button>
