@@ -75,10 +75,8 @@ function createProxiedUrl(secureUrl: string): string {
 
 
 export const contentService = {
-  async extractTextFromPdfUrl(url: string): Promise<string> {
+  async extractTextFromPdf(pdf: pdfjs.PDFDocumentProxy): Promise<string> {
     try {
-        const loadingTask = pdfjs.getDocument(url);
-        const pdf = await loadingTask.promise;
         let fullText = '';
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);

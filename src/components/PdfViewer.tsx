@@ -18,7 +18,7 @@ const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.05;
 
-const PdfViewer = ({ file }: { file: string }) => {
+const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const isMobile = useIsMobile();
@@ -28,8 +28,11 @@ const PdfViewer = ({ file }: { file: string }) => {
   
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
-  function onDocumentLoadSuccess(loadedPdf: PDFDocumentProxy): void {
+  function onDocumentLoadSuccessInternal(loadedPdf: PDFDocumentProxy): void {
     setNumPages(loadedPdf.numPages);
+    if(onLoadSuccess) {
+      onLoadSuccess(loadedPdf);
+    }
   }
 
   function onDocumentLoadError(error: Error) {
@@ -99,7 +102,7 @@ const PdfViewer = ({ file }: { file: string }) => {
         <div className="flex justify-center items-start min-h-full">
             <Document
               file={file}
-              onLoadSuccess={onDocumentLoadSuccess}
+              onLoadSuccess={onDocumentLoadSuccessInternal}
               onLoadError={onDocumentLoadError}
               options={options}
               className="flex flex-col items-center"

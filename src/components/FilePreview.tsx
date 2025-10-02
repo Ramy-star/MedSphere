@@ -2,6 +2,8 @@
 
 import { useEffect, useState, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
+
 
 // Import react-pdf styles here to ensure they are loaded with the dynamic component
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -12,7 +14,7 @@ const PdfViewer = dynamic(() => import('./PdfViewer'), {
   loading: () => <div className="text-white">Loading PDF viewer...</div>
 });
 
-const FilePreview = forwardRef(({ url, mime, itemName }: { url: string, mime: string, itemName: string }, ref) => {
+const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess }: { url: string, mime: string, itemName: string, onPdfLoadSuccess?: (pdf: PDFDocumentProxy) => void }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
 
@@ -51,7 +53,7 @@ const FilePreview = forwardRef(({ url, mime, itemName }: { url: string, mime: st
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer file={url} />;
+    return <PdfViewer file={url} onLoadSuccess={onPdfLoadSuccess} />;
   }
   
   if (mime.startsWith('audio/')) {

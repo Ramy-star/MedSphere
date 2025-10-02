@@ -32,6 +32,7 @@ import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
+import { PDFDocumentProxy } from 'pdfjs-dist';
 
 
 type ChatMessageProps = {
@@ -180,13 +181,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [chatHistory.length, startNewChat]);
 
-  const preExtractText = useCallback(async () => {
-    if (!item || item.metadata?.mime !== 'application/pdf' || !item.metadata.storagePath || documentText) return;
+  const handlePdfTextExtracted = useCallback(async (pdf: PDFDocumentProxy) => {
+    if (documentText) return; // Already extracted
 
     setIsExtracting(true);
     setDocumentText(null);
     try {
-        const text = await contentService.extractTextFromPdfUrl(item.metadata.storagePath);
+        const text = await contentService.extractTextFromPdf(pdf);
         setDocumentText(text);
     } catch (err: any) {
         console.error("Failed to extract PDF text:", err);
@@ -194,7 +195,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     } finally {
         setIsExtracting(false);
     }
-  }, [item, documentText, toast]);
+  }, [documentText, toast]);
   
   useEffect(() => {
     startNewChat();
@@ -203,11 +204,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setError(null);
     setLoading(false);
     setIsExtracting(false);
-
-    if (item?.metadata?.mime === 'application/pdf' && item?.metadata?.storagePath) {
-        preExtractText();
-    }
-  }, [item, startNewChat, preExtractText]);
+  }, [item, startNewChat]);
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -341,11 +338,12 @@ setError(null);
             {loading && <div className="text-white">Loading...</div>}
             {error && <div className="text-red-400">Error: {error}</div>}
             {!loading && !error && fileUrl && (
-            <FilePreview 
-                url={fileUrl} 
-                mime={item.metadata?.mime ?? 'application/octet-stream'} 
-                itemName={item.name}
-            />
+              <FilePreview 
+                  url={fileUrl} 
+                  mime={item.metadata?.mime ?? 'application/octet-stream'} 
+                  itemName={item.name}
+                  onPdfLoadSuccess={handlePdfTextExtracted}
+              />
             )}
             {!loading && !fileUrl && (
             <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
@@ -455,7 +453,7 @@ setError(null);
         
         <div className="flex-1 h-full w-full relative overflow-hidden">
             <AnimatePresence>
-                {(!isMobile || !showChat) && renderFilePreview()}
+                {renderFilePreview()}
                 {showChat && renderChatView()}
             </AnimatePresence>
         </div>
