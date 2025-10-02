@@ -72,12 +72,6 @@ const nextConfig: NextConfig = {
       }
     }
     
-    // Fix for react-pdf worker
-    config.resolve!.alias = {
-        ...config.resolve!.alias,
-        'pdfjs-dist/build/pdf.worker.min.mjs': require.resolve('pdfjs-dist/build/pdf.worker.min.mjs'),
-    };
-
     return config;
   },
 };
