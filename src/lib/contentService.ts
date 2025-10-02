@@ -7,7 +7,12 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sha256file } from './hashFile';
 import { nanoid } from 'nanoid';
+import * as pdfjs from 'pdfjs-dist';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+
+// Use the same worker for text extraction
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
+
 
 export type Content = {
   id: string;
@@ -79,7 +84,8 @@ export const contentService = {
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
-            fullText += textContent.items.map(item => ('str' in item ? item.str : '')).join(' ') + '\n';
+            const pageText = textContent.items.map(item => 'str' in item ? item.str : '').join(' ');
+            fullText += pageText + '\n';
         }
         return fullText;
     } catch (error) {

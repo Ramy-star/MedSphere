@@ -1,36 +1,34 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { Document, Page, pdfjs } from 'react-pdf';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { Document, Page, pdfjs, type PDFDocumentProxy, type OnDocumentLoadSuccess } from 'react-pdf';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-
-pdfjs.GlobalWorkerOptions.workerSrc = '/_next/static/chunks/pdf.worker.min.mjs';
-
+pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js`;
 
 const options = {
-  cMapUrl: '/cmaps/',
-  standardFontDataUrl: '/standard_fonts/',
+  cMapUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/cmaps/',
+  cMapPacked: true,
+  standardFontDataUrl: 'https://unpkg.com/pdfjs-dist@3.11.174/standard_fonts/',
 };
 
 const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
-const ZOOM_STEP = 0.05;
+const ZOOM_STEP = 0.1;
 
-const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
+const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess: (pdf: PDFDocumentProxy) => void }) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const isMobile = useIsMobile();
-  const [scale, setScale] = useState(isMobile ? 0.25 : 1);
+  const [scale, setScale] = useState(isMobile ? 0.5 : 1);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
-  function onDocumentLoadSuccessInternal(loadedPdf: PDFDocumentProxy): void {
+  const onDocumentLoadSuccessInternal: OnDocumentLoadSuccess = (loadedPdf) => {
     setNumPages(loadedPdf.numPages);
     if(onLoadSuccess) {
       onLoadSuccess(loadedPdf);
@@ -38,9 +36,6 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }
 
   function onDocumentLoadError(error: Error) {
-    // The error "The API version "x.y.z" does not match the Worker version "a.b.c"" is a known issue
-    // with how Next.js handles dependencies. The CDN-based worker setup is a workaround.
-    // We can safely ignore this specific warning if it appears, as the viewer will still function.
     if (error.message.includes('API version') && error.message.includes('Worker version')) {
         console.warn(`Ignoring expected PDF.js version mismatch error: ${error.message}`);
         return;
@@ -54,8 +49,6 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }
 
   const onRenderError = (error: Error) => {
-    // This error is expected when the user scrolls quickly or closes the modal.
-    // We can safely ignore it to prevent console spam.
     if (error.name === 'AbortException' || (error.message && error.message.includes('TextLayer task cancelled'))) {
         return;
     }
@@ -68,7 +61,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }
 
   useEffect(() => {
-    setScale(isMobile ? 0.25 : 1);
+    setScale(isMobile ? 0.5 : 1);
   }, [isMobile]);
 
   useEffect(() => {
