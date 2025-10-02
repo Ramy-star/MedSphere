@@ -317,10 +317,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <motion.div 
                 key="preview"
                 className="flex-1 flex flex-col h-full bg-transparent"
-                animate={{ width: showChat && isMobile ? 0 : '100%' }}
+                animate={{ width: showChat && isMobile ? '100%' : '100%' }}
                 transition={{ duration: 0.3, ease: 'easeInOut' }}
             >
-                <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+               {!showChat && (
+                 <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
                     <div className="flex items-center gap-2 overflow-hidden">
                         <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
                             <X className="w-6 h-6" />
@@ -347,6 +348,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         )}
                     </div>
                 </header>
+               )}
 
                 <main className="flex-1 overflow-auto flex items-center justify-center relative">
                     {loading && <div className="text-white">Loading...</div>}
@@ -369,7 +371,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={isMobile ? { y: 0 } : { x: 0 }}
                     exit={isMobile ? { y: '100%' } : { x: '100%' }}
                     transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full md:w-[448px] w-full"
+                    className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full md:w-[448px] w-full absolute inset-0 md:relative"
                     aria-label="AI Chat Panel"
                     style={{ willChange: 'transform' }}
                 >
