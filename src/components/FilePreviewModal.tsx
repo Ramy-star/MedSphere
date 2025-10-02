@@ -269,7 +269,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-screen p-0 flex flex-col bg-slate-900 border-0"
+        className="max-w-none w-screen h-screen p-0 flex flex-col bg-slate-900/80 border-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
@@ -282,7 +282,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <div className="flex flex-1 overflow-hidden h-full">
 
             {/* File Preview */}
-            <div className="flex-1 flex flex-col h-full bg-slate-900">
+            <div className="flex-1 flex flex-col h-full bg-transparent">
                 <header className="flex h-16 shrink-0 items-center justify-between px-4 bg-slate-950/70 border-b border-slate-800 z-10">
                 <div className="flex items-center gap-4">
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10" aria-label="Close file preview">
