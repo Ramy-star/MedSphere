@@ -27,7 +27,7 @@ import {
   AlertDialogHeader as AlertDialogHeader2,
   AlertDialogTitle as AlertDialogTitle2,
 } from "@/components/ui/alert-dialog"
-import { Input } from './ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -97,7 +97,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 inline-block max-w-sm">
+                <div className="rounded-xl bg-blue-900/80 px-4 py-2.5 inline-block max-w-sm">
                     <p className="text-slate-200 whitespace-pre-wrap break-words">{msg.text}</p>
                 </div>
             </div>
@@ -427,11 +427,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
             <div className="mt-8">
                  <form onSubmit={handleChatSubmit} className="relative">
-                    <Input
-                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-14"
+                    <Textarea
+                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-14 resize-none"
                         placeholder="Ask anything..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleChatSubmit();
+                            }
+                        }}
                         disabled={isExtracting || isAiThinking || !documentText}
                     />
                     <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
