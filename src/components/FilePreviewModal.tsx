@@ -296,12 +296,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setChatInput('');
     setIsAiThinking(true);
     
-    const { text } = await chatAboutDocument({ 
+    const responseText = await chatAboutDocument({ 
         question: newQuestion, 
         documentContent: documentText,
         chatHistory: chatHistory // Send the history BEFORE the new question
     });
-    setChatHistory(prev => [...prev, { role: 'model', text }]);
+    setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
     setIsAiThinking(false);
   }
 
