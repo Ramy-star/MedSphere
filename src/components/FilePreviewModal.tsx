@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -233,9 +232,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const textarea = textareaRef.current;
     if (!textarea || !isMobile) return;
 
+    let onVVResize = () => {};
+
     const handleFocus = () => {
       setHeaderFixed(true);
-      const onVVResize = () => {
+      onVVResize = () => {
         if (window.visualViewport) {
           const keyboardHeight = window.innerHeight - window.visualViewport.height;
           setChatInputOffset(keyboardHeight);
@@ -252,8 +253,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       setHeaderFixed(false);
       setChatInputOffset(0);
        if ('visualViewport' in window && window.visualViewport) {
-        // A proper type guard would be better, but this works for now.
-        // @ts-ignore
         window.visualViewport.removeEventListener('resize', onVVResize);
       }
     };
