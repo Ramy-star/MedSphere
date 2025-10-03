@@ -296,11 +296,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setChatInput('');
     setIsAiThinking(true);
     
-    const responseText = await chatAboutDocument({ 
-        question: newQuestion, 
+    const responseText = await chatAboutDocument({
+        question: newQuestion,
         documentContent: documentText,
-        chatHistory: chatHistory // Send the history BEFORE the new question
+        chatHistory: chatHistory, // Send the history BEFORE the new question
     });
+
     setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
     setIsAiThinking(false);
   }
@@ -445,6 +446,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         }}
                         disabled={isExtracting || isAiThinking || !documentText}
                         rows={1}
+                        enterKeyHint="send"
                     />
                     <div className="absolute bottom-2 right-2 flex-shrink-0">
                         <Button type="submit" size="icon" className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
