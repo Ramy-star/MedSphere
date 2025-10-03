@@ -439,7 +439,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                  <form onSubmit={handleChatSubmit} className="relative">
                     <Textarea
                         ref={textareaRef}
-                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-auto min-h-[56px] resize-none overflow-hidden"
+                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-auto min-h-[56px] resize-none overflow-hidden focus-visible:ring-0"
                         placeholder="Ask anything..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
