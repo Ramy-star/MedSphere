@@ -97,8 +97,8 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-full bg-blue-900/80 px-4 py-2 inline-block">
-                    <p className="text-slate-200">{msg.text}</p>
+                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 inline-block max-w-sm">
+                    <p className="text-slate-200 whitespace-pre-wrap break-words">{msg.text}</p>
                 </div>
             </div>
         );
