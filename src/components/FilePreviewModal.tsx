@@ -33,6 +33,7 @@ import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { cn } from '@/lib/utils';
 
 
 type ChatMessageProps = {
@@ -98,14 +99,14 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
         return (
             <div className="flex justify-end">
                 <div className="rounded-xl bg-blue-900/80 px-4 py-2.5 max-w-sm">
-                    <p className="text-slate-200 whitespace-pre-wrap break-words">{msg.text}</p>
+                    <p className="text-slate-200 whitespace-pre-wrap break-words text-sm md:text-base">{msg.text}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="prose prose-sm max-w-full text-slate-200 relative group">
+        <div className={cn("prose prose-sm md:prose-base max-w-full text-slate-200 relative group")}>
              <button
                 onClick={() => onCopy(msg.text, messageId)}
                 className="absolute top-0 right-0 p-1.5 rounded-full text-slate-400 hover:bg-slate-700 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
@@ -391,7 +392,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
                 
                 {chatHistory.length === 0 && !isAiThinking && (
-                    <div className="prose prose-sm max-w-full text-slate-200">
+                    <div className="prose prose-sm md:prose-base max-w-full text-slate-200">
                         {isExtracting ? (
                             <div className="flex items-center gap-2">
                             <Skeleton className="h-5 w-5 rounded-full" />
