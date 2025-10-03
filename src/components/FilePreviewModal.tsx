@@ -33,7 +33,6 @@ import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { Textarea } from './ui/textarea';
 
 
 type ChatMessageProps = {
@@ -227,7 +226,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (!fileUrl || !item) return;
     try {
         setLoading(true);
-setError(null);
+        setError(null);
         const res = await fetch(fileUrl);
         if (!res.ok) throw new Error(`Failed to fetch file: ${res.statusText}`);
         const blob = await res.blob();
@@ -313,7 +312,7 @@ setError(null);
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
             <div className="flex items-center gap-2 overflow-hidden">
-                <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0" aria-label="Close file preview">
+                <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                     <X className="w-6 h-6" />
                 </Button>
                 <div className="flex items-center gap-3 overflow-hidden">
@@ -424,19 +423,12 @@ setError(null);
             </div>
             <div className="mt-8">
                  <form onSubmit={handleChatSubmit} className="relative">
-                    <Textarea
-                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-14 resize-none"
+                    <Input
+                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-14"
                         placeholder="Ask anything..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         disabled={isExtracting || isAiThinking || !documentText}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleChatSubmit();
-                            }
-                        }}
-                        rows={1}
                     />
                     <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
                         <Send className="w-5 h-5" />
