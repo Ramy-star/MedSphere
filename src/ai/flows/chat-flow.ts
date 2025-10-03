@@ -10,9 +10,15 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { chatPromptText } from '../prompts/chat-prompt';
 
+const ChatHistoryMessageSchema = z.object({
+  role: z.enum(['user', 'model']),
+  text: z.string(),
+});
+
 const ChatInputSchema = z.object({
   question: z.string().describe('The question the user is asking about the document.'),
   documentContent: z.string().describe('The full text content of the document.'),
+  chatHistory: z.array(ChatHistoryMessageSchema).describe('The history of the conversation so far.'),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 

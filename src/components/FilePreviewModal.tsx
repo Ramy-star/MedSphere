@@ -287,7 +287,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(true);
     
     try {
-      const aiResponse = await chatAboutDocument({ question: newQuestion, documentContent: documentText });
+      // Pass the previous messages (excluding the latest user question) to the AI.
+      const historyForAi = currentChatHistory.slice(0, -1);
+      const aiResponse = await chatAboutDocument({ 
+        question: newQuestion, 
+        documentContent: documentText,
+        chatHistory: historyForAi
+      });
       setChatHistory(prev => [...prev, { role: 'model', text: aiResponse }]);
     } catch (error: any) {
         console.error("AI chat error:", error);
