@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Button } from './ui/button';
@@ -17,9 +17,9 @@ const options = {
   standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
 };
 
-const MAX_ZOOM = 3;
+const MAX_ZOOM = 5;
 const MIN_ZOOM = 0.2;
-const ZOOM_STEP = 0.1;
+const ZOOM_STEP = 0.2;
 
 
 const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
@@ -30,27 +30,33 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
 
-  useEffect(() => {
-    // Set initial scale to fit width or a default for mobile
-    if (containerRef.current) {
-        const pageContainer = containerRef.current.querySelector('.react-pdf__Page');
-        if (pageContainer) {
-            const containerWidth = containerRef.current.clientWidth;
-            const pageWidth = pageContainer.clientWidth / scale; // get original width
-            setScale(containerWidth / pageWidth);
-        } else {
-             setScale(isMobile ? 0.5 : 1);
+  const setInitialScale = useCallback(() => {
+    // We target a `Page` component rendered with a temporary scale to measure its original width.
+    const tempPage = containerRef.current?.querySelector('.react-pdf__Page');
+    if (containerRef.current && tempPage) {
+        const containerWidth = containerRef.current.clientWidth;
+        const pageWidth = tempPage.clientWidth; // This width is already scaled by the initial `scale` state.
+        const originalPageWidth = pageWidth / scale;
+
+        if (originalPageWidth > 0) {
+            const newScale = containerWidth / originalPageWidth;
+            setScale(Math.min(newScale, MAX_ZOOM)); // Fit to width, but don't exceed max zoom
         }
+    } else {
+        // Fallback for mobile or if measurement fails
+        setScale(isMobile ? 0.5 : 1);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMobile]);
-  
+  }, [isMobile, scale]);
+
 
   const onDocumentLoadSuccessInternal = (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
     if(onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
+    // After the document loads, we can measure the first page to set the initial scale
+    // A small delay ensures the page is in the DOM for measurement.
+    setTimeout(setInitialScale, 100);
   }
 
   function onDocumentLoadError(error: Error) {
@@ -90,7 +96,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   return (
     <div 
       ref={containerRef} 
-      className="w-full h-full flex flex-col items-center justify-start overflow-auto"
+      className="w-full h-full flex flex-col items-center justify-start overflow-auto p-4"
     >
       <Document
         file={file}
@@ -99,18 +105,21 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
         options={options}
         className="flex justify-center"
       >
-        <Page
-            pageNumber={pageNumber}
-            scale={scale}
-            renderTextLayer={true}
-            onRenderError={onRenderError}
-            className="shadow-2xl"
-        />
+        <div onWheel={(e) => e.stopPropagation()}>
+            <Page
+                key={`page_${pageNumber}`}
+                pageNumber={pageNumber}
+                scale={scale}
+                renderTextLayer={true}
+                onRenderError={onRenderError}
+                className="shadow-2xl"
+            />
+        </div>
       </Document>
 
       {numPages && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-           <div className="flex items-center gap-0 md:gap-1 bg-black/80 text-white rounded-full p-1 shadow-lg">
+           <div className="flex items-center gap-0 md:gap-1 bg-black/80 text-white rounded-full p-1 shadow-lg backdrop-blur-sm">
             
             <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
                 <ChevronLeft className="w-4 h-4" />
@@ -130,7 +139,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
               <Minus className="w-4 h-4" />
             </Button>
 
-            <span className='text-xs w-10 text-center font-mono'>
+            <span className='text-xs w-12 text-center font-mono'>
                 {`${Math.round(scale * 100)}%`}
             </span>
 
