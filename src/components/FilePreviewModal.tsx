@@ -127,12 +127,12 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
                 code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5" {...props} />,
                 pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                 hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
-                table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg" {...props} />,
+                table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
                 thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
                 tbody: ({node, ...props}) => <tbody {...props} />,
-                tr: ({node, ...props}) => <tr className="border-b border-slate-700" {...props} />,
-                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white" {...props} />,
-                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2" {...props} />,
+                tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
+                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
+                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0" {...props} />,
               }}
             >
                 {msg.text}
@@ -481,5 +481,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
