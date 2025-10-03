@@ -15,7 +15,7 @@ import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIc
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
-import { chatAboutDocument, type ChatInput } from '@/ai/flows/chat-flow';
+import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
 import {
   AlertDialog,
@@ -99,8 +99,8 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-sm md:max-w-md lg:max-w-sm">
-                    <p className="text-sm md:text-base text-slate-200 whitespace-pre-wrap break-words">{msg.text}</p>
+                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-sm">
+                    <p className="text-sm text-slate-200 whitespace-pre-wrap break-words">{msg.text}</p>
                 </div>
             </div>
         );
@@ -147,7 +147,6 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
-  
   const [showChat, setShowChat] = useState(false);
   const [chatHistory, setChatHistory] = useState<ChatInput['chatHistory']>([]);
   const [chatInput, setChatInput] = useState('');
@@ -159,14 +158,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const { setHeaderFixed, setChatInputOffset } = useMobileViewStore();
+  const { setHeaderFixed, setChatInputOffset, chatInputOffset } = useMobileViewStore();
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
+
   const previewContainerRef = useRef<HTMLDivElement>(null);
-
-
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
 
   const fileUrl = item?.metadata?.storagePath;
   const isLink = item?.type === 'LINK';
@@ -421,7 +418,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   );
 
   const renderChatView = () => {
-    const { chatInputOffset } = useMobileViewStore();
     const chatViewContent = (
       <>
         <header className={cn("flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16")}>
@@ -496,9 +492,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                      onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
-                            if (!isMobile) {
-                              handleChatSubmit();
-                            }
+                            handleChatSubmit();
                         }
                     }}
                     disabled={isExtracting || isAiThinking || !documentText}
@@ -541,9 +535,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     layout
                     initial={{ width: 0, opacity: 0, x: 448 }}
                     animate={{ width: 448, opacity: 1, x: 0 }}
-                    exit={{ width: 0, opacity: 0, x: 448, transition: { duration: 0.2, ease: 'easeOut' } }}
                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full"
+                    exit={{ width: 0, opacity: 0, x: 448, transition: { duration: 0.2, ease: 'easeOut' } }}
+                    className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full border-l border-slate-800"
                     aria-label="AI Chat Panel"
                 >
                     {chatViewContent}
