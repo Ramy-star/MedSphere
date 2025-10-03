@@ -115,7 +115,6 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
               file={file}
               onLoadSuccess={onDocumentLoadSuccessInternal}
               onLoadError={onDocumentLoadError}
-              onRenderError={onRenderError}
               options={options}
               className="flex flex-col items-center"
             >
