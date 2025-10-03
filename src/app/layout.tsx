@@ -10,6 +10,8 @@ import { useState, useEffect } from "react";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { getFirebaseConfig } from "@/firebase/config";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
+import { useMobileViewStore } from "@/hooks/use-mobile-view-store";
+import { cn } from "@/lib/utils";
 
 
 const nunitoSans = Nunito_Sans({ 
@@ -26,6 +28,7 @@ export default function RootLayout({
 }>) {
   const firebaseConfig = getFirebaseConfig();
   const [showWelcome, setShowWelcome] = useState(true);
+  const { isHeaderFixed } = useMobileViewStore();
 
   useEffect(() => {
     // Check localStorage only on the client side
@@ -71,8 +74,10 @@ export default function RootLayout({
       <body className={`${nunitoSans.className} h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
           <div className="flex flex-col h-full w-full">
-            <Header />
-            <main className="flex flex-1 w-full overflow-hidden">
+            <header className={cn("z-50 w-full", isHeaderFixed && "fixed top-0 left-0 right-0")}>
+              <Header />
+            </header>
+            <main className={cn("flex flex-1 w-full overflow-hidden", isHeaderFixed && "pt-[68px]")}>
               {children}
             </main>
           </div>

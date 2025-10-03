@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -34,6 +35,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
+import { useMobileViewStore } from '@/hooks/use-mobile-view-store';
 
 
 type ChatMessageProps = {
@@ -98,7 +100,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-[85%] md:max-w-sm">
+                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-sm md:max-w-sm">
                     <p className="text-slate-200 whitespace-pre-wrap break-words text-sm md:text-base">{msg.text}</p>
                 </div>
             </div>
@@ -158,6 +160,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
+  const { setHeaderFixed, setChatInputOffset } = useMobileViewStore();
 
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -225,6 +228,44 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         textarea.style.height = `${textarea.scrollHeight}px`; // Set to content height
     }
   }, [chatInput]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea || !isMobile) return;
+
+    const handleFocus = () => {
+      setHeaderFixed(true);
+      const onVVResize = () => {
+        if (window.visualViewport) {
+          const keyboardHeight = window.innerHeight - window.visualViewport.height;
+          setChatInputOffset(keyboardHeight);
+        }
+      };
+
+      if ('visualViewport' in window) {
+        window.visualViewport?.addEventListener('resize', onVVResize);
+        onVVResize(); // Initial call
+      }
+    };
+
+    const handleBlur = () => {
+      setHeaderFixed(false);
+      setChatInputOffset(0);
+      if ('visualViewport' in window) {
+        // A proper type guard would be better, but this works for now.
+        window.visualViewport?.removeEventListener('resize', () => {});
+      }
+    };
+    
+    textarea.addEventListener('focus', handleFocus);
+    textarea.addEventListener('blur', handleBlur);
+
+    return () => {
+      textarea.removeEventListener('focus', handleFocus);
+      textarea.removeEventListener('blur', handleBlur);
+      handleBlur(); // Clean up state on unmount
+    }
+  }, [isMobile, setHeaderFixed, setChatInputOffset]);
 
 
   if (!item) return null;
@@ -368,7 +409,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </motion.div>
   );
 
-  const renderChatView = () => (
+  const renderChatView = () => {
+    const { chatInputOffset, isHeaderFixed } = useMobileViewStore.getState();
+
+    return (
     <motion.div
         key="chat-panel"
         initial={{ y: isMobile ? '100%' : 0, x: isMobile ? 0 : '100%' }}
@@ -378,7 +422,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20 md:w-[448px] md:h-auto md:relative md:border-l md:border-slate-800"
         aria-label="AI Chat Panel"
     >
-        <header className="flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16">
+        <header className={cn("flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16", isMobile && isHeaderFixed && "hidden")}>
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -392,8 +436,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </Button>
             </div>
         </header>
-        <div className="flex-1 flex flex-col p-4 sm:p-6 overflow-hidden">
-            <div ref={chatContainerRef} className="flex-1 space-y-6 overflow-y-auto pr-4 -mr-4">
+        <div 
+            ref={chatContainerRef} 
+            className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
+            style={{
+                paddingBottom: isMobile ? `${(textareaRef.current?.offsetHeight || 68) + 16}px` : undefined
+            }}
+        >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
                     <div className="prose prose-sm md:prose-base max-w-full text-slate-200">
@@ -429,35 +478,41 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         </div>
                     </div>
                 )}
-            </div>
-            <div className="mt-auto pt-6">
-                 <form onSubmit={handleChatSubmit} className="relative flex items-end gap-2">
-                    <Textarea
-                        ref={textareaRef}
-                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0"
-                        placeholder="Ask anything..."
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                        onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleChatSubmit();
-                            }
-                        }}
-                        disabled={isExtracting || isAiThinking || !documentText}
-                        rows={1}
-                        enterKeyHint="send"
-                    />
-                    <div className="absolute bottom-2 right-2 flex-shrink-0">
-                        <Button type="submit" size="icon" className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
-                            <Send className="w-5 h-5" />
-                        </Button>
-                    </div>
-                </form>
-            </div>
+        </div>
+        <div 
+            className={cn(
+                "mt-auto bg-[#1A1A1A] p-2 border-t border-white/10",
+                isMobile && "fixed left-0 right-0"
+            )}
+            style={{ bottom: isMobile ? chatInputOffset : undefined }}
+        >
+                <form onSubmit={handleChatSubmit} className="relative flex items-end gap-2">
+                <Textarea
+                    ref={textareaRef}
+                    className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0"
+                    placeholder="Ask anything..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
+                            e.preventDefault();
+                            handleChatSubmit();
+                        }
+                    }}
+                    disabled={isExtracting || isAiThinking || !documentText}
+                    rows={1}
+                    enterKeyHint="send"
+                />
+                <div className="absolute bottom-2 right-3 flex-shrink-0">
+                    <Button type="submit" size="icon" className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
+                        <Send className="w-5 h-5" />
+                    </Button>
+                </div>
+            </form>
         </div>
     </motion.div>
-  );
+    )
+  };
 
 
   return (
