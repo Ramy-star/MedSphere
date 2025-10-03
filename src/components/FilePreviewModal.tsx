@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -30,7 +31,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobile } from '@/hooks/use-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
@@ -158,7 +159,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isMobile = useIsMobile();
+  const isMobile = useMobile();
   const { isHeaderFixed, chatInputOffset, setHeaderFixed, setChatInputOffset } = useMobileViewStore();
 
 
