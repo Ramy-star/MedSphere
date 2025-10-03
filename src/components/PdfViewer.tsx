@@ -7,6 +7,7 @@ import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useWindowSize } from '@react-hook/window-size';
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -26,18 +27,24 @@ const ZOOM_STEP = 0.05;
 const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const isMobile = useIsMobile();
   const [scale, setScale] = useState(0.25);
-  const { toast } = useToast();
-  const containerRef = useRef<HTMLDivElement>(null);
   const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 });
   
+  const { toast } = useToast();
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [width] = useWindowSize();
+  
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
+  const calculatedWidth = Math.min(width, 1024) * 0.9; // 90% of width up to 1024px
 
   const rowVirtualizer = useVirtualizer({
     count: numPages || 0,
     getScrollElement: () => containerRef.current,
-    estimateSize: () => pageDimensions.height * scale + 16, // +16 for margin-bottom
+    estimateSize: useCallback(() => {
+        if (!pageDimensions.width) return 1000; // Default estimate
+        const pageScale = calculatedWidth / pageDimensions.width;
+        return pageDimensions.height * pageScale + 16;
+    }, [pageDimensions, calculatedWidth]),
     overscan: 2,
   });
 
@@ -79,14 +86,16 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
         description: 'A page could not be displayed correctly.',
     });
   }
-
+  
   useEffect(() => {
     const handleScroll = () => {
+      if (!rowVirtualizer) return;
       const virtualItems = rowVirtualizer.getVirtualItems();
       if (virtualItems.length > 0) {
-        const middleItem = virtualItems[Math.floor(virtualItems.length / 2)];
-        if (middleItem) {
-          setPageNumber(middleItem.index + 1);
+        // Find the topmost visible item.
+        const firstVisibleItem = virtualItems.find(item => item.start >= (containerRef.current?.scrollTop || 0));
+        if (firstVisibleItem) {
+          setPageNumber(firstVisibleItem.index + 1);
         }
       }
     };
@@ -129,11 +138,12 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
                         height: `${virtualItem.size}px`,
                         transform: `translateY(${virtualItem.start}px)`,
                       }}
-                      className="flex justify-center"
+                      className="flex justify-center mb-4" // mb-4 for spacing between pages
                     >
                       <Page
                         pageNumber={virtualItem.index + 1}
-                        scale={scale * devicePixelRatio}
+                        width={calculatedWidth}
+                        scale={scale}
                         renderTextLayer={true}
                         onRenderError={onRenderError}
                       />
