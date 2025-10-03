@@ -1,11 +1,11 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -19,54 +19,35 @@ const options = {
 
 const MAX_ZOOM = 3;
 const MIN_ZOOM = 0.2;
-const ZOOM_STEP = 0.05;
+const ZOOM_STEP = 0.1;
 
 
 const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1);
-  const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 });
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
-  
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-  
-  const calculatedWidth = Math.min(windowWidth, 1024) * 0.9; // 90% of width up to 1024px
-
-  const rowVirtualizer = useVirtualizer({
-    count: numPages || 0,
-    getScrollElement: () => containerRef.current,
-    estimateSize: useCallback(() => {
-        if (!pageDimensions.width) return 1000; // Default estimate
-        const pageScale = calculatedWidth / pageDimensions.width;
-        return pageDimensions.height * pageScale + 16;
-    }, [pageDimensions, calculatedWidth]),
-    overscan: 2,
-  });
-
-  const onDocumentLoadSuccessInternal = async (loadedPdf: PDFDocumentProxy) => {
-    setNumPages(loadedPdf.numPages);
-     try {
-        const firstPage = await loadedPdf.getPage(1);
-        const viewport = firstPage.getViewport({ scale: 1 });
-        setPageDimensions({ width: viewport.width, height: viewport.height });
-
-        // Set initial scale to fit width
-        if (containerRef.current) {
-          const containerWidth = containerRef.current.clientWidth;
-          setScale(containerWidth / viewport.width);
+    // Set initial scale to fit width or a default for mobile
+    if (containerRef.current) {
+        const pageContainer = containerRef.current.querySelector('.react-pdf__Page');
+        if (pageContainer) {
+            const containerWidth = containerRef.current.clientWidth;
+            const pageWidth = pageContainer.clientWidth / scale; // get original width
+            setScale(containerWidth / pageWidth);
+        } else {
+             setScale(isMobile ? 0.5 : 1);
         }
-
-    } catch (e) {
-        console.error("Could not get page dimensions", e);
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMobile]);
+  
+
+  const onDocumentLoadSuccessInternal = (loadedPdf: PDFDocumentProxy) => {
+    setNumPages(loadedPdf.numPages);
     if(onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
@@ -97,26 +78,9 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
     });
   }
   
-  useEffect(() => {
-    const handleScroll = () => {
-      if (!rowVirtualizer) return;
-      const virtualItems = rowVirtualizer.getVirtualItems();
-      if (virtualItems.length > 0) {
-        const firstVisibleItem = virtualItems.find(item => item.start >= (containerRef.current?.scrollTop || 0));
-        if (firstVisibleItem) {
-          setPageNumber(firstVisibleItem.index + 1);
-        }
-      }
-    };
-    const scrollElement = containerRef.current;
-    scrollElement?.addEventListener('scroll', handleScroll, { passive: true });
-    return () => scrollElement?.removeEventListener('scroll', handleScroll);
-  }, [rowVirtualizer]);
-
 
   const goToPage = (page: number) => {
-    rowVirtualizer.scrollToIndex(page - 1, { align: 'start' });
-    setPageNumber(page);
+    setPageNumber(Math.max(1, Math.min(page, numPages || 1)));
   }
   
   const zoomIn = () => setScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
@@ -125,55 +89,37 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
 
   return (
     <div 
-      className="w-full h-full flex flex-col items-center justify-start"
+      ref={containerRef} 
+      className="w-full h-full flex flex-col items-center justify-start overflow-auto"
     >
-      <div ref={containerRef} className="flex-1 w-full overflow-auto">
-         <Document
-              file={file}
-              onLoadSuccess={onDocumentLoadSuccessInternal}
-              onLoadError={onDocumentLoadError}
-              options={options}
-              className="flex flex-col items-center"
-            >
-              <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-                {rowVirtualizer.getVirtualItems().map((virtualItem) => (
-                    <div
-                      key={virtualItem.key}
-                      style={{
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        width: '100%',
-                        height: `${virtualItem.size}px`,
-                        transform: `translateY(${virtualItem.start}px)`,
-                      }}
-                      className="flex justify-center mb-4"
-                    >
-                      <Page
-                        pageNumber={virtualItem.index + 1}
-                        width={calculatedWidth}
-                        scale={scale}
-                        renderTextLayer={true}
-                        onRenderError={onRenderError}
-                      />
-                    </div>
-                ))}
-              </div>
-            </Document>
-      </div>
+      <Document
+        file={file}
+        onLoadSuccess={onDocumentLoadSuccessInternal}
+        onLoadError={onDocumentLoadError}
+        options={options}
+        className="flex justify-center"
+      >
+        <Page
+            pageNumber={pageNumber}
+            scale={scale}
+            renderTextLayer={true}
+            onRenderError={onRenderError}
+            className="shadow-2xl"
+        />
+      </Document>
 
       {numPages && (
-        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
+        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
            <div className="flex items-center gap-0 md:gap-1 bg-black/80 text-white rounded-full p-1 shadow-lg">
             
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(Math.max(pageNumber - 1, 1))} disabled={pageNumber <= 1}>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
                 <ChevronLeft className="w-4 h-4" />
                 <span className="sr-only">Previous Page</span>
             </Button>
             
             <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
             
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(Math.min(pageNumber + 1, numPages))} disabled={pageNumber >= numPages}>
+            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= numPages}>
                 <ChevronRight className="w-4 h-4" />
                 <span className="sr-only">Next Page</span>
             </Button>
