@@ -15,7 +15,7 @@ import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIc
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
-import { chatAboutDocument } from '@/ai/flows/chat-flow';
+import { chatAboutDocument, type ChatInput } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
 import {
   AlertDialog,
@@ -147,7 +147,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const { toast } = useToast();
   
   const [showChat, setShowChat] = useState(false);
-  const [chatHistory, setChatHistory] = useState<{ role: 'user' | 'model', text: string }[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatInput['chatHistory']>([]);
   const [chatInput, setChatInput] = useState('');
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [documentText, setDocumentText] = useState<string | null>(null);
@@ -287,12 +287,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(true);
     
     try {
-      // Pass the previous messages (excluding the latest user question) to the AI.
-      const historyForAi = currentChatHistory.slice(0, -1);
       const aiResponse = await chatAboutDocument({ 
         question: newQuestion, 
         documentContent: documentText,
-        chatHistory: historyForAi
+        chatHistory: chatHistory // Send the history BEFORE the new question
       });
       setChatHistory(prev => [...prev, { role: 'model', text: aiResponse }]);
     } catch (error: any) {

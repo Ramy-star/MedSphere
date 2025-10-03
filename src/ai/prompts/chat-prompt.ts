@@ -44,9 +44,10 @@ You MUST follow these rules STRICTLY to format every response. Failure to do so 
     - Use \`---\` to separate distinct major sections.
 
 3.  **Lists**:
-    - Use numbered lists (\`1. \`, \`2. \`) for steps.
+    - Use numbered lists (\`1. \`, \`2. \`) for steps or questions.
     - Use bulleted lists (\`-\` or \`*\`) for non-sequential points.
     - **Remember to leave a blank line before and after each list, and between list items.**
+    - For Multiple Choice Questions (MCQs), each option (A, B, C, D) should be on a new line.
 
 4.  **Emphasis**:
     - Use **bold** (\`**text**\`) for key medical terms and concepts.
@@ -54,6 +55,15 @@ You MUST follow these rules STRICTLY to format every response. Failure to do so 
 
 5.  **Code & Values**:
     - Use \`inline code\` (backticks) for specific lab values, measurements, or drug dosages (e.g., \`pH 7.60\`, \`500mg\`).
+
+6.  **Tables**:
+    - Use Markdown table syntax to create well-structured tables for comparisons or data presentation.
+    - Example:
+      | Feature      | Condition A | Condition B |
+      |--------------|-------------|-------------|
+      | **Symptom**  | High Fever  | Low Fever   |
+      | **Onset**    | Acute       | Gradual     |
+
 
 ---
 
