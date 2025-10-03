@@ -1,15 +1,16 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { Skeleton } from './ui/skeleton';
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
 
 const options = {
   cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
@@ -21,47 +22,49 @@ const MAX_ZOOM = 5;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.2;
 
-
 const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
+  const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [scale, setScale] = useState(1);
+  const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
+  const [userHasScrolled, setUserHasScrolled] = useState(false);
 
-  const setInitialScale = useCallback(() => {
-    // We target a `Page` component rendered with a temporary scale to measure its original width.
-    const tempPage = containerRef.current?.querySelector('.react-pdf__Page');
-    if (containerRef.current && tempPage) {
-        const containerWidth = containerRef.current.clientWidth;
-        const pageWidth = tempPage.clientWidth; // This width is already scaled by the initial `scale` state.
-        const originalPageWidth = pageWidth / scale;
+  const rowVirtualizer = useVirtualizer({
+    count: numPages || 0,
+    getScrollElement: () => containerRef.current,
+    estimateSize: (index) => pageDimensions[index]?.height * scale + 16 || 1000,
+    overscan: 2,
+  });
 
-        if (originalPageWidth > 0) {
-            const newScale = containerWidth / originalPageWidth;
-            setScale(Math.min(newScale, MAX_ZOOM)); // Fit to width, but don't exceed max zoom
-        }
-    } else {
-        // Fallback for mobile or if measurement fails
-        setScale(isMobile ? 0.5 : 1);
-    }
-  }, [isMobile, scale]);
-
-
-  const onDocumentLoadSuccessInternal = (loadedPdf: PDFDocumentProxy) => {
+  const onDocumentLoadSuccessInternal = async (loadedPdf: PDFDocumentProxy) => {
+    setPdf(loadedPdf);
     setNumPages(loadedPdf.numPages);
     if(onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
-    // After the document loads, we can measure the first page to set the initial scale
-    // A small delay ensures the page is in the DOM for measurement.
-    setTimeout(setInitialScale, 100);
+    
+    const dims = await Promise.all(
+        Array.from({ length: loadedPdf.numPages }, (_, i) => loadedPdf.getPage(i + 1))
+            .map(p => p.then(page => ({ width: page.view[2], height: page.view[3] })))
+    );
+    setPageDimensions(dims);
+
+    setTimeout(() => {
+        if (containerRef.current && dims[0]) {
+            const containerWidth = containerRef.current.clientWidth - 32; // padding
+            const pageOriginalWidth = dims[0].width;
+            const newScale = Math.min(containerWidth / pageOriginalWidth, MAX_ZOOM);
+            setScale(newScale);
+        }
+    }, 100);
   }
 
   function onDocumentLoadError(error: Error) {
     if (error.message.includes('API version') && error.message.includes('Worker version')) {
-        console.warn(`Ignoring expected PDF.js version mismatch error: ${error.message}`);
         return;
     }
     console.error('Error loading PDF:', error);
@@ -72,9 +75,9 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
     });
   }
 
-  const onRenderError = (error: Error) => {
+  const onRenderError = useCallback((error: Error) => {
     if (error.name === 'AbortException' || (error.message && error.message.includes('TextLayer task cancelled'))) {
-        return; // Ignore AbortExceptions as they are expected on rapid interaction.
+        return; 
     }
     console.error('Failed to render PDF page:', error);
     toast({
@@ -82,40 +85,95 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
         title: 'PDF Render Error',
         description: 'A page could not be displayed correctly.',
     });
-  }
+  }, [toast]);
   
+  useEffect(() => {
+    const scrollElement = containerRef.current;
+    if (!scrollElement || !rowVirtualizer) return;
+    
+    const handleScroll = () => {
+        if (!userHasScrolled) setUserHasScrolled(true);
+
+        const virtualItems = rowVirtualizer.getVirtualItems();
+        if (virtualItems.length > 0) {
+            const firstVisibleItem = virtualItems.find(item => item.start >= scrollElement.scrollTop);
+            if(firstVisibleItem) {
+                setPageNumber(firstVisibleItem.index + 1);
+            } else {
+                 const lastItem = virtualItems[virtualItems.length - 1];
+                 if (lastItem) setPageNumber(lastItem.index + 1);
+            }
+        }
+    };
+    
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollElement.removeEventListener('scroll', handleScroll);
+}, [rowVirtualizer, userHasScrolled]);
+
 
   const goToPage = (page: number) => {
-    setPageNumber(Math.max(1, Math.min(page, numPages || 1)));
+    const targetPage = Math.max(1, Math.min(page, numPages || 1));
+    rowVirtualizer.scrollToIndex(targetPage - 1, { align: 'start' });
+    setPageNumber(targetPage);
   }
   
   const zoomIn = () => setScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
+  const virtualItems = rowVirtualizer.getVirtualItems();
 
   return (
-    <div 
-      ref={containerRef} 
-      className="w-full h-full flex flex-col items-center justify-start overflow-auto p-4"
-    >
-      <Document
-        file={file}
-        onLoadSuccess={onDocumentLoadSuccessInternal}
-        onLoadError={onDocumentLoadError}
-        options={options}
-        className="flex justify-center"
+    <div className="w-full h-full flex flex-col items-center">
+      <div 
+        ref={containerRef} 
+        className="w-full h-full overflow-y-auto"
       >
-        <div onWheel={(e) => e.stopPropagation()}>
-            <Page
-                key={`page_${pageNumber}`}
-                pageNumber={pageNumber}
-                scale={scale}
-                renderTextLayer={true}
-                onRenderError={onRenderError}
-                className="shadow-2xl"
-            />
-        </div>
-      </Document>
+        <Document
+          file={file}
+          onLoadSuccess={onDocumentLoadSuccessInternal}
+          onLoadError={onDocumentLoadError}
+          options={options}
+          loading={<div className="p-4"><Skeleton className="h-[80vh] w-full" /></div>}
+          className="flex justify-center"
+        >
+         {numPages && pageDimensions.length > 0 && (
+           <div
+              className="relative w-full"
+              style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+            >
+              {virtualItems.map((virtualRow) => {
+                 const pageDim = pageDimensions[virtualRow.index];
+                 const width = pageDim ? pageDim.width * scale : 'auto';
+                 
+                 return (
+                    <div
+                      key={virtualRow.key}
+                      data-index={virtualRow.index}
+                      ref={rowVirtualizer.measureElement}
+                      className="absolute top-0 left-0 w-full"
+                      style={{
+                        transform: `translateY(${virtualRow.start}px)`,
+                        padding: '8px 0',
+                      }}
+                    >
+                      <div className="mx-auto" style={{ width: `${width}px`}}>
+                          <Page
+                            key={`page_${virtualRow.index + 1}`}
+                            pageNumber={virtualRow.index + 1}
+                            scale={scale}
+                            onRenderError={onRenderError}
+                            renderAnnotationLayer={false}
+                            className="shadow-2xl"
+                            loading={<Skeleton style={{ height: virtualRow.size - 16, width: width }} />}
+                          />
+                      </div>
+                    </div>
+                )
+              })}
+           </div>
+         )}
+        </Document>
+      </div>
 
       {numPages && (
         <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
