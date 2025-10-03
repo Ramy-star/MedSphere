@@ -98,7 +98,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-sm">
+                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-[85%] md:max-w-sm">
                     <p className="text-slate-200 whitespace-pre-wrap break-words text-sm md:text-base">{msg.text}</p>
                 </div>
             </div>
@@ -296,19 +296,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setChatInput('');
     setIsAiThinking(true);
     
-    try {
-      const aiResponse = await chatAboutDocument({ 
+    const { text } = await chatAboutDocument({ 
         question: newQuestion, 
         documentContent: documentText,
         chatHistory: chatHistory // Send the history BEFORE the new question
-      });
-      setChatHistory(prev => [...prev, { role: 'model', text: aiResponse }]);
-    } catch (error: any) {
-        console.error("AI chat error:", error);
-        setChatHistory(prev => [...prev, { role: 'model', text: `An error occurred: ${error.message}. Please try again.` }]);
-    } finally {
-        setIsAiThinking(false);
-    }
+    });
+    setChatHistory(prev => [...prev, { role: 'model', text }]);
+    setIsAiThinking(false);
   }
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
@@ -345,8 +339,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 {isChatAvailable && (
                 <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                    <span className="sr-only sm:hidden">Chat with AI</span>
                     <span className="hidden sm:inline">Chat</span>
+                    <span className="sm:hidden">Chat with AI</span>
                 </Button>
                 )}
             </div>
@@ -435,16 +429,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </div>
                 )}
             </div>
-            <div className="mt-8">
-                 <form onSubmit={handleChatSubmit} className="relative">
+            <div className="mt-auto pt-6">
+                 <form onSubmit={handleChatSubmit} className="relative flex items-end gap-2">
                     <Textarea
                         ref={textareaRef}
-                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-auto min-h-[56px] resize-none overflow-hidden focus-visible:ring-0"
+                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0"
                         placeholder="Ask anything..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
+                            if (e.key === 'Enter' && !e.shiftKey) {
                                 e.preventDefault();
                                 handleChatSubmit();
                             }
@@ -452,9 +446,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         disabled={isExtracting || isAiThinking || !documentText}
                         rows={1}
                     />
-                    <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
-                        <Send className="w-5 h-5" />
-                    </Button>
+                    <div className="absolute bottom-2 right-2 flex-shrink-0">
+                        <Button type="submit" size="icon" className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
+                            <Send className="w-5 h-5" />
+                        </Button>
+                    </div>
                 </form>
             </div>
         </div>
