@@ -55,10 +55,14 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
 
     setTimeout(() => {
         if (containerRef.current && dims[0]) {
-            const containerWidth = containerRef.current.clientWidth - 32; // padding
-            const pageOriginalWidth = dims[0].width;
-            const newScale = Math.min(containerWidth / pageOriginalWidth, MAX_ZOOM);
-            setScale(newScale);
+            if (isMobile) {
+                const containerWidth = containerRef.current.clientWidth - 32; // padding
+                const pageOriginalWidth = dims[0].width;
+                const newScale = Math.min(containerWidth / pageOriginalWidth, MAX_ZOOM);
+                setScale(newScale);
+            } else {
+                setScale(1); // Set to 100% on desktop
+            }
         }
     }, 100);
   }
