@@ -7,7 +7,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { sha256file } from './hashFile';
 import { nanoid } from 'nanoid';
-import type { PDFDocumentProxy } from 'react-pdf';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 
 
 export type Content = {
