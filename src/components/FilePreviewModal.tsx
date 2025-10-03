@@ -98,7 +98,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-xl bg-blue-900/80 px-4 py-2.5 max-w-sm">
+                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-xs md:max-w-sm">
                     <p className="text-slate-200 whitespace-pre-wrap break-words text-sm md:text-base">{msg.text}</p>
                 </div>
             </div>
@@ -117,23 +117,23 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
             </button>
             <ReactMarkdown
               components={{
-                h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3" {...props} />,
-                h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2" {...props} />,
-                h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1" {...props} />,
-                p: ({node, ...props}) => <p className="text-slate-200 my-4" {...props} />,
+                h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg md:text-xl" {...props} />,
+                h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base md:text-lg" {...props} />,
+                h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
+                p: ({node, ...props}) => <p className="text-slate-200 my-4 text-sm md:text-base" {...props} />,
                 strong: ({node, ...props}) => <strong className="text-white" {...props} />,
-                ul: ({node, ...props}) => <ul className="text-slate-200 my-4 ml-4 list-disc" {...props} />,
-                ol: ({node, ...props}) => <ol className="text-slate-200 my-4 ml-4 list-decimal" {...props} />,
-                li: ({node, ...props}) => <li className="text-slate-200 mb-2" {...props} />,
-                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5" {...props} />,
+                ul: ({node, ...props}) => <ul className="text-slate-200 my-4 ml-4 list-disc text-sm md:text-base" {...props} />,
+                ol: ({node, ...props}) => <ol className="text-slate-200 my-4 ml-4 list-decimal text-sm md:text-base" {...props} />,
+                li: ({node, ...props}) => <li className="text-slate-200 mb-2 text-sm md:text-base" {...props} />,
+                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm md:text-base" {...props} />,
                 pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                 hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
                 table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
                 thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
                 tbody: ({node, ...props}) => <tbody {...props} />,
                 tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
-                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
-                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0" {...props} />,
+                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0 text-sm md:text-base" {...props} />,
+                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-sm md:text-base" {...props} />,
               }}
             >
                 {msg.text}
@@ -296,7 +296,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       setChatHistory(prev => [...prev, { role: 'model', text: aiResponse }]);
     } catch (error: any) {
         console.error("AI chat error:", error);
-        setChatHistory(prev => [...prev, { role: 'model', text: error.message || 'Sorry, I encountered an error. Please try again.' }]);
+        setChatHistory(prev => [...prev, { role: 'model', text: `An error occurred: ${error.message}. Please try again.` }]);
     } finally {
         setIsAiThinking(false);
     }
@@ -399,9 +399,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             <p>Analyzing document...</p>
                             </div>
                         ) : documentText ? (
-                            <p>Hello! I am your AI assistant. Ask me anything about this document.</p>
+                            <p className="text-sm md:text-base">Hello! I am your AI assistant. Ask me anything about this document.</p>
                         ) : (
-                            <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                            <p className="text-yellow-400 text-sm md:text-base">Document content is not available or could not be extracted. Chat is disabled.</p>
                         )}
                     </div>
                 )}
@@ -429,7 +429,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <div className="mt-8">
                  <form onSubmit={handleChatSubmit} className="relative">
                     <Textarea
-                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-14 resize-none"
+                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-auto min-h-[56px] resize-none"
                         placeholder="Ask anything..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
@@ -440,6 +440,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             }
                         }}
                         disabled={isExtracting || isAiThinking || !documentText}
+                        rows={1}
                     />
                     <Button type="submit" size="icon" className="absolute top-1/2 right-3 -translate-y-1/2 flex h-10 w-10 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
                         <Send className="w-5 h-5" />
