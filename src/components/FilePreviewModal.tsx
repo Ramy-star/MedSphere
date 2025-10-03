@@ -30,7 +30,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
@@ -98,7 +98,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-xs md:max-w-sm">
+                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-sm md:max-w-md">
                     <p className="text-slate-200 whitespace-pre-wrap break-words text-sm md:text-base">{msg.text}</p>
                 </div>
             </div>
@@ -161,6 +161,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
 
   const fileUrl = item?.metadata?.storagePath;
@@ -216,6 +217,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [chatHistory, isAiThinking]);
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+        textarea.style.height = 'auto'; // Reset height
+        textarea.style.height = `${textarea.scrollHeight}px`; // Set to content height
+    }
+  }, [chatInput]);
 
 
   if (!item) return null;
@@ -336,7 +345,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 {isChatAvailable && (
                 <Button variant={'outline'} onClick={() => setShowChat(true)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                    <span className="sm:hidden">Chat with AI</span>
+                    <span className="sr-only sm:hidden">Chat with AI</span>
                     <span className="hidden sm:inline">Chat</span>
                 </Button>
                 )}
@@ -429,12 +438,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <div className="mt-8">
                  <form onSubmit={handleChatSubmit} className="relative">
                     <Textarea
-                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-auto min-h-[56px] resize-none"
+                        ref={textareaRef}
+                        className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-16 text-white placeholder-[#9A9A9A] h-auto min-h-[56px] resize-none overflow-hidden"
                         placeholder="Ask anything..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
                         onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
+                            if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
                                 e.preventDefault();
                                 handleChatSubmit();
                             }
