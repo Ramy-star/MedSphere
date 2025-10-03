@@ -23,7 +23,7 @@ const MAX_ZOOM = 5;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.2;
 
-const PdfViewer = ({ file, onLoadSuccess, isControlsVisible }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, isControlsVisible: boolean }) => {
+const PdfViewer = ({ file, onLoadSuccess, isControlsVisible, previewContainerRef }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, isControlsVisible: boolean, previewContainerRef: React.RefObject<HTMLDivElement> }) => {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
@@ -126,6 +126,15 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible }: { file: string, o
   const zoomOut = () => setScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
 
   const virtualItems = rowVirtualizer.getVirtualItems();
+  
+  const getControlsPosition = () => {
+    if (!previewContainerRef.current) return { left: '50%', transform: 'translateX(-50%)' };
+    const { left, width } = previewContainerRef.current.getBoundingClientRect();
+    return {
+        left: `${left + width / 2}px`,
+        transform: 'translateX(-50%)',
+    };
+  };
 
   return (
     <div className="w-full h-full flex flex-col items-center">
@@ -187,7 +196,8 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible }: { file: string, o
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center"
+            className="fixed bottom-4 z-20 flex items-center justify-center"
+            style={isMobile ? { left: '50%', transform: 'translateX(-50%)' } : getControlsPosition()}
           >
             <div className="flex items-center gap-0 md:gap-1 bg-black/50 text-white rounded-full p-1 shadow-lg backdrop-blur-sm border border-white/20">
               <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>

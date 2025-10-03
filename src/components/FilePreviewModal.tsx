@@ -99,7 +99,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-sm md:max-w-md">
+                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-sm md:max-w-md lg:max-w-sm">
                     <p className="text-sm md:text-base text-slate-200 whitespace-pre-wrap break-words">{msg.text}</p>
                 </div>
             </div>
@@ -159,8 +159,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const { isHeaderFixed, chatInputOffset, setHeaderFixed, setChatInputOffset } = useMobileViewStore();
+  const { setHeaderFixed, setChatInputOffset } = useMobileViewStore();
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
+  const previewContainerRef = useRef<HTMLDivElement>(null);
 
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -343,7 +344,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         chatHistory: chatHistory, // Send the history BEFORE the new question
     });
 
-    setChatHistory(prev => [...prev, { role: 'model', text: responseText }]);
+    setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
     setIsAiThinking(false);
   }
 
@@ -352,7 +353,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const renderFilePreview = () => (
     <motion.div 
         layout
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        ref={previewContainerRef}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         onMouseEnter={() => !isMobile && setIsHoveringPreview(true)}
         onMouseLeave={() => !isMobile && setIsHoveringPreview(false)}
         className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden relative"
@@ -363,7 +365,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <X className="w-6 h-6" />
                 </Button>
                 <div className="flex items-center gap-3 overflow-hidden">
-                    {!isMobile && <Icon className={cn("w-6 h-6 shrink-0", color)} />}
+                    <Icon className={cn("w-6 h-6 shrink-0", color)} />
                     <span className="text-sm md:text-base text-white font-medium truncate">{item.name}</span>
                 </div>
             </div>
@@ -382,11 +384,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onClick={() => setShowChat(!showChat)} 
                     className={cn(
                         "rounded-full px-3 h-9 sm:px-4",
-                        showChat && "bg-primary hover:bg-primary/90"
+                        showChat && "bg-primary hover:bg-primary/90",
+                        !showChat && "bg-background/50 border-white/20 text-white"
                     )}
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                    <span className="hidden sm:inline">
+                    <span className={cn(isMobile ? 'inline' : 'hidden sm:inline')}>
                       Chat with AI
                     </span>
                 </Button>
@@ -404,6 +407,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   itemName={item.name}
                   onPdfLoadSuccess={handlePdfLoadSuccess}
                   isControlsVisible={isHoveringPreview || isMobile}
+                  previewContainerRef={previewContainerRef}
               />
             )}
             {!loading && !fileUrl && (
@@ -417,9 +421,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   );
 
   const renderChatView = () => {
+    const { chatInputOffset } = useMobileViewStore();
     const chatViewContent = (
       <>
-        <header className={cn("flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16", isMobile && isHeaderFixed && "hidden")}>
+        <header className={cn("flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16")}>
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -477,9 +482,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             className={cn(
               "mt-auto bg-[#1A1A1A] p-2 border-t border-white/10",
               isMobile && "fixed bottom-0 left-0 right-0 z-50",
-              isMobile && "pb-[var(--chat-input-offset)] transition-[padding-bottom] duration-200"
+              "transition-all duration-200"
             )}
-             style={{ '--chat-input-offset': `${chatInputOffset}px` } as React.CSSProperties}
+             style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined }}
         >
                 <form onSubmit={handleChatSubmit} className="relative flex items-end gap-2">
                 <Textarea
@@ -489,11 +494,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
+                        if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
-                            handleChatSubmit();
-                        } else if (e.key === 'Enter' && e.shiftKey) {
-                            // This case is handled by default textarea behavior (new line)
+                            if (!isMobile) {
+                              handleChatSubmit();
+                            }
                         }
                     }}
                     disabled={isExtracting || isAiThinking || !documentText}
@@ -533,11 +538,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             {showChat && (
                  <motion.div
                     key="chat-panel-desktop"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 448, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full border-l border-slate-800"
+                    layout
+                    initial={{ width: 0, opacity: 0, x: 448 }}
+                    animate={{ width: 448, opacity: 1, x: 0 }}
+                    exit={{ width: 0, opacity: 0, x: 448, transition: { duration: 0.2, ease: 'easeOut' } }}
+                    transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+                    className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full"
                     aria-label="AI Chat Panel"
                 >
                     {chatViewContent}
