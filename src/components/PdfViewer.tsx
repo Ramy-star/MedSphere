@@ -117,22 +117,21 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
               options={options}
               className="flex flex-col items-center"
             >
-              <div style={{ height: rowVirtualizer.getTotalSize(), width: '100%', position: 'relative' }}>
+              <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
                 {rowVirtualizer.getVirtualItems().map((virtualItem) => (
-                    <div 
-                      key={virtualItem.key} 
-                      data-page-number={virtualItem.index + 1}
+                    <div
+                      key={virtualItem.key}
                       style={{
                         position: 'absolute',
                         top: 0,
                         left: 0,
                         width: '100%',
-                        transform: `translateY(${virtualItem.start}px)`,
                         height: `${virtualItem.size}px`,
+                        transform: `translateY(${virtualItem.start}px)`,
                       }}
                       className="flex justify-center"
                     >
-                      <Page 
+                      <Page
                         pageNumber={virtualItem.index + 1}
                         scale={scale * devicePixelRatio}
                         renderTextLayer={true}
