@@ -6,6 +6,7 @@ import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -26,14 +27,29 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const isMobile = useIsMobile();
-  const [scale, setScale] = useState(isMobile ? 0.25 : 1);
+  const [scale, setScale] = useState(0.25);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
+  const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 });
   
   const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
 
-  const onDocumentLoadSuccessInternal = (loadedPdf: PDFDocumentProxy) => {
+  const rowVirtualizer = useVirtualizer({
+    count: numPages || 0,
+    getScrollElement: () => containerRef.current,
+    estimateSize: () => pageDimensions.height * scale + 16, // +16 for margin-bottom
+    overscan: 2,
+  });
+
+  const onDocumentLoadSuccessInternal = async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
+     try {
+        const firstPage = await loadedPdf.getPage(1);
+        const viewport = firstPage.getViewport({ scale: 1 });
+        setPageDimensions({ width: viewport.width, height: viewport.height });
+    } catch (e) {
+        console.error("Could not get page dimensions", e);
+    }
     if(onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
@@ -65,39 +81,23 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
   }
 
   useEffect(() => {
-    setScale(isMobile ? 0.25 : 1);
-  }, [isMobile]);
-
-  useEffect(() => {
-    if (!numPages || !containerRef.current) return;
-  
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            const page = entry.target.getAttribute('data-page-number');
-            if (page) {
-              setPageNumber(parseInt(page, 10));
-            }
-          }
-        });
-      },
-      { root: containerRef.current, threshold: 0.5 }
-    );
-  
-    const pageElements = containerRef.current.querySelectorAll('[data-page-number]');
-    pageElements.forEach((el) => observer.observe(el));
-  
-    return () => {
-      pageElements.forEach((el) => observer.unobserve(el));
+    const handleScroll = () => {
+      const virtualItems = rowVirtualizer.getVirtualItems();
+      if (virtualItems.length > 0) {
+        const middleItem = virtualItems[Math.floor(virtualItems.length / 2)];
+        if (middleItem) {
+          setPageNumber(middleItem.index + 1);
+        }
+      }
     };
-  }, [numPages]);
+    const scrollElement = containerRef.current;
+    scrollElement?.addEventListener('scroll', handleScroll, { passive: true });
+    return () => scrollElement?.removeEventListener('scroll', handleScroll);
+  }, [rowVirtualizer]);
+
 
   const goToPage = (page: number) => {
-    const pageElement = document.querySelector(`[data-page-number="${page}"]`);
-    if (pageElement) {
-        pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
+    rowVirtualizer.scrollToIndex(page - 1, { align: 'start' });
     setPageNumber(page);
   }
   
@@ -110,26 +110,38 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
       className="w-full h-full flex flex-col items-center justify-start"
     >
       <div ref={containerRef} className="flex-1 w-full overflow-auto">
-        <div className="flex justify-center items-start min-h-full">
-            <Document
+         <Document
               file={file}
               onLoadSuccess={onDocumentLoadSuccessInternal}
               onLoadError={onDocumentLoadError}
               options={options}
               className="flex flex-col items-center"
             >
-              {Array.from({ length: numPages || 0 }, (_, i) => i + 1).map((page) => (
-                  <div key={`page_${page}`} className="mb-4" data-page-number={page}>
-                    <Page 
-                      pageNumber={page} 
-                      scale={scale * devicePixelRatio}
-                      renderTextLayer={true}
-                      onRenderError={onRenderError}
-                    />
-                  </div>
-              ))}
+              <div style={{ height: rowVirtualizer.getTotalSize(), width: '100%', position: 'relative' }}>
+                {rowVirtualizer.getVirtualItems().map((virtualItem) => (
+                    <div 
+                      key={virtualItem.key} 
+                      data-page-number={virtualItem.index + 1}
+                      style={{
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        transform: `translateY(${virtualItem.start}px)`,
+                        height: `${virtualItem.size}px`,
+                      }}
+                      className="flex justify-center"
+                    >
+                      <Page 
+                        pageNumber={virtualItem.index + 1}
+                        scale={scale * devicePixelRatio}
+                        renderTextLayer={true}
+                        onRenderError={onRenderError}
+                      />
+                    </div>
+                ))}
+              </div>
             </Document>
-        </div>
       </div>
 
       {numPages && (
