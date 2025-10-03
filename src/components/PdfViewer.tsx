@@ -8,6 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { Skeleton } from './ui/skeleton';
+import { motion, AnimatePresence } from 'framer-motion';
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -22,7 +23,7 @@ const MAX_ZOOM = 5;
 const MIN_ZOOM = 0.2;
 const ZOOM_STEP = 0.2;
 
-const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
+const PdfViewer = ({ file, onLoadSuccess, isControlsVisible }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, isControlsVisible: boolean }) => {
   const [pdf, setPdf] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
@@ -179,38 +180,45 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
         </Document>
       </div>
 
-      {numPages && (
-        <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center">
-           <div className="flex items-center gap-0 md:gap-1 bg-black/80 text-white rounded-full p-1 shadow-lg backdrop-blur-sm">
-            
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
-                <ChevronLeft className="w-4 h-4" />
-                <span className="sr-only">Previous Page</span>
-            </Button>
-            
-            <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
-            
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= numPages}>
-                <ChevronRight className="w-4 h-4" />
-                <span className="sr-only">Next Page</span>
-            </Button>
+      <AnimatePresence>
+        {numPages && isControlsVisible && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ duration: 0.2, ease: 'easeOut' }}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-20 flex items-center justify-center"
+          >
+            <div className="flex items-center gap-0 md:gap-1 bg-black/50 text-white rounded-full p-1 shadow-lg backdrop-blur-sm border border-white/20">
+              <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+                  <ChevronLeft className="w-4 h-4" />
+                  <span className="sr-only">Previous Page</span>
+              </Button>
+              
+              <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
+              
+              <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= numPages}>
+                  <ChevronRight className="w-4 h-4" />
+                  <span className="sr-only">Next Page</span>
+              </Button>
 
-            <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
-            
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
-              <Minus className="w-4 h-4" />
-            </Button>
+              <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
+              
+              <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={scale <= MIN_ZOOM}>
+                <Minus className="w-4 h-4" />
+              </Button>
 
-            <span className='text-xs w-12 text-center font-mono'>
-                {`${Math.round(scale * 100)}%`}
-            </span>
+              <span className='text-xs w-12 text-center font-mono'>
+                  {`${Math.round(scale * 100)}%`}
+              </span>
 
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
-              <Plus className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
+              <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={scale >= MAX_ZOOM}>
+                <Plus className="w-4 h-4" />
+              </Button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

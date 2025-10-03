@@ -14,7 +14,7 @@ const PdfViewer = dynamic(() => import('./PdfViewer'), {
   loading: () => <div className="text-white">Loading PDF viewer...</div>
 });
 
-const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess }: { url: string, mime: string, itemName: string, onPdfLoadSuccess?: (pdf: PDFDocumentProxy) => void }, ref) => {
+const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess, isControlsVisible }: { url: string, mime: string, itemName: string, onPdfLoadSuccess?: (pdf: PDFDocumentProxy) => void, isControlsVisible: boolean }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
 
@@ -53,7 +53,7 @@ const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess }: { url
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer file={url} onLoadSuccess={onPdfLoadSuccess} />;
+    return <PdfViewer file={url} onLoadSuccess={onPdfLoadSuccess} isControlsVisible={isControlsVisible} />;
   }
   
   if (mime.startsWith('audio/')) {

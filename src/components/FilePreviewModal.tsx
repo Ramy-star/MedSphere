@@ -160,6 +160,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { isHeaderFixed, chatInputOffset, setHeaderFixed, setChatInputOffset } = useMobileViewStore();
+  const [isHoveringPreview, setIsHoveringPreview] = useState(false);
 
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -350,22 +351,21 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const renderFilePreview = () => (
     <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
+        layout
+        transition={{ duration: 0.3, ease: 'easeInOut' }}
+        onMouseEnter={() => !isMobile && setIsHoveringPreview(true)}
+        onMouseLeave={() => !isMobile && setIsHoveringPreview(false)}
+        className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden relative"
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
             <div className="flex items-center gap-2 overflow-hidden">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                     <X className="w-6 h-6" />
                 </Button>
-                {!isMobile && (
-                  <div className="flex items-center gap-3 overflow-hidden">
-                      <Icon className="w-5 h-5 sm:w-6 sm:h-6 shrink-0" color={color} />
-                      <span className="text-sm md:text-base text-white font-medium truncate">{item.name}</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-3 overflow-hidden">
+                    {!isMobile && <Icon className={cn("w-6 h-6 shrink-0", color)} />}
+                    <span className="text-sm md:text-base text-white font-medium truncate">{item.name}</span>
+                </div>
             </div>
             <div className='flex items-center gap-1 sm:gap-2'>
                 {!isLink && (
@@ -377,12 +377,18 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <ExternalLink className="w-5 h-5" />
                 </Button>
                 {isChatAvailable && (
-                <Button variant={'outline'} onClick={() => setShowChat(!showChat)} className="rounded-full px-3 h-9 sm:h-auto sm:w-auto sm:px-4">
+                <Button 
+                    variant={showChat ? 'default' : 'outline'} 
+                    onClick={() => setShowChat(!showChat)} 
+                    className={cn(
+                        "rounded-full px-3 h-9 sm:px-4",
+                        showChat && "bg-primary hover:bg-primary/90"
+                    )}
+                >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
                     <span className="hidden sm:inline">
-                      {isMobile ? "Chat with AI" : "Chat"}
+                      Chat with AI
                     </span>
-                    <span className="sm:hidden">Chat with AI</span>
                 </Button>
                 )}
             </div>
@@ -397,6 +403,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   mime={item.metadata?.mime ?? 'application/octet-stream'} 
                   itemName={item.name}
                   onPdfLoadSuccess={handlePdfLoadSuccess}
+                  isControlsVisible={isHoveringPreview || isMobile}
               />
             )}
             {!loading && !fileUrl && (
@@ -410,8 +417,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   );
 
   const renderChatView = () => {
-    if (!showChat) return null;
-
     const chatViewContent = (
       <>
         <header className={cn("flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16", isMobile && isHeaderFixed && "hidden")}>
@@ -469,7 +474,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 )}
         </div>
         <div 
-            className="mt-auto bg-[#1A1A1A] p-2 border-t border-white/10"
+            className={cn(
+              "mt-auto bg-[#1A1A1A] p-2 border-t border-white/10",
+              isMobile && "fixed bottom-0 left-0 right-0 z-50",
+              isMobile && "pb-[var(--chat-input-offset)] transition-[padding-bottom] duration-200"
+            )}
+             style={{ '--chat-input-offset': `${chatInputOffset}px` } as React.CSSProperties}
         >
                 <form onSubmit={handleChatSubmit} className="relative flex items-end gap-2">
                 <Textarea
@@ -478,10 +488,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={(e) => {
+                     onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
                             e.preventDefault();
                             handleChatSubmit();
+                        } else if (e.key === 'Enter' && e.shiftKey) {
+                            // This case is handled by default textarea behavior (new line)
                         }
                     }}
                     disabled={isExtracting || isAiThinking || !documentText}
@@ -499,35 +511,39 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     
     if (isMobile) {
         return (
-             <motion.div
-                key="chat-panel-mobile"
-                initial={{ y: '100%' }}
-                animate={{ y: 0 }}
-                exit={{ y: '100%' }}
-                transition={{ duration: 0.3, ease: 'easeInOut' }}
-                className={cn(
-                    "flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20",
-                    "pb-[var(--chat-input-offset)]"
+             <AnimatePresence>
+                {showChat && (
+                    <motion.div
+                        key="chat-panel-mobile"
+                        initial={{ y: '100%' }}
+                        animate={{ y: 0 }}
+                        exit={{ y: '100%' }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20"
+                    >
+                        {chatViewContent}
+                    </motion.div>
                 )}
-                style={{ '--chat-input-offset': `${chatInputOffset}px` } as React.CSSProperties}
-            >
-                {chatViewContent}
-            </motion.div>
+            </AnimatePresence>
         );
     }
 
     return (
-        <motion.div
-            key="chat-panel-desktop"
-            initial={{ x: '100%' }}
-            animate={{ x: 0 }}
-            exit={{ x: '100%' }}
-            transition={{ duration: 0.3, ease: 'easeInOut' }}
-            className="flex flex-col overflow-hidden bg-[#1A1A1A] w-[448px] h-full border-l border-slate-800"
-            aria-label="AI Chat Panel"
-        >
-            {chatViewContent}
-        </motion.div>
+        <AnimatePresence initial={false}>
+            {showChat && (
+                 <motion.div
+                    key="chat-panel-desktop"
+                    initial={{ width: 0, opacity: 0 }}
+                    animate={{ width: 448, opacity: 1 }}
+                    exit={{ width: 0, opacity: 0 }}
+                    transition={{ duration: 0.3, ease: 'easeInOut' }}
+                    className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full border-l border-slate-800"
+                    aria-label="AI Chat Panel"
+                >
+                    {chatViewContent}
+                </motion.div>
+            )}
+        </AnimatePresence>
     );
   };
 
@@ -546,8 +562,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </DialogHeader>
         
         {renderFilePreview()}
-        {!isMobile && renderChatView()}
-        {isMobile && <AnimatePresence>{showChat && renderChatView()}</AnimatePresence>}
+        {renderChatView()}
        
         <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
             <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
