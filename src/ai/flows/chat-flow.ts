@@ -29,19 +29,7 @@ const chatPrompt = ai.definePrompt({
   prompt: chatPromptText,
 });
 
-const chatFlow = ai.defineFlow(
-  {
-    name: 'chatFlow',
-    inputSchema: ChatInputSchema,
-    outputSchema: z.string(),
-  },
-  async (input) => {
+export async function chatAboutDocument(input: ChatInput): Promise<string> {
     const { text } = await chatPrompt(input);
     return text;
-  }
-);
-
-
-export async function chatAboutDocument(input: ChatInput): Promise<string> {
-    return await chatFlow(input);
 }
