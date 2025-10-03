@@ -31,7 +31,7 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
@@ -159,7 +159,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const { isHeaderFixed, chatInputOffset, setHeaderFixed, setChatInputOffset } = useMobileViewStore();
 
 
@@ -500,7 +500,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     }}
                     disabled={isExtracting || isAiThinking || !documentText}
                     rows={1}
-                    enterKeyHint="send"
                 />
                 <div className="absolute bottom-2 right-3 flex-shrink-0">
                     <Button type="submit" size="icon" className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
