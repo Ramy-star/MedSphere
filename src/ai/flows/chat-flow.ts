@@ -43,11 +43,5 @@ const chatFlow = ai.defineFlow(
 
 
 export async function chatAboutDocument(input: ChatInput): Promise<string> {
-    try {
-        return await chatFlow(input);
-    } catch(e: any) {
-        console.error("Error in chatAboutDocument flow: ", e);
-        // Return a user-friendly error message
-        return "I'm sorry, I encountered an issue while trying to process your request. Please try again later.";
-    }
+    return await chatFlow(input);
 }
