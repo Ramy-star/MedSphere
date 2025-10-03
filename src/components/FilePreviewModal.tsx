@@ -160,7 +160,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const { setHeaderFixed, setChatInputOffset } = useMobileViewStore();
+  const { isHeaderFixed, chatInputOffset, setHeaderFixed, setChatInputOffset } = useMobileViewStore();
 
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -242,8 +242,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         }
       };
 
-      if ('visualViewport' in window) {
-        window.visualViewport?.addEventListener('resize', onVVResize);
+      if ('visualViewport' in window && window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onVVResize);
         onVVResize(); // Initial call
       }
     };
@@ -251,9 +251,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const handleBlur = () => {
       setHeaderFixed(false);
       setChatInputOffset(0);
-      if ('visualViewport' in window) {
+       if ('visualViewport' in window && window.visualViewport) {
         // A proper type guard would be better, but this works for now.
-        window.visualViewport?.removeEventListener('resize', () => {});
+        // @ts-ignore
+        window.visualViewport.removeEventListener('resize', onVVResize);
       }
     };
     
@@ -410,8 +411,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   );
 
   const renderChatView = () => {
-    const { chatInputOffset, isHeaderFixed } = useMobileViewStore.getState();
-
     return (
     <motion.div
         key="chat-panel"
