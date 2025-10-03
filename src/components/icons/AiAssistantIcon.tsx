@@ -1,20 +1,18 @@
 'use client';
 import { cn } from "@/lib/utils";
-import type { LucideProps } from "lucide-react";
 import React from "react";
 import Image from "next/image";
 
-// The LucideProps type includes props like 'strokeWidth' which are not valid for the next/image component.
-// We are destructuring them here to prevent them from being passed down to the Image component via `...rest`.
-export const AiAssistantIcon = React.forwardRef<HTMLImageElement, LucideProps>(
-  ({ className, strokeWidth, ...rest }, ref) => (
+// Simplified the component to only accept basic HTML props to avoid type conflicts with LucideProps.
+export const AiAssistantIcon = React.forwardRef<HTMLImageElement, React.HTMLAttributes<HTMLImageElement>>(
+  ({ className, ...props }, ref) => (
     <Image
       src="/ai-assistant-icon.svg"
       alt="AI Assistant"
       width={24}
       height={24}
       className={cn(className)}
-      {...rest}
+      {...props} // Pass only basic compatible props
       ref={ref}
     />
   )
