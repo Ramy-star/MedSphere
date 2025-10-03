@@ -5,9 +5,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Button } from './ui/button';
 import { Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useWindowSize } from '@react-hook/window-size';
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -27,15 +25,20 @@ const ZOOM_STEP = 0.05;
 const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void }) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
-  const [scale, setScale] = useState(0.25);
+  const [scale, setScale] = useState(1);
   const [pageDimensions, setPageDimensions] = useState({ width: 0, height: 0 });
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 0);
   
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [width] = useWindowSize();
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
   
-  const devicePixelRatio = typeof window !== 'undefined' ? window.devicePixelRatio : 1;
-  const calculatedWidth = Math.min(width, 1024) * 0.9; // 90% of width up to 1024px
+  const calculatedWidth = Math.min(windowWidth, 1024) * 0.9; // 90% of width up to 1024px
 
   const rowVirtualizer = useVirtualizer({
     count: numPages || 0,
@@ -54,6 +57,13 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
         const firstPage = await loadedPdf.getPage(1);
         const viewport = firstPage.getViewport({ scale: 1 });
         setPageDimensions({ width: viewport.width, height: viewport.height });
+
+        // Set initial scale to fit width
+        if (containerRef.current) {
+          const containerWidth = containerRef.current.clientWidth;
+          setScale(containerWidth / viewport.width);
+        }
+
     } catch (e) {
         console.error("Could not get page dimensions", e);
     }
@@ -92,7 +102,6 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
       if (!rowVirtualizer) return;
       const virtualItems = rowVirtualizer.getVirtualItems();
       if (virtualItems.length > 0) {
-        // Find the topmost visible item.
         const firstVisibleItem = virtualItems.find(item => item.start >= (containerRef.current?.scrollTop || 0));
         if (firstVisibleItem) {
           setPageNumber(firstVisibleItem.index + 1);
@@ -138,7 +147,7 @@ const PdfViewer = ({ file, onLoadSuccess }: { file: string, onLoadSuccess?: (pdf
                         height: `${virtualItem.size}px`,
                         transform: `translateY(${virtualItem.start}px)`,
                       }}
-                      className="flex justify-center mb-4" // mb-4 for spacing between pages
+                      className="flex justify-center mb-4"
                     >
                       <Page
                         pageNumber={virtualItem.index + 1}
