@@ -165,14 +165,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [isPdfControlsVisible, setIsPdfControlsVisible] = useState(false);
 
+  // Hooks moved to top level
+  const isMobile = useIsMobile();
+  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   
-  // Hooks moved to top level
-  const isMobile = useIsMobile();
-  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
-
   const fileUrl = item?.metadata?.storagePath;
   const isLink = item?.type === 'LINK';
   const linkUrl = item?.metadata?.url;
@@ -403,29 +402,27 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="absolute bottom-4 z-20 left-1/2 -translate-x-1/2"
+                    className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
                 >
-                    <div className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20">
-                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
-                            <ChevronLeft className="w-4 h-4" />
-                            <span className="sr-only">Previous Page</span>
-                        </Button>
-                        <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
-                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
-                            <ChevronRight className="w-4 h-4" />
-                            <span className="sr-only">Next Page</span>
-                        </Button>
-                        <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
-                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
-                            <Minus className="w-4 h-4" />
-                        </Button>
-                        <span className='text-xs w-12 text-center font-mono'>
-                            {`${Math.round(pdfScale * 100)}%`}
-                        </span>
-                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
-                            <Plus className="w-4 h-4" />
-                        </Button>
-                    </div>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+                        <ChevronLeft className="w-4 h-4" />
+                        <span className="sr-only">Previous Page</span>
+                    </Button>
+                    <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
+                        <ChevronRight className="w-4 h-4" />
+                        <span className="sr-only">Next Page</span>
+                    </Button>
+                    <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+                        <Minus className="w-4 h-4" />
+                    </Button>
+                    <span className='text-xs w-12 text-center font-mono'>
+                        {`${Math.round(pdfScale * 100)}%`}
+                    </span>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+                        <Plus className="w-4 h-4" />
+                    </Button>
                 </motion.div>
             )}
         </AnimatePresence>
@@ -439,7 +436,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         onMouseEnter={() => setIsHoveringPreview(true)}
         onMouseLeave={() => setIsHoveringPreview(false)}
-        className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden relative"
+        className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
             <div className="flex items-center gap-2 overflow-hidden">
@@ -481,26 +478,30 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main className="flex-1 overflow-auto flex items-center justify-center relative">
-            {loading && <div className="text-white">Loading...</div>}
-            {error && <div className="text-red-400">Error: {error}</div>}
-            {!loading && !error && fileUrl && (
-              <FilePreview 
-                  url={fileUrl} 
-                  mime={item.metadata?.mime ?? 'application/octet-stream'} 
-                  itemName={item.name}
-                  onPdfLoadSuccess={handlePdfLoadSuccess}
-                  pdfScale={pdfScale}
-                  pageNumber={pageNumber}
-              />
-            )}
-            {!loading && !fileUrl && (
-            <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                <p className="text-xl mb-3">File content not available.</p>
-                <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+        <main className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1">
+            <div className="[grid-area:1/1] overflow-auto flex items-center justify-center">
+              {loading && <div className="text-white">Loading...</div>}
+              {error && <div className="text-red-400">Error: {error}</div>}
+              {!loading && !error && fileUrl && (
+                <FilePreview 
+                    url={fileUrl} 
+                    mime={item.metadata?.mime ?? 'application/octet-stream'} 
+                    itemName={item.name}
+                    onPdfLoadSuccess={handlePdfLoadSuccess}
+                    pdfScale={pdfScale}
+                    pageNumber={pageNumber}
+                />
+              )}
+              {!loading && !fileUrl && (
+              <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                  <p className="text-xl mb-3">File content not available.</p>
+                  <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
+              </div>
+              )}
             </div>
-            )}
-            {renderPdfControls()}
+            <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4">
+                {renderPdfControls()}
+            </div>
         </main>
     </motion.div>
   );
