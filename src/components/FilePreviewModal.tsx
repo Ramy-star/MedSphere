@@ -158,7 +158,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const { setHeaderFixed, setChatInputOffset } = useMobileViewStore();
+  // Call hooks at the top level
+  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -320,7 +321,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     onOpenChange(false);
   }
   
-  const handleChatSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
+ const handleChatSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();
     if (!chatInput.trim() || isAiThinking) return;
 
@@ -344,6 +345,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
     setIsAiThinking(false);
   }
+
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   
@@ -421,8 +423,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   );
 
   const renderChatView = () => {
-    // Hooks must be called at the top level, so we do it here unconditionally
-    const { chatInputOffset } = useMobileViewStore();
 
     const chatViewContent = (
       <>
@@ -496,7 +496,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
+                        if (e.key === 'Enter' && e.shiftKey) {
+                            // Default behavior (new line) will happen
+                        } else if (e.key === 'Enter') {
                             e.preventDefault();
                             handleChatSubmit();
                         }
