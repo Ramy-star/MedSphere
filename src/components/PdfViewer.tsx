@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -54,13 +53,12 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
 
   // Scroll to page when targetPageNumber changes (from button clicks)
   useEffect(() => {
-    if (targetPageNumber > 0 && targetPageNumber <= (numPages || 0)) {
-        const pageElement = pageRefs.current[targetPageNumber - 1];
-        if (pageElement) {
-            pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
-    }
-  }, [targetPageNumber, numPages]);
+      const pageElement = pageRefs.current[targetPageNumber - 1];
+      if (pageElement) {
+          pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+  }, [targetPageNumber]);
+
 
   // Intersection observer for scroll detection
   useEffect(() => {
@@ -70,19 +68,16 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
       (entries) => {
         const visibleEntries = entries.filter(e => e.isIntersecting);
         if (visibleEntries.length > 0) {
-          // Find the entry with the highest intersection ratio
           const mostVisibleEntry = visibleEntries.reduce((prev, current) => {
             return prev.intersectionRatio > current.intersectionRatio ? prev : current;
           });
           const pageIndex = parseInt(mostVisibleEntry.target.getAttribute('data-page-index') || '0', 10);
-          if (pageIndex + 1 !== targetPageNumber) {
-            onPageChange(pageIndex + 1);
-          }
+          onPageChange(pageIndex + 1);
         }
       },
       { 
         root: containerRef.current,
-        threshold: Array.from({ length: 11 }, (_, i) => i * 0.1), // Create thresholds from 0.0 to 1.0
+        threshold: 0.5,
       }
     );
 
@@ -96,7 +91,7 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
         if (ref) observer.unobserve(ref);
       });
     };
-  }, [numPages, onPageChange, targetPageNumber]);
+  }, [numPages, onPageChange]);
 
 
   return (
