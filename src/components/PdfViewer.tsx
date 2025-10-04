@@ -129,21 +129,32 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible, previewContainerRef
   const virtualItems = rowVirtualizer.getVirtualItems();
   
   const updateControlsPosition = useCallback(() => {
-    if (!previewContainerRef.current) return;
+    if (isMobile || !previewContainerRef.current) {
+        setControlsPosition({ left: '50%', transform: 'translateX(-50%)' });
+        return;
+    }
     const previewContainerRect = previewContainerRef.current.getBoundingClientRect();
     setControlsPosition({
         left: `${previewContainerRect.left + previewContainerRect.width / 2}px`,
         transform: 'translateX(-50%)',
     });
-  }, [previewContainerRef]);
+  }, [previewContainerRef, isMobile]);
+
 
   useEffect(() => {
     updateControlsPosition();
+    // Use a ResizeObserver to handle layout changes
     const observer = new ResizeObserver(updateControlsPosition);
     if (previewContainerRef.current) {
         observer.observe(previewContainerRef.current);
     }
-    return () => observer.disconnect();
+    // Add window resize listener as a fallback
+    window.addEventListener('resize', updateControlsPosition);
+
+    return () => {
+        observer.disconnect();
+        window.removeEventListener('resize', updateControlsPosition);
+    };
   }, [updateControlsPosition, previewContainerRef]);
 
 

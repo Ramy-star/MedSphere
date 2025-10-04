@@ -158,9 +158,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
   
+  // This hook must be called at the top level
+  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
+
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -335,14 +337,25 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setChatInput('');
     setIsAiThinking(true);
     
-    const responseText = await chatAboutDocument({
-        question: newQuestion,
-        documentContent: documentText,
-        chatHistory: chatHistory, // Send the history BEFORE the new question
-    });
-
-    setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
-    setIsAiThinking(false);
+    try {
+        const responseText = await chatAboutDocument({
+            question: newQuestion,
+            documentContent: documentText,
+            chatHistory: chatHistory, // Send the history BEFORE the new question
+        });
+        setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
+    } catch (error) {
+        console.error("Error calling chat flow:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Chat Error",
+            description: "The AI assistant could not be reached. Please try again later."
+        });
+        // Remove the user's question to indicate failure
+        setChatHistory(prev => prev.slice(0, -1));
+    } finally {
+        setIsAiThinking(false);
+    }
   }
 
 
@@ -365,7 +378,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <div className="flex items-center gap-3 overflow-hidden">
                     <Icon className={cn("w-6 h-6 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
-                       {!isMobile && <p className='text-sm text-slate-400'>{item.metadata?.mime}</p>}
                        <span className="text-sm md:text-base text-white font-medium truncate">{item.name}</span>
                     </div>
                 </div>
@@ -390,7 +402,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     )}
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                    <span className={cn(isMobile ? 'inline' : 'sm:inline')}>
+                    <span className={cn(isMobile ? 'sr-only' : 'sm:inline')}>
                       Chat with AI
                     </span>
                 </Button>
