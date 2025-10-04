@@ -129,9 +129,9 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible, previewContainerRef
   
   const getControlsPosition = () => {
     if (!previewContainerRef.current) return { left: '50%', transform: 'translateX(-50%)' };
-    const { left, width } = previewContainerRef.current.getBoundingClientRect();
+    const previewContainerRect = previewContainerRef.current.getBoundingClientRect();
     return {
-        left: `${left + width / 2}px`,
+        left: `${previewContainerRect.left + previewContainerRect.width / 2}px`,
         transform: 'translateX(-50%)',
     };
   };

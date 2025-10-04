@@ -10,7 +10,7 @@ import { Button } from './ui/button';
 import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
-import React, { useEffect, useState, useRef, useCallback } from 'react';
+import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, Sparkles } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -158,10 +158,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
-  // Call hooks at the top level
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
-
+  
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
