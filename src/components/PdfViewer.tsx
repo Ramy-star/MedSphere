@@ -15,7 +15,7 @@ const options = {
   standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
 };
 
-const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, scale: number, pageNumber: number }) => {
+const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, onPageChange }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, scale: number, pageNumber: number, onPageChange?: (page: number) => void }) => {
   const [numPages, setNumPages] = useState<number>();
   const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
   const { toast } = useToast();
@@ -85,6 +85,46 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber }:
     }
   }, [targetPageNumber, numPages, rowVirtualizer]);
 
+  useEffect(() => {
+    if (!onPageChange || !containerRef.current) return;
+    
+    const handleScroll = () => {
+        if (!containerRef.current) return;
+
+        const virtualItems = rowVirtualizer.getVirtualItems();
+        if (virtualItems.length === 0) return;
+
+        const containerTop = containerRef.current.getBoundingClientRect().top;
+
+        let mostVisiblePage = -1;
+        let maxVisibility = -1;
+
+        for (const virtualItem of virtualItems) {
+            const element = virtualItem.measureElement;
+            if (!element) continue;
+
+            const rect = element.getBoundingClientRect();
+            const visibleHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, containerTop);
+            
+            if (visibleHeight > maxVisibility) {
+                maxVisibility = visibleHeight;
+                mostVisiblePage = virtualItem.index + 1;
+            }
+        }
+
+        if (mostVisiblePage !== -1) {
+            onPageChange(mostVisiblePage);
+        }
+    };
+    
+    const scrollElement = containerRef.current;
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+        scrollElement.removeEventListener('scroll', handleScroll);
+    };
+
+}, [rowVirtualizer, onPageChange, numPages]);
 
   const virtualItems = rowVirtualizer.getVirtualItems();
   
