@@ -389,7 +389,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const renderPdfControls = () => {
     const MAX_ZOOM = 5;
     const MIN_ZOOM = 0.1;
-    const ZOOM_STEP = 0.05;
+    const ZOOM_STEP = 0.2;
     
     const goToPage = (page: number) => {
         setPageNumber(Math.max(1, Math.min(page, numPages || 1)));
@@ -448,9 +448,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <X className="w-6 h-6" />
                 </Button>
                 <div className="flex items-center gap-3 overflow-hidden">
-                    <Icon className={cn("w-6 h-6 shrink-0", isMobile ? "hidden" : "md:inline-block", color)} />
+                    <Icon className={cn("w-6 h-6 shrink-0", "md:inline-block", color)} />
                     <div className='flex items-center gap-2'>
-                       <span className={cn("text-sm md:text-base text-white font-medium truncate", isMobile && "hidden")}>{item.name}</span>
+                       <span className={cn("text-sm md:text-base text-white font-medium truncate")}>{item.name}</span>
                     </div>
                 </div>
             </div>
@@ -475,7 +475,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
                     <span className="hidden sm:inline">
-                      Chat
+                      Chat with AI
                     </span>
                     <span className="sm:hidden">
                       Chat with AI
