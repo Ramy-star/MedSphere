@@ -159,14 +159,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
-  
+  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
+  const [previewContainerRect, setPreviewContainerRect] = useState<DOMRect | null>(null);
+
   // PDF specific state
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfScale, setPdfScale] = useState(1);
   const [isPdfControlsVisible, setIsPdfControlsVisible] = useState(false);
-
-  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
@@ -289,6 +289,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsPdfControlsVisible(isHoveringPreview || isMobile);
   }, [isHoveringPreview, isMobile]);
 
+   useEffect(() => {
+    const container = previewContainerRef.current;
+    if (!container) return;
+
+    const observer = new ResizeObserver(() => {
+      setPreviewContainerRect(container.getBoundingClientRect());
+    });
+
+    observer.observe(container);
+
+    return () => observer.disconnect();
+  }, [showChat]);
+
+
   if (!item) return null;
   
   const { Icon, color } = getIconForFileType(item);
@@ -332,7 +346,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         toast({
             variant: "destructive",
             title: "Failed to Copy",
-            description: "Could not copy the message.",
+            description: "Could not copy the message."
         })
     });
   }
@@ -393,6 +407,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     
     const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
     const zoomOut = () => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
+
+    const controlsStyle: React.CSSProperties = {
+        position: 'fixed',
+        bottom: '1rem',
+        zIndex: 20,
+    };
+    
+    if (previewContainerRect) {
+        controlsStyle.left = `${previewContainerRect.left + previewContainerRect.width / 2}px`;
+        controlsStyle.transform = 'translateX(-50%)';
+    } else if (isMobile) {
+        controlsStyle.left = '50%';
+        controlsStyle.transform = 'translateX(-50%)';
+    }
   
     return (
         <AnimatePresence>
@@ -402,7 +430,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 10 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20"
+                    style={controlsStyle}
                 >
                     <div className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20">
                         <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
