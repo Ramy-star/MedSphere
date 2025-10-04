@@ -4,6 +4,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
+import { useVirtualizer } from '@tanstack/react-virtual';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -14,18 +15,27 @@ const options = {
 };
 
 const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, onPageChange }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, scale: number, pageNumber: number, onPageChange?: (page: number) => void }) => {
-  const [numPages, setNumPages] = useState<number>();
+  const [numPages, setNumPages] = useState<number>(0);
+  const [pageDimensions, setPageDimensions] = useState<{width: number, height: number}[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const onDocumentLoadSuccessInternal = (loadedPdf: PDFDocumentProxy) => {
+  const onDocumentLoadSuccessInternal = async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
-    pageRefs.current = Array(loadedPdf.numPages).fill(null);
-    if(onLoadSuccess) {
+    
+    // Pre-fetch all page dimensions
+    const dims = [];
+    for(let i=1; i <= loadedPdf.numPages; i++) {
+        const page = await loadedPdf.getPage(i);
+        const viewport = page.getViewport({ scale });
+        dims.push({ width: viewport.width, height: viewport.height });
+    }
+    setPageDimensions(dims);
+
+    if (onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
-  }
+  };
 
   function onDocumentLoadError(error: Error) {
     if (error.message.includes('API version') && error.message.includes('Worker version')) {
@@ -50,87 +60,104 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
         description: 'A page could not be displayed correctly.',
     });
   }, [toast]);
+  
+  // Use TanStack Virtualizer
+  const rowVirtualizer = useVirtualizer({
+    count: numPages,
+    getScrollElement: () => containerRef.current,
+    estimateSize: (index) => (pageDimensions[index]?.height ?? 1000) + 16, // height + margin
+    overscan: 2,
+  });
 
-  // Scroll to page when targetPageNumber changes (from button clicks)
+  // Effect for programmatic scrolling when arrow buttons are clicked
   useEffect(() => {
-      const pageElement = pageRefs.current[targetPageNumber - 1];
-      if (pageElement) {
-          pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
-  }, [targetPageNumber]);
+    if (targetPageNumber > 0 && targetPageNumber <= numPages) {
+        rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'start', smooth: false });
+    }
+  }, [targetPageNumber, numPages, rowVirtualizer]);
 
-
-  // Intersection observer for scroll detection
+  // Effect for updating page number on manual scroll
   useEffect(() => {
-    if (!onPageChange || !numPages || !containerRef.current) return;
-    
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visibleEntries = entries.filter(e => e.isIntersecting);
-        if (visibleEntries.length > 0) {
-          const mostVisibleEntry = visibleEntries.reduce((prev, current) => {
-            return prev.intersectionRatio > current.intersectionRatio ? prev : current;
-          });
-          const pageIndex = parseInt(mostVisibleEntry.target.getAttribute('data-page-index') || '0', 10);
-          onPageChange(pageIndex + 1);
+    const handleScroll = () => {
+        if (!containerRef.current || rowVirtualizer.virtualItems.length === 0) return;
+        
+        const scrollOffset = containerRef.current.scrollTop;
+        const virtualItems = rowVirtualizer.virtualItems;
+        
+        // Find the topmost visible item
+        let topVisibleIndex = -1;
+        for (const virtualItem of virtualItems) {
+            if (virtualItem.start >= scrollOffset) {
+                topVisibleIndex = virtualItem.index;
+                break;
+            }
         }
-      },
-      { 
-        root: containerRef.current,
-        threshold: 0.5,
-      }
-    );
+        // If scrolled past all items, it's the last one
+        if (topVisibleIndex === -1 && virtualItems.length > 0) {
+            topVisibleIndex = virtualItems[virtualItems.length - 1].index;
+        }
 
-    const currentRefs = pageRefs.current;
-    currentRefs.forEach(ref => {
-      if (ref) observer.observe(ref);
-    });
-
-    return () => {
-        currentRefs.forEach(ref => {
-        if (ref) observer.unobserve(ref);
-      });
+        if (topVisibleIndex !== -1 && onPageChange) {
+            onPageChange(topVisibleIndex + 1);
+        }
     };
-  }, [numPages, onPageChange]);
+    
+    const el = containerRef.current;
+    el?.addEventListener('scroll', handleScroll, { passive: true });
+    return () => el?.removeEventListener('scroll', handleScroll);
+
+  }, [rowVirtualizer.virtualItems, onPageChange, rowVirtualizer]);
 
 
   return (
     <div className="w-full h-full flex flex-col items-center">
+      <Document
+        file={file}
+        onLoadSuccess={onDocumentLoadSuccessInternal}
+        onLoadError={onDocumentLoadError}
+        options={options}
+        loading={<div className="p-4"><Skeleton className="h-[80vh] w-full" /></div>}
+        className="hidden" // The Document component itself doesn't render anything visible here
+      >
+        {/* We render pages inside the virtualized container */}
+      </Document>
       <div 
         ref={containerRef} 
         className="w-full h-full overflow-y-auto"
       >
-        <Document
-          file={file}
-          onLoadSuccess={onDocumentLoadSuccessInternal}
-          onLoadError={onDocumentLoadError}
-          options={options}
-          loading={<div className="p-4"><Skeleton className="h-[80vh] w-full" /></div>}
-          className="flex justify-center"
-        >
-         {numPages && (
-            <div className="flex flex-col items-center">
-              {Array.from(new Array(numPages), (el, index) => (
-                 <div
-                    key={`page_container_${index + 1}`}
-                    ref={el => pageRefs.current[index] = el}
-                    data-page-index={index}
-                    className="my-2"
-                >
-                    <Page
-                        key={`page_${index + 1}`}
-                        pageNumber={index + 1}
-                        scale={scale}
-                        onRenderError={onRenderError}
-                        renderAnnotationLayer={false}
-                        className="shadow-2xl"
-                        loading={<Skeleton style={{ height: 1100 * scale, width: 850 * scale }} />}
-                    />
-                </div>
-              ))}
+        {numPages > 0 && pageDimensions.length === numPages && (
+            <div
+                style={{
+                    height: `${rowVirtualizer.getTotalSize()}px`,
+                    width: '100%',
+                    position: 'relative',
+                }}
+            >
+                {rowVirtualizer.getVirtualItems().map((virtualItem) => (
+                    <div
+                        key={virtualItem.key}
+                        style={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            transform: `translateY(${virtualItem.start}px)`,
+                            display: 'flex',
+                            justifyContent: 'center'
+                        }}
+                    >
+                        <Page
+                            pageNumber={virtualItem.index + 1}
+                            scale={scale}
+                            onRenderError={onRenderError}
+                            renderAnnotationLayer={false}
+                            className="shadow-2xl"
+                            loading={<Skeleton style={{ height: (pageDimensions[virtualItem.index]?.height ?? 1000) + 16, width: pageDimensions[virtualItem.index]?.width ?? 800 }} />}
+                        />
+                    </div>
+                ))}
             </div>
-         )}
-        </Document>
+        )}
       </div>
     </div>
   );
