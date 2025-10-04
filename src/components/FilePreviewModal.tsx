@@ -158,6 +158,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
+  const isMobile = useIsMobile();
+  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
 
   // PDF specific state
   const [numPages, setNumPages] = useState<number>();
@@ -165,9 +167,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [isPdfControlsVisible, setIsPdfControlsVisible] = useState(false);
 
-  // Hooks moved to top level
-  const isMobile = useIsMobile();
-  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
+  // Refs
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -384,8 +384,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const renderPdfControls = () => {
     const MAX_ZOOM = 5;
-    const MIN_ZOOM = 0.2;
-    const ZOOM_STEP = 0.2;
+    const MIN_ZOOM = 0.1;
+    const ZOOM_STEP = 0.05;
     
     const goToPage = (page: number) => {
         setPageNumber(Math.max(1, Math.min(page, numPages || 1)));
@@ -436,7 +436,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         onMouseEnter={() => setIsHoveringPreview(true)}
         onMouseLeave={() => setIsHoveringPreview(false)}
-        className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
+        className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
             <div className="flex items-center gap-2 overflow-hidden">
