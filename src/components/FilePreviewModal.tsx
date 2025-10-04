@@ -194,8 +194,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
     setNumPages(pdf.numPages);
     if (isMobile) {
-        // On mobile, we fit the PDF to the screen width initially.
-        // We'll get the page and container dimensions inside PdfViewer component now.
+        if (previewContainerRef.current) {
+            const page = await pdf.getPage(1);
+            const containerWidth = previewContainerRef.current.clientWidth - 32; // with padding
+            const scale = containerWidth / page.getViewport({ scale: 1 }).width;
+            setPdfScale(scale);
+        }
     } else {
         setPdfScale(1); // Default 100% zoom for desktop
     }
@@ -446,7 +450,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <div className="flex items-center gap-3 overflow-hidden">
                     <Icon className={cn("w-6 h-6 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
-                       <span className="text-sm md:text-base text-white font-medium truncate">{item.name}</span>
+                       <span className="hidden md:inline text-sm md:text-base text-white font-medium truncate">{item.name}</span>
                     </div>
                 </div>
             </div>
@@ -470,7 +474,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     )}
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                    <span className={cn(isMobile ? 'sr-only' : 'sm:inline')}>
+                    <span className="sm:inline">
                       Chat with AI
                     </span>
                 </Button>
@@ -643,7 +647,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0"
+        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0 gap-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
