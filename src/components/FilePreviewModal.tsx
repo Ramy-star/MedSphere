@@ -11,7 +11,7 @@ import FilePreview from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, Sparkles } from 'lucide-react';
+import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, Sparkles, Minus, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -160,7 +160,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isMobile = useIsMobile();
   const [isHoveringPreview, setIsHoveringPreview] = useState(false);
   
-  // This hook must be called at the top level
+  // PDF specific state
+  const [numPages, setNumPages] = useState<number>();
+  const [pageNumber, setPageNumber] = useState(1);
+  const [pdfScale, setPdfScale] = useState(1);
+  const [isPdfControlsVisible, setIsPdfControlsVisible] = useState(false);
+
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
 
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -187,6 +192,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [chatHistory.length, startNewChat]);
 
   const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
+    setNumPages(pdf.numPages);
     if (documentText || isExtracting) return;
 
     setIsExtracting(true);
@@ -195,7 +201,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       setDocumentText(text);
     } catch (err: any) {
       console.error("Failed to extract PDF text:", err);
-      setDocumentText(null); // Ensure it's null on failure
+      setDocumentText(null);
       toast({ 
         variant: 'destructive', 
         title: 'Text Extraction Failed', 
@@ -213,6 +219,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setError(null);
     setLoading(false);
     setIsExtracting(false);
+    // Reset PDF state
+    setNumPages(undefined);
+    setPageNumber(1);
+    setPdfScale(1);
   }, [item, startNewChat]);
 
   useEffect(() => {
@@ -224,8 +234,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-        textarea.style.height = 'auto'; // Reset height
-        textarea.style.height = `${textarea.scrollHeight}px`; // Set to content height
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
     }
   }, [chatInput]);
 
@@ -263,10 +273,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     return () => {
       textarea.removeEventListener('focus', handleFocus);
       textarea.removeEventListener('blur', handleBlur);
-      handleBlur(); // Clean up state on unmount
+      handleBlur();
     }
   }, [isMobile, setHeaderFixed, setChatInputOffset]);
 
+
+  useEffect(() => {
+    setIsPdfControlsVisible(isHoveringPreview || isMobile);
+  }, [isHoveringPreview, isMobile]);
 
   if (!item) return null;
   
@@ -305,7 +319,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handleCopyToClipboard = (text: string, messageId: string) => {
     navigator.clipboard.writeText(text).then(() => {
         setCopiedMessage(messageId);
-        setTimeout(() => setCopiedMessage(null), 2000); // Reset after 2s
+        setTimeout(() => setCopiedMessage(null), 2000);
     }).catch(err => {
         console.error('Failed to copy: ', err);
         toast({
@@ -318,7 +332,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
 
   const handleClose = () => {
-    setShowChat(false); // Also close chat on modal close
+    setShowChat(false);
     onOpenChange(false);
   }
   
@@ -341,7 +355,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         const responseText = await chatAboutDocument({
             question: newQuestion,
             documentContent: documentText,
-            chatHistory: chatHistory, // Send the history BEFORE the new question
+            chatHistory: chatHistory,
         });
         setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
     } catch (error) {
@@ -351,7 +365,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             title: "AI Chat Error",
             description: "The AI assistant could not be reached. Please try again later."
         });
-        // Remove the user's question to indicate failure
         setChatHistory(prev => prev.slice(0, -1));
     } finally {
         setIsAiThinking(false);
@@ -360,14 +373,64 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
+  const isPdf = item.metadata?.mime === 'application/pdf';
+
+  const renderPdfControls = () => {
+    const MAX_ZOOM = 5;
+    const MIN_ZOOM = 0.2;
+    const ZOOM_STEP = 0.2;
+    
+    const goToPage = (page: number) => {
+        setPageNumber(Math.max(1, Math.min(page, numPages || 1)));
+    }
+    
+    const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
+    const zoomOut = () => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
+  
+    return (
+        <AnimatePresence>
+            {isPdf && numPages && isPdfControlsVisible && (
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20"
+                >
+                    <div className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20">
+                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+                            <ChevronLeft className="w-4 h-4" />
+                            <span className="sr-only">Previous Page</span>
+                        </Button>
+                        <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
+                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
+                            <ChevronRight className="w-4 h-4" />
+                            <span className="sr-only">Next Page</span>
+                        </Button>
+                        <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
+                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+                            <Minus className="w-4 h-4" />
+                        </Button>
+                        <span className='text-xs w-12 text-center font-mono'>
+                            {`${Math.round(pdfScale * 100)}%`}
+                        </span>
+                        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+                            <Plus className="w-4 h-4" />
+                        </Button>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+  };
   
   const renderFilePreview = () => (
     <motion.div 
         layout
         ref={previewContainerRef}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        onMouseEnter={() => !isMobile && setIsHoveringPreview(true)}
-        onMouseLeave={() => !isMobile && setIsHoveringPreview(false)}
+        onMouseEnter={() => setIsHoveringPreview(true)}
+        onMouseLeave={() => setIsHoveringPreview(false)}
         className="flex-1 flex flex-col h-full bg-slate-900 overflow-hidden relative"
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
@@ -376,7 +439,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <X className="w-6 h-6" />
                 </Button>
                 <div className="flex items-center gap-3 overflow-hidden">
-                    <Icon className={cn("w-6 h-6 shrink-0", color)} />
+                    {!isMobile && <Icon className={cn("w-6 h-6 shrink-0", color)} />}
                     <div className='flex items-center gap-2'>
                        <span className="text-sm md:text-base text-white font-medium truncate">{item.name}</span>
                     </div>
@@ -419,8 +482,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   mime={item.metadata?.mime ?? 'application/octet-stream'} 
                   itemName={item.name}
                   onPdfLoadSuccess={handlePdfLoadSuccess}
-                  isControlsVisible={isHoveringPreview || isMobile}
-                  previewContainerRef={previewContainerRef}
+                  pdfScale={pdfScale}
+                  pageNumber={pageNumber}
               />
             )}
             {!loading && !fileUrl && (
@@ -429,6 +492,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
             </div>
             )}
+            {renderPdfControls()}
         </main>
     </motion.div>
   );
@@ -437,7 +501,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
     const chatViewContent = (
       <>
-        <header className={cn("flex items-center justify-between whitespace-nowrap border-b border-white/10 px-4 py-3 shrink-0 h-16")}>
+        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-16")}>
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -508,7 +572,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onChange={(e) => setChatInput(e.target.value)}
                      onKeyDown={(e) => {
                         if (e.key === 'Enter' && e.shiftKey) {
-                            // Default behavior (new line) will happen
+                            
                         } else if (e.key === 'Enter') {
                             e.preventDefault();
                             handleChatSubmit();
@@ -570,7 +634,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-transparent border-0"
+        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
