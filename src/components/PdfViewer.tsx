@@ -4,7 +4,6 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
-import { useVirtualizer } from '@tanstack/react-virtual';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -17,27 +16,19 @@ const options = {
 const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, onPageChange }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, scale: number, pageNumber: number, onPageChange?: (page: number) => void }) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pdfRef, setPdfRef] = useState<PDFDocumentProxy | null>(null);
-  const [pageDimensions, setPageDimensions] = useState<{width: number, height: number}[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setPdfRef(loadedPdf);
     setNumPages(loadedPdf.numPages);
+    pageRefs.current = Array(loadedPdf.numPages).fill(null).map((_, i) => pageRefs.current[i] || null);
     
-    const dims = [];
-    for(let i=1; i <= loadedPdf.numPages; i++) {
-        const page = await loadedPdf.getPage(i);
-        const viewport = page.getViewport({ scale: 1 }); // Always get base dimensions
-        dims.push({ width: viewport.width, height: viewport.height });
-    }
-    setPageDimensions(dims);
-
     if (onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
   }, [onLoadSuccess]);
-
 
   function onDocumentLoadError(error: Error) {
     if (error.message.includes('API version') && error.message.includes('Worker version')) {
@@ -62,43 +53,46 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
         description: 'A page could not be displayed correctly.',
     });
   }, [toast]);
-  
-  const rowVirtualizer = useVirtualizer({
-    count: numPages,
-    getScrollElement: () => containerRef.current,
-    estimateSize: (index) => (pageDimensions[index]?.height ?? 1000) * scale + 16,
-    overscan: 2,
-  });
 
   useEffect(() => {
     if (targetPageNumber > 0 && targetPageNumber <= numPages) {
-        rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'start', smooth: true });
+        const pageElement = pageRefs.current[targetPageNumber - 1];
+        if (pageElement) {
+            pageElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
     }
-  }, [targetPageNumber, numPages, rowVirtualizer]);
+  }, [targetPageNumber, numPages]);
 
   useEffect(() => {
-    const handleScroll = () => {
-        const virtualItems = rowVirtualizer.virtualItems;
-        if (!containerRef.current || !virtualItems || virtualItems.length === 0) return;
-        
-        const scrollOffset = containerRef.current.scrollTop;
-
-        let visibleItem = virtualItems.find(item => {
-            const itemTop = item.start;
-            const itemBottom = item.start + item.size;
-            return itemTop <= scrollOffset && itemBottom > scrollOffset;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            const pageNum = parseInt(entry.target.getAttribute('data-page-number') || '0', 10);
+            if (pageNum && onPageChange) {
+              onPageChange(pageNum);
+            }
+          }
         });
+      },
+      {
+        root: containerRef.current,
+        rootMargin: '-50% 0px -50% 0px', // Trigger when page is in the middle of the viewport
+        threshold: 0,
+      }
+    );
 
-        if (visibleItem && onPageChange) {
-            onPageChange(visibleItem.index + 1);
-        }
+    const currentRefs = pageRefs.current;
+    currentRefs.forEach((ref) => {
+      if (ref) observer.observe(ref);
+    });
+
+    return () => {
+      currentRefs.forEach((ref) => {
+        if (ref) observer.unobserve(ref);
+      });
     };
-    
-    const el = containerRef.current;
-    el?.addEventListener('scroll', handleScroll, { passive: true });
-    return () => el?.removeEventListener('scroll', handleScroll);
-
-  }, [rowVirtualizer, onPageChange]);
+  }, [numPages, onPageChange]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">
@@ -111,43 +105,28 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
           onLoadSuccess={onDocumentLoadSuccessInternal}
           onLoadError={onDocumentLoadError}
           options={options}
-          loading={<div className="p-4"><Skeleton className="h-[80vh] w-[80%]" /></div>}
+          loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}
           className="flex justify-center"
         >
-          {numPages > 0 && pageDimensions.length === numPages && (
-              <div
-                  style={{
-                      height: `${rowVirtualizer.getTotalSize()}px`,
-                      width: '100%',
-                      position: 'relative',
-                  }}
-              >
-                  {rowVirtualizer.getVirtualItems().map((virtualItem) => (
-                      <div
-                          key={virtualItem.key}
-                          style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              width: '100%',
-                              transform: `translateY(${virtualItem.start}px)`,
-                              display: 'flex',
-                              justifyContent: 'center'
-                          }}
-                      >
-                          <Page
-                              pdf={pdfRef}
-                              pageNumber={virtualItem.index + 1}
-                              scale={scale}
-                              onRenderError={onRenderError}
-                              renderAnnotationLayer={false}
-                              className="shadow-2xl mb-4"
-                              loading={<Skeleton style={{ height: (pageDimensions[virtualItem.index]?.height ?? 1000) * scale, width: (pageDimensions[virtualItem.index]?.width ?? 800) * scale }} />}
-                          />
-                      </div>
-                  ))}
-              </div>
-          )}
+            <div className="flex flex-col items-center">
+              {Array.from(new Array(numPages), (el, index) => (
+                <div
+                  key={`page_container_${index + 1}`}
+                  ref={(el) => (pageRefs.current[index] = el)}
+                  data-page-number={index + 1}
+                >
+                  <Page
+                    key={`page_${index + 1}`}
+                    pageNumber={index + 1}
+                    scale={scale}
+                    onRenderError={onRenderError}
+                    renderAnnotationLayer={false}
+                    className="shadow-2xl mb-4"
+                    loading={<Skeleton style={{ height: 1000 * scale, width: 800 * scale }} />}
+                  />
+                </div>
+              ))}
+            </div>
         </Document>
       </div>
     </div>
