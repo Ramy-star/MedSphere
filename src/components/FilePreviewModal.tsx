@@ -193,6 +193,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
     setNumPages(pdf.numPages);
+    if (isMobile) {
+        // On mobile, we fit the PDF to the screen width initially.
+        // We'll get the page and container dimensions inside PdfViewer component now.
+    } else {
+        setPdfScale(1); // Default 100% zoom for desktop
+    }
+    
     if (documentText || isExtracting) return;
 
     setIsExtracting(true);
@@ -210,7 +217,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     } finally {
       setIsExtracting(false);
     }
-  }, [documentText, isExtracting, toast]);
+  }, [isMobile, documentText, isExtracting, toast]);
   
   useEffect(() => {
     startNewChat();
@@ -439,7 +446,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <X className="w-6 h-6" />
                 </Button>
                 <div className="flex items-center gap-3 overflow-hidden">
-                    {!isMobile && <Icon className={cn("w-6 h-6 shrink-0", color)} />}
+                    <Icon className={cn("w-6 h-6 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
                        <span className="text-sm md:text-base text-white font-medium truncate">{item.name}</span>
                     </div>
