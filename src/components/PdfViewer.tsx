@@ -1,10 +1,8 @@
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { Skeleton } from './ui/skeleton';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -17,42 +15,16 @@ const options = {
 
 const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, onPageChange }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, scale: number, pageNumber: number, onPageChange?: (page: number) => void }) => {
   const [numPages, setNumPages] = useState<number>();
-  const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
-  const [initialScale, setInitialScale] = useState(1);
+  const pageRefs = useRef<(HTMLDivElement | null)[]>([]);
 
-  const rowVirtualizer = useVirtualizer({
-    count: numPages || 0,
-    getScrollElement: () => containerRef.current,
-    estimateSize: (index) => pageDimensions[index]?.height * scale + 16 || 1000,
-    overscan: 2,
-  });
-
-  const onDocumentLoadSuccessInternal = async (loadedPdf: PDFDocumentProxy) => {
+  const onDocumentLoadSuccessInternal = (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
+    pageRefs.current = Array(loadedPdf.numPages).fill(null);
     if(onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
-    
-    const dims = await Promise.all(
-        Array.from({ length: loadedPdf.numPages }, (_, i) => loadedPdf.getPage(i + 1))
-            .map(p => p.then(page => ({ width: page.view[2], height: page.view[3] })))
-    );
-    setPageDimensions(dims);
-
-    setTimeout(() => {
-        if (containerRef.current && dims[0]) {
-            if (isMobile) {
-                const containerWidth = containerRef.current.clientWidth - 32; // padding
-                const pageOriginalWidth = dims[0].width;
-                setInitialScale(containerWidth / pageOriginalWidth);
-            } else {
-                setInitialScale(1); 
-            }
-        }
-    }, 100);
   }
 
   function onDocumentLoadError(error: Error) {
@@ -74,60 +46,56 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
     console.error('Failed to render PDF page:', error);
     toast({
         variant: 'destructive',
-        title: 'PDF Render Error',
+        title: 'PDF RenderError',
         description: 'A page could not be displayed correctly.',
     });
   }, [toast]);
-  
+
+  // Scroll to page when targetPageNumber changes (from button clicks)
   useEffect(() => {
-    if(targetPageNumber > 0 && targetPageNumber <= (numPages || 0)) {
-        rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'start' });
+    if (targetPageNumber > 0 && targetPageNumber <= (numPages || 0)) {
+        const pageElement = pageRefs.current[targetPageNumber - 1];
+        pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
-  }, [targetPageNumber, numPages, rowVirtualizer]);
+  }, [targetPageNumber, numPages]);
 
+  // Intersection observer for scroll detection
   useEffect(() => {
-    if (!onPageChange || !containerRef.current) return;
+    if (!onPageChange || !numPages || !containerRef.current) return;
     
-    const handleScroll = () => {
-        if (!containerRef.current) return;
-
-        const virtualItems = rowVirtualizer.getVirtualItems();
-        if (virtualItems.length === 0) return;
-
-        const containerTop = containerRef.current.getBoundingClientRect().top;
-
-        let mostVisiblePage = -1;
-        let maxVisibility = -1;
-
-        for (const virtualItem of virtualItems) {
-            const element = virtualItem.measureElement;
-            if (!element) continue;
-
-            const rect = element.getBoundingClientRect();
-            const visibleHeight = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, containerTop);
-            
-            if (visibleHeight > maxVisibility) {
-                maxVisibility = visibleHeight;
-                mostVisiblePage = virtualItem.index + 1;
-            }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const visibleEntries = entries.filter(e => e.isIntersecting);
+        if (visibleEntries.length > 0) {
+          // Find the entry with the highest intersection ratio
+          const mostVisibleEntry = visibleEntries.reduce((prev, current) => {
+            return prev.intersectionRatio > current.intersectionRatio ? prev : current;
+          });
+          const pageIndex = parseInt(mostVisibleEntry.target.getAttribute('data-page-index') || '0', 10);
+          if (pageIndex + 1 !== targetPageNumber) {
+            onPageChange(pageIndex + 1);
+          }
         }
+      },
+      { 
+        root: containerRef.current,
+        threshold: Array.from({ length: 11 }, (_, i) => i * 0.1), // Create thresholds from 0.0 to 1.0
+      }
+    );
 
-        if (mostVisiblePage !== -1) {
-            onPageChange(mostVisiblePage);
-        }
-    };
-    
-    const scrollElement = containerRef.current;
-    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
-    
+    const currentRefs = pageRefs.current;
+    currentRefs.forEach(ref => {
+      if (ref) observer.observe(ref);
+    });
+
     return () => {
-        scrollElement.removeEventListener('scroll', handleScroll);
+        currentRefs.forEach(ref => {
+        if (ref) observer.unobserve(ref);
+      });
     };
+  }, [numPages, onPageChange, targetPageNumber]);
 
-}, [rowVirtualizer, onPageChange, numPages]);
 
-  const virtualItems = rowVirtualizer.getVirtualItems();
-  
   return (
     <div className="w-full h-full flex flex-col items-center">
       <div 
@@ -142,41 +110,27 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
           loading={<div className="p-4"><Skeleton className="h-[80vh] w-full" /></div>}
           className="flex justify-center"
         >
-         {numPages && pageDimensions.length > 0 && (
-           <div
-              className="relative w-full"
-              style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
-            >
-              {virtualItems.map((virtualRow) => {
-                 const pageDim = pageDimensions[virtualRow.index];
-                 const width = pageDim ? pageDim.width * scale : 'auto';
-                 
-                 return (
-                    <div
-                      key={virtualRow.key}
-                      data-index={virtualRow.index}
-                      ref={rowVirtualizer.measureElement}
-                      className="absolute top-0 left-0 w-full"
-                      style={{
-                        transform: `translateY(${virtualRow.start}px)`,
-                        padding: '8px 0',
-                      }}
-                    >
-                      <div className="mx-auto" style={{ width: `${width}px`}}>
-                          <Page
-                            key={`page_${virtualRow.index + 1}`}
-                            pageNumber={virtualRow.index + 1}
-                            scale={scale}
-                            onRenderError={onRenderError}
-                            renderAnnotationLayer={false}
-                            className="shadow-2xl"
-                            loading={<Skeleton style={{ height: virtualRow.size - 16, width: width }} />}
-                          />
-                      </div>
-                    </div>
-                )
-              })}
-           </div>
+         {numPages && (
+            <div className="flex flex-col items-center">
+              {Array.from(new Array(numPages), (el, index) => (
+                 <div
+                    key={`page_container_${index + 1}`}
+                    ref={el => pageRefs.current[index] = el}
+                    data-page-index={index}
+                    className="my-2"
+                >
+                    <Page
+                        key={`page_${index + 1}`}
+                        pageNumber={index + 1}
+                        scale={scale}
+                        onRenderError={onRenderError}
+                        renderAnnotationLayer={false}
+                        className="shadow-2xl"
+                        loading={<Skeleton style={{ height: 1100 * scale, width: 850 * scale }} />}
+                    />
+                </div>
+              ))}
+            </div>
          )}
         </Document>
       </div>
