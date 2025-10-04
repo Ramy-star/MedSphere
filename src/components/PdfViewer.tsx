@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -55,7 +56,9 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
   useEffect(() => {
     if (targetPageNumber > 0 && targetPageNumber <= (numPages || 0)) {
         const pageElement = pageRefs.current[targetPageNumber - 1];
-        pageElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (pageElement) {
+            pageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
     }
   }, [targetPageNumber, numPages]);
 
