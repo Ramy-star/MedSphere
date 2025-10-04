@@ -171,6 +171,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const pdfViewerRef = useRef<HTMLDivElement>(null);
   
   const fileUrl = item?.metadata?.storagePath;
   const isLink = item?.type === 'LINK';
@@ -292,6 +293,48 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   useEffect(() => {
     setIsPdfControlsVisible(isHoveringPreview || isMobile);
   }, [isHoveringPreview, isMobile]);
+
+  const handleScroll = useCallback(() => {
+    if (!pdfViewerRef.current) return;
+  
+    const container = pdfViewerRef.current;
+    const pageElements = Array.from(container.querySelectorAll('.react-pdf__Page'));
+    if (pageElements.length === 0) return;
+  
+    const containerTop = container.getBoundingClientRect().top;
+    const containerHeight = container.clientHeight;
+  
+    let mostVisiblePage = 1;
+    let maxVisibleHeight = 0;
+  
+    pageElements.forEach((pageEl, index) => {
+        const pageNumber = index + 1;
+        const pageRect = pageEl.getBoundingClientRect();
+  
+        const visibleTop = Math.max(pageRect.top, containerTop);
+        const visibleBottom = Math.min(pageRect.bottom, containerTop + containerHeight);
+        const visibleHeight = Math.max(0, visibleBottom - visibleTop);
+  
+        if (visibleHeight > maxVisibleHeight) {
+            maxVisibleHeight = visibleHeight;
+            mostVisiblePage = pageNumber;
+        }
+    });
+  
+    setPageNumber(mostVisiblePage);
+  }, []);
+
+  useEffect(() => {
+    const pdfViewer = pdfViewerRef.current;
+    if (pdfViewer) {
+      const scrollableDiv = pdfViewer.querySelector('.w-full.h-full.overflow-y-auto');
+      if (scrollableDiv) {
+        scrollableDiv.addEventListener('scroll', handleScroll);
+        return () => scrollableDiv.removeEventListener('scroll', handleScroll);
+      }
+    }
+  }, [handleScroll, item]);
+
 
   if (!item) return null;
   
@@ -486,7 +529,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </header>
 
         <main className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1">
-            <div className="[grid-area:1/1] overflow-auto flex items-center justify-center">
+            <div className="[grid-area:1/1] overflow-auto flex items-center justify-center" ref={pdfViewerRef}>
               {loading && <div className="text-white">Loading...</div>}
               {error && <div className="text-red-400">Error: {error}</div>}
               {!loading && !error && fileUrl && (
