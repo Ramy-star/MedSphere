@@ -33,7 +33,6 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible, previewContainerRef
   const containerRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const [userHasScrolled, setUserHasScrolled] = useState(false);
-  const [controlsPosition, setControlsPosition] = useState({ left: '50%', transform: 'translateX(-50%)' });
 
   const rowVirtualizer = useVirtualizer({
     count: numPages || 0,
@@ -128,38 +127,8 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible, previewContainerRef
 
   const virtualItems = rowVirtualizer.getVirtualItems();
   
-  const updateControlsPosition = useCallback(() => {
-    if (isMobile || !previewContainerRef.current) {
-        setControlsPosition({ left: '50%', transform: 'translateX(-50%)' });
-        return;
-    }
-    const previewContainerRect = previewContainerRef.current.getBoundingClientRect();
-    setControlsPosition({
-        left: `${previewContainerRect.left + previewContainerRect.width / 2}px`,
-        transform: 'translateX(-50%)',
-    });
-  }, [previewContainerRef, isMobile]);
-
-
-  useEffect(() => {
-    updateControlsPosition();
-    // Use a ResizeObserver to handle layout changes
-    const observer = new ResizeObserver(updateControlsPosition);
-    if (previewContainerRef.current) {
-        observer.observe(previewContainerRef.current);
-    }
-    // Add window resize listener as a fallback
-    window.addEventListener('resize', updateControlsPosition);
-
-    return () => {
-        observer.disconnect();
-        window.removeEventListener('resize', updateControlsPosition);
-    };
-  }, [updateControlsPosition, previewContainerRef]);
-
-
   return (
-    <div className="w-full h-full flex flex-col items-center">
+    <div className="w-full h-full flex flex-col items-center relative">
       <div 
         ref={containerRef} 
         className="w-full h-full overflow-y-auto"
@@ -218,10 +187,13 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible, previewContainerRef
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="fixed bottom-4 z-20 flex items-center justify-center"
-            style={controlsPosition}
+            className="absolute bottom-4 z-20"
+            style={{
+              left: '50%',
+              transform: 'translateX(-50%)',
+            }}
           >
-            <div className="flex items-center gap-0 md:gap-1 bg-black/50 text-white rounded-full p-1 shadow-lg backdrop-blur-sm border border-white/20">
+            <div className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20">
               <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
                   <ChevronLeft className="w-4 h-4" />
                   <span className="sr-only">Previous Page</span>
