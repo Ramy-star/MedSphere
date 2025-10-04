@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -79,9 +78,9 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
 
   useEffect(() => {
     const handleScroll = () => {
-        if (!containerRef.current || rowVirtualizer.virtualItems.length === 0) return;
-        
         const virtualItems = rowVirtualizer.virtualItems;
+        if (!containerRef.current || !virtualItems || virtualItems.length === 0) return;
+        
         const scrollOffset = containerRef.current.scrollTop;
 
         let visibleItem = virtualItems.find(item => {
