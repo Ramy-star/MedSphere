@@ -389,7 +389,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const renderPdfControls = () => {
     const MAX_ZOOM = 5;
     const MIN_ZOOM = 0.1;
-    const ZOOM_STEP = 0.2;
+    const ZOOM_STEP = 0.05;
     
     const goToPage = (page: number) => {
         setPageNumber(Math.max(1, Math.min(page, numPages || 1)));
@@ -447,8 +447,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                     <X className="w-6 h-6" />
                 </Button>
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <Icon className={cn("w-6 h-6 shrink-0", "md:inline-block", color)} />
+                <div className="hidden md:flex items-center gap-3 overflow-hidden">
+                    <Icon className={cn("w-6 h-6 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
                        <span className={cn("text-sm md:text-base text-white font-medium truncate")}>{item.name}</span>
                     </div>
