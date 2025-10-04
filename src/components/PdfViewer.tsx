@@ -187,11 +187,7 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible, previewContainerRef
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="absolute bottom-4 z-20"
-            style={{
-              left: '50%',
-              transform: 'translateX(-50%)',
-            }}
+            className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20"
           >
             <div className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20">
               <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
@@ -201,7 +197,7 @@ const PdfViewer = ({ file, onLoadSuccess, isControlsVisible, previewContainerRef
               
               <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
               
-              <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= numPages}>
+              <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
                   <ChevronRight className="w-4 h-4" />
                   <span className="sr-only">Next Page</span>
               </Button>
