@@ -439,6 +439,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+            {/* Left Section */}
             <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                     <X className="w-6 h-6" />
@@ -451,10 +452,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-                {!isMobile && renderPdfControls()}
+            {/* Center Section (Desktop Only) */}
+            <div className="hidden md:flex flex-1 items-center justify-center">
+              {!isMobile && renderPdfControls()}
             </div>
 
+            {/* Right Section */}
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
                 {!isLink && (
                     <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Download">
@@ -508,6 +511,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               </div>
               )}
             </div>
+            {/* Bottom Controls (Mobile Only) */}
             {isMobile && (
               <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4">
                   {renderPdfControls()}
