@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -531,7 +530,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
-        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/90 border-b border-slate-800 z-10">
+        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
             <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">

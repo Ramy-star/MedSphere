@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -98,9 +97,9 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     if (!virtualItems || virtualItems.length === 0) return;
 
     const container = containerRef.current;
-    const scrollBottom = container.scrollTop + container.clientHeight;
+    
     // Check if scrolled to the very bottom
-    if (scrollBottom >= container.scrollHeight - 5) { // 5px tolerance
+    if (container.scrollHeight > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 5) { // 5px tolerance
         if(numPages > 0) {
             onPageChange(numPages);
         }
@@ -111,9 +110,9 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     // Find the topmost visible item in the viewport
     const viewportTop = container.scrollTop;
     
-    let topmostVisibleItem = virtualItems[0];
+    let topmostVisibleItem = null;
     for(const virtualItem of virtualItems) {
-        if (virtualItem.start + virtualItem.size / 2 > viewportTop) {
+        if (virtualItem.start >= viewportTop - virtualItem.size / 2) {
             topmostVisibleItem = virtualItem;
             break;
         }
@@ -122,6 +121,9 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     if (topmostVisibleItem) {
       const currentPage = topmostVisibleItem.index + 1;
       onPageChange(currentPage);
+    } else if (virtualItems.length > 0) {
+      // Fallback for cases where the loop doesn't find a match (e.g., fast scrolling)
+      onPageChange(virtualItems[0].index + 1);
     }
   }, [virtualItems, onPageChange, numPages]);
 
