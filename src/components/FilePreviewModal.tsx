@@ -222,11 +222,12 @@ const PdfControls = ({
             <span className="sr-only">Previous Page</span>
         </Button>
         
-        <form onSubmit={handlePageInputSubmit} className="flex items-center">
+        <form onSubmit={handlePageInputSubmit}>
             <Input 
               type="text" 
               value={pageInput}
               onChange={handlePageInputChange}
+              onBlur={handlePageInputSubmit}
               className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
             />
             <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
@@ -249,6 +250,7 @@ const PdfControls = ({
                 type="text"
                 value={scaleInput}
                 onChange={handleScaleInputChange}
+                onBlur={handleScaleInputSubmit}
                 className="w-16 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
                 onFocus={(e) => e.target.select()}
             />
@@ -285,10 +287,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
   
-  // Ref to control PdfViewer component
   const pdfViewerRef = useRef<FilePreviewRef>(null);
 
-  // Refs
+  // Other Refs
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -309,8 +310,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       setPageNumber(newPage);
       if (pdfViewerRef.current && typeof pdfViewerRef.current.scrollToPage === 'function') {
         pdfViewerRef.current.scrollToPage(newPage);
-      } else {
-        console.error("Error: pdfViewerRef.current.scrollToPage is not a function.", pdfViewerRef.current);
       }
   }, [numPages]);
 
