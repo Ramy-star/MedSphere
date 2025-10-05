@@ -1,5 +1,5 @@
 'use client';
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
@@ -15,15 +15,19 @@ const options = {
   standardFontDataUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/standard_fonts/`,
 };
 
-const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, onPageChange }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, scale: number, pageNumber: number, onPageChange?: (page: number) => void }) => {
+type PdfViewerProps = {
+  file: string;
+  onLoadSuccess?: (pdf: PDFDocumentProxy) => void;
+  scale: number;
+  onPageChange?: (page: number) => void;
+};
+
+const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfViewerProps, ref) => {
   const [numPages, setNumPages] = useState<number>(0);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
   
-  // This state will be managed internally to avoid re-rendering the parent
-  const [internalCurrentPage, setInternalCurrentPage] = useState(1);
-
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
     
@@ -73,21 +77,23 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
     overscan: 5,
   });
 
-  // Effect to scroll to a specific page when the targetPageNumber prop changes
-  useEffect(() => {
-    if (targetPageNumber > 0 && targetPageNumber <= numPages) {
-       rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'start' });
+  useImperativeHandle(ref, () => ({
+    scrollTo: (page: number) => {
+      if (page > 0 && page <= numPages) {
+        rowVirtualizer.scrollToIndex(page - 1, { align: 'start' });
+      }
     }
-  }, [targetPageNumber, numPages, rowVirtualizer]);
+  }));
 
+  const [debouncedVirtualizer] = useDebounce(rowVirtualizer.getVirtualItems(), 100);
 
-  const handleScroll = useCallback(() => {
-    if (!containerRef.current) return;
-
-    const virtualItems = rowVirtualizer.getVirtualItems();
+  useEffect(() => {
+    if (!onPageChange || !containerRef.current) return;
+    
+    const virtualItems = debouncedVirtualizer;
     if (!virtualItems || virtualItems.length === 0) return;
 
-    const viewportCenter = containerRef.current.scrollTop + containerRef.current.clientHeight / 2;
+    const viewportCenter = (containerRef.current.scrollTop + containerRef.current.clientHeight / 2);
 
     let bestMatch = null;
     let smallestDistance = Infinity;
@@ -103,29 +109,9 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
     
     if (bestMatch) {
       const currentPage = bestMatch.index + 1;
-      if (currentPage !== internalCurrentPage) {
-        setInternalCurrentPage(currentPage);
-      }
+      onPageChange(currentPage);
     }
-  }, [rowVirtualizer, internalCurrentPage]);
-  
-  const [debouncedHandleScroll] = useDebounce(handleScroll, 100);
-
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    container.addEventListener('scroll', debouncedHandleScroll, { passive: true });
-    return () => container.removeEventListener('scroll', debouncedHandleScroll);
-  }, [debouncedHandleScroll]);
-  
-  // This effect will now pass the internally managed page number to the parent.
-  useEffect(() => {
-    if(onPageChange) {
-      onPageChange(internalCurrentPage);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [internalCurrentPage]);
+  }, [debouncedVirtualizer, onPageChange]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">
@@ -183,6 +169,8 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
       </div>
     </div>
   );
-};
+});
+
+PdfViewer.displayName = 'PdfViewer';
 
 export default PdfViewer;

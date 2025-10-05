@@ -161,11 +161,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isMobile = useIsMobile();
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
 
-  // PDF specific state
+  // PDF specific state moved here
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfScale, setPdfScale] = useState(1);
   const [isPdfControlsVisible, setIsPdfControlsVisible] = useState(false);
+  
+  // Ref to control PdfViewer component
+  const pdfViewerRef = useRef<{ scrollTo: (page: number) => void } | null>(null);
 
   // Refs
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -392,7 +395,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const ZOOM_STEP = 0.05;
     
     const goToPage = (page: number) => {
-        setPageNumber(Math.max(1, Math.min(page, numPages || 1)));
+        const newPage = Math.max(1, Math.min(page, numPages || 1));
+        setPageNumber(newPage);
+        pdfViewerRef.current?.scrollTo(newPage);
     }
     
     const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
@@ -491,12 +496,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               {error && <div className="text-red-400">Error: {error}</div>}
               {!loading && !error && fileUrl && (
                 <FilePreview 
+                    ref={pdfViewerRef}
                     url={fileUrl} 
                     mime={item.metadata?.mime ?? 'application/octet-stream'} 
                     itemName={item.name}
                     onPdfLoadSuccess={handlePdfLoadSuccess}
                     pdfScale={pdfScale}
-                    pageNumber={pageNumber}
                     onPageChange={setPageNumber}
                 />
               )}

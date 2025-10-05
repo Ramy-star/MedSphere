@@ -1,22 +1,34 @@
 'use client';
 
-import { useEffect, useState, forwardRef } from 'react';
+import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import dynamic from 'next/dynamic';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import PdfViewer from './PdfViewer'; // Direct import
 
 
-// Import react-pdf styles here to ensure they are loaded with the dynamic component
+// Import react-pdf styles here to ensure they are loaded
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
-const PdfViewer = dynamic(() => import('./PdfViewer'), { 
-  ssr: false,
-  loading: () => <div className="text-white">Loading PDF viewer...</div>
-});
+type FilePreviewProps = {
+  url: string;
+  mime: string;
+  itemName: string;
+  onPdfLoadSuccess?: (pdf: PDFDocumentProxy) => void;
+  pdfScale: number;
+  onPageChange?: (page: number) => void;
+};
 
-const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, pageNumber, onPageChange }: { url: string, mime: string, itemName: string, onPdfLoadSuccess?: (pdf: PDFDocumentProxy) => void, pdfScale: number, pageNumber: number, onPageChange?: (page: number) => void }, ref) => {
+const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange }: FilePreviewProps, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
+  
+  useImperativeHandle(ref, () => ({
+    scrollTo: (page: number) => {
+      // This is a placeholder. The actual implementation will be inside PdfViewer.
+      // The ref to PdfViewer will be passed down from FilePreviewModal.
+    }
+  }));
 
   useEffect(() => {
     if (mime === 'text/html') {
@@ -53,7 +65,7 @@ const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess, pdfScal
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer file={url} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} pageNumber={pageNumber} onPageChange={onPageChange} />;
+    return <PdfViewer ref={ref} file={url} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} />;
   }
   
   if (mime.startsWith('audio/')) {
