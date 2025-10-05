@@ -56,12 +56,12 @@ const nextConfig: NextConfig = {
             protocol: 'https',
             hostname: new URL(process.env.NEXT_PUBLIC_FILES_BASE_URL).hostname,
           }
-        : null,
+        : undefined,
       {
         protocol: 'https' as const,
         hostname: 'picsum.photos',
       },
-    ].filter(Boolean) as NextConfig['images']['remotePatterns'],
+    ].filter(Boolean) as Exclude<NextConfig['images'], undefined>['remotePatterns'],
   },
   webpack: (config: Configuration, { isServer, dev }) => {
     // This is to prevent the "Module not found: Can't resolve 'canvas'" error during build
