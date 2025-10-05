@@ -160,6 +160,7 @@ const PdfControls = ({
     scaleInput,
     handleScaleInputChange,
     handleScaleInputSubmit,
+    pageInputRef,
 }: {
     isMobile: boolean,
     numPages: number | undefined,
@@ -174,6 +175,7 @@ const PdfControls = ({
     scaleInput: string,
     handleScaleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
     handleScaleInputSubmit: (e: React.FormEvent) => void,
+    pageInputRef: React.RefObject<HTMLInputElement>,
 }) => {
     const MAX_ZOOM = 5;
     const MIN_ZOOM = 0.1;
@@ -223,14 +225,17 @@ const PdfControls = ({
         </Button>
         
         <form onSubmit={handlePageInputSubmit}>
-            <Input 
-              type="text" 
-              value={pageInput}
-              onChange={handlePageInputChange}
-              onBlur={handlePageInputSubmit}
-              className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
-            />
-            <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
+            <div className="flex items-center">
+              <Input 
+                ref={pageInputRef}
+                type="text" 
+                defaultValue={pageInput}
+                onChange={handlePageInputChange}
+                onBlur={handlePageInputSubmit}
+                className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
+              />
+              <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
+            </div>
         </form>
 
         <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
@@ -288,6 +293,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [scaleInput, setScaleInput] = useState('100%');
   
   const pdfViewerRef = useRef<FilePreviewRef>(null);
+  const pageInputRef = useRef<HTMLInputElement>(null);
 
   // Other Refs
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -308,7 +314,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const goToPage = useCallback((page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
       setPageNumber(newPage);
-      if (pdfViewerRef.current && typeof pdfViewerRef.current.scrollToPage === 'function') {
+      if (pdfViewerRef.current) {
         pdfViewerRef.current.scrollToPage(newPage);
       }
   }, [numPages]);
@@ -320,13 +326,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       setPageInput(e.target.value);
   }
 
-  const handlePageInputSubmit = (e: React.FormEvent) => {
+  const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
       e.preventDefault();
-      const page = parseInt(pageInput, 10);
-      if (!isNaN(page)) {
-          goToPage(page);
+      if (pageInputRef.current) {
+          const page = parseInt(pageInputRef.current.value, 10);
+          if (!isNaN(page)) {
+              goToPage(page);
+          }
       }
-  };
+  }, [goToPage]);
   
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setScaleInput(e.target.value);
@@ -560,7 +568,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
-        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 z-10">
+        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
             <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
@@ -591,6 +599,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     scaleInput={scaleInput}
                     handleScaleInputChange={handleScaleInputChange}
                     handleScaleInputSubmit={handleScaleInputSubmit}
+                    pageInputRef={pageInputRef}
                 />
               }
             </div>
@@ -598,11 +607,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             {/* Right Section */}
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
                 {!isLink && (
-                    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Download">
+                    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
                         <Download className="w-5 h-5" />
                     </Button>
                 )}
-                <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Open in new tab">
+                <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
                     <ExternalLink className="w-5 h-5" />
                 </Button>
                 {isChatAvailable && (
@@ -666,6 +675,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     scaleInput={scaleInput}
                     handleScaleInputChange={handleScaleInputChange}
                     handleScaleInputSubmit={handleScaleInputSubmit}
+                    pageInputRef={pageInputRef}
                   />
               </div>
             )}
