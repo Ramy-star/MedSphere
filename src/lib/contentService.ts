@@ -262,7 +262,8 @@ export const contentService = {
         formData.append('public_id', public_id);
         formData.append('folder', folder);
 
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
+        // Upload as a 'raw' file to preserve original quality
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
 
         xhr.upload.onprogress = (event) => {
             if (event.lengthComputable) {
@@ -300,7 +301,7 @@ export const contentService = {
                         mime: file.type || 'application/octet-stream',
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
-                        cloudinaryResourceType: data.resource_type
+                        cloudinaryResourceType: 'raw' // Explicitly set as raw
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
@@ -448,7 +449,7 @@ export const contentService = {
 
 
         const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`);
+        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
         
         xhr.upload.onprogress = (event) => {
              if (event.lengthComputable) {
@@ -472,7 +473,7 @@ export const contentService = {
                         mime: newFile.type || 'application/octet-stream',
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
-                        cloudinaryResourceType: data.resource_type,
+                        cloudinaryResourceType: 'raw',
                     },
                 };
                 await updateDoc(docRef, updatedData);
@@ -621,4 +622,6 @@ export const contentService = {
   }
 };
     
+    
+
     
