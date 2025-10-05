@@ -16,19 +16,20 @@ const options = {
 
 const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, onPageChange }: { file: string, onLoadSuccess?: (pdf: PDFDocumentProxy) => void, scale: number, pageNumber: number, onPageChange?: (page: number) => void }) => {
   const [numPages, setNumPages] = useState<number>(0);
-  const [pdfRef, setPdfRef] = useState<PDFDocumentProxy | null>(null);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number } | null>(null);
+  const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
-    setPdfRef(loadedPdf);
     setNumPages(loadedPdf.numPages);
     
-    // Get dimensions of the first page to estimate the size of others
-    const page = await loadedPdf.getPage(1);
-    const viewport = page.getViewport({ scale });
-    setPageDimensions({ width: viewport.width, height: viewport.height });
+    const allPageDimensions = [];
+    for(let i = 1; i <= loadedPdf.numPages; i++) {
+        const page = await loadedPdf.getPage(i);
+        const viewport = page.getViewport({ scale });
+        allPageDimensions.push({ width: viewport.width, height: viewport.height });
+    }
+    setPageDimensions(allPageDimensions);
 
     if (onLoadSuccess) {
       onLoadSuccess(loadedPdf);
@@ -64,7 +65,7 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
   const rowVirtualizer = useVirtualizer({
     count: numPages,
     getScrollElement: () => containerRef.current,
-    estimateSize: () => (pageDimensions?.height ?? 1000) + 16, // page height + margin
+    estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16,
     overscan: 5,
   });
 
@@ -73,18 +74,19 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
        rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'start', smooth: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [targetPageNumber]);
+  }, [targetPageNumber, numPages]);
 
 
   const handleScroll = useCallback(() => {
-    if (!rowVirtualizer.virtualItems || rowVirtualizer.virtualItems.length === 0 || !containerRef.current) return;
+    const virtualItems = rowVirtualizer.getVirtualItems();
+    if (!virtualItems || virtualItems.length === 0 || !containerRef.current) return;
 
     // Find the item that is closest to the center of the viewport
     let bestMatch = null;
     let smallestDistance = Infinity;
     const viewportCenter = containerRef.current.scrollTop + containerRef.current.clientHeight / 2;
 
-    for (const item of rowVirtualizer.virtualItems) {
+    for (const item of virtualItems) {
         const itemCenter = item.start + item.size / 2;
         const distance = Math.abs(viewportCenter - itemCenter);
         if (distance < smallestDistance) {
@@ -94,9 +96,12 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
     }
     
     if (bestMatch && onPageChange) {
-      onPageChange(bestMatch.index + 1);
+      const currentPage = bestMatch.index + 1;
+      if(currentPage !== targetPageNumber) {
+        onPageChange(currentPage);
+      }
     }
-  }, [rowVirtualizer.virtualItems, onPageChange]);
+  }, [rowVirtualizer, onPageChange, targetPageNumber]);
 
 
   useEffect(() => {
@@ -121,7 +126,7 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
             loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}
             className="flex justify-center"
         >
-            {pageDimensions && (
+            {numPages > 0 && pageDimensions.length > 0 && (
                 <div
                     style={{
                         height: `${rowVirtualizer.getTotalSize()}px`,
@@ -152,7 +157,7 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
                                     onRenderError={onRenderError}
                                     renderAnnotationLayer={false}
                                     className="shadow-2xl"
-                                    loading={<Skeleton style={{ height: pageDimensions.height, width: pageDimensions.width }} />}
+                                    loading={<Skeleton style={{ height: pageDimensions[virtualItem.index].height, width: pageDimensions[virtualItem.index].width }} />}
                                 />
                             </div>
                         </div>
