@@ -128,7 +128,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
                 ul: ({node, ...props}) => <ul className="text-slate-200 my-4 ml-4 list-disc text-sm md:text-base" {...props} />,
                 ol: ({node, ...props}) => <ol className="text-slate-200 my-4 ml-4 list-decimal text-sm md:text-base" {...props} />,
                 li: ({node, ...props}) => <li className="text-slate-200 mb-2 text-sm md:text-base" {...props} />,
-                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm md:text-base" {...props} />,
+                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm md:text-base font-mono" {...props} />,
                 pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                 hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
                 table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
@@ -490,7 +490,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               onBlur={(e) => { e.preventDefault(); handlePageInputSubmit(e as any); }}
               className="w-10 h-8 text-center bg-transparent border-0 font-mono focus-visible:ring-1 focus-visible:ring-blue-500"
             />
-            <span className="text-xs px-1 text-slate-400 font-mono">/ {numPages ?? '--'}</span>
+            <span className="text-sm px-1 text-slate-400 font-mono">/ {numPages ?? '--'}</span>
         </form>
 
         <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
@@ -498,7 +498,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <span className="sr-only">Next Page</span>
         </Button>
         
-        <div className="h-5 w-px bg-white/20 mx-1"></div>
+        <div className="h-5 w-px bg-white/20 mx-2"></div>
         
         <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
             <Minus className="w-4 h-4" />
@@ -531,7 +531,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
-        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/80 border-b border-slate-800 z-10">
+        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/90 border-b border-slate-800 z-10">
             {/* Left Section */}
             <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">

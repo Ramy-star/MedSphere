@@ -6,6 +6,8 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
+import { useIsMobile } from '@/hooks/use-mobile';
+
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -27,6 +29,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
+  const isMobile = useIsMobile();
   
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
@@ -76,7 +79,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: 5,
+    overscan: isMobile ? 2 : 5,
   });
 
   useImperativeHandle(ref, () => ({
@@ -94,13 +97,23 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     
     if (!virtualItems || virtualItems.length === 0) return;
 
+    const container = containerRef.current;
+    const scrollBottom = container.scrollTop + container.clientHeight;
+    // Check if scrolled to the very bottom
+    if (scrollBottom >= container.scrollHeight - 5) { // 5px tolerance
+        if(numPages > 0) {
+            onPageChange(numPages);
+        }
+        return;
+    }
+
+
     // Find the topmost visible item in the viewport
-    const viewportTop = containerRef.current.scrollTop;
+    const viewportTop = container.scrollTop;
     
     let topmostVisibleItem = virtualItems[0];
     for(const virtualItem of virtualItems) {
-        // Check if the item's bottom is below the viewport's top
-        if (virtualItem.start + virtualItem.size > viewportTop) {
+        if (virtualItem.start + virtualItem.size / 2 > viewportTop) {
             topmostVisibleItem = virtualItem;
             break;
         }
@@ -110,7 +123,8 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
       const currentPage = topmostVisibleItem.index + 1;
       onPageChange(currentPage);
     }
-  }, [virtualItems, onPageChange]);
+  }, [virtualItems, onPageChange, numPages]);
+
 
   return (
     <div className="w-full h-full flex flex-col items-center">
