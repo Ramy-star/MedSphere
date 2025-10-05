@@ -145,7 +145,6 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     );
 });
 
-
 const PdfControls = ({
     isMobile,
     numPages,
@@ -179,7 +178,7 @@ const PdfControls = ({
 }) => {
     const MAX_ZOOM = 5;
     const MIN_ZOOM = 0.1;
-  
+
     if (!numPages) return null;
 
     if (isMobile) {
@@ -192,23 +191,23 @@ const PdfControls = ({
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
                 >
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
                         <ChevronLeft className="w-4 h-4" />
                         <span className="sr-only">Previous Page</span>
                     </Button>
                     <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu">{pageNumber} / {numPages ?? '--'}</span>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
                         <ChevronRight className="w-4 h-4" />
                         <span className="sr-only">Next Page</span>
                     </Button>
                     <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
                         <Minus className="w-4 h-4" />
                     </Button>
                     <span className='text-xs w-12 text-center font-ubuntu'>
                         {`${Math.round(pdfScale * 100)}%`}
                     </span>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
                         <Plus className="w-4 h-4" />
                     </Button>
                 </motion.div>
@@ -295,31 +294,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
 
-  // Other Refs
-  const previewContainerRef = useRef<HTMLDivElement>(null);
-  const chatContainerRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  
-  const fileUrl = item?.metadata?.storagePath;
-  const isLink = item?.type === 'LINK';
-  const linkUrl = item?.metadata?.url;
-  const openUrl = isLink ? linkUrl : fileUrl;
-  const isPdf = item?.metadata?.mime === 'application/pdf';
-
-  // PDF Controls Logic
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
   
-  const handlePageChange = useCallback((newPage: number) => {
-    setPageNumber(newPage);
-    setPageInput(String(newPage));
-  }, []);
-
   const goToPage = useCallback((page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
       setPageNumber(newPage);
-      pdfViewerRef.current?.scrollToPage(newPage);
+      if (pdfViewerRef.current) {
+        pdfViewerRef.current.scrollToPage(newPage);
+      }
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -350,6 +334,22 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           setPdfScale(Math.max(MIN_ZOOM, Math.min(newScale / 100, MAX_ZOOM)));
       }
   };
+
+
+  // Other Refs
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  
+  const fileUrl = item?.metadata?.storagePath;
+  const isLink = item?.type === 'LINK';
+  const linkUrl = item?.metadata?.url;
+  const openUrl = isLink ? linkUrl : fileUrl;
+  const isPdf = item?.metadata?.mime === 'application/pdf';
+  
+  const handlePageChange = useCallback((newPage: number) => {
+    setPageNumber(newPage);
+  }, []);
 
   const startNewChat = useCallback(() => {
     setChatHistory([]);
@@ -587,7 +587,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
             {/* Center Section (Desktop Only) */}
              <div className="hidden md:flex flex-1 items-center justify-center">
-              {isPdf &&
                 <PdfControls
                     isMobile={isMobile}
                     numPages={numPages}
@@ -604,7 +603,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     handleScaleInputSubmit={handleScaleInputSubmit}
                     pageInputRef={pageInputRef}
                 />
-              }
             </div>
 
             {/* Right Section */}
@@ -639,7 +637,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-slate-700">
+        <main className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-slate-750">
             <div className="[grid-area:1/1] overflow-auto flex items-center justify-center">
               {loading && <div className="text-white">Loading...</div>}
               {error && <div className="text-red-400">Error: {error}</div>}
