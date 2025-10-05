@@ -12,7 +12,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ['var(--font-nunito-sans)'],
-        mono: ['var(--font-ubuntu-mono)'],
+        ubuntu: ['var(--font-ubuntu)'],
         code: ['monospace'],
       },
       colors: {

@@ -1,3 +1,4 @@
+
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink,
@@ -152,17 +153,17 @@ export const FileCard = React.memo(function FileCard({
                 </h3>
                 {isMobile && (
                      <p className="text-xs text-slate-400 mt-0.5">
-                        <span className="font-mono">{displaySize}</span> • <span className="font-mono">{createdAt}</span>
+                        <span className="font-ubuntu">{displaySize}</span> • <span className="font-ubuntu">{createdAt}</span>
                     </p>
                 )}
             </div>
         </div>
         
         <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
-            <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-mono">
+            <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-ubuntu">
                 {createdAt}
             </p>
-            <p className="text-xs text-slate-400 hidden sm:block w-20 text-right font-mono">
+            <p className="text-xs text-slate-400 hidden sm:block w-20 text-right font-ubuntu">
                 {displaySize}
             </p>
             

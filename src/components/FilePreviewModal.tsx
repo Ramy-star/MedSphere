@@ -128,7 +128,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
                 ul: ({node, ...props}) => <ul className="text-slate-200 my-4 ml-4 list-disc text-sm md:text-base" {...props} />,
                 ol: ({node, ...props}) => <ol className="text-slate-200 my-4 ml-4 list-decimal text-sm md:text-base" {...props} />,
                 li: ({node, ...props}) => <li className="text-slate-200 mb-2 text-sm md:text-base" {...props} />,
-                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm md:text-base font-mono" {...props} />,
+                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm md:text-base font-ubuntu" {...props} />,
                 pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                 hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
                 table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
@@ -454,7 +454,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <ChevronLeft className="w-4 h-4" />
                         <span className="sr-only">Previous Page</span>
                     </Button>
-                    <span className="text-xs px-2 tabular-nums whitespace-nowrap font-mono">{pageNumber} / {numPages ?? '--'}</span>
+                    <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu">{pageNumber} / {numPages ?? '--'}</span>
                     <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
                         <ChevronRight className="w-4 h-4" />
                         <span className="sr-only">Next Page</span>
@@ -463,7 +463,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
                         <Minus className="w-4 h-4" />
                     </Button>
-                    <span className='text-xs w-12 text-center font-mono'>
+                    <span className='text-xs w-12 text-center font-ubuntu'>
                         {`${Math.round(pdfScale * 100)}%`}
                     </span>
                     <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
@@ -488,9 +488,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               value={pageInput}
               onChange={handlePageInputChange}
               onBlur={(e) => { e.preventDefault(); handlePageInputSubmit(e as any); }}
-              className="w-10 h-8 text-center bg-transparent border-0 font-mono focus-visible:ring-1 focus-visible:ring-blue-500"
+              className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
             />
-            <span className="text-sm px-1 text-slate-400 font-mono">/ {numPages ?? '--'}</span>
+            <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
         </form>
 
         <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
@@ -511,7 +511,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 value={scaleInput}
                 onChange={handleScaleInputChange}
                 onBlur={(e) => { e.preventDefault(); handleScaleInputSubmit(e as any); }}
-                className="w-16 h-8 text-center bg-transparent border-0 font-mono focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="w-16 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
                 onFocus={(e) => e.target.select()}
             />
         </form>
