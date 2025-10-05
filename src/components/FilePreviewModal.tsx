@@ -30,11 +30,11 @@ import {
 import { Textarea } from '@/components/ui/textarea';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobileViewStore } from '@/hooks/use-mobile-view-store';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
-import { useMobileViewStore } from '@/hooks/use-mobile-view-store';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 type ChatMessageProps = {
@@ -165,7 +165,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfScale, setPdfScale] = useState(1);
-  const [isPdfControlsVisible, setIsPdfControlsVisible] = useState(false);
   
   // Ref to control PdfViewer component
   const pdfViewerRef = useRef<{ scrollTo: (page: number) => void } | null>(null);
@@ -291,11 +290,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [isMobile, setHeaderFixed, setChatInputOffset]);
 
-
-  useEffect(() => {
-    setIsPdfControlsVisible(isHoveringPreview || isMobile);
-  }, [isHoveringPreview, isMobile]);
-
   if (!item) return null;
   
   const { Icon, color } = getIconForFileType(item);
@@ -389,7 +383,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   const isPdf = item.metadata?.mime === 'application/pdf';
 
-  const renderPdfControls = (isTopBar: boolean = false) => {
+  const renderPdfControls = () => {
     const MAX_ZOOM = 5;
     const MIN_ZOOM = 0.1;
     const ZOOM_STEP = 0.05;
@@ -403,8 +397,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
     const zoomOut = () => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
   
-    const shouldShow = isPdf && numPages && (isTopBar ? !isMobile : isMobile && isPdfControlsVisible);
-    if (!shouldShow) return null;
+    if (!isPdf || !numPages) return null;
 
     return (
         <AnimatePresence>
@@ -462,7 +455,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
 
             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex">
-               {renderPdfControls(true)}
+                {!isMobile && renderPdfControls()}
             </div>
 
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
@@ -518,9 +511,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               </div>
               )}
             </div>
-            <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4 md:hidden">
-                {renderPdfControls(false)}
-            </div>
+            {isMobile && (
+              <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4">
+                  {renderPdfControls()}
+              </div>
+            )}
         </main>
     </motion.div>
   );
