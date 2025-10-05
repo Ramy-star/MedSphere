@@ -17,7 +17,6 @@ type FilePreviewProps = {
   onPdfLoadSuccess?: (pdf: PDFDocumentProxy) => void;
   pdfScale: number;
   onPageChange?: (page: number) => void;
-  manualPageInputInProgressRef: React.MutableRefObject<boolean>;
 };
 
 // Define the type for the ref handle
@@ -25,7 +24,7 @@ export type FilePreviewRef = {
   scrollToPage: (page: number) => void;
 };
 
-const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, manualPageInputInProgressRef }, ref) => {
+const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
   
@@ -66,7 +65,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer ref={ref} file={url} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} manualPageInputInProgressRef={manualPageInputInProgressRef} />;
+    return <PdfViewer ref={ref} file={url} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} />;
   }
   
   if (mime.startsWith('audio/')) {

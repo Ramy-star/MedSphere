@@ -291,7 +291,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
-  const manualPageInputInProgress = useRef(false);
 
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
@@ -305,7 +304,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const goToPage = useCallback((page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
-      setPageNumber(newPage);
       pdfViewerRef.current?.scrollToPage(newPage);
   }, [numPages]);
 
@@ -321,12 +319,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (pageInputRef.current) {
         const page = parseInt(pageInputRef.current.value, 10);
         if (!isNaN(page)) {
-            manualPageInputInProgress.current = true;
-            goToPage(page);
-            // After a short delay, allow scroll updates again
-            setTimeout(() => {
-                manualPageInputInProgress.current = false;
-            }, 500); 
+           goToPage(page);
         }
     }
   }, [goToPage]);
@@ -350,7 +343,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isPdf = item?.metadata?.mime === 'application/pdf';
   
   const onPageChange = useCallback((newPage: number) => {
-    if (manualPageInputInProgress.current) return;
     setPageNumber(newPage);
     setPageInput(String(newPage));
   }, []);
@@ -416,10 +408,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [item, startNewChat]);
   
   useEffect(() => {
-    // Only update the text input if it's not currently focused by the user
-    if (document.activeElement !== pageInputRef.current) {
-      setPageInput(String(pageNumber));
-    }
+    setPageInput(String(pageNumber));
   }, [pageNumber]);
 
   useEffect(() => {
@@ -657,7 +646,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onPdfLoadSuccess={handlePdfLoadSuccess}
                     pdfScale={pdfScale}
                     onPageChange={onPageChange}
-                    manualPageInputInProgressRef={manualPageInputInProgress}
                 />
               )}
               {!loading && !fileUrl && (
