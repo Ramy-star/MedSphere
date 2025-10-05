@@ -6,7 +6,7 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // This explicitly disables PWA in development
+  disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
       urlPattern: /^https:\/\/res\.cloudinary\.com\/.*/i,
@@ -22,11 +22,16 @@ const withPWA = require('next-pwa')({
         },
       },
     },
-     {
+    {
       urlPattern: ({ url }: { url: URL }) => {
         const workerBase = process.env.NEXT_PUBLIC_FILES_BASE_URL;
         if (!workerBase) return false;
-        return url.origin === workerBase;
+        // Ensure the origin of the request URL matches the worker's origin.
+        try {
+          return url.origin === new URL(workerBase).origin;
+        } catch (e) {
+          return false;
+        }
       },
       handler: 'CacheFirst',
       options: {
@@ -43,25 +48,33 @@ const withPWA = require('next-pwa')({
   ],
 });
 
+const remotePatterns: Exclude<NextConfig['images'], undefined>['remotePatterns'] = [
+  {
+    protocol: 'https',
+    hostname: 'res.cloudinary.com',
+  },
+  {
+    protocol: 'https' as const,
+    hostname: 'picsum.photos',
+  },
+];
+
+// Dynamically add the worker hostname to remotePatterns if it's set
+if (process.env.NEXT_PUBLIC_FILES_BASE_URL) {
+  try {
+    const workerHostname = new URL(process.env.NEXT_PUBLIC_FILES_BASE_URL).hostname;
+    remotePatterns.push({
+      protocol: 'https',
+      hostname: workerHostname,
+    });
+  } catch (error) {
+    console.error("Invalid NEXT_PUBLIC_FILES_BASE_URL:", error);
+  }
+}
 
 const nextConfig: NextConfig = {
   images: {
-    remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'res.cloudinary.com',
-      },
-      process.env.NEXT_PUBLIC_FILES_BASE_URL
-        ? {
-            protocol: 'https',
-            hostname: new URL(process.env.NEXT_PUBLIC_FILES_BASE_URL).hostname,
-          }
-        : undefined,
-      {
-        protocol: 'https' as const,
-        hostname: 'picsum.photos',
-      },
-    ].filter(Boolean) as Exclude<NextConfig['images'], undefined>['remotePatterns'],
+    remotePatterns,
   },
   webpack: (config: Configuration, { isServer, dev }) => {
     // This is to prevent the "Module not found: Can't resolve 'canvas'" error during build
