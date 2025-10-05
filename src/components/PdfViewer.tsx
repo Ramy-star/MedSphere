@@ -76,7 +76,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: 5,
+    overscan: 10,
   });
 
   useImperativeHandle(ref, () => ({
@@ -87,12 +87,11 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     }
   }));
 
-  const [debouncedVirtualizer] = useDebounce(rowVirtualizer.getVirtualItems(), 100);
+  const virtualItems = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
     if (!onPageChange || !containerRef.current) return;
     
-    const virtualItems = debouncedVirtualizer;
     if (!virtualItems || virtualItems.length === 0) return;
 
     const viewportCenter = (containerRef.current.scrollTop + containerRef.current.clientHeight / 2);
@@ -113,7 +112,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
       const currentPage = bestMatch.index + 1;
       onPageChange(currentPage);
     }
-  }, [debouncedVirtualizer, onPageChange]);
+  }, [virtualItems, onPageChange]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">
@@ -138,7 +137,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
                   }}
                   className="flex justify-center"
               >
-                  {rowVirtualizer.getVirtualItems().map((virtualItem) => (
+                  {virtualItems.map((virtualItem) => (
                       <div
                           key={virtualItem.key}
                           data-index={virtualItem.index}
