@@ -82,7 +82,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
   });
 
   useImperativeHandle(ref, () => ({
-    scrollTo: (page: number) => {
+    scrollToPage: (page: number) => {
       if (page > 0 && page <= numPages) {
         rowVirtualizer.scrollToIndex(page - 1, { align: 'start' });
       }
@@ -92,9 +92,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
-    if (!onPageChange || !containerRef.current) return;
-    
-    if (!virtualItems || virtualItems.length === 0) return;
+    if (!onPageChange || !containerRef.current || virtualItems.length === 0) return;
 
     const container = containerRef.current;
     
@@ -106,24 +104,17 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
         return;
     }
 
-
     // Find the topmost visible item in the viewport
-    const viewportTop = container.scrollTop;
-    
-    let topmostVisibleItem = null;
-    for(const virtualItem of virtualItems) {
-        if (virtualItem.start >= viewportTop - virtualItem.size / 2) {
-            topmostVisibleItem = virtualItem;
-            break;
-        }
+    let topmostVisibleIndex = -1;
+    for (const virtualItem of virtualItems) {
+      if (virtualItem.start >= container.scrollTop - 10) { // 10px tolerance from top
+        topmostVisibleIndex = virtualItem.index;
+        break;
+      }
     }
     
-    if (topmostVisibleItem) {
-      const currentPage = topmostVisibleItem.index + 1;
-      onPageChange(currentPage);
-    } else if (virtualItems.length > 0) {
-      // Fallback for cases where the loop doesn't find a match (e.g., fast scrolling)
-      onPageChange(virtualItems[0].index + 1);
+    if (topmostVisibleIndex !== -1) {
+      onPageChange(topmostVisibleIndex + 1);
     }
   }, [virtualItems, onPageChange, numPages]);
 

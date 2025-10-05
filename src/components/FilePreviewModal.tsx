@@ -166,11 +166,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
-  const [scaleInput, setScaleInput] = useState('100');
+  const [scaleInput, setScaleInput] = useState('100%');
 
   
   // Ref to control PdfViewer component
-  const pdfViewerRef = useRef<{ scrollTo: (page: number) => void } | null>(null);
+  const pdfViewerRef = useRef<{ scrollToPage: (page: number) => void } | null>(null);
 
   // Refs
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -204,11 +204,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             const containerWidth = previewContainerRef.current.clientWidth - 32; // with padding
             const scale = containerWidth / page.getViewport({ scale: 1 }).width;
             setPdfScale(scale);
-            setScaleInput(String(Math.round(scale * 100)));
+            setScaleInput(String(Math.round(scale * 100)) + '%');
         }
     } else {
         setPdfScale(1); // Default 100% zoom for desktop
-        setScaleInput('100');
+        setScaleInput('100%');
     }
     
     if (documentText || isExtracting) return;
@@ -242,15 +242,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setPageNumber(1);
     setPageInput('1');
     setPdfScale(1);
-    setScaleInput('100');
+    setScaleInput('100%');
   }, [item, startNewChat]);
   
   useEffect(() => {
-    setPageInput(String(pageNumber));
+    if (pageNumber > 0) {
+        setPageInput(String(pageNumber));
+    }
   }, [pageNumber]);
 
   useEffect(() => {
-    setScaleInput(String(Math.round(pdfScale * 100)));
+    setScaleInput(`${Math.round(pdfScale * 100)}%`);
   }, [pdfScale]);
 
 
@@ -407,7 +409,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const goToPage = (page: number) => {
         const newPage = Math.max(1, Math.min(page, numPages || 1));
         setPageNumber(newPage);
-        pdfViewerRef.current?.scrollTo(newPage);
+        pdfViewerRef.current?.scrollToPage(newPage);
     }
     
     const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
@@ -417,19 +419,19 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setPageInput(e.target.value);
     }
 
-    const handlePageInputSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handlePageInputSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const newPage = parseInt(pageInput, 10);
-        if (!isNaN(newPage)) {
-            goToPage(newPage);
+        const page = parseInt(pageInput, 10);
+        if (!isNaN(page)) {
+            goToPage(page);
         }
-    }
+    };
     
     const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setScaleInput(e.target.value);
     };
 
-    const handleScaleInputSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    const handleScaleInputSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const newScale = parseInt(scaleInput.replace('%', ''), 10);
         if (!isNaN(newScale)) {
@@ -486,7 +488,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               type="text" 
               value={pageInput}
               onChange={handlePageInputChange}
-              onBlur={(e) => { e.preventDefault(); handlePageInputSubmit(e as any); }}
               className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
             />
             <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
@@ -509,7 +510,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 type="text"
                 value={scaleInput}
                 onChange={handleScaleInputChange}
-                onBlur={(e) => { e.preventDefault(); handleScaleInputSubmit(e as any); }}
                 className="w-16 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
                 onFocus={(e) => e.target.select()}
             />
