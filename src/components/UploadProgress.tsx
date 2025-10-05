@@ -72,7 +72,7 @@ export function UploadProgress({ file, onRetry, onRemove }: { file: UploadingFil
                         <X className="w-5 h-5" />
                     </Button>
                  )}
-                <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
+                <p className="text-xs text-slate-400 hidden sm:block w-20 text-right font-mono">
                     {displaySize}
                 </p>
             </div>

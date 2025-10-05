@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder } from 'lucide-react';
@@ -66,10 +65,10 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                 </Link>
                 
                  <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
-                    <p className="text-xs text-slate-400 hidden lg:block w-24 text-right">
+                    <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-mono">
                         {createdAt}
                     </p>
-                    <p className="text-xs text-slate-400 hidden sm:block w-20 text-right">
+                    <p className="text-xs text-slate-400 hidden sm:block w-20 text-right font-mono">
                         --
                     </p>
                     <DropdownMenu>
