@@ -7,7 +7,7 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
-import FilePreview from './FilePreview';
+import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
@@ -286,7 +286,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [scaleInput, setScaleInput] = useState('100%');
   
   // Ref to control PdfViewer component
-  const pdfViewerRef = useRef<{ scrollToPage: (page: number) => void } | null>(null);
+  const pdfViewerRef = useRef<FilePreviewRef>(null);
 
   // Refs
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -307,7 +307,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const goToPage = useCallback((page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
       setPageNumber(newPage);
-      pdfViewerRef.current?.scrollToPage(newPage);
+      if (pdfViewerRef.current && typeof pdfViewerRef.current.scrollToPage === 'function') {
+        pdfViewerRef.current.scrollToPage(newPage);
+      } else {
+        console.error("Error: pdfViewerRef.current.scrollToPage is not a function.", pdfViewerRef.current);
+      }
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);

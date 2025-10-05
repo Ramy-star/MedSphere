@@ -23,7 +23,11 @@ type PdfViewerProps = {
   onPageChange?: (page: number) => void;
 };
 
-const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfViewerProps, ref) => {
+export type PdfViewerRef = {
+  scrollToPage: (page: number) => void;
+};
+
+const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange }, ref) => {
   const [numPages, setNumPages] = useState<number>(0);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);

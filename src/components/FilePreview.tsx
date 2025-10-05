@@ -19,25 +19,25 @@ type FilePreviewProps = {
   onPageChange?: (page: number) => void;
 };
 
-const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange }: FilePreviewProps, ref) => {
+// Define the type for the ref handle
+export type FilePreviewRef = {
+  scrollToPage: (page: number) => void;
+};
+
+const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
   
-  useImperativeHandle(ref, () => ({
-    scrollTo: (page: number) => {
-      // This is a placeholder. The actual implementation will be inside PdfViewer.
-      // The ref to PdfViewer will be passed down from FilePreviewModal.
-    }
-  }));
 
   useEffect(() => {
+    let objectUrl: string | null = null;
     if (mime === 'text/html') {
       setIsLoadingHtml(true);
       fetch(url)
         .then(response => response.text())
         .then(text => {
           const blob = new Blob([text], { type: 'text/html' });
-          const objectUrl = URL.createObjectURL(blob);
+          objectUrl = URL.createObjectURL(blob);
           setHtmlContentUrl(objectUrl);
         })
         .catch(error => {
@@ -50,8 +50,8 @@ const FilePreview = forwardRef(({ url, mime, itemName, onPdfLoadSuccess, pdfScal
 
       // Cleanup function to revoke the object URL
       return () => {
-        if (htmlContentUrl) {
-          URL.revokeObjectURL(htmlContentUrl);
+        if (objectUrl) {
+          URL.revokeObjectURL(objectUrl);
         }
       };
     }
