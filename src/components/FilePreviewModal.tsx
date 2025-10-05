@@ -148,7 +148,7 @@ const PdfControls = ({
                 value={scaleInput}
                 onChange={handleScaleInputChange}
                 onBlur={handleScaleInputSubmit}
-                className="w-14 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
                 onFocus={(e) => e.target.select()}
             />
         </form>
@@ -304,11 +304,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MIN_ZOOM = 0.1;
   
   const goToPage = useCallback((page: number) => {
-    const newPage = Math.max(1, Math.min(page, numPages || 1));
-    if (pdfViewerRef.current?.scrollToPage) {
-        pdfViewerRef.current.scrollToPage(newPage);
-        setPageNumber(newPage);
-    }
+      const newPage = Math.max(1, Math.min(page, numPages || 1));
+      setPageNumber(newPage);
+      pdfViewerRef.current?.scrollToPage(newPage);
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -418,7 +416,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [item, startNewChat]);
   
   useEffect(() => {
-    setPageInput(String(pageNumber));
+    // Only update the text input if it's not currently focused by the user
+    if (document.activeElement !== pageInputRef.current) {
+      setPageInput(String(pageNumber));
+    }
   }, [pageNumber]);
 
   useEffect(() => {

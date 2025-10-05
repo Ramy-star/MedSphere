@@ -138,9 +138,17 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     // Run once on initial render
     handleScroll();
   
-    container.addEventListener('scroll', handleScroll, { passive: true });
+    const scrollDebounceTimeout = 100;
+    let scrollTimeout: NodeJS.Timeout | null = null;
+    const debouncedScrollHandler = () => {
+        if(scrollTimeout) clearTimeout(scrollTimeout);
+        scrollTimeout = setTimeout(handleScroll, scrollDebounceTimeout);
+    };
+
+    container.addEventListener('scroll', debouncedScrollHandler, { passive: true });
     return () => {
-      container.removeEventListener('scroll', handleScroll);
+      container.removeEventListener('scroll', debouncedScrollHandler);
+      if(scrollTimeout) clearTimeout(scrollTimeout);
     };
   }, [virtualItems, onPageChange, numPages, manualPageInputInProgressRef]);
 
