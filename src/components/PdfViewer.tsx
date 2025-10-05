@@ -77,25 +77,19 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
 
 
   const handleScroll = useCallback(() => {
-    if (!rowVirtualizer.virtualItems || rowVirtualizer.virtualItems.length === 0) return;
+    if (!rowVirtualizer.virtualItems || rowVirtualizer.virtualItems.length === 0 || !containerRef.current) return;
 
-    const firstVisibleItem = rowVirtualizer.virtualItems[0];
-    const middleItem = rowVirtualizer.virtualItems[Math.floor(rowVirtualizer.virtualItems.length / 2)];
-    
     // Find the item that is closest to the center of the viewport
-    let bestMatch = firstVisibleItem;
+    let bestMatch = null;
     let smallestDistance = Infinity;
+    const viewportCenter = containerRef.current.scrollTop + containerRef.current.clientHeight / 2;
 
     for (const item of rowVirtualizer.virtualItems) {
-        const itemElement = containerRef.current?.querySelector(`[data-index="${item.index}"]`);
-        if (itemElement) {
-            const rect = itemElement.getBoundingClientRect();
-            const containerRect = containerRef.current.getBoundingClientRect();
-            const distance = Math.abs((rect.top + rect.bottom) / 2 - (containerRect.top + containerRect.height / 2));
-            if (distance < smallestDistance) {
-                smallestDistance = distance;
-                bestMatch = item;
-            }
+        const itemCenter = item.start + item.size / 2;
+        const distance = Math.abs(viewportCenter - itemCenter);
+        if (distance < smallestDistance) {
+            smallestDistance = distance;
+            bestMatch = item;
         }
     }
     
@@ -109,7 +103,7 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
     const container = containerRef.current;
     if (!container) return;
 
-    container.addEventListener('scroll', handleScroll);
+    container.addEventListener('scroll', handleScroll, { passive: true });
     return () => container.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
@@ -151,14 +145,16 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
                                 justifyContent: 'center'
                             }}
                         >
-                            <Page
-                                pageNumber={virtualItem.index + 1}
-                                scale={scale}
-                                onRenderError={onRenderError}
-                                renderAnnotationLayer={false}
-                                className="shadow-2xl"
-                                loading={<Skeleton style={{ height: pageDimensions.height, width: pageDimensions.width }} />}
-                            />
+                            <div className="mb-4">
+                                <Page
+                                    pageNumber={virtualItem.index + 1}
+                                    scale={scale}
+                                    onRenderError={onRenderError}
+                                    renderAnnotationLayer={false}
+                                    className="shadow-2xl"
+                                    loading={<Skeleton style={{ height: pageDimensions.height, width: pageDimensions.width }} />}
+                                />
+                            </div>
                         </div>
                     ))}
                 </div>
