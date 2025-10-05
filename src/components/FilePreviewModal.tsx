@@ -407,9 +407,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <AnimatePresence>
             {isPdf && numPages && isPdfControlsVisible && (
                 <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 10 }}
+                    initial={{ opacity: 0, y: isMobile ? 10 : 0, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: isMobile ? 10 : 0, scale: 0.95 }}
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
                 >
@@ -448,7 +448,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
-            <div className="flex items-center gap-2 overflow-hidden">
+            <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                     <X className="w-6 h-6" />
                 </Button>
@@ -459,7 +459,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </div>
                 </div>
             </div>
-            <div className='flex items-center gap-1 sm:gap-2'>
+
+             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex">
+                {renderPdfControls()}
+            </div>
+
+            <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
                 {!isLink && (
                     <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9" title="Download">
                         <Download className="w-5 h-5" />
@@ -512,7 +517,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               </div>
               )}
             </div>
-            <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4">
+            <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4 md:hidden">
                 {renderPdfControls()}
             </div>
         </main>
