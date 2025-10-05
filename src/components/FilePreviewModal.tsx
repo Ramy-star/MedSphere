@@ -318,10 +318,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const goToPage = useCallback((page: number) => {
     const newPage = Math.max(1, Math.min(page, numPages || 1));
-    if (pdfViewerRef.current) {
+    if (pdfViewerRef.current && typeof pdfViewerRef.current.scrollToPage === 'function') {
         pdfViewerRef.current.scrollToPage(newPage);
     }
-    // The page number will be updated by the onPageChange callback from the viewer
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -571,7 +570,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         layout
         ref={previewContainerRef}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
+        className="relative flex-1 flex flex-col h-full bg-slate-800 overflow-hidden"
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-900/90 backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
