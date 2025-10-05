@@ -146,6 +146,123 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
 });
 
 
+const PdfControls = ({
+    isMobile,
+    numPages,
+    pageNumber,
+    pdfScale,
+    goToPage,
+    zoomIn,
+    zoomOut,
+    pageInput,
+    handlePageInputChange,
+    handlePageInputSubmit,
+    scaleInput,
+    handleScaleInputChange,
+    handleScaleInputSubmit,
+}: {
+    isMobile: boolean,
+    numPages: number | undefined,
+    pageNumber: number,
+    pdfScale: number,
+    goToPage: (page: number) => void,
+    zoomIn: () => void,
+    zoomOut: () => void,
+    pageInput: string,
+    handlePageInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+    handlePageInputSubmit: (e: React.FormEvent) => void,
+    scaleInput: string,
+    handleScaleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+    handleScaleInputSubmit: (e: React.FormEvent) => void,
+}) => {
+    const MAX_ZOOM = 5;
+    const MIN_ZOOM = 0.1;
+  
+    if (!numPages) return null;
+
+    if (isMobile) {
+        return (
+            <AnimatePresence>
+                <motion.div
+                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                    transition={{ duration: 0.2, ease: 'easeOut' }}
+                    className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
+                >
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+                        <ChevronLeft className="w-4 h-4" />
+                        <span className="sr-only">Previous Page</span>
+                    </Button>
+                    <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu">{pageNumber} / {numPages ?? '--'}</span>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
+                        <ChevronRight className="w-4 h-4" />
+                        <span className="sr-only">Next Page</span>
+                    </Button>
+                    <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+                        <Minus className="w-4 h-4" />
+                    </Button>
+                    <span className='text-xs w-12 text-center font-ubuntu'>
+                        {`${Math.round(pdfScale * 100)}%`}
+                    </span>
+                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+                        <Plus className="w-4 h-4" />
+                    </Button>
+                </motion.div>
+            </AnimatePresence>
+        );
+    }
+
+    // Desktop controls
+    return (
+      <div className="flex items-center gap-1.5 text-white">
+        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+            <ChevronLeft className="w-4 h-4" />
+            <span className="sr-only">Previous Page</span>
+        </Button>
+        
+        <form onSubmit={handlePageInputSubmit} className="flex items-center">
+            <Input 
+              type="text" 
+              value={pageInput}
+              onChange={handlePageInputChange}
+              className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
+            />
+            <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
+        </form>
+
+        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
+            <ChevronRight className="w-4 h-4" />
+            <span className="sr-only">Next Page</span>
+        </Button>
+        
+        <div className="h-5 w-px bg-white/20 mx-2"></div>
+        
+        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+            <Minus className="w-4 h-4" />
+            <span className="sr-only">Zoom Out</span>
+        </Button>
+        
+        <form onSubmit={handleScaleInputSubmit}>
+            <Input
+                type="text"
+                value={scaleInput}
+                onChange={handleScaleInputChange}
+                className="w-16 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
+                onFocus={(e) => e.target.select()}
+            />
+        </form>
+        
+        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+            <Plus className="w-4 h-4" />
+            <span className="sr-only">Zoom In</span>
+        </Button>
+    </div>
+    );
+};
+
+
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const [showChat, setShowChat] = useState(false);
@@ -167,7 +284,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
-
   
   // Ref to control PdfViewer component
   const pdfViewerRef = useRef<{ scrollToPage: (page: number) => void } | null>(null);
@@ -181,6 +297,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isLink = item?.type === 'LINK';
   const linkUrl = item?.metadata?.url;
   const openUrl = isLink ? linkUrl : fileUrl;
+  const isPdf = item?.metadata?.mime === 'application/pdf';
+
 
   const startNewChat = useCallback(() => {
     setChatHistory([]);
@@ -228,6 +346,46 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [isMobile, documentText, isExtracting, toast]);
   
+  // PDF Controls Logic
+  const goToPage = useCallback((page: number) => {
+      const newPage = Math.max(1, Math.min(page, numPages || 1));
+      setPageNumber(newPage);
+      setPageInput(String(newPage));
+      pdfViewerRef.current?.scrollToPage(newPage);
+  }, [numPages]);
+
+  const ZOOM_STEP = 0.1;
+  const MAX_ZOOM = 5;
+  const MIN_ZOOM = 0.1;
+
+  const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
+  const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
+  
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setPageInput(e.target.value);
+  }
+
+  const handlePageInputSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const page = parseInt(pageInput, 10);
+      if (!isNaN(page)) {
+          goToPage(page);
+      }
+  };
+  
+  const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setScaleInput(e.target.value);
+  };
+
+  const handleScaleInputSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const newScale = parseInt(scaleInput.replace('%', ''), 10);
+      if (!isNaN(newScale)) {
+          setPdfScale(Math.max(MIN_ZOOM, Math.min(newScale / 100, MAX_ZOOM)));
+      }
+  };
+
+
   useEffect(() => {
     startNewChat();
     setDocumentText(null); 
@@ -237,6 +395,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsExtracting(false);
     setNumPages(undefined);
     setPageNumber(1);
+    setPageInput('1');
     setPdfScale(1);
   }, [item, startNewChat]);
   
@@ -392,129 +551,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
-  const isPdf = item.metadata?.mime === 'application/pdf';
-
-  const renderPdfControls = () => {
-    const MAX_ZOOM = 5;
-    const MIN_ZOOM = 0.1;
-    const ZOOM_STEP = 0.1;
-    
-    const goToPage = useCallback((page: number) => {
-        const newPage = Math.max(1, Math.min(page, numPages || 1));
-        setPageNumber(newPage);
-        pdfViewerRef.current?.scrollToPage(newPage);
-    }, [numPages]);
-    
-    const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
-    const zoomOut = () => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
-    
-    const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setPageInput(e.target.value);
-    }
-
-    const handlePageInputSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const page = parseInt(pageInput, 10);
-        if (!isNaN(page)) {
-            goToPage(page);
-        }
-    };
-    
-    const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        setScaleInput(e.target.value);
-    };
-
-    const handleScaleInputSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        const newScale = parseInt(scaleInput.replace('%', ''), 10);
-        if (!isNaN(newScale)) {
-            setPdfScale(Math.max(MIN_ZOOM, Math.min(newScale / 100, MAX_ZOOM)));
-        }
-    };
-  
-    if (!isPdf || !numPages) return null;
-
-    if (isMobile) {
-        return (
-            <AnimatePresence>
-                <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
-                >
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
-                        <ChevronLeft className="w-4 h-4" />
-                        <span className="sr-only">Previous Page</span>
-                    </Button>
-                    <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu">{pageNumber} / {numPages ?? '--'}</span>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
-                        <ChevronRight className="w-4 h-4" />
-                        <span className="sr-only">Next Page</span>
-                    </Button>
-                    <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
-                        <Minus className="w-4 h-4" />
-                    </Button>
-                    <span className='text-xs w-12 text-center font-ubuntu'>
-                        {`${Math.round(pdfScale * 100)}%`}
-                    </span>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
-                        <Plus className="w-4 h-4" />
-                    </Button>
-                </motion.div>
-            </AnimatePresence>
-        );
-    }
-
-    // Desktop controls
-    return (
-      <div className="flex items-center gap-1.5 text-white">
-        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
-            <ChevronLeft className="w-4 h-4" />
-            <span className="sr-only">Previous Page</span>
-        </Button>
-        
-        <form onSubmit={handlePageInputSubmit} className="flex items-center">
-            <Input 
-              type="text" 
-              value={pageInput}
-              onChange={handlePageInputChange}
-              className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
-            />
-            <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
-        </form>
-
-        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
-            <ChevronRight className="w-4 h-4" />
-            <span className="sr-only">Next Page</span>
-        </Button>
-        
-        <div className="h-5 w-px bg-white/20 mx-2"></div>
-        
-        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
-            <Minus className="w-4 h-4" />
-            <span className="sr-only">Zoom Out</span>
-        </Button>
-        
-        <form onSubmit={handleScaleInputSubmit}>
-            <Input
-                type="text"
-                value={scaleInput}
-                onChange={handleScaleInputChange}
-                className="w-16 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
-                onFocus={(e) => e.target.select()}
-            />
-        </form>
-        
-        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
-            <Plus className="w-4 h-4" />
-            <span className="sr-only">Zoom In</span>
-        </Button>
-    </div>
-    );
-  };
   
   const renderFilePreview = () => (
     <motion.div 
@@ -539,7 +575,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
             {/* Center Section (Desktop Only) */}
              <div className="hidden md:flex flex-1 items-center justify-center">
-              {!isMobile && renderPdfControls()}
+              {isPdf &&
+                <PdfControls
+                    isMobile={isMobile}
+                    numPages={numPages}
+                    pageNumber={pageNumber}
+                    pdfScale={pdfScale}
+                    goToPage={goToPage}
+                    zoomIn={zoomIn}
+                    zoomOut={zoomOut}
+                    pageInput={pageInput}
+                    handlePageInputChange={handlePageInputChange}
+                    handlePageInputSubmit={handlePageInputSubmit}
+                    scaleInput={scaleInput}
+                    handleScaleInputChange={handleScaleInputChange}
+                    handleScaleInputSubmit={handleScaleInputSubmit}
+                />
+              }
             </div>
 
             {/* Right Section */}
@@ -597,9 +649,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               )}
             </div>
             {/* Bottom Controls (Mobile Only) */}
-            {isMobile && isPdf && numPages && (
+            {isMobile && isPdf && (
               <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4">
-                  {renderPdfControls()}
+                  <PdfControls
+                    isMobile={isMobile}
+                    numPages={numPages}
+                    pageNumber={pageNumber}
+                    pdfScale={pdfScale}
+                    goToPage={goToPage}
+                    zoomIn={zoomIn}
+                    zoomOut={zoomOut}
+                    pageInput={pageInput}
+                    handlePageInputChange={handlePageInputChange}
+                    handlePageInputSubmit={handlePageInputSubmit}
+                    scaleInput={scaleInput}
+                    handleScaleInputChange={handleScaleInputChange}
+                    handleScaleInputSubmit={handleScaleInputSubmit}
+                  />
               </div>
             )}
         </main>
