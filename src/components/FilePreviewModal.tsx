@@ -389,7 +389,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   const isPdf = item.metadata?.mime === 'application/pdf';
 
-  const renderPdfControls = () => {
+  const renderPdfControls = (isTopBar: boolean = false) => {
     const MAX_ZOOM = 5;
     const MIN_ZOOM = 0.1;
     const ZOOM_STEP = 0.05;
@@ -403,37 +403,38 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
     const zoomOut = () => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
   
+    const shouldShow = isPdf && numPages && (isTopBar ? !isMobile : isMobile && isPdfControlsVisible);
+    if (!shouldShow) return null;
+
     return (
         <AnimatePresence>
-            {isPdf && numPages && isPdfControlsVisible && (
-                <motion.div
-                    initial={{ opacity: 0, y: isMobile ? 10 : 0, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: isMobile ? 10 : 0, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
-                >
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
-                        <ChevronLeft className="w-4 h-4" />
-                        <span className="sr-only">Previous Page</span>
-                    </Button>
-                    <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
-                        <ChevronRight className="w-4 h-4" />
-                        <span className="sr-only">Next Page</span>
-                    </Button>
-                    <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
-                        <Minus className="w-4 h-4" />
-                    </Button>
-                    <span className='text-xs w-12 text-center font-mono'>
-                        {`${Math.round(pdfScale * 100)}%`}
-                    </span>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
-                        <Plus className="w-4 h-4" />
-                    </Button>
-                </motion.div>
-            )}
+            <motion.div
+                initial={{ opacity: 0, y: isMobile ? 10 : 0, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: isMobile ? 10 : 0, scale: 0.95 }}
+                transition={{ duration: 0.2, ease: 'easeOut' }}
+                className="flex items-center gap-0 md:gap-1 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
+            >
+                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+                    <ChevronLeft className="w-4 h-4" />
+                    <span className="sr-only">Previous Page</span>
+                </Button>
+                <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
+                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
+                    <ChevronRight className="w-4 h-4" />
+                    <span className="sr-only">Next Page</span>
+                </Button>
+                <div className="h-4 md:h-5 w-px bg-white/20 mx-1"></div>
+                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+                    <Minus className="w-4 h-4" />
+                </Button>
+                <span className='text-xs w-12 text-center font-mono'>
+                    {`${Math.round(pdfScale * 100)}%`}
+                </span>
+                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+                    <Plus className="w-4 h-4" />
+                </Button>
+            </motion.div>
         </AnimatePresence>
     );
   };
@@ -460,8 +461,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-             <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex">
-                {renderPdfControls()}
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex">
+               {renderPdfControls(true)}
             </div>
 
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
@@ -518,7 +519,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               )}
             </div>
             <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4 md:hidden">
-                {renderPdfControls()}
+                {renderPdfControls(false)}
             </div>
         </main>
     </motion.div>
