@@ -49,8 +49,7 @@ export type UploadCallbacks = {
 function createProxiedUrl(secureUrl: string): string {
     const workerBase = process.env.NEXT_PUBLIC_FILES_BASE_URL;
 
-    // If the worker URL is not configured or is the placeholder, return the direct URL.
-    if (!workerBase || workerBase.includes('files.yourdomain.com')) {
+    if (!workerBase) {
         return secureUrl;
     }
 
@@ -262,7 +261,6 @@ export const contentService = {
         formData.append('public_id', public_id);
         formData.append('folder', folder);
 
-        // Upload as a 'raw' file to preserve original quality
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
 
         xhr.upload.onprogress = (event) => {
@@ -301,7 +299,7 @@ export const contentService = {
                         mime: file.type || 'application/octet-stream',
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
-                        cloudinaryResourceType: 'raw' // Explicitly set as raw
+                        cloudinaryResourceType: 'raw'
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
@@ -473,7 +471,7 @@ export const contentService = {
                         mime: newFile.type || 'application/octet-stream',
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
-                        cloudinaryResourceType: 'raw',
+                        cloudinaryResourceType: 'raw' as const,
                     },
                 };
                 await updateDoc(docRef, updatedData);
