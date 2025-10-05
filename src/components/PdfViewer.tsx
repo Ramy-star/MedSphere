@@ -49,6 +49,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
   }, [onLoadSuccess, scale]);
 
   function onDocumentLoadError(error: Error) {
+    // This warning is frequent and not critical, related to worker version mismatches.
     if (error.message.includes('API version') && error.message.includes('Worker version')) {
         return;
     }
@@ -78,13 +79,14 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: isMobile ? 1 : 2,
+    overscan: isMobile ? 2 : 5,
   });
 
   useImperativeHandle(ref, () => ({
     scrollToPage: (page: number) => {
-      if (page > 0 && page <= numPages) {
-        rowVirtualizer.scrollToIndex(page - 1, { align: 'start' });
+      const pageIndex = page - 1;
+      if (pageIndex >= 0 && pageIndex < numPages) {
+        rowVirtualizer.scrollToIndex(pageIndex, { align: 'start' });
       }
     }
   }));

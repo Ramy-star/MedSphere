@@ -299,6 +299,43 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const openUrl = isLink ? linkUrl : fileUrl;
   const isPdf = item?.metadata?.mime === 'application/pdf';
 
+  // PDF Controls Logic
+  const ZOOM_STEP = 0.1;
+  const MAX_ZOOM = 5;
+  const MIN_ZOOM = 0.1;
+  
+  const goToPage = useCallback((page: number) => {
+      const newPage = Math.max(1, Math.min(page, numPages || 1));
+      setPageNumber(newPage);
+      pdfViewerRef.current?.scrollToPage(newPage);
+  }, [numPages]);
+
+  const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
+  const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
+  
+  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setPageInput(e.target.value);
+  }
+
+  const handlePageInputSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const page = parseInt(pageInput, 10);
+      if (!isNaN(page)) {
+          goToPage(page);
+      }
+  };
+  
+  const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      setScaleInput(e.target.value);
+  };
+
+  const handleScaleInputSubmit = (e: React.FormEvent) => {
+      e.preventDefault();
+      const newScale = parseInt(scaleInput.replace('%', ''), 10);
+      if (!isNaN(newScale)) {
+          setPdfScale(Math.max(MIN_ZOOM, Math.min(newScale / 100, MAX_ZOOM)));
+      }
+  };
 
   const startNewChat = useCallback(() => {
     setChatHistory([]);
@@ -346,45 +383,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [isMobile, documentText, isExtracting, toast]);
   
-  // PDF Controls Logic
-  const goToPage = useCallback((page: number) => {
-      const newPage = Math.max(1, Math.min(page, numPages || 1));
-      setPageNumber(newPage);
-      setPageInput(String(newPage));
-      pdfViewerRef.current?.scrollToPage(newPage);
-  }, [numPages]);
-
-  const ZOOM_STEP = 0.1;
-  const MAX_ZOOM = 5;
-  const MIN_ZOOM = 0.1;
-
-  const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
-  const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
-  
-  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPageInput(e.target.value);
-  }
-
-  const handlePageInputSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      const page = parseInt(pageInput, 10);
-      if (!isNaN(page)) {
-          goToPage(page);
-      }
-  };
-  
-  const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setScaleInput(e.target.value);
-  };
-
-  const handleScaleInputSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      const newScale = parseInt(scaleInput.replace('%', ''), 10);
-      if (!isNaN(newScale)) {
-          setPdfScale(Math.max(MIN_ZOOM, Math.min(newScale / 100, MAX_ZOOM)));
-      }
-  };
-
 
   useEffect(() => {
     startNewChat();
