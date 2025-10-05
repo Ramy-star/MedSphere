@@ -78,7 +78,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: isMobile ? 2 : 5,
+    overscan: isMobile ? 1 : 2,
   });
 
   useImperativeHandle(ref, () => ({

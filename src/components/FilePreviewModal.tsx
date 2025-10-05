@@ -161,7 +161,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isMobile = useIsMobile();
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
 
-  // PDF specific state moved here
+  // PDF specific state
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfScale, setPdfScale] = useState(1);
@@ -204,11 +204,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             const containerWidth = previewContainerRef.current.clientWidth - 32; // with padding
             const scale = containerWidth / page.getViewport({ scale: 1 }).width;
             setPdfScale(scale);
-            setScaleInput(String(Math.round(scale * 100)) + '%');
         }
     } else {
         setPdfScale(1); // Default 100% zoom for desktop
-        setScaleInput('100%');
     }
     
     if (documentText || isExtracting) return;
@@ -237,18 +235,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setError(null);
     setLoading(false);
     setIsExtracting(false);
-    // Reset PDF state
     setNumPages(undefined);
     setPageNumber(1);
-    setPageInput('1');
     setPdfScale(1);
-    setScaleInput('100%');
   }, [item, startNewChat]);
   
   useEffect(() => {
-    if (pageNumber > 0) {
-        setPageInput(String(pageNumber));
-    }
+    setPageInput(String(pageNumber));
   }, [pageNumber]);
 
   useEffect(() => {
@@ -406,11 +399,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const MIN_ZOOM = 0.1;
     const ZOOM_STEP = 0.1;
     
-    const goToPage = (page: number) => {
+    const goToPage = useCallback((page: number) => {
         const newPage = Math.max(1, Math.min(page, numPages || 1));
         setPageNumber(newPage);
         pdfViewerRef.current?.scrollToPage(newPage);
-    }
+    }, [numPages]);
     
     const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
     const zoomOut = () => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
