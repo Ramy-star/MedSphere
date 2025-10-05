@@ -20,13 +20,13 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
-  const [internalPdf, setInternalPdf] = useState<PDFDocumentProxy | null>(null);
+  
+  // This state will be managed internally to avoid re-rendering the parent
+  const [internalCurrentPage, setInternalCurrentPage] = useState(1);
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
-    setInternalPdf(loadedPdf);
     setNumPages(loadedPdf.numPages);
     
-    // We get the dimensions of all pages to correctly estimate the total scroll height
     const allPageDimensions = await Promise.all(
         Array.from({ length: loadedPdf.numPages }, async (_, i) => {
             const page = await loadedPdf.getPage(i + 1);
@@ -76,13 +76,13 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
   // Effect to scroll to a specific page when the targetPageNumber prop changes
   useEffect(() => {
     if (targetPageNumber > 0 && targetPageNumber <= numPages) {
-       rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'start', smooth: true });
+       rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'start' });
     }
   }, [targetPageNumber, numPages, rowVirtualizer]);
 
 
   const handleScroll = useCallback(() => {
-    if (!onPageChange || !containerRef.current) return;
+    if (!containerRef.current) return;
 
     const virtualItems = rowVirtualizer.getVirtualItems();
     if (!virtualItems || virtualItems.length === 0) return;
@@ -103,14 +103,13 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
     
     if (bestMatch) {
       const currentPage = bestMatch.index + 1;
-      if(currentPage !== targetPageNumber) {
-        onPageChange(currentPage);
+      if (currentPage !== internalCurrentPage) {
+        setInternalCurrentPage(currentPage);
       }
     }
-  }, [onPageChange, rowVirtualizer, targetPageNumber]);
+  }, [rowVirtualizer, internalCurrentPage]);
   
-  const [debouncedHandleScroll] = useDebounce(handleScroll, 150);
-
+  const [debouncedHandleScroll] = useDebounce(handleScroll, 100);
 
   useEffect(() => {
     const container = containerRef.current;
@@ -119,6 +118,14 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
     container.addEventListener('scroll', debouncedHandleScroll, { passive: true });
     return () => container.removeEventListener('scroll', debouncedHandleScroll);
   }, [debouncedHandleScroll]);
+  
+  // This effect will now pass the internally managed page number to the parent.
+  useEffect(() => {
+    if(onPageChange) {
+      onPageChange(internalCurrentPage);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [internalCurrentPage]);
 
   return (
     <div className="w-full h-full flex flex-col items-center">
