@@ -304,11 +304,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MIN_ZOOM = 0.1;
   
   const goToPage = useCallback((page: number) => {
-      const newPage = Math.max(1, Math.min(page, numPages || 1));
-      if(pdfViewerRef.current) {
+    const newPage = Math.max(1, Math.min(page, numPages || 1));
+    if (pdfViewerRef.current?.scrollToPage) {
         pdfViewerRef.current.scrollToPage(newPage);
-      }
-      setPageNumber(newPage);
+        setPageNumber(newPage);
+    }
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -352,8 +352,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isPdf = item?.metadata?.mime === 'application/pdf';
   
   const onPageChange = useCallback((newPage: number) => {
-      if (manualPageInputInProgress.current) return;
-      setPageNumber(newPage);
+    if (manualPageInputInProgress.current) return;
+    setPageNumber(newPage);
+    setPageInput(String(newPage));
   }, []);
 
   const startNewChat = useCallback(() => {
@@ -412,6 +413,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsExtracting(false);
     setNumPages(undefined);
     setPageNumber(1);
+    setPageInput('1');
     setPdfScale(1);
   }, [item, startNewChat]);
   
@@ -654,6 +656,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onPdfLoadSuccess={handlePdfLoadSuccess}
                     pdfScale={pdfScale}
                     onPageChange={onPageChange}
+                    manualPageInputInProgressRef={manualPageInputInProgress}
                 />
               )}
               {!loading && !fileUrl && (

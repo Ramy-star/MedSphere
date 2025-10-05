@@ -21,13 +21,14 @@ type PdfViewerProps = {
   onLoadSuccess?: (pdf: PDFDocumentProxy) => void;
   scale: number;
   onPageChange?: (page: number) => void;
+  manualPageInputInProgressRef: React.MutableRefObject<boolean>;
 };
 
 export type PdfViewerRef = {
   scrollToPage: (page: number) => void;
 };
 
-const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange }, ref) => {
+const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, manualPageInputInProgressRef }, ref) => {
   const [numPages, setNumPages] = useState<number>(0);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -90,7 +91,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     scrollToPage: (page: number) => {
       const pageIndex = page - 1;
       if (pageIndex >= 0 && pageIndex < numPages) {
-        rowVirtualizer.scrollToIndex(pageIndex, { align: 'start' });
+        rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', smoothScroll: false });
       }
     }
   }));
@@ -102,6 +103,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     if (!onPageChange || !container || virtualItems.length === 0) return;
   
     const handleScroll = () => {
+      if (manualPageInputInProgressRef.current) return;
       // Check if scrolled to the very bottom
       if (container.scrollHeight > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 10) { // 10px tolerance
         if (numPages > 0) {
@@ -124,6 +126,12 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
       
       if (topmostVisibleIndex !== -1) {
         onPageChange(topmostVisibleIndex + 1);
+      } else if (virtualItems.length > 0) {
+        // Fallback if no item is found (e.g., scrolled past the last item's start)
+        const lastVirtualItem = virtualItems[virtualItems.length - 1];
+        if (scrollTop > lastVirtualItem.start) {
+          onPageChange(lastVirtualItem.index + 1);
+        }
       }
     };
   
@@ -134,7 +142,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     return () => {
       container.removeEventListener('scroll', handleScroll);
     };
-  }, [virtualItems, onPageChange, numPages]);
+  }, [virtualItems, onPageChange, numPages, manualPageInputInProgressRef]);
 
 
   return (
