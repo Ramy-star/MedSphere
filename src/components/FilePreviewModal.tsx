@@ -112,34 +112,32 @@ const PdfControls = ({
 
     // Desktop controls
     return (
-      <div className="flex items-center gap-1.5 text-white">
-        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+      <div className="flex items-center gap-1 text-white">
+        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
             <ChevronLeft className="w-4 h-4" />
             <span className="sr-only">Previous Page</span>
         </Button>
         
-        <form onSubmit={handlePageInputSubmit}>
-            <div className="flex items-center">
+        <form onSubmit={handlePageInputSubmit} className="flex items-center">
               <Input 
                 ref={pageInputRef}
                 type="text" 
                 value={pageInput}
                 onChange={handlePageInputChange}
                 onBlur={handlePageInputSubmit}
-                className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="w-9 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500 p-0"
               />
               <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
-            </div>
         </form>
 
-        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
+        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
             <ChevronRight className="w-4 h-4" />
             <span className="sr-only">Next Page</span>
         </Button>
         
-        <div className="h-5 w-px bg-white/20 mx-2"></div>
+        <div className="h-4 w-px bg-white/20 mx-1.5"></div>
         
-        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
             <Minus className="w-4 h-4" />
             <span className="sr-only">Zoom Out</span>
         </Button>
@@ -150,12 +148,12 @@ const PdfControls = ({
                 value={scaleInput}
                 onChange={handleScaleInputChange}
                 onBlur={handleScaleInputSubmit}
-                className="w-16 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
+                className="w-14 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
                 onFocus={(e) => e.target.select()}
             />
         </form>
         
-        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
             <Plus className="w-4 h-4" />
             <span className="sr-only">Zoom In</span>
         </Button>
@@ -293,7 +291,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
-  
+  const manualPageInputInProgress = useRef(false);
+
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -306,10 +305,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const goToPage = useCallback((page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
-      setPageNumber(newPage);
-      if (pdfViewerRef.current) {
+      if(pdfViewerRef.current) {
         pdfViewerRef.current.scrollToPage(newPage);
       }
+      setPageNumber(newPage);
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -324,7 +323,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (pageInputRef.current) {
         const page = parseInt(pageInputRef.current.value, 10);
         if (!isNaN(page)) {
+            manualPageInputInProgress.current = true;
             goToPage(page);
+            // After a short delay, allow scroll updates again
+            setTimeout(() => {
+                manualPageInputInProgress.current = false;
+            }, 500); 
         }
     }
   }, [goToPage]);
@@ -348,7 +352,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isPdf = item?.metadata?.mime === 'application/pdf';
   
   const onPageChange = useCallback((newPage: number) => {
-    setPageNumber(newPage);
+      if (manualPageInputInProgress.current) return;
+      setPageNumber(newPage);
   }, []);
 
   const startNewChat = useCallback(() => {
@@ -407,7 +412,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsExtracting(false);
     setNumPages(undefined);
     setPageNumber(1);
-    setPageInput('1');
     setPdfScale(1);
   }, [item, startNewChat]);
   
