@@ -229,7 +229,7 @@ const PdfControls = ({
               <Input 
                 ref={pageInputRef}
                 type="text" 
-                defaultValue={pageInput}
+                value={pageInput}
                 onChange={handlePageInputChange}
                 onBlur={handlePageInputSubmit}
                 className="w-10 h-8 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
@@ -311,12 +311,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
   
+  const handlePageChange = useCallback((newPage: number) => {
+    setPageNumber(newPage);
+    setPageInput(String(newPage));
+  }, []);
+
   const goToPage = useCallback((page: number) => {
-      const newPage = Math.max(1, Math.min(page, numPages || 1));
-      setPageNumber(newPage);
-      if (pdfViewerRef.current) {
+    const newPage = Math.max(1, Math.min(page, numPages || 1));
+    if (pdfViewerRef.current) {
         pdfViewerRef.current.scrollToPage(newPage);
-      }
+    }
+    // The page number will be updated by the onPageChange callback from the viewer
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -648,7 +653,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     itemName={item.name}
                     onPdfLoadSuccess={handlePdfLoadSuccess}
                     pdfScale={pdfScale}
-                    onPageChange={setPageNumber}
+                    onPageChange={handlePageChange}
                 />
               )}
               {!loading && !fileUrl && (

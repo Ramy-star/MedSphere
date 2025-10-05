@@ -98,30 +98,42 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
-    if (!onPageChange || !containerRef.current || virtualItems.length === 0) return;
-
     const container = containerRef.current;
-    
-    // Check if scrolled to the very bottom
-    if (container.scrollHeight > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 5) { // 5px tolerance
-        if(numPages > 0) {
-            onPageChange(numPages);
+    if (!onPageChange || !container || virtualItems.length === 0) return;
+  
+    const handleScroll = () => {
+      // Check if scrolled to the very bottom
+      if (container.scrollHeight > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 10) { // 10px tolerance
+        if (numPages > 0) {
+          onPageChange(numPages);
         }
         return;
-    }
-
-    // Find the topmost visible item in the viewport
-    let topmostVisibleIndex = -1;
-    for (const virtualItem of virtualItems) {
-      if (virtualItem.start >= container.scrollTop - 10) { // 10px tolerance from top
-        topmostVisibleIndex = virtualItem.index;
-        break;
       }
-    }
-    
-    if (topmostVisibleIndex !== -1) {
-      onPageChange(topmostVisibleIndex + 1);
-    }
+  
+      // Find the topmost visible item in the viewport
+      let topmostVisibleIndex = -1;
+      const { scrollTop } = container;
+  
+      for (const virtualItem of virtualItems) {
+        // Find the first item whose starting point is at or just below the top of the viewport
+        if (virtualItem.start >= scrollTop - 10) { // 10px tolerance from top
+          topmostVisibleIndex = virtualItem.index;
+          break;
+        }
+      }
+      
+      if (topmostVisibleIndex !== -1) {
+        onPageChange(topmostVisibleIndex + 1);
+      }
+    };
+  
+    // Run once on initial render
+    handleScroll();
+  
+    container.addEventListener('scroll', handleScroll);
+    return () => {
+      container.removeEventListener('scroll', handleScroll);
+    };
   }, [virtualItems, onPageChange, numPages]);
 
 
