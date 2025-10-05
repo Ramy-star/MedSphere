@@ -51,15 +51,17 @@ const nextConfig: NextConfig = {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
       },
-      {
-        protocol: 'https',
-        hostname: 'files.yourdomain.com', // Add your worker domain here
-      },
+      process.env.NEXT_PUBLIC_FILES_BASE_URL
+        ? {
+            protocol: 'https',
+            hostname: new URL(process.env.NEXT_PUBLIC_FILES_BASE_URL).hostname,
+          }
+        : null,
       {
         protocol: 'https' as const,
         hostname: 'picsum.photos',
       },
-    ],
+    ].filter(Boolean) as NextConfig['images']['remotePatterns'],
   },
   webpack: (config: Configuration, { isServer, dev }) => {
     // This is to prevent the "Module not found: Can't resolve 'canvas'" error during build
