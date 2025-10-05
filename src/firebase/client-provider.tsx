@@ -66,7 +66,7 @@ export function FirebaseClientProvider({
 
   if (loading) {
     return (
-      <div className="flex h-screen w-screen items-center justify-center bg-background">
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
             <Logo className="h-16 w-16 animate-pulse" />
             <p className="text-slate-400">Connecting to MedSphere...</p>
