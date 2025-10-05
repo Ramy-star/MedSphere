@@ -70,7 +70,7 @@ const PdfViewer = ({ file, onLoadSuccess, scale, pageNumber: targetPageNumber, o
 
   useEffect(() => {
     if (targetPageNumber > 0 && targetPageNumber <= numPages) {
-       rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'center', smooth: true });
+       rowVirtualizer.scrollToIndex(targetPageNumber - 1, { align: 'start', smooth: true });
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetPageNumber]);
