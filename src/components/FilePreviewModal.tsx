@@ -157,7 +157,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isHoveringPreview, setIsHoveringPreview] = useState(false);
   const isMobile = useIsMobile();
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
 
@@ -437,8 +436,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         layout
         ref={previewContainerRef}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        onMouseEnter={() => setIsHoveringPreview(true)}
-        onMouseLeave={() => setIsHoveringPreview(false)}
         className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
@@ -454,7 +451,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 hidden md:flex">
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
                 {!isMobile && renderPdfControls()}
             </div>
 
