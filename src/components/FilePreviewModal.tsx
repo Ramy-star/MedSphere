@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -35,6 +36,7 @@ import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Input } from './ui/input';
 
 
 type ChatMessageProps = {
@@ -164,6 +166,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfScale, setPdfScale] = useState(1);
+  const [pageInput, setPageInput] = useState('1');
+  const [scaleInput, setScaleInput] = useState('100');
+
   
   // Ref to control PdfViewer component
   const pdfViewerRef = useRef<{ scrollTo: (page: number) => void } | null>(null);
@@ -200,9 +205,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             const containerWidth = previewContainerRef.current.clientWidth - 32; // with padding
             const scale = containerWidth / page.getViewport({ scale: 1 }).width;
             setPdfScale(scale);
+            setScaleInput(String(Math.round(scale * 100)));
         }
     } else {
         setPdfScale(1); // Default 100% zoom for desktop
+        setScaleInput('100');
     }
     
     if (documentText || isExtracting) return;
@@ -234,8 +241,19 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     // Reset PDF state
     setNumPages(undefined);
     setPageNumber(1);
+    setPageInput('1');
     setPdfScale(1);
+    setScaleInput('100');
   }, [item, startNewChat]);
+  
+  useEffect(() => {
+    setPageInput(String(pageNumber));
+  }, [pageNumber]);
+
+  useEffect(() => {
+    setScaleInput(String(Math.round(pdfScale * 100)));
+  }, [pdfScale]);
+
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -385,7 +403,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const renderPdfControls = () => {
     const MAX_ZOOM = 5;
     const MIN_ZOOM = 0.1;
-    const ZOOM_STEP = 0.05;
+    const ZOOM_STEP = 0.1;
     
     const goToPage = (page: number) => {
         const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -395,6 +413,30 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     
     const zoomIn = () => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM));
     const zoomOut = () => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM));
+    
+    const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setPageInput(e.target.value);
+    }
+
+    const handlePageInputSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const newPage = parseInt(pageInput, 10);
+        if (!isNaN(newPage)) {
+            goToPage(newPage);
+        }
+    }
+    
+    const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        setScaleInput(e.target.value);
+    };
+
+    const handleScaleInputSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
+        const newScale = parseInt(scaleInput.replace('%', ''), 10);
+        if (!isNaN(newScale)) {
+            setPdfScale(Math.max(MIN_ZOOM, Math.min(newScale / 100, MAX_ZOOM)));
+        }
+    };
   
     if (!isPdf || !numPages) return null;
 
@@ -412,7 +454,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <ChevronLeft className="w-4 h-4" />
                         <span className="sr-only">Previous Page</span>
                     </Button>
-                    <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
+                    <span className="text-xs px-2 tabular-nums whitespace-nowrap font-mono">{pageNumber} / {numPages ?? '--'}</span>
                     <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
                         <ChevronRight className="w-4 h-4" />
                         <span className="sr-only">Next Page</span>
@@ -434,27 +476,51 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
     // Desktop controls
     return (
-        <div className="flex items-center gap-1 text-white">
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
-                <ChevronLeft className="w-4 h-4" />
-                <span className="sr-only">Previous Page</span>
-            </Button>
-            <span className="text-xs px-2 tabular-nums whitespace-nowrap">{pageNumber} / {numPages ?? '--'}</span>
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
-                <ChevronRight className="w-4 h-4" />
-                <span className="sr-only">Next Page</span>
-            </Button>
-            <div className="h-5 w-px bg-white/20 mx-1"></div>
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
-                <Minus className="w-4 h-4" />
-            </Button>
-            <span className='text-xs w-12 text-center font-mono'>
-                {`${Math.round(pdfScale * 100)}%`}
-            </span>
-            <Button variant="ghost" size="icon" className="rounded-full w-8 h-8" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
-                <Plus className="w-4 h-4" />
-            </Button>
-        </div>
+      <div className="flex items-center gap-1.5 text-white">
+        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
+            <ChevronLeft className="w-4 h-4" />
+            <span className="sr-only">Previous Page</span>
+        </Button>
+        
+        <form onSubmit={handlePageInputSubmit} className="flex items-center">
+            <Input 
+              type="text" 
+              value={pageInput}
+              onChange={handlePageInputChange}
+              onBlur={(e) => { e.preventDefault(); handlePageInputSubmit(e as any); }}
+              className="w-10 h-8 text-center bg-transparent border-0 font-mono focus-visible:ring-1 focus-visible:ring-blue-500"
+            />
+            <span className="text-xs px-1 text-slate-400 font-mono">/ {numPages ?? '--'}</span>
+        </form>
+
+        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
+            <ChevronRight className="w-4 h-4" />
+            <span className="sr-only">Next Page</span>
+        </Button>
+        
+        <div className="h-5 w-px bg-white/20 mx-1"></div>
+        
+        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+            <Minus className="w-4 h-4" />
+            <span className="sr-only">Zoom Out</span>
+        </Button>
+        
+        <form onSubmit={handleScaleInputSubmit}>
+            <Input
+                type="text"
+                value={scaleInput}
+                onChange={handleScaleInputChange}
+                onBlur={(e) => { e.preventDefault(); handleScaleInputSubmit(e as any); }}
+                className="w-16 h-8 text-center bg-transparent border-0 font-mono focus-visible:ring-1 focus-visible:ring-blue-500"
+                onFocus={(e) => e.target.select()}
+            />
+        </form>
+        
+        <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+            <Plus className="w-4 h-4" />
+            <span className="sr-only">Zoom In</span>
+        </Button>
+    </div>
     );
   };
   
@@ -465,7 +531,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className="relative flex-1 flex flex-col h-full bg-slate-900 overflow-hidden"
     >
-        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/70 border-b border-slate-800 z-10">
+        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-950/80 border-b border-slate-800 z-10">
             {/* Left Section */}
             <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
@@ -480,7 +546,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
 
             {/* Center Section (Desktop Only) */}
-            <div className="hidden md:flex flex-1 items-center justify-center">
+             <div className="hidden md:flex flex-1 items-center justify-center">
               {!isMobile && renderPdfControls()}
             </div>
 
@@ -539,7 +605,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               )}
             </div>
             {/* Bottom Controls (Mobile Only) */}
-            {isMobile && (
+            {isMobile && isPdf && numPages && (
               <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4">
                   {renderPdfControls()}
               </div>

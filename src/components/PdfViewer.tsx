@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -5,7 +6,6 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
-import { useDebounce } from 'use-debounce';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -76,7 +76,7 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: 10,
+    overscan: 5,
   });
 
   useImperativeHandle(ref, () => ({
@@ -94,22 +94,20 @@ const PdfViewer = forwardRef(({ file, onLoadSuccess, scale, onPageChange }: PdfV
     
     if (!virtualItems || virtualItems.length === 0) return;
 
-    const viewportCenter = (containerRef.current.scrollTop + containerRef.current.clientHeight / 2);
-
-    let bestMatch = null;
-    let smallestDistance = Infinity;
-
-    for (const item of virtualItems) {
-      const itemCenter = item.start + item.size / 2;
-      const distance = Math.abs(viewportCenter - itemCenter);
-      if (distance < smallestDistance) {
-        smallestDistance = distance;
-        bestMatch = item;
-      }
+    // Find the topmost visible item in the viewport
+    const viewportTop = containerRef.current.scrollTop;
+    
+    let topmostVisibleItem = virtualItems[0];
+    for(const virtualItem of virtualItems) {
+        // Check if the item's bottom is below the viewport's top
+        if (virtualItem.start + virtualItem.size > viewportTop) {
+            topmostVisibleItem = virtualItem;
+            break;
+        }
     }
     
-    if (bestMatch) {
-      const currentPage = bestMatch.index + 1;
+    if (topmostVisibleItem) {
+      const currentPage = topmostVisibleItem.index + 1;
       onPageChange(currentPage);
     }
   }, [virtualItems, onPageChange]);

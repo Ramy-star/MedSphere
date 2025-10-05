@@ -11,8 +11,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['Roboto', 'sans-serif'],
-        headline: ['Inter', 'sans-serif'],
+        sans: ['var(--font-nunito-sans)'],
+        mono: ['var(--font-ubuntu-mono)'],
         code: ['monospace'],
       },
       colors: {
