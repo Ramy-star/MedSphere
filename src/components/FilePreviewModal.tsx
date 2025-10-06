@@ -328,11 +328,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           const page = parseInt(pageInputRef.current.value, 10);
           if (!isNaN(page)) {
              goToPage(page);
-          } else {
-             setPageInput(String(pageNumber));
           }
       }
-    }, [goToPage, pageNumber]);
+      pageInputRef.current?.blur();
+    }, [goToPage]);
   
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setScaleInput(e.target.value);
@@ -354,7 +353,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const onPageChange = useCallback((newPage: number) => {
     setPageNumber(newPage);
-    setPageInput(String(newPage));
   }, []);
 
   const startNewChat = useCallback(() => {
@@ -413,7 +411,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsExtracting(false);
     setNumPages(undefined);
     setPageNumber(1);
-    setPageInput('1');
     setPdfScale(1);
   }, [item, startNewChat]);
   
