@@ -4,11 +4,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
-<<<<<<< HEAD
-import { useVirtualizer, Virtualizer } from '@tanstack/react-virtual';
-=======
-import { useVirtualizer } from '@tanstack/react-virtual';
->>>>>>> 44eca5d197dd49f5d9aa600180dfde043ab5caa4
+import { useVirtualizer, type Virtualizer } from '@tanstack/react-virtual';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -40,10 +36,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
   const isMobile = useIsMobile();
-<<<<<<< HEAD
   const [pdfProxy, setPdfProxy] = useState<PDFDocumentProxy | null>(null);
-=======
->>>>>>> 44eca5d197dd49f5d9aa600180dfde043ab5caa4
   
   const rowVirtualizer = useVirtualizer({
     count: numPages,
@@ -115,16 +108,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
         description: 'A page could not be displayed correctly.',
     });
   }, [toast]);
-
-<<<<<<< HEAD
-=======
-  const rowVirtualizer = useVirtualizer({
-    count: numPages,
-    getScrollElement: () => containerRef.current,
-    estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: isMobile ? 2 : 5, // Optimized for mobile and desktop
-  });
->>>>>>> 44eca5d197dd49f5d9aa600180dfde043ab5caa4
 
   useImperativeHandle(ref, () => ({
     scrollToPage: async (page: number) => {
