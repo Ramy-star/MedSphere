@@ -3,7 +3,7 @@
 import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
 import dynamic from 'next/dynamic';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import PdfViewer from './PdfViewer'; // Direct import
+import PdfViewer, { type PdfViewerRef } from './PdfViewer'; // Direct import and import type
 
 
 // Import react-pdf styles here to ensure they are loaded
@@ -22,9 +22,7 @@ type FilePreviewProps = {
 };
 
 // Define the type for the ref handle
-export type FilePreviewRef = {
-  scrollToPage: (page: number) => void;
-};
+export type FilePreviewRef = PdfViewerRef;
 
 const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
