@@ -42,7 +42,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: isMobile ? 1 : 2,
+    overscan: isMobile ? 3 : 2,
   });
 
   const computePageDimensions = useCallback(async (targetScale: number) => {

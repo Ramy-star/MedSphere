@@ -387,13 +387,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
     setPdfProxy(pdf);
     setNumPages(pdf.numPages);
-    if (isMobile) {
-        if (previewContainerRef.current) {
-            const page = await pdf.getPage(1);
-            const containerWidth = previewContainerRef.current.clientWidth - 32; // with padding
-            const scale = containerWidth / page.getViewport({ scale: 1 }).width;
-            setPdfScale(scale);
-        }
+    if (isMobile && previewContainerRef.current) {
+        const page = await pdf.getPage(1);
+        const containerWidth = previewContainerRef.current.clientWidth - 16; // with padding
+        const deviceDPR = window.devicePixelRatio || 1;
+        // Adjust scale for mobile to fit width, considering DPR for performance.
+        const optimalScale = (containerWidth / page.getViewport({ scale: 1 }).width) * (deviceDPR > 2 ? 1 : deviceDPR) * 0.95;
+        setPdfScale(Math.max(0.1, optimalScale));
     } else {
         setPdfScale(1); // Default 100% zoom for desktop
     }
