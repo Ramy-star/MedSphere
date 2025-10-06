@@ -46,7 +46,7 @@ type PdfControlsProps = {
     zoomIn: () => void,
     zoomOut: () => void,
     pageInput: string,
-    handlePageInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
+    setPageInput: (value: string) => void,
     handlePageInputSubmit: (e: React.FormEvent) => void,
     scaleInput: string,
     handleScaleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
@@ -64,7 +64,7 @@ const PdfControls = ({
     zoomIn,
     zoomOut,
     pageInput,
-    handlePageInputChange,
+    setPageInput,
     handlePageInputSubmit,
     scaleInput,
     handleScaleInputChange,
@@ -73,6 +73,10 @@ const PdfControls = ({
 }: PdfControlsProps) => {
     const MAX_ZOOM = 5;
     const MIN_ZOOM = 0.1;
+
+    useEffect(() => {
+        setPageInput(String(pageNumber));
+    }, [pageNumber, setPageInput]);
 
     if (!numPages) return null;
 
@@ -123,7 +127,7 @@ const PdfControls = ({
               ref={pageInputRef}
               type="text"
               value={pageInput}
-              onChange={handlePageInputChange}
+              onChange={(e) => setPageInput(e.target.value)}
               onBlur={handlePageInputSubmit}
               className="w-9 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500 p-0"
               onFocus={(e) => e.target.select()}
@@ -310,7 +314,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setScrollListenerEnabled(false);
         pdfViewerRef.current.scrollToPage(newPage);
         setPageNumber(newPage); 
-        setPageInput(String(newPage));
         setTimeout(() => setScrollListenerEnabled(true), 500); 
     }
   }, [numPages]);
@@ -318,9 +321,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
   const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
   
-  const handlePageInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      setPageInput(e.target.value);
-  }
 
   const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
       e.preventDefault();
@@ -414,10 +414,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setPdfScale(1);
   }, [item, startNewChat]);
   
-  useEffect(() => {
-    setPageInput(String(pageNumber));
-  }, [pageNumber]);
-
   useEffect(() => {
     setScaleInput(`${Math.round(pdfScale * 100)}%`);
   }, [pdfScale]);
@@ -599,7 +595,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     zoomIn={zoomIn}
                     zoomOut={zoomOut}
                     pageInput={pageInput}
-                    handlePageInputChange={handlePageInputChange}
+                    setPageInput={setPageInput}
                     handlePageInputSubmit={handlePageInputSubmit}
                     scaleInput={scaleInput}
                     handleScaleInputChange={handleScaleInputChange}
@@ -676,7 +672,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     zoomIn={zoomIn}
                     zoomOut={zoomOut}
                     pageInput={pageInput}
-                    handlePageInputChange={handlePageInputChange}
+                    setPageInput={setPageInput}
                     handlePageInputSubmit={handlePageInputSubmit}
                     scaleInput={scaleInput}
                     handleScaleInputChange={handleScaleInputChange}
