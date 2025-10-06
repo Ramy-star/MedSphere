@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useState, forwardRef, useImperativeHandle } from 'react';
-import dynamic from 'next/dynamic';
+import { useEffect, useState, forwardRef } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import PdfViewer, { type PdfViewerRef } from './PdfViewer'; // Direct import and import type
+import PdfViewer, { type PdfViewerRef } from './PdfViewer';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 // Import react-pdf styles here to ensure they are loaded
@@ -27,6 +27,7 @@ export type FilePreviewRef = PdfViewerRef;
 const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
+  const isMobile = useIsMobile();
   
 
   useEffect(() => {
@@ -65,6 +66,9 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
   
   if (mime === 'application/pdf') {
+    if (isMobile) {
+      return <iframe src={url} className="w-full h-full border-0" title={itemName} />;
+    }
     return <PdfViewer ref={ref} file={url} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} scrollListenerEnabled={scrollListenerEnabled} setScrollListenerEnabled={setScrollListenerEnabled} />;
   }
   
