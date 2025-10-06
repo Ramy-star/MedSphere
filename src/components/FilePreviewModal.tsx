@@ -152,7 +152,6 @@ const PdfControls = ({
                 type="text"
                 value={scaleInput}
                 onChange={handleScaleInputChange}
-                onBlur={handleScaleInputSubmit}
                 className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
                 onFocus={(e) => e.target.select()}
             />
@@ -291,6 +290,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
 
   // PDF specific state
+  const [pdfProxy, setPdfProxy] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfScale, setPdfScale] = useState(1);
@@ -303,6 +303,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const manualPageInputInProgress = useRef(false);
 
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -314,6 +315,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setScrollListenerEnabled(false);
         pdfViewerRef.current.scrollToPage(newPage);
         setPageNumber(newPage); 
+        // Re-enable after a short delay to prevent race conditions
         setTimeout(() => setScrollListenerEnabled(true), 500); 
     }
   }, [numPages]);
@@ -323,15 +325,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
 
   const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
-      e.preventDefault();
-      if (pageInputRef.current) {
-          const page = parseInt(pageInputRef.current.value, 10);
-          if (!isNaN(page)) {
-             goToPage(page);
-          }
-      }
-      pageInputRef.current?.blur();
-    }, [goToPage]);
+    e.preventDefault();
+    if (pageInputRef.current) {
+        const page = parseInt(pageInputRef.current.value, 10);
+        if (!isNaN(page)) {
+            goToPage(page);
+        }
+    }
+    pageInputRef.current?.blur();
+  }, [goToPage]);
   
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setScaleInput(e.target.value);
@@ -353,6 +355,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const onPageChange = useCallback((newPage: number) => {
     setPageNumber(newPage);
+    setPageInput(String(newPage));
   }, []);
 
   const startNewChat = useCallback(() => {
@@ -370,6 +373,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [chatHistory.length, startNewChat]);
 
   const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
+    setPdfProxy(pdf);
     setNumPages(pdf.numPages);
     if (isMobile) {
         if (previewContainerRef.current) {
@@ -412,6 +416,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setNumPages(undefined);
     setPageNumber(1);
     setPdfScale(1);
+    setPdfProxy(null);
   }, [item, startNewChat]);
   
   useEffect(() => {

@@ -4,7 +4,7 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer, Virtualizer } from '@tanstack/react-virtual';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -27,6 +27,7 @@ type PdfViewerProps = {
 
 export type PdfViewerRef = {
   scrollToPage: (page: number) => void;
+  rowVirtualizer: Virtualizer<HTMLDivElement, Element> | null;
 };
 
 const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled }, ref) => {
@@ -35,15 +36,24 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
   const isMobile = useIsMobile();
+  const [pdfProxy, setPdfProxy] = useState<PDFDocumentProxy | null>(null);
   
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
+    setPdfProxy(loadedPdf);
     setNumPages(loadedPdf.numPages);
     
+    // Estimate dimensions for all pages for the virtualizer
     const allPageDimensions = await Promise.all(
         Array.from({ length: loadedPdf.numPages }, async (_, i) => {
-            const page = await loadedPdf.getPage(i + 1);
-            const viewport = page.getViewport({ scale });
-            return { width: viewport.width, height: viewport.height };
+            try {
+                const page = await loadedPdf.getPage(i + 1);
+                const viewport = page.getViewport({ scale });
+                return { width: viewport.width, height: viewport.height };
+            } catch (e) {
+                // If a page fails to load, use a default height
+                console.error(`Failed to get page ${i+1} dimensions`, e);
+                return { width: 800 * scale, height: 1000 * scale };
+            }
         })
     );
 
@@ -85,16 +95,17 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: isMobile ? 2 : 5,
+    overscan: isMobile ? 1 : 2,
   });
 
   useImperativeHandle(ref, () => ({
     scrollToPage: (page: number) => {
       const pageIndex = page - 1;
       if (pageIndex >= 0 && pageIndex < numPages) {
-        rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', smoothScroll: false });
+        rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', behavior: 'auto' });
       }
-    }
+    },
+    rowVirtualizer: rowVirtualizer
   }));
 
   const virtualItems = rowVirtualizer.getVirtualItems();
