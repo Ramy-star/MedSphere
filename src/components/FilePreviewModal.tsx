@@ -305,8 +305,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MIN_ZOOM = 0.1;
   
   const goToPage = useCallback((page: number) => {
-      const newPage = Math.max(1, Math.min(page, numPages || 1));
-      pdfViewerRef.current?.scrollToPage(newPage);
+    const newPage = Math.max(1, Math.min(page, numPages || 1));
+    if (pdfViewerRef.current) {
+        setScrollListenerEnabled(false);
+        pdfViewerRef.current.scrollToPage(newPage);
+        setPageNumber(newPage); 
+        setPageInput(String(newPage));
+        setTimeout(() => setScrollListenerEnabled(true), 500); 
+    }
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -322,9 +328,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           const page = parseInt(pageInputRef.current.value, 10);
           if (!isNaN(page)) {
              goToPage(page);
+          } else {
+             setPageInput(String(pageNumber));
           }
       }
-    }, [goToPage]);
+    }, [goToPage, pageNumber]);
   
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setScaleInput(e.target.value);

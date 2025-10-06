@@ -92,15 +92,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     scrollToPage: (page: number) => {
       const pageIndex = page - 1;
       if (pageIndex >= 0 && pageIndex < numPages) {
-        setScrollListenerEnabled(false);
         rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', smoothScroll: false });
-        if (onPageChange) {
-            onPageChange(page);
-        }
-        // Re-enable scroll listener after a short delay
-        setTimeout(() => {
-          setScrollListenerEnabled(true);
-        }, 500);
       }
     }
   }));
