@@ -308,6 +308,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const manualPageInputInProgress = useRef(false);
   
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -330,6 +331,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
       e.preventDefault();
+      manualPageInputInProgress.current = false;
       const page = parseInt(pageInput, 10);
       if (!isNaN(page)) {
           goToPage(page);
@@ -367,7 +369,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, []);
 
   useEffect(() => {
-      setPageInput(String(pageNumber));
+      if (!manualPageInputInProgress.current) {
+        setPageInput(String(pageNumber));
+      }
   }, [pageNumber]);
 
   const startNewChat = useCallback(() => {
@@ -389,10 +393,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setNumPages(pdf.numPages);
     if (isMobile && previewContainerRef.current) {
         const page = await pdf.getPage(1);
-        const containerWidth = previewContainerRef.current.clientWidth - 16; // with padding
+        const containerWidth = previewContainerRef.current.clientWidth - 16;
         const deviceDPR = window.devicePixelRatio || 1;
-        // Adjust scale for mobile to fit width, considering DPR for performance.
-        const optimalScale = (containerWidth / page.getViewport({ scale: 1 }).width) * (deviceDPR > 2 ? 1 : deviceDPR) * 0.95;
+        // Adjust scale for mobile to fit width, but cap DPR to avoid creating huge canvases on high-end phones
+        const optimalScale = (containerWidth / page.getViewport({ scale: 1 }).width) * (deviceDPR > 1.5 ? 1.5 : deviceDPR);
         setPdfScale(Math.max(0.1, optimalScale));
     } else {
         setPdfScale(1); // Default 100% zoom for desktop
@@ -612,7 +616,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     zoomIn={zoomIn}
                     zoomOut={zoomOut}
                     pageInput={pageInput}
-                    setPageInput={setPageInput}
+                    setPageInput={(v) => {
+                      manualPageInputInProgress.current = true;
+                      setPageInput(v);
+                    }}
                     handlePageInputSubmit={handlePageInputSubmit}
                     handlePageInputBlur={handlePageInputBlur}
                     scaleInput={scaleInput}
@@ -691,7 +698,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     zoomIn={zoomIn}
                     zoomOut={zoomOut}
                     pageInput={pageInput}
-                    setPageInput={setPageInput}
+                    setPageInput={(v) => {
+                      manualPageInputInProgress.current = true;
+                      setPageInput(v);
+                    }}
                     handlePageInputSubmit={handlePageInputSubmit}
                     handlePageInputBlur={handlePageInputBlur}
                     scaleInput={scaleInput}
