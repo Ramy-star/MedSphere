@@ -67,7 +67,9 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   
   if (mime === 'application/pdf') {
     if (isMobile) {
-      return <iframe src={url} className="w-full h-full border-0" title={itemName} />;
+      // Use Google Docs viewer for robust embedding on mobile
+      const googleDocsUrl = `https://docs.google.com/gview?url=${encodeURIComponent(url)}&embedded=true`;
+      return <iframe src={googleDocsUrl} className="w-full h-full border-0" title={itemName} />;
     }
     return <PdfViewer ref={ref} file={url} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} scrollListenerEnabled={scrollListenerEnabled} setScrollListenerEnabled={setScrollListenerEnabled} />;
   }
