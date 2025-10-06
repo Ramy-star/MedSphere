@@ -112,81 +112,100 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
   useImperativeHandle(ref, () => ({
     scrollToPage: async (page: number) => {
-      const pageIndex = page - 1;
-      if (pageIndex < 0 || pageIndex >= numPages) return;
+        const pageIndex = page - 1;
+        if (pageIndex < 0 || pageIndex >= numPages) return;
 
-      const waitForDims = async () => {
+        // 1) Wait for page dimensions to be ready
         let tries = 0;
-        while ((pageDimensions.length !== numPages) && tries < 20) {
-          await new Promise(r => setTimeout(r, 50));
-          tries++;
+        while ((pageDimensions.length !== numPages) && tries < 40) { // ~2s max
+            await new Promise(r => setTimeout(r, 50));
+            tries++;
         }
-      };
-      await waitForDims();
 
-      try { rowVirtualizer.measure(); } catch (e) {}
+        // 2) Ask the virtualizer to re-measure to ensure offsets are correct
+        try { rowVirtualizer.measure(); } catch (e) { /* ignore if not yet mounted */ }
 
-      rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', behavior: 'auto' });
+        // 3) Wait for the target DOM element to exist
+        const container = containerRef.current;
+        let el: HTMLElement | null = null;
+        if (container) {
+            let waitTries = 0;
+            while (waitTries < 20) { // ~1s max wait
+                el = container.querySelector<HTMLElement>(`[data-index="${pageIndex}"]`);
+                if (el) break;
+                await new Promise(r => setTimeout(r, 50));
+                waitTries++;
+            }
+        }
+
+        // 4) If the element is found, use precise offsetTop scrolling. Otherwise, fall back to virtualizer's method.
+        if (el && container) {
+            container.scrollTo({ top: el.offsetTop, behavior: 'auto' });
+        } else {
+            rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', behavior: 'auto' });
+        }
     },
     rowVirtualizer: rowVirtualizer
   }));
 
   const virtualItems = rowVirtualizer.getVirtualItems();
 
-  useEffect(() => {
+  const handleScroll = useCallback(() => {
+    if (!onPageChange || !containerRef.current || virtualItems.length === 0 || !scrollListenerEnabled) return;
+
     const container = containerRef.current;
-    if (!onPageChange || !container || virtualItems.length === 0) return;
-  
-    const handleScroll = () => {
-        if (!scrollListenerEnabled) return;
+    
+    // Check if scrolled to the very bottom
+    if (container.scrollHeight > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 10) { // 10px tolerance
+      if (numPages > 0) {
+        onPageChange(numPages);
+      }
+      return;
+    }
 
-      // Check if scrolled to the very bottom
-      if (container.scrollHeight > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 10) { // 10px tolerance
-        if (numPages > 0) {
-          onPageChange(numPages);
-        }
-        return;
-      }
-  
-      // Find the topmost visible item in the viewport
-      let topmostVisibleIndex = -1;
-      const { scrollTop } = container;
-  
-      for (const virtualItem of virtualItems) {
-        // Find the first item whose starting point is at or just below the top of the viewport
-        if (virtualItem.start >= scrollTop - 10) { // 10px tolerance from top
-          topmostVisibleIndex = virtualItem.index;
-          break;
-        }
-      }
-      
-      if (topmostVisibleIndex !== -1) {
-        onPageChange(topmostVisibleIndex + 1);
-      } else if (virtualItems.length > 0) {
-        // Fallback if no item is found (e.g., scrolled past the last item's start)
-        const lastVirtualItem = virtualItems[virtualItems.length - 1];
-        if (scrollTop > lastVirtualItem.start) {
-          onPageChange(lastVirtualItem.index + 1);
-        }
-      }
-    };
-  
-    // Run once on initial render
-    handleScroll();
-  
-    const scrollDebounceTimeout = 100;
-    let scrollTimeout: NodeJS.Timeout | null = null;
-    const debouncedScrollHandler = () => {
-        if(scrollTimeout) clearTimeout(scrollTimeout);
-        scrollTimeout = setTimeout(handleScroll, scrollDebounceTimeout);
-    };
+    // Find the topmost visible item in the viewport
+    let topmostVisibleIndex = -1;
+    const { scrollTop } = container;
 
-    container.addEventListener('scroll', debouncedScrollHandler, { passive: true });
-    return () => {
-      container.removeEventListener('scroll', debouncedScrollHandler);
-      if(scrollTimeout) clearTimeout(scrollTimeout);
-    };
+    for (const virtualItem of virtualItems) {
+      if (virtualItem.start >= scrollTop - 10) { // 10px tolerance from top
+        topmostVisibleIndex = virtualItem.index;
+        break;
+      }
+    }
+    
+    if (topmostVisibleIndex !== -1) {
+      onPageChange(topmostVisibleIndex + 1);
+    } else if (virtualItems.length > 0) {
+      const lastVirtualItem = virtualItems[virtualItems.length - 1];
+      if (scrollTop > lastVirtualItem.start) {
+        onPageChange(lastVirtualItem.index + 1);
+      }
+    }
   }, [virtualItems, onPageChange, numPages, scrollListenerEnabled]);
+
+  useEffect(() => {
+      const container = containerRef.current;
+      if (!container) return;
+  
+      const scrollDebounceTimeout = 100;
+      let scrollTimeout: NodeJS.Timeout | null = null;
+      
+      const debouncedScrollHandler = () => {
+          if(scrollTimeout) clearTimeout(scrollTimeout);
+          scrollTimeout = setTimeout(handleScroll, scrollDebounceTimeout);
+      };
+
+      container.addEventListener('scroll', debouncedScrollHandler, { passive: true });
+      
+      // Initial call
+      handleScroll();
+
+      return () => {
+        container.removeEventListener('scroll', debouncedScrollHandler);
+        if(scrollTimeout) clearTimeout(scrollTimeout);
+      };
+  }, [handleScroll]);
 
 
   return (
@@ -203,7 +222,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
             loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}
             className="flex justify-center"
         >
-          {numPages > 0 && pageDimensions.length > 0 && (
+          {numPages > 0 && pageDimensions.length === numPages && (
               <div
                   style={{
                       height: `${rowVirtualizer.getTotalSize()}px`,
