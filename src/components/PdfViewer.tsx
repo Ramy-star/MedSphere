@@ -21,21 +21,21 @@ type PdfViewerProps = {
   onLoadSuccess?: (pdf: PDFDocumentProxy) => void;
   scale: number;
   onPageChange?: (page: number) => void;
+  scrollListenerEnabled: boolean;
+  setScrollListenerEnabled: (enabled: boolean) => void;
 };
 
 export type PdfViewerRef = {
   scrollToPage: (page: number) => void;
 };
 
-const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange }, ref) => {
+const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled }, ref) => {
   const [numPages, setNumPages] = useState<number>(0);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
   const isMobile = useIsMobile();
   
-  const scrollListenerEnabled = useRef(true);
-
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
     
@@ -92,20 +92,15 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     scrollToPage: (page: number) => {
       const pageIndex = page - 1;
       if (pageIndex >= 0 && pageIndex < numPages) {
-        // Disable scroll listener
-        scrollListenerEnabled.current = false;
-        
+        setScrollListenerEnabled(false);
         rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', smoothScroll: false });
-        
-        // Manually update the page number in the parent
         if (onPageChange) {
             onPageChange(page);
         }
-
         // Re-enable scroll listener after a short delay
         setTimeout(() => {
-          scrollListenerEnabled.current = true;
-        }, 500); // 500ms should be enough to prevent race conditions
+          setScrollListenerEnabled(true);
+        }, 500);
       }
     }
   }));
@@ -117,7 +112,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     if (!onPageChange || !container || virtualItems.length === 0) return;
   
     const handleScroll = () => {
-        if (!scrollListenerEnabled.current) return;
+        if (!scrollListenerEnabled) return;
 
       // Check if scrolled to the very bottom
       if (container.scrollHeight > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 10) { // 10px tolerance
@@ -165,7 +160,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
       container.removeEventListener('scroll', debouncedScrollHandler);
       if(scrollTimeout) clearTimeout(scrollTimeout);
     };
-  }, [virtualItems, onPageChange, numPages]);
+  }, [virtualItems, onPageChange, numPages, scrollListenerEnabled]);
 
 
   return (

@@ -119,15 +119,16 @@ const PdfControls = ({
         </Button>
         
         <form onSubmit={handlePageInputSubmit} className="flex items-center">
-              <Input 
-                ref={pageInputRef}
-                type="text" 
-                value={pageInput}
-                onChange={handlePageInputChange}
-                onBlur={handlePageInputSubmit}
-                className="w-9 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500 p-0"
-              />
-              <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
+            <Input
+              ref={pageInputRef}
+              type="text"
+              value={pageInput}
+              onChange={handlePageInputChange}
+              onBlur={handlePageInputSubmit}
+              className="w-9 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500 p-0"
+              onFocus={(e) => e.target.select()}
+            />
+            <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
         </form>
 
         <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
@@ -291,6 +292,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
+  const [scrollListenerEnabled, setScrollListenerEnabled] = useState(true);
 
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
@@ -315,14 +317,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }
 
   const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (pageInputRef.current) {
-        const page = parseInt(pageInputRef.current.value, 10);
-        if (!isNaN(page)) {
-           goToPage(page);
-        }
-    }
-  }, [goToPage]);
+      e.preventDefault();
+      if (pageInputRef.current) {
+          const page = parseInt(pageInputRef.current.value, 10);
+          if (!isNaN(page)) {
+             goToPage(page);
+          }
+      }
+    }, [goToPage]);
   
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setScaleInput(e.target.value);
@@ -646,6 +648,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onPdfLoadSuccess={handlePdfLoadSuccess}
                     pdfScale={pdfScale}
                     onPageChange={onPageChange}
+                    scrollListenerEnabled={scrollListenerEnabled}
+                    setScrollListenerEnabled={setScrollListenerEnabled}
                 />
               )}
               {!loading && !fileUrl && (
