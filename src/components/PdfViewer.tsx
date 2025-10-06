@@ -26,7 +26,7 @@ type PdfViewerProps = {
 };
 
 export type PdfViewerRef = {
-  scrollToPage: (page: number) => void;
+  scrollToPage: (page: number) => Promise<void>;
   rowVirtualizer: Virtualizer<HTMLDivElement, Element> | null;
 };
 
@@ -38,31 +38,49 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const isMobile = useIsMobile();
   const [pdfProxy, setPdfProxy] = useState<PDFDocumentProxy | null>(null);
   
+  const rowVirtualizer = useVirtualizer({
+    count: numPages,
+    getScrollElement: () => containerRef.current,
+    estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
+    overscan: isMobile ? 1 : 2,
+  });
+
+  const computePageDimensions = useCallback(async (targetScale: number) => {
+    if (!pdfProxy) return;
+    try {
+      const dims = await Promise.all(
+        Array.from({ length: pdfProxy.numPages }, async (_, i) => {
+          const page = await pdfProxy.getPage(i + 1);
+          const vp = page.getViewport({ scale: targetScale });
+          return { width: Math.ceil(vp.width), height: Math.ceil(vp.height) };
+        })
+      );
+      setPageDimensions(dims);
+      // Tell virtualizer to re-measure after state update
+      setTimeout(() => {
+        try { rowVirtualizer.measure(); } catch (e) { /* ignore if not yet mounted */ }
+      }, 50);
+    } catch (err) {
+      console.error('Failed to compute page dimensions:', err);
+    }
+  }, [pdfProxy, rowVirtualizer]);
+
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setPdfProxy(loadedPdf);
     setNumPages(loadedPdf.numPages);
-    
-    // Estimate dimensions for all pages for the virtualizer
-    const allPageDimensions = await Promise.all(
-        Array.from({ length: loadedPdf.numPages }, async (_, i) => {
-            try {
-                const page = await loadedPdf.getPage(i + 1);
-                const viewport = page.getViewport({ scale });
-                return { width: viewport.width, height: viewport.height };
-            } catch (e) {
-                // If a page fails to load, use a default height
-                console.error(`Failed to get page ${i+1} dimensions`, e);
-                return { width: 800 * scale, height: 1000 * scale };
-            }
-        })
-    );
 
-    setPageDimensions(allPageDimensions);
+    await computePageDimensions(scale);
 
     if (onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
-  }, [onLoadSuccess, scale]);
+  }, [onLoadSuccess, scale, computePageDimensions]);
+
+  useEffect(() => {
+    if (pdfProxy) {
+      computePageDimensions(scale);
+    }
+  }, [scale, pdfProxy, computePageDimensions]);
 
   function onDocumentLoadError(error: Error) {
     // This warning is frequent and not critical, related to worker version mismatches.
@@ -91,19 +109,24 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     });
   }, [toast]);
 
-  const rowVirtualizer = useVirtualizer({
-    count: numPages,
-    getScrollElement: () => containerRef.current,
-    estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
-    overscan: isMobile ? 1 : 2,
-  });
 
   useImperativeHandle(ref, () => ({
-    scrollToPage: (page: number) => {
+    scrollToPage: async (page: number) => {
       const pageIndex = page - 1;
-      if (pageIndex >= 0 && pageIndex < numPages) {
-        rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', behavior: 'auto' });
-      }
+      if (pageIndex < 0 || pageIndex >= numPages) return;
+
+      const waitForDims = async () => {
+        let tries = 0;
+        while ((pageDimensions.length !== numPages) && tries < 20) {
+          await new Promise(r => setTimeout(r, 50));
+          tries++;
+        }
+      };
+      await waitForDims();
+
+      try { rowVirtualizer.measure(); } catch (e) {}
+
+      rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', behavior: 'auto' });
     },
     rowVirtualizer: rowVirtualizer
   }));

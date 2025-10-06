@@ -303,21 +303,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const manualPageInputInProgress = useRef(false);
-
+  
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
   
-  const goToPage = useCallback((page: number) => {
-    const newPage = Math.max(1, Math.min(page, numPages || 1));
-    if (pdfViewerRef.current) {
-        setScrollListenerEnabled(false);
-        pdfViewerRef.current.scrollToPage(newPage);
-        setPageNumber(newPage); 
-        // Re-enable after a short delay to prevent race conditions
-        setTimeout(() => setScrollListenerEnabled(true), 500); 
-    }
+  const goToPage = useCallback(async (page: number) => {
+      const newPage = Math.max(1, Math.min(page, numPages || 1));
+      if (pdfViewerRef.current) {
+          setScrollListenerEnabled(false);
+          await pdfViewerRef.current.scrollToPage(newPage);
+          setPageNumber(newPage);
+          // Re-enable after a short delay to prevent race conditions
+          setTimeout(() => setScrollListenerEnabled(true), 500); 
+      }
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -327,13 +326,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (pageInputRef.current) {
-        const page = parseInt(pageInputRef.current.value, 10);
+        const page = parseInt(pageInput, 10);
         if (!isNaN(page)) {
             goToPage(page);
         }
     }
     pageInputRef.current?.blur();
-  }, [goToPage]);
+  }, [goToPage, pageInput]);
   
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setScaleInput(e.target.value);
@@ -355,8 +354,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const onPageChange = useCallback((newPage: number) => {
     setPageNumber(newPage);
-    setPageInput(String(newPage));
   }, []);
+
+  useEffect(() => {
+      setPageInput(String(pageNumber));
+  }, [pageNumber]);
 
   const startNewChat = useCallback(() => {
     setChatHistory([]);
