@@ -34,7 +34,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [debouncedScale] = useDebounce(scale, 50); // Speed up debounce for zoom
+  const [debouncedScale] = useDebounce(scale, 50);
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
@@ -53,7 +53,8 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (index) => (pageDimensions[index] ? pageDimensions[index].height * debouncedScale : 1000),
-    overscan: 1, // Reduce overscan for better performance
+    overscan: 1,
+    paddingEnd: 4, // Corresponds to the margin-bottom on the last element
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
@@ -113,9 +114,9 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                   data-index={virtualItem.index}
                   ref={rowVirtualizer.measureElement}
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
-                  className="flex justify-center md:px-4 pt-2"
+                  className="flex justify-center md:px-4"
                 >
-                  <div className="shadow-lg mb-2">
+                  <div className="shadow-lg" style={{ marginBottom: '4px' }}>
                     <Page
                       pageNumber={pageNumber}
                       scale={debouncedScale}
