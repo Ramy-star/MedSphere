@@ -283,6 +283,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [scrollListenerEnabled, setScrollListenerEnabled] = useState(true);
 
   const pageNumberRef = useRef(pageNumber);
+  pageNumberRef.current = pageNumber; // Keep the ref updated on every render
 
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
@@ -308,11 +309,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
-
-  useEffect(() => {
-    pageNumberRef.current = pageNumber;
-  }, [pageNumber]);
-
   
   const goToPage = useCallback(async (page: number) => {
     const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -588,20 +584,33 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     document.addEventListener('touchmove', onTouchMove, opts);
   }, [pdfProxy, numPages]);
 
-
   useEffect(() => {
-    document.addEventListener('fullscreenchange', handleFullscreenChange);
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange);
-      // ensure cleanup of any leftover handlers
-      const stored = fullscreenHandlersRef.current;
-      if (stored.onKeyDown) document.removeEventListener('keydown', stored.onKeyDown, !!(stored.opts && (stored.opts as any).capture));
-      if (stored.onWheel) document.removeEventListener('wheel', stored.onWheel, !!(stored.opts && (stored.opts as any).capture));
-      if (stored.onTouchMove) document.removeEventListener('touchmove', stored.onTouchMove, !!(stored.opts && (stored.opts as any).capture));
-      fullscreenHandlersRef.current = { onKeyDown: null, onWheel: null, onTouchMove: null, opts: null };
-    };
-  }, [handleFullscreenChange]);
+    if (!item) return;
 
+    const handleKeyDown = (e: KeyboardEvent) => {
+        if (!document.fullscreenElement) return;
+
+        const key = e.key;
+        if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(key)) {
+            e.preventDefault();
+            const currentPage = pageNumberRef.current;
+            let nextPage;
+            if (key === 'ArrowRight' || key === 'ArrowDown') {
+                nextPage = Math.min(numPages || currentPage, currentPage + 1);
+            } else {
+                nextPage = Math.max(1, currentPage - 1);
+            }
+            if (nextPage !== currentPage) {
+                goToPageRef.current(nextPage);
+            }
+        }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+        document.removeEventListener('keydown', handleKeyDown);
+    };
+}, [item, numPages]);
 
   if (!item) return null;
   
