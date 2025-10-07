@@ -319,17 +319,18 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleClose = () => {
     onOpenChange(false);
+    // Delay reset to allow for closing animation, ensuring a clean state next time.
+    setTimeout(resetPdfState, 300);
   };
-
-  // Effect to reset state when the dialog is closed.
+  
+  // This effect ensures that if a new item is loaded while the modal is already open,
+  // the state is reset to prevent stale data from a previous file.
   useEffect(() => {
-    if (!item) {
-      // Delay reset to allow for closing animation
-      setTimeout(() => {
+    if(item) {
         resetPdfState();
-      }, 300);
     }
   }, [item, resetPdfState]);
+
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -493,10 +494,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     scaleBeforeFullscreen.current = pdfScale;
                     const page = await pdfProxy.getPage(pageNumberRef.current);
                     const viewport = page.getViewport({ scale: 1 });
-                    const container = fileContentRef.current;
+                    
+                    const screenWidth = window.innerWidth;
+                    const screenHeight = window.innerHeight;
 
-                    const scaleX = container.clientWidth / viewport.width;
-                    const scaleY = container.clientHeight / viewport.height;
+                    const scaleX = screenWidth / viewport.width;
+                    const scaleY = screenHeight / viewport.height;
+                    
                     setPdfScale(Math.max(scaleX, scaleY));
                 }
             } else {
