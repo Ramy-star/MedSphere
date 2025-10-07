@@ -31,8 +31,14 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
   
+  const isInitialLoadRef = useRef(true);
+  const lastReportedPageRef = useRef<number>(1);
+  
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
+    isInitialLoadRef.current = true;
+    lastReportedPageRef.current = 1;
+    
     if (onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
@@ -73,6 +79,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
         const pageElement = container.querySelector(`[data-page-number="${page}"]`);
 
         if (pageElement) {
+            lastReportedPageRef.current = page;
             container.scrollTo({
                 top: (pageElement as HTMLElement).offsetTop - container.offsetTop,
                 behavior: 'auto'
@@ -87,12 +94,17 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     const container = containerRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
     
-    if (scrollHeight > 0 && scrollTop + clientHeight >= scrollHeight - 10) {
-      onPageChange(numPages);
+    if (scrollTop > 0 && scrollHeight > 0 && scrollTop + clientHeight >= scrollHeight - 10) {
+      if (lastReportedPageRef.current !== numPages) {
+        lastReportedPageRef.current = numPages;
+        onPageChange(numPages);
+      }
       return;
     }
 
     const pageElements = Array.from(container.querySelectorAll('[data-page-number]'));
+    if (pageElements.length === 0) return;
+    
     let bestVisiblePage = 1;
     let maxVisibleRatio = 0;
 
@@ -110,7 +122,10 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
         }
     }
     
-    onPageChange(bestVisiblePage);
+    if (bestVisiblePage !== lastReportedPageRef.current) {
+      lastReportedPageRef.current = bestVisiblePage;
+      onPageChange(bestVisiblePage);
+    }
   }, [onPageChange, numPages]);
 
   useEffect(() => {
@@ -119,6 +134,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   
       const scrollDebounceTimeout = 100;
       let scrollTimeout: NodeJS.Timeout | null = null;
+      let initialScrollTimeout: NodeJS.Timeout | null = null;
       
       const debouncedScrollHandler = () => {
           if(scrollTimeout) clearTimeout(scrollTimeout);
@@ -127,18 +143,29 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
       container.addEventListener('scroll', debouncedScrollHandler, { passive: true });
       
-      handleScroll();
+      if (isInitialLoadRef.current && numPages > 0) {
+        initialScrollTimeout = setTimeout(() => {
+          isInitialLoadRef.current = false;
+          if (onPageChange) {
+            lastReportedPageRef.current = 1;
+            onPageChange(1);
+          }
+        }, 300);
+      }
 
       return () => {
         container.removeEventListener('scroll', debouncedScrollHandler);
         if(scrollTimeout) clearTimeout(scrollTimeout);
+        if(initialScrollTimeout) clearTimeout(initialScrollTimeout);
       };
-  }, [handleScroll, isFullscreen]);
+  }, [handleScroll, isFullscreen, numPages, onPageChange]);
   
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
       container.scrollTop = 0;
+      isInitialLoadRef.current = true;
+      lastReportedPageRef.current = 1;
     }
   }, [file]);
 
@@ -199,3 +226,5 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 PdfViewer.displayName = 'PdfViewer';
 
 export default PdfViewer;
+
+    
