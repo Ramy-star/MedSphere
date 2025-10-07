@@ -196,7 +196,8 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   return (
     <div 
       ref={containerRef} 
-      className="w-full h-full overflow-y-auto"
+      className="w-full h-full overflow-y-auto relative"
+      style={{ WebkitOverflowScrolling: 'touch' }}
     >
       <Document
           file={file}
@@ -204,16 +205,22 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
           onLoadError={onDocumentLoadError}
           options={options}
           loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}
-          className="flex justify-center"
       >
-          <div className="flex flex-col items-center gap-4 py-4">
+          <div className="w-full flex flex-col items-center gap-4 py-4">
             {Array.from(new Array(numPages), (el, index) => (
-                <div key={`page_${index + 1}`} data-page-number={index + 1}>
+                <div 
+                  key={`page_${index + 1}`} 
+                  data-page-number={index + 1}
+                  className="flex justify-center w-full"
+                >
                   <Page
                       pageNumber={index + 1}
                       scale={scale}
                       onRenderError={onRenderError}
+                      renderAnnotationLayer={false}
+                      renderTextLayer={true}
                       loading={<Skeleton style={{ height: (1122 * scale), width: (794 * scale) }} />}
+                      className="shadow-lg"
                   />
                 </div>
             ))}
@@ -226,5 +233,3 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 PdfViewer.displayName = 'PdfViewer';
 
 export default PdfViewer;
-
-    
