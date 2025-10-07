@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
