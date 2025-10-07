@@ -90,18 +90,18 @@ const PdfControls = ({
                     transition={{ duration: 0.2, ease: 'easeOut' }}
                     className="flex items-center gap-0 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
                 >
-                    <span className="sr-only">Previous Page</span>
                     <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu">{pageNumber} / {numPages ?? '--'}</span>
-                    <span className="sr-only">Next Page</span>
                     <div className="h-4 md:h-5 w-px bg-white/20 mx-0.5"></div>
                     <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
                         <Minus className="w-4 h-4" />
+                         <span className="sr-only">Zoom Out</span>
                     </Button>
                     <span className='text-xs w-12 text-center font-ubuntu'>
                         {`${Math.round(pdfScale * 100)}%`}
                     </span>
                     <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
                         <Plus className="w-4 h-4" />
+                        <span className="sr-only">Zoom In</span>
                     </Button>
                 </motion.div>
             </AnimatePresence>
@@ -291,17 +291,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileContentRef = useRef<HTMLDivElement>(null);
-  const fullscreenHandlersRef = useRef<{
-    onKeyDown: ((e: KeyboardEvent) => void) | null;
-    onWheel: ((e: Event) => void) | null;
-    onTouchMove: ((e: Event) => void) | null;
-    opts: AddEventListenerOptions | null;
-  }>({
-    onKeyDown: null,
-    onWheel: null,
-    onTouchMove: null,
-    opts: null,
-  });
   const scaleBeforeFullscreen = useRef<number>(1);
   
   const goToPageRef = useRef<(page: number) => void>(() => {});
@@ -483,134 +472,80 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [isMobile, setHeaderFixed, setChatInputOffset]);
 
-  const handleFullscreenChange = useCallback(async () => {
-    const isNowFullscreen = !!document.fullscreenElement;
-    const opts: AddEventListenerOptions = { passive: false, capture: true };
-
-    // helper to remove safely
-    const removeHandlers = () => {
-      const { onKeyDown, onWheel, onTouchMove, opts: storedOpts } = fullscreenHandlersRef.current;
-      // use stored capture boolean when removing
-      const captureFlag = !!(storedOpts && (storedOpts as any).capture);
-
-      if (onKeyDown) {
-        document.removeEventListener('keydown', onKeyDown, captureFlag);
-      }
-      if (onWheel) {
-        document.removeEventListener('wheel', onWheel, captureFlag);
-      }
-      if (onTouchMove) {
-        document.removeEventListener('touchmove', onTouchMove, captureFlag);
-      }
-      fullscreenHandlersRef.current = { onKeyDown: null, onWheel: null, onTouchMove: null, opts: null };
-    };
-
-    if (!isNowFullscreen) {
-      // EXIT fullscreen
-      setPdfScale(scaleBeforeFullscreen.current);
-
-      // restore scrolling
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-      if (fileContentRef.current) fileContentRef.current.style.overflow = '';
-
-      // re-enable internal scroll listener
-      setScrollListenerEnabled(true);
-
-      // remove handlers
-      removeHandlers();
-      return;
-    }
-
-    // ENTER fullscreen
-    if (!pdfProxy || !fileContentRef.current) return;
-
-    try {
-      const page = await pdfProxy.getPage(pageNumberRef.current);
-      const viewport = page.getViewport({ scale: 1 });
-      const container = fileContentRef.current;
-
-      const scaleX = container.clientWidth / viewport.width;
-      const scaleY = container.clientHeight / viewport.height;
-      const newScale = Math.min(scaleX, scaleY);
-      setPdfScale(newScale);
-    } catch (e) {
-      console.error('Could not calculate fullscreen scale:', e);
-    }
-
-    // hide native scrollbars and disable scrolling
-    document.documentElement.style.overflow = 'hidden';
-    document.body.style.overflow = 'hidden';
-    if (fileContentRef.current) fileContentRef.current.style.overflow = 'hidden';
-
-    // disable internal pdf viewer scroll while presenting
-    setScrollListenerEnabled(false);
-
-    // create handlers
-    const onKeyDown = (e: KeyboardEvent) => {
-      // ignore if focus is inside an input/textarea (optional safeguard)
-      const active = document.activeElement;
-      if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || (active as HTMLElement).isContentEditable)) {
-        return;
-      }
-
-      const navKeys = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', 'Home', 'End', ' '];
-      if (navKeys.includes(e.key)) {
-        e.preventDefault();
-      }
-
-      const current = pageNumberRef.current;
-      if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown' || e.key === ' ') {
-        goToPageRef.current(Math.min((numPages || Infinity), current + 1));
-      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
-        goToPageRef.current(Math.max(1, current - 1));
-      }
-    };
-
-    const onWheel = (ev: Event) => {
-      ev.preventDefault();
-    };
-
-    const onTouchMove = (ev: Event) => {
-      ev.preventDefault();
-    };
-
-    // store handlers and opts so we can remove them exactly the same way
-    fullscreenHandlersRef.current = { onKeyDown, onWheel, onTouchMove, opts };
-
-    // attach to document (use captureFlag boolean on removal to match)
-    document.addEventListener('keydown', onKeyDown, /*capture=*/ true);
-    document.addEventListener('wheel', onWheel, opts);
-    document.addEventListener('touchmove', onTouchMove, opts);
-  }, [pdfProxy, numPages]);
-
   useEffect(() => {
-    if (!item) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
+    const handleFullscreenChange = async () => {
+      const isFullscreen = !!document.fullscreenElement;
+  
+      if (isFullscreen) {
+        if (fileContentRef.current) {
+          scaleBeforeFullscreen.current = pdfScale;
+          // Calculate scale to fit
+          if (pdfProxy) {
+            const page = await pdfProxy.getPage(pageNumberRef.current);
+            const viewport = page.getViewport({ scale: 1 });
+            const container = fileContentRef.current;
+            const scaleX = container.clientWidth / viewport.width;
+            const scaleY = container.clientHeight / viewport.height;
+            setPdfScale(Math.min(scaleX, scaleY));
+          }
+        }
+      } else {
+        // Exiting fullscreen, restore scale
+        setPdfScale(scaleBeforeFullscreen.current);
+      }
+    };
+  
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+  
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, [pdfProxy, pdfScale]);
+  
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+        // Only act when in fullscreen
         if (!document.fullscreenElement) return;
 
-        const key = e.key;
-        if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(key)) {
+        // Prevent default browser action for arrow keys
+        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
             e.preventDefault();
-            const currentPage = pageNumberRef.current;
-            let nextPage;
-            if (key === 'ArrowRight' || key === 'ArrowDown') {
-                nextPage = Math.min(numPages || currentPage, currentPage + 1);
-            } else {
-                nextPage = Math.max(1, currentPage - 1);
-            }
-            if (nextPage !== currentPage) {
-                goToPageRef.current(nextPage);
-            }
+        }
+
+        const current = pageNumberRef.current;
+        const total = numPages || 0;
+
+        if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && current < total) {
+            goToPageRef.current(current + 1);
+        } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp') && current > 1) {
+            goToPageRef.current(current - 1);
         }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-    return () => {
-        document.removeEventListener('keydown', handleKeyDown);
+    const onWheel = (e: WheelEvent) => {
+        if (document.fullscreenElement) {
+            e.preventDefault();
+        }
     };
-}, [item, numPages]);
+
+    const onTouchMove = (e: TouchEvent) => {
+        if (document.fullscreenElement) {
+            e.preventDefault();
+        }
+    };
+
+    // Add listeners when the component mounts
+    document.addEventListener('keydown', onKeyDown, true);
+    document.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    document.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
+
+    // Clean up the listeners when the component unmounts
+    return () => {
+        document.removeEventListener('keydown', onKeyDown, true);
+        document.removeEventListener('wheel', onWheel, { capture: true });
+        document.removeEventListener('touchmove', onTouchMove, { capture: true });
+    };
+  }, [numPages]); // Rerun if numPages changes
 
   if (!item) return null;
   
@@ -757,7 +692,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                       size="icon" 
                       onClick={() => {
                         if (fileContentRef.current) {
-                          scaleBeforeFullscreen.current = pdfScale;
                           fileContentRef.current.requestFullscreen();
                           toast({
                             title: "Presentation Mode",
