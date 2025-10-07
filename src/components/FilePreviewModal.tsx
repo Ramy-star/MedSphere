@@ -404,15 +404,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   useEffect(() => {
     // This effect now resets everything when the item changes
     if (item) {
+        setPageNumber(1);
+        setNumPages(undefined);
+        setPdfProxy(null);
         startNewChat();
         setDocumentText(null);
         setShowChat(false);
         setError(null);
         setLoading(false);
         setIsExtracting(false);
-        setPageNumber(1); // Explicitly reset page number
-        setNumPages(undefined);
-        setPdfProxy(null);
     }
   }, [item, startNewChat]);
   
@@ -486,7 +486,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     const container = fileContentRef.current;
                     const scaleX = container.clientWidth / viewport.width;
                     const scaleY = container.clientHeight / viewport.height;
-                    setPdfScale(Math.max(scaleX, scaleY));
+                    setPdfScale(Math.min(scaleX, scaleY));
                 }
             } else {
                 setPdfScale(scaleBeforeFullscreen.current);
