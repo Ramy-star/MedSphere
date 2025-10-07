@@ -636,9 +636,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         layout
         ref={previewContainerRef}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className={cn("relative flex-1 flex flex-col h-full bg-[#13161C] overflow-hidden")}
+        className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden")}
     >
-        <header className="flex h-12 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
+        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
             <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
@@ -724,17 +724,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className={cn("grid flex-1 grid-rows-1 grid-cols-1 fullscreen:overflow-hidden fullscreen:bg-black", isFullscreen ? 'bg-black' : 'bg-[#13161C]')}>
-             <div className={cn(
-                "[grid-area:1/1] flex items-center justify-center",
-                isFullscreen ? "overflow-hidden" : "overflow-auto"
-            )}>
+        <main ref={fileContentRef} className="flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden">
+             <div className="[grid-area:1/1] overflow-auto">
               {loading && <div className="text-white">Loading...</div>}
               {error && <div className="text-red-400">Error: {error}</div>}
               {!loading && !error && fileUrl && (
                 <FilePreview 
-                    key={item.id}
-                    ref={pdfViewerRef}
                     url={fileUrl} 
                     mime={item.metadata?.mime ?? 'application/octet-stream'} 
                     itemName={item.name}
