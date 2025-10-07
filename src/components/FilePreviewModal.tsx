@@ -575,7 +575,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         layout
         ref={previewContainerRef}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className={cn("relative flex-1 flex flex-col h-full bg-slate-750 overflow-hidden")}
+        className={cn("relative flex-1 flex flex-col h-full bg-[#13161C] overflow-hidden")}
     >
         <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
@@ -643,7 +643,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-slate-750">
+        <main className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-[#13161C]">
             <div className="[grid-area:1/1] overflow-auto flex items-center justify-center">
               {loading && <div className="text-white">Loading...</div>}
               {error && <div className="text-red-400">Error: {error}</div>}
@@ -858,5 +858,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
