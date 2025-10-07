@@ -306,6 +306,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileContentRef = useRef<HTMLDivElement>(null);
+  const fullscreenHandlersRef = useRef<{ onKeyDown: ((e: KeyboardEvent) => void) | null; onWheel: ((e: Event) => void) | null; onTouchMove: ((e: Event) => void) | null }>({
+    onKeyDown: null,
+    onWheel: null,
+    onTouchMove: null,
+  });
   const scaleBeforeFullscreen = useRef<number>(1);
   
   const ZOOM_STEP = 0.1;
@@ -318,14 +323,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   
   const goToPage = useCallback(async (page: number) => {
-      const newPage = Math.max(1, Math.min(page, numPages || 1));
-      if (pdfViewerRef.current) {
-          setScrollListenerEnabled(false);
-          await pdfViewerRef.current.scrollToPage(newPage);
-          setPageNumber(newPage);
-          // Re-enable after a short delay to prevent race conditions
-          setTimeout(() => setScrollListenerEnabled(true), 500); 
-      }
+    const newPage = Math.max(1, Math.min(page, numPages || 1));
+    setPageNumber(newPage);
+    if (pdfViewerRef.current) {
+        setScrollListenerEnabled(false);
+        await pdfViewerRef.current.scrollToPage(newPage);
+        setTimeout(() => setScrollListenerEnabled(true), 500); 
+    }
   }, [numPages]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
@@ -488,28 +492,96 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [isMobile, setHeaderFixed, setChatInputOffset]);
 
   const handleFullscreenChange = useCallback(async () => {
-      if (!document.fullscreenElement) {
-          // Exiting fullscreen
+      const isNowFullscreen = !!document.fullscreenElement;
+
+      if (!isNowFullscreen) {
+          // Exiting fullscreen - restore scale and cleanup
           setPdfScale(scaleBeforeFullscreen.current);
+
+          // restore scrolling
+          document.documentElement.style.overflow = '';
+          document.body.style.overflow = '';
+          if (fileContentRef.current) fileContentRef.current.style.overflow = '';
+
+          // restore scroll listener for pdf viewer
+          setScrollListenerEnabled(true);
+
+          // remove any fullscreen handlers
+          if (fullscreenHandlersRef.current.onKeyDown) {
+              window.removeEventListener('keydown', fullscreenHandlersRef.current.onKeyDown, true);
+          }
+          if (fullscreenHandlersRef.current.onWheel) {
+              window.removeEventListener('wheel', fullscreenHandlersRef.current.onWheel, { passive: false, capture: true } as EventListenerOptions);
+          }
+          if (fullscreenHandlersRef.current.onTouchMove) {
+              window.removeEventListener('touchmove', fullscreenHandlersRef.current.onTouchMove, { passive: false, capture: true } as EventListenerOptions);
+          }
+          fullscreenHandlersRef.current = { onKeyDown: null, onWheel: null, onTouchMove: null };
       } else {
-          // Entering fullscreen, calculate new scale
+          // Entering fullscreen - calculate scale as before
           if (!pdfProxy || !fileContentRef.current) return;
-          
+
           try {
-              const page = await pdfProxy.getPage(pageNumber);
+              const page = await pdfProxy.getPage(pageNumberRef.current);
               const viewport = page.getViewport({ scale: 1 });
               const container = fileContentRef.current;
 
               const scaleX = container.clientWidth / viewport.width;
               const scaleY = container.clientHeight / viewport.height;
               const newScale = Math.min(scaleX, scaleY);
-              
+
               setPdfScale(newScale);
           } catch(e) {
               console.error("Could not calculate fullscreen scale:", e);
           }
+
+          // Disable scrolling + hide native scrollbars
+          document.documentElement.style.overflow = 'hidden';
+          document.body.style.overflow = 'hidden';
+          if (fileContentRef.current) fileContentRef.current.style.overflow = 'hidden';
+
+          // Make sure the PDF internal scroll listener is disabled while presenting
+          setScrollListenerEnabled(false);
+
+          // Handlers to prevent scroll and route arrow keys to page navigation
+          const onKeyDown = (e: KeyboardEvent) => {
+              // Keys that normally scroll - we prevent them in fullscreen
+              const navigationKeys = ['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown', 'PageDown', 'PageUp', ' ', 'Home', 'End'];
+              if (navigationKeys.includes(e.key)) {
+                  e.preventDefault();
+              }
+
+              const current = pageNumberRef.current;
+              if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
+                  goToPage(current + 1);
+              } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+                  goToPage(current - 1);
+              }
+              // ignore other keys
+          };
+
+          const onWheel = (ev: Event) => {
+              // stop wheel scrolling while presenting
+              ev.preventDefault();
+          };
+
+          const onTouchMove = (ev: Event) => {
+              // stop touch scrolling while presenting (mobile/touchscreen)
+              ev.preventDefault();
+          };
+
+          // store refs so we can remove later
+          fullscreenHandlersRef.current.onKeyDown = onKeyDown;
+          fullscreenHandlersRef.current.onWheel = onWheel;
+          fullscreenHandlersRef.current.onTouchMove = onTouchMove;
+
+          // use capture + passive:false where needed to reliably block default scrolling
+          window.addEventListener('keydown', onKeyDown, { capture: true });
+          window.addEventListener('wheel', onWheel, { passive: false, capture: true } as EventListenerOptions);
+          window.addEventListener('touchmove', onTouchMove, { passive: false, capture: true } as EventListenerOptions);
       }
-  }, [pdfProxy, pageNumber]);
+  }, [pdfProxy, goToPage]);
+
 
   useEffect(() => {
       document.addEventListener('fullscreenchange', handleFullscreenChange);
@@ -522,21 +594,24 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (!item || !isPdf) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (document.fullscreenElement && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+      // Only act when in fullscreen (presentation mode)
+      if (!document.fullscreenElement) return;
+
+      const key = e.key;
+      if (['ArrowRight', 'ArrowLeft', 'ArrowUp', 'ArrowDown'].includes(key)) {
         e.preventDefault();
-        const currentPage = pageNumberRef.current;
-        if (e.key === 'ArrowRight') {
-          goToPage(currentPage + 1);
-        } else if (e.key === 'ArrowLeft') {
-          goToPage(currentPage - 1);
+        const current = pageNumberRef.current;
+        if (key === 'ArrowRight' || key === 'ArrowDown') {
+          goToPage(current + 1);
+        } else {
+          goToPage(current - 1);
         }
       }
     };
 
-    document.addEventListener('keydown', handleKeyDown);
-
+    window.addEventListener('keydown', handleKeyDown, { capture: true });
     return () => {
-      document.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
   }, [item, isPdf, goToPage]);
 
@@ -727,7 +802,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-[#13161C]">
+        <main ref={fileContentRef} className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-[#13161C] fullscreen:overflow-hidden">
             <div className="[grid-area:1/1] overflow-auto flex items-center justify-center">
               {loading && <div className="text-white">Loading...</div>}
               {error && <div className="text-red-400">Error: {error}</div>}
