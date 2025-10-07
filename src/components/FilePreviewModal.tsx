@@ -304,6 +304,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileContentRef = useRef<HTMLDivElement>(null);
+  const scaleBeforeFullscreen = useRef<number>(1);
   
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -479,6 +480,38 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [isMobile, setHeaderFixed, setChatInputOffset]);
 
+  const handleFullscreenChange = useCallback(async () => {
+      if (!document.fullscreenElement) {
+          // Exiting fullscreen
+          setPdfScale(scaleBeforeFullscreen.current);
+      } else {
+          // Entering fullscreen, calculate new scale
+          if (!pdfProxy || !fileContentRef.current) return;
+          
+          try {
+              const page = await pdfProxy.getPage(pageNumber);
+              const viewport = page.getViewport({ scale: 1 });
+              const container = fileContentRef.current;
+
+              const scaleX = container.clientWidth / viewport.width;
+              const scaleY = container.clientHeight / viewport.height;
+              const newScale = Math.min(scaleX, scaleY);
+              
+              setPdfScale(newScale);
+          } catch(e) {
+              console.error("Could not calculate fullscreen scale:", e);
+          }
+      }
+  }, [pdfProxy, pageNumber]);
+
+  useEffect(() => {
+      document.addEventListener('fullscreenchange', handleFullscreenChange);
+      return () => {
+          document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      };
+  }, [handleFullscreenChange]);
+
+
   if (!item) return null;
   
   const { Icon, color } = getIconForFileType(item);
@@ -624,6 +657,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                       size="icon" 
                       onClick={() => {
                         if (fileContentRef.current) {
+                          scaleBeforeFullscreen.current = pdfScale;
                           fileContentRef.current.requestFullscreen();
                           toast({
                             title: "Presentation Mode",
@@ -885,3 +919,4 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     
 
     
+
