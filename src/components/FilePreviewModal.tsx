@@ -303,6 +303,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileContentRef = useRef<HTMLDivElement>(null);
   
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -618,11 +619,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
                         <Download className="w-5 h-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={() => {
-                      if (previewContainerRef.current) {
-                        previewContainerRef.current.requestFullscreen();
-                      }
-                    }} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Present">
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      onClick={() => {
+                        if (fileContentRef.current) {
+                          fileContentRef.current.requestFullscreen();
+                          toast({
+                            title: "Presentation Mode",
+                            description: "To exit fullscreen, press the ESC key.",
+                            duration: 3000,
+                          })
+                        }
+                      }} 
+                      disabled={!fileUrl} 
+                      className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
+                      title="Present"
+                    >
                         <Presentation className="w-5 h-5" />
                     </Button>
                   </>
@@ -651,7 +664,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-[#13161C]">
+        <main ref={fileContentRef} className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-[#13161C]">
             <div className="[grid-area:1/1] overflow-auto flex items-center justify-center">
               {loading && <div className="text-white">Loading...</div>}
               {error && <div className="text-red-400">Error: {error}</div>}
@@ -866,6 +879,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
 
     
 
