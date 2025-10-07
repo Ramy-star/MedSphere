@@ -511,6 +511,27 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       };
   }, [handleFullscreenChange]);
 
+  useEffect(() => {
+    if (!item || !isPdf) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (document.fullscreenElement && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+        e.preventDefault(); // Prevent default browser action (like scrolling)
+        if (e.key === 'ArrowRight') {
+          goToPage(pageNumber + 1);
+        } else if (e.key === 'ArrowLeft') {
+          goToPage(pageNumber - 1);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [item, isPdf, goToPage, pageNumber]);
+
 
   if (!item) return null;
   
@@ -913,10 +934,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
-
-    
-
-    
-
