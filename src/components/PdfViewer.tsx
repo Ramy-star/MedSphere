@@ -98,7 +98,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const onRenderError = useCallback((error: Error) => {
     // This is a common, non-critical warning when scrolling fast.
     // It happens when react-pdf cancels a render task for a page that's no longer in view.
-    if (error.name === 'AbortException' || (error.message && error.message.includes('TextLayer task cancelled'))) {
+    if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
         return; 
     }
     console.error('Failed to render PDF page:', error);
