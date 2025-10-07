@@ -577,7 +577,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className={cn("relative flex-1 flex flex-col h-full bg-[#13161C] overflow-hidden")}
     >
-        <header className="flex h-16 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
+        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
             <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
@@ -696,7 +696,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
     const chatViewContent = (
       <>
-        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-16")}>
+        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14")}>
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
