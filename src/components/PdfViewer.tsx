@@ -41,7 +41,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const rowVirtualizer = useVirtualizer({
     count: numPages,
     getScrollElement: () => containerRef.current,
-    estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 16, // +16 for margin
+    estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 8, // +8 for margin
     overscan: isMobile ? 1 : 2,
   });
 
@@ -246,7 +246,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                               justifyContent: 'center'
                           }}
                       >
-                          <div className="mb-4">
+                          <div className="mb-2">
                               <Page
                                   pageNumber={virtualItem.index + 1}
                                   scale={scale}
