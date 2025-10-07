@@ -584,9 +584,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <X className="w-6 h-6" />
                 </Button>
                 <div className="hidden md:flex items-center gap-3 overflow-hidden">
-                    <Icon className={cn("w-6 h-6 shrink-0", color)} />
+                    <Icon className={cn("w-5 h-5 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
-                       <span className={cn("text-sm md:text-base text-white font-medium truncate")}>{item.name}</span>
+                       <span className={cn("text-sm text-white font-medium truncate")}>{item.name}</span>
                     </div>
                 </div>
             </div>
@@ -626,17 +626,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     variant={showChat ? 'default' : 'outline'} 
                     onClick={() => setShowChat(!showChat)} 
                     className={cn(
-                        "rounded-full px-3 h-9 sm:px-4",
+                        "rounded-full px-3 h-8",
                         showChat && "bg-primary hover:bg-primary/90",
                         !showChat && "bg-background/50 border-white/20 text-white"
                     )}
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
                     <span className="hidden sm:inline">
-                      Chat with AI
+                      Ask AI
                     </span>
                     <span className="sm:hidden">
-                      Chat with AI
+                      Ask AI
                     </span>
                 </Button>
                 )}
