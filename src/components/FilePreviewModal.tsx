@@ -88,18 +88,18 @@ const PdfControls = ({
     if (isMobile) {
         return (
              <div
-                className="flex items-center gap-0 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
+                className="flex items-center justify-center gap-x-0"
             >
-                <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu">{pageNumber} / {numPages ?? '--'}</span>
-                <div className="h-4 w-px bg-white/20 mx-0.5"></div>
-                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+                <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu text-white">{pageNumber} / {numPages ?? '--'}</span>
+                <div className="h-4 w-px bg-white/20 mx-1"></div>
+                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-white hover:bg-white/20" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
                     <Minus className="w-4 h-4" />
                      <span className="sr-only">Zoom Out</span>
                 </Button>
-                <span className='text-xs w-12 text-center font-ubuntu'>
+                <span className='text-xs w-12 text-center font-ubuntu text-white'>
                     {`${Math.round(pdfScale * 100)}%`}
                 </span>
-                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-white hover:bg-white/20" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
                     <Plus className="w-4 h-4" />
                     <span className="sr-only">Zoom In</span>
                 </Button>
@@ -654,7 +654,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
 
             {/* Center Section */}
-             <div className="flex flex-1 items-center justify-center">
+             <div className={cn("flex-1 items-center justify-center", isMobile ? 'flex' : 'hidden md:flex')}>
                  <PdfControls
                     isMobile={isMobile}
                     numPages={numPages}
