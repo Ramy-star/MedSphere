@@ -117,11 +117,6 @@ const PdfControls = ({
     // Desktop controls
     return (
       <div className="flex items-center gap-0 text-white">
-        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1}>
-            <ChevronLeft className="w-4 h-4" />
-            <span className="sr-only">Previous Page</span>
-        </Button>
-        
         <form onSubmit={handlePageInputSubmit} className="flex items-center">
             <Input
               ref={pageInputRef}
@@ -134,11 +129,6 @@ const PdfControls = ({
             />
             <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
         </form>
-
-        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)}>
-            <ChevronRight className="w-4 h-4" />
-            <span className="sr-only">Next Page</span>
-        </Button>
         
         <div className="h-4 w-px bg-white/20 mx-1"></div>
         
@@ -792,8 +782,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onClick={() => setShowChat(!showChat)} 
                     className={cn(
                         "rounded-full px-3 h-8 text-white font-semibold transition-all duration-300",
-                        "bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700",
-                        showChat && "bg-gradient-to-r from-red-700 to-blue-700"
+                        "bg-gradient-to-r from-red-500 via-red-600 to-blue-500 hover:from-red-600 hover:to-blue-600",
+                        showChat && "bg-gradient-to-r from-red-600 via-red-700 to-blue-600"
                     )}
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
