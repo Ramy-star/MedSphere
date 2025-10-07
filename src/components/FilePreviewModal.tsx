@@ -403,12 +403,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
     setPdfProxy(pdf);
     setNumPages(pdf.numPages);
+    
     if (isMobile) {
         if (previewContainerRef.current) {
             const page = await pdf.getPage(1);
             const containerWidth = previewContainerRef.current.clientWidth;
-            const scale = containerWidth / page.getViewport({ scale: 1 }).width;
-            setPdfScale(scale);
+            const viewportWidth = page.getViewport({ scale: 1 }).width;
+            setPdfScale(containerWidth / viewportWidth);
         }
     } else {
         setPdfScale(1); // Default 100% zoom for desktop

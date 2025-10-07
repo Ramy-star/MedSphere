@@ -32,10 +32,9 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   
   useEffect(() => {
     let objectUrl: string | null = null;
-    const isPdfOnMobile = isMobile && mime === 'application/pdf';
     const isHtml = mime === 'text/html';
 
-    if (isPdfOnMobile || isHtml) {
+    if (isHtml) {
       setIsLoading(true);
       fetch(url)
         .then(response => {
@@ -56,7 +55,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
             setIsLoading(false);
         });
     } else {
-        // For other types or desktop PDF, use the URL directly
+        // For other types, use the URL directly
         setContentUrl(url);
     }
 
@@ -66,7 +65,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [url, mime, isMobile]);
+  }, [url, mime]);
 
   if (isLoading) {
       return (
@@ -93,11 +92,6 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
   
   if (mime === 'application/pdf') {
-    if (isMobile) {
-      // Use the created object URL for the native browser viewer on mobile
-      return <iframe src={contentUrl} className="w-full h-full border-0" title={itemName} />;
-    }
-    // Use react-pdf on desktop
     return <PdfViewer ref={ref} file={contentUrl} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} isFullscreen={isFullscreen} currentPage={currentPage} />;
   }
   
