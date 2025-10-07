@@ -281,8 +281,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
-  const [scrollListenerEnabled, setScrollListenerEnabled] = useState(true);
-
+  
   const pageNumberRef = useRef(pageNumber);
   pageNumberRef.current = pageNumber;
 
@@ -304,9 +303,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         const newPage = Math.max(1, Math.min(page, numPages || 1));
         setPageNumber(newPage);
         if (pdfViewerRef.current && !isFullscreen) {
-            setScrollListenerEnabled(false);
             pdfViewerRef.current.scrollToPage(newPage);
-            setTimeout(() => setScrollListenerEnabled(true), 500); 
         }
     }, [numPages, isFullscreen]);
 
@@ -413,7 +410,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setError(null);
         setLoading(false);
         setIsExtracting(false);
-        // Do not reset PDF state here, `key` on FilePreview will handle it
+        setPageNumber(1); // Explicitly reset page number
+        setNumPages(undefined);
+        setPdfProxy(null);
     }
   }, [item, startNewChat]);
   

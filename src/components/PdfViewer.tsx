@@ -190,7 +190,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                       pageNumber={index + 1}
                       scale={scale}
                       onRenderError={onRenderError}
-                      renderAnnotationLayer={false}
                       loading={<Skeleton style={{ height: (1122 * scale), width: (794 * scale) }} />}
                   />
                 </div>
