@@ -670,25 +670,27 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
                         <Download className="w-5 h-5" />
                     </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      onClick={() => {
-                        if (fileContentRef.current) {
-                          fileContentRef.current.requestFullscreen();
-                          toast({
-                            title: "Presentation Mode",
-                            description: "To exit fullscreen, press the ESC key.",
-                            duration: 3000,
-                          })
-                        }
-                      }} 
-                      disabled={!fileUrl} 
-                      className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
-                      title="Present"
-                    >
-                        <Presentation className="w-5 h-5" />
-                    </Button>
+                    {!isMobile && (
+                        <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => {
+                            if (fileContentRef.current) {
+                            fileContentRef.current.requestFullscreen();
+                            toast({
+                                title: "Presentation Mode",
+                                description: "To exit fullscreen, press the ESC key.",
+                                duration: 3000,
+                            })
+                            }
+                        }} 
+                        disabled={!fileUrl} 
+                        className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
+                        title="Present"
+                        >
+                            <Presentation className="w-5 h-5" />
+                        </Button>
+                    )}
                   </>
                 )}
                 <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">

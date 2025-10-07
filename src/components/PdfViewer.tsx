@@ -113,7 +113,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                   data-index={virtualItem.index}
                   ref={rowVirtualizer.measureElement}
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
-                  className="flex justify-center px-2 pt-2"
+                  className="flex justify-center md:px-4 pt-2"
                 >
                   <div className="shadow-lg mb-2">
                     <Page
