@@ -87,29 +87,23 @@ const PdfControls = ({
 
     if (isMobile) {
         return (
-            <AnimatePresence>
-                <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    transition={{ duration: 0.2, ease: 'easeOut' }}
-                    className="flex items-center gap-0 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
-                >
-                    <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu">{pageNumber} / {numPages ?? '--'}</span>
-                    <div className="h-4 md:h-5 w-px bg-white/20 mx-0.5"></div>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
-                        <Minus className="w-4 h-4" />
-                         <span className="sr-only">Zoom Out</span>
-                    </Button>
-                    <span className='text-xs w-12 text-center font-ubuntu'>
-                        {`${Math.round(pdfScale * 100)}%`}
-                    </span>
-                    <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
-                        <Plus className="w-4 h-4" />
-                        <span className="sr-only">Zoom In</span>
-                    </Button>
-                </motion.div>
-            </AnimatePresence>
+             <div
+                className="flex items-center gap-0 bg-black/60 text-white rounded-full p-1 shadow-lg backdrop-blur-md border border-white/20"
+            >
+                <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu">{pageNumber} / {numPages ?? '--'}</span>
+                <div className="h-4 w-px bg-white/20 mx-0.5"></div>
+                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
+                    <Minus className="w-4 h-4" />
+                     <span className="sr-only">Zoom Out</span>
+                </Button>
+                <span className='text-xs w-12 text-center font-ubuntu'>
+                    {`${Math.round(pdfScale * 100)}%`}
+                </span>
+                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 hover:bg-white/20" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
+                    <Plus className="w-4 h-4" />
+                    <span className="sr-only">Zoom In</span>
+                </Button>
+            </div>
         );
     }
 
@@ -647,7 +641,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     >
         <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
-            <div className="flex items-center gap-2 overflow-hidden flex-1">
+             <div className="flex items-center gap-2 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                     <X className="w-6 h-6" />
                 </Button>
@@ -659,9 +653,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-            {/* Center Section (Desktop Only) */}
-             <div className="hidden md:flex flex-1 items-center justify-center">
-                <PdfControls
+            {/* Center Section */}
+             <div className="flex flex-1 items-center justify-center">
+                 <PdfControls
                     isMobile={isMobile}
                     numPages={numPages}
                     pageNumber={pageNumber}
@@ -763,32 +757,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               </div>
               )}
             </div>
-            {/* Bottom Controls (Mobile Only) */}
-            {isMobile && isPdf && !isFullscreen && (
-              <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4">
-                  <PdfControls
-                    isMobile={isMobile}
-                    numPages={numPages}
-                    pageNumber={pageNumber}
-                    pdfScale={pdfScale}
-                    goToPage={goToPage}
-                    zoomIn={zoomIn}
-                    zoomOut={zoomOut}
-                    pageInput={pageInput}
-                    setPageInput={(v) => {
-                      manualPageInputInProgress.current = true;
-                      setPageInput(v);
-                    }}
-                    handlePageInputSubmit={handlePageInputSubmit}
-                    handlePageInputBlur={handlePageInputBlur}
-                    scaleInput={scaleInput}
-                    handleScaleInputChange={handleScaleInputChange}
-                    handleScaleInputSubmit={handleScaleInputSubmit}
-                    handleScaleInputBlur={handleScaleInputBlur}
-                    pageInputRef={pageInputRef}
-                  />
-              </div>
-            )}
         </main>
     </motion.div>
   );
