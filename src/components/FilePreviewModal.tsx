@@ -313,6 +313,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   });
   const scaleBeforeFullscreen = useRef<number>(1);
   
+  const goToPageRef = useRef<(page: number) => void>(() => {});
+
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
@@ -331,6 +333,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setTimeout(() => setScrollListenerEnabled(true), 500); 
     }
   }, [numPages]);
+
+  useEffect(() => {
+    goToPageRef.current = goToPage;
+  }, [goToPage]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
   const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
@@ -553,9 +559,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
               const current = pageNumberRef.current;
               if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'PageDown') {
-                  goToPage(current + 1);
+                  goToPageRef.current(current + 1);
               } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
-                  goToPage(current - 1);
+                  goToPageRef.current(current - 1);
               }
               // ignore other keys
           };
@@ -580,7 +586,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           window.addEventListener('wheel', onWheel, { passive: false, capture: true } as EventListenerOptions);
           window.addEventListener('touchmove', onTouchMove, { passive: false, capture: true } as EventListenerOptions);
       }
-  }, [pdfProxy, goToPage]);
+  }, [pdfProxy]);
 
 
   useEffect(() => {
@@ -602,9 +608,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         e.preventDefault();
         const current = pageNumberRef.current;
         if (key === 'ArrowRight' || key === 'ArrowDown') {
-          goToPage(current + 1);
+          goToPageRef.current(current + 1);
         } else {
-          goToPage(current - 1);
+          goToPageRef.current(current - 1);
         }
       }
     };
@@ -613,7 +619,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     return () => {
       window.removeEventListener('keydown', handleKeyDown, { capture: true });
     };
-  }, [item, isPdf, goToPage]);
+  }, [item, isPdf]);
 
 
   if (!item) return null;
@@ -785,9 +791,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <Button 
                     onClick={() => setShowChat(!showChat)} 
                     className={cn(
-                        "rounded-full px-3 h-8 text-white font-semibold transition-all duration-300 border-0",
-                        "bg-gradient-to-r from-red-500 via-red-600 to-blue-500 hover:from-red-600 hover:to-blue-600",
-                        showChat && "bg-gradient-to-r from-red-600 via-red-700 to-blue-600"
+                        "rounded-full px-3 h-8 text-white font-semibold transition-all duration-300",
+                        "bg-gradient-to-r from-red-600 to-blue-600 hover:from-red-700 hover:to-blue-700",
+                        showChat && "bg-gradient-to-r from-red-700 to-blue-700"
                     )}
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
