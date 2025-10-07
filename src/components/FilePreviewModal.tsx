@@ -391,7 +391,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (isMobile) {
         if (previewContainerRef.current) {
             const page = await pdf.getPage(1);
-            const containerWidth = previewContainerRef.current.clientWidth - 32; // with padding
+            const containerWidth = previewContainerRef.current.clientWidth;
             const scale = containerWidth / page.getViewport({ scale: 1 }).width;
             setPdfScale(scale);
         }
