@@ -1,8 +1,7 @@
-
 'use client';
 import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
@@ -60,24 +59,30 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
   const virtualItems = rowVirtualizer.getVirtualItems();
 
+  // ✅ استخدام تحقق آمن من وجود startIndex قبل الاستخدام
   useEffect(() => {
-    if (!onPageChange || !virtualItems || virtualItems.length === 0 || !rowVirtualizer.range) {
-      return;
-    }
-    const visibleItem = virtualItems.find(item => item.index === rowVirtualizer.range.startIndex);
+    if (!onPageChange) return;
+
+    // قراءة startIndex بطريقة آمنة (قد تكون undefined/null)
+    const startIndex = rowVirtualizer?.range?.startIndex;
+    if (startIndex == null) return;
+
+    const visibleItem = virtualItems.find(item => item.index === startIndex);
     if (visibleItem) {
       const newPageNumber = visibleItem.index + 1;
       onPageChange(newPageNumber);
     }
-  }, [virtualItems, onPageChange, rowVirtualizer.range]);
-
+    // ملاحظة: وضعنا rowVirtualizer?.range?.startIndex في الـ deps لتقليل إعادة التنفيذ غير الضرورية.
+    // إن تسبب eslint في تحذير، يمكن إما إضافة تعليق eslint-disable-next-line المناسب أو استخدام rowVirtualizer ككل في الـ deps.
+  }, [virtualItems, onPageChange, rowVirtualizer?.range?.startIndex]);
 
   useImperativeHandle(ref, () => ({
     scrollToPage: (page: number) => {
+      // scrollToIndex موجود على نتيجة useVirtualizer
       rowVirtualizer.scrollToIndex(page - 1, { align: 'start', behavior: 'smooth' });
     },
   }));
-  
+
   function onDocumentLoadError(error: Error) {
     if (error.message.includes('API version') && error.message.includes('Worker version')) return;
     console.error('Error loading PDF:', error);
@@ -89,7 +94,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     console.error('Failed to render PDF page:', error);
     toast({ variant: 'destructive', title: 'PDF Render Error', description: 'A page could not be displayed correctly.' });
   }, [toast]);
-  
+
 
   if (isFullscreen) {
     return (
