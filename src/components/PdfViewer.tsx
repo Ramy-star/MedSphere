@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
 
@@ -174,6 +173,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     <div 
       ref={containerRef} 
       className="w-full h-full overflow-y-auto"
+      onScroll={handleScroll}
     >
       <Document
           file={file}
