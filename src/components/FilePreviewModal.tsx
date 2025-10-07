@@ -272,6 +272,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [error, setError] = useState<string | null>(null);
   const isMobile = useIsMobile();
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // PDF specific state
   const [pdfProxy, setPdfProxy] = useState<PDFDocumentProxy | null>(null);
@@ -302,12 +303,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const goToPage = useCallback(async (page: number) => {
     const newPage = Math.max(1, Math.min(page, numPages || 1));
     setPageNumber(newPage);
-    if (pdfViewerRef.current) {
+    if (pdfViewerRef.current && !isFullscreen) {
         setScrollListenerEnabled(false);
         await pdfViewerRef.current.scrollToPage(newPage);
         setTimeout(() => setScrollListenerEnabled(true), 500); 
     }
-  }, [numPages]);
+  }, [numPages, isFullscreen]);
 
   useEffect(() => {
     goToPageRef.current = goToPage;
@@ -474,9 +475,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   useEffect(() => {
     const handleFullscreenChange = async () => {
-      const isFullscreen = !!document.fullscreenElement;
+      const isNowFullscreen = !!document.fullscreenElement;
+      setIsFullscreen(isNowFullscreen);
   
-      if (isFullscreen) {
+      if (isNowFullscreen) {
         if (fileContentRef.current) {
           scaleBeforeFullscreen.current = pdfScale;
           // Calculate scale to fit
@@ -732,8 +734,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className="grid flex-1 overflow-hidden grid-rows-1 grid-cols-1 bg-[#13161C] fullscreen:overflow-hidden">
-            <div className="[grid-area:1/1] overflow-auto flex items-center justify-center">
+        <main ref={fileContentRef} className="grid flex-1 grid-rows-1 grid-cols-1 bg-[#13161C] fullscreen:overflow-hidden">
+            <div className={cn(
+                "[grid-area:1/1] flex items-center justify-center",
+                isFullscreen ? "overflow-hidden" : "overflow-auto"
+            )}>
               {loading && <div className="text-white">Loading...</div>}
               {error && <div className="text-red-400">Error: {error}</div>}
               {!loading && !error && fileUrl && (
@@ -747,6 +752,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onPageChange={onPageChange}
                     scrollListenerEnabled={scrollListenerEnabled}
                     setScrollListenerEnabled={setScrollListenerEnabled}
+                    isFullscreen={isFullscreen}
+                    currentPage={pageNumber}
                 />
               )}
               {!loading && !fileUrl && (
@@ -757,7 +764,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               )}
             </div>
             {/* Bottom Controls (Mobile Only) */}
-            {isMobile && isPdf && (
+            {isMobile && isPdf && !isFullscreen && (
               <div className="[grid-area:1/1] place-self-end justify-self-center z-20 mb-4">
                   <PdfControls
                     isMobile={isMobile}

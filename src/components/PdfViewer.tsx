@@ -23,6 +23,8 @@ type PdfViewerProps = {
   onPageChange?: (page: number) => void;
   scrollListenerEnabled: boolean;
   setScrollListenerEnabled: (enabled: boolean) => void;
+  isFullscreen?: boolean;
+  currentPage?: number;
 };
 
 export type PdfViewerRef = {
@@ -30,7 +32,7 @@ export type PdfViewerRef = {
   rowVirtualizer: Virtualizer<HTMLDivElement, Element> | null;
 };
 
-const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled }, ref) => {
+const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled, isFullscreen, currentPage }, ref) => {
   const [numPages, setNumPages] = useState<number>(0);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -207,7 +209,31 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
       };
   }, [handleScroll]);
 
+  // SINGLE PAGE FULLSCREEN VIEW
+  if (isFullscreen) {
+    return (
+      <div className="w-full h-full flex flex-col items-center justify-center">
+        <Document
+          file={file}
+          onLoadSuccess={onDocumentLoadSuccessInternal}
+          onLoadError={onDocumentLoadError}
+          options={options}
+          loading={<Skeleton className="h-[80vh] w-[80%]" />}
+        >
+          <Page
+            pageNumber={currentPage || 1}
+            scale={scale}
+            onRenderError={onRenderError}
+            renderAnnotationLayer={false}
+            renderTextLayer={false}
+            className="shadow-2xl"
+          />
+        </Document>
+      </div>
+    );
+  }
 
+  // MULTI-PAGE SCROLLABLE VIEW (Normal mode)
   return (
     <div className="w-full h-full flex flex-col items-center">
       <div 

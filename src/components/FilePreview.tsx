@@ -19,6 +19,8 @@ type FilePreviewProps = {
   onPageChange?: (page: number) => void;
   scrollListenerEnabled: boolean;
   setScrollListenerEnabled: (enabled: boolean) => void;
+  isFullscreen?: boolean;
+  currentPage?: number;
 };
 
 // Define the type for the ref handle
@@ -26,7 +28,7 @@ export type FilePreviewRef = {
   scrollToPage: (page: number) => void;
 };
 
-const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled }, ref) => {
+const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled, isFullscreen, currentPage }, ref) => {
   const [htmlContentUrl, setHtmlContentUrl] = useState<string | null>(null);
   const [isLoadingHtml, setIsLoadingHtml] = useState(false);
   
@@ -67,7 +69,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer ref={ref} file={url} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} scrollListenerEnabled={scrollListenerEnabled} setScrollListenerEnabled={setScrollListenerEnabled} />;
+    return <PdfViewer ref={ref as any} file={url} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} scrollListenerEnabled={scrollListenerEnabled} setScrollListenerEnabled={setScrollListenerEnabled} isFullscreen={isFullscreen} currentPage={currentPage} />;
   }
   
   if (mime.startsWith('audio/')) {
