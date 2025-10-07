@@ -334,11 +334,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
-      setPageNumber(newPage);
-      if (pdfViewerRef.current && !isFullscreen) {
+      if (pdfViewerRef.current) {
           pdfViewerRef.current.scrollToPage(newPage);
       }
-  }, [numPages, isFullscreen]);
+  }, [numPages]);
 
 
   useEffect(() => {
@@ -730,6 +729,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               {error && <div className="text-red-400">Error: {error}</div>}
               {!loading && !error && fileUrl && (
                 <FilePreview 
+                    key={item.id}
+                    ref={pdfViewerRef}
                     url={fileUrl} 
                     mime={item.metadata?.mime ?? 'application/octet-stream'} 
                     itemName={item.name}

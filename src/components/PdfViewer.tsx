@@ -1,9 +1,11 @@
 'use client';
 import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy, PDFPageProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
+import { useVirtualizer } from '@tanstack/react-virtual';
+import { useDebounce } from 'use-debounce';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -28,208 +30,106 @@ export type PdfViewerRef = {
 
 const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, isFullscreen, currentPage }, ref) => {
   const [numPages, setNumPages] = useState<number>(0);
+  const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number }[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  
-  const isInitialLoadRef = useRef(true);
-  const lastReportedPageRef = useRef<number>(1);
-  
+
+  const [debouncedScale] = useDebounce(scale, 100);
+
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
-    isInitialLoadRef.current = true;
-    lastReportedPageRef.current = 1;
-    
     if (onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
+    const dims: { width: number; height: number }[] = [];
+    for (let i = 1; i <= loadedPdf.numPages; i++) {
+      const page = await loadedPdf.getPage(i);
+      dims.push({ width: page.view[2], height: page.view[3] });
+    }
+    setPageDimensions(dims);
   }, [onLoadSuccess]);
 
+  const rowVirtualizer = useVirtualizer({
+    count: numPages,
+    getScrollElement: () => containerRef.current,
+    estimateSize: (index) => (pageDimensions[index] ? pageDimensions[index].height * debouncedScale : 1000),
+    overscan: 2,
+  });
 
-  function onDocumentLoadError(error: Error) {
-    if (error.message.includes('API version') && error.message.includes('Worker version')) {
-        return;
-    }
-    console.error('Error loading PDF:', error);
-    toast({
-      variant: 'destructive',
-      title: 'Error loading PDF',
-      description: 'The file could not be loaded. It may be corrupted or in an unsupported format.',
-    });
-  }
+  const virtualItems = rowVirtualizer.getVirtualItems();
 
-  const onRenderError = useCallback((error: Error) => {
-    if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
-        return; 
+  useEffect(() => {
+    const visibleItem = virtualItems.find(item => item.index === rowVirtualizer.range.startIndex);
+    if (visibleItem && onPageChange) {
+      const newPageNumber = visibleItem.index + 1;
+      onPageChange(newPageNumber);
     }
-    console.error('Failed to render PDF page:', error);
-    toast({
-        variant: 'destructive',
-        title: 'PDF Render Error',
-        description: 'A page could not be displayed correctly.',
-    });
-  }, [toast]);
+  }, [virtualItems, onPageChange, rowVirtualizer.range.startIndex]);
 
 
   useImperativeHandle(ref, () => ({
     scrollToPage: (page: number) => {
-        const pageIndex = page - 1;
-        if (!containerRef.current || pageIndex < 0 || pageIndex >= numPages) return;
-
-        const container = containerRef.current;
-        const pageElement = container.querySelector(`[data-page-number="${page}"]`);
-
-        if (pageElement) {
-            lastReportedPageRef.current = page;
-            container.scrollTo({
-                top: (pageElement as HTMLElement).offsetTop - container.offsetTop,
-                behavior: 'auto'
-            });
-        }
+      rowVirtualizer.scrollToIndex(page - 1, { align: 'start', behavior: 'auto' });
     },
   }));
-
-  const handleScroll = useCallback(() => {
-    if (!onPageChange || !containerRef.current || numPages === 0) return;
-
-    const container = containerRef.current;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    
-    if (scrollTop > 0 && scrollHeight > 0 && scrollTop + clientHeight >= scrollHeight - 10) {
-      if (lastReportedPageRef.current !== numPages) {
-        lastReportedPageRef.current = numPages;
-        onPageChange(numPages);
-      }
-      return;
-    }
-
-    const pageElements = Array.from(container.querySelectorAll('[data-page-number]'));
-    if (pageElements.length === 0) return;
-    
-    let bestVisiblePage = 1;
-    let maxVisibleRatio = 0;
-
-    for (const el of pageElements) {
-        const pageNumber = parseInt(el.getAttribute('data-page-number') || '0', 10);
-        const rect = el.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-
-        const visibleHeight = Math.max(0, Math.min(rect.bottom, containerRect.bottom) - Math.max(rect.top, containerRect.top));
-        const visibleRatio = visibleHeight / rect.height;
-
-        if (visibleRatio > maxVisibleRatio) {
-            maxVisibleRatio = visibleRatio;
-            bestVisiblePage = pageNumber;
-        }
-    }
-    
-    if (bestVisiblePage !== lastReportedPageRef.current) {
-      lastReportedPageRef.current = bestVisiblePage;
-      onPageChange(bestVisiblePage);
-    }
-  }, [onPageChange, numPages]);
-
-  useEffect(() => {
-      const container = containerRef.current;
-      if (!container || isFullscreen) return;
   
-      const scrollDebounceTimeout = 100;
-      let scrollTimeout: NodeJS.Timeout | null = null;
-      let initialScrollTimeout: NodeJS.Timeout | null = null;
-      
-      const debouncedScrollHandler = () => {
-          if(scrollTimeout) clearTimeout(scrollTimeout);
-          scrollTimeout = setTimeout(handleScroll, scrollDebounceTimeout);
-      };
+  function onDocumentLoadError(error: Error) {
+    if (error.message.includes('API version') && error.message.includes('Worker version')) return;
+    console.error('Error loading PDF:', error);
+    toast({ variant: 'destructive', title: 'Error loading PDF', description: 'The file could not be loaded.' });
+  }
 
-      container.addEventListener('scroll', debouncedScrollHandler, { passive: true });
-      
-      if (isInitialLoadRef.current && numPages > 0) {
-        initialScrollTimeout = setTimeout(() => {
-          isInitialLoadRef.current = false;
-          if (onPageChange) {
-            lastReportedPageRef.current = 1;
-            onPageChange(1);
-          }
-        }, 300);
-      }
-
-      return () => {
-        container.removeEventListener('scroll', debouncedScrollHandler);
-        if(scrollTimeout) clearTimeout(scrollTimeout);
-        if(initialScrollTimeout) clearTimeout(initialScrollTimeout);
-      };
-  }, [handleScroll, isFullscreen, numPages, onPageChange]);
+  const onRenderError = useCallback((error: Error) => {
+    if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) return;
+    console.error('Failed to render PDF page:', error);
+    toast({ variant: 'destructive', title: 'PDF Render Error', description: 'A page could not be displayed correctly.' });
+  }, [toast]);
   
-  useEffect(() => {
-    const container = containerRef.current;
-    if (container) {
-      container.scrollTop = 0;
-      isInitialLoadRef.current = true;
-      lastReportedPageRef.current = 1;
-    }
-  }, [file]);
-
 
   if (isFullscreen) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center">
-        <Document
-          file={file}
-          onLoadSuccess={onDocumentLoadSuccessInternal}
-          onLoadError={onDocumentLoadError}
-          options={options}
-          loading={<Skeleton className="h-[80vh] w-[80%]" />}
-        >
-          <Page
-            pageNumber={currentPage || 1}
-            scale={scale}
-            onRenderError={onRenderError}
-            renderAnnotationLayer={false}
-            renderTextLayer={false}
-            className="shadow-2xl fullscreen:object-contain"
-          />
+        <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<Skeleton className="h-[80vh] w-[80%]" />}>
+          <Page pageNumber={currentPage || 1} scale={scale} onRenderError={onRenderError} renderAnnotationLayer={false} renderTextLayer={false} className="shadow-2xl fullscreen:object-contain" />
         </Document>
       </div>
     );
   }
 
   return (
-    <div 
-      ref={containerRef} 
-      className="w-full h-full overflow-y-auto relative"
-      style={{ WebkitOverflowScrolling: 'touch' }}
-    >
-      <Document
-          file={file}
-          onLoadSuccess={onDocumentLoadSuccessInternal}
-          onLoadError={onDocumentLoadError}
-          options={options}
-          loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}
-      >
-          <div className="w-full flex flex-col items-center gap-4 py-4">
-            {Array.from(new Array(numPages), (el, index) => (
-                <div 
-                  key={`page_${index + 1}`} 
-                  data-page-number={index + 1}
-                  className="flex justify-center w-full"
+    <div ref={containerRef} className="w-full h-full overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+      <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}>
+        {numPages > 0 && pageDimensions.length > 0 && (
+          <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
+            {virtualItems.map((virtualItem) => {
+              const pageIndex = virtualItem.index;
+              const pageNumber = pageIndex + 1;
+              return (
+                <div
+                  key={virtualItem.key}
+                  data-index={virtualItem.index}
+                  ref={rowVirtualizer.measureElement}
+                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
+                  className="flex justify-center"
                 >
                   <Page
-                      pageNumber={index + 1}
-                      scale={scale}
-                      onRenderError={onRenderError}
-                      renderAnnotationLayer={false}
-                      renderTextLayer={true}
-                      loading={<Skeleton style={{ height: (1122 * scale), width: (794 * scale) }} />}
-                      className="shadow-lg"
+                    pageNumber={pageNumber}
+                    scale={debouncedScale}
+                    onRenderError={onRenderError}
+                    renderAnnotationLayer={true}
+                    renderTextLayer={true}
+                    loading={<Skeleton style={{ height: pageDimensions[pageIndex].height * debouncedScale, width: pageDimensions[pageIndex].width * debouncedScale }} />}
+                    className="shadow-lg"
                   />
                 </div>
-            ))}
+              );
+            })}
           </div>
+        )}
       </Document>
     </div>
   );
 });
 
 PdfViewer.displayName = 'PdfViewer';
-
 export default PdfViewer;
