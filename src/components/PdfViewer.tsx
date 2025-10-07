@@ -1,10 +1,9 @@
 'use client';
-import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef, Children } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
-import { useVirtualizer } from '@tanstack/react-virtual';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -36,56 +35,16 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const [numPages, setNumPages] = useState<number>(0);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const [pageDimensions, setPageDimensions] = useState<{ width: number, height: number }[]>([]);
-  const isMobile = useIsMobile();
-  const [pdfProxy, setPdfProxy] = useState<PDFDocumentProxy | null>(null);
   
-  const rowVirtualizer = useVirtualizer({
-    count: numPages,
-    getScrollElement: () => containerRef.current,
-    estimateSize: (i) => (pageDimensions[i]?.height ?? 1000) + 8, // +8 for margin
-    overscan: isMobile ? 1 : 2,
-  });
-
-  const computePageDimensions = useCallback(async (targetScale: number) => {
-    if (!pdfProxy) return;
-    try {
-      const dims = await Promise.all(
-        Array.from({ length: pdfProxy.numPages }, async (_, i) => {
-          const page = await pdfProxy.getPage(i + 1);
-          const vp = page.getViewport({ scale: targetScale });
-          return { width: Math.ceil(vp.width), height: Math.ceil(vp.height) };
-        })
-      );
-      setPageDimensions(dims);
-      // Tell virtualizer to re-measure after state update
-      setTimeout(() => {
-        try { rowVirtualizer.measure(); } catch (e) { /* ignore if not yet mounted */ }
-      }, 50);
-    } catch (err) {
-      console.error('Failed to compute page dimensions:', err);
-    }
-  }, [pdfProxy, rowVirtualizer]);
-
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
-    setPdfProxy(loadedPdf);
     setNumPages(loadedPdf.numPages);
-
-    await computePageDimensions(scale);
-
     if (onLoadSuccess) {
       onLoadSuccess(loadedPdf);
     }
-  }, [onLoadSuccess, scale, computePageDimensions]);
+  }, [onLoadSuccess]);
 
-  useEffect(() => {
-    if (pdfProxy) {
-      computePageDimensions(scale);
-    }
-  }, [scale, pdfProxy, computePageDimensions]);
 
   function onDocumentLoadError(error: Error) {
-    // This warning is frequent and not critical, related to worker version mismatches.
     if (error.message.includes('API version') && error.message.includes('Worker version')) {
         return;
     }
@@ -98,8 +57,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   }
 
   const onRenderError = useCallback((error: Error) => {
-    // This is a common, non-critical warning when scrolling fast.
-    // It happens when react-pdf cancels a render task for a page that's no longer in view.
     if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
         return; 
     }
@@ -115,79 +72,56 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   useImperativeHandle(ref, () => ({
     scrollToPage: async (page: number) => {
         const pageIndex = page - 1;
-        if (pageIndex < 0 || pageIndex >= numPages) return;
+        if (!containerRef.current || pageIndex < 0 || pageIndex >= numPages) return;
 
-        // 1) Wait for page dimensions to be ready
-        let tries = 0;
-        while ((pageDimensions.length !== numPages) && tries < 40) { // ~2s max
-            await new Promise(r => setTimeout(r, 50));
-            tries++;
-        }
-
-        // 2) Ask the virtualizer to re-measure to ensure offsets are correct
-        try { rowVirtualizer.measure(); } catch (e) { /* ignore if not yet mounted */ }
-
-        // 3) Wait for the target DOM element to exist
         const container = containerRef.current;
-        let el: HTMLElement | null = null;
-        if (container) {
-            let waitTries = 0;
-            while (waitTries < 20) { // ~1s max wait
-                el = container.querySelector<HTMLElement>(`[data-index="${pageIndex}"]`);
-                if (el) break;
-                await new Promise(r => setTimeout(r, 50));
-                waitTries++;
-            }
-        }
+        const pageElement = container.querySelector(`[data-page-number="${page}"]`);
 
-        // 4) If the element is found, use precise offsetTop scrolling. Otherwise, fall back to virtualizer's method.
-        if (el && container) {
-            container.scrollTo({ top: el.offsetTop, behavior: 'auto' });
-        } else {
-            rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', behavior: 'auto' });
+        if (pageElement) {
+            container.scrollTo({
+                top: (pageElement as HTMLElement).offsetTop - container.offsetTop,
+                behavior: 'auto'
+            });
         }
     },
   }));
 
-  const virtualItems = rowVirtualizer.getVirtualItems();
-
   const handleScroll = useCallback(() => {
-    if (!onPageChange || !containerRef.current || virtualItems.length === 0 || !scrollListenerEnabled) return;
+    if (!onPageChange || !containerRef.current || !scrollListenerEnabled || numPages === 0) return;
 
     const container = containerRef.current;
+    const { scrollTop, scrollHeight, clientHeight } = container;
     
     // Check if scrolled to the very bottom
-    if (container.scrollHeight > 0 && container.scrollTop + container.clientHeight >= container.scrollHeight - 10) { // 10px tolerance
-      if (numPages > 0) {
-        onPageChange(numPages);
-      }
+    if (scrollHeight > 0 && scrollTop + clientHeight >= scrollHeight - 10) {
+      onPageChange(numPages);
       return;
     }
 
-    // Find the topmost visible item in the viewport
-    let topmostVisibleIndex = -1;
-    const { scrollTop } = container;
+    const pageElements = Array.from(container.querySelectorAll('[data-page-number]'));
+    let bestVisiblePage = 1;
+    let maxVisibleRatio = 0;
 
-    for (const virtualItem of virtualItems) {
-      if (virtualItem.start >= scrollTop - 10) { // 10px tolerance from top
-        topmostVisibleIndex = virtualItem.index;
-        break;
-      }
+    for (const el of pageElements) {
+        const pageNumber = parseInt(el.getAttribute('data-page-number') || '0', 10);
+        const rect = el.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+
+        const visibleHeight = Math.max(0, Math.min(rect.bottom, containerRect.bottom) - Math.max(rect.top, containerRect.top));
+        const visibleRatio = visibleHeight / rect.height;
+
+        if (visibleRatio > maxVisibleRatio) {
+            maxVisibleRatio = visibleRatio;
+            bestVisiblePage = pageNumber;
+        }
     }
     
-    if (topmostVisibleIndex !== -1) {
-      onPageChange(topmostVisibleIndex + 1);
-    } else if (virtualItems.length > 0) {
-      const lastVirtualItem = virtualItems[virtualItems.length - 1];
-      if (scrollTop > lastVirtualItem.start) {
-        onPageChange(lastVirtualItem.index + 1);
-      }
-    }
-  }, [virtualItems, onPageChange, numPages, scrollListenerEnabled]);
+    onPageChange(bestVisiblePage);
+  }, [onPageChange, numPages, scrollListenerEnabled]);
 
   useEffect(() => {
       const container = containerRef.current;
-      if (!container) return;
+      if (!container || isFullscreen) return; // Don't attach scroll listener in fullscreen
   
       const scrollDebounceTimeout = 100;
       let scrollTimeout: NodeJS.Timeout | null = null;
@@ -199,16 +133,14 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
       container.addEventListener('scroll', debouncedScrollHandler, { passive: true });
       
-      // Initial call
       handleScroll();
 
       return () => {
         container.removeEventListener('scroll', debouncedScrollHandler);
         if(scrollTimeout) clearTimeout(scrollTimeout);
       };
-  }, [handleScroll]);
+  }, [handleScroll, isFullscreen]);
 
-  // SINGLE PAGE FULLSCREEN VIEW
   if (isFullscreen) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center">
@@ -232,7 +164,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     );
   }
 
-  // MULTI-PAGE SCROLLABLE VIEW (Normal mode)
   return (
     <div className="w-full h-full flex flex-col items-center">
       <div 
@@ -247,44 +178,19 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
             loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}
             className="flex justify-center"
         >
-          {numPages > 0 && pageDimensions.length === numPages && (
-              <div
-                  style={{
-                      height: `${rowVirtualizer.getTotalSize()}px`,
-                      width: '100%',
-                      position: 'relative',
-                  }}
-                  className="flex justify-center"
-              >
-                  {virtualItems.map((virtualItem) => (
-                      <div
-                          key={virtualItem.key}
-                          data-index={virtualItem.index}
-                          ref={rowVirtualizer.measureElement}
-                          style={{
-                              position: 'absolute',
-                              top: 0,
-                              left: 0,
-                              width: '100%',
-                              transform: `translateY(${virtualItem.start}px)`,
-                              display: 'flex',
-                              justifyContent: 'center'
-                          }}
-                      >
-                          <div className="mb-2">
-                              <Page
-                                  pageNumber={virtualItem.index + 1}
-                                  scale={scale}
-                                  onRenderError={onRenderError}
-                                  renderAnnotationLayer={false}
-                                  className="shadow-2xl"
-                                  loading={<Skeleton style={{ height: pageDimensions[virtualItem.index]?.height || 1000, width: pageDimensions[virtualItem.index]?.width || 800 }} />}
-                              />
-                          </div>
-                      </div>
-                  ))}
-              </div>
-          )}
+           <div className="flex flex-col items-center gap-4 py-4">
+              {Array.from(new Array(numPages), (el, index) => (
+                 <div key={`page_${index + 1}`} data-page-number={index + 1}>
+                    <Page
+                        pageNumber={index + 1}
+                        scale={scale}
+                        onRenderError={onRenderError}
+                        renderAnnotationLayer={false}
+                        loading={<Skeleton style={{ height: (1122 * scale), width: (794 * scale) }} />}
+                    />
+                 </div>
+              ))}
+           </div>
         </Document>
       </div>
     </div>
