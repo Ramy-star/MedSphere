@@ -59,12 +59,13 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
+    if (!rowVirtualizer.range) return; // FIX: Add guard clause
     const visibleItem = virtualItems.find(item => item.index === rowVirtualizer.range.startIndex);
     if (visibleItem && onPageChange) {
       const newPageNumber = visibleItem.index + 1;
       onPageChange(newPageNumber);
     }
-  }, [virtualItems, onPageChange, rowVirtualizer.range.startIndex]);
+  }, [virtualItems, onPageChange, rowVirtualizer.range]);
 
 
   useImperativeHandle(ref, () => ({
