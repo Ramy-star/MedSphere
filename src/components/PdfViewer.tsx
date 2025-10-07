@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useDebounce } from 'use-debounce';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -55,7 +56,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     getScrollElement: () => containerRef.current,
     estimateSize: (index) => (pageDimensions[index] ? pageDimensions[index].height * debouncedScale : 1000),
     overscan: 1,
-    paddingEnd: 4, // Corresponds to the margin-bottom on the last element
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
@@ -115,7 +115,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                   data-index={virtualItem.index}
                   ref={rowVirtualizer.measureElement}
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
-                  className="flex justify-center md:px-4"
+                  className="flex justify-center w-full"
                 >
                   <div className="shadow-lg" style={{ marginBottom: '4px' }}>
                     <Page
