@@ -614,9 +614,18 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             {/* Right Section */}
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
                 {!isLink && (
+                  <>
                     <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
                         <Download className="w-5 h-5" />
                     </Button>
+                    <Button variant="ghost" size="icon" onClick={() => {
+                      if (previewContainerRef.current) {
+                        previewContainerRef.current.requestFullscreen();
+                      }
+                    }} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Present">
+                        <Presentation className="w-5 h-5" />
+                    </Button>
+                  </>
                 )}
                 <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
                     <ExternalLink className="w-5 h-5" />
@@ -626,8 +635,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onClick={() => setShowChat(!showChat)} 
                     className={cn(
                         "rounded-full px-3 h-8 text-white font-semibold transition-all duration-300 border-0",
-                        "bg-gradient-to-r from-red-500/80 to-blue-500/80 hover:from-red-500 hover:to-blue-500",
-                        showChat && "from-red-600 to-blue-600"
+                        "bg-gradient-to-r from-red-500 via-red-600 to-blue-500 hover:from-red-600 hover:to-blue-600",
+                        showChat && "bg-gradient-to-r from-red-600 via-red-700 to-blue-600"
                     )}
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
