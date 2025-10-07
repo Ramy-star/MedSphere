@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -48,9 +49,11 @@ type PdfControlsProps = {
     pageInput: string,
     setPageInput: (value: string) => void,
     handlePageInputSubmit: (e: React.FormEvent) => void,
+    handlePageInputBlur: (e: React.FocusEvent) => void,
     scaleInput: string,
     handleScaleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
     handleScaleInputSubmit: (e: React.FormEvent) => void,
+    handleScaleInputBlur: (e: React.FocusEvent) => void,
     pageInputRef: React.RefObject<HTMLInputElement>,
 };
 
@@ -66,9 +69,11 @@ const PdfControls = ({
     pageInput,
     setPageInput,
     handlePageInputSubmit,
+    handlePageInputBlur,
     scaleInput,
     handleScaleInputChange,
     handleScaleInputSubmit,
+    handleScaleInputBlur,
     pageInputRef,
 }: PdfControlsProps) => {
     const MAX_ZOOM = 5;
@@ -117,7 +122,7 @@ const PdfControls = ({
               type="text"
               value={pageInput}
               onChange={(e) => setPageInput(e.target.value)}
-              onBlur={handlePageInputSubmit}
+              onBlur={handlePageInputBlur}
               className="w-9 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500 p-0"
               onFocus={(e) => e.target.select()}
             />
@@ -136,6 +141,7 @@ const PdfControls = ({
                 type="text"
                 value={scaleInput}
                 onChange={handleScaleInputChange}
+                onBlur={handleScaleInputBlur}
                 className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
                 onFocus={(e) => e.target.select()}
             />
@@ -289,6 +295,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileContentRef = useRef<HTMLDivElement>(null);
   const scaleBeforeFullscreen = useRef<number>(1);
+  const manualPageInputInProgress = useRef(false);
   
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -340,26 +347,32 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
   
   const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
-    if (pageInputRef.current) {
-        const page = parseInt(pageInput, 10);
-        if (!isNaN(page)) {
-            goToPage(page);
-        }
-    }
-    pageInputRef.current?.blur();
+      e.preventDefault();
+      manualPageInputInProgress.current = false;
+      const page = parseInt(pageInput, 10);
+      if (!isNaN(page)) {
+          goToPage(page);
+      }
   }, [goToPage, pageInput]);
+
+  const handlePageInputBlur = (e: React.FocusEvent) => {
+      handlePageInputSubmit(e);
+  };
   
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       setScaleInput(e.target.value);
   };
 
-  const handleScaleInputSubmit = (e: React.FormEvent) => {
+  const handleScaleInputSubmit = useCallback((e: React.FormEvent) => {
       e.preventDefault();
       const newScale = parseInt(scaleInput.replace('%', ''), 10);
       if (!isNaN(newScale)) {
           setPdfScale(Math.max(MIN_ZOOM, Math.min(newScale / 100, MAX_ZOOM)));
       }
+  }, [scaleInput]);
+
+  const handleScaleInputBlur = (e: React.FocusEvent) => {
+      handleScaleInputSubmit(e);
   };
 
   const fileUrl = item?.metadata?.storagePath;
@@ -373,7 +386,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, []);
 
   useEffect(() => {
-      setPageInput(String(pageNumber));
+      if (!manualPageInputInProgress.current) {
+        setPageInput(String(pageNumber));
+      }
   }, [pageNumber]);
 
   
@@ -654,11 +669,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     zoomIn={zoomIn}
                     zoomOut={zoomOut}
                     pageInput={pageInput}
-                    setPageInput={setPageInput}
+                    setPageInput={(v) => {
+                      manualPageInputInProgress.current = true;
+                      setPageInput(v);
+                    }}
                     handlePageInputSubmit={handlePageInputSubmit}
+                    handlePageInputBlur={handlePageInputBlur}
                     scaleInput={scaleInput}
                     handleScaleInputChange={handleScaleInputChange}
                     handleScaleInputSubmit={handleScaleInputSubmit}
+                    handleScaleInputBlur={handleScaleInputBlur}
                     pageInputRef={pageInputRef}
                 />
             </div>
@@ -754,11 +774,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     zoomIn={zoomIn}
                     zoomOut={zoomOut}
                     pageInput={pageInput}
-                    setPageInput={setPageInput}
+                    setPageInput={(v) => {
+                      manualPageInputInProgress.current = true;
+                      setPageInput(v);
+                    }}
                     handlePageInputSubmit={handlePageInputSubmit}
+                    handlePageInputBlur={handlePageInputBlur}
                     scaleInput={scaleInput}
                     handleScaleInputChange={handleScaleInputChange}
                     handleScaleInputSubmit={handleScaleInputSubmit}
+                    handleScaleInputBlur={handleScaleInputBlur}
                     pageInputRef={pageInputRef}
                   />
               </div>
