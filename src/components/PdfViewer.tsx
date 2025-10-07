@@ -87,7 +87,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     const container = containerRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
     
-    // Check if scrolled to the very bottom
     if (scrollHeight > 0 && scrollTop + clientHeight >= scrollHeight - 10) {
       onPageChange(numPages);
       return;

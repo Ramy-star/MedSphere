@@ -298,23 +298,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
-  
-    const goToPage = useCallback(async (page: number) => {
-        const newPage = Math.max(1, Math.min(page, numPages || 1));
-        setPageNumber(newPage);
-        if (pdfViewerRef.current && !isFullscreen) {
-            pdfViewerRef.current.scrollToPage(newPage);
-        }
-    }, [numPages, isFullscreen]);
 
-
-  useEffect(() => {
-    goToPageRef.current = goToPage;
-  }, [goToPage]);
-
-  const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
-  const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
-  
   const startNewChat = useCallback(() => {
     setChatHistory([]);
     setIsAiThinking(false);
@@ -333,7 +317,36 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     startNewChat();
   }, [startNewChat]);
 
+  const handleClose = () => {
+    onOpenChange(false);
+  };
 
+  // Effect to reset state when the dialog is closed.
+  useEffect(() => {
+    if (!item) {
+      // Delay reset to allow for closing animation
+      setTimeout(() => {
+        resetPdfState();
+      }, 300);
+    }
+  }, [item, resetPdfState]);
+  
+  const goToPage = useCallback(async (page: number) => {
+      const newPage = Math.max(1, Math.min(page, numPages || 1));
+      setPageNumber(newPage);
+      if (pdfViewerRef.current && !isFullscreen) {
+          pdfViewerRef.current.scrollToPage(newPage);
+      }
+  }, [numPages, isFullscreen]);
+
+
+  useEffect(() => {
+    goToPageRef.current = goToPage;
+  }, [goToPage]);
+
+  const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
+  const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
+  
   const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (pageInputRef.current) {
@@ -481,6 +494,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     const page = await pdfProxy.getPage(pageNumberRef.current);
                     const viewport = page.getViewport({ scale: 1 });
                     const container = fileContentRef.current;
+
                     const scaleX = container.clientWidth / viewport.width;
                     const scaleY = container.clientHeight / viewport.height;
                     setPdfScale(Math.max(scaleX, scaleY));
@@ -524,18 +538,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             document.removeEventListener('touchmove', onTouchMove, { capture: true });
         };
     }, [isFullscreen, numPages, pdfProxy, pdfScale]);
-
-    const handleClose = () => {
-        resetPdfState();
-        onOpenChange(false);
-    }
-
-    // Effect to reset state when a new item is selected while the modal is already open
-    useEffect(() => {
-        if(item) {
-            resetPdfState();
-        }
-    }, [item, resetPdfState]);
 
 
   if (!item) return null;
