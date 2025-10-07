@@ -486,7 +486,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     const container = fileContentRef.current;
                     const scaleX = container.clientWidth / viewport.width;
                     const scaleY = container.clientHeight / viewport.height;
-                    setPdfScale(Math.min(scaleX, scaleY));
+                    setPdfScale(Math.max(scaleX, scaleY));
                 }
             } else {
                 setPdfScale(scaleBeforeFullscreen.current);
