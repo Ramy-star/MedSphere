@@ -1,3 +1,4 @@
+
 {
   "name": "nextn",
   "version": "0.1.0",
@@ -63,7 +64,6 @@
     "react-markdown": "^9.0.1",
     "react-pdf": "^7.7.1",
     "recharts": "^2.15.1",
-    "string-replace-loader": "^3.1.0",
     "tailwind-merge": "^3.0.1",
     "tailwindcss-animate": "^1.0.7",
     "use-debounce": "^10.0.1",
