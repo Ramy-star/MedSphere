@@ -626,8 +626,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onClick={() => setShowChat(!showChat)} 
                     className={cn(
                         "rounded-full px-3 h-8 text-white font-semibold transition-all duration-300 border-0",
-                        "bg-gradient-to-r from-red-500/50 via-blue-500/50 to-purple-600/50 hover:from-red-500/70 hover:via-blue-500/70 hover:to-purple-600/70",
-                        showChat && "from-red-500 via-blue-500 to-purple-600"
+                        "bg-gradient-to-r from-red-500/80 to-blue-500/80 hover:from-red-500 hover:to-blue-500",
+                        showChat && "from-red-600 to-blue-600"
                     )}
                 >
                     <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
@@ -857,5 +857,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
 
     
