@@ -21,17 +21,15 @@ type PdfViewerProps = {
   onLoadSuccess?: (pdf: PDFDocumentProxy) => void;
   scale: number;
   onPageChange?: (page: number) => void;
-  scrollListenerEnabled: boolean;
-  setScrollListenerEnabled: (enabled: boolean) => void;
   isFullscreen?: boolean;
   currentPage?: number;
 };
 
 export type PdfViewerRef = {
-  scrollToPage: (page: number) => Promise<void>;
+  scrollToPage: (page: number) => void;
 };
 
-const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled, isFullscreen, currentPage }, ref) => {
+const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, isFullscreen, currentPage }, ref) => {
   const [numPages, setNumPages] = useState<number>(0);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -70,7 +68,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
 
   useImperativeHandle(ref, () => ({
-    scrollToPage: async (page: number) => {
+    scrollToPage: (page: number) => {
         const pageIndex = page - 1;
         if (!containerRef.current || pageIndex < 0 || pageIndex >= numPages) return;
 
@@ -87,7 +85,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   }));
 
   const handleScroll = useCallback(() => {
-    if (!onPageChange || !containerRef.current || !scrollListenerEnabled || numPages === 0) return;
+    if (!onPageChange || !containerRef.current || numPages === 0) return;
 
     const container = containerRef.current;
     const { scrollTop, scrollHeight, clientHeight } = container;
@@ -117,11 +115,11 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     }
     
     onPageChange(bestVisiblePage);
-  }, [onPageChange, numPages, scrollListenerEnabled]);
+  }, [onPageChange, numPages]);
 
   useEffect(() => {
       const container = containerRef.current;
-      if (!container || isFullscreen) return; // Don't attach scroll listener in fullscreen
+      if (!container || isFullscreen) return;
   
       const scrollDebounceTimeout = 100;
       let scrollTimeout: NodeJS.Timeout | null = null;
@@ -140,6 +138,14 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
         if(scrollTimeout) clearTimeout(scrollTimeout);
       };
   }, [handleScroll, isFullscreen]);
+  
+  useEffect(() => {
+    const container = containerRef.current;
+    if (container) {
+      container.scrollTop = 0;
+    }
+  }, [file]);
+
 
   if (isFullscreen) {
     return (
@@ -157,7 +163,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
             onRenderError={onRenderError}
             renderAnnotationLayer={false}
             renderTextLayer={false}
-            className="shadow-2xl"
+            className="shadow-2xl fullscreen:object-contain"
           />
         </Document>
       </div>
@@ -165,34 +171,32 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   }
 
   return (
-    <div className="w-full h-full flex flex-col items-center">
-      <div 
-        ref={containerRef} 
-        className="w-full h-full overflow-y-auto"
+    <div 
+      ref={containerRef} 
+      className="w-full h-full overflow-y-auto"
+    >
+      <Document
+          file={file}
+          onLoadSuccess={onDocumentLoadSuccessInternal}
+          onLoadError={onDocumentLoadError}
+          options={options}
+          loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}
+          className="flex justify-center"
       >
-        <Document
-            file={file}
-            onLoadSuccess={onDocumentLoadSuccessInternal}
-            onLoadError={onDocumentLoadError}
-            options={options}
-            loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}
-            className="flex justify-center"
-        >
-           <div className="flex flex-col items-center gap-4 py-4">
-              {Array.from(new Array(numPages), (el, index) => (
-                 <div key={`page_${index + 1}`} data-page-number={index + 1}>
-                    <Page
-                        pageNumber={index + 1}
-                        scale={scale}
-                        onRenderError={onRenderError}
-                        renderAnnotationLayer={false}
-                        loading={<Skeleton style={{ height: (1122 * scale), width: (794 * scale) }} />}
-                    />
-                 </div>
-              ))}
-           </div>
-        </Document>
-      </div>
+          <div className="flex flex-col items-center gap-4 py-4">
+            {Array.from(new Array(numPages), (el, index) => (
+                <div key={`page_${index + 1}`} data-page-number={index + 1}>
+                  <Page
+                      pageNumber={index + 1}
+                      scale={scale}
+                      onRenderError={onRenderError}
+                      renderAnnotationLayer={false}
+                      loading={<Skeleton style={{ height: (1122 * scale), width: (794 * scale) }} />}
+                  />
+                </div>
+            ))}
+          </div>
+      </Document>
     </div>
   );
 });

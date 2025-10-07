@@ -305,7 +305,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setPageNumber(newPage);
         if (pdfViewerRef.current && !isFullscreen) {
             setScrollListenerEnabled(false);
-            await pdfViewerRef.current.scrollToPage(newPage);
+            pdfViewerRef.current.scrollToPage(newPage);
             setTimeout(() => setScrollListenerEnabled(true), 500); 
         }
     }, [numPages, isFullscreen]);
@@ -413,14 +413,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setError(null);
         setLoading(false);
         setIsExtracting(false);
-        setNumPages(undefined);
-        setPageNumber(1); // Always start from page 1
-        setPdfScale(1);
-        setPdfProxy(null);
-        setScrollListenerEnabled(true);
-        if (previewContainerRef.current) {
-            previewContainerRef.current.scrollTop = 0; // Scroll to top
-        }
+        // Do not reset PDF state here, `key` on FilePreview will handle it
     }
   }, [item, startNewChat]);
   
@@ -722,7 +715,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className={cn("grid flex-1 grid-rows-1 grid-cols-1 fullscreen:overflow-hidden", isFullscreen ? 'bg-black' : 'bg-[#13161C]')}>
+        <main ref={fileContentRef} className={cn("grid flex-1 grid-rows-1 grid-cols-1 fullscreen:overflow-hidden fullscreen:bg-black", isFullscreen ? 'bg-black' : 'bg-[#13161C]')}>
              <div className={cn(
                 "[grid-area:1/1] flex items-center justify-center",
                 isFullscreen ? "overflow-hidden" : "overflow-auto"
@@ -731,6 +724,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               {error && <div className="text-red-400">Error: {error}</div>}
               {!loading && !error && fileUrl && (
                 <FilePreview 
+                    key={item.id}
                     ref={pdfViewerRef}
                     url={fileUrl} 
                     mime={item.metadata?.mime ?? 'application/octet-stream'} 
@@ -738,8 +732,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     onPdfLoadSuccess={handlePdfLoadSuccess}
                     pdfScale={pdfScale}
                     onPageChange={onPageChange}
-                    scrollListenerEnabled={scrollListenerEnabled}
-                    setScrollListenerEnabled={setScrollListenerEnabled}
                     isFullscreen={isFullscreen}
                     currentPage={pageNumber}
                 />
