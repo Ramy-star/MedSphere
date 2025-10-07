@@ -315,6 +315,24 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
   const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
   
+  const startNewChat = useCallback(() => {
+    setChatHistory([]);
+    setIsAiThinking(false);
+    setShowConfirmNewChat(false);
+  }, []);
+
+  const resetPdfState = useCallback(() => {
+    setPdfProxy(null);
+    setNumPages(undefined);
+    setPageNumber(1);
+    setPageInput('1');
+    setPdfScale(1);
+    setDocumentText(null);
+    setIsExtracting(false);
+    setShowChat(false);
+    startNewChat();
+  }, [startNewChat]);
+
 
   const handlePageInputSubmit = useCallback((e: React.FormEvent) => {
     e.preventDefault();
@@ -353,12 +371,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       setPageInput(String(pageNumber));
   }, [pageNumber]);
 
-  const startNewChat = useCallback(() => {
-    setChatHistory([]);
-    setIsAiThinking(false);
-    setShowConfirmNewChat(false);
-  }, []);
-
+  
   const handleNewChat = useCallback(() => {
     if (chatHistory.length > 0) {
         setShowConfirmNewChat(true);
@@ -512,6 +525,18 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         };
     }, [isFullscreen, numPages, pdfProxy, pdfScale]);
 
+    const handleClose = () => {
+        resetPdfState();
+        onOpenChange(false);
+    }
+
+    // Effect to reset state when a new item is selected while the modal is already open
+    useEffect(() => {
+        if(item) {
+            resetPdfState();
+        }
+    }, [item, resetPdfState]);
+
 
   if (!item) return null;
   
@@ -561,11 +586,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     });
   }
 
-
-  const handleClose = () => {
-    setShowChat(false);
-    onOpenChange(false);
-  }
   
  const handleChatSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
     e?.preventDefault();

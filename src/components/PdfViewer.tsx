@@ -171,7 +171,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     <div 
       ref={containerRef} 
       className="w-full h-full overflow-y-auto"
-      onScroll={handleScroll}
     >
       <Document
           file={file}
