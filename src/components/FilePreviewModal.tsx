@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -87,22 +86,10 @@ const PdfControls = ({
 
     if (isMobile) {
         return (
-             <div
-                className="flex items-center justify-center gap-x-0"
-            >
-                <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu text-white">{pageNumber} / {numPages ?? '--'}</span>
-                <div className="h-4 w-px bg-white/20 mx-1"></div>
-                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-white hover:bg-white/20" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
-                    <Minus className="w-4 h-4" />
-                     <span className="sr-only">Zoom Out</span>
-                </Button>
-                <span className='text-xs w-12 text-center font-ubuntu text-white'>
-                    {`${Math.round(pdfScale * 100)}%`}
+            <div className="flex items-center justify-center">
+                <span className="text-xs px-2 tabular-nums whitespace-nowrap font-ubuntu text-white">
+                    {pageNumber} / {numPages ?? '--'}
                 </span>
-                <Button variant="ghost" size="icon" className="rounded-full w-8 h-8 text-white hover:bg-white/20" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
-                    <Plus className="w-4 h-4" />
-                    <span className="sr-only">Zoom In</span>
-                </Button>
             </div>
         );
     }
@@ -654,7 +641,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
 
             {/* Center Section */}
-             <div className={cn("flex-1 items-center justify-center", isMobile ? 'flex' : 'hidden md:flex')}>
+             <div className={cn("flex-1 items-center justify-center", isPdf && (isMobile ? 'flex' : 'hidden md:flex'))}>
                  <PdfControls
                     isMobile={isMobile}
                     numPages={numPages}
