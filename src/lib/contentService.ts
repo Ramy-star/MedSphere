@@ -73,20 +73,32 @@ function createProxiedUrl(secureUrl: string): string {
 
 
 export const contentService = {
-  async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
-    try {
-        let fullText = '';
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items.map(item => 'str' in item ? item.str : '').join(' ');
-            fullText += pageText + '\n';
+    async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
+        const maxPages = pdf.numPages;
+        const textPromises: Promise<string>[] = [];
+
+        for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
+            textPromises.push(
+                pdf.getPage(pageNum)
+                .then(async (page) => {
+                    const textContent = await page.getTextContent();
+                    return textContent.items
+                    .map((item: any) => item.str) // Type assertion to access 'str'
+                    .join(' ');
+                })
+                .catch((error) => {
+                    console.error(`Error extracting text from page ${pageNum}:`, error);
+                    return ''; // Return empty string on error to not fail the whole process
+                })
+            );
         }
-        return fullText;
-    } catch (error) {
-        console.error('Error extracting text from PDF:', error);
-        throw new Error('Failed to extract text from PDF.');
-    }
+        try {
+            const pageTexts = await Promise.all(textPromises);
+            return pageTexts.join('\n');
+        } catch (error) {
+            console.error('Failed to process all pages for text extraction:', error);
+            throw new Error('Failed to extract text from PDF.');
+        }
   },
   
   async seedInitialData() {

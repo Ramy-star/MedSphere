@@ -4,11 +4,12 @@ import { Document, Page, pdfjs } from 'react-pdf';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
-import { useVirtualizer, Virtualizer } from '@tanstack/react-virtual';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
 pdfjs.GlobalWorkerOptions.workerSrc = `https://cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+
 
 const options = {
   cMapUrl: `https://unpkg.com/pdfjs-dist@${pdfjs.version}/cmaps/`,
@@ -29,7 +30,6 @@ type PdfViewerProps = {
 
 export type PdfViewerRef = {
   scrollToPage: (page: number) => Promise<void>;
-  rowVirtualizer: Virtualizer<HTMLDivElement, Element> | null;
 };
 
 const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, scrollListenerEnabled, setScrollListenerEnabled, isFullscreen, currentPage }, ref) => {
@@ -147,7 +147,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
             rowVirtualizer.scrollToIndex(pageIndex, { align: 'start', behavior: 'auto' });
         }
     },
-    rowVirtualizer: rowVirtualizer
   }));
 
   const virtualItems = rowVirtualizer.getVirtualItems();

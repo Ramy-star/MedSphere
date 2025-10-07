@@ -404,16 +404,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
 
   useEffect(() => {
-    startNewChat();
-    setDocumentText(null); 
-    setShowChat(false); 
-    setError(null);
-    setLoading(false);
-    setIsExtracting(false);
-    setNumPages(undefined);
-    setPageNumber(1);
-    setPdfScale(1);
-    setPdfProxy(null);
+    // This effect now resets everything when the item changes
+    if (item) {
+        startNewChat();
+        setDocumentText(null);
+        setShowChat(false);
+        setError(null);
+        setLoading(false);
+        setIsExtracting(false);
+        setNumPages(undefined);
+        setPageNumber(1); // Always start from page 1
+        setPdfScale(1);
+        setPdfProxy(null);
+        setScrollListenerEnabled(true); // Ensure scrolling is enabled
+        if (previewContainerRef.current) {
+            previewContainerRef.current.scrollTop = 0; // Scroll to top
+        }
+    }
   }, [item, startNewChat]);
   
   useEffect(() => {
@@ -481,7 +488,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       if (isNowFullscreen) {
         if (fileContentRef.current) {
           scaleBeforeFullscreen.current = pdfScale;
-          // Calculate scale to fit
           if (pdfProxy) {
             const page = await pdfProxy.getPage(pageNumberRef.current);
             const viewport = page.getViewport({ scale: 1 });
@@ -506,13 +512,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
-        // Only act when in fullscreen
         if (!document.fullscreenElement) return;
 
-        // Prevent default browser action for arrow keys
-        if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(e.key)) {
-            e.preventDefault();
-        }
+        e.preventDefault();
 
         const current = pageNumberRef.current;
         const total = numPages || 0;
@@ -536,18 +538,18 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         }
     };
 
-    // Add listeners when the component mounts
-    document.addEventListener('keydown', onKeyDown, true);
-    document.addEventListener('wheel', onWheel, { capture: true, passive: false });
-    document.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
+    if (isFullscreen) {
+        document.addEventListener('keydown', onKeyDown, true);
+        document.addEventListener('wheel', onWheel, { capture: true, passive: false });
+        document.addEventListener('touchmove', onTouchMove, { capture: true, passive: false });
+    }
 
-    // Clean up the listeners when the component unmounts
     return () => {
         document.removeEventListener('keydown', onKeyDown, true);
         document.removeEventListener('wheel', onWheel, { capture: true });
         document.removeEventListener('touchmove', onTouchMove, { capture: true });
     };
-  }, [numPages]); // Rerun if numPages changes
+  }, [numPages, isFullscreen]);
 
   if (!item) return null;
   
@@ -735,7 +737,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </header>
 
         <main ref={fileContentRef} className="grid flex-1 grid-rows-1 grid-cols-1 bg-[#13161C] fullscreen:overflow-hidden">
-            <div className={cn(
+             <div className={cn(
                 "[grid-area:1/1] flex items-center justify-center",
                 isFullscreen ? "overflow-hidden" : "overflow-auto"
             )}>
