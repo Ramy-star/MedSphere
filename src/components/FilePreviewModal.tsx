@@ -306,6 +306,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (pdfViewerRef.current && !isFullscreen) {
         setScrollListenerEnabled(false);
         await pdfViewerRef.current.scrollToPage(newPage);
+        // We re-enable the listener after a short delay to prevent the scroll
+        // event from immediately firing and changing the page number back.
         setTimeout(() => setScrollListenerEnabled(true), 500); 
     }
   }, [numPages, isFullscreen]);
@@ -492,9 +494,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             const page = await pdfProxy.getPage(pageNumberRef.current);
             const viewport = page.getViewport({ scale: 1 });
             const container = fileContentRef.current;
+            // Use Math.max to fill the screen (cover mode)
             const scaleX = container.clientWidth / viewport.width;
             const scaleY = container.clientHeight / viewport.height;
-            setPdfScale(Math.min(scaleX, scaleY));
+            setPdfScale(Math.max(scaleX, scaleY));
           }
         }
       } else {
