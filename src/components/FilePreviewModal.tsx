@@ -281,9 +281,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
-  
-  const pageNumberRef = useRef(pageNumber);
-  pageNumberRef.current = pageNumber;
 
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
@@ -293,8 +290,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const fileContentRef = useRef<HTMLDivElement>(null);
   const scaleBeforeFullscreen = useRef<number>(1);
   
-  const goToPageRef = useRef<(page: number) => void>(() => {});
-
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
@@ -334,15 +329,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
+      setPageNumber(newPage);
       if (pdfViewerRef.current) {
           pdfViewerRef.current.scrollToPage(newPage);
       }
   }, [numPages]);
 
-
-  useEffect(() => {
-    goToPageRef.current = goToPage;
-  }, [goToPage]);
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
   const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
@@ -491,7 +483,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             if (isNowFullscreen) {
                 if (fileContentRef.current && pdfProxy) {
                     scaleBeforeFullscreen.current = pdfScale;
-                    const page = await pdfProxy.getPage(pageNumberRef.current);
+                    const page = await pdfProxy.getPage(pageNumber);
                     const viewport = page.getViewport({ scale: 1 });
                     
                     const screenWidth = window.innerWidth;
@@ -510,12 +502,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         const onKeyDown = (e: KeyboardEvent) => {
             if (!document.fullscreenElement) return;
             e.preventDefault();
-            const current = pageNumberRef.current;
             const total = numPages || 0;
-            if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && current < total) {
-                goToPageRef.current(current + 1);
-            } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp') && current > 1) {
-                goToPageRef.current(current - 1);
+
+            if ((e.key === 'ArrowRight' || e.key === 'ArrowDown') && pageNumber < total) {
+                goToPage(pageNumber + 1);
+            } else if ((e.key === 'ArrowLeft' || e.key === 'ArrowUp') && pageNumber > 1) {
+                goToPage(pageNumber - 1);
             }
         };
 
@@ -540,7 +532,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             document.removeEventListener('wheel', onWheel, { capture: true });
             document.removeEventListener('touchmove', onTouchMove, { capture: true });
         };
-    }, [isFullscreen, numPages, pdfProxy, pdfScale]);
+    }, [isFullscreen, numPages, pdfProxy, pdfScale, pageNumber, goToPage]);
 
 
   if (!item) return null;

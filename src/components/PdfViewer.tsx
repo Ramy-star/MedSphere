@@ -34,7 +34,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const [debouncedScale] = useDebounce(scale, 100);
+  const [debouncedScale] = useDebounce(scale, 50); // Speed up debounce for zoom
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
@@ -53,15 +53,17 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (index) => (pageDimensions[index] ? pageDimensions[index].height * debouncedScale : 1000),
-    overscan: 2,
+    overscan: 1, // Reduce overscan for better performance
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
-    if (!rowVirtualizer.range) return; // FIX: Add guard clause
+    if (!onPageChange || !virtualItems || virtualItems.length === 0 || !rowVirtualizer.range) {
+      return;
+    }
     const visibleItem = virtualItems.find(item => item.index === rowVirtualizer.range.startIndex);
-    if (visibleItem && onPageChange) {
+    if (visibleItem) {
       const newPageNumber = visibleItem.index + 1;
       onPageChange(newPageNumber);
     }
@@ -70,7 +72,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
   useImperativeHandle(ref, () => ({
     scrollToPage: (page: number) => {
-      rowVirtualizer.scrollToIndex(page - 1, { align: 'start', behavior: 'auto' });
+      rowVirtualizer.scrollToIndex(page - 1, { align: 'start', behavior: 'smooth' });
     },
   }));
   
@@ -89,7 +91,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
   if (isFullscreen) {
     return (
-      <div className="w-full h-full flex flex-col items-center justify-center">
+      <div className="w-full h-full flex flex-col items-center justify-center bg-black">
         <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<Skeleton className="h-[80vh] w-[80%]" />}>
           <Page pageNumber={currentPage || 1} scale={scale} onRenderError={onRenderError} renderAnnotationLayer={false} renderTextLayer={false} className="shadow-2xl fullscreen:object-contain" />
         </Document>
@@ -111,17 +113,18 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                   data-index={virtualItem.index}
                   ref={rowVirtualizer.measureElement}
                   style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
-                  className="flex justify-center"
+                  className="flex justify-center px-2 pt-2"
                 >
-                  <Page
-                    pageNumber={pageNumber}
-                    scale={debouncedScale}
-                    onRenderError={onRenderError}
-                    renderAnnotationLayer={true}
-                    renderTextLayer={true}
-                    loading={<Skeleton style={{ height: pageDimensions[pageIndex].height * debouncedScale, width: pageDimensions[pageIndex].width * debouncedScale }} />}
-                    className="shadow-lg"
-                  />
+                  <div className="shadow-lg mb-2">
+                    <Page
+                      pageNumber={pageNumber}
+                      scale={debouncedScale}
+                      onRenderError={onRenderError}
+                      renderAnnotationLayer={true}
+                      renderTextLayer={true}
+                      loading={<Skeleton style={{ height: pageDimensions[pageIndex]?.height * debouncedScale || 1000, width: pageDimensions[pageIndex]?.width * debouncedScale || 700 }} />}
+                    />
+                  </div>
                 </div>
               );
             })}
