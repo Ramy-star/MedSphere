@@ -69,6 +69,19 @@ const nextConfig: NextConfig = {
       }
     }
 
+    // Fix for Handlebars `require.extensions` issue with webpack
+    config.module = config.module || {};
+    config.module.rules = config.module.rules || [];
+    config.module.rules.push({
+      test: /\.js$/,
+      include: /node_modules\/handlebars\//,
+      loader: 'string-replace-loader',
+      options: {
+        search: 'require.extensions',
+        replace: 'null',
+      },
+    });
+
     return config;
   },
 };
