@@ -400,22 +400,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [isMobile, documentText, isExtracting, toast]);
   
-
-  useEffect(() => {
-    // This effect now resets everything when the item changes
-    if (item) {
-        setPageNumber(1);
-        setNumPages(undefined);
-        setPdfProxy(null);
-        startNewChat();
-        setDocumentText(null);
-        setShowChat(false);
-        setError(null);
-        setLoading(false);
-        setIsExtracting(false);
-    }
-  }, [item, startNewChat]);
-  
   useEffect(() => {
     setScaleInput(`${Math.round(pdfScale * 100)}%`);
   }, [pdfScale]);
