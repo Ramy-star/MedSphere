@@ -142,16 +142,14 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
             )}
         </AnimatePresence>
         
-        <div className={cn("flex items-center")}>
-            <Button 
-                variant="ghost" 
-                size="icon" 
-                onClick={() => setOpen(!open)} 
-                className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8 rounded-full"
-            >
-                <Menu size={20} />
-            </Button>
-        </div>
+        <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={() => setOpen(!open)} 
+            className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8 rounded-full -mr-1"
+        >
+            <Menu size={20} />
+        </Button>
       </div>
 
       <nav className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1">
