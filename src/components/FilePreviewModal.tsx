@@ -901,7 +901,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 448, opacity: 1 }}
                     exit={{ width: 0, opacity: 0, transition: { duration: 0.2, ease: 'easeOut' } }}
                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full"
+                    className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full border-l border-white/10"
                     aria-label="AI Chat Panel"
                 >
                     {chatViewContent}
