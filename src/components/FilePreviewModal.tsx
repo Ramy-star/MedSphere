@@ -699,22 +699,25 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <ExternalLink className="w-5 h-5" />
                 </Button>
                 {isChatAvailable && (
-                <Button 
-                    onClick={() => setShowChat(!showChat)} 
-                    className={cn(
-                        "rounded-full px-3 h-8 text-white font-semibold transition-all duration-300",
-                        "bg-gradient-to-r from-red-500 via-red-600 to-blue-500 hover:from-red-600 hover:to-blue-600",
-                        showChat && "bg-gradient-to-r from-red-600 via-red-700 to-blue-600"
-                    )}
-                >
-                    <Sparkles className="mr-0 sm:mr-2 h-4 w-4"/>
-                    <span className="hidden sm:inline">
-                      Ask AI
-                    </span>
-                    <span className="sm:hidden">
-                      Ask AI
-                    </span>
-                </Button>
+                    <Button
+                        onClick={() => setShowChat(!showChat)}
+                        className={cn(
+                            "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden",
+                            "bg-gradient-to-r from-blue-500 to-red-500",
+                            "hover:saturate-150 active:scale-95",
+                            !showChat && "saturate-50 brightness-75"
+                        )}
+                        style={{
+                            backgroundSize: '200% 200%',
+                        }}
+                    >
+                        <span className="absolute inset-0 bg-gradient-to-r from-blue-500 to-red-500 transition-all duration-500 ease-in-out group-hover:opacity-0" />
+                        <div className="flex items-center relative z-10">
+                            <Sparkles className="mr-0 sm:mr-2 h-4 w-4" />
+                            <span className="hidden sm:inline font-bold">Ask AI</span>
+                            <span className="sm:hidden font-bold">Ask AI</span>
+                        </div>
+                    </Button>
                 )}
             </div>
         </header>
