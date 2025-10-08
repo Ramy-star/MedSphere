@@ -57,7 +57,9 @@ function SearchResults() {
         setIsSearching(true);
         try {
             const searchResults = await search(query, allItems);
-            setResults(searchResults);
+            // Filter results to only include files and links
+            const fileResults = searchResults.filter(item => item.type === 'FILE' || item.type === 'LINK');
+            setResults(fileResults);
         } catch (error) {
             console.error("Search failed:", error);
             setResults([]);
