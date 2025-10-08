@@ -703,14 +703,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         onClick={() => setShowChat(!showChat)}
                         className={cn(
                             "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
-                            "bg-gradient-to-r",
-                            "hover:scale-105 active:scale-95 active:brightness-75",
-                            !showChat && "from-[#2d77d1] to-[#d13a3a]",
-                            showChat && "from-[#2b7de9] to-[#f03232]"
+                            "active:scale-95",
+                             !showChat && "bg-gradient-to-r from-[#2968b5] to-[#b53434]",
+                             showChat && "bg-gradient-to-r from-[#2162bb] to-[#d42b2b]"
                         )}
-                        style={{
-                            backgroundSize: '200% 200%',
-                        }}
                     >
                         <div className="flex items-center relative z-10">
                             <Sparkles className="mr-0 sm:mr-2 h-4 w-4" />
