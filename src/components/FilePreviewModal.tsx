@@ -629,22 +629,24 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
              <div className="flex items-center gap-1 overflow-hidden flex-1">
-                <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
-                    <X className="w-6 h-6" />
-                </Button>
-                
-                <div className="md:hidden">
-                  {!isLink && (
-                      <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
-                          <Download className="w-5 h-5" />
-                      </Button>
-                  )}
-                   <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
-                      <ExternalLink className="w-5 h-5" />
-                  </Button>
+                <div className="flex items-center gap-1 md:hidden">
+                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
+                        <X className="w-5 h-5" />
+                    </Button>
+                    {!isLink && (
+                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
+                            <Download className="w-5 h-5" />
+                        </Button>
+                    )}
+                    <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
+                        <ExternalLink className="w-5 h-5" />
+                    </Button>
                 </div>
 
                 <div className="hidden md:flex items-center gap-3 overflow-hidden">
+                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
+                       <X className="w-6 h-6" />
+                    </Button>
                     <Icon className={cn("w-5 h-5 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
                        <span className={cn("text-sm text-white font-medium truncate")}>{item.name}</span>
