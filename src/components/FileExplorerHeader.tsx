@@ -46,13 +46,13 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
 
     if (currentFolder.metadata?.iconURL) {
       return (
-        <div className="relative w-8 h-8 sm:w-10 sm:h-10">
+        <div className="relative w-7 h-7 sm:w-8 sm:h-8">
           <Image
             src={currentFolder.metadata.iconURL}
             alt={currentFolder.name}
             fill
             className="object-cover rounded-md"
-            sizes="(max-width: 640px) 32px, 40px"
+            sizes="(max-width: 640px) 28px, 32px"
           />
         </div>
       );
@@ -81,7 +81,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
         break;
     }
 
-    return <Icon className={`w-8 h-8 sm:w-10 sm:h-10 ${iconColor}`} />;
+    return <Icon className={`w-7 h-7 sm:w-8 sm:h-8 ${iconColor}`} />;
   };
 
   return (
@@ -95,9 +95,9 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
       </div>
       
       <div className="flex items-center justify-between min-h-[40px] flex-wrap gap-4">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           {renderIcon()}
-          <h1 className="text-xl sm:text-2xl font-bold text-white">
+          <h1 className="text-lg sm:text-xl font-bold text-white">
             {currentFolder ? currentFolder.name : ''}
           </h1>
         </div>
