@@ -702,21 +702,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button
                         onClick={() => setShowChat(!showChat)}
                         className={cn(
-                            "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden",
-                            "bg-gradient-to-r from-blue-400 to-red-400",
-                            "hover:scale-105 active:scale-95",
-                            !showChat && "saturate-100 brightness-90",
-                            showChat && "saturate-150 brightness-80"
+                            "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
+                            "bg-gradient-to-r",
+                            "hover:scale-105 active:scale-95 active:brightness-75",
+                            !showChat && "from-[#2d77d1] to-[#d13a3a]",
+                            showChat && "from-[#2b7de9] to-[#f03232]"
                         )}
                         style={{
                             backgroundSize: '200% 200%',
                         }}
                     >
-                        <span className="absolute inset-0 bg-gradient-to-r from-blue-500 to-red-500 transition-all duration-500 ease-in-out group-hover:opacity-0" />
                         <div className="flex items-center relative z-10">
                             <Sparkles className="mr-0 sm:mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline font-bold">Ask AI</span>
-                            <span className="sm:hidden font-bold">Ask AI</span>
+                            <span className="hidden sm:inline">Ask AI</span>
+                            <span className="sm:hidden">Ask AI</span>
                         </div>
                     </Button>
                 )}
