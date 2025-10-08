@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, forwardRef } from 'react';
@@ -88,9 +87,9 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
   if (mime.startsWith('image/')) {
     return (
-        <div className="w-full h-full overflow-auto flex items-center justify-center">
+        <div className="w-full h-full overflow-auto flex items-center justify-center p-4 md:p-8">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={contentUrl} alt={itemName} className="max-w-none max-h-none" />
+            <img src={contentUrl} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
         </div>
     );
   }
