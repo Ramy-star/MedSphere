@@ -628,10 +628,22 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     >
         <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
-             <div className="flex items-center gap-2 overflow-hidden flex-1">
+             <div className="flex items-center gap-1 overflow-hidden flex-1">
                 <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                     <X className="w-6 h-6" />
                 </Button>
+                
+                <div className="md:hidden">
+                  {!isLink && (
+                      <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
+                          <Download className="w-5 h-5" />
+                      </Button>
+                  )}
+                   <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
+                      <ExternalLink className="w-5 h-5" />
+                  </Button>
+                </div>
+
                 <div className="hidden md:flex items-center gap-3 overflow-hidden">
                     <Icon className={cn("w-5 h-5 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
@@ -667,45 +679,47 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
             {/* Right Section */}
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
-                {!isLink && (
-                  <>
-                    <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
-                        <Download className="w-5 h-5" />
-                    </Button>
-                    {!isMobile && (
-                        <Button 
-                        variant="ghost" 
-                        size="icon" 
-                        onClick={() => {
-                            if (fileContentRef.current) {
-                            fileContentRef.current.requestFullscreen();
-                            toast({
-                                title: "Presentation Mode",
-                                description: "To exit fullscreen, press the ESC key.",
-                                duration: 3000,
-                            })
-                            }
-                        }} 
-                        disabled={!fileUrl} 
-                        className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
-                        title="Present"
-                        >
-                            <Presentation className="w-5 h-5" />
+                <div className='hidden md:flex items-center gap-1 sm:gap-2'>
+                    {!isLink && (
+                    <>
+                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
+                            <Download className="w-5 h-5" />
                         </Button>
+                        {!isMobile && (
+                            <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => {
+                                if (fileContentRef.current) {
+                                fileContentRef.current.requestFullscreen();
+                                toast({
+                                    title: "Presentation Mode",
+                                    description: "To exit fullscreen, press the ESC key.",
+                                    duration: 3000,
+                                })
+                                }
+                            }} 
+                            disabled={!fileUrl} 
+                            className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
+                            title="Present"
+                            >
+                                <Presentation className="w-5 h-5" />
+                            </Button>
+                        )}
+                    </>
                     )}
-                  </>
-                )}
-                <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
-                    <ExternalLink className="w-5 h-5" />
-                </Button>
+                    <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
+                        <ExternalLink className="w-5 h-5" />
+                    </Button>
+                </div>
                 {isChatAvailable && (
                     <Button
                         onClick={() => setShowChat(!showChat)}
                         className={cn(
                             "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
                             "active:scale-95",
-                             !showChat && "bg-gradient-to-r from-[#2968b5] to-[#b53434]",
-                             showChat && "bg-gradient-to-r from-[#206eff] to-[#ff3333]"
+                             !showChat && "bg-gradient-to-r from-[#2968b5] to-[#C42929]",
+                             showChat && "bg-gradient-to-r from-[#1263FF] to-[#D11111]"
                         )}
                     >
                         <div className="flex items-center relative z-10">
