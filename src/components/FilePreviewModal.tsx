@@ -704,9 +704,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         className={cn(
                             "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden",
                             "bg-gradient-to-r from-blue-500 to-red-500",
-                            "hover:saturate-150 active:scale-95",
-                            !showChat && "saturate-[.65] brightness-90",
-                            showChat && "saturate-100 brightness-105"
+                            "hover:scale-105 active:scale-95",
+                            !showChat && "saturate-[.75] brightness-95",
+                            showChat && "saturate-100 brightness-110"
                         )}
                         style={{
                             backgroundSize: '200% 200%',
