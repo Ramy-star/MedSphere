@@ -449,7 +449,7 @@ export function FolderGrid({
                   parentId={parentId}
                   onFileSelected={onFileSelected}
                   trigger={
-                    <Button className="mt-6 rounded-xl active:scale-95 transition-transform">
+                    <Button className="mt-6 rounded-2xl active:scale-95 transition-transform">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Content
                     </Button>
