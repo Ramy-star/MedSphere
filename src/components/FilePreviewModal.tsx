@@ -783,7 +783,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </header>
         <div 
             ref={chatContainerRef} 
-            className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
+            className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6", isMobile && "pb-20")}
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
