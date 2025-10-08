@@ -90,7 +90,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     return (
         <div className="w-full h-full overflow-auto flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={contentUrl} alt={itemName} className="max-w-none max-h-none object-contain" />
+            <img src={contentUrl} alt={itemName} className="max-w-none max-h-none" />
         </div>
     );
   }
