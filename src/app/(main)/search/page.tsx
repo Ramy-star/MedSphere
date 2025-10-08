@@ -29,6 +29,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser } from '@/firebase/auth/use-user';
 import { ChangeIconDialog } from '@/components/ChangeIconDialog';
 import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -113,10 +114,10 @@ function SearchResults() {
                 ) : (
                     <div className="flex flex-col">
                         {results.length > 0 ? (
-                            results.map((item) => (
+                            results.map((item, index) => (
                                  <div
                                     key={item.id}
-                                    className="border-b border-white/10"
+                                    className={cn("border-white/10", index !== results.length - 1 && "border-b")}
                                 >
                                     {(item.type === 'FILE' || item.type === 'LINK') && (
                                          <FileCard

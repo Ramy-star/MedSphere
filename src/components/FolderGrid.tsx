@@ -134,8 +134,9 @@ const SortableList = ({
                               <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                           </motion.div>
                         ))}
-                        {items.map((it: Content) => {
+                        {items.map((it: Content, index: number) => {
                             const itemKey = it.id;
+                            const isLastItem = index === items.length - 1;
 
                             let content;
                             if (it.type === 'SUBJECT') {
@@ -164,7 +165,7 @@ const SortableList = ({
                                 return (
                                    <div
                                       key={itemKey}
-                                      className="border-b border-white/10"
+                                      className={cn("border-white/10", !isLastItem && "border-b")}
                                     >
                                       {content}
                                     </div>
@@ -176,7 +177,7 @@ const SortableList = ({
                                     key={itemKey}
                                     variants={itemVariants(isMobile)}
                                     exit="exit"
-                                    className={cn(!isSubjectView && "border-b border-white/10")}
+                                    className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
                                 >
                                     {isSubjectView ? <motion.div variants={itemVariants(isMobile)}>{content}</motion.div> : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
                                 </motion.div>
@@ -229,8 +230,9 @@ const NonSortableList = ({
                         <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                     </motion.div>
                 ))}
-                {items.map((it) => {
+                {items.map((it, index) => {
                      const itemKey = it.id;
+                     const isLastItem = index === items.length - 1;
  
                      let content;
                      if (it.type === 'SUBJECT') {
@@ -261,7 +263,7 @@ const NonSortableList = ({
                              variants={itemVariants(isMobile)}
                              exit="exit"
                              // Add border here for mobile consistency
-                             className={cn("border-b border-white/10", isSubjectView && "border-b-0")}
+                             className={cn("border-white/10", !isSubjectView && !isLastItem && "border-b")}
                          >
                              {content}
                          </motion.div>
