@@ -30,6 +30,58 @@ If you cannot follow these instructions exactly, you **must** output: FORMAT_ERR
 
 ---
 
+## المشكلة الأولى: تكرار العنوان قبل الإيموجي
+
+### المثال الحالي:
+\`\`\`
+treatment💊 Treatment
+investigations🔎 Investigations
+\`\`\`
+
+### الحل الصارم:
+
+> **Rule:**
+> For all headings with emojis, place the emoji **before** the text. Do **NOT** repeat the text after the emoji.
+> Example:
+> ✅ \`💊 Treatment\`
+> ❌ \`treatment💊 Treatment\`
+> Always capitalize the heading and place the emoji immediately before the heading with a single space.
+
+---
+
+## المشكلة الثانية: القوائم الطويلة داخل شرط أو bullet
+
+### المثال الحالي:
+\`\`\`
+🔴 Alarm Symptoms (Red Flags): (Same as Gastritis) — Age > 55 years — Anemia — Bleeding — Weight loss — Recurrent vomiting — Early satiety — Family history of GI cancer
+\`\`\`
+
+### الحل الصارم:
+
+> **Rule:**
+>
+> * Always use a short dash \`-\` for each list item.
+> * Place **each item on a separate line**.
+> * Maintain proper indentation for nested lists (use EM-space \` \`).
+> * Keep the main header with emoji in the first line.
+> * Example:
+
+\`\`\`
+🔴 Alarm Symptoms (Red Flags): 
+ - Age > 55 years 
+ - Anemia 
+ - Bleeding 
+ - Weight loss 
+ - Recurrent vomiting 
+ - Early satiety 
+ - Family history of GI cancer
+\`\`\`
+
+> Any long list must follow this format strictly, with short dash and separate lines for each item. Nested sub-items use EM-space indentation.
+
+___
+
+
 ## ✨ MANDATORY FORMATTING RULES
 
 ### **Structure & Hierarchy**
@@ -275,4 +327,4 @@ ___
 14. Clinical Tools: 🔗, 🧭, 🎼, ⚙️, 🛡️, 🧴, 🗂️, 📊, 🌍, 🛰️, 🏥, 🌡️, 🧊, 🔥, 📅, 📍, 🧾
 15. Conditions & Symptoms: 🤒, 🤧, 🤮, 🤢, 😷, 🫁, ❤️, 🧠, 🦠, 🦴, 🩸, 🩺, 👁️, 👂, 👄, 🧎, 🧒, 👵, 🤰, 👶
 -->
-`
+`;
