@@ -141,7 +141,7 @@ export const FileCard = React.memo(function FileCard({
     
     return (
         <div 
-            className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg md:px-3 px-4 cursor-pointer"
+            className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg md:px-3 px-4"
             onClick={handleClick}
         >
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
@@ -184,12 +184,6 @@ export const FileCard = React.memo(function FileCard({
                         className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
                         align="end"
                     >
-                        {isAdmin && (
-                            <DropdownMenuItem onClick={onRename} className="cursor-pointer">
-                                <Edit className="mr-2 h-4 w-4" />
-                                <span>Rename</span>
-                            </DropdownMenuItem>
-                        )}
                         {!isLink && (
                             <DropdownMenuItem 
                                 onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
@@ -207,6 +201,10 @@ export const FileCard = React.memo(function FileCard({
                         {isAdmin && (
                             <>
                                 <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={onRename} className="cursor-pointer">
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    <span>Rename</span>
+                                </DropdownMenuItem>
                                 <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
@@ -219,3 +217,4 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
+

@@ -43,6 +43,28 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
       return <Folder className="w-8 h-8 text-yellow-400" />;
     }
     
+    const DropdownContent = () => (
+      <DropdownMenuContent 
+          className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
+          align="end"
+          onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+      >
+          <DropdownMenuItem onClick={onRename} className="cursor-pointer">
+              <Edit className="mr-2 h-4 w-4" />
+              <span>Rename</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => onIconChange(item)} className="cursor-pointer">
+              <ImageIcon className="mr-2 h-4 w-4" />
+              <span>Change Icon</span>
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
+              <Trash2 className="mr-2 h-4 w-4" />
+              <span>Delete</span>
+          </DropdownMenuItem>
+      </DropdownMenuContent>
+    );
+
     if (displayAs === 'list') {
         return (
              <Link 
@@ -83,25 +105,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                                     <MoreVertical className="w-5 h-5" />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent 
-                                className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
-                                align="end"
-                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                            >
-                                <DropdownMenuItem onClick={onRename} className="cursor-pointer">
-                                    <Edit className="mr-2 h-4 w-4" />
-                                    <span>Rename</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => onIconChange(item)} className="cursor-pointer">
-                                    <ImageIcon className="mr-2 h-4 w-4" />
-                                    <span>Change Icon</span>
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Delete</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
+                            <DropdownContent />
                         </DropdownMenu>
                     )}
                  </div>
@@ -128,25 +132,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                                   <MoreVertical className="w-5 h-5" />
                               </Button>
                           </DropdownMenuTrigger>
-                          <DropdownMenuContent 
-                              className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
-                              align="end"
-                              onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
-                          >
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRename(); }} className="cursor-pointer">
-                                  <Edit className="mr-2 h-4 w-4" />
-                                  <span>Rename</span>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onIconChange(item); }} className="cursor-pointer">
-                                  <ImageIcon className="mr-2 h-4 w-4" />
-                                  <span>Change Icon</span>
-                              </DropdownMenuItem>
-                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(); }} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                                  <Trash2 className="mr-2 h-4 w-4" />
-                                  <span>Delete</span>
-                              </DropdownMenuItem>
-                          </DropdownMenuContent>
+                          <DropdownContent />
                       </DropdownMenu>
                   )}
               </div>
