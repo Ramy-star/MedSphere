@@ -705,8 +705,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden",
                             "bg-gradient-to-r from-blue-400 to-red-400",
                             "hover:scale-105 active:scale-95",
-                            !showChat && "saturate-50 brightness-75",
-                            showChat && "saturate-125 brightness-90"
+                            !showChat && "saturate-100 brightness-90",
+                            showChat && "saturate-150 brightness-80"
                         )}
                         style={{
                             backgroundSize: '200% 200%',
