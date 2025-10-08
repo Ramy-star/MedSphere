@@ -146,7 +146,6 @@ Use emojis **sparingly and purposefully**:
 
 
 **Rules:**
-- Maximum 3-5 emojis per response
 - Only use when they add value
 - Never use in serious clinical descriptions
 - Avoid overuse - this is medical education, not social media

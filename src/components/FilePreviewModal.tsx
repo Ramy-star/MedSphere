@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -217,6 +218,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
                 {copiedMessageId === messageId ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
             </button>
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg md:text-xl" {...props} />,
                 h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base md:text-lg" {...props} />,
@@ -783,7 +785,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </header>
         <div 
             ref={chatContainerRef} 
-            className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6", isMobile && "pb-20")}
+            className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6 pb-20")}
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
