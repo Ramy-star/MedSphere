@@ -165,10 +165,9 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                 className={cn(
                 'p-2.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center',
                 open ? 'justify-between' : 'justify-center',
-                (isLevelActive && open) && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
-                (!open && isPathActive) && 'bg-blue-500/20 text-white',
+                isPathActive && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
                 )}
-                whileHover={{ backgroundColor: (isLevelActive && open) ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
+                whileHover={{ backgroundColor: isPathActive ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
                 transition={{ duration: 0.2 }}
                 layout
             >
