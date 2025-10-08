@@ -69,42 +69,38 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                     <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-ubuntu">
                         {createdAt}
                     </p>
-                    <p className="text-xs text-slate-400 hidden sm:block w-20 text-right font-ubuntu">
-                        --
-                    </p>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
+                    
+                    {isAdmin && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
+                                >
+                                    <MoreVertical className="w-5 h-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent 
+                                className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
+                                align="end"
                             >
-                                <MoreVertical className="w-5 h-5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent 
-                            className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
-                            align="end"
-                        >
-                            {isAdmin && (
-                                <>
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRename(); }} className="cursor-pointer">
-                                        <Edit className="mr-2 h-4 w-4" />
-                                        <span>Rename</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onIconChange(item); }} className="cursor-pointer">
-                                        <ImageIcon className="mr-2 h-4 w-4" />
-                                        <span>Change Icon</span>
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(); }} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        <span>Delete</span>
-                                    </DropdownMenuItem>
-                                </>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onRename(); }} className="cursor-pointer">
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    <span>Rename</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onIconChange(item); }} className="cursor-pointer">
+                                    <ImageIcon className="mr-2 h-4 w-4" />
+                                    <span>Change Icon</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(); }} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Delete</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                  </div>
             </div>
         )
