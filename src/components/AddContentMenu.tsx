@@ -98,7 +98,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       />
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
-          {trigger || <Button size="sm" className="rounded-full"><Plus className="mr-2 h-4 w-4" />Add Content</Button>}
+          {trigger || <Button size="sm" className="rounded-xl active:scale-95 transition-transform"><Plus className="mr-2 h-4 w-4" />Add Content</Button>}
         </PopoverTrigger>
         <PopoverContent 
           className="w-56 p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10" 

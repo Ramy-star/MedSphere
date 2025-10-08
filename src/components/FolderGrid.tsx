@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -448,7 +449,7 @@ export function FolderGrid({
                   parentId={parentId}
                   onFileSelected={onFileSelected}
                   trigger={
-                    <Button className="mt-6 rounded-xl">
+                    <Button className="mt-6 rounded-xl active:scale-95 transition-transform">
                       <Plus className="mr-2 h-4 w-4" />
                       Add Content
                     </Button>
