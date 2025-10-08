@@ -127,98 +127,95 @@ export const FileCard = React.memo(function FileCard({
     const storagePath = item.metadata?.storagePath;
     const openUrl = isLink ? linkUrl : storagePath;
 
-    const fileContent = (
-      <>
-        <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
-            {showDragHandle && !isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
-        </div>
-        <div 
-            className="flex items-center gap-3 overflow-hidden flex-1 cursor-pointer"
-             onClick={(e) => {
-                // Prevent dropdown trigger from also triggering this
-                if (e.target instanceof HTMLElement && e.target.closest('[data-radix-collection-item]')) {
-                    return;
-                }
-                if (isLink && linkUrl) {
-                    window.open(linkUrl, '_blank');
-                } else {
-                    onFileClick(item);
-                }
-              }}
-        >
-            <Icon className={`w-6 h-6 ${color} shrink-0`} />
-            <div className="flex-1 overflow-hidden">
-                <h3 className={cn("text-sm font-medium text-white/90 break-words", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
-                    {item.name}
-                </h3>
-                {isMobile && (
-                     <p className="text-xs text-slate-400 mt-0.5">
-                        <span className="font-ubuntu">{displaySize}</span> • <span className="font-ubuntu">{createdAt}</span>
-                    </p>
-                )}
-            </div>
-        </div>
-        
-        <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
-            <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-ubuntu">
-                {createdAt}
-            </p>
-            <p className="text-xs text-slate-400 hidden sm:block w-20 text-right font-ubuntu">
-                {displaySize}
-            </p>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                  <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
-                  >
-                      <MoreVertical className="w-5 h-5" />
-                  </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent 
-                className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
-                align="end"
-              >
-                {isAdmin && (
-                    <DropdownMenuItem onClick={onRename} className="cursor-pointer">
-                      <Edit className="mr-2 h-4 w-4" />
-                      <span>Rename</span>
-                    </DropdownMenuItem>
-                )}
-                {!isLink && (
-                     <DropdownMenuItem 
-                          onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
-                          disabled={!storagePath}
-                          className="cursor-pointer"
-                      >
-                      <Download className="mr-2 h-4 w-4" />
-                      <span>Download</span>
-                    </DropdownMenuItem>
-                )}
-                 <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="cursor-pointer">
-                    <ExternalLink className="mr-2 h-4 w-4" />
-                    <span>Open in new tab</span>
-                </DropdownMenuItem>
-                {isAdmin && (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      <span>Delete</span>
-                    </DropdownMenuItem>
-                  </>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
-        </div>
-      </>
-    );
+    const handleClick = (e: React.MouseEvent) => {
+      // Prevent dropdown trigger from also triggering this
+      if (e.target instanceof HTMLElement && (e.target.closest('[data-radix-collection-item]') || e.target.closest('button'))) {
+          return;
+      }
+      if (isLink && linkUrl) {
+          window.open(linkUrl, '_blank');
+      } else {
+          onFileClick(item);
+      }
+    };
     
     return (
-        <div className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg md:px-3 px-4">
-            {fileContent}
+        <div 
+            className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg md:px-3 px-4 cursor-pointer"
+            onClick={handleClick}
+        >
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
+                {showDragHandle && !isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+            </div>
+
+            <div className="flex items-center gap-3 overflow-hidden flex-1">
+                <Icon className={`w-6 h-6 ${color} shrink-0`} />
+                <div className="flex-1 overflow-hidden">
+                    <h3 className={cn("text-sm font-medium text-white/90 break-words", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
+                        {item.name}
+                    </h3>
+                    {isMobile && (
+                        <p className="text-xs text-slate-400 mt-0.5">
+                            <span className="font-ubuntu">{displaySize}</span> • <span className="font-ubuntu">{createdAt}</span>
+                        </p>
+                    )}
+                </div>
+            </div>
+            
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
+                <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-ubuntu">
+                    {createdAt}
+                </p>
+                <p className="text-xs text-slate-400 hidden sm:block w-20 text-right font-ubuntu">
+                    {displaySize}
+                </p>
+                
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
+                        >
+                            <MoreVertical className="w-5 h-5" />
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent 
+                        className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
+                        align="end"
+                    >
+                        {isAdmin && (
+                            <DropdownMenuItem onClick={onRename} className="cursor-pointer">
+                                <Edit className="mr-2 h-4 w-4" />
+                                <span>Rename</span>
+                            </DropdownMenuItem>
+                        )}
+                        {!isLink && (
+                            <DropdownMenuItem 
+                                onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
+                                disabled={!storagePath}
+                                className="cursor-pointer"
+                            >
+                                <Download className="mr-2 h-4 w-4" />
+                                <span>Download</span>
+                            </DropdownMenuItem>
+                        )}
+                        <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="cursor-pointer">
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            <span>Open in new tab</span>
+                        </DropdownMenuItem>
+                        {isAdmin && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Delete</span>
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </div>
     )
 });
