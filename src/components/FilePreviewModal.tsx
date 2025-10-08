@@ -223,11 +223,26 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
                 h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg md:text-xl" {...props} />,
                 h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base md:text-lg" {...props} />,
                 h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
-                p: ({node, ...props}) => <p className="text-slate-200 my-4 text-sm md:text-base" {...props} />,
+                p: ({node, children, ...props}) => {
+                    const raw = String(children?.[0] ?? '');
+                     if (raw.startsWith('   ')) { // 3x EM SPACE
+                        const trimmed = raw.replace(/^ {3}/, '');
+                        return <p className="indent" {...props}>{trimmed}</p>;
+                    }
+                    return <p className="text-slate-200 my-4 text-sm md:text-base" {...props}>{children}</p>;
+                },
                 strong: ({node, ...props}) => <strong className="text-white" {...props} />,
                 ul: ({node, ...props}) => <ul className="text-slate-200 my-4 ml-4 list-disc text-sm md:text-base" {...props} />,
                 ol: ({node, ...props}) => <ol className="text-slate-200 my-4 ml-4 list-decimal text-sm md:text-base" {...props} />,
-                li: ({node, ...props}) => <li className="text-slate-200 mb-2 text-sm md:text-base" {...props} />,
+                 li: ({node, children, ...props}) => {
+                    const firstChild = children?.[0];
+                    const text = typeof firstChild === 'string' ? firstChild : '';
+                    if (text.startsWith('   ')) {
+                        const trimmed = text.replace(/^ {3}/, '');
+                        return <li className="indent my-2 text-sm md:text-base" {...props}>{trimmed}</li>;
+                    }
+                    return <li className="text-slate-200 mb-2 text-sm md:text-base" {...props}>{children}</li>;
+                },
                 code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm md:text-base font-ubuntu" {...props} />,
                 pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                 hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,

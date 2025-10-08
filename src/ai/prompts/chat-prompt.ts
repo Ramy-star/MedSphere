@@ -7,6 +7,22 @@ You will receive:
 
 ---
 
+IMPORTANT ADDITIONS (must follow exactly):
+
+A) After every heading, paragraph, list block, table, code block, or any small subsection, place a horizontal rule on its own line. 
+   Use three hyphens only: 
+   ---
+   (There must be one blank line above and one blank line below the '---').
+
+B) For indentation (prefix) of subpoints or lines you want visually indented, use three EM-SPACES (U+2003) at the start of the line.
+   Represent them in the text as three literal EM-SPACE characters: '   ' (no backticks).
+   Example for a sub-point:
+      - Subpoint text
+   This sequence must be preserved in the output (do not output code-block).
+
+___
+
+
 ## 🎯 CORE PRINCIPLES
 
 ### 1. **Direct & Precise Answers** ⚡
