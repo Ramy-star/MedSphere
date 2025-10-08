@@ -69,7 +69,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
         return (
              <Link 
                 href={`/folder/${item.id}`}
-                className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg md:px-3 px-4"
+                className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg cursor-pointer"
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
                 {!isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}

@@ -132,16 +132,12 @@ export const FileCard = React.memo(function FileCard({
       if (e.target instanceof HTMLElement && (e.target.closest('[data-radix-collection-item]') || e.target.closest('button'))) {
           return;
       }
-      if (isLink && linkUrl) {
-          window.open(linkUrl, '_blank');
-      } else {
-          onFileClick(item);
-      }
+      onFileClick(item);
     };
     
     return (
         <div 
-            className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg md:px-3 px-4"
+            className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-lg cursor-pointer"
             onClick={handleClick}
         >
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
@@ -176,6 +172,7 @@ export const FileCard = React.memo(function FileCard({
                             variant="ghost" 
                             size="icon" 
                             className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
+                            onClick={(e) => { e.stopPropagation(); }}
                         >
                             <MoreVertical className="w-5 h-5" />
                         </Button>
@@ -183,6 +180,7 @@ export const FileCard = React.memo(function FileCard({
                     <DropdownMenuContent 
                         className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
                         align="end"
+                        onClick={(e) => { e.stopPropagation(); }}
                     >
                         {!isLink && (
                             <DropdownMenuItem 
