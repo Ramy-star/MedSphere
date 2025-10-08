@@ -705,7 +705,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
                             "active:scale-95",
                              !showChat && "bg-gradient-to-r from-[#2968b5] to-[#b53434]",
-                             showChat && "bg-gradient-to-r from-[#2162bb] to-[#d42b2b]"
+                             showChat && "bg-gradient-to-r from-[#206eff] to-[#ff3333]"
                         )}
                     >
                         <div className="flex items-center relative z-10">
