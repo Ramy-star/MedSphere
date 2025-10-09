@@ -75,5 +75,7 @@ input:focus {
 }
 
 .prose hr {
-    @apply border-slate-700 my-6;
+    @apply border-slate-700 my-6 mx-auto;
+    max-width: calc(100% - 2rem);
 }
+

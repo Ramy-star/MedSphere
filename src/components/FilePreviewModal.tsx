@@ -234,7 +234,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                     tbody: ({node, ...props}) => <tbody {...props} />,
                     tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
                     th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
-                    td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0" {...props} />,
+                    td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-white" {...props} />,
                 }}
                 >
                     {msg.text}
