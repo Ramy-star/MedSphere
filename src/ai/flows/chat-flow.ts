@@ -37,10 +37,8 @@ export async function chatAboutDocument(input: ChatInput, options?: { signal?: A
             input,
             stream: false,
             config: {
-              // The signal needs to be passed in the config block for ai.generate
-              // This is the correct way to pass the AbortSignal
+              signal: options?.signal,
             },
-            ...options, // Pass the options object which may contain the signal
         });
         return text;
     } catch (error) {
