@@ -31,15 +31,13 @@ const chatPrompt = ai.definePrompt({
 });
 
 export async function chatAboutDocument(input: ChatInput, options?: { signal?: AbortSignal }): Promise<string> {
-    const controller = new AbortController();
-    const signal = options?.signal || controller.signal;
-
-    if (options?.signal) {
-        options.signal.addEventListener('abort', () => controller.abort());
-    }
-
     try {
-        const { text } = await chatPrompt(input, { signal });
+        const { text } = await ai.generate({
+            prompt: chatPrompt,
+            input,
+            stream: false,
+            signal: options?.signal,
+        });
         return text;
     } catch (error) {
         if ((error as any).name === 'AbortError') {
