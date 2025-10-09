@@ -28,7 +28,7 @@ import {
   AlertDialogHeader as AlertDialogHeader2,
   AlertDialogTitle as AlertDialogTitle2,
 } from "@/components/ui/alert-dialog"
-import { Textarea } from '@/components/ui/textarea';
+import { Textarea } from './ui/textarea';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
 import { useMobileViewStore } from '@/hooks/use-mobile-view-store';
@@ -213,33 +213,32 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
     }
 
     return (
-        <div className={cn("group/message", fontSizeClass)}>
+        <div className="group/message">
             <div className="relative font-inter">
-                <div className="prose prose-sm max-w-full">
-                    <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                        h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg" {...props} />,
-                        h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base" {...props} />,
-                        h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
-                        p: ({node, ...props}) => <p className="text-white my-4" {...props} />,
-                        strong: ({node, ...props}) => <strong className="text-white" {...props} />,
-                        ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
-                        ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
-                        li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
-                        code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 font-ubuntu" {...props} />,
-                        pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
-                        table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
-                        thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
-                        tbody: ({node, ...props}) => <tbody {...props} />,
-                        tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
-                        th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
-                        td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-white" {...props} />,
-                    }}
-                    >
-                        {msg.text}
-                    </ReactMarkdown>
-                </div>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  className={cn("prose prose-sm max-w-full", fontSizeClass)}
+                  components={{
+                      h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg" {...props} />,
+                      h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base" {...props} />,
+                      h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
+                      p: ({node, ...props}) => <p className="text-white my-4" {...props} />,
+                      strong: ({node, ...props}) => <strong className="text-white" {...props} />,
+                      ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
+                      ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
+                      li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
+                      code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 font-ubuntu" {...props} />,
+                      pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
+                      table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
+                      thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
+                      tbody: ({node, ...props}) => <tbody {...props} />,
+                      tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
+                      th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
+                      td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-white" {...props} />,
+                  }}
+                >
+                    {msg.text}
+                </ReactMarkdown>
             </div>
 
             {isLastMessage && !isAiThinking && (
@@ -848,7 +847,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </header>
         <div 
             ref={chatContainerRef} 
-            className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6")}
+            className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
             style={{backgroundColor: '#212121'}}
         >
                 

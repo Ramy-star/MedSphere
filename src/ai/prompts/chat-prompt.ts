@@ -755,7 +755,7 @@ Cause ⬇️ Effect ⬇️ Treatment
 
 
 ═══════════════════════════════════════════
-## 🚫 **EXTREMELY STRICT WARNINGS** 🚫
+## 🚫 **EXTREMELY STRICT WARNINGS: you must always follow them!** 🚫
 
 1) It is a **MAJOR FORMATTING VIOLATION** to write multiple investigations, tests, or items in a single paragraph separated by commas.  
 **EVERY investigation MUST be written on a separate line with its own symbol.**  
