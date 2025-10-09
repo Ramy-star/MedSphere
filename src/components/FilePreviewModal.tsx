@@ -895,8 +895,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </div>
         <div 
             className={cn(
-              "mt-auto p-2 border-t border-transparent",
-              isMobile && "fixed bottom-0 left-0 right-0 z-50",
+              "p-2 border-t border-transparent mb-2",
+              isMobile && "fixed bottom-2 left-0 right-0 z-50",
               "transition-all duration-200"
             )}
              style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined, backgroundColor: '#212121' }}
