@@ -946,7 +946,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                      onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
-                            handleChatSubmit(e);
+                            handleChatSubmit();
                         }
                     }}
                     disabled={isAiThinking || isExtracting || !documentText}
