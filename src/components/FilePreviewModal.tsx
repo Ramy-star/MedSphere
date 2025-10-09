@@ -233,7 +233,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                  li: ({node, children, ...props}) => {
                     const firstChild = children?.[0];
                     const text = typeof firstChild === 'string' ? firstChild : '';
-                    if (text.startsWith('   ')) {
+                    if (text.startsWith('⃟')) {
                         const trimmed = text.replace(/^ {3}/, '');
                         return <li className="indent my-2 text-sm md:text-base" {...props}>{trimmed}</li>;
                     }
@@ -393,12 +393,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       handleScaleInputSubmit(e);
   };
 
-  const fileUrl = item?.metadata?.storagePath;
-  const isLink = item?.type === 'LINK';
-  const linkUrl = item?.metadata?.url;
-  const openUrl = isLink ? linkUrl : fileUrl;
-  const isPdf = item?.metadata?.mime === 'application/pdf';
-  
   const onPageChange = useCallback((newPage: number) => {
     setPageNumber(newPage);
   }, []);
@@ -568,55 +562,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         };
     }, [isFullscreen, numPages, pdfProxy, pdfScale, pageNumber, goToPage]);
 
-
-  if (!item) return null;
-  
-  const { Icon, color } = getIconForFileType(item);
-
-
-  const handleDownload = async () => {
-    if (!fileUrl || !item) return;
-    try {
-        setLoading(true);
-        setError(null);
-        const res = await fetch(fileUrl);
-        if (!res.ok) throw new Error(`Failed to fetch file: ${res.statusText}`);
-        const blob = await res.blob();
-        const blobUrl = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = blobUrl;
-        a.download = item.name;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(blobUrl);
-    } catch (error: any) {
-        console.error("Download failed:", error);
-        setError(error.message);
-        toast({
-            variant: "destructive",
-            title: "Download Failed",
-            description: "Could not download the file.",
-        });
-    } finally {
-        setLoading(false);
-    }
-  }
-  
-  const handleCopyToClipboard = (text: string, messageId: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-        setCopiedMessage(messageId);
-        setTimeout(() => setCopiedMessage(null), 2000);
-    }).catch(err => {
-        console.error('Failed to copy: ', err);
-        toast({
-            variant: "destructive",
-            title: "Failed to Copy",
-            description: "Could not copy the message."
-        })
-    });
-  }
-  
   const submitChat = useCallback(async (question: string) => {
     if (!question.trim()) return;
 
@@ -684,7 +629,57 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(false);
   }
 
+  const handleDownload = async () => {
+    if (!fileUrl || !item) return;
+    try {
+        setLoading(true);
+        setError(null);
+        const res = await fetch(fileUrl);
+        if (!res.ok) throw new Error(`Failed to fetch file: ${res.statusText}`);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = item.name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(blobUrl);
+    } catch (error: any) {
+        console.error("Download failed:", error);
+        setError(error.message);
+        toast({
+            variant: "destructive",
+            title: "Download Failed",
+            description: "Could not download the file.",
+        });
+    } finally {
+        setLoading(false);
+    }
+  }
+  
+  const handleCopyToClipboard = (text: string, messageId: string) => {
+    navigator.clipboard.writeText(text).then(() => {
+        setCopiedMessage(messageId);
+        setTimeout(() => setCopiedMessage(null), 2000);
+    }).catch(err => {
+        console.error('Failed to copy: ', err);
+        toast({
+            variant: "destructive",
+            title: "Failed to Copy",
+            description: "Could not copy the message."
+        })
+    });
+  }
 
+  if (!item) return null;
+  
+  const { Icon, color } = getIconForFileType(item);
+  const fileUrl = item?.metadata?.storagePath;
+  const isLink = item?.type === 'LINK';
+  const linkUrl = item?.metadata?.url;
+  const openUrl = isLink ? linkUrl : fileUrl;
+  const isPdf = item?.metadata?.mime === 'application/pdf';
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   
   const renderFilePreview = () => (
@@ -1010,3 +1005,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
