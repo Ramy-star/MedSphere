@@ -212,12 +212,12 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
     }
 
     return (
-        <div className={cn("prose prose-sm md:prose-base max-w-full text-slate-200 relative group/message")}>
+        <div className={cn("prose prose-sm max-w-full text-slate-200 relative group/message")}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
-                h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg md:text-xl" {...props} />,
-                h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base md:text-lg" {...props} />,
+                h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg" {...props} />,
+                h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base" {...props} />,
                 h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
                 p: ({node, children, ...props}) => {
                     const raw = String(children?.[0] ?? '');
@@ -225,29 +225,29 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         const trimmed = raw.replace(/^ {3}/, '');
                         return <p className="indent" {...props}>{trimmed}</p>;
                     }
-                    return <p className="text-slate-200 my-4 text-sm md:text-base" {...props}>{children}</p>;
+                    return <p className="text-slate-200 my-4 text-sm" {...props}>{children}</p>;
                 },
                 strong: ({node, ...props}) => <strong className="text-white" {...props} />,
-                ul: ({node, ...props}) => <ul className="text-slate-200 my-4 ml-4 list-disc text-sm md:text-base" {...props} />,
-                ol: ({node, ...props}) => <ol className="text-slate-200 my-4 ml-4 list-decimal text-sm md:text-base" {...props} />,
+                ul: ({node, ...props}) => <ul className="text-slate-200 my-4 ml-4 list-disc text-sm" {...props} />,
+                ol: ({node, ...props}) => <ol className="text-slate-200 my-4 ml-4 list-decimal text-sm" {...props} />,
                  li: ({node, children, ...props}) => {
                     const firstChild = children?.[0];
                     const text = typeof firstChild === 'string' ? firstChild : '';
                     if (text.startsWith('⃟')) {
                         const trimmed = text.replace(/^ {3}/, '');
-                        return <li className="indent my-2 text-sm md:text-base" {...props}>{trimmed}</li>;
+                        return <li className="indent my-2 text-sm" {...props}>{trimmed}</li>;
                     }
-                    return <li className="text-slate-200 mb-2 text-sm md:text-base" {...props}>{children}</li>;
+                    return <li className="text-slate-200 mb-2 text-sm" {...props}>{children}</li>;
                 },
-                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm md:text-base font-ubuntu" {...props} />,
+                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm font-ubuntu" {...props} />,
                 pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                 hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
                 table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
                 thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
                 tbody: ({node, ...props}) => <tbody {...props} />,
                 tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
-                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0 text-sm md:text-base" {...props} />,
-                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-sm md:text-base" {...props} />,
+                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0 text-sm" {...props} />,
+                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-sm" {...props} />,
               }}
             >
                 {msg.text}
@@ -343,6 +343,36 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setTimeout(resetPdfState, 300);
   };
   
+  const submitChat = useCallback(async (question: string) => {
+    if (!question.trim()) return;
+
+    if (!documentText) {
+       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
+       return;
+    }
+
+    setIsAiThinking(true);
+    
+    try {
+        const responseText = await chatAboutDocument({
+            question: question,
+            documentContent: documentText,
+            chatHistory: chatHistory,
+        });
+        setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
+    } catch (error) {
+        console.error("Error calling chat flow:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Chat Error",
+            description: "The AI assistant could not be reached. Please try again later."
+        });
+        setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question if the call fails
+    } finally {
+        setIsAiThinking(false);
+    }
+  }, [documentText, chatHistory, toast]);
+
   // This effect ensures that if a new item is loaded while the modal is already open,
   // the state is reset to prevent stale data from a previous file.
   useEffect(() => {
@@ -561,36 +591,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             document.removeEventListener('touchmove', onTouchMove, { capture: true });
         };
     }, [isFullscreen, numPages, pdfProxy, pdfScale, pageNumber, goToPage]);
-
-  const submitChat = useCallback(async (question: string) => {
-    if (!question.trim()) return;
-
-    if (!documentText) {
-       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
-       return;
-    }
-
-    setIsAiThinking(true);
-    
-    try {
-        const responseText = await chatAboutDocument({
-            question: question,
-            documentContent: documentText,
-            chatHistory: chatHistory,
-        });
-        setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
-    } catch (error) {
-        console.error("Error calling chat flow:", error);
-        toast({
-            variant: "destructive",
-            title: "AI Chat Error",
-            description: "The AI assistant could not be reached. Please try again later."
-        });
-        setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question if the call fails
-    } finally {
-        setIsAiThinking(false);
-    }
-  }, [documentText, chatHistory, toast]);
 
   const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement>) => {
       e?.preventDefault();
@@ -850,16 +850,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
-                    <div className="prose prose-sm md:prose-base max-w-full text-slate-200">
+                    <div className="prose prose-sm max-w-full text-slate-200">
                         {isExtracting ? (
                             <div className="flex items-center gap-2">
                             <Skeleton className="h-5 w-5 rounded-full" />
                             <p>Analyzing document...</p>
                             </div>
                         ) : documentText ? (
-                            <p className="text-sm md:text-base">Hello! I am your AI assistant. Ask me anything about this document.</p>
+                            <p className="text-sm">Hello! I am your AI assistant. Ask me anything about this document.</p>
                         ) : (
-                            <p className="text-yellow-400 text-sm md:text-base">Document content is not available or could not be extracted. Chat is disabled.</p>
+                            <p className="text-yellow-400 text-sm">Document content is not available or could not be extracted. Chat is disabled.</p>
                         )}
                     </div>
                 )}
@@ -957,7 +957,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     key="chat-panel-desktop"
                     layout
                     initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 448, opacity: 1 }}
+                    animate={{ width: 512, opacity: 1 }}
                     exit={{ width: 0, opacity: 0, transition: { duration: 0.2, ease: 'easeOut' } }}
                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
                     className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full border-l border-white/10"
