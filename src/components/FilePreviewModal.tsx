@@ -10,8 +10,8 @@ import { Button } from './ui/button';
 import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
-import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus } from 'lucide-react';
+import React, { useEffect, useState, useRef, useCallback } from 'react';
+import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus, ZoomIn, ZoomOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -891,7 +891,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                  <form 
                   onSubmit={handleChatSubmit} 
                   className={cn(
-                    "flex items-center",
+                    "flex items-end",
                     (!chatInput.trim() || isExtracting || !documentText) && "opacity-50"
                   )}
                 >
