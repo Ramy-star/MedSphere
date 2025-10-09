@@ -305,7 +305,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
-
+  
   const startNewChat = useCallback(() => {
     setChatHistory([]);
     setIsAiThinking(false);
@@ -323,39 +323,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setShowChat(false);
     startNewChat();
   }, [startNewChat]);
-  
-  const submitChat = useCallback(async (question: string) => {
-    if (!question.trim()) return;
 
-    if (!documentText) {
-       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
-       return;
-    }
-
-    setIsAiThinking(true);
-    setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
-    setChatInput('');
-    
-    try {
-        const responseText = await chatAboutDocument({
-            question: question,
-            documentContent: documentText,
-            chatHistory: chatHistory,
-        });
-        setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
-    } catch (error) {
-        console.error("Error calling chat flow:", error);
-        toast({
-            variant: "destructive",
-            title: "AI Chat Error",
-            description: "The AI assistant could not be reached. Please try again later."
-        });
-        setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question if the call fails
-    } finally {
-        setIsAiThinking(false);
-    }
-  }, [documentText, chatHistory, toast]);
-  
+  // All hooks should be called unconditionally at the top level.
+  // We'll check for `item` later before rendering.
   useEffect(() => {
     if(item) {
         resetPdfState();
@@ -424,6 +394,38 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         startNewChat();
     }
   }, [chatHistory.length, startNewChat]);
+
+  const submitChat = useCallback(async (question: string) => {
+    if (!question.trim()) return;
+
+    if (!documentText) {
+       toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
+       return;
+    }
+
+    setIsAiThinking(true);
+    setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
+    setChatInput('');
+    
+    try {
+        const responseText = await chatAboutDocument({
+            question: question,
+            documentContent: documentText,
+            chatHistory: chatHistory,
+        });
+        setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
+    } catch (error) {
+        console.error("Error calling chat flow:", error);
+        toast({
+            variant: "destructive",
+            title: "AI Chat Error",
+            description: "The AI assistant could not be reached. Please try again later."
+        });
+        setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question if the call fails
+    } finally {
+        setIsAiThinking(false);
+    }
+  }, [documentText, chatHistory, toast]);
 
   const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
     setPdfProxy(pdf);
@@ -652,6 +654,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setFontSizeIndex(prev => Math.max(prev - 1, 0));
   };
   
+  // This is the correct place for the early return, after all hooks have been called.
   if (!item) {
     return null;
   }
@@ -835,6 +838,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <div 
             ref={chatContainerRef} 
             className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6 pb-20")}
+            style={{backgroundColor: '#212121'}}
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
@@ -881,7 +885,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </div>
         <div 
             className={cn(
-              "mt-auto p-2 border-t border-white/10",
+              "mt-auto p-2 border-t border-transparent",
               isMobile && "fixed bottom-0 left-0 right-0 z-50",
               "transition-all duration-200"
             )}
@@ -897,7 +901,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 focus-visible:ring-offset-0 font-inter border-none shadow-lg shadow-black/20"
+                    className="w-full rounded-3xl py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20 border border-white/10"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
