@@ -292,7 +292,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [scaleInput, setScaleInput] = useState('100%');
   const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
   const [fontSizeIndex, setFontSizeIndex] = useState(1);
-
   const isMobile = useIsMobile();
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
@@ -891,13 +890,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
              style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined }}
         >
             <div className="w-full max-w-[95%] mx-auto">
-                <form 
+                 <form 
                   onSubmit={handleChatSubmit} 
-                  className={cn("relative flex items-center", (!chatInput.trim() || isExtracting || !documentText) && "opacity-50")}
+                  className={cn(
+                    "relative flex items-center shadow-lg shadow-black/20", 
+                    (!chatInput.trim() || isExtracting || !documentText) && "opacity-50"
+                  )}
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 font-inter"
+                    className="w-full rounded-3xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 focus-visible:ring-offset-0 font-inter"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -910,7 +912,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     disabled={isAiThinking || isExtracting || !documentText}
                     rows={1}
                 />
-                <div className="absolute bottom-2 right-3 flex-shrink-0">
+                <div className="absolute bottom-0 right-3 h-full flex items-center flex-shrink-0">
                      <SendStopButton
                         size='md'
                         onSend={handleChatSubmit}
