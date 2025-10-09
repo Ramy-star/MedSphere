@@ -230,7 +230,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                       ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
                       ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
                       li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
-                      code: ({node, ...props}) => <code className="text-white bg-transparent rounded-sm px-1 py-0.5 font-ubuntu" {...props} />,
+                      code: ({node, ...props}) => <code className="text-inherit bg-transparent p-0 font-ubuntu" {...props} />,
                       pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                       table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
                       thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
@@ -254,7 +254,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         aria-label="Copy AI response to clipboard"
                     >
                          {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" /> : <Copy className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />}
-                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs">Copy</span>
+                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline">Copy</span>
                     </Button>
                     <Button
                         variant="ghost"
@@ -264,7 +264,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         aria-label="Regenerate response"
                     >
                         <RefreshCw className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />
-                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs">Regenerate</span>
+                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline">Regenerate</span>
                     </Button>
                 </div>
             )}
@@ -668,7 +668,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setFontSizeIndex(prev => Math.max(prev - 1, 0));
   };
   
-  const handleInsertNewline = () => {
+  const handleInsertNewline = (e: React.MouseEvent) => {
+    e.preventDefault();
     if (textareaRef.current) {
         const { selectionStart, selectionEnd, value } = textareaRef.current;
         const newValue = value.substring(0, selectionStart) + '\n' + value.substring(selectionEnd);
@@ -795,7 +796,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button
                         onClick={() => setShowChat(!showChat)}
                         className={cn(
-                            "rounded-full px-3 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
+                            "rounded-full px-4 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
                             "active:scale-95",
                              !showChat && "bg-gradient-to-r from-[#2968b5] to-[#C42929]",
                              showChat && "bg-gradient-to-r from-[#1263FF] to-[#D11111]"
@@ -842,7 +843,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const renderChatView = () => {
     const inputContainerHeight = 76; // Approx height of input area
-    const chatPaddingBottom = isMobile ? `${inputContainerHeight}px` : '1rem';
+    const chatPaddingBottom = isMobile ? `${inputContainerHeight + 8}px` : '1rem';
 
 
     const chatViewContent = (
@@ -921,11 +922,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </div>
         <div 
             className={cn(
-              "p-2 border-t border-transparent",
+              "p-2",
               isMobile ? "fixed bottom-2 left-0 right-0 z-50" : "mt-auto mb-2",
-              "transition-all duration-300"
+              "transition-transform duration-300"
             )}
-            style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined, backgroundColor: '#212121' }}
+            style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none', backgroundColor: '#212121' }}
         >
              <form
                 onSubmit={handleChatSubmit}
@@ -950,18 +951,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     style={{backgroundColor: '#303030'}}
                 />
                 <div className="absolute right-3 bottom-2 flex h-[36px] items-center gap-1">
-                     {isMobile && (
-                        <Button 
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={handleInsertNewline}
-                            className="w-9 h-9 rounded-full text-white/70 hover:bg-white/10"
-                            aria-label="Insert new line"
-                            >
-                            <CornerDownLeft className="w-5 h-5" />
-                        </Button>
-                     )}
                     <SendStopButton
                         size='md'
                         onSend={handleChatSubmit}
@@ -984,7 +973,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         initial={{ y: '100dvh' }}
                         animate={{ y: 0 }}
                         exit={{ y: '100dvh' }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 40 }}
                         className="flex flex-col overflow-hidden h-[100dvh] w-full absolute inset-0 z-20"
                         style={{backgroundColor: '#212121'}}
                     >
@@ -1051,5 +1040,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
