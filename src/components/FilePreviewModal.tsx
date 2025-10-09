@@ -245,7 +245,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
             </div>
 
             {showActions && (
-                 <div className={cn("flex items-center gap-2 mt-4 transition-opacity", !isMobile && "opacity-0 group-hover/message:opacity-100")}>
+                 <div className={cn("flex items-center gap-2 mt-4 transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover/message:opacity-100")}>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -418,7 +418,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             question: question,
             documentContent: documentText,
             chatHistory: chatHistory,
-        }, { signal: abortControllerRef.current.signal });
+        }, abortControllerRef.current.signal);
         setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
     } catch (error: any) {
         if (error.name === 'AbortError') {
@@ -589,7 +589,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         };
     }, [isFullscreen, numPages, pdfProxy, pdfScale, pageNumber, goToPage]);
 
-  const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement>) => {
+  const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent) => {
       e?.preventDefault();
       if(isAiThinking) return;
       await submitChat(chatInput);
@@ -803,9 +803,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         )}
                     >
                         <div className="flex items-center relative z-10">
-                            <Sparkles className="h-4 w-4 sm:mr-2" />
+                            <Sparkles className={cn("h-4 w-4", isMobile ? "mr-2" : "sm:mr-2")} />
                             <span className="hidden sm:inline">Ask AI</span>
-                            <span className="sm:hidden">Ask AI</span>
+                            <span className="sm:hidden">AI</span>
                         </div>
                     </Button>
                 )}
@@ -843,7 +843,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const renderChatView = () => {
     const inputContainerHeight = 76; // Approx height of input area
-    const chatPaddingBottom = isMobile ? `${inputContainerHeight + 8}px` : '1rem';
+    const chatPaddingBottom = isMobile ? `${inputContainerHeight + 8}px` : '0.5rem';
 
 
     const chatViewContent = (
@@ -921,12 +921,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         </div>
                     )}
             </div>
-             <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
+             <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
         </div>
         <div 
             className={cn(
               "p-2 mb-2",
-              isMobile ? "fixed bottom-0 left-0 right-0 z-50" : "mt-auto",
+              isMobile ? "fixed bottom-2 left-0 right-0 z-50" : "mt-auto",
               "transition-transform duration-300"
             )}
             style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none', backgroundColor: '#212121' }}
@@ -939,7 +939,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-24 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
+                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
