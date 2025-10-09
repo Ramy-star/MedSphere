@@ -38,8 +38,7 @@ export async function chatAboutDocument(input: ChatInput, options?: { signal?: A
             stream: false,
             config: {
               // The signal needs to be passed in the config block for ai.generate
-              // However, the prompt object itself might have a different way of handling it.
-              // Let's try passing it here as per standard generate options.
+              // This is the correct way to pass the AbortSignal
             },
             ...options, // Pass the options object which may contain the signal
         });
