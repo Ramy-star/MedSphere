@@ -254,7 +254,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         aria-label="Copy AI response to clipboard"
                     >
                          {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" /> : <Copy className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />}
-                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline">Copy</span>
+                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline"></span>
                     </Button>
                     <Button
                         variant="ghost"
@@ -264,7 +264,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         aria-label="Regenerate response"
                     >
                         <RefreshCw className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />
-                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline">Regenerate</span>
+                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline"></span>
                     </Button>
                 </div>
             )}
@@ -803,7 +803,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         )}
                     >
                         <div className="flex items-center relative z-10">
-                            <Sparkles className="mr-0 sm:mr-2 h-4 w-4" />
+                            <Sparkles className="h-4 w-4 sm:mr-2" />
                             <span className="hidden sm:inline">Ask AI</span>
                             <span className="sm:hidden">Ask AI</span>
                         </div>
@@ -868,57 +868,60 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </Button>
             </div>
         </header>
-        <div 
-            ref={chatContainerRef} 
-            className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
-            style={{
-                backgroundColor: '#212121',
-                paddingBottom: chatPaddingBottom
-            }}
-        >
-                
-                {chatHistory.length === 0 && !isAiThinking && (
-                    <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
-                        {isExtracting ? (
-                            <div className="flex items-center gap-2 text-white">
-                            <Skeleton className="h-5 w-5 rounded-full" />
-                            <p>Analyzing document...</p>
-                            </div>
-                        ) : documentText ? (
-                            <p className="text-white">Hello! I am your AI assistant. Ask me anything about this document.</p>
-                        ) : (
-                            <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
-                        )}
-                    </div>
-                )}
-
-                {chatHistory.map((msg, index) => {
-                    const isLastMessage = index === chatHistory.length - 1;
-                    return (
-                        <ChatMessage
-                            key={`msg-${index}`}
-                            messageId={`msg-${index}`}
-                            msg={msg}
-                            onCopy={handleCopyToClipboard}
-                            onRegenerate={handleRegenerate}
-                            isLastMessage={isLastMessage}
-                            isAiThinking={isAiThinking}
-                            copiedMessageId={copiedMessageId}
-                            fontSizeClass={fontSizes[fontSizeIndex]}
-                            isMobile={isMobile}
-                        />
-                    )
-                })}
-
-                    {isAiThinking && (
-                    <div className="space-y-4">
-                        <div className="space-y-2">
-                            <Skeleton className="h-4 w-[80%] rounded-lg" />
-                            <Skeleton className="h-4 w-[95%] rounded-lg" />
-                            <Skeleton className="h-4 w-[60%] rounded-lg" />
+        <div className='relative flex-1 flex flex-col overflow-hidden'>
+            <div 
+                ref={chatContainerRef} 
+                className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
+                style={{
+                    backgroundColor: '#212121',
+                    paddingBottom: chatPaddingBottom
+                }}
+            >
+                    
+                    {chatHistory.length === 0 && !isAiThinking && (
+                        <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
+                            {isExtracting ? (
+                                <div className="flex items-center gap-2 text-white">
+                                <Skeleton className="h-5 w-5 rounded-full" />
+                                <p>Analyzing document...</p>
+                                </div>
+                            ) : documentText ? (
+                                <p className="text-white">Hello! I am your AI assistant. Ask me anything about this document.</p>
+                            ) : (
+                                <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                            )}
                         </div>
-                    </div>
-                )}
+                    )}
+
+                    {chatHistory.map((msg, index) => {
+                        const isLastMessage = index === chatHistory.length - 1;
+                        return (
+                            <ChatMessage
+                                key={`msg-${index}`}
+                                messageId={`msg-${index}`}
+                                msg={msg}
+                                onCopy={handleCopyToClipboard}
+                                onRegenerate={handleRegenerate}
+                                isLastMessage={isLastMessage}
+                                isAiThinking={isAiThinking}
+                                copiedMessageId={copiedMessageId}
+                                fontSizeClass={fontSizes[fontSizeIndex]}
+                                isMobile={isMobile}
+                            />
+                        )
+                    })}
+
+                        {isAiThinking && (
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[80%] rounded-lg" />
+                                <Skeleton className="h-4 w-[95%] rounded-lg" />
+                                <Skeleton className="h-4 w-[60%] rounded-lg" />
+                            </div>
+                        </div>
+                    )}
+            </div>
+             <div className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
         </div>
         <div 
             className={cn(
