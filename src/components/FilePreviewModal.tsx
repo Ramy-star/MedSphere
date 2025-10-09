@@ -35,7 +35,7 @@ import { useMobileViewStore } from '@/hooks/use-mobile-view-store';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
-import { useMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import SendStopButton from './SendStopButton';
 
@@ -293,7 +293,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [scaleInput, setScaleInput] = useState('100%');
   const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
   const [fontSizeIndex, setFontSizeIndex] = useState(1);
-  const isMobile = useMobile();
+  const isMobile = useIsMobile();
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
