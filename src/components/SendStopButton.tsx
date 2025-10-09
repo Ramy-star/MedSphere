@@ -1,3 +1,4 @@
+
 import React from "react";
 
 // SendStopButton: a blue Send button that becomes a Stop button with a rotating outer ring while "isSending".
@@ -66,8 +67,8 @@ export default function SendStopButton({ onSend, onStop, isSending, disabled, si
             className={`relative z-10 inline-flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700`}
           >
             <div className={`flex items-center justify-center ${btn}`}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="4" y="4" width="16" height="16" rx="2" fill="#ffffff" />
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="2" y="2" width="20" height="20" rx="2" fill="#ffffff" />
               </svg>
             </div>
           </button>
