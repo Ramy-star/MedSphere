@@ -1,4 +1,3 @@
-
 'use client';
 import Link from 'next/link';
 import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder } from 'lucide-react';

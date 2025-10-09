@@ -1,4 +1,3 @@
-
 import type { NextConfig } from 'next';
 import type { Configuration } from 'webpack';
 
@@ -8,7 +7,6 @@ const withPWA = require('next-pwa')({
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
-    // Add new caching strategies
     {
       urlPattern: /^https?.*/,
       handler: 'StaleWhileRevalidate',
@@ -21,11 +19,10 @@ const withPWA = require('next-pwa')({
       },
     },
     {
-      urlPattern: /_next\/static\/(chunks|css|media|images)\//,
-      handler: 'NetworkFirst',
+      urlPattern: /_next\/static\//,
+      handler: 'CacheFirst',
       options: {
-        cacheName: 'static-chunks-cache',
-        networkTimeoutSeconds: 10,
+        cacheName: 'static-assets-cache',
         expiration: {
           maxEntries: 200,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
@@ -93,7 +90,7 @@ const nextConfig: NextConfig = {
       }
     }
 
-     // Fix for Handlebars `require.extensions` issue with webpack
+    // Fix for Handlebars `require.extensions` issue with webpack
     config.module = config.module || {};
     config.module.rules = config.module.rules || [];
     config.module.rules.push({
