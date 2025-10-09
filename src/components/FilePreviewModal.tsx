@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode } from 'lucide-react';
+import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -863,8 +863,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     rows={1}
                 />
                 <div className="absolute bottom-2 right-3 flex-shrink-0">
-                    <Button type="submit" size="icon" className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-500" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
-                        <Send className="w-5 h-5" />
+                    <Button type="submit" size="icon" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#19C37D] text-white hover:bg-[#15A26A] disabled:bg-gray-500 disabled:text-gray-300 relative" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
+                        {isAiThinking ? (
+                            <>
+                                <Loader2 className="absolute h-9 w-9 animate-spin text-orange-400" />
+                                <Square className="w-3 h-3 fill-current" />
+                            </>
+                        ) : (
+                            <Send className="w-5 h-5" />
+                        )}
                     </Button>
                 </div>
             </form>
