@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -12,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageSquarePlus, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageSquarePlus, ZoomIn, ZoomOut, MessageCirclePlus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -827,7 +826,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <ZoomIn className="w-6 h-6" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Start New Chat" aria-label="Start a new chat session">
-                    <MessageSquarePlus className="w-6 h-6" />
+                    <MessageCirclePlus className="w-6 h-6" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Close Chat" aria-label="Close chat panel">
                     <X className="w-6 h-6" />
@@ -910,7 +909,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 />
                 <div className="absolute bottom-2 right-3 flex-shrink-0">
                      <SendStopButton
-                        size='sm'
+                        size='md'
                         onSend={handleChatSubmit}
                         onStop={handleStopAi}
                         isSending={isAiThinking}
