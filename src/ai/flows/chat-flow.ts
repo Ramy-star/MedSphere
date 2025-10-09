@@ -32,14 +32,7 @@ const chatPrompt = ai.definePrompt({
 
 export async function chatAboutDocument(input: ChatInput, options?: { signal?: AbortSignal }): Promise<string> {
     try {
-        const { text } = await ai.generate({
-            prompt: chatPrompt,
-            input,
-            stream: false,
-            config: {
-              signal: options?.signal,
-            },
-        });
+        const { text } = await chatPrompt(input, options);
         return text;
     } catch (error) {
         if ((error as any).name === 'AbortError') {
