@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, PlusSquare } from 'lucide-react';
+import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, PlusSquare, ZoomIn, ZoomOut, MessageSquarePlus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -213,7 +213,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
     }
 
     return (
-        <div className={cn("prose prose-sm max-w-full text-white relative group/message", fontSizeClass)}>
+        <div className={cn("prose prose-sm max-w-full relative group/message", fontSizeClass)}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -324,6 +324,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
 
+  // This check must happen AFTER all hooks are declared.
   if (!item) return null;
 
   const startNewChat = useCallback(() => {
@@ -845,13 +846,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
             <div className="flex items-center">
                  <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Decrease font size">
-                    <Minus className="w-4 h-4" />
+                    <ZoomOut className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Increase font size">
-                    <Plus className="w-4 h-4" />
+                    <ZoomIn className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
-                    <PlusSquare className="w-4 h-4" />
+                    <MessageSquarePlus className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Close Chat" aria-label="Close chat panel">
                     <X className="w-5 h-5" />
