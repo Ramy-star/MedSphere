@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 // SendStopButton: a blue Send button that becomes a Stop button with a rotating outer ring while "isSending".
 // Props:
@@ -36,14 +36,22 @@ export default function SendStopButton({ onSend, onStop, isSending, disabled, si
       {isSending ? (
         <div className={`relative flex items-center justify-center ${ring}`}>
           {/* Rotating ring (outside) */}
-          <svg
+           <svg
             className="absolute inset-0 w-full h-full animate-spin-slow"
             viewBox="0 0 32 32"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
           >
+            <circle
+              cx="16"
+              cy="16"
+              r="14"
+              stroke="#2563EB"
+              strokeWidth="3"
+              strokeOpacity="0.2"
+            />
             <path
-              d="M16 4C9.37258 4 4 9.37258 4 16C4 22.6274 9.37258 28 16 28C22.6274 28 28 22.6274 28 16"
+              d="M16 2 A 14 14 0 0 1 30 16"
               stroke="#2563EB"
               strokeWidth="3"
               strokeLinecap="round"
@@ -58,8 +66,8 @@ export default function SendStopButton({ onSend, onStop, isSending, disabled, si
             className={`relative z-10 inline-flex items-center justify-center rounded-full bg-blue-600 hover:bg-blue-700`}
           >
             <div className={`flex items-center justify-center ${btn}`}>
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <rect x="5" y="5" width="14" height="14" rx="2" fill="#ffffff" />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="4" y="4" width="16" height="16" rx="2" fill="#ffffff" />
               </svg>
             </div>
           </button>
