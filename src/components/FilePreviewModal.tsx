@@ -12,7 +12,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, PlusSquare, ZoomIn, ZoomOut, MessageSquarePlus } from 'lucide-react';
+import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageSquarePlus, ZoomIn, ZoomOut } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -214,46 +214,33 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
     }
 
     return (
-        <div className={cn("prose prose-sm max-w-full relative group/message font-inter", fontSizeClass)}>
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg" {...props} />,
-                h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base" {...props} />,
-                h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
-                p: ({node, children, ...props}) => {
-                    const raw = String(children?.[0] ?? '');
-                     if (raw.startsWith('   ')) { // 3x EM SPACE
-                        const trimmed = raw.replace(/^ {3}/, '');
-                        return <p className="indent" {...props}>{trimmed}</p>;
-                    }
-                    return <p className="text-white my-4" {...props}>{children}</p>;
-                },
-                strong: ({node, ...props}) => <strong className="text-white" {...props} />,
-                ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
-                ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
-                 li: ({node, children, ...props}) => {
-                    const firstChild = children?.[0];
-                    const text = typeof firstChild === 'string' ? firstChild : '';
-                    if (text.startsWith('⃟')) {
-                        const trimmed = text.replace(/^ {3}/, '');
-                        return <li className="indent my-2" {...props}>{trimmed}</li>;
-                    }
-                    return <li className="text-white mb-2" {...props}>{children}</li>;
-                },
-                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 font-ubuntu" {...props} />,
-                pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
-                hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
-                table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
-                thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
-                tbody: ({node, ...props}) => <tbody {...props} />,
-                tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
-                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
-                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0" {...props} />,
-              }}
-            >
-                {msg.text}
-            </ReactMarkdown>
+        <div className="group/message">
+            <div className={cn("prose prose-sm max-w-full relative font-inter", fontSizeClass)}>
+                <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                    h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg" {...props} />,
+                    h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base" {...props} />,
+                    h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
+                    p: ({node, ...props}) => <p className="text-white my-4" {...props} />,
+                    strong: ({node, ...props}) => <strong className="text-white" {...props} />,
+                    ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
+                    ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
+                    li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
+                    code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 font-ubuntu" {...props} />,
+                    pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
+                    hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
+                    table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
+                    thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
+                    tbody: ({node, ...props}) => <tbody {...props} />,
+                    tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
+                    th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
+                    td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0" {...props} />,
+                }}
+                >
+                    {msg.text}
+                </ReactMarkdown>
+            </div>
 
             {isLastMessage && !isAiThinking && (
                  <div className="flex items-center gap-2 mt-4 opacity-0 group-hover/message:opacity-100 transition-opacity">
@@ -261,21 +248,21 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         variant="ghost"
                         size="sm"
                         onClick={() => onCopy(msg.text, messageId)}
-                        className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white"
+                        className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white group/action"
                         aria-label="Copy AI response to clipboard"
                     >
-                         {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-1.5" /> : <Copy className="w-4 h-4 mr-1.5" />}
-                        <span>Copy</span>
+                         {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-0 group-hover/action:mr-1.5 transition-all" /> : <Copy className="w-4 h-4 mr-0 group-hover/action:mr-1.5 transition-all" />}
+                        <span className="text-sm max-w-0 overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs">Copy</span>
                     </Button>
                     <Button
                         variant="ghost"
                         size="sm"
                         onClick={onRegenerate}
-                        className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white"
+                        className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white group/action"
                         aria-label="Regenerate response"
                     >
-                        <RefreshCw className="w-4 h-4 mr-1.5" />
-                        <span>Regenerate</span>
+                        <RefreshCw className="w-4 h-4 mr-0 group-hover/action:mr-1.5 transition-all" />
+                        <span className="text-sm max-w-0 overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs">Regenerate</span>
                     </Button>
                 </div>
             )}
@@ -298,19 +285,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [error, setError] = useState<string | null>(null);
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
   const [isFullscreen, setIsFullscreen] = useState(false);
-
-  // PDF specific state
   const [pdfProxy, setPdfProxy] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState<number>();
   const [pageNumber, setPageNumber] = useState(1);
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
-
-  // Font size state
   const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
-  const [fontSizeIndex, setFontSizeIndex] = useState(1); // Default to 'text-sm'
+  const [fontSizeIndex, setFontSizeIndex] = useState(1);
 
+  const isMobile = useIsMobile();
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -319,7 +303,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const fileContentRef = useRef<HTMLDivElement>(null);
   const scaleBeforeFullscreen = useRef<number>(1);
   const manualPageInputInProgress = useRef(false);
-  const isMobile = useIsMobile();
   
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -374,9 +357,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setIsAiThinking(false);
     }
   }, [documentText, chatHistory, toast]);
-
-  // This effect ensures that if a new item is loaded while the modal is already open,
-  // the state is reset to prevent stale data from a previous file.
+  
   useEffect(() => {
     if(item) {
         resetPdfState();
@@ -385,7 +366,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const handleClose = () => {
     onOpenChange(false);
-    // Delay reset to allow for closing animation, ensuring a clean state next time.
     setTimeout(resetPdfState, 300);
   };
   
@@ -396,7 +376,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           pdfViewerRef.current.scrollToPage(newPage);
       }
   }, [numPages]);
-
 
   const zoomIn = useCallback(() => setPdfScale(prev => Math.min(prev + ZOOM_STEP, MAX_ZOOM)), []);
   const zoomOut = useCallback(() => setPdfScale(prev => Math.max(prev - ZOOM_STEP, MIN_ZOOM)), []);
@@ -439,7 +418,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setPageInput(String(pageNumber));
       }
   }, [pageNumber]);
-
   
   const handleNewChat = useCallback(() => {
     if (chatHistory.length > 0) {
@@ -461,7 +439,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             setPdfScale(containerWidth / viewportWidth);
         }
     } else {
-        setPdfScale(1); // Default 100% zoom for desktop
+        setPdfScale(1);
     }
     
     if (documentText || isExtracting) return;
@@ -486,7 +464,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   useEffect(() => {
     setScaleInput(`${Math.round(pdfScale * 100)}%`);
   }, [pdfScale]);
-
 
   useEffect(() => {
     if (chatContainerRef.current) {
@@ -601,8 +578,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement>) => {
       e?.preventDefault();
+      if(isAiThinking) return;
       await submitChat(chatInput);
-  }, [chatInput, submitChat]);
+  }, [chatInput, submitChat, isAiThinking]);
   
   const handleRegenerate = useCallback(async () => {
     if (isAiThinking || chatHistory.length === 0) return;
@@ -610,7 +588,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const lastUserMessage = [...chatHistory].reverse().find(m => m.role === 'user');
     if (!lastUserMessage) return;
 
-    // Remove the last AI response before regenerating
     setChatHistory(prev => {
         const lastMessage = prev[prev.length - 1];
         if (lastMessage && lastMessage.role === 'model') {
@@ -623,9 +600,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [isAiThinking, chatHistory, submitChat]);
 
   const handleStopAi = () => {
-    // This is a placeholder. In a real scenario, you'd need a way to
-    // signal an abort to the ongoing `chatAboutDocument` flow.
-    // Genkit flows can be made cancellable.
     console.log("Stopping AI... (Not implemented)");
     setIsAiThinking(false);
   }
@@ -680,7 +654,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setFontSizeIndex(prev => Math.max(prev - 1, 0));
   };
   
-  // This check must happen AFTER all hooks are declared to prevent hook order errors.
   if (!item) {
     return null;
   }
@@ -847,17 +820,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
             </div>
             <div className="flex items-center">
-                 <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Decrease font size">
-                    <ZoomOut className="w-5 h-5" />
+                 <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Decrease font size">
+                    <ZoomOut className="w-6 h-6" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Increase font size">
-                    <ZoomIn className="w-5 h-5" />
+                <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Increase font size">
+                    <ZoomIn className="w-6 h-6" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
-                    <MessageSquarePlus className="w-5 h-5" />
+                <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Start New Chat" aria-label="Start a new chat session">
+                    <MessageSquarePlus className="w-6 h-6" />
                 </Button>
-                <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Close Chat" aria-label="Close chat panel">
-                    <X className="w-5 h-5" />
+                <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Close Chat" aria-label="Close chat panel">
+                    <X className="w-6 h-6" />
                 </Button>
             </div>
         </header>
@@ -922,7 +895,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0"
+                    className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 font-inter"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
