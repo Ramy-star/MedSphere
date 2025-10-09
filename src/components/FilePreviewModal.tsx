@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageSquarePlus, ZoomIn, ZoomOut, MessageCirclePlus } from 'lucide-react';
+import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -205,7 +205,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className={cn("rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-[90%]", fontSizeClass)}>
+                <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%]", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
                     <p className="text-white whitespace-pre-wrap break-words font-inter">{msg.text}</p>
                 </div>
             </div>
@@ -306,7 +306,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
   
-   // All hooks must be called unconditionally at the top level.
   const startNewChat = useCallback(() => {
     setChatHistory([]);
     setIsAiThinking(false);
@@ -324,7 +323,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setShowChat(false);
     startNewChat();
   }, [startNewChat]);
-
+  
   const submitChat = useCallback(async (question: string) => {
     if (!question.trim()) return;
 
@@ -653,7 +652,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setFontSizeIndex(prev => Math.max(prev - 1, 0));
   };
   
-  // This is the crucial fix: The early return is now after all hooks.
   if (!item) {
     return null;
   }
@@ -883,23 +881,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </div>
         <div 
             className={cn(
-              "mt-auto bg-[#1A1A1A] p-2 border-t border-white/10",
+              "mt-auto p-2 border-t border-white/10",
               isMobile && "fixed bottom-0 left-0 right-0 z-50",
               "transition-all duration-200"
             )}
-             style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined }}
+             style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined, backgroundColor: '#212121' }}
         >
             <div className="w-full max-w-[95%] mx-auto">
                  <form 
                   onSubmit={handleChatSubmit} 
                   className={cn(
-                    "relative flex items-center shadow-lg shadow-black/20", 
+                    "relative flex items-center", 
                     (!chatInput.trim() || isExtracting || !documentText) && "opacity-50"
                   )}
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 focus-visible:ring-offset-0 font-inter"
+                    className="w-full rounded-3xl py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 focus-visible:ring-offset-0 font-inter border-none shadow-lg shadow-black/20"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -909,10 +907,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             handleChatSubmit();
                         }
                     }}
+                    style={{backgroundColor: '#303030'}}
                     disabled={isAiThinking || isExtracting || !documentText}
                     rows={1}
                 />
-                <div className="absolute bottom-0 right-3 h-full flex items-center flex-shrink-0">
+                <div className="absolute right-3 h-full flex items-center flex-shrink-0">
                      <SendStopButton
                         size='md'
                         onSend={handleChatSubmit}
@@ -937,7 +936,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         animate={{ y: 0 }}
                         exit={{ y: '100%' }}
                         transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="flex flex-col overflow-hidden bg-[#1A1A1A] h-full w-full absolute inset-0 z-20"
+                        className="flex flex-col overflow-hidden h-full w-full absolute inset-0 z-20"
+                        style={{backgroundColor: '#212121'}}
                     >
                         {chatViewContent}
                     </motion.div>
@@ -956,7 +956,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 512, opacity: 1 }}
                     exit={{ width: 0, opacity: 0, transition: { duration: 0.2, ease: 'easeOut' } }}
                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className="flex-shrink-0 flex flex-col overflow-hidden bg-[#1A1A1A] h-full border-l border-white/10"
+                    className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10"
+                    style={{backgroundColor: '#212121'}}
                     aria-label="AI Chat Panel"
                 >
                     {chatViewContent}
