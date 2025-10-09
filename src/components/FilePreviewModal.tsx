@@ -305,7 +305,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
-  
+
   const startNewChat = useCallback(() => {
     setChatHistory([]);
     setIsAiThinking(false);
@@ -887,11 +887,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             )}
              style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined, backgroundColor: '#212121' }}
         >
-            <div className="w-full max-w-[95%] mx-auto">
+            <div className="relative w-full max-w-[95%] mx-auto">
                  <form 
                   onSubmit={handleChatSubmit} 
                   className={cn(
-                    "relative flex items-center", 
+                    "flex items-center",
                     (!chatInput.trim() || isExtracting || !documentText) && "opacity-50"
                   )}
                 >
@@ -911,7 +911,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     disabled={isAiThinking || isExtracting || !documentText}
                     rows={1}
                 />
-                <div className="absolute right-3 h-full flex items-center flex-shrink-0">
+                <div className="absolute right-3 bottom-2 h-full flex items-center flex-shrink-0">
                      <SendStopButton
                         size='md'
                         onSend={handleChatSubmit}
