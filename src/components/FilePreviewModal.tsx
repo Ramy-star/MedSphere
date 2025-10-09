@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2 } from 'lucide-react';
+import { X, Download, Send, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, PlusSquare } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -147,6 +147,7 @@ type ChatMessageProps = {
     isAiThinking: boolean;
     copiedMessageId: string | null;
     messageId: string;
+    fontSizeClass: string;
 };
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
@@ -200,19 +201,19 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
 };
 
 
-const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate, isLastMessage, isAiThinking, copiedMessageId, messageId }: ChatMessageProps) {
+const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate, isLastMessage, isAiThinking, copiedMessageId, messageId, fontSizeClass }: ChatMessageProps) {
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className="rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-[90%] sm:max-w-sm">
-                    <p className="text-sm text-slate-200 whitespace-pre-wrap break-words">{msg.text}</p>
+                <div className={cn("rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-[90%]", fontSizeClass)}>
+                    <p className="text-white whitespace-pre-wrap break-words">{msg.text}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className={cn("prose prose-sm max-w-full text-slate-200 relative group/message")}>
+        <div className={cn("prose prose-sm max-w-full text-white relative group/message", fontSizeClass)}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -225,29 +226,29 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         const trimmed = raw.replace(/^ {3}/, '');
                         return <p className="indent" {...props}>{trimmed}</p>;
                     }
-                    return <p className="text-slate-200 my-4 text-sm" {...props}>{children}</p>;
+                    return <p className="text-white my-4" {...props}>{children}</p>;
                 },
                 strong: ({node, ...props}) => <strong className="text-white" {...props} />,
-                ul: ({node, ...props}) => <ul className="text-slate-200 my-4 ml-4 list-disc text-sm" {...props} />,
-                ol: ({node, ...props}) => <ol className="text-slate-200 my-4 ml-4 list-decimal text-sm" {...props} />,
+                ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
+                ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
                  li: ({node, children, ...props}) => {
                     const firstChild = children?.[0];
                     const text = typeof firstChild === 'string' ? firstChild : '';
                     if (text.startsWith('⃟')) {
                         const trimmed = text.replace(/^ {3}/, '');
-                        return <li className="indent my-2 text-sm" {...props}>{trimmed}</li>;
+                        return <li className="indent my-2" {...props}>{trimmed}</li>;
                     }
-                    return <li className="text-slate-200 mb-2 text-sm" {...props}>{children}</li>;
+                    return <li className="text-white mb-2" {...props}>{children}</li>;
                 },
-                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 text-sm font-ubuntu" {...props} />,
+                code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 font-ubuntu" {...props} />,
                 pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
                 hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
                 table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
                 thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
                 tbody: ({node, ...props}) => <tbody {...props} />,
                 tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
-                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0 text-sm" {...props} />,
-                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-sm" {...props} />,
+                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
+                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0" {...props} />,
               }}
             >
                 {msg.text}
@@ -290,7 +291,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [isAiThinking, setIsAiThinking] = useState(false);
   const [documentText, setDocumentText] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
-  const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
+  const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -306,6 +307,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
 
+  // Font size state
+  const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
+  const [fontSizeIndex, setFontSizeIndex] = useState(1); // Default to 'text-sm'
+
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -318,6 +323,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
+
+  if (!item) return null;
 
   const startNewChat = useCallback(() => {
     setChatHistory([]);
@@ -352,6 +359,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
 
     setIsAiThinking(true);
+    setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
+    setChatInput('');
     
     try {
         const responseText = await chatAboutDocument({
@@ -594,14 +603,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement>) => {
       e?.preventDefault();
-      if (!chatInput.trim() || isAiThinking) return;
-
-      const newQuestion = chatInput;
-      setChatHistory(prev => [...prev, { role: 'user' as const, text: newQuestion }]);
-      setChatInput('');
-      
-      await submitChat(newQuestion);
-  }, [chatInput, isAiThinking, submitChat]);
+      await submitChat(chatInput);
+  }, [chatInput, submitChat]);
   
   const handleRegenerate = useCallback(async () => {
     if (isAiThinking || chatHistory.length === 0) return;
@@ -660,8 +663,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const handleCopyToClipboard = (text: string, messageId: string) => {
     navigator.clipboard.writeText(text).then(() => {
-        setCopiedMessage(messageId);
-        setTimeout(() => setCopiedMessage(null), 2000);
+        setCopiedMessageId(messageId);
+        setTimeout(() => setCopiedMessageId(null), 2000);
     }).catch(err => {
         console.error('Failed to copy: ', err);
         toast({
@@ -672,7 +675,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     });
   }
 
-  if (!item) return null;
+  const increaseFontSize = () => {
+    setFontSizeIndex(prev => Math.min(prev + 1, fontSizes.length - 1));
+  };
+  const decreaseFontSize = () => {
+    setFontSizeIndex(prev => Math.max(prev - 1, 0));
+  };
   
   const { Icon, color } = getIconForFileType(item);
   const fileUrl = item?.metadata?.storagePath;
@@ -836,8 +844,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
             </div>
             <div className="flex items-center">
+                 <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Decrease font size">
+                    <Minus className="w-4 h-4" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Increase font size">
+                    <Plus className="w-4 h-4" />
+                </Button>
                 <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
-                    <RefreshCw className="w-4 h-4" />
+                    <PlusSquare className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Close Chat" aria-label="Close chat panel">
                     <X className="w-5 h-5" />
@@ -850,16 +864,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
-                    <div className="prose prose-sm max-w-full text-slate-200">
+                    <div className={cn("prose prose-sm max-w-full text-white", fontSizes[fontSizeIndex])}>
                         {isExtracting ? (
                             <div className="flex items-center gap-2">
                             <Skeleton className="h-5 w-5 rounded-full" />
                             <p>Analyzing document...</p>
                             </div>
                         ) : documentText ? (
-                            <p className="text-sm">Hello! I am your AI assistant. Ask me anything about this document.</p>
+                            <p>Hello! I am your AI assistant. Ask me anything about this document.</p>
                         ) : (
-                            <p className="text-yellow-400 text-sm">Document content is not available or could not be extracted. Chat is disabled.</p>
+                            <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
                         )}
                     </div>
                 )}
@@ -875,7 +889,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             onRegenerate={handleRegenerate}
                             isLastMessage={isLastMessage}
                             isAiThinking={isAiThinking}
-                            copiedMessageId={copiedMessage}
+                            copiedMessageId={copiedMessageId}
+                            fontSizeClass={fontSizes[fontSizeIndex]}
                         />
                     )
                 })}
@@ -1005,5 +1020,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
