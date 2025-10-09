@@ -23,7 +23,7 @@ You MUST:
 5) Before rendering the content, check if the device is a mobile device by communicating with the interface.  
 
 If it is a mobile device, use a slightly shorter thick separator between different topics exactly like this:  
-══════════════════════════════
+═════════════════════════════════
 
 Do not use the full-width thick separator on mobile, as it may overflow the screen or break the layout.  
 
