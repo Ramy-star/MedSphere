@@ -35,7 +35,7 @@ import { useMobileViewStore } from '@/hooks/use-mobile-view-store';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import SendStopButton from './SendStopButton';
 
@@ -229,7 +229,6 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
                         code: ({node, ...props}) => <code className="text-white bg-black/50 rounded-sm px-1 py-0.5 font-ubuntu" {...props} />,
                         pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
-                        hr: ({node, ...props}) => <hr className="border-slate-700 my-6" {...props} />,
                         table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
                         thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
                         tbody: ({node, ...props}) => <tbody {...props} />,
@@ -294,7 +293,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [scaleInput, setScaleInput] = useState('100%');
   const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
   const [fontSizeIndex, setFontSizeIndex] = useState(1);
-  const isMobile = useIsMobile();
+  const isMobile = useMobile();
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
@@ -901,7 +900,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20 bg-[#303030]"
+                    className="w-full rounded-3xl border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -913,6 +912,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     }}
                     disabled={isAiThinking || isExtracting || !documentText}
                     rows={1}
+                    style={{backgroundColor: '#303030'}}
                 />
                 <div className="absolute right-3 bottom-2 flex h-[36px] items-center">
                     <SendStopButton
