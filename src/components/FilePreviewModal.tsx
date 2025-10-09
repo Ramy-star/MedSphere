@@ -213,8 +213,8 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
     }
 
     return (
-        <div className="group/message">
-            <div className={cn("relative font-inter", fontSizeClass)}>
+        <div className={cn("group/message", fontSizeClass)}>
+            <div className="relative font-inter">
                 <div className="prose prose-sm max-w-full">
                     <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
@@ -302,6 +302,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const fileContentRef = useRef<HTMLDivElement>(null);
   const scaleBeforeFullscreen = useRef<number>(1);
   const manualPageInputInProgress = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -407,15 +408,22 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(true);
     setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
     setChatInput('');
+
+    abortControllerRef.current = new AbortController();
     
     try {
         const responseText = await chatAboutDocument({
             question: question,
             documentContent: documentText,
             chatHistory: chatHistory,
-        });
+        }, { signal: abortControllerRef.current.signal });
         setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
-    } catch (error) {
+    } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.log("Chat request aborted.");
+          setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question as it was cancelled
+          return; // Don't show an error toast
+        }
         console.error("Error calling chat flow:", error);
         toast({
             variant: "destructive",
@@ -425,6 +433,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question if the call fails
     } finally {
         setIsAiThinking(false);
+        abortControllerRef.current = null;
     }
   }, [documentText, chatHistory, toast]);
 
@@ -601,8 +610,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [isAiThinking, chatHistory, submitChat]);
 
   const handleStopAi = () => {
-    console.log("Stopping AI... (Not implemented)");
-    setIsAiThinking(false);
+    if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+    }
   }
 
   const handleDownload = async () => {
@@ -900,7 +910,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
+                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}

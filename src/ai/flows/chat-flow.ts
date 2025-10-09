@@ -29,7 +29,7 @@ const chatPrompt = ai.definePrompt({
   prompt: chatPromptText,
 });
 
-export async function chatAboutDocument(input: ChatInput): Promise<string> {
-    const { text } = await chatPrompt(input);
+export async function chatAboutDocument(input: ChatInput, options?: { signal?: AbortSignal }): Promise<string> {
+    const { text } = await chatPrompt(input, { signal: options?.signal });
     return text;
 }
