@@ -418,7 +418,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             question: question,
             documentContent: documentText,
             chatHistory: chatHistory,
-        }, abortControllerRef.current.signal);
+        }, { signal: abortControllerRef.current.signal });
         setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
     } catch (error: any) {
         if (error.name === 'AbortError') {
@@ -589,7 +589,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         };
     }, [isFullscreen, numPages, pdfProxy, pdfScale, pageNumber, goToPage]);
 
-  const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent) => {
+  const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<Element, MouseEvent>) => {
       e?.preventDefault();
       if(isAiThinking) return;
       await submitChat(chatInput);
@@ -946,7 +946,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                      onKeyDown={(e) => {
                         if (e.key === 'Enter' && !e.shiftKey) {
                             e.preventDefault();
-                            handleChatSubmit();
+                            handleChatSubmit(e);
                         }
                     }}
                     disabled={isAiThinking || isExtracting || !documentText}
