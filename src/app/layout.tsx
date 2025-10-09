@@ -2,7 +2,7 @@
 'use client';
 
 import type { Metadata } from "next";
-import { Nunito_Sans, Ubuntu } from "next/font/google";
+import { Nunito_Sans, Ubuntu, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/header";
@@ -24,6 +24,12 @@ const ubuntu = Ubuntu({
   subsets: ['latin'],
   weight: ['400', '700'],
   variable: '--font-ubuntu',
+});
+
+const inter = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
 });
 
 const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
@@ -61,7 +67,7 @@ export default function RootLayout({
                 <meta name="theme-color" content="#0B0F12" />
                 <link rel="apple-touch-icon" href="/icon-192.png" />
             </head>
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} font-sans h-full`}>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
                  <WelcomeScreen onGetStarted={handleGetStarted} />
             </body>
         </html>
@@ -78,7 +84,7 @@ export default function RootLayout({
           <meta name="theme-color" content="#0B0F12" />
           <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className={`${nunitoSans.variable} ${ubuntu.variable} font-sans h-full`}>
+      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
           <div className="flex flex-col h-full w-full">
             <header className={cn("z-50 w-full", isHeaderFixed && "fixed top-0 left-0 right-0")}>

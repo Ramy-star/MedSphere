@@ -12,6 +12,7 @@ export default {
       fontFamily: {
         sans: ['var(--font-nunito-sans)'],
         ubuntu: ['var(--font-ubuntu)'],
+        inter: ['var(--font-inter)'],
         code: ['monospace'],
       },
       colors: {
@@ -90,6 +91,7 @@ export default {
   },
   plugins: [
     require('tailwindcss-animate'),
+    require('@tailwindcss/typography'),
     function({ addVariant }: { addVariant: (name: string, definition: string) => void }) {
       addVariant('fullscreen', '&:fullscreen');
     }

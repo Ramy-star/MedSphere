@@ -207,14 +207,14 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
         return (
             <div className="flex justify-end">
                 <div className={cn("rounded-2xl bg-blue-900/80 px-4 py-2.5 max-w-[90%]", fontSizeClass)}>
-                    <p className="text-white whitespace-pre-wrap break-words">{msg.text}</p>
+                    <p className="text-white whitespace-pre-wrap break-words font-inter">{msg.text}</p>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className={cn("prose prose-sm max-w-full relative group/message", fontSizeClass)}>
+        <div className={cn("prose prose-sm max-w-full relative group/message font-inter", fontSizeClass)}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -296,7 +296,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isMobile = useIsMobile();
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -320,6 +319,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const fileContentRef = useRef<HTMLDivElement>(null);
   const scaleBeforeFullscreen = useRef<number>(1);
   const manualPageInputInProgress = useRef(false);
+  const isMobile = useIsMobile();
   
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -343,12 +343,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     startNewChat();
   }, [startNewChat]);
 
-  const handleClose = () => {
-    onOpenChange(false);
-    // Delay reset to allow for closing animation, ensuring a clean state next time.
-    setTimeout(resetPdfState, 300);
-  };
-  
   const submitChat = useCallback(async (question: string) => {
     if (!question.trim()) return;
 
@@ -388,7 +382,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         resetPdfState();
     }
   }, [item, resetPdfState]);
-
+  
+  const handleClose = () => {
+    onOpenChange(false);
+    // Delay reset to allow for closing animation, ensuring a clean state next time.
+    setTimeout(resetPdfState, 300);
+  };
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -681,8 +680,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setFontSizeIndex(prev => Math.max(prev - 1, 0));
   };
   
-  // This check must happen AFTER all hooks are declared.
-  if (!item) return null;
+  // This check must happen AFTER all hooks are declared to prevent hook order errors.
+  if (!item) {
+    return null;
+  }
   
   const { Icon, color } = getIconForFileType(item);
   const fileUrl = item?.metadata?.storagePath;
@@ -847,13 +848,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
             <div className="flex items-center">
                  <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Decrease font size">
-                    <ZoomOut className="w-4 h-4" />
+                    <ZoomOut className="w-5 h-5" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Increase font size">
-                    <ZoomIn className="w-4 h-4" />
+                    <ZoomIn className="w-5 h-5" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Start New Chat" aria-label="Start a new chat session">
-                    <MessageSquarePlus className="w-4 h-4" />
+                    <MessageSquarePlus className="w-5 h-5" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-8 h-8" title="Close Chat" aria-label="Close chat panel">
                     <X className="w-5 h-5" />
@@ -866,7 +867,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
-                    <div className={cn("prose prose-sm max-w-full", fontSizes[fontSizeIndex])}>
+                    <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
                         {isExtracting ? (
                             <div className="flex items-center gap-2 text-white">
                             <Skeleton className="h-5 w-5 rounded-full" />
@@ -1022,5 +1023,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
