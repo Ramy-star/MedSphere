@@ -36,17 +36,21 @@ export async function chatAboutDocument(input: ChatInput, options?: { signal?: A
             prompt: chatPrompt,
             input,
             stream: false,
-            signal: options?.signal,
+            config: {
+              // The signal needs to be passed in the config block for ai.generate
+              // However, the prompt object itself might have a different way of handling it.
+              // Let's try passing it here as per standard generate options.
+            },
+            ...options, // Pass the options object which may contain the signal
         });
         return text;
     } catch (error) {
         if ((error as any).name === 'AbortError') {
             console.log('Chat request was aborted.');
             // When aborted, we don't want to show an error, just stop.
-            // We can return an empty string or throw a specific error to be caught by the UI.
-            // Here, re-throwing seems appropriate as the UI is designed to handle it.
+            // Re-throwing the error to be handled by the UI.
         }
-        // Re-throw the error to be handled by the caller
+        // Re-throw other errors to be handled by the caller
         throw error;
     }
 }
