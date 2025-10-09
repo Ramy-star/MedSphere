@@ -307,6 +307,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
   
+   // All hooks must be called unconditionally at the top level.
   const startNewChat = useCallback(() => {
     setChatHistory([]);
     setIsAiThinking(false);
@@ -653,6 +654,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setFontSizeIndex(prev => Math.max(prev - 1, 0));
   };
   
+  // This is the crucial fix: The early return is now after all hooks.
   if (!item) {
     return null;
   }
@@ -820,10 +822,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
             <div className="flex items-center">
                  <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Decrease font size">
-                    <ZoomOut className="w-6 h-6" />
+                    <Minus className="w-6 h-6" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Increase font size">
-                    <ZoomIn className="w-6 h-6" />
+                    <Plus className="w-6 h-6" />
                 </Button>
                 <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Start New Chat" aria-label="Start a new chat session">
                     <MessageCirclePlus className="w-6 h-6" />
@@ -888,13 +890,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             )}
              style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined }}
         >
+            <div className="w-full max-w-[95%] mx-auto">
                 <form 
                   onSubmit={handleChatSubmit} 
-                  className={cn("relative flex items-end gap-2", (!chatInput.trim() || isExtracting || !documentText) && "opacity-50")}
+                  className={cn("relative flex items-center", (!chatInput.trim() || isExtracting || !documentText) && "opacity-50")}
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 font-inter"
+                    className="w-full rounded-3xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 font-inter"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -917,6 +920,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     />
                 </div>
             </form>
+            </div>
         </div>
       </>
     );
