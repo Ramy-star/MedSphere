@@ -13,7 +13,7 @@ import { SendHorizontal } from 'lucide-react';
 // - disabled: boolean to disable the button.
 // - size: one of 'sm' | 'md' | 'lg' (defaults to 'md')
 
-export default function SendStopButton({ onSend, onStop, isSending, disabled, size = "md" }: { onSend: () => void, onStop: () => void, isSending: boolean, disabled?: boolean, size?: 'sm' | 'md' | 'lg' }) {
+export default function SendStopButton({ onSend, onStop, isSending, disabled, size = "md" }: { onSend: (e: React.MouseEvent) => void, onStop: () => void, isSending: boolean, disabled?: boolean, size?: 'sm' | 'md' | 'lg' }) {
   // size map
   const sizes = {
     sm: { btn: "w-9 h-9" },
@@ -23,10 +23,9 @@ export default function SendStopButton({ onSend, onStop, isSending, disabled, si
 
   const { btn } = sizes[size] || sizes.md;
 
-  async function handleSend(e: React.MouseEvent) {
-    e.preventDefault();
+  function handleSend(e: React.MouseEvent) {
     if (!isSending && onSend) {
-      onSend();
+      onSend(e);
     }
   }
 
@@ -75,3 +74,5 @@ export default function SendStopButton({ onSend, onStop, isSending, disabled, si
     </div>
   );
 }
+
+    

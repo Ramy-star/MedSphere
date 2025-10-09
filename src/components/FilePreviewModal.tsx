@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus } from 'lucide-react';
+import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus, CornerDownLeft } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -148,6 +148,7 @@ type ChatMessageProps = {
     copiedMessageId: string | null;
     messageId: string;
     fontSizeClass: string;
+    isMobile: boolean;
 };
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
@@ -201,7 +202,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
 };
 
 
-const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate, isLastMessage, isAiThinking, copiedMessageId, messageId, fontSizeClass }: ChatMessageProps) {
+const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate, isLastMessage, isAiThinking, copiedMessageId, messageId, fontSizeClass, isMobile }: ChatMessageProps) {
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
@@ -211,6 +212,8 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
             </div>
         );
     }
+    
+    const showActions = isLastMessage && !isAiThinking;
 
     return (
         <div className="group/message">
@@ -241,8 +244,8 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                 </ReactMarkdown>
             </div>
 
-            {isLastMessage && !isAiThinking && (
-                 <div className="flex items-center gap-2 mt-4 opacity-0 group-hover/message:opacity-100 transition-opacity">
+            {showActions && (
+                 <div className={cn("flex items-center gap-2 mt-4 transition-opacity", !isMobile && "opacity-0 group-hover/message:opacity-100")}>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -250,8 +253,8 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white group/action"
                         aria-label="Copy AI response to clipboard"
                     >
-                         {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-0 group-hover/action:mr-1.5 transition-all" /> : <Copy className="w-4 h-4 mr-0 group-hover/action:mr-1.5 transition-all" />}
-                        <span className="text-sm max-w-0 overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs">Copy</span>
+                         {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" /> : <Copy className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />}
+                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs">Copy</span>
                     </Button>
                     <Button
                         variant="ghost"
@@ -260,8 +263,8 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white group/action"
                         aria-label="Regenerate response"
                     >
-                        <RefreshCw className="w-4 h-4 mr-0 group-hover/action:mr-1.5 transition-all" />
-                        <span className="text-sm max-w-0 overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs">Regenerate</span>
+                        <RefreshCw className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />
+                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs">Regenerate</span>
                     </Button>
                 </div>
             )}
@@ -484,7 +487,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     const textarea = textareaRef.current;
     if (textarea) {
         textarea.style.height = 'auto';
-        textarea.style.height = `${textarea.scrollHeight}px`;
+        const scrollHeight = textarea.scrollHeight;
+        textarea.style.height = `${scrollHeight}px`;
     }
   }, [chatInput]);
 
@@ -664,6 +668,21 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setFontSizeIndex(prev => Math.max(prev - 1, 0));
   };
   
+  const handleInsertNewline = () => {
+    if (textareaRef.current) {
+        const { selectionStart, selectionEnd, value } = textareaRef.current;
+        const newValue = value.substring(0, selectionStart) + '\n' + value.substring(selectionEnd);
+        setChatInput(newValue);
+        // Move cursor after the inserted newline
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.selectionStart = selectionStart + 1;
+                textareaRef.current.selectionEnd = selectionStart + 1;
+            }
+        }, 0);
+    }
+  };
+
   // This is the correct place for the early return, after all hooks have been called.
   if (!item) {
     return null;
@@ -822,6 +841,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   );
 
   const renderChatView = () => {
+    const inputContainerHeight = 76; // Approx height of input area
+    const chatPaddingBottom = isMobile ? `${inputContainerHeight}px` : '1rem';
+
 
     const chatViewContent = (
       <>
@@ -848,7 +870,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <div 
             ref={chatContainerRef} 
             className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
-            style={{backgroundColor: '#212121'}}
+            style={{
+                backgroundColor: '#212121',
+                paddingBottom: chatPaddingBottom
+            }}
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
@@ -879,6 +904,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             isAiThinking={isAiThinking}
                             copiedMessageId={copiedMessageId}
                             fontSizeClass={fontSizes[fontSizeIndex]}
+                            isMobile={isMobile}
                         />
                     )
                 })}
@@ -895,11 +921,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </div>
         <div 
             className={cn(
-              "p-2 border-t border-transparent mb-2",
-              isMobile && "fixed bottom-2 left-0 right-0 z-50",
-              "transition-all duration-200"
+              "p-2 border-t border-transparent",
+              isMobile ? "fixed bottom-2 left-0 right-0 z-50" : "mt-auto mb-2",
+              "transition-all duration-300"
             )}
-             style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined, backgroundColor: '#212121' }}
+            style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined, backgroundColor: '#212121' }}
         >
              <form
                 onSubmit={handleChatSubmit}
@@ -909,7 +935,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
+                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-24 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -923,7 +949,19 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     rows={1}
                     style={{backgroundColor: '#303030'}}
                 />
-                <div className="absolute right-3 bottom-2 flex h-[36px] items-center">
+                <div className="absolute right-3 bottom-2 flex h-[36px] items-center gap-1">
+                     {isMobile && (
+                        <Button 
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleInsertNewline}
+                            className="w-9 h-9 rounded-full text-white/70 hover:bg-white/10"
+                            aria-label="Insert new line"
+                            >
+                            <CornerDownLeft className="w-5 h-5" />
+                        </Button>
+                     )}
                     <SendStopButton
                         size='md'
                         onSend={handleChatSubmit}
@@ -943,11 +981,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 {showChat && (
                     <motion.div
                         key="chat-panel-mobile"
-                        initial={{ y: '100%' }}
+                        initial={{ y: '100dvh' }}
                         animate={{ y: 0 }}
-                        exit={{ y: '100%' }}
-                        transition={{ duration: 0.3, ease: 'easeInOut' }}
-                        className="flex flex-col overflow-hidden h-full w-full absolute inset-0 z-20"
+                        exit={{ y: '100dvh' }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 40 }}
+                        className="flex flex-col overflow-hidden h-[100dvh] w-full absolute inset-0 z-20"
                         style={{backgroundColor: '#212121'}}
                     >
                         {chatViewContent}
@@ -1013,3 +1051,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
