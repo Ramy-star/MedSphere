@@ -142,6 +142,9 @@ const PdfControls = ({
 type ChatMessageProps = {
     msg: { role: 'user' | 'model', text: string };
     onCopy: (text: string, id: string) => void;
+    onRegenerate: () => void;
+    isLastMessage: boolean;
+    isAiThinking: boolean;
     copiedMessageId: string | null;
     messageId: string;
 };
@@ -197,7 +200,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
 };
 
 
-const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessageId, messageId }: ChatMessageProps) {
+const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate, isLastMessage, isAiThinking, copiedMessageId, messageId }: ChatMessageProps) {
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
@@ -209,15 +212,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
     }
 
     return (
-        <div className={cn("prose prose-sm md:prose-base max-w-full text-slate-200 relative group")}>
-             <button
-                onClick={() => onCopy(msg.text, messageId)}
-                className="absolute top-0 right-0 p-1.5 rounded-full text-slate-400 hover:bg-slate-700 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                title="Copy message"
-                aria-label="Copy AI response to clipboard"
-            >
-                {copiedMessageId === messageId ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            </button>
+        <div className={cn("prose prose-sm md:prose-base max-w-full text-slate-200 relative group/message")}>
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
               components={{
@@ -257,7 +252,31 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, copiedMessage
             >
                 {msg.text}
             </ReactMarkdown>
-           
+
+            {isLastMessage && !isAiThinking && (
+                 <div className="flex items-center gap-2 mt-4 opacity-0 group-hover/message:opacity-100 transition-opacity">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => onCopy(msg.text, messageId)}
+                        className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white"
+                        aria-label="Copy AI response to clipboard"
+                    >
+                         {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-1.5" /> : <Copy className="w-4 h-4 mr-1.5" />}
+                        <span>Copy</span>
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={onRegenerate}
+                        className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white"
+                        aria-label="Regenerate response"
+                    >
+                        <RefreshCw className="w-4 h-4 mr-1.5" />
+                        <span>Regenerate</span>
+                    </Button>
+                </div>
+            )}
         </div>
     );
 });
@@ -597,26 +616,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         })
     });
   }
-
   
- const handleChatSubmit = async (e?: React.FormEvent<HTMLFormElement>) => {
-    e?.preventDefault();
-    if (!chatInput.trim() || isAiThinking) return;
+  const submitChat = useCallback(async (question: string) => {
+    if (!question.trim()) return;
 
     if (!documentText) {
        toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
        return;
     }
 
-    const newQuestion = chatInput;
-    const currentChatHistory = [...chatHistory, { role: 'user' as const, text: newQuestion }];
-    setChatHistory(currentChatHistory);
-    setChatInput('');
     setIsAiThinking(true);
     
     try {
         const responseText = await chatAboutDocument({
-            question: newQuestion,
+            question: question,
             documentContent: documentText,
             chatHistory: chatHistory,
         });
@@ -628,11 +641,40 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             title: "AI Chat Error",
             description: "The AI assistant could not be reached. Please try again later."
         });
-        setChatHistory(prev => prev.slice(0, -1));
+        setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question if the call fails
     } finally {
         setIsAiThinking(false);
     }
-  }
+  }, [documentText, chatHistory, toast]);
+
+  const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement>) => {
+      e?.preventDefault();
+      if (!chatInput.trim() || isAiThinking) return;
+
+      const newQuestion = chatInput;
+      setChatHistory(prev => [...prev, { role: 'user' as const, text: newQuestion }]);
+      setChatInput('');
+      
+      await submitChat(newQuestion);
+  }, [chatInput, isAiThinking, submitChat]);
+  
+  const handleRegenerate = useCallback(async () => {
+    if (isAiThinking || chatHistory.length === 0) return;
+
+    const lastUserMessage = [...chatHistory].reverse().find(m => m.role === 'user');
+    if (!lastUserMessage) return;
+
+    // Remove the last AI response before regenerating
+    setChatHistory(prev => {
+        const lastMessage = prev[prev.length - 1];
+        if (lastMessage && lastMessage.role === 'model') {
+            return prev.slice(0, -1);
+        }
+        return prev;
+    });
+
+    await submitChat(lastUserMessage.text);
+  }, [isAiThinking, chatHistory, submitChat]);
 
   const handleStopAi = () => {
     // This is a placeholder. In a real scenario, you'd need a way to
@@ -827,15 +869,21 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </div>
                 )}
 
-                {chatHistory.map((msg, index) => (
-                    <ChatMessage
-                        key={`msg-${index}`}
-                        messageId={`msg-${index}`}
-                        msg={msg}
-                        onCopy={handleCopyToClipboard}
-                        copiedMessageId={copiedMessage}
-                    />
-                ))}
+                {chatHistory.map((msg, index) => {
+                    const isLastMessage = index === chatHistory.length - 1;
+                    return (
+                        <ChatMessage
+                            key={`msg-${index}`}
+                            messageId={`msg-${index}`}
+                            msg={msg}
+                            onCopy={handleCopyToClipboard}
+                            onRegenerate={handleRegenerate}
+                            isLastMessage={isLastMessage}
+                            isAiThinking={isAiThinking}
+                            copiedMessageId={copiedMessage}
+                        />
+                    )
+                })}
 
                     {isAiThinking && (
                     <div className="space-y-4">
