@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -323,10 +324,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
-
-  // This check must happen AFTER all hooks are declared.
-  if (!item) return null;
-
+  
   const startNewChat = useCallback(() => {
     setChatHistory([]);
     setIsAiThinking(false);
@@ -683,6 +681,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setFontSizeIndex(prev => Math.max(prev - 1, 0));
   };
   
+  // This check must happen AFTER all hooks are declared.
+  if (!item) return null;
+  
   const { Icon, color } = getIconForFileType(item);
   const fileUrl = item?.metadata?.storagePath;
   const isLink = item?.type === 'LINK';
@@ -865,14 +866,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
-                    <div className={cn("prose prose-sm max-w-full text-white", fontSizes[fontSizeIndex])}>
+                    <div className={cn("prose prose-sm max-w-full", fontSizes[fontSizeIndex])}>
                         {isExtracting ? (
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-2 text-white">
                             <Skeleton className="h-5 w-5 rounded-full" />
                             <p>Analyzing document...</p>
                             </div>
                         ) : documentText ? (
-                            <p>Hello! I am your AI assistant. Ask me anything about this document.</p>
+                            <p className="text-white">Hello! I am your AI assistant. Ask me anything about this document.</p>
                         ) : (
                             <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
                         )}
@@ -1021,3 +1022,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
