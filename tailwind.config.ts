@@ -82,6 +82,9 @@ export default {
       },
       transform: {
         'none': 'none',
+      },
+      animation: {
+        'spin-slow': 'spin 1.6s linear infinite',
       }
     },
   },

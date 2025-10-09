@@ -37,6 +37,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
+import SendStopButton from './SendStopButton';
 
 type PdfControlsProps = {
     isMobile: boolean,
@@ -633,6 +634,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }
 
+  const handleStopAi = () => {
+    // This is a placeholder. In a real scenario, you'd need a way to
+    // signal an abort to the ongoing `chatAboutDocument` flow.
+    // Genkit flows can be made cancellable.
+    console.log("Stopping AI... (Not implemented)");
+    setIsAiThinking(false);
+  }
+
 
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   
@@ -846,7 +855,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             )}
              style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined }}
         >
-                <form onSubmit={handleChatSubmit} className="relative flex items-end gap-2">
+                <form 
+                  onSubmit={handleChatSubmit} 
+                  className={cn("relative flex items-end gap-2", (!chatInput.trim() || isExtracting || !documentText) && "opacity-50")}
+                >
                 <Textarea
                     ref={textareaRef}
                     className="w-full rounded-2xl border-none bg-[#343541] py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0"
@@ -859,29 +871,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             handleChatSubmit();
                         }
                     }}
-                    disabled={isExtracting || isAiThinking || !documentText}
+                    disabled={isAiThinking || isExtracting || !documentText}
                     rows={1}
                 />
                 <div className="absolute bottom-2 right-3 flex-shrink-0">
-                     <Button 
-                        type="submit" 
-                        size="icon" 
-                        className={cn(
-                            "flex h-9 w-9 items-center justify-center rounded-full text-white disabled:bg-gray-500 disabled:text-gray-300 relative",
-                            isAiThinking ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-600 hover:bg-blue-700"
-                        )}
-                        disabled={!chatInput.trim() || isExtracting || !documentText} 
-                        aria-label="Send message"
-                    >
-                        {isAiThinking ? (
-                            <>
-                                <Loader2 className="absolute h-9 w-9 animate-spin text-blue-300" />
-                                <Square className="w-3 h-3 fill-current text-white" />
-                            </>
-                        ) : (
-                            <Send className="w-5 h-5" />
-                        )}
-                    </Button>
+                     <SendStopButton
+                        size='sm'
+                        onSend={handleChatSubmit}
+                        onStop={handleStopAi}
+                        isSending={isAiThinking}
+                        disabled={!chatInput.trim() || isExtracting || !documentText}
+                    />
                 </div>
             </form>
         </div>
@@ -962,5 +962,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
