@@ -863,11 +863,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     rows={1}
                 />
                 <div className="absolute bottom-2 right-3 flex-shrink-0">
-                    <Button type="submit" size="icon" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#19C37D] text-white hover:bg-[#15A26A] disabled:bg-gray-500 disabled:text-gray-300 relative" disabled={isAiThinking || !chatInput.trim() || isExtracting || !documentText} aria-label="Send message">
+                     <Button 
+                        type="submit" 
+                        size="icon" 
+                        className={cn(
+                            "flex h-9 w-9 items-center justify-center rounded-full text-white disabled:bg-gray-500 disabled:text-gray-300 relative",
+                            isAiThinking ? "bg-blue-600 hover:bg-blue-700" : "bg-blue-600 hover:bg-blue-700"
+                        )}
+                        disabled={!chatInput.trim() || isExtracting || !documentText} 
+                        aria-label="Send message"
+                    >
                         {isAiThinking ? (
                             <>
-                                <Loader2 className="absolute h-9 w-9 animate-spin text-orange-400" />
-                                <Square className="w-3 h-3 fill-current" />
+                                <Loader2 className="absolute h-9 w-9 animate-spin text-blue-300" />
+                                <Square className="w-3 h-3 fill-current text-white" />
                             </>
                         ) : (
                             <Send className="w-5 h-5" />
@@ -953,3 +962,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
