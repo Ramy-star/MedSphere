@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus, ZoomIn, ZoomOut } from 'lucide-react';
+import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -891,17 +891,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             )}
              style={{ paddingBottom: isMobile ? `${chatInputOffset}px` : undefined, backgroundColor: '#212121' }}
         >
-            <div className="relative w-full max-w-[95%] mx-auto">
-                 <form 
-                  onSubmit={handleChatSubmit} 
-                  className={cn(
-                    "flex items-end",
+             <form
+                onSubmit={handleChatSubmit}
+                className={cn("relative mx-auto w-full max-w-[95%]",
                     (!chatInput.trim() || isExtracting || !documentText) && "opacity-50"
-                  )}
+                )}
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] resize-none overflow-y-hidden focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20 border border-white/10"
+                    className="w-full rounded-3xl border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -915,8 +913,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     disabled={isAiThinking || isExtracting || !documentText}
                     rows={1}
                 />
-                <div className="absolute right-3 bottom-2 h-full flex items-center flex-shrink-0">
-                     <SendStopButton
+                <div className="absolute right-3 bottom-2 flex h-[36px] items-center">
+                    <SendStopButton
                         size='md'
                         onSend={handleChatSubmit}
                         onStop={handleStopAi}
@@ -925,7 +923,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     />
                 </div>
             </form>
-            </div>
         </div>
       </>
     );
