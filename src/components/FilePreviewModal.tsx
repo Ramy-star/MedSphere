@@ -832,14 +832,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         )}
                     >
                         <div className="flex items-center relative z-10">
-<<<<<<< HEAD
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            <span className="sm:inline">Ask AI</span>
-=======
-                            <Sparkles className={cn("h-4 w-4", isMobile ? "mr-1.5" : "sm:mr-2")} />
+                            <Sparkles className={cn("h-4 w-4", !isMobile && "sm:mr-2")} />
                             <span className="hidden sm:inline">Ask AI</span>
-                            <span className="sm:hidden">AI</span>
->>>>>>> 1a01f8ab84d9d42763ba920797cf23bf6046da80
                         </div>
                     </Button>
                 )}
