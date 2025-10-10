@@ -1,4 +1,4 @@
-// chat-formatter.js
+
 import DOMPurify from 'dompurify';
 import { marked } from 'marked';
 
@@ -110,8 +110,7 @@ function preprocess(raw){
     }
 
     // inline numeric lists without heading
-    if ((/\d+\)/.test(p) || /\d+\./.test(p)) && (p.split(/(?:\d+\)|\d+\.)/).filter(Boolean).length>1)
-   {
+    if ((/\d+\)/.test(p) || /\d+\./.test(p)) && (p.split(/(?:\d+\)|\d+\.)/).filter(Boolean).length > 1)) {
       const items = p.split(/(?:\d+\)|\d+\.)/).map(s=>s.trim()).filter(Boolean);
       const lines = items.map((it,i)=> (i+1)+'. '+it);
       processed.push(lines.join('\n'));
