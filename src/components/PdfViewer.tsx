@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useDebounce } from 'use-debounce';
-import { useIsMobile } from '@/hooks/use-is-mobile';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -34,12 +33,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number }[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-<<<<<<< HEAD
-  const [debouncedScale] = useDebounce(scale, 50);
-=======
-
   const [debouncedScale] = useDebounce(scale, 100);
->>>>>>> b8d438ebab57131ad2e515378e6f019913f8dc3f
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
@@ -71,14 +65,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
   useEffect(() => {
     if (!onPageChange || !virtualItems.length) return;
-<<<<<<< HEAD
-  
-    const firstVisibleItem = virtualItems[0];
-    if (firstVisibleItem) {
-      const newPageNumber = firstVisibleItem.index + 1;
-      onPageChange(newPageNumber);
-    }
-=======
 
     let middleVisibleIndex = 0;
     if (virtualItems.length > 0 && containerRef.current) {
@@ -101,7 +87,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     }
     onPageChange(middleVisibleIndex + 1);
 
->>>>>>> b8d438ebab57131ad2e515378e6f019913f8dc3f
   }, [virtualItems, onPageChange]);
 
   useImperativeHandle(ref, () => ({
