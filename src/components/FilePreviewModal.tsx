@@ -679,6 +679,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             if (textareaRef.current) {
                 textareaRef.current.selectionStart = selectionStart + 1;
                 textareaRef.current.selectionEnd = selectionStart + 1;
+                textareaRef.current.focus();
             }
         }, 0);
     }
@@ -796,16 +797,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button
                         onClick={() => setShowChat(!showChat)}
                         className={cn(
-                            "rounded-full px-4 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
+                            "rounded-full px-3 sm:px-4 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
                             "active:scale-95",
                              !showChat && "bg-gradient-to-r from-[#2968b5] to-[#C42929]",
                              showChat && "bg-gradient-to-r from-[#1263FF] to-[#D11111]"
                         )}
                     >
                         <div className="flex items-center relative z-10">
-                            <Sparkles className="mr-0 sm:mr-2 h-4 w-4" />
-                            <span className="hidden sm:inline">Ask AI</span>
-                            <span className="sm:hidden">Ask AI</span>
+                            <Sparkles className="h-4 w-4" />
+                            <span className="hidden sm:inline ml-2">Ask AI</span>
+                            <span className="sm:hidden ml-1.5">Ask AI</span>
                         </div>
                     </Button>
                 )}
@@ -868,15 +869,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </Button>
             </div>
         </header>
-        <div 
-            ref={chatContainerRef} 
-            className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
-            style={{
-                backgroundColor: '#212121',
-                paddingBottom: chatPaddingBottom
-            }}
-        >
-                
+        <div className="relative flex-1 overflow-hidden" style={{backgroundColor: '#212121'}}>
+            <div 
+                ref={chatContainerRef} 
+                className="h-full space-y-6 overflow-y-auto p-4 sm:p-6"
+                style={{ paddingBottom: chatPaddingBottom }}
+            >
                 {chatHistory.length === 0 && !isAiThinking && (
                     <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
                         {isExtracting ? (
@@ -919,6 +917,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         </div>
                     </div>
                 )}
+            </div>
+            {/* Fade-out effect for mobile */}
+            <div
+              className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none"
+              style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none' }}
+            ></div>
         </div>
         <div 
             className={cn(
@@ -951,6 +955,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     style={{backgroundColor: '#303030'}}
                 />
                 <div className="absolute right-3 bottom-2 flex h-[36px] items-center gap-1">
+                    {isMobile && (
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={handleInsertNewline}
+                            className="w-8 h-8 rounded-full text-slate-400 hover:bg-white/10"
+                            aria-label="Insert new line"
+                        >
+                            <CornerDownLeft className="w-5 h-5" />
+                        </Button>
+                    )}
                     <SendStopButton
                         size='md'
                         onSend={handleChatSubmit}
