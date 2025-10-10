@@ -245,7 +245,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
             </div>
 
             {showActions && (
-                 <div className={cn("flex items-center gap-2 mt-4 transition-opacity", !isMobile && "opacity-0 group-hover/message:opacity-100")}>
+                 <div className={cn("flex items-center gap-2 mt-4 transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover/message:opacity-100")}>
                     <Button
                         variant="ghost"
                         size="sm"
@@ -254,7 +254,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         aria-label="Copy AI response to clipboard"
                     >
                          {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" /> : <Copy className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />}
-                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline">Copy</span>
+                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline"></span>
                     </Button>
                     <Button
                         variant="ghost"
@@ -264,7 +264,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         aria-label="Regenerate response"
                     >
                         <RefreshCw className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />
-                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline">Regenerate</span>
+                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline"></span>
                     </Button>
                 </div>
             )}
@@ -589,7 +589,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         };
     }, [isFullscreen, numPages, pdfProxy, pdfScale, pageNumber, goToPage]);
 
-  const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement>) => {
+  const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<Element, MouseEvent>) => {
       e?.preventDefault();
       if(isAiThinking) return;
       await submitChat(chatInput);
@@ -804,9 +804,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         )}
                     >
                         <div className="flex items-center relative z-10">
+<<<<<<< HEAD
                             <Sparkles className="h-4 w-4" />
                             <span className="hidden sm:inline ml-2">Ask AI</span>
                             <span className="sm:hidden ml-1.5">Ask AI</span>
+=======
+                            <Sparkles className={cn("h-4 w-4", isMobile ? "mr-2" : "sm:mr-2")} />
+                            <span className="hidden sm:inline">Ask AI</span>
+                            <span className="sm:hidden">AI</span>
+>>>>>>> 1531d290a1bef57d7bca63b615a590b21b94d460
                         </div>
                     </Button>
                 )}
@@ -844,7 +850,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const renderChatView = () => {
     const inputContainerHeight = 76; // Approx height of input area
-    const chatPaddingBottom = isMobile ? `${inputContainerHeight + 8}px` : '1rem';
+    const chatPaddingBottom = isMobile ? `${inputContainerHeight + 8}px` : '0.5rem';
 
 
     const chatViewContent = (
@@ -869,6 +875,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </Button>
             </div>
         </header>
+<<<<<<< HEAD
         <div className="relative flex-1 overflow-hidden" style={{backgroundColor: '#212121'}}>
             <div 
                 ref={chatContainerRef} 
@@ -923,11 +930,67 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               className="absolute bottom-0 left-0 right-0 h-24 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none"
               style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none' }}
             ></div>
+=======
+        <div className='relative flex-1 flex flex-col overflow-hidden'>
+            <div 
+                ref={chatContainerRef} 
+                className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
+                style={{
+                    backgroundColor: '#212121',
+                    paddingBottom: chatPaddingBottom
+                }}
+            >
+                    
+                    {chatHistory.length === 0 && !isAiThinking && (
+                        <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
+                            {isExtracting ? (
+                                <div className="flex items-center gap-2 text-white">
+                                <Skeleton className="h-5 w-5 rounded-full" />
+                                <p>Analyzing document...</p>
+                                </div>
+                            ) : documentText ? (
+                                <p className="text-white">Hello! I am your AI assistant. Ask me anything about this document.</p>
+                            ) : (
+                                <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {chatHistory.map((msg, index) => {
+                        const isLastMessage = index === chatHistory.length - 1;
+                        return (
+                            <ChatMessage
+                                key={`msg-${index}`}
+                                messageId={`msg-${index}`}
+                                msg={msg}
+                                onCopy={handleCopyToClipboard}
+                                onRegenerate={handleRegenerate}
+                                isLastMessage={isLastMessage}
+                                isAiThinking={isAiThinking}
+                                copiedMessageId={copiedMessageId}
+                                fontSizeClass={fontSizes[fontSizeIndex]}
+                                isMobile={isMobile}
+                            />
+                        )
+                    })}
+
+                        {isAiThinking && (
+                        <div className="space-y-4">
+                            <div className="space-y-2">
+                                <Skeleton className="h-4 w-[80%] rounded-lg" />
+                                <Skeleton className="h-4 w-[95%] rounded-lg" />
+                                <Skeleton className="h-4 w-[60%] rounded-lg" />
+                            </div>
+                        </div>
+                    )}
+            </div>
+             <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
+>>>>>>> 1531d290a1bef57d7bca63b615a590b21b94d460
         </div>
         <div 
             className={cn(
-              "p-2",
-              isMobile ? "fixed bottom-2 left-0 right-0 z-50" : "mt-auto mb-2",
+              "p-2 mb-2",
+              isMobile ? "fixed bottom-2 left-0 right-0 z-50" : "mt-auto",
               "transition-transform duration-300"
             )}
             style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none', backgroundColor: '#212121' }}
@@ -940,7 +1003,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-24 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
+                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
