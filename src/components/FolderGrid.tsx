@@ -28,7 +28,7 @@ import { UploadingFile, UploadProgress } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '../hooks/use-mobile';
 import React from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { ChangeIconDialog } from './ChangeIconDialog';
