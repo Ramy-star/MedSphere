@@ -34,7 +34,12 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number }[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
+<<<<<<< HEAD
   const [debouncedScale] = useDebounce(scale, 50);
+=======
+
+  const [debouncedScale] = useDebounce(scale, 100);
+>>>>>>> b8d438ebab57131ad2e515378e6f019913f8dc3f
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
     setNumPages(loadedPdf.numPages);
@@ -59,19 +64,44 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     count: numPages,
     getScrollElement: () => containerRef.current,
     estimateSize: (index) => (pageDimensions[index] ? pageDimensions[index].height * debouncedScale : 1000),
-    overscan: 1,
+    overscan: 3,
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
 
   useEffect(() => {
     if (!onPageChange || !virtualItems.length) return;
+<<<<<<< HEAD
   
     const firstVisibleItem = virtualItems[0];
     if (firstVisibleItem) {
       const newPageNumber = firstVisibleItem.index + 1;
       onPageChange(newPageNumber);
     }
+=======
+
+    let middleVisibleIndex = 0;
+    if (virtualItems.length > 0 && containerRef.current) {
+        const viewportTop = containerRef.current.scrollTop;
+        const viewportBottom = viewportTop + containerRef.current.clientHeight;
+
+        for (const virtualItem of virtualItems) {
+            const itemTop = virtualItem.start;
+            const itemBottom = itemTop + virtualItem.size;
+
+            if (itemTop < viewportBottom && itemBottom > viewportTop) {
+                // This item is at least partially visible
+                const visibleHeight = Math.min(itemBottom, viewportBottom) - Math.max(itemTop, viewportTop);
+                if (visibleHeight > 0) { // Check if it's the most visible one
+                     middleVisibleIndex = virtualItem.index;
+                     break;
+                }
+            }
+        }
+    }
+    onPageChange(middleVisibleIndex + 1);
+
+>>>>>>> b8d438ebab57131ad2e515378e6f019913f8dc3f
   }, [virtualItems, onPageChange]);
 
   useImperativeHandle(ref, () => ({

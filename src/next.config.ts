@@ -1,7 +1,5 @@
-
 import type { NextConfig } from 'next';
 import type { Configuration } from 'webpack';
-import path from 'path';
 
 const withPWA = require('next-pwa')({
   dest: 'public',
@@ -10,9 +8,42 @@ const withPWA = require('next-pwa')({
   disable: process.env.NODE_ENV === 'development',
   runtimeCaching: [
     {
-      // This rule will match both direct Cloudinary URLs and URLs proxied through the worker.
-      // It looks for /image/upload/, /video/upload/, or /raw/upload/ which is common
-      // to both URL structures.
+      urlPattern: /^https?.*/,
+      handler: 'StaleWhileRevalidate',
+      options: {
+        cacheName: 'pages-cache',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        },
+      },
+    },
+    {
+      urlPattern: /_next\/static\//,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'static-assets-cache',
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
+        },
+      },
+    },
+    {
+      urlPattern: /\.(?:pdf|docx|pptx|xlsx)$/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'document-cache',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 Days
+        },
+        cacheableResponse: {
+          statuses: [0, 200], // 0 for opaque responses
+        },
+      },
+    },
+    {
       urlPattern: /\/(image|video|raw)\/upload\//i,
       handler: 'CacheFirst',
       options: {
@@ -82,17 +113,6 @@ const nextConfig: NextConfig = {
         replace: 'null',
       },
     });
-
-    // Add path alias for @
-    if (!config.resolve) {
-      config.resolve = {};
-    }
-    if (!config.resolve.alias) {
-      config.resolve.alias = {};
-    }
-    if (typeof config.resolve.alias === 'object') {
-        config.resolve.alias['@'] = path.resolve(__dirname, './src');
-    }
 
     return config;
   },
