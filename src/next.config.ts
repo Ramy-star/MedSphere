@@ -30,9 +30,20 @@ const withPWA = require('next-pwa')({
       },
     },
     {
-      // This rule will match both direct Cloudinary URLs and URLs proxied through the worker.
-      // It looks for /image/upload/, /video/upload/, or /raw/upload/ which is common
-      // to both URL structures.
+      urlPattern: /\.(?:pdf|docx|pptx|xlsx)$/i,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'document-cache',
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 Days
+        },
+        cacheableResponse: {
+          statuses: [0, 200], // 0 for opaque responses
+        },
+      },
+    },
+    {
       urlPattern: /\/(image|video|raw)\/upload\//i,
       handler: 'CacheFirst',
       options: {

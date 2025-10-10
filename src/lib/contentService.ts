@@ -1,6 +1,6 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -535,76 +535,93 @@ export const contentService = {
 
   async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
-
+  
     type FileToDelete = {
-        publicId: string;
-        resourceType: 'image' | 'video' | 'raw';
+      publicId: string;
+      resourceType: 'image' | 'video' | 'raw';
     };
-
+  
+    const contentCollection = collection(db, 'content');
+  
+    // Efficiently get all children of a given parent
+    const getChildrenOf = async (parentId: string, transaction: any) => {
+      const childrenQuery = query(contentCollection, where('parentId', '==', parentId));
+      const snapshot = await transaction.get(childrenQuery);
+      return snapshot.docs;
+    };
+  
     try {
-        await runTransaction(db, async (transaction) => {
-            const allContentSnapshot = await getDocs(collection(db, 'content'));
-            const allContent = allContentSnapshot.docs.map(d => ({ id: d.id, ...d.data() }) as Content);
-
-            const itemsToDelete: Content[] = [];
-            const visited = new Set<string>();
-            const filesToDeleteFromCloudinary: FileToDelete[] = [];
-
-            function findRecursively(idToDelete: string) {
-                if(visited.has(idToDelete)) return;
-                visited.add(idToDelete);
-                
-                const item = allContent.find(x => x.id === idToDelete);
-                if (item) {
-                    itemsToDelete.push(item);
-                    if (item.type === 'FILE' && item.metadata?.cloudinaryPublicId) {
-                        filesToDeleteFromCloudinary.push({
-                            publicId: item.metadata.cloudinaryPublicId,
-                            resourceType: item.metadata.cloudinaryResourceType || 'raw'
-                        });
-                    }
-                    if ((item.type === 'FOLDER' || item.type === 'SUBJECT') && item.metadata?.iconCloudinaryPublicId) {
-                         filesToDeleteFromCloudinary.push({
-                            publicId: item.metadata.iconCloudinaryPublicId,
-                            resourceType: 'image'
-                        });
-                    }
-                    const children = allContent.filter(x => x.parentId === idToDelete);
-                    children.forEach(child => findRecursively(child.id));
-                }
+      await runTransaction(db, async (transaction) => {
+        const itemsToDelete: { ref: any, data: Content }[] = [];
+        const filesToCloudinaryDelete: FileToDelete[] = [];
+        const searchQueue: string[] = [id];
+        const visited = new Set<string>();
+  
+        while (searchQueue.length > 0) {
+          const currentId = searchQueue.shift();
+          if (!currentId || visited.has(currentId)) continue;
+          visited.add(currentId);
+  
+          const docRef = doc(contentCollection, currentId);
+          const docSnap = await transaction.get(docRef);
+  
+          if (docSnap.exists()) {
+            const itemData = { id: docSnap.id, ...docSnap.data() } as Content;
+            itemsToDelete.push({ ref: docRef, data: itemData });
+  
+            // Queue children for deletion
+            const childrenDocs = await getChildrenOf(currentId, transaction);
+            childrenDocs.forEach((childDoc: QueryDocumentSnapshot<DocumentData>) => searchQueue.push(childDoc.id));
+  
+            // Check for associated Cloudinary files
+            if (itemData.type === 'FILE' && itemData.metadata?.cloudinaryPublicId) {
+              filesToCloudinaryDelete.push({
+                publicId: itemData.metadata.cloudinaryPublicId,
+                resourceType: itemData.metadata.cloudinaryResourceType || 'raw',
+              });
             }
-            findRecursively(id);
-
-            // Step 1: Delete files from Cloudinary via our API route
-            for (const file of filesToDeleteFromCloudinary) {
-                 const res = await fetch('/api/delete-cloudinary', {
+            if ((itemData.type === 'FOLDER' || itemData.type === 'SUBJECT') && itemData.metadata?.iconCloudinaryPublicId) {
+              filesToCloudinaryDelete.push({
+                publicId: itemData.metadata.iconCloudinaryPublicId,
+                resourceType: 'image',
+              });
+            }
+          }
+        }
+  
+        // Step 1 (within transaction): Delete Firestore documents
+        for (const item of itemsToDelete) {
+          transaction.delete(item.ref);
+        }
+  
+        // Note: Cloudinary deletions happen outside the Firestore transaction
+        // for robustness. If this part fails, data is gone from Firestore,
+        // but files might remain in Cloudinary (can be cleaned up later).
+        if (filesToCloudinaryDelete.length > 0) {
+            Promise.all(filesToCloudinaryDelete.map(file => 
+                fetch('/api/delete-cloudinary', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(file),
-                });
-                if (!res.ok) {
-                    // Log the error but continue transaction to delete from Firestore anyway
-                    console.error(`Failed to delete ${file.publicId} from Cloudinary. Status: ${res.status}`);
-                }
-            }
-
-            // Step 2: Delete documents from Firestore
-            for (const item of itemsToDelete) {
-                const docRef = doc(db, 'content', item.id);
-                transaction.delete(docRef);
-            }
-        });
-    } catch (e: any) {
-        if (e.code === 'permission-denied') {
-            const permissionError = new FirestorePermissionError({
-                path: `/content (transactional delete starting from ${id})`,
-                operation: 'delete',
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        } else {
-            console.error(`Transaction failed: ${e.message}`);
+                }).then(res => {
+                    if (!res.ok) {
+                        console.error(`Failed to delete ${file.publicId} from Cloudinary. Status: ${res.status}`);
+                    }
+                })
+            )).catch(err => console.error("Error during batch Cloudinary deletion:", err));
         }
-        throw e;
+      });
+    } catch (e: any) {
+      if (e.code === 'permission-denied') {
+        const permissionError = new FirestorePermissionError({
+          path: `/content (transactional delete starting from ${id})`,
+          operation: 'delete',
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      } else {
+        console.error(`Transaction failed: ${e.message}`);
+      }
+      throw e;
     }
   },
 

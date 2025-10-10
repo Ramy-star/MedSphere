@@ -1,7 +1,6 @@
 
 import type { NextConfig } from 'next';
 import type { Configuration } from 'webpack';
-import path from 'path';
 
 const withPWA = require('next-pwa')({
   dest: 'public',
@@ -82,17 +81,6 @@ const nextConfig: NextConfig = {
         replace: 'null',
       },
     });
-
-    // Add path alias for @
-    if (!config.resolve) {
-      config.resolve = {};
-    }
-    if (!config.resolve.alias) {
-      config.resolve.alias = {};
-    }
-    if (typeof config.resolve.alias === 'object') {
-        config.resolve.alias['@'] = path.resolve(__dirname, './src');
-    }
 
     return config;
   },

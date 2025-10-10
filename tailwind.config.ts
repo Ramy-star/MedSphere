@@ -71,6 +71,8 @@ export default {
         },
         slate: {
           750: '#293548',
+          850: '#151c2c',
+          950: '#0b0f19',
         }
       },
       borderRadius: {
