@@ -1,6 +1,6 @@
 // chat-formatter.js
-import DOMPurify from 'https://unpkg.com/dompurify@2.4.0/dist/purify.min.js';
-import { marked } from 'https://unpkg.com/marked@5.1.1/lib/marked.esm.js';
+import DOMPurify from 'dompurify';
+import { marked } from 'marked';
 
 /* ================= Formatting rules (copied / summarized from your command file)
    These are the rules & symbols we keep inside the formatter (not the full chatPrompt).
