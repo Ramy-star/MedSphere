@@ -6,7 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useDebounce } from 'use-debounce';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -34,7 +33,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number }[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-
   const [debouncedScale] = useDebounce(scale, 100);
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
@@ -44,8 +42,14 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     }
     const dims: { width: number; height: number }[] = [];
     for (let i = 1; i <= loadedPdf.numPages; i++) {
-      const page = await loadedPdf.getPage(i);
-      dims.push({ width: page.view[2], height: page.view[3] });
+      try {
+        const page = await loadedPdf.getPage(i);
+        dims.push({ width: page.view[2], height: page.view[3] });
+      } catch (error) {
+        console.error(`Failed to get page ${i}`, error);
+        // Push a default or estimated dimension
+        dims.push({ width: 595, height: 842 }); 
+      }
     }
     setPageDimensions(dims);
   }, [onLoadSuccess]);
