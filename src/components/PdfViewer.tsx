@@ -6,7 +6,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useDebounce } from 'use-debounce';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -34,7 +34,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number }[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-
   const [debouncedScale] = useDebounce(scale, 50);
 
   const onDocumentLoadSuccessInternal = useCallback(async (loadedPdf: PDFDocumentProxy) => {
@@ -44,8 +43,14 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     }
     const dims: { width: number; height: number }[] = [];
     for (let i = 1; i <= loadedPdf.numPages; i++) {
-      const page = await loadedPdf.getPage(i);
-      dims.push({ width: page.view[2], height: page.view[3] });
+      try {
+        const page = await loadedPdf.getPage(i);
+        dims.push({ width: page.view[2], height: page.view[3] });
+      } catch (error) {
+        console.error(`Failed to get page ${i}`, error);
+        // Push a default or estimated dimension
+        dims.push({ width: 595, height: 842 }); 
+      }
     }
     setPageDimensions(dims);
   }, [onLoadSuccess]);
@@ -59,26 +64,18 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
   const virtualItems = rowVirtualizer.getVirtualItems();
 
-  // ✅ استخدام تحقق آمن من وجود startIndex قبل الاستخدام
   useEffect(() => {
-    if (!onPageChange) return;
-
-    // قراءة startIndex بطريقة آمنة (قد تكون undefined/null)
-    const startIndex = rowVirtualizer?.range?.startIndex;
-    if (startIndex == null) return;
-
-    const visibleItem = virtualItems.find(item => item.index === startIndex);
-    if (visibleItem) {
-      const newPageNumber = visibleItem.index + 1;
+    if (!onPageChange || !virtualItems.length) return;
+  
+    const firstVisibleItem = virtualItems[0];
+    if (firstVisibleItem) {
+      const newPageNumber = firstVisibleItem.index + 1;
       onPageChange(newPageNumber);
     }
-    // ملاحظة: وضعنا rowVirtualizer?.range?.startIndex في الـ deps لتقليل إعادة التنفيذ غير الضرورية.
-    // إن تسبب eslint في تحذير، يمكن إما إضافة تعليق eslint-disable-next-line المناسب أو استخدام rowVirtualizer ككل في الـ deps.
-  }, [virtualItems, onPageChange, rowVirtualizer?.range?.startIndex]);
+  }, [virtualItems, onPageChange]);
 
   useImperativeHandle(ref, () => ({
     scrollToPage: (page: number) => {
-      // scrollToIndex موجود على نتيجة useVirtualizer
       rowVirtualizer.scrollToIndex(page - 1, { align: 'start', behavior: 'smooth' });
     },
   }));
