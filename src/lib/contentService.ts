@@ -1,6 +1,6 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc, DocumentData, QueryDocumentSnapshot } from 'firebase/firestore';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -571,7 +571,7 @@ export const contentService = {
   
             // Queue children for deletion
             const childrenDocs = await getChildrenOf(currentId, transaction);
-            childrenDocs.forEach(childDoc => searchQueue.push(childDoc.id));
+            childrenDocs.forEach((childDoc: QueryDocumentSnapshot<DocumentData>) => searchQueue.push(childDoc.id));
   
             // Check for associated Cloudinary files
             if (itemData.type === 'FILE' && itemData.metadata?.cloudinaryPublicId) {
