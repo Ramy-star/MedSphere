@@ -231,7 +231,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
                         li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
                         code: ({node, ...props}) => <code className="text-inherit bg-transparent p-0 font-ubuntu" {...props} />,
-                        pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
+                        pre: ({node, ...props}) => <pre className="bg-transparent p-0" {...props} />,
                         table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
                         thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
                         tbody: ({node, ...props}) => <tbody {...props} />,
@@ -806,8 +806,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         )}
                     >
                         <div className="flex items-center relative z-10">
-                            <Sparkles className={cn("h-4 w-4", !isMobile && "sm:mr-2")} />
-                            <span className="hidden sm:inline">Ask AI</span>
+                            <Sparkles className="h-4 w-4 sm:mr-2" />
+                            <span className={cn(isMobile && "hidden", "sm:inline")}>Ask AI</span>
                         </div>
                     </Button>
                 )}
@@ -869,7 +869,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <div className='relative flex-1 flex flex-col overflow-hidden'>
             <div 
                 ref={chatContainerRef} 
-                className="flex-1 space-y-6 overflow-y-auto p-4 sm:p-6"
+                className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6", isMobile && "pb-36")}
                 style={{
                     backgroundColor: '#212121'
                 }}
