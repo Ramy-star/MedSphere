@@ -230,7 +230,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
                         ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
                         li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
-                        code: ({node, ...props}) => <code className="text-inherit bg-transparent p-0 font-ubuntu" {...props} />,
+                        code: ({node, ...props}) => <code className="text-inherit bg-transparent p-0 font-ubuntu whitespace-pre-wrap" {...props} />,
                         pre: ({node, ...props}) => <pre className="bg-transparent p-0" {...props} />,
                         table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
                         thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
@@ -869,9 +869,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <div className='relative flex-1 flex flex-col overflow-hidden'>
             <div 
                 ref={chatContainerRef} 
-                className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6", isMobile && "pb-36")}
+                className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6")}
                 style={{
-                    backgroundColor: '#212121'
+                    backgroundColor: '#212121',
+                    paddingBottom: isMobile ? '7rem' : '1.5rem',
                 }}
             >
                     
