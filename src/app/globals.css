@@ -73,9 +73,15 @@
   }
 }
 
-input:focus {
+input:focus, button:focus, textarea:focus {
   outline: none !important;
   box-shadow: none !important;
+}
+
+input:focus-visible, button:focus-visible, textarea:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
+    --tw-ring-color: transparent !important;
 }
 
 

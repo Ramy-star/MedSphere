@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -233,7 +234,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                     code({node, className, children, ...props}) {
                       const match = /language-(\w+)/.exec(className || '')
                       return !match ? (
-                        <code className={cn("bg-slate-800/80 rounded-md px-1.5 py-1 font-mono text-sm", className)} {...props}>
+                        <code className={cn("rounded-md px-1.5 py-1 font-mono text-sm", className)} {...props}>
                           {children}
                         </code>
                       ) : (
@@ -710,7 +711,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className={cn("relative flex-1 flex flex-col bg-slate-950 overflow-hidden")}
     >
-        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-900 z-10">
+        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-850 z-10">
             {/* Left Section */}
              <div className="flex items-center gap-1 overflow-hidden flex-1">
                 <div className="flex items-center gap-1 md:hidden">
@@ -804,7 +805,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         className={cn(
                             "rounded-full px-3 sm:px-4 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
                             "active:scale-95",
-                             !showChat && "bg-gradient-to-r from-blue-600 to-teal-500",
+                             !showChat && "bg-gradient-to-r from-blue-600 to-teal-500 opacity-80",
                              showChat && "bg-gradient-to-r from-purple-600 to-indigo-500"
                         )}
                     >
@@ -849,7 +850,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const renderChatView = () => {
     const chatViewContent = (
       <>
-        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 border-b border-slate-800 bg-slate-900")}>
+        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 bg-slate-850")}>
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -921,7 +922,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </div>
         <div 
             className={cn(
-              "p-2 bg-slate-900 border-t border-slate-800",
+              "px-4 pb-3 pt-2 bg-slate-850",
               isMobile ? "fixed bottom-0 left-0 right-0 z-50" : "mt-auto",
               "transition-transform duration-300"
             )}
@@ -933,40 +934,42 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     (!chatInput.trim() || isExtracting || !documentText) && "opacity-50"
                 )}
                 >
-                <Textarea
-                    ref={textareaRef}
-                    className="w-full rounded-2xl border-slate-700 bg-slate-800 py-3 pl-4 pr-24 text-white placeholder:text-slate-400 h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
-                    placeholder="Ask anything..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                     onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                            e.preventDefault();
-                            handleChatSubmit();
-                        }
-                    }}
-                    disabled={isAiThinking || isExtracting || !documentText}
-                    rows={1}
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                    {isMobile && (
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={handleInsertNewline}
-                            className="w-8 h-8 rounded-full text-slate-400 hover:bg-white/10"
-                            aria-label="Insert new line"
-                        >
-                            <CornerDownLeft className="w-5 h-5" />
-                        </Button>
-                    )}
-                    <SendStopButton
-                        size='md'
-                        onSend={handleChatSubmit}
-                        onStop={handleStopAi}
-                        isSending={isAiThinking}
-                        disabled={!chatInput.trim() || isExtracting || !documentText}
+                <div className="relative">
+                    <Textarea
+                        ref={textareaRef}
+                        className="w-full rounded-2xl border-slate-700 bg-slate-900 py-3 pl-4 pr-24 text-white placeholder:text-slate-400 h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0"
+                        placeholder="Ask anything..."
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                         onKeyDown={(e) => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleChatSubmit();
+                            }
+                        }}
+                        disabled={isAiThinking || isExtracting || !documentText}
+                        rows={1}
                     />
+                    <div className="absolute right-3 bottom-3 flex items-center gap-1">
+                        {isMobile && (
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={handleInsertNewline}
+                                className="w-8 h-8 rounded-full text-slate-400 hover:bg-white/10"
+                                aria-label="Insert new line"
+                            >
+                                <CornerDownLeft className="w-5 h-5" />
+                            </Button>
+                        )}
+                        <SendStopButton
+                            size='md'
+                            onSend={handleChatSubmit}
+                            onStop={handleStopAi}
+                            isSending={isAiThinking}
+                            disabled={!chatInput.trim() || isExtracting || !documentText}
+                        />
+                    </div>
                 </div>
             </form>
         </div>
@@ -983,7 +986,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         animate={{ y: 0 }}
                         exit={{ y: '100dvh' }}
                         transition={{ type: "spring", stiffness: 400, damping: 40 }}
-                        className="bg-slate-950 flex flex-col overflow-hidden h-[100dvh] w-full absolute inset-0 z-20"
+                        className="bg-slate-900 flex flex-col overflow-hidden h-[100dvh] w-full absolute inset-0 z-20"
                     >
                         {chatViewContent}
                     </motion.div>
@@ -1002,7 +1005,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 512, opacity: 1 }}
                     exit={{ width: 0, opacity: 0, transition: { duration: 0.2, ease: 'easeOut' } }}
                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className="bg-slate-950 flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-slate-800"
+                    className="bg-slate-900 flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-slate-800"
                     aria-label="AI Chat Panel"
                 >
                     {chatViewContent}
@@ -1016,7 +1019,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-slate-950 border-0 gap-0"
+        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-slate-900 border-0 gap-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
