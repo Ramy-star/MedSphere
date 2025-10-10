@@ -77,3 +77,24 @@ input:focus {
   outline: none !important;
   box-shadow: none !important;
 }
+
+
+/* Add this to your global CSS file */
+.prose {
+    --tw-prose-code: hsl(var(--foreground));
+}
+
+.prose code {
+    @apply bg-slate-800/80 rounded-md px-1.5 py-1 font-mono text-sm;
+}
+.prose code::before, .prose code::after {
+    content: "" !important;
+}
+
+.prose pre {
+    @apply bg-slate-800/80 p-4 rounded-md overflow-x-auto;
+}
+
+.prose pre code {
+    @apply bg-transparent p-0;
+}

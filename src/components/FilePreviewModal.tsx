@@ -230,6 +230,18 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                     tr: ({node, ...props}) => <tr className="even:bg-slate-800/50" {...props} />,
                     th: ({node, ...props}) => <th className="px-3 py-2 text-left" {...props} />,
                     td: ({node, ...props}) => <td className="px-3 py-2" {...props} />,
+                    code({node, className, children, ...props}) {
+                      const match = /language-(\w+)/.exec(className || '')
+                      return !match ? (
+                        <code className={cn("bg-slate-800/80 rounded-md px-1.5 py-1 font-mono text-sm", className)} {...props}>
+                          {children}
+                        </code>
+                      ) : (
+                        <div className="bg-slate-800/80 rounded-md overflow-x-auto">
+                            <pre className="p-4"><code className={className} {...props}>{children}</code></pre>
+                        </div>
+                      )
+                    }
                 }}
             >
                 {msg.text}
@@ -696,9 +708,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         layout
         ref={previewContainerRef}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className={cn("relative flex-1 flex flex-col bg-slate-800/30 overflow-hidden")}
+        className={cn("relative flex-1 flex flex-col bg-slate-950 overflow-hidden")}
     >
-        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-900/50 backdrop-blur-sm border-b border-slate-800 z-10">
+        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-900 z-10">
             {/* Left Section */}
              <div className="flex items-center gap-1 overflow-hidden flex-1">
                 <div className="flex items-center gap-1 md:hidden">
@@ -798,7 +810,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     >
                         <div className="flex items-center relative z-10">
                             <Sparkles className="h-4 w-4 mr-2" />
-                            <span className={cn("sm:inline")}>Ask AI</span>
+                            <span className={cn(isMobile ? "text-sm" : "sm:inline")}>Ask AI</span>
                         </div>
                     </Button>
                 )}
@@ -837,7 +849,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const renderChatView = () => {
     const chatViewContent = (
       <>
-        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 border-b border-white/10")}>
+        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 border-b border-slate-700")}>
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -860,7 +872,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <div 
             ref={chatContainerRef} 
             className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6",
-            isMobile && "pb-[7rem]")}
+            isMobile && "pb-28")}
         >
                 
                 {chatHistory.length === 0 && !isAiThinking && (
@@ -908,7 +920,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </div>
         <div 
             className={cn(
-              "p-2 mb-2 bg-slate-900 border-t border-white/10",
+              "p-2 mb-2 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700",
               isMobile ? "fixed bottom-0 left-0 right-0 z-50" : "mt-auto",
               "transition-transform duration-300"
             )}
@@ -922,7 +934,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-2xl border border-white/10 bg-slate-800 py-3 pl-4 pr-24 text-white placeholder:text-slate-400 h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
+                    className="w-full rounded-2xl border border-slate-700 bg-slate-800 py-3 pl-4 pr-24 text-white placeholder:text-slate-400 h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -989,7 +1001,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 512, opacity: 1 }}
                     exit={{ width: 0, opacity: 0, transition: { duration: 0.2, ease: 'easeOut' } }}
                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className="bg-slate-900 flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10"
+                    className="bg-slate-800 flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-slate-700"
                     aria-label="AI Chat Panel"
                 >
                     {chatViewContent}
@@ -1003,7 +1015,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0 gap-0"
+        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-slate-900 border-0 gap-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
