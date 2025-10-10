@@ -16,7 +16,6 @@ import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
-import { generateInteractiveContent } from '@/ai/flows/interactive-content-flow';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -39,7 +38,6 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import SendStopButton from './SendStopButton';
-import { Quiz } from './Quiz';
 
 type PdfControlsProps = {
     isMobile: boolean,
@@ -142,7 +140,7 @@ const PdfControls = ({
 
 
 type ChatMessageProps = {
-    msg: { role: 'user' | 'model', text: string | object };
+    msg: { role: 'user' | 'model', text: string };
     onCopy: (text: string, id: string) => void;
     onRegenerate: () => void;
     isLastMessage: boolean;
@@ -209,53 +207,41 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
         return (
             <div className="flex justify-end">
                 <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%]", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
-                    <p className="text-white whitespace-pre-wrap break-words font-inter">{typeof msg.text === 'string' ? msg.text : JSON.stringify(msg.text)}</p>
+                    <p className="text-white whitespace-pre-wrap break-words font-inter">{msg.text}</p>
                 </div>
             </div>
         );
     }
     
-    const showActions = isLastMessage && !isAiThinking && typeof msg.text === 'string';
-
-    const renderContent = () => {
-      if (typeof msg.text === 'object' && (msg.text as any).contentType === 'quiz') {
-        return <Quiz data={msg.text as any} />;
-      }
-      
-      const textToRender = typeof msg.text === 'string' ? msg.text : "Unsupported content format";
-      return (
-         <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            className={cn("prose prose-sm max-w-full", fontSizeClass)}
-            components={{
-                h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg" {...props} />,
-                h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base" {...props} />,
-                h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
-                p: ({node, ...props}) => <p className="text-white my-4" {...props} />,
-                strong: ({node, ...props}) => <strong className="text-white" {...props} />,
-                ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
-                ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
-                li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
-                code: ({node, ...props}) => <code className="text-inherit bg-transparent p-0 font-ubuntu" {...props} />,
-                pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
-                table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
-                thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
-                tbody: ({node, ...props}) => <tbody {...props} />,
-                tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
-                th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
-                td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-white" {...props} />,
-            }}
-          >
-              {textToRender}
-          </ReactMarkdown>
-      );
-    }
-
+    const showActions = isLastMessage && !isAiThinking;
 
     return (
         <div className="group/message">
             <div className="relative font-inter">
-                {renderContent()}
+                 <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    className={cn("prose prose-sm max-w-full", fontSizeClass)}
+                    components={{
+                        h2: ({node, ...props}) => <h2 className="text-white mt-6 mb-3 text-lg" {...props} />,
+                        h3: ({node, ...props}) => <h3 className="text-white mt-4 mb-2 text-base" {...props} />,
+                        h4: ({node, ...props}) => <h4 className="text-white mt-3 mb-1 text-base" {...props} />,
+                        p: ({node, ...props}) => <p className="text-white my-4" {...props} />,
+                        strong: ({node, ...props}) => <strong className="text-white" {...props} />,
+                        ul: ({node, ...props}) => <ul className="text-white my-4 ml-4 list-disc" {...props} />,
+                        ol: ({node, ...props}) => <ol className="text-white my-4 ml-4 list-decimal" {...props} />,
+                        li: ({node, ...props}) => <li className="text-white mb-2" {...props} />,
+                        code: ({node, ...props}) => <code className="text-inherit bg-transparent p-0 font-ubuntu" {...props} />,
+                        pre: ({node, ...props}) => <pre className="bg-black/50 p-2 rounded-md" {...props} />,
+                        table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
+                        thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
+                        tbody: ({node, ...props}) => <tbody {...props} />,
+                        tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
+                        th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
+                        td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0 text-white" {...props} />,
+                    }}
+                  >
+                      {msg.text}
+                  </ReactMarkdown>
             </div>
 
             {showActions && (
@@ -263,7 +249,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                     <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => onCopy(msg.text as string, messageId)}
+                        onClick={() => onCopy(msg.text, messageId)}
                         className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white group/action"
                         aria-label="Copy AI response to clipboard"
                     >
@@ -426,27 +412,15 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsAiThinking(true);
     
     abortControllerRef.current = new AbortController();
-
-    // Check if the user is asking to generate a quiz
-    const isQuizRequest = /quiz|mcq|question/i.test(question);
     
     try {
-        let response: any;
-        if (isQuizRequest) {
-            response = await generateInteractiveContent({
-                documentContent: documentText,
-                request: question,
-            }, { signal: abortControllerRef.current.signal });
-        } else {
-            response = await chatAboutDocument({
-                question: question,
-                documentContent: documentText,
-                chatHistory: chatHistory,
-            }, { signal: abortControllerRef.current.signal });
-        }
+        const response = await chatAboutDocument({
+            question: question,
+            documentContent: documentText,
+            chatHistory: chatHistory,
+        }, { signal: abortControllerRef.current.signal });
         
-        const responseText = (typeof response === 'string') ? response : response;
-        setChatHistory(prev => [...prev, { role: 'model' as const, text: responseText }]);
+        setChatHistory(prev => [...prev, { role: 'model' as const, text: response }]);
 
     } catch (error: any) {
         if (error.name === 'AbortError') {
@@ -963,7 +937,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <Textarea
                     ref={textareaRef}
                     className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
-                    placeholder="Ask anything or 'create a quiz'..."
+                    placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
                      onKeyDown={(e) => {
