@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Breadcrumbs } from '@/components/breadcrumbs';
@@ -13,6 +14,9 @@ import React from 'react';
 import Link from 'next/link';
 import { prefetcher } from '@/lib/prefetchService';
 
+
+// This forces the page to be dynamically rendered.
+export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
   const { db } = useFirebase();

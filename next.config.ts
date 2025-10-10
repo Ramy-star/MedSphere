@@ -58,6 +58,12 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns,
   },
+  experimental: {
+    // This is to allow cross-origin requests from the development environment (Cloud Workstations).
+    // It should be a top-level property, not inside experimental.
+  },
+  // This is the correct place for allowedDevOrigins
+  allowedDevOrigins: ["*.cloudworkstations.dev"],
   webpack: (config: Configuration, { isServer, dev }) => {
     // This is to prevent the "Module not found: Can't resolve 'canvas'" error during build
     if (isServer) {

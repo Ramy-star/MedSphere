@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent for chatting about document content.
@@ -29,7 +30,24 @@ const chatPrompt = ai.definePrompt({
   prompt: chatPromptText,
 });
 
-export async function chatAboutDocument(input: ChatInput, options?: { signal?: AbortSignal }): Promise<string> {
-    const { text } = await chatPrompt(input, { signal: options?.signal });
+export async function chatAboutDocument(
+  input: ChatInput,
+  options?: { signal?: AbortSignal }
+): Promise<string> {
+  try {
+    const { text } = await chatPrompt(input, {
+      config: {
+        signal: options?.signal,
+      },
+    });
     return text;
+  } catch (error) {
+    if ((error as any).name === 'AbortError') {
+      console.log('Chat request was aborted.');
+      // When aborted, we don't want to show an error, just stop.
+      // Re-throwing the error to be handled by the UI.
+    }
+    // Re-throw other errors to be handled by the caller
+    throw error;
+  }
 }

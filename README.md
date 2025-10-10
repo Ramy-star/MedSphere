@@ -40,3 +40,4 @@ This project is built with a modern, scalable, and type-safe technology stack:
 -   **[Lucide React](https://lucide.dev/)** - Beautiful & consistent icons.
 
 ---
+
