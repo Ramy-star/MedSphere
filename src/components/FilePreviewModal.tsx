@@ -27,6 +27,8 @@ import {
   AlertDialogTitle as AlertDialogTitle2,
 } from "@/components/ui/alert-dialog"
 import { Textarea } from './ui/textarea';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
 import { useMobileViewStore } from '@/hooks/use-mobile-view-store';
@@ -36,8 +38,6 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import SendStopButton from './SendStopButton';
-import { toSanitizedHtml } from '@/lib/chat-formatter/chat-formatter.js';
-import '@/lib/chat-formatter/chat-formatter.css';
 
 type PdfControlsProps = {
     isMobile: boolean,
@@ -203,26 +203,10 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
 
 
 const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate, isLastMessage, isAiThinking, copiedMessageId, messageId, fontSizeClass, isMobile }: ChatMessageProps) {
-    const [safeHtml, setSafeHtml] = useState('');
-
-    useEffect(() => {
-        if (msg.role === 'model') {
-            try {
-                setSafeHtml(toSanitizedHtml(msg.text));
-            } catch (error) {
-                console.error("Error formatting model output:", error);
-                // Fallback to plain text if formatting fails
-                const pre = document.createElement('pre');
-                pre.textContent = msg.text;
-                setSafeHtml(pre.outerHTML);
-            }
-        }
-    }, [msg.text, msg.role]);
-    
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%]", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
+                <div className={cn("bg-blue-800/80 rounded-3xl px-4 py-2.5 max-w-[90%]", fontSizeClass)}>
                     <p className="text-white whitespace-pre-wrap break-words font-inter">{msg.text}</p>
                 </div>
             </div>
@@ -233,10 +217,23 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
 
     return (
         <div className="group/message">
-            <div
-                className={cn("prose prose-sm max-w-full preview", fontSizeClass)}
-                dangerouslySetInnerHTML={{ __html: safeHtml }}
-            />
+            <ReactMarkdown
+                className={cn(
+                    "prose prose-sm max-w-full text-white prose-p:text-white prose-headings:text-white prose-strong:text-white prose-table:text-white prose-th:text-white prose-td:text-white prose-li:text-white prose-a:text-blue-400 hover:prose-a:text-blue-300",
+                    fontSizeClass
+                )}
+                remarkPlugins={[remarkGfm]}
+                components={{
+                    table: ({node, ...props}) => <table className="w-full text-sm" {...props} />,
+                    thead: ({node, ...props}) => <thead className="border-b border-slate-700" {...props} />,
+                    tbody: ({node, ...props}) => <tbody className="divide-y divide-slate-800" {...props} />,
+                    tr: ({node, ...props}) => <tr className="even:bg-slate-800/50" {...props} />,
+                    th: ({node, ...props}) => <th className="px-3 py-2 text-left" {...props} />,
+                    td: ({node, ...props}) => <td className="px-3 py-2" {...props} />,
+                }}
+            >
+                {msg.text}
+            </ReactMarkdown>
 
             {showActions && (
                  <div className={cn("flex items-center gap-2 mt-4 transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover/message:opacity-100")}>
@@ -699,9 +696,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         layout
         ref={previewContainerRef}
         transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden")}
+        className={cn("relative flex-1 flex flex-col bg-slate-800/30 overflow-hidden")}
     >
-        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
+        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-slate-900/50 backdrop-blur-sm border-b border-slate-800 z-10">
             {/* Left Section */}
              <div className="flex items-center gap-1 overflow-hidden flex-1">
                 <div className="flex items-center gap-1 md:hidden">
@@ -795,8 +792,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         className={cn(
                             "rounded-full px-3 sm:px-4 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
                             "active:scale-95",
-                             !showChat && "bg-gradient-to-r from-[#2968b5] to-[#C42929]",
-                             showChat && "bg-gradient-to-r from-[#1263FF] to-[#D11111]"
+                             !showChat && "bg-gradient-to-r from-blue-600 to-teal-500",
+                             showChat && "bg-gradient-to-r from-purple-600 to-indigo-500"
                         )}
                     >
                         <div className="flex items-center relative z-10">
@@ -840,7 +837,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const renderChatView = () => {
     const chatViewContent = (
       <>
-        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14")}>
+        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 border-b border-white/10")}>
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -860,78 +857,72 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </Button>
             </div>
         </header>
-        <div className='relative flex-1 flex flex-col overflow-hidden'>
-            <div 
-                ref={chatContainerRef} 
-                className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6")}
-                style={{
-                    backgroundColor: '#212121',
-                    paddingBottom: isMobile ? '7rem' : '1.5rem',
-                }}
-            >
-                    
-                    {chatHistory.length === 0 && !isAiThinking && (
-                        <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
-                            {isExtracting ? (
-                                <div className="flex items-center gap-2 text-white">
-                                <Skeleton className="h-5 w-5 rounded-full" />
-                                <p>Analyzing document...</p>
-                                </div>
-                            ) : documentText ? (
-                                <p className="text-white">Hello! I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
-                            ) : (
-                                <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
-                            )}
-                        </div>
-                    )}
-
-                    {chatHistory.map((msg, index) => {
-                        const isLastMessage = index === chatHistory.length - 1;
-                        return (
-                            <ChatMessage
-                                key={`msg-${index}`}
-                                messageId={`msg-${index}`}
-                                msg={msg}
-                                onCopy={handleCopyToClipboard}
-                                onRegenerate={handleRegenerate}
-                                isLastMessage={isLastMessage}
-                                isAiThinking={isAiThinking}
-                                copiedMessageId={copiedMessageId}
-                                fontSizeClass={fontSizes[fontSizeIndex]}
-                                isMobile={isMobile}
-                            />
-                        )
-                    })}
-
-                        {isAiThinking && (
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[80%] rounded-lg" />
-                                <Skeleton className="h-4 w-[95%] rounded-lg" />
-                                <Skeleton className="h-4 w-[60%] rounded-lg" />
+        <div 
+            ref={chatContainerRef} 
+            className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6",
+            isMobile && "pb-[7rem]")}
+        >
+                
+                {chatHistory.length === 0 && !isAiThinking && (
+                    <div className={cn("prose prose-sm max-w-full text-white", fontSizes[fontSizeIndex])}>
+                        {isExtracting ? (
+                            <div className="flex items-center gap-2">
+                            <Skeleton className="h-5 w-5 rounded-full" />
+                            <p>Analyzing document...</p>
                             </div>
+                        ) : documentText ? (
+                            <p>Hello! I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
+                        ) : (
+                            <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                        )}
+                    </div>
+                )}
+
+                {chatHistory.map((msg, index) => {
+                    const isLastMessage = index === chatHistory.length - 1;
+                    return (
+                        <ChatMessage
+                            key={`msg-${index}`}
+                            messageId={`msg-${index}`}
+                            msg={msg}
+                            onCopy={handleCopyToClipboard}
+                            onRegenerate={handleRegenerate}
+                            isLastMessage={isLastMessage}
+                            isAiThinking={isAiThinking}
+                            copiedMessageId={copiedMessageId}
+                            fontSizeClass={fontSizes[fontSizeIndex]}
+                            isMobile={isMobile}
+                        />
+                    )
+                })}
+
+                    {isAiThinking && (
+                    <div className="space-y-4">
+                        <div className="space-y-2">
+                            <Skeleton className="h-4 w-[80%] rounded-lg" />
+                            <Skeleton className="h-4 w-[95%] rounded-lg" />
+                            <Skeleton className="h-4 w-[60%] rounded-lg" />
                         </div>
-                    )}
-            </div>
-             <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
+                    </div>
+                )}
         </div>
         <div 
             className={cn(
-              "p-2 mb-2",
-              isMobile ? "fixed bottom-2 left-0 right-0 z-50" : "mt-auto",
+              "p-2 mb-2 bg-slate-900 border-t border-white/10",
+              isMobile ? "fixed bottom-0 left-0 right-0 z-50" : "mt-auto",
               "transition-transform duration-300"
             )}
-            style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none', backgroundColor: '#212121' }}
+            style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none' }}
         >
              <form
                 onSubmit={handleChatSubmit}
-                className={cn("relative mx-auto w-full max-w-[95%]",
+                className={cn("relative mx-auto w-full max-w-3xl",
                     (!chatInput.trim() || isExtracting || !documentText) && "opacity-50"
                 )}
                 >
                 <Textarea
                     ref={textareaRef}
-                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
+                    className="w-full rounded-2xl border border-white/10 bg-slate-800 py-3 pl-4 pr-24 text-white placeholder:text-slate-400 h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-1 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                     placeholder="Ask anything..."
                     value={chatInput}
                     onChange={(e) => setChatInput(e.target.value)}
@@ -943,9 +934,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     }}
                     disabled={isAiThinking || isExtracting || !documentText}
                     rows={1}
-                    style={{backgroundColor: '#303030'}}
                 />
-                <div className="absolute right-3 bottom-2 flex h-[36px] items-center gap-1">
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
                     {isMobile && (
                         <Button 
                             variant="ghost" 
@@ -980,8 +970,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         animate={{ y: 0 }}
                         exit={{ y: '100dvh' }}
                         transition={{ type: "spring", stiffness: 400, damping: 40 }}
-                        className="flex flex-col overflow-hidden h-[100dvh] w-full absolute inset-0 z-20"
-                        style={{backgroundColor: '#212121'}}
+                        className="bg-slate-900 flex flex-col overflow-hidden h-[100dvh] w-full absolute inset-0 z-20"
                     >
                         {chatViewContent}
                     </motion.div>
@@ -1000,8 +989,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     animate={{ width: 512, opacity: 1 }}
                     exit={{ width: 0, opacity: 0, transition: { duration: 0.2, ease: 'easeOut' } }}
                     transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-                    className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10"
-                    style={{backgroundColor: '#212121'}}
+                    className="bg-slate-900 flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10"
                     aria-label="AI Chat Panel"
                 >
                     {chatViewContent}
