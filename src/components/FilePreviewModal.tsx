@@ -420,34 +420,32 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [chatHistory.length, startNewChat]);
 
-  const submitChat = useCallback(async (question: string) => {
+  const submitChat = useCallback(async (question: string, historyToUse: any[]) => {
     if (!question.trim()) return;
 
     if (!documentText) {
        toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
        return;
     }
-
-    setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
-    setChatInput('');
-    setIsAiThinking(true);
     
+    setIsAiThinking(true);
     abortControllerRef.current = new AbortController();
     
     try {
         const response = await chatAboutDocument({
             question: question,
             documentContent: documentText,
-            chatHistory: chatHistory,
+            chatHistory: historyToUse,
         }, { signal: abortControllerRef.current.signal });
         
-        setChatHistory(prev => [...prev, { role: 'model' as const, text: response }]);
+        setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: question }, { role: 'model' as const, text: response }]);
 
     } catch (error: any) {
         if (error.name === 'AbortError') {
           console.log("Chat request aborted.");
-          // When aborting, we don't remove the user's message, as they might want to re-send it.
-          // The AI thinking state will be handled in finally.
+          // When aborting, we don't add the AI response, but we keep the user message,
+          // allowing them to see what they sent and decide if they want to resubmit.
+          setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: question }]);
         } else {
             console.error("Error calling AI flow:", error);
             toast({
@@ -455,13 +453,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 title: "AI Assistant Error",
                 description: "The AI assistant could not be reached. Please try again later."
             });
-            // Also, don't remove user message on other errors, allows for retry.
+            // Also keep user message on other errors, allows for retry.
+             setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: question }]);
         }
     } finally {
         setIsAiThinking(false);
         abortControllerRef.current = null;
     }
-  }, [documentText, chatHistory, toast]);
+  }, [documentText, toast]);
 
   const handlePdfLoadSuccess = useCallback(async (pdf: PDFDocumentProxy) => {
     setPdfProxy(pdf);
@@ -615,26 +614,24 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<Element, MouseEvent>) => {
       e?.preventDefault();
-      if(isAiThinking) return;
-      await submitChat(chatInput);
-  }, [chatInput, submitChat, isAiThinking]);
+      if(isAiThinking || !chatInput.trim()) return;
+      const question = chatInput;
+      setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
+      setChatInput('');
+      await submitChat(question, chatHistory);
+  }, [chatInput, submitChat, isAiThinking, chatHistory]);
   
   const handleRegenerate = useCallback(async () => {
     if (isAiThinking || chatHistory.length === 0) return;
 
-    // Find the last user message to resubmit
-    const lastUserMessage = [...chatHistory].reverse().find(m => m.role === 'user');
-    if (!lastUserMessage) return;
+    const lastUserMessageIndex = chatHistory.findLastIndex(m => m.role === 'user');
+    if (lastUserMessageIndex === -1) return;
 
-    // Find the last model message to remove it
-    const lastModelMessageIndex = chatHistory.findLastIndex(m => m.role === 'model');
+    const lastUserMessage = chatHistory[lastUserMessageIndex];
+    const historyBeforeLastInteraction = chatHistory.slice(0, lastUserMessageIndex);
 
-    if (lastModelMessageIndex !== -1) {
-        // Remove the last model's response and any user messages after it (which shouldn't exist in normal flow)
-        setChatHistory(prev => prev.slice(0, lastModelMessageIndex));
-        // Immediately resubmit the last user message to get a new response
-        await submitChat(lastUserMessage.text);
-    }
+    setChatHistory(historyBeforeLastInteraction);
+    await submitChat(lastUserMessage.text, historyBeforeLastInteraction);
   }, [isAiThinking, chatHistory, submitChat]);
 
 
@@ -642,14 +639,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     if (abortControllerRef.current) {
         abortControllerRef.current.abort();
     }
-    // Also remove the user's last message if they stop, as the request was cancelled
-    setChatHistory(prev => {
-        const lastMessage = prev[prev.length - 1];
-        if(lastMessage && lastMessage.role === 'user') {
-            return prev.slice(0, -1);
-        }
-        return prev;
-    });
+    // The submitChat function now handles the state correctly on abort.
+    // We don't need to manually manipulate chatHistory here anymore.
   }
 
   const handleDownload = async () => {
@@ -975,7 +966,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     )}
 
                     {chatHistory.map((msg, index) => {
-                        const isLastMessage = index === chatHistory.length - 1;
+                        const isLastMessage = index === chatHistory.length - 1 && msg.role === 'model';
                         return (
                             <ChatMessage
                                 key={`msg-${index}`}
