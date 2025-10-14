@@ -248,7 +248,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
             </div>
 
             {showActions && (
-                 <div className={cn("flex items-center gap-2 mt-4 transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover/message:opacity-100")}>
+                 <div className={cn("flex items-center gap-2 mt-4 transition-opacity", "opacity-0 group-hover/message:opacity-100")}>
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>
                         <TooltipTrigger asChild>
