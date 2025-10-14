@@ -624,13 +624,18 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handleRegenerate = useCallback(async () => {
     if (isAiThinking || chatHistory.length === 0) return;
 
+    // Find the last user message and the history before it.
     const lastUserMessageIndex = chatHistory.findLastIndex(m => m.role === 'user');
     if (lastUserMessageIndex === -1) return;
-
+    
     const lastUserMessage = chatHistory[lastUserMessageIndex];
     const historyBeforeLastInteraction = chatHistory.slice(0, lastUserMessageIndex);
 
-    setChatHistory(historyBeforeLastInteraction);
+    // Keep the user's message in the UI by setting the chat history up to that point.
+    // The AI's previous response is removed.
+    setChatHistory(historyBeforeLastInteraction.concat(lastUserMessage));
+
+    // Call submitChat, which will only add the new AI response.
     await submitChat(lastUserMessage.text, historyBeforeLastInteraction);
   }, [isAiThinking, chatHistory, submitChat]);
 
@@ -966,7 +971,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     )}
 
                     {chatHistory.map((msg, index) => {
-                        const isLastMessage = index === chatHistory.length - 1 && msg.role === 'model';
+                        const isLastModelMessage = index === chatHistory.length - 1 && msg.role === 'model';
                         return (
                             <ChatMessage
                                 key={`msg-${index}`}
@@ -974,7 +979,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 msg={msg}
                                 onCopy={handleCopyToClipboard}
                                 onRegenerate={handleRegenerate}
-                                isLastMessage={isLastMessage}
+                                isLastMessage={isLastModelMessage}
                                 isAiThinking={isAiThinking}
                                 copiedMessageId={copiedMessageId}
                                 fontSizeClass={fontSizes[fontSizeIndex]}
