@@ -909,12 +909,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         )
                     })}
 
-                        {isAiThinking && (
-                        <div className="space-y-4">
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-[80%] rounded-lg" />
-                                <Skeleton className="h-4 w-[95%] rounded-lg" />
-                                <Skeleton className="h-4 w-[60%] rounded-lg" />
+                    {isAiThinking && (
+                        <div className="flex items-start space-x-3">
+                            <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
+                            <div className="flex-1 space-y-3 pt-1">
+                                <Skeleton className="h-4 w-12 rounded-lg" />
+                                <Skeleton className="h-4 w-[90%] rounded-lg" />
+                                <Skeleton className="h-4 w-[75%] rounded-lg" />
+                                <Skeleton className="h-4 w-[85%] rounded-lg" />
                             </div>
                         </div>
                     )}
