@@ -256,13 +256,13 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                               variant="ghost"
                               size="icon"
                               onClick={() => onCopy(msg.text, messageId)}
-                              className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white"
+                              className="h-8 w-8 rounded-lg text-white hover:bg-slate-700"
                               aria-label="Copy AI response to clipboard"
                           >
-                              {copiedMessageId === messageId ? <Check className="w-4 h-4 transition-all" /> : <CopyIcon className="w-5 h-5 transition-all scale-x-[-1]" />}
+                              {copiedMessageId === messageId ? <Check className="w-5 h-5 transition-all" /> : <CopyIcon className="w-5 h-5 transition-all scale-x-[-1]" />}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom">
+                        <TooltipContent side="bottom" className="rounded-lg bg-black text-white">
                           <p>Copy</p>
                         </TooltipContent>
                       </Tooltip>
@@ -276,13 +276,13 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                                   variant="ghost"
                                   size="icon"
                                   onClick={onRegenerate}
-                                  className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white"
+                                  className="h-8 w-8 rounded-lg text-white hover:bg-slate-700"
                                   aria-label="Regenerate response"
                               >
-                                  <RefreshCw className="w-4 h-4 transition-all" />
+                                  <RefreshCw className="w-5 h-5 transition-all" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom">
+                            <TooltipContent side="bottom" className="rounded-lg bg-black text-white">
                               <p>Regenerate</p>
                             </TooltipContent>
                           </Tooltip>
@@ -743,7 +743,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 <Download className="w-5 h-5" />
                             </Button>
                            </TooltipTrigger>
-                          <TooltipContent side="bottom"><p>Download</p></TooltipContent>
+                          <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                           <TooltipTrigger asChild>
@@ -751,7 +751,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 <ExternalLink className="w-5 h-5" />
                             </Button>
                            </TooltipTrigger>
-                          <TooltipContent side="bottom"><p>Open in new tab</p></TooltipContent>
+                          <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                 </div>
@@ -804,7 +804,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                   <Download className="w-5 h-5" />
                               </Button>
                            </TooltipTrigger>
-                           <TooltipContent side="bottom"><p>Download</p></TooltipContent>
+                           <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                         </Tooltip>
                         {!isMobile && (
                            <Tooltip>
@@ -828,7 +828,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     <Presentation className="w-5 h-5" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom"><p>Present</p></TooltipContent>
+                            <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Present</p></TooltipContent>
                            </Tooltip>
                         )}
                     </>
@@ -839,7 +839,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 <ExternalLink className="w-5 h-5" />
                             </Button>
                         </TooltipTrigger>
-                       <TooltipContent side="bottom"><p>Open in new tab</p></TooltipContent>
+                       <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
                     </Tooltip>
                 </div>
                 </TooltipProvider>
@@ -907,7 +907,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <Minus className="w-6 h-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Decrease font size</p></TooltipContent>
+                  <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Decrease font size</p></TooltipContent>
                  </Tooltip>
                  <Tooltip>
                    <TooltipTrigger asChild>
@@ -915,7 +915,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <Plus className="w-6 h-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Increase font size</p></TooltipContent>
+                  <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Increase font size</p></TooltipContent>
                  </Tooltip>
                  <Tooltip>
                    <TooltipTrigger asChild>
@@ -923,7 +923,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <MessageCirclePlus className="w-6 h-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Start New Chat</p></TooltipContent>
+                  <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Start New Chat</p></TooltipContent>
                  </Tooltip>
                  <Tooltip>
                    <TooltipTrigger asChild>
@@ -931,7 +931,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <X className="w-6 h-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom"><p>Close Chat</p></TooltipContent>
+                  <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Close Chat</p></TooltipContent>
                  </Tooltip>
             </div>
             </TooltipProvider>
