@@ -55,7 +55,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
                       onMouseEnter={() => prefetcher.prefetchChildren(semester.id)}
                     >
                         <Link href={`/folder/${semester.id}`} className="block h-full">
-                            <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center">
+                            <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center rounded-[1.25rem]">
                                 <h3 className="text-xl font-semibold text-white">{semester.name}</h3>
                             </div>
                         </Link>
