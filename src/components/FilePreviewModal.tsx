@@ -39,6 +39,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import SendStopButton from './SendStopButton';
+import { Progress } from './ui/progress';
 
 type PdfControlsProps = {
     isMobile: boolean,
@@ -257,10 +258,10 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                               className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white"
                               aria-label="Copy AI response to clipboard"
                           >
-                              {copiedMessageId === messageId ? <Check className="w-4 h-4 transition-all" /> : <Copy className="w-4 h-4 transition-all" />}
+                              {copiedMessageId === messageId ? <Check className="w-4 h-4 transition-all" /> : <Copy className="w-4 h-4 transition-all scale-x-[-1]" />}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>
+                        <TooltipContent side="bottom">
                           <p>Copy</p>
                         </TooltipContent>
                       </Tooltip>
@@ -280,7 +281,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                                   <RefreshCw className="w-4 h-4 transition-all" />
                               </Button>
                             </TooltipTrigger>
-                            <TooltipContent>
+                            <TooltipContent side="bottom">
                               <p>Regenerate</p>
                             </TooltipContent>
                           </Tooltip>
@@ -734,14 +735,24 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                         <X className="w-5 h-5" />
                     </Button>
-                    {!isLink && (
-                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
-                            <Download className="w-5 h-5" />
-                        </Button>
-                    )}
-                    <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
-                        <ExternalLink className="w-5 h-5" />
-                    </Button>
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                <Download className="w-5 h-5" />
+                            </Button>
+                           </TooltipTrigger>
+                          <TooltipContent side="bottom"><p>Download</p></TooltipContent>
+                      </Tooltip>
+                      <Tooltip>
+                          <TooltipTrigger asChild>
+                             <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                <ExternalLink className="w-5 h-5" />
+                            </Button>
+                           </TooltipTrigger>
+                          <TooltipContent side="bottom"><p>Open in new tab</p></TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                 </div>
 
                 <div className="hidden md:flex items-center gap-3 overflow-hidden">
@@ -782,39 +793,55 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
             {/* Right Section */}
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
+              <TooltipProvider delayDuration={100}>
                 <div className='hidden md:flex items-center gap-1 sm:gap-2'>
                     {!isLink && (
                     <>
-                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Download">
-                            <Download className="w-5 h-5" />
-                        </Button>
+                        <Tooltip>
+                           <TooltipTrigger asChild>
+                              <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                  <Download className="w-5 h-5" />
+                              </Button>
+                           </TooltipTrigger>
+                           <TooltipContent side="bottom"><p>Download</p></TooltipContent>
+                        </Tooltip>
                         {!isMobile && (
-                            <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => {
-                                if (fileContentRef.current) {
-                                fileContentRef.current.requestFullscreen();
-                                toast({
-                                    title: "Presentation Mode",
-                                    description: "To exit fullscreen, press the ESC key.",
-                                    duration: 3000,
-                                })
-                                }
-                            }} 
-                            disabled={!fileUrl} 
-                            className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
-                            title="Present"
-                            >
-                                <Presentation className="w-5 h-5" />
-                            </Button>
+                           <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => {
+                                    if (fileContentRef.current) {
+                                    fileContentRef.current.requestFullscreen();
+                                    toast({
+                                        title: "Presentation Mode",
+                                        description: "To exit fullscreen, press the ESC key.",
+                                        duration: 3000,
+                                    })
+                                    }
+                                }} 
+                                disabled={!fileUrl} 
+                                className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
+                                >
+                                    <Presentation className="w-5 h-5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom"><p>Present</p></TooltipContent>
+                           </Tooltip>
                         )}
                     </>
                     )}
-                    <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" title="Open in new tab">
-                        <ExternalLink className="w-5 h-5" />
-                    </Button>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                <ExternalLink className="w-5 h-5" />
+                            </Button>
+                        </TooltipTrigger>
+                       <TooltipContent side="bottom"><p>Open in new tab</p></TooltipContent>
+                    </Tooltip>
                 </div>
+                </TooltipProvider>
                 {isChatAvailable && (
                     <Button
                         onClick={() => setShowChat(!showChat)}
@@ -871,20 +898,42 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
             </div>
+            <TooltipProvider delayDuration={100}>
             <div className="flex items-center">
-                 <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Decrease font size">
-                    <Minus className="w-6 h-6" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Increase font size">
-                    <Plus className="w-6 h-6" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Start New Chat" aria-label="Start a new chat session">
-                    <MessageCirclePlus className="w-6 h-6" />
-                </Button>
-                <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" title="Close Chat" aria-label="Close chat panel">
-                    <X className="w-6 h-6" />
-                </Button>
+                 <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
+                        <Minus className="w-6 h-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom"><p>Decrease font size</p></TooltipContent>
+                 </Tooltip>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
+                        <Plus className="w-6 h-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom"><p>Increase font size</p></TooltipContent>
+                 </Tooltip>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" aria-label="Start a new chat session">
+                        <MessageCirclePlus className="w-6 h-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom"><p>Start New Chat</p></TooltipContent>
+                 </Tooltip>
+                 <Tooltip>
+                   <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => setShowChat(false)} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" aria-label="Close chat panel">
+                        <X className="w-6 h-6" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom"><p>Close Chat</p></TooltipContent>
+                 </Tooltip>
             </div>
+            </TooltipProvider>
         </header>
         <div className='relative flex-1 flex flex-col overflow-hidden'>
             <div 
