@@ -83,6 +83,7 @@ export default function RootLayout({
           <link rel="manifest" href="/manifest.json" />
           <meta name="theme-color" content="#0B0F12" />
           <link rel="apple-touch-icon" href="/icon-192.png" />
+          <link rel="preconnect" href="https://res.cloudinary.com" />
       </head>
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
