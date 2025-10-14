@@ -34,20 +34,44 @@ export async function chatAboutDocument(
   input: ChatInput,
   options?: { signal?: AbortSignal }
 ): Promise<string> {
-  try {
-    const { text } = await chatPrompt(input, {
-      config: {
-        signal: options?.signal,
-      },
-    });
-    return text;
-  } catch (error) {
-    if ((error as any).name === 'AbortError') {
-      console.log('Chat request was aborted.');
-      // When aborted, we don't want to show an error, just stop.
-      // Re-throwing the error to be handled by the UI.
+  
+  const maxRetries = 3;
+  let delay = 1000; // start with 1 second
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const { text } = await chatPrompt(input, {
+        config: {
+          signal: options?.signal,
+        },
+      });
+      return text;
+    } catch (error: any) {
+      // Check for AbortError first, and re-throw immediately if found.
+      if (error.name === 'AbortError') {
+        console.log('Chat request was aborted by the user.');
+        throw error; // Re-throw to be handled by the UI.
+      }
+      
+      const isServiceUnavailable = error.message?.includes('503') || error.message?.toLowerCase().includes('overloaded');
+      
+      // If it's the last retry or not a service unavailable error, throw the error.
+      if (i === maxRetries - 1 || !isServiceUnavailable) {
+        console.error("Final attempt failed or non-retriable error:", error);
+        throw error;
+      }
+      
+      // Log the retry attempt.
+      console.log(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+      
+      // Wait for the specified delay.
+      await new Promise(res => setTimeout(res, delay));
+      
+      // Double the delay for the next attempt (exponential backoff).
+      delay *= 2;
     }
-    // Re-throw other errors to be handled by the caller
-    throw error;
   }
+
+  // This part should not be reachable, but is included for type safety.
+  throw new Error('Chat failed after multiple retries.');
 }
