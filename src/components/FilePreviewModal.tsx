@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback } from 'react';
-import { X, Download, RefreshCw, Copy, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus, CornerDownLeft } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus, CornerDownLeft } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -40,6 +40,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import SendStopButton from './SendStopButton';
 import { Progress } from './ui/progress';
+import { CopyIcon } from './icons/CopyIcon';
 
 type PdfControlsProps = {
     isMobile: boolean,
@@ -258,7 +259,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                               className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white"
                               aria-label="Copy AI response to clipboard"
                           >
-                              {copiedMessageId === messageId ? <Check className="w-4 h-4 transition-all" /> : <Copy className="w-4 h-4 transition-all scale-x-[-1]" />}
+                              {copiedMessageId === messageId ? <Check className="w-4 h-4 transition-all" /> : <CopyIcon className="w-5 h-5 transition-all scale-x-[-1]" />}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom">
