@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -216,7 +217,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
         );
     }
     
-    const showActions = !isAiThinking;
+    const showActions = !isAiThinking && isLastMessage;
 
     return (
         <div className="group/message">
@@ -247,47 +248,47 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                   </ReactMarkdown>
             </div>
 
-            {showActions && (
-                 <div className={cn("flex items-center gap-2 mt-4 transition-opacity", "opacity-0 group-hover/message:opacity-100")}>
-                    <TooltipProvider delayDuration={100}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => onCopy(msg.text, messageId)}
-                              className="h-8 w-8 rounded-full text-white hover:bg-white/10"
-                              aria-label="Copy AI response to clipboard"
-                          >
-                              {copiedMessageId === messageId ? <Check className="w-6 h-6 transition-all" /> : <CopyIcon className="w-6 h-6" />}
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" className="rounded-lg bg-black text-white">
-                          <p>Copy</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
+            <div className={cn("flex items-center gap-2 mt-4 transition-opacity", "opacity-0 group-hover/message:opacity-100")}>
+                <TooltipProvider delayDuration={100}>
+                    <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => onCopy(msg.text, messageId)}
+                            className="h-8 w-8 rounded-full text-white hover:bg-white/10"
+                            aria-label="Copy AI response to clipboard"
+                        >
+                            {copiedMessageId === messageId ? <Check className="w-6 h-6 transition-all" /> : <CopyIcon className="w-6 h-6" />}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Copy</p>
+                    </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
 
-                   <TooltipProvider delayDuration={100}>
-                      <Tooltip>
+                {showActions && (
+                    <TooltipProvider delayDuration={100}>
+                    <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={onRegenerate}
-                              className="h-8 w-8 rounded-full text-white hover:bg-white/10"
-                              aria-label="Regenerate response"
-                          >
-                              <RefreshCw className="w-6 h-6 transition-all" />
-                          </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onRegenerate}
+                            className="h-8 w-8 rounded-full text-white hover:bg-white/10"
+                            aria-label="Regenerate response"
+                        >
+                            <RefreshCw className="w-6 h-6 transition-all" />
+                        </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" className="rounded-lg bg-black text-white">
-                          <p>Regenerate</p>
+                        <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Regenerate</p>
                         </TooltipContent>
-                      </Tooltip>
-                   </TooltipProvider>
-                </div>
-            )}
+                    </Tooltip>
+                    </TooltipProvider>
+                )}
+            </div>
         </div>
     );
 });
@@ -445,16 +446,17 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     } catch (error: any) {
         if (error.name === 'AbortError') {
           console.log("Chat request aborted.");
-          setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question as it was cancelled
-          return; // Don't show an error toast
+          // When aborting, we don't remove the user's message, as they might want to re-send it.
+          // The AI thinking state will be handled in finally.
+        } else {
+            console.error("Error calling AI flow:", error);
+            toast({
+                variant: "destructive",
+                title: "AI Assistant Error",
+                description: "The AI assistant could not be reached. Please try again later."
+            });
+            // Also, don't remove user message on other errors, allows for retry.
         }
-        console.error("Error calling AI flow:", error);
-        toast({
-            variant: "destructive",
-            title: "AI Assistant Error",
-            description: "The AI assistant could not be reached. Please try again later."
-        });
-        setChatHistory(prev => prev.slice(0, -1)); // Remove the user's question if the call fails
     } finally {
         setIsAiThinking(false);
         abortControllerRef.current = null;
@@ -620,24 +622,34 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handleRegenerate = useCallback(async () => {
     if (isAiThinking || chatHistory.length === 0) return;
 
+    // Find the last user message to resubmit
     const lastUserMessage = [...chatHistory].reverse().find(m => m.role === 'user');
     if (!lastUserMessage) return;
 
-    setChatHistory(prev => {
-        const lastMessage = prev[prev.length - 1];
-        if (lastMessage && lastMessage.role === 'model') {
-            return prev.slice(0, -1);
-        }
-        return prev;
-    });
+    // Find the last model message to remove it
+    const lastModelMessageIndex = chatHistory.findLastIndex(m => m.role === 'model');
 
-    await submitChat(lastUserMessage.text);
+    if (lastModelMessageIndex !== -1) {
+        // Remove the last model's response and any user messages after it (which shouldn't exist in normal flow)
+        setChatHistory(prev => prev.slice(0, lastModelMessageIndex));
+        // Immediately resubmit the last user message to get a new response
+        await submitChat(lastUserMessage.text);
+    }
   }, [isAiThinking, chatHistory, submitChat]);
+
 
   const handleStopAi = () => {
     if (abortControllerRef.current) {
         abortControllerRef.current.abort();
     }
+    // Also remove the user's last message if they stop, as the request was cancelled
+    setChatHistory(prev => {
+        const lastMessage = prev[prev.length - 1];
+        if(lastMessage && lastMessage.role === 'user') {
+            return prev.slice(0, -1);
+        }
+        return prev;
+    });
   }
 
   const handleDownload = async () => {
@@ -741,7 +753,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 <Download className="w-5 h-5" />
                             </Button>
                            </TooltipTrigger>
-                          <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
+                          <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                       </Tooltip>
                       <Tooltip>
                           <TooltipTrigger asChild>
@@ -749,7 +761,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 <ExternalLink className="w-5 h-5" />
                             </Button>
                            </TooltipTrigger>
-                          <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
+                          <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                 </div>
@@ -802,7 +814,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                   <Download className="w-5 h-5" />
                               </Button>
                            </TooltipTrigger>
-                           <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
+                           <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                         </Tooltip>
                         {!isMobile && (
                            <Tooltip>
@@ -826,7 +838,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                     <Presentation className="w-5 h-5" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Present</p></TooltipContent>
+                            <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Present</p></TooltipContent>
                            </Tooltip>
                         )}
                     </>
@@ -837,7 +849,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 <ExternalLink className="w-5 h-5" />
                             </Button>
                         </TooltipTrigger>
-                       <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
+                       <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
                     </Tooltip>
                 </div>
                 </TooltipProvider>
@@ -905,7 +917,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <Minus className="w-6 h-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Decrease font size</p></TooltipContent>
+                  <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Decrease font size</p></TooltipContent>
                  </Tooltip>
                  <Tooltip>
                    <TooltipTrigger asChild>
@@ -913,7 +925,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <Plus className="w-6 h-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Increase font size</p></TooltipContent>
+                  <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Increase font size</p></TooltipContent>
                  </Tooltip>
                  <Tooltip>
                    <TooltipTrigger asChild>
@@ -921,7 +933,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <MessageCirclePlus className="w-6 h-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Start New Chat</p></TooltipContent>
+                  <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Start New Chat</p></TooltipContent>
                  </Tooltip>
                  <Tooltip>
                    <TooltipTrigger asChild>
@@ -929,7 +941,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <X className="w-6 h-6" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent side="bottom" className="rounded-lg bg-black text-white"><p>Close Chat</p></TooltipContent>
+                  <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Close Chat</p></TooltipContent>
                  </Tooltip>
             </div>
             </TooltipProvider>
@@ -1125,5 +1137,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
 
     
