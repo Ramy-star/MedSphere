@@ -28,6 +28,7 @@ import {
   AlertDialogHeader as AlertDialogHeader2,
   AlertDialogTitle as AlertDialogTitle2,
 } from "@/components/ui/alert-dialog"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Textarea } from './ui/textarea';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
@@ -213,7 +214,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
         );
     }
     
-    const showActions = isLastMessage && !isAiThinking;
+    const showActions = !isAiThinking;
 
     return (
         <div className="group/message">
@@ -246,26 +247,45 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
 
             {showActions && (
                  <div className={cn("flex items-center gap-2 mt-4 transition-opacity", isMobile ? "opacity-100" : "opacity-0 group-hover/message:opacity-100")}>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => onCopy(msg.text, messageId)}
-                        className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white group/action"
-                        aria-label="Copy AI response to clipboard"
-                    >
-                         {copiedMessageId === messageId ? <Check className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" /> : <Copy className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />}
-                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline"></span>
-                    </Button>
-                    <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={onRegenerate}
-                        className="h-8 px-2 text-slate-400 hover:bg-slate-700 hover:text-white group/action"
-                        aria-label="Regenerate response"
-                    >
-                        <RefreshCw className="w-4 h-4 mr-0 sm:mr-1.5 transition-all" />
-                        <span className="text-sm max-w-0 sm:max-w-xs overflow-hidden whitespace-nowrap transition-all group-hover/action:max-w-xs hidden sm:inline"></span>
-                    </Button>
+                    <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => onCopy(msg.text, messageId)}
+                              className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white"
+                              aria-label="Copy AI response to clipboard"
+                          >
+                              {copiedMessageId === messageId ? <Check className="w-4 h-4 transition-all" /> : <Copy className="w-4 h-4 transition-all" />}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Copy</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+
+                    {isLastMessage && (
+                       <TooltipProvider delayDuration={100}>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={onRegenerate}
+                                  className="h-8 w-8 rounded-lg text-slate-400 hover:bg-slate-700 hover:text-white"
+                                  aria-label="Regenerate response"
+                              >
+                                  <RefreshCw className="w-4 h-4 transition-all" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Regenerate</p>
+                            </TooltipContent>
+                          </Tooltip>
+                       </TooltipProvider>
+                    )}
                 </div>
             )}
         </div>
@@ -909,8 +929,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         )
                     })}
 
-                    {isAiThinking && (
-                        <div className="flex items-start space-x-3">
+                     {isAiThinking && (
+                        <div className="flex items-start space-x-3 group/message">
                             <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
                             <div className="flex-1 space-y-3 pt-1">
                                 <Skeleton className="h-4 w-12 rounded-lg" />
