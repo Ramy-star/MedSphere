@@ -137,7 +137,7 @@ export const FileCard = React.memo(function FileCard({
     
     return (
         <div 
-            className="relative group flex items-center w-full p-3 md:p-3 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer"
+            className="relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer"
             onClick={handleClick}
         >
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
@@ -215,5 +215,6 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
+
 
 

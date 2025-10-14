@@ -248,7 +248,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
                           onClick={() => handleLinkClick(`/folder/${semester.id}`)}
                           onMouseEnter={() => prefetcher.prefetchChildren(semester.id)}
                           className={cn(
-                            "flex w-full items-center justify-between p-3 rounded-2xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer text-left",
+                            "flex w-full items-center justify-between p-2.5 rounded-2xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer text-left",
                             isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
                           )}
                             initial={{ opacity: 0, x: -10 }}
