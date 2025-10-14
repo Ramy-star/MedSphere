@@ -15,7 +15,7 @@ export const SubjectCard = React.memo(function SubjectCard({ subject }: { subjec
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
 
   return (
-    <Link href={subjectPath} className="block glass-card p-4 rounded-xl group hover:bg-white/10 transition-colors">
+    <Link href={subjectPath} className="block glass-card p-4 rounded-2xl group hover:bg-white/10 transition-colors">
       <div className="flex justify-between items-start mb-4">
         <Icon className={`w-8 h-8 ${color}`} />
       </div>
