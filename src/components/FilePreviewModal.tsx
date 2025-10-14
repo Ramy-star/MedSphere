@@ -259,7 +259,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                               className="h-8 w-8 rounded-lg text-white hover:bg-slate-700"
                               aria-label="Copy AI response to clipboard"
                           >
-                              {copiedMessageId === messageId ? <Check className="w-5 h-5 transition-all" /> : <CopyIcon className="w-5 h-5 transition-all scale-x-[-1]" />}
+                              {copiedMessageId === messageId ? <Check className="w-6 h-6 transition-all" /> : <CopyIcon className="w-6 h-6 transition-all scale-x-[-1]" />}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="rounded-lg bg-black text-white">
@@ -268,26 +268,24 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                       </Tooltip>
                     </TooltipProvider>
 
-                    {isLastMessage && (
-                       <TooltipProvider delayDuration={100}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={onRegenerate}
-                                  className="h-8 w-8 rounded-lg text-white hover:bg-slate-700"
-                                  aria-label="Regenerate response"
-                              >
-                                  <RefreshCw className="w-5 h-5 transition-all" />
-                              </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" className="rounded-lg bg-black text-white">
-                              <p>Regenerate</p>
-                            </TooltipContent>
-                          </Tooltip>
-                       </TooltipProvider>
-                    )}
+                   <TooltipProvider delayDuration={100}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={onRegenerate}
+                              className="h-8 w-8 rounded-lg text-white hover:bg-slate-700"
+                              aria-label="Regenerate response"
+                          >
+                              <RefreshCw className="w-6 h-6 transition-all" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" className="rounded-lg bg-black text-white">
+                          <p>Regenerate</p>
+                        </TooltipContent>
+                      </Tooltip>
+                   </TooltipProvider>
                 </div>
             )}
         </div>
@@ -949,9 +947,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     {chatHistory.length === 0 && !isAiThinking && (
                         <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
                             {isExtracting ? (
-                                <div className="flex items-center gap-2 text-white">
-                                <Skeleton className="h-5 w-5 rounded-full" />
-                                <p>Analyzing document...</p>
+                                <div className="flex flex-col gap-4">
+                                  <div className="flex items-center gap-2 text-white">
+                                    <Skeleton className="h-5 w-5 rounded-full" />
+                                    <p>Analyzing document...</p>
+                                  </div>
+                                  <Progress value={50} className="w-full h-1" />
                                 </div>
                             ) : documentText ? (
                                 <p className="text-white">Hello! I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
@@ -1124,3 +1125,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
