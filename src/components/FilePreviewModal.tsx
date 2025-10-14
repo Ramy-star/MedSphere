@@ -256,10 +256,10 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                               variant="ghost"
                               size="icon"
                               onClick={() => onCopy(msg.text, messageId)}
-                              className="h-8 w-8 rounded-lg text-white hover:bg-slate-700"
+                              className="h-8 w-8 rounded-full text-white hover:bg-white/10"
                               aria-label="Copy AI response to clipboard"
                           >
-                              {copiedMessageId === messageId ? <Check className="w-6 h-6 transition-all" /> : <CopyIcon className="w-6 h-6 transition-all scale-x-[-1]" />}
+                              {copiedMessageId === messageId ? <Check className="w-6 h-6 transition-all" /> : <CopyIcon className="w-6 h-6" />}
                           </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" className="rounded-lg bg-black text-white">
@@ -275,7 +275,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                               variant="ghost"
                               size="icon"
                               onClick={onRegenerate}
-                              className="h-8 w-8 rounded-lg text-white hover:bg-slate-700"
+                              className="h-8 w-8 rounded-full text-white hover:bg-white/10"
                               aria-label="Regenerate response"
                           >
                               <RefreshCw className="w-6 h-6 transition-all" />
