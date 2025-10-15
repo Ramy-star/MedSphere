@@ -84,27 +84,24 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between min-h-[40px] flex-wrap gap-4">
-        <div className="flex items-center gap-3">
-          {renderIcon()}
-          <h1 className="text-lg sm:text-xl font-bold text-white">
-            {currentFolder ? currentFolder.name : ''}
-          </h1>
-        </div>
-        <div className="flex gap-2">
-          {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'SEMESTER' && (
-            <div>
-              <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
-            </div>
-          )}
-          <div className="hidden md:flex items-center gap-1">
-            <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
-            <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
+    <div className="flex items-center justify-between min-h-[40px] flex-wrap gap-4">
+      <div className="flex items-center gap-3">
+        {renderIcon()}
+        <h1 className="text-lg sm:text-xl font-bold text-white">
+          {currentFolder ? currentFolder.name : ''}
+        </h1>
+      </div>
+      <div className="flex gap-2">
+        {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'SEMESTER' && (
+          <div>
+            <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
           </div>
+        )}
+        <div className="hidden md:flex items-center gap-1">
+          <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
+          <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
         </div>
       </div>
-
     </div>
   );
 }
