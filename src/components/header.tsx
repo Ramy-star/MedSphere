@@ -9,6 +9,7 @@ import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import { Logo } from './logo';
 import { AuthButton } from './auth-button';
+import { cn } from '@/lib/utils';
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -17,6 +18,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const searchParams = useSearchParams();
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [debouncedQuery] = useDebounce(query, 1000);
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   useEffect(() => {
     // Navigate to search results if there is a debounced query
@@ -55,13 +57,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       <div className="flex items-center justify-end flex-grow gap-4">
         <div className="relative w-full max-w-[180px] sm:max-w-sm">
           <Search
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400"
+            className={cn(
+              "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform duration-300",
+              isSearchFocused && "transform -scale-x-100"
+            )}
           />
           <Input
             placeholder="Search files..."
             className="pl-9 sm:pl-10 pr-10 bg-black/20 border-white/10 rounded-full h-9 sm:h-10"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
+            onFocus={() => setIsSearchFocused(true)}
+            onBlur={() => setIsSearchFocused(false)}
           />
           {query && (
               <Button 
