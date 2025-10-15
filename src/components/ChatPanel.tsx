@@ -282,9 +282,15 @@ export function ChatPanel({ isMobile, documentText, isExtracting, onClose }: Cha
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            textarea.style.height = 'auto';
-            const scrollHeight = textarea.scrollHeight;
-            textarea.style.height = `${scrollHeight}px`;
+            // Only run if there is text, to prevent initial incorrect resize
+            if (chatInput) {
+                textarea.style.height = 'auto';
+                const scrollHeight = textarea.scrollHeight;
+                textarea.style.height = `${scrollHeight}px`;
+            } else {
+                // Reset to default height when empty
+                textarea.style.height = '';
+            }
         }
     }, [chatInput]);
 
@@ -509,5 +515,3 @@ export function ChatPanel({ isMobile, documentText, isExtracting, onClose }: Cha
         </motion.div>
     );
 }
-
-    
