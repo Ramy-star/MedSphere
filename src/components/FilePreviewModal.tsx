@@ -1116,7 +1116,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         {renderChatView()}
        
         <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
-            <AlertDialogContent className="sm:max-w-[425px]">
+            <AlertDialogContent className="w-[70vw] rounded-2xl sm:max-w-[425px]">
               <AlertDialogHeader2>
                 <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
                 <AlertDialogDesc>
