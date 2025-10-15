@@ -1,5 +1,4 @@
 
-
 'use client';
 import { ArrowRight, ArrowLeft, Folder, Layers, Calendar } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -86,13 +85,6 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
 
   return (
     <div className="mb-6 space-y-4">
-      <div className="flex items-start justify-between">
-        <div className="hidden md:flex items-center gap-1">
-          <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
-          <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
-        </div>
-      </div>
-      
       <div className="flex items-center justify-between min-h-[40px] flex-wrap gap-4">
         <div className="flex items-center gap-3">
           {renderIcon()}
@@ -100,11 +92,17 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
             {currentFolder ? currentFolder.name : ''}
           </h1>
         </div>
-        {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'SEMESTER' && (
-          <div>
-            <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
+        <div className="flex items-center gap-2">
+          <div className="hidden md:flex items-center gap-1">
+            <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
+            <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
           </div>
-        )}
+          {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'SEMESTER' && (
+            <div>
+              <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
+            </div>
+          )}
+        </div>
       </div>
 
     </div>
