@@ -59,7 +59,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           <Search
             className={cn(
               "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 text-slate-400 transition-transform duration-300",
-              isSearchFocused && "transform -scale-x-100"
+              isSearchFocused && "transform rotate-90"
             )}
           />
           <Input
