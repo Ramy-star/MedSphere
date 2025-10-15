@@ -1,12 +1,10 @@
 'use client';
 
-import FileExplorerHeader from '@/components/FileExplorerHeader';
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
 import { useEffect, useMemo, use } from 'react';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { motion } from 'framer-motion';
 import React from 'react';
 import { prefetcher } from '@/lib/prefetchService';
 
