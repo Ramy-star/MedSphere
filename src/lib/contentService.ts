@@ -9,6 +9,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { sha256file } from './hashFile';
 import { nanoid } from 'nanoid';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { cacheService } from './cacheService';
 
 
 export type Content = {
@@ -74,6 +75,28 @@ function createProxiedUrl(secureUrl: string): string {
 
 
 export const contentService = {
+    async getFileContent(url: string): Promise<Blob> {
+        const cachedFile = await cacheService.getFile(url);
+        if (cachedFile) {
+            console.log("Serving file from IndexedDB cache:", url);
+            return cachedFile;
+        }
+
+        console.log("Fetching file from network and caching:", url);
+        const response = await fetch(url);
+        if (!response.ok) {
+            throw new Error(`Failed to fetch file from network: ${response.statusText}`);
+        }
+        const blob = await response.blob();
+        
+        // Don't wait for caching to complete to return the blob
+        cacheService.saveFile(url, blob).catch(err => {
+            console.error("Failed to cache file in IndexedDB:", err);
+        });
+
+        return blob;
+    },
+
     async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
         const maxPages = pdf.numPages;
         const textPromises: Promise<string>[] = [];
@@ -540,6 +563,7 @@ export const contentService = {
     const deleteQueue: string[] = [id];
     const visited = new Set<string>([id]);
     const filesToDeleteFromCloudinary: { publicId: string; resourceType: 'image' | 'video' | 'raw'; }[] = [];
+    const filesToDeleteFromCache: string[] = [];
     const batch = writeBatch(db);
 
     try {
@@ -557,7 +581,7 @@ export const contentService = {
             });
         }
         
-        // Step 2: For all items to be deleted, collect Cloudinary public IDs and add them to the delete batch
+        // Step 2: For all items to be deleted, collect Cloudinary public IDs, cache keys, and add to delete batch
         const allDocsToDeleteQuery = query(collection(db, "content"), where("id", "in", Array.from(visited)));
         const allDocsSnapshot = await getDocs(allDocsToDeleteQuery);
         
@@ -569,6 +593,9 @@ export const contentService = {
                     publicId: item.metadata.cloudinaryPublicId,
                     resourceType: item.metadata.cloudinaryResourceType || 'raw'
                 });
+                if (item.metadata.storagePath) {
+                    filesToDeleteFromCache.push(item.metadata.storagePath);
+                }
             }
             // Collect Cloudinary public IDs for folder icons
             if ((item.type === 'FOLDER' || item.type === 'SUBJECT') && item.metadata?.iconCloudinaryPublicId) {
@@ -576,13 +603,15 @@ export const contentService = {
                     publicId: item.metadata.iconCloudinaryPublicId,
                     resourceType: 'image'
                 });
+                 if (item.metadata.iconURL) {
+                    filesToDeleteFromCache.push(item.metadata.iconURL);
+                }
             }
             // Add the document to the Firestore delete batch
             batch.delete(docSnap.ref);
         });
 
         // Step 3: Delete files from Cloudinary via our API route
-        // This is done outside the Firestore transaction
         if (filesToDeleteFromCloudinary.length > 0) {
             for (const file of filesToDeleteFromCloudinary) {
                 const res = await fetch('/api/delete-cloudinary', {
@@ -592,12 +621,18 @@ export const contentService = {
                 });
                 if (!res.ok) {
                     console.error(`Failed to delete ${file.publicId} from Cloudinary. Status: ${res.status}`);
-                    // We don't throw an error here to allow Firestore deletion to proceed
                 }
             }
         }
+        
+        // Step 4: Delete files from IndexedDB cache
+        if (filesToDeleteFromCache.length > 0) {
+            for (const url of filesToDeleteFromCache) {
+                await cacheService.deleteFile(url);
+            }
+        }
 
-        // Step 4: Commit the Firestore batch deletion
+        // Step 5: Commit the Firestore batch deletion
         await batch.commit();
 
     } catch (e: any) {

@@ -3,8 +3,9 @@
 import { useEffect, useState, forwardRef } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfViewer, { type PdfViewerRef } from './PdfViewer';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Skeleton } from './ui/skeleton';
+import { contentService } from '@/lib/contentService';
 
 // Import react-pdf styles here to ensure they are loaded
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -26,45 +27,41 @@ export type FilePreviewRef = PdfViewerRef;
 
 const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage }, ref) => {
   const [contentUrl, setContentUrl] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const isMobile = useIsMobile();
   
   useEffect(() => {
     let objectUrl: string | null = null;
-    const isHtml = mime === 'text/html';
+    let isCancelled = false;
 
-    if (isHtml) {
-      setIsLoading(true);
-      fetch(url)
-        .then(response => {
-          if (!response.ok) {
-            throw new Error(`Failed to fetch file: ${response.statusText}`);
-          }
-          return response.blob();
-        })
-        .then(blob => {
-          objectUrl = URL.createObjectURL(blob);
-          setContentUrl(objectUrl);
-        })
-        .catch(error => {
-          console.error("Error fetching content for preview:", error);
-          setContentUrl(null); // Fallback to allow showing an error
-        })
-        .finally(() => {
-            setIsLoading(false);
-        });
-    } else {
-        // For other types, use the URL directly
-        setContentUrl(url);
-    }
+    const loadContent = async () => {
+        setIsLoading(true);
+        try {
+            const blob = await contentService.getFileContent(url);
+            if (isCancelled) return;
 
-    // Cleanup function to revoke the object URL
+            objectUrl = URL.createObjectURL(blob);
+            setContentUrl(objectUrl);
+        } catch (error) {
+            console.error("Error loading content for preview:", error);
+            setContentUrl(null); // Fallback to allow showing an error
+        } finally {
+            if (!isCancelled) {
+                setIsLoading(false);
+            }
+        }
+    };
+
+    loadContent();
+
+    // Cleanup function to revoke the object URL and set cancellation flag
     return () => {
+      isCancelled = true;
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [url, mime]);
+  }, [url]);
 
   if (isLoading) {
       return (
@@ -79,7 +76,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
        return (
         <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
             <p className="text-xl font-semibold mb-3">⚠️ Preview could not be loaded</p>
-            <p className="text-base mb-4 text-slate-400">There was an error loading the file content.</p>
+            <p className="text-base mb-4 text-slate-400">There was an error loading the file content. Check your network connection.</p>
             <a href={url} download={itemName} className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">Download File</a>
         </div>
       );
@@ -107,7 +104,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
 
   if (mime === 'text/html') {
-    return <iframe src={contentUrl} className="w-full h-full border-2 border-slate-700 rounded-lg bg-white text-black shadow-lg" title={itemName} sandbox="allow-scripts" />;
+    return <iframe src={contentUrl} className="w-full h-full border-2 border-slate-700 rounded-lg bg-white text-black shadow-lg" title={itemName} sandbox="allow-scripts allow-same-origin" />;
   }
 
   if (mime.startsWith('text/')) {

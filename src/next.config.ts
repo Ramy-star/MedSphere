@@ -6,54 +6,22 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
+  // We are managing asset caching via our own IndexedDB service and a simple
+  // network-first strategy for the service worker.
+  // This gives us more control over offline assets.
   runtimeCaching: [
     {
       urlPattern: /^https?.*/,
-      handler: 'StaleWhileRevalidate',
+      handler: 'NetworkFirst',
       options: {
-        cacheName: 'pages-cache',
+        cacheName: 'http-cache',
+        networkTimeoutSeconds: 3,
         expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-        },
-      },
-    },
-    {
-      urlPattern: /_next\/static\//,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'static-assets-cache',
-        expiration: {
-          maxEntries: 200,
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 days
-        },
-      },
-    },
-    {
-      urlPattern: /\.(?:pdf|docx|pptx|xlsx)$/i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'document-cache',
-        expiration: {
-          maxEntries: 50,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 Days
+          maxEntries: 100,
+          maxAgeSeconds: 24 * 60 * 60, // 1 day
         },
         cacheableResponse: {
-          statuses: [0, 200], // 0 for opaque responses
-        },
-      },
-    },
-    {
-      urlPattern: /\/(image|video|raw)\/upload\//i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'cloudinary-assets',
-        expiration: {
-          maxEntries: 200, // Increased entries
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
-        },
-        cacheableResponse: {
-          statuses: [0, 200], // 0 for opaque responses (cross-origin)
+          statuses: [0, 200],
         },
       },
     },
