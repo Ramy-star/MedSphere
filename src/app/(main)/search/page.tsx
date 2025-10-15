@@ -30,6 +30,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { ChangeIconDialog } from '@/components/ChangeIconDialog';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { FileSearch } from 'lucide-react';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -114,7 +115,7 @@ function SearchResults() {
                 {(loading && !results.length) ? (
                     null
                 ) : (
-                    <div className="flex flex-col">
+                    <div className="flex flex-col h-full">
                         {results.length > 0 ? (
                             results.map((item, index) => (
                                  <div
@@ -160,7 +161,15 @@ function SearchResults() {
                                 </div>
                             ))
                         ) : (
-                            !loading && query && <p className="text-slate-400">No results found.</p>
+                            !loading && query && (
+                                <div className="text-center py-16 flex flex-col items-center justify-center h-full">
+                                    <FileSearch className="mx-auto h-16 w-16 text-slate-500" />
+                                    <h3 className="mt-4 text-lg font-semibold text-white">No Results Found</h3>
+                                    <p className="mt-2 text-sm text-slate-400">
+                                        Your search for "{query}" did not return any results. Try a different keyword.
+                                    </p>
+                                </div>
+                            )
                         )}
                     </div>
                 )}
@@ -184,16 +193,16 @@ function SearchResults() {
                     />
 
                   <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
-                    <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg text-white">
+                    <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
                       <AlertDialogHeader className="p-6 pb-0">
                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                         <AlertDialogDescription>
                           This will permanently delete "{itemToDelete?.name}" and all its contents. This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter className="p-6 pt-4">
-                        <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
-                        <AlertDialogAction asChild><Button variant="destructive" onClick={handleDelete}>Delete</Button></AlertDialogAction>
+                      <AlertDialogFooter className="p-6 pt-4 flex-row justify-end items-center space-x-2">
+                        <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl flex-1 sm:flex-none">Cancel</Button></AlertDialogCancel>
+                        <AlertDialogAction asChild><Button variant="destructive" className="flex-1 sm:flex-none" onClick={handleDelete}>Delete</Button></AlertDialogAction>
                       </AlertDialogFooter>
                     </AlertDialogContent>
                   </AlertDialog>
