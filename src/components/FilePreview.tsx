@@ -3,7 +3,7 @@
 import { useEffect, useState, forwardRef } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfViewer, { type PdfViewerRef } from './PdfViewer';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Skeleton } from './ui/skeleton';
 import { contentService } from '@/lib/contentService';
 
