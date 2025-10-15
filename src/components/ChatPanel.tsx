@@ -139,7 +139,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
 });
 
 
-export function ChatPanel({ isMobile, documentText, isExtracting, onClose }: ChatPanelProps) {
+export default function ChatPanel({ isMobile, documentText, isExtracting, onClose }: ChatPanelProps) {
     const { toast } = useToast();
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
