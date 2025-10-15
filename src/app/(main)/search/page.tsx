@@ -162,7 +162,7 @@ function SearchResults() {
                             ))
                         ) : (
                             !loading && query && (
-                                <div className="text-center flex flex-col items-center justify-center h-full pb-16">
+                                <div className="text-center flex flex-col items-center h-full pt-16">
                                     <SearchX className="mx-auto h-20 w-20 text-slate-500" />
                                     <h3 className="mt-4 text-lg font-semibold text-white">No Results Found</h3>
                                     <p className="mt-2 text-sm text-slate-400">
