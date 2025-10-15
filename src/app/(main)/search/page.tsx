@@ -30,7 +30,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { ChangeIconDialog } from '@/components/ChangeIconDialog';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { FileSearch } from 'lucide-react';
+import { SearchX } from 'lucide-react';
 
 function SearchResults() {
     const searchParams = useSearchParams();
@@ -162,8 +162,8 @@ function SearchResults() {
                             ))
                         ) : (
                             !loading && query && (
-                                <div className="text-center py-16 flex flex-col items-center justify-center h-full">
-                                    <FileSearch className="mx-auto h-16 w-16 text-slate-500" />
+                                <div className="text-center flex flex-col items-center justify-center h-full pb-16">
+                                    <SearchX className="mx-auto h-20 w-20 text-slate-500" />
                                     <h3 className="mt-4 text-lg font-semibold text-white">No Results Found</h3>
                                     <p className="mt-2 text-sm text-slate-400">
                                         Your search for "{query}" did not return any results. Try a different keyword.
