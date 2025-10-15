@@ -21,6 +21,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useEffect } from 'react';
+import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
   folderName: z.string().min(1, { message: 'Folder name is required.' }),
@@ -59,7 +60,7 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg shadow-blue-500/10 text-white">
+      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg shadow-blue-500/10 text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Add new folder</DialogTitle>
@@ -84,9 +85,9 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
                   </FormItem>
                 )}
               />
-              <DialogFooter className="pt-2">
-                <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" className="rounded-xl">Create</Button>
+              <DialogFooter className="pt-2 flex flex-col sm:flex-row">
+                <Button type="submit" className="rounded-xl w-full sm:w-auto">Create</Button>
+                <Button type="button" variant="outline" className="rounded-xl w-full sm:w-auto mt-2 sm:mt-0" onClick={() => onOpenChange(false)}>Cancel</Button>
               </DialogFooter>
             </form>
           </Form>
