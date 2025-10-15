@@ -36,7 +36,7 @@ import { Input } from './ui/input';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
 
-const ChatPanel = dynamic(() => import('./ChatPanel'), {
+const ChatPanel = dynamic(() => import('./ChatPanel').then((mod) => mod.default), {
   ssr: false,
   loading: () => <ChatPanelSkeleton />,
 });
