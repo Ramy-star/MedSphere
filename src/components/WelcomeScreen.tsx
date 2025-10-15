@@ -39,7 +39,7 @@ export function WelcomeScreen({ onGetStarted }: { onGetStarted: () => void }) {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.7 }}
         >
-          Welcome to <span className="font-extrabold">Med</span><span className="text-green-400 font-normal">Sphere</span>
+          Welcome to <span className="font-extrabold">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
         </motion.h1>
 
         <motion.p 
@@ -59,7 +59,7 @@ export function WelcomeScreen({ onGetStarted }: { onGetStarted: () => void }) {
             <Button 
               size="lg" 
               onClick={onGetStarted} 
-              className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-8 py-6 shadow-lg shadow-blue-500/20 transition-all hover:shadow-blue-500/40"
+              className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg px-8 py-6 transition-transform active:scale-95"
             >
               Get Started <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
