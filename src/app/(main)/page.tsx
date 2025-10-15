@@ -114,7 +114,7 @@ export default function HomePage() {
                   {renderContent()}
                 </div>
             </div>
-            <div className="border border-blue-400/30 bg-blue-900/10 rounded-xl p-6 mt-16">
+            <div className="border border-blue-400/30 bg-blue-900/10 rounded-[1.25rem] p-6 mt-16">
                 <blockquote className="text-center">
                     <p className="text-lg text-slate-300 italic max-w-2xl">
                         "The good doctor treats the disease; the great doctor treats the patient who has the disease."
