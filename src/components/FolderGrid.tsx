@@ -500,16 +500,16 @@ export function FolderGrid({
           />
 
           <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
-            <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg text-white">
+            <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
               <AlertDialogHeader className="p-6 pb-0">
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>
                   This will permanently delete "{itemToDelete?.name}". This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter className="p-6 pt-4">
-                <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
-                <AlertDialogAction asChild><Button variant="destructive" onClick={handleDelete}>Delete</Button></AlertDialogAction>
+              <AlertDialogFooter className="p-6 pt-4 flex-row justify-end items-center space-x-2">
+                <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl flex-1 sm:flex-none">Cancel</Button></AlertDialogCancel>
+                <AlertDialogAction asChild><Button variant="destructive" className="flex-1 sm:flex-none" onClick={handleDelete}>Delete</Button></AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

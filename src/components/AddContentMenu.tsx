@@ -101,7 +101,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           {trigger || <Button size="sm" className="rounded-2xl active:scale-95 transition-transform"><Plus className="mr-2 h-4 w-4" />Add Content</Button>}
         </PopoverTrigger>
         <PopoverContent 
-          className="w-56 p-2" 
+          className="w-56 p-2 border-slate-700" 
           align="end"
         >
             <div className="space-y-1">

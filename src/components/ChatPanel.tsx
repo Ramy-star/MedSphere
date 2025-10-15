@@ -464,7 +464,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </form>
             </div>
             <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
-                <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl text-white">
+                <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
                   <AlertDialogHeader2 className="p-6 pb-0">
                     <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
                     <AlertDialogDesc>
@@ -472,7 +472,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                     </AlertDialogDesc>
                   </AlertDialogHeader2>
                   <AlertDialogFooter className='flex-row justify-end items-center space-x-2 p-6 pt-4'>
-                    <AlertDialogCancel asChild><Button variant="ghost" className='flex-1 sm:flex-none rounded-xl'>Cancel</Button></AlertDialogCancel>
+                    <AlertDialogCancel asChild><Button variant="outline" className='flex-1 sm:flex-none rounded-xl'>Cancel</Button></AlertDialogCancel>
                     <AlertDialogAction asChild><Button variant="destructive" className='flex-1 sm:flex-none rounded-xl' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
