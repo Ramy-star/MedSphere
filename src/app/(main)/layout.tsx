@@ -33,11 +33,9 @@ export default function MainLayout({
           !isHomePage && "glass-card p-4 md:p-6"
         )}
       >
-        {!isHomePage && (
-          <div className="flex-shrink-0 min-h-[56px] flex flex-col">
-              <Breadcrumbs />
-          </div>
-        )}
+        <div className="flex-shrink-0 min-h-[56px] flex flex-col">
+            <Breadcrumbs />
+        </div>
         
         <div className={cn("flex-1 flex flex-col overflow-hidden", !isHomePage && "mt-4")}>
           {children}
