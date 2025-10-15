@@ -101,7 +101,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg text-white">
+      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Change Folder Icon</DialogTitle>
@@ -161,9 +161,9 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
 
           </div>
 
-          <DialogFooter className="pt-6">
-            <Button type="button" variant="ghost" onClick={handleClose} disabled={uploadStatus === 'uploading'}>Cancel</Button>
-            <Button type="button" onClick={handleUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}>
+          <DialogFooter className="pt-6 flex-row justify-end space-x-2">
+            <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={handleClose} disabled={uploadStatus === 'uploading'}>Cancel</Button>
+            <Button type="button" className="rounded-xl flex-1 sm:flex-none" onClick={handleUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}>
               {uploadStatus === 'uploading' ? 'Uploading...' : 'Save Icon'}
             </Button>
           </DialogFooter>
