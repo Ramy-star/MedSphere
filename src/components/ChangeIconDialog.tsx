@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -161,7 +160,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
 
           </div>
 
-          <DialogFooter className="pt-6 flex-row justify-end space-x-2">
+          <DialogFooter className="pt-6 flex-row justify-end items-center space-x-2">
             <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={handleClose} disabled={uploadStatus === 'uploading'}>Cancel</Button>
             <Button type="button" className="rounded-xl flex-1 sm:flex-none" onClick={handleUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}>
               {uploadStatus === 'uploading' ? 'Uploading...' : 'Save Icon'}

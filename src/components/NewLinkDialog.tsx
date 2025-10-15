@@ -99,7 +99,7 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
                   </FormItem>
                 )}
               />
-              <DialogFooter className="pt-4 flex-row justify-end space-x-2">
+              <DialogFooter className="pt-4 flex-row justify-end items-center space-x-2">
                 <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" className="rounded-xl flex-1 sm:flex-none">Create Link</Button>
               </DialogFooter>

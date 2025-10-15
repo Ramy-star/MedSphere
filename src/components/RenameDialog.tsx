@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect } from 'react';
@@ -83,7 +82,7 @@ export function RenameDialog({ item, onOpenChange, onRename }: RenameDialogProps
                   </FormItem>
                 )}
               />
-              <DialogFooter className="pt-2 flex-row justify-end space-x-2">
+              <DialogFooter className="pt-2 flex-row justify-end items-center space-x-2">
                 <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" className="rounded-xl flex-1 sm:flex-none">Rename</Button>
               </DialogFooter>
