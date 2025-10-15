@@ -250,6 +250,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
 
+  useEffect(() => {
+    // Preload the chat panel component when the modal opens
+    if (item) {
+        ChatPanel.preload();
+    }
+  }, [item]);
+
   const resetPdfState = useCallback(() => {
     setPdfProxy(null);
     setNumPages(undefined);
