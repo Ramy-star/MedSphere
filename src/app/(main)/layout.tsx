@@ -4,6 +4,7 @@ import { useSidebarStore } from "@/hooks/use-sidebar-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
 import { Breadcrumbs } from "@/components/breadcrumbs";
+import { Separator } from "@/components/ui/separator";
 
 export default function MainLayout({
   children,
@@ -28,7 +29,8 @@ export default function MainLayout({
         <div className="flex-shrink-0">
             <Breadcrumbs />
         </div>
-        <div className="flex-1 flex flex-col overflow-hidden mt-6">
+        <Separator className="my-4" />
+        <div className="flex-1 flex flex-col overflow-hidden">
           {children}
         </div>
       </motion.main>

@@ -1,8 +1,5 @@
-
 'use client';
-import { ArrowRight, ArrowLeft, Folder, Layers, Calendar } from 'lucide-react';
-import type { Content } from '@/lib/contentService';
-import { LucideIcon } from 'lucide-react';
+import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
 import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
@@ -11,6 +8,9 @@ import { usePathname } from 'next/navigation';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useMemo } from 'react';
 import { Button } from './ui/button';
+import { Content } from '@/lib/contentService';
+import { LucideIcon, Folder, Layers, Calendar } from 'lucide-react';
+
 
 export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?: (file: File) => void }) {
   const { user } = useUser();
