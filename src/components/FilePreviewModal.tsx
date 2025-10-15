@@ -1020,7 +1020,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         <div 
             className={cn(
               "p-2 mb-2",
-              isMobile ? "fixed bottom-2 left-0 right-0 z-50" : "mt-auto",
+              isMobile ? "fixed bottom-0 left-0 right-0 z-50" : "mt-auto",
               "transition-transform duration-300"
             )}
             style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none', backgroundColor: '#212121' }}
