@@ -26,7 +26,7 @@ export default function MainLayout({
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden"
       >
-        <div className="flex-shrink-0">
+        <div className="flex-shrink-0 min-h-[56px] flex flex-col justify-center">
             <Breadcrumbs />
         </div>
         <Separator className="my-4" />
