@@ -100,10 +100,7 @@ export default function HomePage() {
   }
 
   return (
-    <motion.main 
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.1, ease: 'easeOut' }}
+    <main 
         className="flex-1 p-4 md:p-6 space-y-6 flex flex-col"
     >
         <Breadcrumbs />
@@ -123,6 +120,6 @@ export default function HomePage() {
                 </blockquote>
             </div>
         </div>
-    </motion.main>
+    </main>
   );
 }

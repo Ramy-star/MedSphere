@@ -39,14 +39,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
   }, [loadingLevels, level]);
   
   return (
-    <motion.main 
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="flex-1 p-4 md:p-6 glass-card"
-    >
-        <FileExplorerHeader />
-        
+    <>
         {!loading && semesters && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
                 {semesters.map((semester) => (
@@ -63,7 +56,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
                 ))}
             </div>
         )}
-    </motion.main>
+    </>
   );
 }
 

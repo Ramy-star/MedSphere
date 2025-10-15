@@ -99,14 +99,7 @@ function SearchResults() {
 
 
     return (
-        <motion.main 
-            initial={{ opacity: 0, y: -5 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="flex-1 p-6 flex flex-col overflow-hidden"
-        >
-            <Breadcrumbs />
-
+        <>
             <h2 className="text-2xl font-bold text-white mt-6 mb-4">
                 {loading && !results.length ? 'Searching...' : `Found ${results.length} results for "${query}"`}
             </h2>
@@ -208,7 +201,7 @@ function SearchResults() {
                   </AlertDialog>
                 </>
               )}
-        </motion.main>
+        </>
     );
 }
 

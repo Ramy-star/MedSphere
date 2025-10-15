@@ -2,14 +2,12 @@
 
 import { useEffect, useState, useCallback, use } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
-import FileExplorerHeader from '@/components/FileExplorerHeader';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import { notFound } from 'next/navigation';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useToast } from '@/hooks/use-toast';
 import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
-import { motion } from 'framer-motion';
 
 function FolderPageContent({ id }: { id: string }) {
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
@@ -91,23 +89,15 @@ function FolderPageContent({ id }: { id: string }) {
   };
   
   return (
-    <motion.main 
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
-        className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden"
-    >
-       <FileExplorerHeader onFileSelected={processFileUpload} />
-       <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-          <FolderGrid 
-            parentId={id} 
-            uploadingFiles={uploadingFiles} 
-            onFileSelected={processFileUpload}
-            onRetry={handleRetryUpload}
-            onRemove={handleRemoveUpload}
-          />
-       </div>
-    </motion.main>
+    <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
+      <FolderGrid 
+        parentId={id} 
+        uploadingFiles={uploadingFiles} 
+        onFileSelected={processFileUpload}
+        onRetry={handleRetryUpload}
+        onRemove={handleRemoveUpload}
+      />
+    </div>
   );
 }
 
