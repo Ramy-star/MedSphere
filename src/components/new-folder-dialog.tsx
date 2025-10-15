@@ -44,7 +44,7 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
     if (open) {
       // Small delay to allow dialog to animate in before focusing
       setTimeout(() => {
-        const input = document.getElementById('folderNameInput');
+        const input = document.getElementById('folderNameInput') as HTMLInputElement | null;
         input?.focus();
         input?.select();
       }, 100);
