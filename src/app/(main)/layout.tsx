@@ -4,7 +4,6 @@ import { useSidebarStore } from "@/hooks/use-sidebar-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "framer-motion";
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { Separator } from "@/components/ui/separator";
 
 export default function MainLayout({
   children,
@@ -26,11 +25,11 @@ export default function MainLayout({
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden"
       >
-        <div className="flex-shrink-0 min-h-[56px] flex flex-col justify-center">
+        <div className="flex-shrink-0 min-h-[56px] flex flex-col">
             <Breadcrumbs />
         </div>
-        <Separator className="my-4" />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        
+        <div className="flex-1 flex flex-col overflow-hidden mt-4">
           {children}
         </div>
       </motion.main>
