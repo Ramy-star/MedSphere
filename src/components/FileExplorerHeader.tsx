@@ -84,7 +84,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
   };
 
   return (
-    <div className="mb-6 space-y-4">
+    <div className="space-y-4">
       <div className="flex items-center justify-between min-h-[40px] flex-wrap gap-4">
         <div className="flex items-center gap-3">
           {renderIcon()}
