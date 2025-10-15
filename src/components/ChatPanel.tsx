@@ -131,7 +131,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         <p>Regenerate</p>
                         </TooltipContent>
                     </Tooltip>
-                    </Tooltip>
+                    </TooltipProvider>
                 )}
             </div>
         </div>
