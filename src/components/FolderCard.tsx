@@ -34,8 +34,9 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
               src={item.metadata.iconURL} 
               alt={item.name} 
               fill
-              className="object-cover rounded-md"
+              className="object-cover rounded-md pointer-events-none select-none"
               sizes="32px"
+              draggable={false}
             />
           </div>
         )
@@ -80,7 +81,8 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                           alt={item.name} 
                           width={24}
                           height={24}
-                          className="w-6 h-6 object-cover rounded-sm shrink-0"
+                          className="w-6 h-6 object-cover rounded-sm shrink-0 pointer-events-none select-none"
+                          draggable={false}
                         />
                     ) : (
                        <Folder className="w-6 h-6 text-yellow-400 shrink-0" />

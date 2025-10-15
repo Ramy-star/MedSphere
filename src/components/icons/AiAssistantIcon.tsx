@@ -1,3 +1,4 @@
+
 'use client';
 import { cn } from "@/lib/utils";
 import React from "react";
@@ -11,7 +12,8 @@ export const AiAssistantIcon = React.forwardRef<HTMLImageElement, React.HTMLAttr
       alt="AI Assistant"
       width={24}
       height={24}
-      className={cn(className)}
+      className={cn("pointer-events-none select-none", className)}
+      draggable={false}
       {...props} // Pass only basic compatible props
       ref={ref}
     />

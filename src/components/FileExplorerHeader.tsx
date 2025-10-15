@@ -51,8 +51,9 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
             src={currentFolder.metadata.iconURL}
             alt={currentFolder.name}
             fill
-            className="object-cover rounded-md"
+            className="object-cover rounded-md pointer-events-none select-none"
             sizes="(max-width: 640px) 28px, 32px"
+            draggable={false}
           />
         </div>
       );
