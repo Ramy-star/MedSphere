@@ -58,6 +58,14 @@ export default function HomePage() {
   };
 
   const renderContent = () => {
+      if (loading || (!levels && !isSeeding)) {
+           return (
+                <div className="text-center min-h-[16rem] md:min-h-0 flex flex-col justify-center items-center">
+                   {/* Loading state, can add a spinner later */}
+                </div>
+            );
+      }
+      
       if (!loading && (!levels || levels.length === 0)) {
            return (
                 <div className="text-center min-h-[16rem] md:min-h-0 flex flex-col justify-center items-center">
@@ -100,8 +108,8 @@ export default function HomePage() {
   }
 
   return (
-    <main 
-        className="flex-1 p-4 md:p-6 space-y-6 flex flex-col"
+    <div
+        className="flex-1 space-y-6 flex flex-col"
     >
         <Breadcrumbs />
         <div className="flex-1 flex flex-col items-center justify-between pt-8 md:pt-12 pb-16">
@@ -120,6 +128,6 @@ export default function HomePage() {
                 </blockquote>
             </div>
         </div>
-    </main>
+    </div>
   );
 }

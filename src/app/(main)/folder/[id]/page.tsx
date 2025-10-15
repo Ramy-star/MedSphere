@@ -8,6 +8,8 @@ import { notFound } from 'next/navigation';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useToast } from '@/hooks/use-toast';
 import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
+import FileExplorerHeader from '@/components/FileExplorerHeader';
+import { motion } from 'framer-motion';
 
 function FolderPageContent({ id }: { id: string }) {
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
@@ -89,15 +91,23 @@ function FolderPageContent({ id }: { id: string }) {
   };
   
   return (
-    <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-      <FolderGrid 
-        parentId={id} 
-        uploadingFiles={uploadingFiles} 
-        onFileSelected={processFileUpload}
-        onRetry={handleRetryUpload}
-        onRemove={handleRemoveUpload}
-      />
-    </div>
+    <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.2 }}
+    >
+        <FileExplorerHeader onFileSelected={processFileUpload} />
+        <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
+            <FolderGrid 
+                parentId={id} 
+                uploadingFiles={uploadingFiles} 
+                onFileSelected={processFileUpload}
+                onRetry={handleRetryUpload}
+                onRemove={handleRemoveUpload}
+            />
+        </div>
+    </motion.div>
   );
 }
 
