@@ -29,8 +29,8 @@ export default function MainLayout({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className={cn(
-          "flex-1 flex flex-col h-full overflow-hidden",
-          !isHomePage && "glass-card p-4 md:p-6"
+          "flex-1 flex flex-col h-full overflow-hidden p-4 md:p-6",
+          !isHomePage && "glass-card"
         )}
       >
         <div className="flex-shrink-0 min-h-[56px] flex flex-col">
