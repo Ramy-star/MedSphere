@@ -1,7 +1,6 @@
 
 'use client';
 
-import { Breadcrumbs } from '@/components/breadcrumbs';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useCallback } from 'react';
 import { Content, contentService } from '@/lib/contentService';
@@ -9,9 +8,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
 import { useFirebase } from '@/firebase/provider';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
 import React from 'react';
-import Link from 'next/link';
 import { prefetcher } from '@/lib/prefetchService';
 
 
@@ -111,7 +108,6 @@ export default function HomePage() {
     <div
         className="flex-1 space-y-6 flex flex-col"
     >
-        <Breadcrumbs />
         <div className="flex-1 flex flex-col items-center justify-between pt-8 md:pt-12 pb-16">
             <div className="w-full max-w-4xl text-center">
                 <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-[#00D309] to-teal-300 text-transparent bg-clip-text">Your Study Levels</h2>
