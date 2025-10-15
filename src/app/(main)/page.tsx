@@ -106,16 +106,18 @@ export default function HomePage() {
 
   return (
     <div
-        className="flex-1 space-y-6 flex flex-col"
+        className="flex-1 flex flex-col"
     >
-        <div className="flex-1 flex flex-col items-center pt-8 md:pt-12 pb-8">
-            <div className="w-full max-w-4xl text-center">
+        <div className="flex-grow pt-8 md:pt-12">
+            <div className="w-full max-w-4xl text-center mx-auto">
                 <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-[#00D309] to-teal-300 text-transparent bg-clip-text">Your Study Levels</h2>
                 <div className="min-h-[16rem]">
                   {renderContent()}
                 </div>
             </div>
-            <div className="border border-blue-400/30 bg-blue-900/10 rounded-[1.25rem] p-6 mt-16 mb-8 md:mb-0">
+        </div>
+        <div className="mt-auto mb-8 mx-4">
+            <div className="border border-blue-400/30 bg-blue-900/10 rounded-[1.25rem] p-6 max-w-3xl mx-auto">
                 <blockquote className="text-center">
                     <p className="text-lg text-slate-300 italic max-w-2xl">
                         "The good doctor treats the disease; the great doctor treats the patient who has the disease."
