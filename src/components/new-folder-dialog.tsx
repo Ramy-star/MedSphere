@@ -21,6 +21,7 @@ import { Input } from './ui/input';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   folderName: z.string().min(1, { message: 'Folder name is required.' }),
@@ -40,21 +41,32 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      // Small delay to allow dialog to animate in before focusing
+      setTimeout(() => {
+        const input = document.getElementById('folderNameInput');
+        input?.focus();
+        input?.select();
+      }, 100);
+    } else {
+      form.reset();
+    }
+  }, [open, form]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     await onAddFolder(values.folderName);
-    onOpenChange(false);
-    form.reset();
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Add new folder</DialogTitle>
           </DialogHeader>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 mt-4">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
               <FormField
                 control={form.control}
                 name="folderName"
@@ -62,19 +74,20 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
                   <FormItem>
                     <FormLabel>Folder Name</FormLabel>
                     <FormControl>
-                      <Input 
+                      <Input
+                        id="folderNameInput" 
                         placeholder="e.g. 'Lecture Notes'" 
                         {...field} 
-                        className="bg-slate-800/60 border-slate-700 focus:ring-blue-500"
+                        className="bg-slate-800/60 border-slate-700 focus:ring-blue-500 rounded-xl"
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <DialogFooter>
-                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit">Create</Button>
+              <DialogFooter className="pt-2">
+                <Button type="button" variant="ghost" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="submit" className="rounded-xl">Create</Button>
               </DialogFooter>
             </form>
           </Form>
