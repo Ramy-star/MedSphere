@@ -1,7 +1,7 @@
 
 'use client';
 import { Sidebar } from "@/components/sidebar";
-import { useState } from "react";
+import { useSidebarStore } from "@/hooks/use-sidebar-store";
 import { useIsMobile } from "@/hooks/use-mobile";
 
 export default function MainLayout({
@@ -9,12 +9,15 @@ export default function MainLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { isMobileSidebarOpen, setMobileSidebarOpen } = useSidebarStore();
   const isMobile = useIsMobile();
 
   return (
     <div className="flex flex-1 w-full p-2 sm:p-4 gap-4 overflow-hidden">
-      {!isMobile && <Sidebar open={sidebarOpen} setOpen={setSidebarOpen} />}
+      <Sidebar 
+        open={isMobile ? isMobileSidebarOpen : undefined} 
+        setOpen={isMobile ? setMobileSidebarOpen : undefined} 
+      />
       <div className="flex-1 flex flex-col overflow-hidden">
         {children}
       </div>

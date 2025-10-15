@@ -7,10 +7,6 @@ import {
   GraduationCap,
   Layers,
   Menu,
-  HeartPulse,
-  Brain,
-  Bone,
-  type LucideIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -26,9 +22,10 @@ import {
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
+import { useSidebarStore } from '@/hooks/use-sidebar-store';
 
 
-function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
+function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
   const pathname = usePathname();
   const router = useRouter();
   const isMobile = useIsMobile();
@@ -116,7 +113,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
   const handleLinkClick = (path: string) => {
     router.push(path);
     if (isMobile) {
-      setOpen(false);
+      onOpenChange(false);
     }
   }
 
@@ -144,7 +141,7 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
         <Button 
             variant="ghost" 
             size="icon" 
-            onClick={() => setOpen(!open)} 
+            onClick={() => onOpenChange(!open)} 
             className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8 rounded-full -mr-1"
         >
             <Menu size={20} />
@@ -274,15 +271,15 @@ function SidebarContent({ open, setOpen }: { open: boolean, setOpen: (open: bool
 }
 
 
-export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: boolean) => void }) {
+export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: boolean) => void }) {
   const isMobile = useIsMobile();
-  const [desktopOpen, setDesktopOpen] = useState(true);
+  const { isDesktopSidebarOpen, setDesktopSidebarOpen } = useSidebarStore();
 
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={setOpen}>
         <SheetContent side="left" className="glass-card p-4 !w-72">
-           <SidebarContent open={true} setOpen={setOpen} />
+           <SidebarContent open={true} onOpenChange={setOpen!} />
         </SheetContent>
       </Sheet>
     )
@@ -291,7 +288,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
   return (
     <motion.aside
       animate={{
-        width: desktopOpen ? 288 : 80,
+        width: isDesktopSidebarOpen ? 288 : 80,
       }}
       transition={{
         type: 'spring',
@@ -300,7 +297,7 @@ export function Sidebar({ open, setOpen }: { open: boolean, setOpen: (open: bool
       }}
       className={cn("relative h-full flex-col glass-card p-4 hidden md:flex z-10")}
     >
-      <SidebarContent open={desktopOpen} setOpen={setDesktopOpen} />
+      <SidebarContent open={isDesktopSidebarOpen} onOpenChange={setDesktopSidebarOpen} />
     </motion.aside>
   );
 }
