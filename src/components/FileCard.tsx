@@ -178,7 +178,7 @@ export const FileCard = React.memo(function FileCard({
                         </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent 
-                        className="w-48 border-slate-700 rounded-xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white"
+                        className="w-48 p-2"
                         align="end"
                         onClick={(e) => { e.stopPropagation(); }}
                     >
@@ -186,24 +186,23 @@ export const FileCard = React.memo(function FileCard({
                             <DropdownMenuItem 
                                 onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
                                 disabled={!storagePath}
-                                className="cursor-pointer"
                             >
                                 <Download className="mr-2 h-4 w-4" />
                                 <span>Download</span>
                             </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="cursor-pointer">
+                        <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl}>
                             <ExternalLink className="mr-2 h-4 w-4" />
                             <span>Open in new tab</span>
                         </DropdownMenuItem>
                         {isAdmin && (
                             <>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={onRename} className="cursor-pointer">
+                                <DropdownMenuItem onClick={onRename}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={onDelete} className="cursor-pointer text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>

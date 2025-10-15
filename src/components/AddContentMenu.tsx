@@ -101,11 +101,11 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           {trigger || <Button size="sm" className="rounded-2xl active:scale-95 transition-transform"><Plus className="mr-2 h-4 w-4" />Add Content</Button>}
         </PopoverTrigger>
         <PopoverContent 
-          className="w-56 p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10" 
+          className="w-56 p-2" 
           align="end"
         >
-            <div className="p-2 space-y-1">
-              <p className="px-2 py-1 text-sm font-semibold text-slate-300">Create New</p>
+            <div className="space-y-1">
+              <p className="px-2 py-1.5 text-sm font-semibold text-slate-300">Create New</p>
               {menuItems.map((item) => (
                   <div 
                       key={item.label}

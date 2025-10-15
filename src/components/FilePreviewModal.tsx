@@ -1116,14 +1116,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         {renderChatView()}
        
         <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
-            <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
-              <AlertDialogHeader2 className="p-6 pb-0">
+            <AlertDialogContent className="sm:max-w-[425px]">
+              <AlertDialogHeader2>
                 <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
                 <AlertDialogDesc>
                   Are you sure you want to start a new chat? Your current conversation history will be cleared.
                 </AlertDialogDesc>
               </AlertDialogHeader2>
-              <AlertDialogFooter className="p-6 pt-4">
+              <AlertDialogFooter>
                 <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
                 <AlertDialogAction asChild><Button variant="destructive" onClick={startNewChat}>New Chat</Button></AlertDialogAction>
               </AlertDialogFooter>
@@ -1133,7 +1133,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
-
-    
