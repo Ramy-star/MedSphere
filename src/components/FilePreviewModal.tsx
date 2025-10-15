@@ -36,7 +36,7 @@ import { Input } from './ui/input';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
 
-const ChatPanel = dynamic(() => import('./ChatPanel').then((mod) => mod.default), {
+const ChatPanel = dynamic(() => import('./ChatPanel'), {
   ssr: false,
   loading: () => <ChatPanelSkeleton />,
 });
@@ -249,13 +249,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
-
-  useEffect(() => {
-    // Preload the chat panel component when the modal opens
-    if (item) {
-        ChatPanel.preload();
-    }
-  }, [item]);
 
   const resetPdfState = useCallback(() => {
     setPdfProxy(null);
