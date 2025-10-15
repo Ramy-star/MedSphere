@@ -59,7 +59,7 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+      <DialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg shadow-blue-500/10 text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Add new folder</DialogTitle>
@@ -85,7 +85,7 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
                 )}
               />
               <DialogFooter className="pt-2">
-                <Button type="button" variant="ghost" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
                 <Button type="submit" className="rounded-xl">Create</Button>
               </DialogFooter>
             </form>
