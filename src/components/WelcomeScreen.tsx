@@ -23,7 +23,7 @@ export function WelcomeScreen({ onGetStarted }: { onGetStarted: () => void }) {
         initial={{ scale: 0.9, y: 20, opacity: 0 }}
         animate={{ scale: 1, y: 0, opacity: 1 }}
         transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-        className="relative z-10 flex flex-col items-center text-center glass-card p-8 md:p-12 rounded-3xl max-w-2xl w-full"
+        className="relative z-10 flex flex-col items-center text-center glass-card p-8 md:p-12 rounded-[1.75rem] max-w-2xl w-full"
       >
         <motion.div
             initial={{ y: -20, opacity: 0 }}
