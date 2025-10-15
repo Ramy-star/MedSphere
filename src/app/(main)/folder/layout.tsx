@@ -1,6 +1,5 @@
 'use client';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
-import { AddContentMenu } from '@/components/AddContentMenu';
 import { motion } from 'framer-motion';
 
 export default function FolderLayout({

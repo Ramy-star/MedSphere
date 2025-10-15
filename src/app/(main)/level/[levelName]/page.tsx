@@ -39,9 +39,9 @@ function LevelPageContent({ levelName }: { levelName: string }) {
   }, [loadingLevels, level]);
   
   return (
-    <>
+    <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
         {!loading && semesters && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mt-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
                 {semesters.map((semester) => (
                     <div 
                       key={semester.id}
@@ -56,7 +56,7 @@ function LevelPageContent({ levelName }: { levelName: string }) {
                 ))}
             </div>
         )}
-    </>
+    </div>
   );
 }
 
