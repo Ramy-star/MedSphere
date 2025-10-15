@@ -33,7 +33,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Textarea } from './ui/textarea';
 import { Link2Icon } from './icons/Link2Icon';
 import { Skeleton } from './ui/skeleton';
-import { useMobileViewStore } from '@/hooks/use-mobile-view-store';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
@@ -305,7 +304,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [pdfProxy, setPdfProxy] = useState<PDFDocumentProxy | null>(null);
   const [numPages, setNumPages] = useState<number>();
@@ -325,6 +323,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const scaleBeforeFullscreen = useRef<number>(1);
   const manualPageInputInProgress = useRef(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [chatInputOffset, setChatInputOffset] = useState(0);
   
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -515,42 +514,25 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [chatInput]);
 
   useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea || !isMobile) return;
+    if (!isMobile || !window.visualViewport) return;
 
-    let onVVResize = () => {};
+    const vv = window.visualViewport;
 
-    const handleFocus = () => {
-      setHeaderFixed(true);
-      onVVResize = () => {
-        if (window.visualViewport) {
-          const keyboardHeight = window.innerHeight - window.visualViewport.height;
-          setChatInputOffset(keyboardHeight);
-        }
-      };
-
-      if ('visualViewport' in window && window.visualViewport) {
-        window.visualViewport.addEventListener('resize', onVVResize);
-      }
+    const onViewportChange = () => {
+      // When the keyboard appears, the visual viewport height shrinks.
+      // The offset is the difference between the layout viewport and visual viewport.
+      const keyboardHeight = window.innerHeight - vv.height;
+      setChatInputOffset(keyboardHeight > 0 ? keyboardHeight : 0);
     };
 
-    const handleBlur = () => {
-      setHeaderFixed(false);
-      setChatInputOffset(0);
-       if ('visualViewport' in window && window.visualViewport) {
-        window.visualViewport.removeEventListener('resize', onVVResize);
-      }
-    };
-    
-    textarea.addEventListener('focus', handleFocus);
-    textarea.addEventListener('blur', handleBlur);
+    vv.addEventListener('resize', onViewportChange);
+    vv.addEventListener('scroll', onViewportChange);
 
     return () => {
-      textarea.removeEventListener('focus', handleFocus);
-      textarea.removeEventListener('blur', handleBlur);
-      handleBlur();
-    }
-  }, [isMobile, setHeaderFixed, setChatInputOffset]);
+      vv.removeEventListener('resize', onViewportChange);
+      vv.removeEventListener('scroll', onViewportChange);
+    };
+  }, [isMobile]);
 
     useEffect(() => {
         const handleFullscreenChange = async () => {
@@ -915,7 +897,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const renderChatView = () => {
     const chatViewContent = (
       <>
-        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14")}>
+        <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 sticky top-0 bg-[#212121] z-10")}>
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -961,10 +943,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <div 
                 ref={chatContainerRef} 
                 className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6")}
-                style={{
-                    backgroundColor: '#212121',
-                    paddingBottom: isMobile ? '7rem' : '1.5rem',
-                }}
             >
                     
                     {chatHistory.length === 0 && !isAiThinking && (
@@ -1018,12 +996,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
              <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
         </div>
         <div 
-            className={cn(
-              "p-2 mb-2",
-              isMobile ? "fixed bottom-0 left-0 right-0 z-50" : "mt-auto",
-              "transition-transform duration-300"
-            )}
-            style={{ transform: isMobile ? `translateY(-${chatInputOffset}px)` : 'none', backgroundColor: '#212121' }}
+            className="p-2 mb-2 mt-auto"
+            style={{ 
+                backgroundColor: '#212121',
+                paddingBottom: `calc(env(safe-area-inset-bottom, 0) + 0.5rem)`
+            }}
         >
              <form
                 onSubmit={handleChatSubmit}
@@ -1079,9 +1056,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <motion.div
                         key="chat-panel-mobile"
                         initial={{ y: '100dvh' }}
-                        animate={{ y: 0 }}
+                        animate={{ 
+                            y: 0,
+                            // Use the offset to move the entire view up, but only when keyboard is active
+                            // We move the whole view, not just the input, to keep layout consistent.
+                            paddingBottom: `${chatInputOffset}px` 
+                        }}
                         exit={{ y: '100dvh' }}
-                        transition={{ type: "spring", stiffness: 400, damping: 40 }}
+                        transition={{ type: "spring", stiffness: 400, damping: 40, duration: 0.2 }}
                         className="flex flex-col overflow-hidden h-[100dvh] w-full absolute inset-0 z-20"
                         style={{backgroundColor: '#212121'}}
                     >

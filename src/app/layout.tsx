@@ -41,7 +41,6 @@ export default function RootLayout({
 }>) {
   const firebaseConfig = getFirebaseConfig();
   const [showWelcome, setShowWelcome] = useState(true);
-  const { isHeaderFixed } = useMobileViewStore();
 
   useEffect(() => {
     // Check localStorage only on the client side
@@ -88,10 +87,10 @@ export default function RootLayout({
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
           <div className="flex flex-col h-full w-full">
-            <header className={cn("z-50 w-full", isHeaderFixed && "fixed top-0 left-0 right-0")}>
+            <header className="z-50 w-full">
               <Header />
             </header>
-            <main className={cn("flex flex-1 w-full overflow-hidden", isHeaderFixed && "pt-[68px]")}>
+            <main className="flex flex-1 w-full overflow-hidden">
               {children}
             </main>
           </div>
