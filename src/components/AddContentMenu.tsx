@@ -110,7 +110,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
                   <div 
                       key={item.label}
                       onClick={item.action}
-                      className="flex items-center gap-3 p-2 rounded-lg text-sm text-slate-200 hover:bg-white/10 cursor-pointer transition-colors"
+                      className="flex items-center gap-3 p-2 rounded-xl text-sm text-slate-200 hover:bg-white/10 cursor-pointer transition-colors"
                   >
                       <item.icon className="h-4 w-4 text-slate-400" />
                       <span>{item.label}</span>
