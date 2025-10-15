@@ -1,4 +1,3 @@
-
 'use client';
 import { Sidebar } from "@/components/sidebar";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
@@ -26,7 +25,9 @@ export default function MainLayout({
         transition={{ duration: 0.2, ease: 'easeOut' }}
         className="flex-1 p-4 md:p-6 glass-card flex flex-col h-full overflow-hidden"
       >
-        <Breadcrumbs />
+        <div className="flex-shrink-0">
+            <Breadcrumbs />
+        </div>
         <div className="flex-1 flex flex-col overflow-hidden mt-6">
           {children}
         </div>
