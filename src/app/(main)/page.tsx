@@ -108,7 +108,7 @@ export default function HomePage() {
     <div
         className="flex-1 space-y-6 flex flex-col"
     >
-        <div className="flex-1 flex flex-col items-center justify-between pt-8 md:pt-12 pb-8">
+        <div className="flex-1 flex flex-col items-center pt-8 md:pt-12 pb-8">
             <div className="w-full max-w-4xl text-center">
                 <h2 className="text-3xl md:text-4xl font-bold mb-8 bg-gradient-to-r from-[#00D309] to-teal-300 text-transparent bg-clip-text">Your Study Levels</h2>
                 <div className="min-h-[16rem]">
