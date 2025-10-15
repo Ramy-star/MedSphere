@@ -162,7 +162,7 @@ const SortableList = ({
                                 content = null;
                             }
                             
-                             if (isMobile) {
+                             if (isMobile && it.type !== 'SUBJECT') {
                                 return (
                                    <div
                                       key={itemKey}
@@ -172,6 +172,11 @@ const SortableList = ({
                                     </div>
                                 );
                             }
+
+                            if (isMobile && it.type === 'SUBJECT') {
+                              return <div key={itemKey}>{content}</div>
+                            }
+
 
                             return (
                                 <motion.div
@@ -258,6 +263,21 @@ const NonSortableList = ({
                          content = null;
                      }
  
+                     if (isMobile && it.type !== 'SUBJECT') {
+                        return (
+                           <div
+                              key={itemKey}
+                              className={cn("border-white/10", !isLastItem && "border-b")}
+                            >
+                              {content}
+                            </div>
+                        );
+                    }
+
+                    if (isMobile && it.type === 'SUBJECT') {
+                      return <div key={itemKey}>{content}</div>
+                    }
+
                      return (
                          <motion.div
                              key={itemKey}
