@@ -92,16 +92,16 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
             {currentFolder ? currentFolder.name : ''}
           </h1>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="hidden md:flex items-center gap-1">
-            <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
-            <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
-          </div>
+        <div className="flex gap-2">
           {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'SEMESTER' && (
             <div>
               <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
             </div>
           )}
+          <div className="hidden md:flex items-center gap-1">
+            <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
+            <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
+          </div>
         </div>
       </div>
 
