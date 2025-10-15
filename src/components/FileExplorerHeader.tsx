@@ -89,8 +89,8 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
       <div className="flex items-start justify-between">
         <Breadcrumbs />
         <div className="hidden md:flex items-center gap-1">
-          <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full"><ArrowLeft size={16} /></Button>
-          <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full"><ArrowRight size={16} /></Button>
+          <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
+          <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
         </div>
       </div>
       
