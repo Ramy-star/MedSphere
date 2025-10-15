@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -56,7 +55,7 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Add new link</DialogTitle>
@@ -76,7 +75,7 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
                       <Input 
                         placeholder="e.g. 'Research Paper on AI'" 
                         {...field} 
-                        className="bg-slate-800/60 border-slate-700 focus:ring-blue-500"
+                        className="bg-slate-800/60 border-slate-700 focus:ring-blue-500 rounded-xl"
                       />
                     </FormControl>
                     <FormMessage />
@@ -93,7 +92,7 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
                       <Input 
                         placeholder="https://example.com" 
                         {...field} 
-                        className="bg-slate-800/60 border-slate-700 focus:ring-blue-500"
+                        className="bg-slate-800/60 border-slate-700 focus:ring-blue-500 rounded-xl"
                       />
                     </FormControl>
                     <FormMessage />
@@ -101,8 +100,8 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
                 )}
               />
               <DialogFooter className="pt-4">
-                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit">Create Link</Button>
+                <Button type="button" variant="ghost" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="submit" className="rounded-xl">Create Link</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -111,5 +110,3 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
     </Dialog>
   );
 }
-
-    
