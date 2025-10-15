@@ -86,7 +86,7 @@ export default function HomePage() {
                         onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
                     >
                         <div className={cn(
-                            "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center",
+                            "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center rounded-[1.25rem]",
                             // Center the content if we are spanning 2 columns
                             isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
                         )}>

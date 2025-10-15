@@ -117,7 +117,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
     return (
       <div onMouseEnter={() => prefetcher.prefetchChildren(item.id)}>
         <Link href={`/folder/${item.id}`} className="block">
-          <div className="relative group glass-card p-4 rounded-2xl group hover:bg-white/10 transition-colors cursor-pointer">
+          <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors cursor-pointer">
               <div className="flex justify-between items-start mb-4">
                   {renderIcon()}
                   {isAdmin && (
