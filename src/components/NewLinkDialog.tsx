@@ -55,7 +55,7 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg shadow-blue-500/10 text-white">
+      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Add new link</DialogTitle>
@@ -99,9 +99,9 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
                   </FormItem>
                 )}
               />
-              <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" className="rounded-xl">Create Link</Button>
+              <DialogFooter className="pt-4 flex-row justify-end space-x-2">
+                <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="submit" className="rounded-xl flex-1 sm:flex-none">Create Link</Button>
               </DialogFooter>
             </form>
           </Form>

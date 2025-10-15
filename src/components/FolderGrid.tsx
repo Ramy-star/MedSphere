@@ -166,7 +166,7 @@ const SortableList = ({
                                 return (
                                    <div
                                       key={itemKey}
-                                      className={cn("border-white/10", !isLastItem && "border-b")}
+                                      className={cn("border-white/10", !isLastItem && !isSubjectView && "border-b")}
                                     >
                                       {content}
                                     </div>
@@ -267,7 +267,7 @@ const NonSortableList = ({
                         return (
                            <div
                               key={itemKey}
-                              className={cn("border-white/10", !isLastItem && "border-b")}
+                              className={cn("border-white/10", !isLastItem && !isSubjectView && "border-b")}
                             >
                               {content}
                             </div>
@@ -500,7 +500,7 @@ export function FolderGrid({
           />
 
           <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
-            <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+            <AlertDialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg text-white">
               <AlertDialogHeader className="p-6 pb-0">
                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                 <AlertDialogDescription>

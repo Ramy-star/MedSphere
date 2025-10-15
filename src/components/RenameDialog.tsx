@@ -55,7 +55,7 @@ export function RenameDialog({ item, onOpenChange, onRename }: RenameDialogProps
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg shadow-blue-500/10 text-white">
+      <DialogContent className="sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-gradient-to-b from-slate-800/80 to-slate-900/70 backdrop-blur-lg shadow-lg text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Rename {item?.type === 'FOLDER' ? 'Folder' : 'File'}</DialogTitle>

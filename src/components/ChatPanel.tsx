@@ -471,9 +471,9 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                       Are you sure you want to start a new chat? Your current conversation history will be cleared.
                     </AlertDialogDesc>
                   </AlertDialogHeader2>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel asChild><Button variant="ghost">Cancel</Button></AlertDialogCancel>
-                    <AlertDialogAction asChild><Button variant="destructive" onClick={startNewChat}>New Chat</Button></AlertDialogAction>
+                  <AlertDialogFooter className='flex-row justify-end space-x-2'>
+                    <AlertDialogCancel asChild><Button variant="ghost" className='flex-1 sm:flex-none'>Cancel</Button></AlertDialogCancel>
+                    <AlertDialogAction asChild><Button variant="destructive" className='flex-1 sm:flex-none' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
