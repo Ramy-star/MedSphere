@@ -124,14 +124,16 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
         <AnimatePresence>
             {open && (
                 <motion.div
-                    className="flex items-center gap-2 overflow-hidden"
+                    className="flex items-center gap-3 overflow-hidden"
                     initial={{ opacity: 0, x: -20 }}
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                    <GraduationCap className="text-green-400 flex-shrink-0" size={24} />
-                    <h2 className="font-semibold text-white whitespace-nowrap">
+                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-400/30 to-green-600/30">
+                        <GraduationCap className="text-green-300 flex-shrink-0" size={20} />
+                    </div>
+                    <h2 className="font-bold text-white whitespace-nowrap">
                         Academic Structure
                     </h2>
                 </motion.div>
