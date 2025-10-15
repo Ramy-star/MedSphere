@@ -304,7 +304,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [isExtracting, setIsExtracting] = useState(false);
   const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
   const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { setHeaderFixed, chatInputOffset, setChatInputOffset } = useMobileViewStore();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -651,8 +650,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const handleDownload = async () => {
     if (!fileUrl || !item) return;
     try {
-        setLoading(true);
-        setError(null);
         const res = await fetch(fileUrl);
         if (!res.ok) throw new Error(`Failed to fetch file: ${res.statusText}`);
         const blob = await res.blob();
@@ -672,8 +669,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             title: "Download Failed",
             description: "Could not download the file.",
         });
-    } finally {
-        setLoading(false);
     }
   }
   
@@ -728,7 +723,37 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isPdf = item?.metadata?.mime === 'application/pdf';
   const isChatAvailable = item.metadata?.mime === 'application/pdf';
   
-  const renderFilePreview = () => (
+  const renderLoadingSkeleton = () => (
+    <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
+        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] z-10">
+            <div className="flex items-center gap-3">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <Skeleton className="h-5 w-40 rounded-lg hidden md:block" />
+            </div>
+            <div className="flex items-center gap-2">
+                <Skeleton className="h-9 w-24 rounded-full" />
+            </div>
+        </header>
+        <main className="flex-1 p-4">
+            <Skeleton className="h-full w-full rounded-lg" />
+        </main>
+    </div>
+  );
+  
+  const renderFilePreview = () => {
+    if (!fileUrl) {
+      if (error) {
+        return (
+          <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+            <p className="text-xl mb-3 text-red-400">Error: {error}</p>
+            <p className="text-sm text-slate-400">The file content could not be loaded.</p>
+          </div>
+        )
+      }
+      return renderLoadingSkeleton();
+    }
+
+    return (
     <motion.div 
         layout
         ref={previewContainerRef}
@@ -745,7 +770,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <TooltipProvider delayDuration={100}>
                       <Tooltip>
                           <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
                                 <Download className="w-5 h-5" />
                             </Button>
                            </TooltipTrigger>
@@ -806,7 +831,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <>
                         <Tooltip>
                            <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl || loading} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                              <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
                                   <Download className="w-5 h-5" />
                               </Button>
                            </TooltipTrigger>
@@ -870,32 +895,22 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
         <main ref={fileContentRef} className="flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden">
              <div className="[grid-area:1/1] overflow-auto">
-              {loading && <div className="text-white">Loading...</div>}
-              {error && <div className="text-red-400">Error: {error}</div>}
-              {!loading && !error && fileUrl && (
-                <FilePreview 
-                    key={item.id}
-                    ref={pdfViewerRef}
-                    url={fileUrl} 
-                    mime={item.metadata?.mime ?? 'application/octet-stream'} 
-                    itemName={item.name}
-                    onPdfLoadSuccess={handlePdfLoadSuccess}
-                    pdfScale={pdfScale}
-                    onPageChange={onPageChange}
-                    isFullscreen={isFullscreen}
-                    currentPage={pageNumber}
-                />
-              )}
-              {!loading && !fileUrl && (
-              <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                  <p className="text-xl mb-3">File content not available.</p>
-                  <p className="text-sm text-slate-400">The file could not be loaded. It might have been deleted or there was a network issue.</p>
-              </div>
-              )}
+              <FilePreview 
+                  key={item.id}
+                  ref={pdfViewerRef}
+                  url={fileUrl} 
+                  mime={item.metadata?.mime ?? 'application/octet-stream'} 
+                  itemName={item.name}
+                  onPdfLoadSuccess={handlePdfLoadSuccess}
+                  pdfScale={pdfScale}
+                  onPageChange={onPageChange}
+                  isFullscreen={isFullscreen}
+                  currentPage={pageNumber}
+              />
             </div>
         </main>
     </motion.div>
-  );
+  )};
 
   const renderChatView = () => {
     const chatViewContent = (
