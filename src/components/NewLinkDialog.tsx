@@ -55,7 +55,7 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
+      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Add new link</DialogTitle>

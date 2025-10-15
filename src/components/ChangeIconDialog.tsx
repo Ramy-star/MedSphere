@@ -10,13 +10,14 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from './ui/progress';
 import { AlertCircle, CheckCircle, UploadCloud } from 'lucide-react';
 import Image from 'next/image';
+import { cn } from '@/lib/utils';
 
 type ChangeIconDialogProps = {
   item: Content | null;
@@ -29,11 +30,11 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
   const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileSelect = (file: File | null | undefined) => {
     if (file) {
       if (!file.type.startsWith('image/')) {
         toast({
@@ -52,6 +53,10 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
       setUploadStatus('idle');
       setError(null);
     }
+  }
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    handleFileSelect(event.target.files?.[0]);
   };
 
   const handleClose = () => {
@@ -64,6 +69,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
         setUploadStatus('idle');
         setUploadProgress(0);
         setError(null);
+        setIsDragging(false);
     }, 300);
   };
   
@@ -96,16 +102,41 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
 
   const triggerFileSelect = () => fileInputRef.current?.click();
 
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+  
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true); // Keep it true while dragging over
+  };
+  
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    handleFileSelect(e.dataTransfer.files?.[0]);
+  };
+
   const open = !!item;
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
+      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Change Folder Icon</DialogTitle>
             <DialogDescription>
-              Upload a new icon for "{item?.name}".
+              Upload a new icon for "{item?.name}". Drag & drop an image or click to select.
             </DialogDescription>
           </DialogHeader>
 
@@ -119,8 +150,15 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
             />
             
             <div 
-              className="w-full h-48 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-slate-800/50 transition-colors"
+              className={cn(
+                "w-full h-48 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-slate-800/50 transition-all duration-300",
+                isDragging && "border-blue-500 bg-slate-800/50 scale-105"
+              )}
               onClick={triggerFileSelect}
+              onDragEnter={handleDragEnter}
+              onDragLeave={handleDragLeave}
+              onDragOver={handleDragOver}
+              onDrop={handleDrop}
             >
               {preview ? (
                 <div className="relative w-32 h-32">
@@ -131,9 +169,9 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
                     <Image src={item.metadata.iconURL} alt="Current icon" layout="fill" objectFit="contain" />
                 </div>
               ) : (
-                <div className="text-slate-400">
+                <div className="text-slate-400 pointer-events-none">
                     <UploadCloud className="mx-auto h-12 w-12" />
-                    <p className="mt-2 text-sm font-semibold">Click to select an image</p>
+                    <p className="mt-2 text-sm font-semibold">{isDragging ? 'Drop the image here' : 'Click or drag file to this area'}</p>
                     <p className="text-xs">PNG, JPG, SVG, WEBP, GIF</p>
                 </div>
               )}

@@ -464,7 +464,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </form>
             </div>
             <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
-                <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
+                <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
                   <AlertDialogHeader2 className="p-6 pb-0">
                     <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
                     <AlertDialogDesc>
