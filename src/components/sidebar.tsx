@@ -130,7 +130,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                     exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
                     transition={{ duration: 0.3, ease: "easeOut" }}
                 >
-                    <div className="p-1.5 rounded-lg bg-gradient-to-br from-green-400/30 to-green-600/30">
+                    <div className="p-1.5 rounded-xl bg-gradient-to-br from-green-400/30 to-green-600/30">
                         <GraduationCap className="text-green-300 flex-shrink-0" size={20} />
                     </div>
                     <h2 className="font-bold text-white whitespace-nowrap">
@@ -303,3 +303,5 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
     </motion.aside>
   );
 }
+
+    
