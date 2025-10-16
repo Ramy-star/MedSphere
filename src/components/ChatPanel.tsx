@@ -148,10 +148,11 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
     const [fontSizeIndex, setFontSizeIndex] = useState(1);
     
-    const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const inputContainerRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     // Mobile keyboard handling effect
     useEffect(() => {
@@ -165,34 +166,52 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
 
         if (!inputContainer || !messagesContainer) return;
 
-        const handleResize = () => {
-             // Amount the keyboard covers the layout viewport
+        let inputContainerHeight = inputContainer.offsetHeight;
+
+        const updateLayout = () => {
+            if (!vv || !inputContainer || !messagesContainer) return;
+
+            // This is the space covered by the keyboard.
             const keyboardOffset = window.innerHeight - vv.height;
-            const inputContainerHeight = inputContainer.clientHeight;
-            
+
             // Move the input container up instantly with the keyboard
             inputContainer.style.transform = `translateY(-${keyboardOffset}px)`;
             
-            // Add padding to the bottom of the chat messages container
-            // so the last message is always visible above the keyboard.
-            messagesContainer.style.paddingBottom = `${inputContainerHeight + keyboardOffset}px`;
-
+            // The total space needed at the bottom of the messages list
+            const totalPadding = inputContainerHeight + keyboardOffset;
+            messagesContainer.style.paddingBottom = `${totalPadding}px`;
+            
             // Scroll to the bottom to keep the last message in view
-            if (messagesContainer) {
+            if(messagesContainer) {
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         };
 
-        vv.addEventListener('resize', handleResize);
+        const onResize = () => {
+            updateLayout();
+        };
+
+        const observer = new ResizeObserver(() => {
+            if (inputContainer) {
+                inputContainerHeight = inputContainer.offsetHeight;
+                updateLayout(); // Recalculate layout when input height changes
+            }
+        });
+
+        if (inputContainer) {
+            observer.observe(inputContainer);
+        }
+
+        vv.addEventListener('resize', onResize);
         
-        // Initial call to set padding correctly
-        handleResize();
+        // Initial call
+        updateLayout();
 
         return () => {
-            vv.removeEventListener('resize', handleResize);
-             // Reset styles on cleanup
-            if (inputContainer) inputContainer.style.transform = 'translateY(0px)';
-            if (messagesContainer) messagesContainer.style.paddingBottom = `${inputContainer.clientHeight}px`;
+            vv.removeEventListener('resize', onResize);
+            if (inputContainer) {
+                observer.unobserve(inputContainer);
+            }
         };
     }, [isMobile]);
 
@@ -315,10 +334,10 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             }, 0);
         }
       };
-
+      
     useEffect(() => {
-        if (messagesContainerRef.current) {
-            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        if (messagesEndRef.current) {
+            messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [chatHistory, isAiThinking]);
 
@@ -329,18 +348,11 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             const scrollHeight = textarea.scrollHeight;
             const maxHeight = 150; 
             textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
-
-            if (inputContainerRef.current) {
-                 const messagesContainer = messagesContainerRef.current;
-                 if (messagesContainer) {
-                    messagesContainer.style.paddingBottom = `${inputContainerRef.current.clientHeight}px`;
-                 }
-            }
         }
     }, [chatInput]);
 
     const chatViewContent = (
-        <>
+      <div className="flex flex-col h-full w-full overflow-hidden">
             <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 sticky top-0 z-20", isMobile ? "bg-[#212121]" : "bg-transparent")}>
                 <div className="flex items-center gap-2">
                     <AiAssistantIcon className="h-6 w-6" />
@@ -383,6 +395,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </div>
                 </TooltipProvider>
             </header>
+            
+            {/* This container will scroll */}
             <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
                  <div className="space-y-6 p-4 sm:p-6">
                     {chatHistory.length === 0 && !isAiThinking && (
@@ -431,13 +445,14 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                             </div>
                         </div>
                     )}
+                    <div ref={messagesEndRef} />
                 </div>
             </div>
             
             <div
                 ref={inputContainerRef}
                 className={cn(
-                    "w-full z-20 transition-transform duration-0", // No transition for instant movement
+                    "w-full z-20 will-change-transform", // 'will-change' is a performance hint
                     isMobile ? "fixed bottom-0 left-0 right-0" : "relative"
                 )}
             >
@@ -502,7 +517,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-          </>
+          </div>
         );
 
     if (isMobile) {
@@ -526,3 +541,4 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         </div>
     );
 }
+

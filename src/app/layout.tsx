@@ -52,20 +52,12 @@ export default function RootLayout({
 
   useEffect(() => {
     const setDynamicVh = () => {
-      // We are using a CSS variable --1dvh to represent 1% of the viewport height.
-      // This is to overcome the issue on mobile browsers where 100vh includes the URL bar.
       document.documentElement.style.setProperty('--1dvh', `${window.innerHeight}px`);
     };
 
     setDynamicVh();
-    // Use visualViewport for more reliable resizing, especially with on-screen keyboards
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener('resize', setDynamicVh);
-      return () => window.visualViewport.removeEventListener('resize', setDynamicVh);
-    } else {
-      window.addEventListener('resize', setDynamicVh);
-      return () => window.removeEventListener('resize', setDynamicVh);
-    }
+    window.addEventListener('resize', setDynamicVh);
+    return () => window.removeEventListener('resize', setDynamicVh);
   }, []);
 
   const handleGetStarted = () => {
