@@ -5,11 +5,11 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { generateQuestions, convertQuestionsToJson } from '@/ai/flows/question-gen-flow';
+import { generateQuestions, convertQuestionsToJson, repairJson } from '@/ai/flows/question-gen-flow';
 import { contentService } from '@/lib/contentService';
 import { type PDFDocumentProxy, type PDFPageProxy } from 'pdfjs-dist';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -25,6 +25,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { jsPDF } from 'jspdf';
 import { Packer, Document as DocxDocument, Paragraph, TextRun } from 'docx';
+import JSZip from 'jszip';
 
 
 type SavedQuestionSet = {
@@ -50,6 +51,8 @@ export default function QuestionsCreatorPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [jsonError, setJsonError] = useState<string | null>(null);
+  const [isRepairing, setIsRepairing] = useState(false);
   const [savedQuestions, setSavedQuestions] = useState<SavedQuestionSet[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
@@ -123,85 +126,88 @@ export default function QuestionsCreatorPage() {
     setTextQuestions(null);
     setJsonQuestions(null);
     setError(null);
+    setJsonError(null);
     setIsGenerating(true);
     setIsConverting(false);
 
     try {
-        if (file.type !== 'application/pdf') {
-            throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
-        }
+        let documentText = '';
+        let imageUris: string[] = [];
 
-        const pdfjs = await import('pdfjs-dist');
-        const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
-        pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+        if (file.type === 'application/pdf') {
+            const pdfjs = await import('pdfjs-dist');
+            const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
+            pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-        const fileBuffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
-        
-        const documentText = await contentService.extractTextFromPdf(pdf);
-
-        const imageUris: string[] = [];
-        for (let i = 1; i <= pdf.numPages; i++) {
-            const page = await pdf.getPage(i);
-            const operatorList = await page.getOperatorList();
+            const fileBuffer = await file.arrayBuffer();
+            const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
             
-            const imagePromises = operatorList.fnArray.reduce((acc: Promise<string | null>[], fn, j) => {
-                if (fn === pdfjs.OPS.paintImageXObject) {
-                    const imageName = operatorList.argsArray[j][0];
-                    const promise = new Promise<string | null>((resolve) => {
-                        page.objs.get(imageName, (img: any) => {
-                            if (!img || !img.data) {
-                                resolve(null);
-                                return;
-                            }
-                            
-                            const canvas = document.createElement('canvas');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            const ctx = canvas.getContext('2d');
-                            if (!ctx) {
-                                resolve(null);
-                                return;
-                            }
+            documentText = await contentService.extractTextFromPdf(pdf);
 
-                            const imageData = ctx.createImageData(img.width, img.height);
-                            if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
-                                let k = 0;
-                                for (let i = 0; i < img.data.length; i++) {
-                                    const b = img.data[i];
-                                    for (let bit = 0; bit < 8; bit++) {
-                                        if (k >= imageData.data.length) break;
-                                        const gray = (b & (1 << (7 - bit))) ? 0 : 255;
-                                        imageData.data[k++] = gray;
-                                        imageData.data[k++] = gray;
-                                        imageData.data[k++] = gray;
-                                        imageData.data[k++] = 255;
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const operatorList = await page.getOperatorList();
+                
+                const imagePromises = operatorList.fnArray.reduce((acc: Promise<string | null>[], fn, j) => {
+                    if (fn === pdfjs.OPS.paintImageXObject) {
+                        const imageName = operatorList.argsArray[j][0];
+                        const promise = new Promise<string | null>((resolve) => {
+                            page.objs.get(imageName, (img: any) => {
+                                if (!img || !img.data) {
+                                    resolve(null);
+                                    return;
+                                }
+                                
+                                const canvas = document.createElement('canvas');
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                const ctx = canvas.getContext('2d');
+                                if (!ctx) {
+                                    resolve(null);
+                                    return;
+                                }
+
+                                const imageData = ctx.createImageData(img.width, img.height);
+                                if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
+                                    let k = 0;
+                                    for (let i = 0; i < img.data.length; i++) {
+                                        const b = img.data[i];
+                                        for (let bit = 0; bit < 8; bit++) {
+                                            if (k >= imageData.data.length) break;
+                                            const gray = (b & (1 << (7 - bit))) ? 0 : 255;
+                                            imageData.data[k++] = gray;
+                                            imageData.data[k++] = gray;
+                                            imageData.data[k++] = gray;
+                                            imageData.data[k++] = 255;
+                                        }
                                     }
+                                } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
+                                    let i = 0;
+                                    for (let j = 0; j < img.data.length; j += 3) {
+                                        imageData.data[i++] = img.data[j];
+                                        imageData.data[i++] = img.data[j + 1];
+                                        imageData.data[i++] = img.data[j + 2];
+                                        imageData.data[i++] = 255;
+                                    }
+                                } else {
+                                    imageData.data.set(img.data);
                                 }
-                            } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
-                                let i = 0;
-                                for (let j = 0; j < img.data.length; j += 3) {
-                                    imageData.data[i++] = img.data[j];
-                                    imageData.data[i++] = img.data[j + 1];
-                                    imageData.data[i++] = img.data[j + 2];
-                                    imageData.data[i++] = 255;
-                                }
-                            } else {
-                                imageData.data.set(img.data);
-                            }
-                            ctx.putImageData(imageData, 0, 0);
-                            resolve(canvas.toDataURL('image/png'));
+                                ctx.putImageData(imageData, 0, 0);
+                                resolve(canvas.toDataURL('image/png'));
+                            });
                         });
-                    });
-                    acc.push(promise);
-                }
-                return acc;
-            }, []);
+                        acc.push(promise);
+                    }
+                    return acc;
+                }, []);
 
-            const pageImages = await Promise.all(imagePromises);
-            pageImages.forEach(uri => {
-                if (uri) imageUris.push(uri);
-            });
+                const pageImages = await Promise.all(imagePromises);
+                pageImages.forEach(uri => {
+                    if (uri) imageUris.push(uri);
+                });
+            }
+        } else {
+             throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
         }
 
         if (!documentText && imageUris.length === 0) {
@@ -223,13 +229,9 @@ export default function QuestionsCreatorPage() {
             setJsonQuestions(generatedJson);
         } catch (jsonErr: any) {
             console.error("Error during JSON conversion:", jsonErr);
-            toast({
-                variant: 'destructive',
-                title: 'JSON Conversion Failed',
-                description: jsonErr.message || "Could not convert text to JSON. The AI returned an invalid format."
-            });
+            setJsonError(jsonErr.message || "Could not convert text to JSON. The AI returned an invalid format.");
             // Keep text questions, but show JSON failed by setting it to an error message.
-            setJsonQuestions(`{ "error": "JSON conversion failed", "message": "${jsonErr.message.replace(/"/g, '\\"')}" }`);
+            setJsonQuestions(`{ "error": "JSON conversion failed", "message": "${(jsonErr.message || '').replace(/"/g, '\\"')}" }`);
         }
 
     } catch (err: any) {
@@ -238,6 +240,33 @@ export default function QuestionsCreatorPage() {
     } finally {
         setIsGenerating(false);
         setIsConverting(false);
+    }
+  };
+
+  const handleRepairJson = async () => {
+    if (!jsonQuestions) return;
+    setIsRepairing(true);
+    try {
+        const repaired = await repairJson({
+            malformedJson: jsonQuestions,
+            desiredSchema: jsonPrompt,
+        });
+        setJsonQuestions(repaired);
+        setJsonError(null);
+        toast({
+            title: 'JSON Repaired',
+            description: 'The JSON structure has been successfully repaired.',
+        });
+    } catch (err: any) {
+        console.error("Error during JSON repair:", err);
+        toast({
+            variant: 'destructive',
+            title: 'Repair Failed',
+            description: err.message || 'Could not repair the JSON.',
+        });
+        setJsonError(err.message || 'Could not repair the JSON.');
+    } finally {
+        setIsRepairing(false);
     }
   };
 
@@ -405,6 +434,7 @@ export default function QuestionsCreatorPage() {
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json', isSavedSet = false, setId?: string) => {
     const isThisCardEditing = isEditing[type] && (isSavedSet ? editingId === setId : !editingId);
     const contentForDisplay = isThisCardEditing ? editingContent[type] : content;
+    const isJsonCardWithError = type === 'json' && jsonError;
 
     return (
         <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
@@ -441,9 +471,9 @@ export default function QuestionsCreatorPage() {
                 </div>
                 </CardTitle>
             </CardHeader>
-            <CardContent className="flex-grow flex">
+            <CardContent className="flex-grow flex flex-col">
                 {isLoading ? (
-                    <div className="flex items-center justify-center w-full">
+                    <div className="flex items-center justify-center w-full h-full">
                         <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                         <p className="ml-3 text-slate-300">{loadingText}</p>
                     </div>
@@ -454,9 +484,19 @@ export default function QuestionsCreatorPage() {
                         className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
                     />
                 ) : (
-                    <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto no-scrollbar">
-                        {content || 'Generated content will appear here...'}
-                    </pre>
+                    <div className="relative flex-1">
+                        <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto no-scrollbar">
+                            {content || 'Generated content will appear here...'}
+                        </pre>
+                    </div>
+                )}
+                {isJsonCardWithError && !isThisCardEditing && (
+                    <div className="mt-2">
+                        <Button onClick={handleRepairJson} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white'>
+                            {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
+                            {isRepairing ? 'Repairing...' : 'Attempt to Repair JSON'}
+                        </Button>
+                    </div>
                 )}
             </CardContent>
         </Card>
