@@ -30,6 +30,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
+import { Input } from '@/components/ui/input';
 
 
 type SavedQuestionSet = {
@@ -156,7 +157,7 @@ export default function QuestionsCreatorPage() {
                   if (operatorList.fnArray[j] === pdfjs.OPS.paintImageXObject) {
                     try {
                       const imageName = operatorList.argsArray[j as any][0];
-                      const img = page.objs.get(imageName);
+                      const img = await page.objs.get(imageName);
     
                       if (!img || !img.data) continue;
     
@@ -393,7 +394,7 @@ export default function QuestionsCreatorPage() {
                                 onDragEnter={handleDragEnter}
                                 onDragLeave={handleDragLeave}
                                 className={cn(
-                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/20",
+                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/40",
                                     isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/40",
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
@@ -470,7 +471,7 @@ export default function QuestionsCreatorPage() {
                                     <div>
                                         <Folder className="w-10 h-10 text-yellow-400 mb-4" />
                                         {editingId === set.id ? (
-                                            <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-2 mt-2">
                                                 <Input 
                                                     value={editingName} 
                                                     onChange={e => setEditingName(e.target.value)}
@@ -480,10 +481,10 @@ export default function QuestionsCreatorPage() {
                                                             e.stopPropagation(); e.preventDefault(); handleSaveEditName(set.id);
                                                         }
                                                     }}
+                                                    onBlur={() => handleSaveEditName(set.id)}
                                                     className="bg-transparent border-b-2 border-blue-500 h-auto p-0 text-lg font-semibold focus:ring-0"
                                                     autoFocus
                                                 />
-                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => {e.stopPropagation(); e.preventDefault(); handleSaveEditName(set.id)}}><Check className="h-4 w-4 text-green-400"/></Button>
                                             </div>
                                         ) : (
                                             <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
@@ -558,3 +559,6 @@ export default function QuestionsCreatorPage() {
 
     
 
+
+
+    
