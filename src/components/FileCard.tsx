@@ -180,7 +180,7 @@ export const FileCard = React.memo(function FileCard({
                     <DropdownMenuContent 
                         className="w-48 p-2"
                         align="end"
-                        onClick={(e) => { e.stopPropagation(); }}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                     >
                         {!isLink && (
                             <DropdownMenuItem 

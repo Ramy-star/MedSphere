@@ -303,5 +303,3 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
     </motion.aside>
   );
 }
-
-    

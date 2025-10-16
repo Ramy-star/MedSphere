@@ -160,8 +160,9 @@ const ChatInputForm = React.memo(function ChatInputForm({
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && e.shiftKey) {
-       return;
+    if (e.key === 'Enter' && !e.shiftKey) {
+       e.preventDefault();
+       handleSubmit();
     }
   };
 
@@ -229,12 +230,13 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const chatPanelRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const inputContainerRef = useRef<HTMLDivElement>(null);
+    const inputFormContainerRef = useRef<HTMLDivElement>(null);
 
     // This effect handles keyboard appearance on mobile.
     useEffect(() => {
         const panel = chatPanelRef.current;
         const messagesContainer = messagesContainerRef.current;
-        const inputContainer = inputContainerRef.current;
+        const inputContainer = inputFormContainerRef.current;
         
         if (!isMobile || !panel || !messagesContainer || !inputContainer || typeof window === 'undefined' || !window.visualViewport) {
             return;
@@ -243,43 +245,33 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         const vv = window.visualViewport;
         if (!vv) return;
 
-        let initialInputHeight = inputContainer.offsetHeight;
-
         const handleResize = () => {
-            if (!vv) return;
+            if (!vv || !inputContainer || !messagesContainer) return;
             const offset = window.innerHeight - vv.height;
+            
             requestAnimationFrame(() => {
-              if (inputContainer) {
                 inputContainer.style.transform = `translateY(-${offset}px)`;
-              }
-              if (messagesContainer) {
-                messagesContainer.style.paddingBottom = `${offset + initialInputHeight}px`;
+                messagesContainer.style.paddingBottom = `${offset + inputContainer.offsetHeight}px`;
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
-              }
             });
         };
         
-        const observer = new ResizeObserver(() => {
-            if (inputContainer) {
-                initialInputHeight = inputContainer.offsetHeight; // Update height on resize (e.g. textarea grows)
-                handleResize(); // Recalculate padding
-            }
+        const resizeObserver = new ResizeObserver(() => {
+            handleResize();
         });
         
-        observer.observe(inputContainer);
+        resizeObserver.observe(inputContainer);
         vv.addEventListener('resize', handleResize);
         
         // Initial setup
-        if (messagesContainer) {
-          messagesContainer.style.paddingBottom = `${initialInputHeight}px`;
-        }
+        messagesContainer.style.paddingBottom = `${inputContainer.offsetHeight}px`;
         handleResize();
 
         return () => {
             vv.removeEventListener('resize', handleResize);
-            observer.disconnect();
+            resizeObserver.disconnect();
             if (inputContainer) inputContainer.style.transform = '';
-            if (messagesContainer) messagesContainer.style.paddingBottom = `${initialInputHeight}px`;
+            if (messagesContainer) messagesContainer.style.paddingBottom = '';
         };
     }, [isMobile]);
 
@@ -474,20 +466,15 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </div>
             </div>
             
-            <div
-                ref={inputContainerRef}
-                className={cn(
-                    "w-full z-20",
-                    isMobile ? "fixed bottom-0 left-0 right-0" : "relative"
-                )}
-            >
-              <ChatInputForm 
-                isAiThinking={isAiThinking}
-                isExtracting={isExtracting}
-                documentText={documentText}
-                onChatSubmit={handleChatSubmit}
-              />
+            <div ref={inputFormContainerRef} className="w-full z-10 will-change-transform">
+                <ChatInputForm
+                  isAiThinking={isAiThinking}
+                  isExtracting={isExtracting}
+                  documentText={documentText}
+                  onChatSubmit={handleChatSubmit}
+                />
             </div>
+
 
             <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
                 <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">

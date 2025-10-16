@@ -12,7 +12,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, MessageCirclePlus, CornerDownLeft } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -261,6 +261,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setShowChat(false);
   }, []);
 
+  const handleClose = useCallback(() => {
+    onOpenChange(false);
+    // Add a delay to allow the dialog to animate out before resetting state
+    setTimeout(resetPdfState, 300);
+  }, [onOpenChange, resetPdfState]);
+
   // All hooks should be called unconditionally at the top level.
   // We'll check for `item` later before rendering.
   useEffect(() => {
@@ -268,12 +274,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         resetPdfState();
     }
   }, [item, resetPdfState]);
-  
-  const handleClose = useCallback(() => {
-    onOpenChange(false);
-    // Add a delay to allow the dialog to animate out before resetting state
-    setTimeout(resetPdfState, 300);
-  }, [onOpenChange, resetPdfState]);
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -652,7 +652,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-[var(--1dvh,100vh)] p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0 gap-0"
+        className={cn(
+            "max-w-none w-screen p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0 gap-0",
+            "h-full md:h-[var(--1dvh,100vh)]"
+        )}
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
