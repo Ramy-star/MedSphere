@@ -34,6 +34,13 @@ type SavedQuestionSet = {
   createdAt: string;
 };
 
+type EditingState = {
+  text: boolean;
+  json: boolean;
+  savedText: string | null;
+  savedJson: string | null;
+};
+
 export default function QuestionsCreatorPage() {
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
@@ -49,6 +56,12 @@ export default function QuestionsCreatorPage() {
   const [editingName, setEditingName] = useState('');
   const [previewContent, setPreviewContent] = useState<{title: string, content: string} | null>(null);
 
+  const [isEditing, setIsEditing] = useState<EditingState>({
+    text: false,
+    json: false,
+    savedText: null,
+    savedJson: null,
+  });
 
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
   const [debouncedJsonPrompt] = useDebounce(jsonPrompt, 500);
@@ -293,6 +306,36 @@ export default function QuestionsCreatorPage() {
     setSavedQuestions(prev => prev.filter(s => s.id !== id));
     toast({ title: 'Set Deleted', description: 'The question set has been removed.' });
   };
+  
+  const handleToggleEdit = (type: 'text' | 'json') => {
+    const isCurrentlyEditing = isEditing[type];
+    if (isCurrentlyEditing) {
+      // Save logic
+      if (type === 'text' && isEditing.savedText !== textQuestions) {
+        setTextQuestions(isEditing.savedText);
+      } else if (type === 'json' && isEditing.savedJson !== jsonQuestions) {
+        setJsonQuestions(isEditing.savedJson);
+      }
+      setIsEditing(prev => ({ ...prev, [type]: false }));
+    } else {
+      // Start editing
+      setIsEditing(prev => ({
+        ...prev,
+        [type]: true,
+        savedText: type === 'text' ? textQuestions : prev.savedText,
+        savedJson: type === 'json' ? jsonQuestions : prev.savedJson,
+      }));
+    }
+  };
+  
+  const handleContentChange = (type: 'text' | 'json', value: string) => {
+    if (type === 'text') {
+      setIsEditing(prev => ({ ...prev, savedText: value }));
+    } else {
+      setIsEditing(prev => ({ ...prev, savedJson: value }));
+    }
+  };
+
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -301,7 +344,7 @@ export default function QuestionsCreatorPage() {
 
   const hasGeneratedContent = textQuestions || jsonQuestions;
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, isTextCard: boolean = false) => (
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json') => (
     <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
@@ -312,7 +355,10 @@ export default function QuestionsCreatorPage() {
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || ""})} disabled={!content}><Eye className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
-            {isTextCard ? (
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)} disabled={isLoading || (!content && !isEditing[type])}>
+              {isEditing[type] ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
+            </Button>
+            {type === 'text' ? (
                  <Popover>
                     <PopoverTrigger asChild>
                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={!content}><Download className="h-4 w-4" /></Button>
@@ -337,6 +383,12 @@ export default function QuestionsCreatorPage() {
                 <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                 <p className="ml-3 text-slate-300">{loadingText}</p>
             </div>
+        ) : isEditing[type] ? (
+            <Textarea
+              value={isEditing[type === 'text' ? 'savedText' : 'savedJson'] || ''}
+              onChange={(e) => handleContentChange(type, e.target.value)}
+              className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500"
+            />
         ) : (
             <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto">
                 {content || 'Generated content will appear here...'}
@@ -347,7 +399,7 @@ export default function QuestionsCreatorPage() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto p-2">
+    <div className="flex-1 flex flex-col overflow-y-auto p-2 no-scrollbar">
       <div className="text-center">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
@@ -365,7 +417,7 @@ export default function QuestionsCreatorPage() {
             <div className="space-y-8">
                 {/* Top Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <motion.div variants={cardVariants} initial="hidden" animate="visible">
+                    <motion.div variants={cardVariants} initial="hidden" animate="visible" className="h-full">
                         <Card className="glass-card rounded-3xl h-full">
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><UploadCloud className='text-blue-400'/>1. Upload Lecture</CardTitle>
@@ -404,7 +456,7 @@ export default function QuestionsCreatorPage() {
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col justify-end">
-                                <Button onClick={handleSaveCurrentQuestions} className="active:scale-95 transition-transform">
+                                <Button onClick={handleSaveCurrentQuestions} className="rounded-full active:scale-95 transition-transform">
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
                             </CardContent>
@@ -414,10 +466,10 @@ export default function QuestionsCreatorPage() {
                 {/* Bottom Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
-                        {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, textQuestions, isGenerating, "Generating questions...", true)}
+                        {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, textQuestions, isGenerating, "Generating questions...", 'text')}
                     </motion.div>
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.6 }}>
-                        {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, jsonQuestions, isConverting, "Converting to JSON...", false)}
+                        {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, jsonQuestions, isConverting, "Converting to JSON...", 'json')}
                     </motion.div>
                 </div>
             </div>
@@ -477,8 +529,8 @@ export default function QuestionsCreatorPage() {
                                         </div>
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleString()}</p>
                                         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {renderOutputCard("Text", <FileText className="text-blue-400" />, set.textQuestions, false, "", true)}
-                                            {renderOutputCard("JSON", <FileJson className="text-green-400" />, set.jsonQuestions, false, "", false)}
+                                            {renderOutputCard("Text", <FileText className="text-blue-400" />, set.textQuestions, false, "", 'text')}
+                                            {renderOutputCard("JSON", <FileJson className="text-green-400" />, set.jsonQuestions, false, "", 'json')}
                                         </div>
                                     </div>
                                 ))}
@@ -496,8 +548,8 @@ export default function QuestionsCreatorPage() {
           <DialogHeader>
             <DialogTitle>{previewContent?.title}</DialogTitle>
           </DialogHeader>
-          <div className="flex-1 overflow-auto -mx-6 -mb-6 px-6 pb-6">
-            <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full">
+          <div className="flex-1 overflow-auto -mx-6 -mb-6 px-6 pb-6 no-scrollbar">
+            <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full min-h-full">
                 {previewContent?.content}
             </pre>
           </div>
@@ -506,5 +558,3 @@ export default function QuestionsCreatorPage() {
     </div>
   );
 }
-
-    
