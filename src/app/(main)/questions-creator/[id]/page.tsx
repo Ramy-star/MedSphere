@@ -359,7 +359,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 )}
             </div>
         </div>
-         <p className="text-sm text-slate-400 mb-6 ml-12 -mt-4">{new Date(questionSet.createdAt).toLocaleString()}</p>
+         <p className="text-sm text-slate-400 mb-6 ml-12 -mt-4">{new Date(questionSet.createdAt).toLocaleDateString()}</p>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, editingContent.text, 'text')}
