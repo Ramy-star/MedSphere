@@ -127,12 +127,12 @@ export default function QuestionsCreatorPage() {
       setIsConverting(true);
       const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: generatedText });
       setJsonQuestions(generatedJson);
-      setIsConverting(false);
 
     } catch (err: any) {
       console.error("Error during question generation process:", err);
       setError(err.message || 'An unexpected error occurred.');
       setIsGenerating(false);
+    } finally {
       setIsConverting(false);
     }
   };
@@ -307,11 +307,11 @@ a.click();
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
                         <label htmlFor="gen-prompt" className="text-sm font-medium text-slate-300">Question Generation Prompt</label>
-                        <Textarea id="gen-prompt" value={generationPrompt} onChange={(e) => setGenerationPrompt(e.target.value)} className="h-32 bg-slate-900/50 border-slate-700 rounded-xl" />
+                        <Textarea id="gen-prompt" value={generationPrompt} onChange={(e) => setGenerationPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl" />
                         </div>
                         <div className="space-y-2">
                         <label htmlFor="json-prompt" className="text-sm font-medium text-slate-300">Text-to-JSON Conversion Prompt</label>
-                        <Textarea id="json-prompt" value={jsonPrompt} onChange={(e) => setJsonPrompt(e.target.value)} className="h-32 bg-slate-900/50 border-slate-700 rounded-xl" />
+                        <Textarea id="json-prompt" value={jsonPrompt} onChange={(e) => setJsonPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl" />
                         </div>
                     </CardContent>
                 </Card>
