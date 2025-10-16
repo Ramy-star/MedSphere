@@ -336,7 +336,7 @@ export default function QuestionsCreatorPage() {
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col justify-end">
-                                <Button onClick={handleSaveCurrentQuestions} className="w-full rounded-2xl active:scale-95 transition-transform" disabled={!hasGeneratedContent}>
+                                <Button onClick={handleSaveCurrentQuestions} className="rounded-2xl active:scale-95 transition-transform" disabled={!hasGeneratedContent}>
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
                             </CardContent>
