@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -31,6 +31,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { Input } from '@/components/ui/input';
+import { useSearchParams } from 'next/navigation';
 
 
 type SavedQuestionSet = {
@@ -42,7 +43,7 @@ type SavedQuestionSet = {
   userId: string;
 };
 
-export default function QuestionsCreatorPage() {
+function QuestionsCreatorContent() {
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
   const [isDragging, setIsDragging] = useState(false);
@@ -73,6 +74,9 @@ export default function QuestionsCreatorPage() {
     user ? `users/${user.uid}/questionSets` : '',
     { orderBy: ['createdAt', 'desc'], disabled: !user }
   );
+  
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') || 'generate';
 
   const { toast } = useToast();
 
@@ -372,7 +376,7 @@ export default function QuestionsCreatorPage() {
         </h1>
       </div>
 
-      <Tabs defaultValue="generate" className="w-full mt-4">
+      <Tabs defaultValue={initialTab} className="w-full mt-4">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-slate-800/50 rounded-2xl p-1.5">
           <TabsTrigger value="generate" className="rounded-xl">Generate</TabsTrigger>
           <TabsTrigger value="prompts" className="rounded-xl">Prompts</TabsTrigger>
@@ -394,7 +398,7 @@ export default function QuestionsCreatorPage() {
                                 onDragEnter={handleDragEnter}
                                 onDragLeave={handleDragLeave}
                                 className={cn(
-                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/20",
+                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-900/40",
                                     isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/40",
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
@@ -549,8 +553,12 @@ export default function QuestionsCreatorPage() {
   );
 }
 
-    
-
-
+export default function QuestionsCreatorPage() {
+    return (
+        <Suspense fallback={<div className="flex items-center justify-center h-full"><Loader2 className="h-8 w-8 animate-spin text-blue-400" /></div>}>
+            <QuestionsCreatorContent />
+        </Suspense>
+    )
+}
 
     

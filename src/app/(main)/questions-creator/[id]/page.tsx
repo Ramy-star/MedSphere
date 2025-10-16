@@ -272,18 +272,24 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         className="flex-1 flex flex-col p-2 overflow-y-auto no-scrollbar"
     >
         <div className="flex items-center mb-6">
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full mr-2" onClick={() => router.back()}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full mr-2" onClick={() => router.push('/questions-creator?tab=saved')}>
                 <ArrowLeft className="h-5 w-5" />
             </Button>
             {isEditingTitle ? (
                 <div className="flex items-center gap-2">
-                    <Input 
+                    <Textarea
                         value={editingTitle}
                         onChange={e => setEditingTitle(e.target.value)}
-                        className="text-2xl font-bold bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto"
+                        className="text-2xl font-bold bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto resize-none overflow-hidden"
                         autoFocus
                         onBlur={handleTitleSave}
-                        onKeyDown={e => e.key === 'Enter' && handleTitleSave()}
+                        onKeyDown={e => {
+                            if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                                handleTitleSave();
+                            }
+                        }}
+                        rows={1}
                     />
                      <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={handleTitleSave}>
                         <Check className="h-5 w-5 text-green-400" />
@@ -359,3 +365,5 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    
