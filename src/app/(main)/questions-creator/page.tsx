@@ -223,13 +223,13 @@ a.click();
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-2">
-      <div className="text-center">
+      <div className="text-center mb-4">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
         </h1>
       </div>
 
-      <Tabs defaultValue="generate" className="w-full mt-4">
+      <Tabs defaultValue="generate" className="w-full mt-0">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-slate-800/50 rounded-2xl p-1.5">
           <TabsTrigger value="generate" className="rounded-xl">Generate</TabsTrigger>
           <TabsTrigger value="prompts" className="rounded-xl">Prompts</TabsTrigger>
