@@ -25,7 +25,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { jsPDF } from 'jspdf';
 import { Packer, Document as DocxDocument, Paragraph, TextRun } from 'docx';
-import JSZip from 'jszip';
 import Link from 'next/link';
 import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -220,32 +219,8 @@ export default function QuestionsCreatorPage() {
                     if (uri) imageUris.push(uri);
                 });
             }
-        } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-             const zip = await JSZip.loadAsync(file);
-             const textPromises: Promise<string>[] = [];
-             
-             if(file.type.includes('presentation')) { // PPTX
-                const slideMasters = /ppt\/slides\/_rels\/slide\d+\.xml\.rels/;
-                zip.forEach((relativePath, zipEntry) => {
-                    if (slideMasters.test(relativePath)) {
-                        textPromises.push(zipEntry.async('string').then(xml => {
-                            const slidePath = xml.match(/Target="..\/slides\/slide(\d+)\.xml"/);
-                            if (slidePath && slidePath[1]) {
-                                return zip.file(`ppt/slides/slide${slidePath[1]}.xml`)?.async('string') || '';
-                            }
-                            return '';
-                        }));
-                    }
-                });
-             } else { // DOCX
-                 textPromises.push(zip.file('word/document.xml')?.async('string') || Promise.resolve(''));
-             }
-
-            const allXmls = await Promise.all(textPromises);
-            documentText = allXmls.join(' ').replace(/<[^>]+>/g, ' ');
-
         } else {
-             throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF, DOCX, or PPTX file.`);
+             throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
         }
 
         if (!documentText && imageUris.length === 0) {
@@ -558,11 +533,11 @@ export default function QuestionsCreatorPage() {
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
                                 >
-                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf,.pptx,.docx" disabled={isGenerating || isConverting} />
+                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf" disabled={isGenerating || isConverting} />
                                 <div className="flex flex-col items-center justify-center text-slate-400">
                                     <UploadCloud className="h-12 w-12 mb-4" />
                                     <p className="font-semibold">{fileName ? `File: ${fileName}` : 'Drag & drop a file or click to upload'}</p>
-                                    <p className="text-xs mt-1">PDF, DOCX, PPTX</p>
+                                    <p className="text-xs mt-1">PDF</p>
                                 </div>
                                 </div>
                                 {error && (
