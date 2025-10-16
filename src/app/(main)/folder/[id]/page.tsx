@@ -95,7 +95,7 @@ function FolderPageContent({ id }: { id: string }) {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.2 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="flex flex-col flex-1 overflow-hidden"
     >
         <FileExplorerHeader onFileSelected={processFileUpload} />

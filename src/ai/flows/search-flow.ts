@@ -34,7 +34,7 @@ function initializeFuse(items: Content[]) {
 
 /**
  * Performs a fuzzy search on an array of content items using Fuse.js.
- * It now prioritizes direct "includes" matches over fuzzy matches.
+ * It now prioritizes fuzzy matches over direct "includes" matches.
  * @param query The search query string.
  * @param items The array of Content items to search through.
  * @returns A promise that resolves to an array of matching Content items, sorted by relevance.
@@ -53,20 +53,19 @@ export async function search(query: string, items: Content[]): Promise<Content[]
   
   const lowerCaseQuery = query.toLowerCase();
 
-  // Step 1: Find direct matches where the item name includes the query
+  // Step 1: Perform fuzzy search first.
+  const fuzzyResults = fuse.search(query);
+  const fuzzyMatches = fuzzyResults.map(result => result.item);
+  
+  // Step 2: If there are fuzzy matches, return them as the primary result.
+  if (fuzzyMatches.length > 0) {
+    return fuzzyMatches;
+  }
+
+  // Step 3: If no fuzzy matches, fall back to simple substring matching as a last resort.
   const directMatches = items.filter(item => 
     item.name.toLowerCase().includes(lowerCaseQuery)
   );
 
-  // Step 2: If there are direct matches, return them immediately.
-  // This gives precedence to exact substring matching.
-  if (directMatches.length > 0) {
-    return directMatches;
-  }
-
-  // Step 3: If no direct matches, fall back to the fuzzy search results.
-  const results = fuse.search(query);
-  
-  // The result from Fuse.js includes the item and a score. We just need the item.
-  return results.map(result => result.item);
+  return directMatches;
 }

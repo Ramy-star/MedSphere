@@ -27,7 +27,7 @@ export default function MainLayout({
       <motion.main
         initial={{ opacity: 0, y: -5 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.2, ease: 'easeOut' }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={cn(
           "flex-1 flex flex-col h-full overflow-hidden p-4 md:p-6",
           !isHomePage && "glass-card"
