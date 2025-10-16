@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, use } from 'react';
+import { useState, useEffect, useMemo, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +49,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
+  const titleRef = useRef<HTMLHeadingElement>(null);
 
 
   const { toast } = useToast();
@@ -62,6 +63,18 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         setEditingTitle(questionSet.fileName);
     }
   }, [id, questionSet, loading]);
+
+  useEffect(() => {
+    if (isEditingTitle && titleRef.current) {
+      titleRef.current.focus();
+      // Select all text
+      const range = document.createRange();
+      range.selectNodeContents(titleRef.current);
+      const sel = window.getSelection();
+      sel?.removeAllRanges();
+      sel?.addRange(range);
+    }
+  }, [isEditingTitle]);
 
   const updateQuestionSet = async (updatedData: Partial<SavedQuestionSet>) => {
     if (!user?.uid || !id) return;
@@ -181,8 +194,10 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   };
   
   const handleTitleSave = async () => {
-      if (editingTitle && questionSet && editingTitle !== questionSet.fileName) {
-          await updateQuestionSet({ fileName: editingTitle });
+      const newTitle = titleRef.current?.textContent || editingTitle;
+      if (newTitle && questionSet && newTitle !== questionSet.fileName) {
+          await updateQuestionSet({ fileName: newTitle });
+          setEditingTitle(newTitle);
           toast({ title: 'Title Updated' });
       }
       setIsEditingTitle(false);
@@ -275,34 +290,32 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full mr-2" onClick={() => router.push('/questions-creator?tab=saved')}>
                 <ArrowLeft className="h-5 w-5" />
             </Button>
-            {isEditingTitle ? (
-                <div className="flex items-center gap-2">
-                    <Textarea
-                        value={editingTitle}
-                        onChange={e => setEditingTitle(e.target.value)}
-                        className="text-2xl font-bold bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 p-0 h-auto resize-none overflow-hidden"
-                        autoFocus
-                        onBlur={handleTitleSave}
-                        onKeyDown={e => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleTitleSave();
-                            }
-                        }}
-                        rows={1}
-                    />
-                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={handleTitleSave}>
+            <div className="flex items-center gap-2">
+                <h1
+                  ref={titleRef}
+                  contentEditable={isEditingTitle}
+                  suppressContentEditableWarning={true}
+                  className="text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-500 focus:rounded-md"
+                  onBlur={handleTitleSave}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleTitleSave();
+                    }
+                  }}
+                >
+                  {editingTitle}
+                </h1>
+                {isEditingTitle ? (
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={handleTitleSave}>
                         <Check className="h-5 w-5 text-green-400" />
                     </Button>
-                </div>
-            ) : (
-                <div className="flex items-center gap-2">
-                    <h1 className="text-2xl font-bold text-white">{questionSet.fileName}</h1>
+                ) : (
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={() => setIsEditingTitle(true)}>
                         <Pencil className="h-5 w-5" />
                     </Button>
-                </div>
-            )}
+                )}
+            </div>
         </div>
          <p className="text-sm text-slate-400 mb-6 ml-12 -mt-4">{new Date(questionSet.createdAt).toLocaleString()}</p>
         
@@ -365,5 +378,3 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    
