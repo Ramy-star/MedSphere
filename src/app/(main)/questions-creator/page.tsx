@@ -383,33 +383,12 @@ export default function QuestionsCreatorPage() {
     const isJsonCardWithError = type === 'json' && jsonError;
 
     return (
-        <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
+        <Card className="glass-card min-h-[200px] flex flex-col rounded-3xl">
             <CardHeader>
                 <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     {icon}
                     <span className="ml-0">{title}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || "", type })} disabled={!content}><Eye className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
-                    
-                    {type === 'text' ? (
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={!content}><Download className="h-4 w-4" /></Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-40 p-2">
-                                <div className="space-y-1">
-                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'txt')}>TXT</Button>
-                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'pdf')}>PDF</Button>
-                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'docx')}>DOCX</Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
-                    ) : (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'json')} disabled={!content}><Download className="h-4 w-4" /></Button>
-                    )}
                 </div>
                 </CardTitle>
             </CardHeader>
