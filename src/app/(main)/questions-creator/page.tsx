@@ -37,8 +37,6 @@ type SavedQuestionSet = {
 type EditingState = {
   text: boolean;
   json: boolean;
-  savedText: string | null;
-  savedJson: string | null;
 };
 
 export default function QuestionsCreatorPage() {
@@ -56,11 +54,14 @@ export default function QuestionsCreatorPage() {
   const [editingName, setEditingName] = useState('');
   const [previewContent, setPreviewContent] = useState<{title: string, content: string} | null>(null);
 
+  const [editingContent, setEditingContent] = useState<{ text: string | null, json: string | null }>({
+    text: null,
+    json: null,
+  });
+  
   const [isEditing, setIsEditing] = useState<EditingState>({
     text: false,
     json: false,
-    savedText: null,
-    savedJson: null,
   });
 
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
@@ -309,31 +310,27 @@ export default function QuestionsCreatorPage() {
   
   const handleToggleEdit = (type: 'text' | 'json') => {
     const isCurrentlyEditing = isEditing[type];
+    
     if (isCurrentlyEditing) {
-      // Save logic
-      if (type === 'text' && isEditing.savedText !== textQuestions) {
-        setTextQuestions(isEditing.savedText);
-      } else if (type === 'json' && isEditing.savedJson !== jsonQuestions) {
-        setJsonQuestions(isEditing.savedJson);
-      }
-      setIsEditing(prev => ({ ...prev, [type]: false }));
+        // Save logic
+        if (type === 'text') {
+            setTextQuestions(editingContent.text);
+        } else {
+            setJsonQuestions(editingContent.json);
+        }
     } else {
-      // Start editing
-      setIsEditing(prev => ({
-        ...prev,
-        [type]: true,
-        savedText: type === 'text' ? textQuestions : prev.savedText,
-        savedJson: type === 'json' ? jsonQuestions : prev.savedJson,
-      }));
+        // Start editing
+        setEditingContent({
+            text: textQuestions,
+            json: jsonQuestions,
+        });
     }
-  };
+
+    setIsEditing(prev => ({ ...prev, [type]: !isCurrentlyEditing }));
+};
   
   const handleContentChange = (type: 'text' | 'json', value: string) => {
-    if (type === 'text') {
-      setIsEditing(prev => ({ ...prev, savedText: value }));
-    } else {
-      setIsEditing(prev => ({ ...prev, savedJson: value }));
-    }
+    setEditingContent(prev => ({ ...prev, [type]: value }));
   };
 
 
@@ -344,59 +341,79 @@ export default function QuestionsCreatorPage() {
 
   const hasGeneratedContent = textQuestions || jsonQuestions;
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json') => (
-    <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
-      <CardHeader>
-        <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {icon}
-            <span className="ml-0">{title}</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || ""})} disabled={!content}><Eye className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)} disabled={isLoading || (!content && !isEditing[type])}>
-              {isEditing[type] ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
-            </Button>
-            {type === 'text' ? (
-                 <Popover>
-                    <PopoverTrigger asChild>
-                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={!content}><Download className="h-4 w-4" /></Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-40 p-2">
-                        <div className="space-y-1">
-                             <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'txt')}>TXT</Button>
-                             <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'pdf')}>PDF</Button>
-                             <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'docx')}>DOCX</Button>
-                        </div>
-                    </PopoverContent>
-                </Popover>
-            ) : (
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'json')} disabled={!content}><Download className="h-4 w-4" /></Button>
-            )}
-          </div>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-grow flex">
-        {isLoading ? (
-            <div className="flex items-center justify-center w-full">
-                <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
-                <p className="ml-3 text-slate-300">{loadingText}</p>
-            </div>
-        ) : isEditing[type] ? (
-            <Textarea
-              value={isEditing[type === 'text' ? 'savedText' : 'savedJson'] || ''}
-              onChange={(e) => handleContentChange(type, e.target.value)}
-              className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500"
-            />
-        ) : (
-            <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto">
-                {content || 'Generated content will appear here...'}
-            </pre>
-        )}
-      </CardContent>
-    </Card>
-  );
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json', isSavedSet = false) => {
+    const currentIsEditing = isEditing[type];
+    const contentToEdit = isSavedSet ? content : editingContent[type];
+
+    const handleSaveSavedSetEdit = (id: string) => {
+        setSavedQuestions(prev => prev.map(s => {
+            if (s.id === id) {
+                return {
+                    ...s,
+                    textQuestions: type === 'text' ? editingContent.text ?? s.textQuestions : s.textQuestions,
+                    jsonQuestions: type === 'json' ? editingContent.json ?? s.jsonQuestions : s.jsonQuestions
+                };
+            }
+            return s;
+        }));
+        setIsEditing(prev => ({...prev, [type]: false}));
+    };
+    
+    return (
+        <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
+            <CardHeader>
+                <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    {icon}
+                    <span className="ml-0">{title}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || ""})} disabled={!content}><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)} disabled={isLoading || (!content && !currentIsEditing)}>
+                      {currentIsEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
+                    </Button>
+                    {type === 'text' ? (
+                        <Popover>
+                            <PopoverTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={!content}><Download className="h-4 w-4" /></Button>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-40 p-2">
+                                <div className="space-y-1">
+                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'txt')}>TXT</Button>
+                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'pdf')}>PDF</Button>
+                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'docx')}>DOCX</Button>
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                    ) : (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'json')} disabled={!content}><Download className="h-4 w-4" /></Button>
+                    )}
+                </div>
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="flex-grow flex">
+                {isLoading ? (
+                    <div className="flex items-center justify-center w-full">
+                        <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+                        <p className="ml-3 text-slate-300">{loadingText}</p>
+                    </div>
+                ) : currentIsEditing && !isSavedSet ? (
+                    <Textarea
+                        value={contentToEdit || ''}
+                        onChange={(e) => handleContentChange(type, e.target.value)}
+                        className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500"
+                    />
+                ) : (
+                    <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto">
+                        {content || 'Generated content will appear here...'}
+                    </pre>
+                )}
+            </CardContent>
+        </Card>
+    );
+  };
+
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-2 no-scrollbar">
@@ -418,7 +435,7 @@ export default function QuestionsCreatorPage() {
                 {/* Top Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="h-full">
-                        <Card className="glass-card rounded-3xl h-full">
+                        <Card className="glass-card rounded-3xl h-full flex flex-col">
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><UploadCloud className='text-blue-400'/>1. Upload Lecture</CardTitle>
                             </CardHeader>
@@ -455,7 +472,7 @@ export default function QuestionsCreatorPage() {
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
-                            <CardContent className="flex-1 flex flex-col justify-end">
+                             <CardContent className="flex-1 flex flex-col justify-end">
                                 <Button onClick={handleSaveCurrentQuestions} className="rounded-full active:scale-95 transition-transform">
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
@@ -512,7 +529,7 @@ export default function QuestionsCreatorPage() {
                                                     type="text"
                                                     value={editingName}
                                                     onChange={(e) => setEditingName(e.target.value)}
-                                                    className="bg-slate-700 text-white rounded-md px-2 py-1 text-lg font-semibold"
+                                                    className="bg-transparent text-white text-lg font-semibold border-none focus:ring-0 w-full"
                                                     autoFocus
                                                 />
                                             ) : (
@@ -529,8 +546,8 @@ export default function QuestionsCreatorPage() {
                                         </div>
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleString()}</p>
                                         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {renderOutputCard("Text", <FileText className="text-blue-400" />, set.textQuestions, false, "", 'text')}
-                                            {renderOutputCard("JSON", <FileJson className="text-green-400" />, set.jsonQuestions, false, "", 'json')}
+                                            {renderOutputCard("Text", <FileText className="text-blue-400" />, set.textQuestions, false, "", 'text', true)}
+                                            {renderOutputCard("JSON", <FileJson className="text-green-400" />, set.jsonQuestions, false, "", 'json', true)}
                                         </div>
                                     </div>
                                 ))}
@@ -544,12 +561,9 @@ export default function QuestionsCreatorPage() {
         </TabsContent>
       </Tabs>
       <Dialog open={!!previewContent} onOpenChange={(isOpen) => !isOpen && setPreviewContent(null)}>
-        <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl">
-          <DialogHeader>
-            <DialogTitle>{previewContent?.title}</DialogTitle>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto -mx-6 -mb-6 px-6 pb-6 no-scrollbar">
-            <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full min-h-full">
+        <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0">
+          <div className="flex-1 overflow-auto p-6 no-scrollbar">
+            <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
                 {previewContent?.content}
             </pre>
           </div>
