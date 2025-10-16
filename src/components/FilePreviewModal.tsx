@@ -35,6 +35,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
+import { FileQuestion } from './icons/FileQuestion';
 
 const ChatPanel = dynamic(() => import('./ChatPanel'), {
   ssr: false,
@@ -185,6 +186,8 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     switch (extension) {
         case 'pdf':
             return { Icon: FileText, color: 'text-red-400' };
+        case 'md':
+            return { Icon: FileQuestion, color: 'text-gray-400' };
         case 'docx':
         case 'doc':
             return { Icon: FileText, color: 'text-blue-500' };
@@ -201,7 +204,6 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
         case 'ts':
             return { Icon: FileCode, color: 'text-gray-400' };
         case 'txt':
-        case 'md':
              return { Icon: FileText, color: 'text-gray-400' };
         case 'mp3':
         case 'wav':
@@ -712,9 +714,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   onSelectionChange={() => setSelection(null)}
               />
             </div>
-             {selection && isMarkdown && (
+            {selection && isMarkdown && (
                 <div
-                    className="absolute z-20"
+                    className="absolute z-20 -translate-x-1/2"
                     style={{ top: selection.position.top - 50, left: selection.position.left }}
                 >
                     <TooltipProvider>
@@ -722,14 +724,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             <TooltipTrigger asChild>
                                 <Button
                                     size="icon"
-                                    className="rounded-full h-10 w-10 bg-blue-600 hover:bg-blue-500 shadow-lg"
+                                    className="rounded-full h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-black/30 hover:from-blue-600 hover:to-indigo-700 active:scale-95 transition-all"
                                     onClick={handleQuoteToChat}
                                 >
                                     <MessageSquareQuote className="h-5 w-5" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent>
-                                <p>Quote to AI Chat</p>
+                            <TooltipContent side="top">
+                                <p>Quote to Chat</p>
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>

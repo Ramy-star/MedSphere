@@ -23,6 +23,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { DropdownMenuSeparator } from './ui/dropdown-menu';
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 import { useRouter } from 'next/navigation';
+import { FileQuestion } from './icons/FileQuestion';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
     if (item.type === 'LINK') {
@@ -40,6 +41,8 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     switch (extension) {
         case 'pdf':
             return { Icon: FileText, color: 'text-red-400' };
+        case 'md':
+            return { Icon: FileQuestion, color: 'text-gray-400' };
         case 'docx':
         case 'doc':
             return { Icon: FileText, color: 'text-blue-500' };
