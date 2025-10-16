@@ -11,8 +11,7 @@ import { Logo } from './logo';
 import { AuthButton } from './auth-button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useQuestionGenerationStore } from '@/stores/question-gen-store';
-import { Progress } from './ui/progress';
+import { useUser } from '@/firebase/auth/use-user';
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -22,7 +21,8 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [debouncedQuery] = useDebounce(query, 1000);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const { task } = useQuestionGenerationStore();
+  const { user } = useUser();
+  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -44,8 +44,6 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const handleClearSearch = () => {
       setQuery('');
   }
-
-  const isGenerating = task && task.status !== 'completed' && task.status !== 'error';
 
   return (
     <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-3 min-h-[68px] flex items-center gap-4">
@@ -85,18 +83,20 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               </Button>
           )}
         </div>
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                     <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
-                        <Wand2 className="h-5 w-5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                    <p>Questions Creator</p>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+        {isAdmin && (
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
+                            <Wand2 className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Questions Creator</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+        )}
         <AuthButton />
       </div>
     </header>

@@ -193,7 +193,7 @@ export const FileCard = React.memo(function FileCard({
                         align="end"
                         onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                     >
-                        {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && (
+                        {isAdmin && item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && (
                              <DropdownMenuItem onClick={handleCreateQuestions}>
                                 <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                 <span>Create Questions</span>
