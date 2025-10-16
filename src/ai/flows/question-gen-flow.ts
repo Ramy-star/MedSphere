@@ -55,9 +55,37 @@ const generateQuestionsPrompt = ai.definePrompt({
     `,
 });
 
+const isRetriableError = (error: any): boolean => {
+    const errorMessage = error.message?.toLowerCase() || '';
+    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable'];
+    return retriableStrings.some(s => errorMessage.includes(s));
+};
+
+async function runWithRetry<T>(fn: () => Promise<T>): Promise<T> {
+  const maxRetries = 3;
+  let delay = 1000;
+
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      return await fn();
+    } catch (error: any) {
+      if (i === maxRetries - 1 || !isRetriableError(error)) {
+        console.error(`Final attempt failed or non-retriable error: ${error.message}`);
+        throw error;
+      }
+      console.log(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+      await new Promise(res => setTimeout(res, delay));
+      delay *= 2;
+    }
+  }
+  throw new Error('Operation failed after multiple retries.');
+}
+
 export async function generateQuestions(input: GenerateQuestionsInput): Promise<string> {
-    const { text } = await generateQuestionsPrompt(input);
-    return text;
+    return runWithRetry(async () => {
+        const { text } = await generateQuestionsPrompt(input);
+        return text;
+    });
 }
 
 
@@ -79,51 +107,41 @@ const convertToJsonPrompt = ai.definePrompt({
 });
 
 export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise<string> {
-    try {
-        const { output } = await convertToJsonPrompt(input);
+    return runWithRetry(async () => {
+        try {
+            const { output } = await convertToJsonPrompt(input);
 
-        // Case 1: The output is already a structured JSON object.
-        if (typeof output === 'object' && output !== null) {
-            return JSON.stringify(output, null, 2);
-        }
+            if (typeof output === 'object' && output !== null) {
+                return JSON.stringify(output, null, 2);
+            }
 
-        // Case 2: The output is a string that might contain JSON.
-        if (typeof output === 'string') {
-            // Attempt to find and parse JSON from a markdown block.
-            const jsonMatch = output.match(/```json\n([\s\S]*?)\n```/);
-            if (jsonMatch && jsonMatch[1]) {
+            if (typeof output === 'string') {
+                const jsonMatch = output.match(/```json\n([\s\S]*?)\n```/);
+                if (jsonMatch && jsonMatch[1]) {
+                    try {
+                        const parsed = JSON.parse(jsonMatch[1]);
+                        return JSON.stringify(parsed, null, 2); 
+                    } catch (e) {
+                         throw new Error(`The AI returned a response that could not be converted to a valid JSON structure. Raw output: ${output}`);
+                    }
+                }
                 try {
-                    // It's already a string, just need to format it
-                    const parsed = JSON.parse(jsonMatch[1]);
-                    return JSON.stringify(parsed, null, 2); 
+                    const parsed = JSON.parse(output);
+                    return JSON.stringify(parsed, null, 2);
                 } catch (e) {
-                     // The extracted string is not valid JSON, fall through to throw an error
+                    console.warn("Model output was a string but not valid JSON:", output);
+                     throw new Error(`The AI returned a response that could not be converted to a valid JSON structure. Raw output: ${output}`);
                 }
             }
+            const errorMsg = `Could not convert to JSON. The AI returned an unexpected data type: ${typeof output}`;
+            console.error(errorMsg);
+            throw new Error(errorMsg);
 
-            // If not in a markdown block, try to parse the whole string directly.
-            try {
-                const parsed = JSON.parse(output);
-                return JSON.stringify(parsed, null, 2);
-            } catch (e) {
-                // If parsing fails, it's not a valid JSON string.
-                // This could be an error message or plain text from the model.
-                console.warn("Model output was a string but not valid JSON:", output);
-                // Throw a specific, catchable error with the malformed output
-                 throw new Error(`The AI returned a response that could not be converted to a valid JSON structure. Raw output: ${output}`);
-            }
+        } catch (err: any) {
+            console.error("Error in convertQuestionsToJson flow:", err.message);
+            throw new Error(err.message || "An unexpected error occurred during JSON conversion.");
         }
-
-        // Fallback for any other unexpected type (e.g., number, boolean).
-        const errorMsg = `Could not convert to JSON. The AI returned an unexpected data type: ${typeof output}`;
-        console.error(errorMsg);
-        throw new Error(errorMsg);
-
-    } catch (err: any) {
-        console.error("Error in convertQuestionsToJson flow:", err);
-        // Re-throw the original error or a new one to be caught by the client-side caller.
-        throw new Error(err.message || "An unexpected error occurred during JSON conversion.");
-    }
+    });
 }
 
 
@@ -144,18 +162,19 @@ const repairJsonPrompt = ai.definePrompt({
 });
 
 export async function repairJson(input: RepairJsonInput): Promise<string> {
-    const { output } = await repairJsonPrompt(input);
-    if (typeof output === 'object' && output !== null) {
-        return JSON.stringify(output, null, 2);
-    }
-    // Attempt to parse if it's a string, similar to the main conversion function
-    if (typeof output === 'string') {
-        try {
-            const parsed = JSON.parse(output);
-            return JSON.stringify(parsed, null, 2);
-        } catch (e) {
-            throw new Error('The repair process also resulted in invalid JSON.');
+     return runWithRetry(async () => {
+        const { output } = await repairJsonPrompt(input);
+        if (typeof output === 'object' && output !== null) {
+            return JSON.stringify(output, null, 2);
         }
-    }
-    throw new Error('The repair process returned an unexpected data type.');
+        if (typeof output === 'string') {
+            try {
+                const parsed = JSON.parse(output);
+                return JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                throw new Error('The repair process also resulted in invalid JSON.');
+            }
+        }
+        throw new Error('The repair process returned an unexpected data type.');
+    });
 }

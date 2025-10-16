@@ -30,6 +30,12 @@ const chatPrompt = ai.definePrompt({
   prompt: chatPromptText,
 });
 
+const isRetriableError = (error: any): boolean => {
+    const errorMessage = error.message?.toLowerCase() || '';
+    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable'];
+    return retriableStrings.some(s => errorMessage.includes(s));
+};
+
 export async function chatAboutDocument(
   input: ChatInput,
   options?: { signal?: AbortSignal }
@@ -53,10 +59,8 @@ export async function chatAboutDocument(
         throw error; // Re-throw to be handled by the UI.
       }
       
-      const isServiceUnavailable = error.message?.includes('503') || error.message?.toLowerCase().includes('overloaded');
-      
-      // If it's the last retry or not a service unavailable error, throw the error.
-      if (i === maxRetries - 1 || !isServiceUnavailable) {
+      // If it's the last retry or not a retriable error, throw the error.
+      if (i === maxRetries - 1 || !isRetriableError(error)) {
         console.error("Final attempt failed or non-retriable error:", error);
         throw error;
       }
