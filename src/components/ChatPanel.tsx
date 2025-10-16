@@ -337,7 +337,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
 
 
     const chatViewContent = (
-      <div className="flex flex-col h-full w-full overflow-hidden">
+      <>
+        <div className="flex-1 flex flex-col min-h-0">
             <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14", isMobile ? "bg-[#212121]" : "bg-transparent")}>
                 <div className="flex items-center gap-2">
                     <AiAssistantIcon className="h-6 w-6" />
@@ -381,89 +382,88 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </TooltipProvider>
             </header>
             
-            <div className="flex-1 flex flex-col min-h-0">
-                <div className="flex-1 overflow-y-auto shrink-[1] min-h-0">
-                    <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
-                        {chatHistory.length === 0 && !isAiThinking && (
-                            <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
-                                {isExtracting ? (
-                                    <div className="flex flex-col gap-4">
-                                      <div className="flex items-center gap-2 text-white">
-                                        <Skeleton className="h-5 w-5 rounded-full" />
-                                        <p>Analyzing document...</p>
-                                      </div>
-                                      <Progress value={50} className="w-full h-1" />
-                                    </div>
-                                ) : documentText ? (
-                                    <p className="text-white">I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
-                                ) : (
-                                    <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
-                                )}
-                            </div>
-                        )}
-
-                        {chatHistory.map((msg, index) => {
-                            const isLastModelMessage = index === chatHistory.length - 1 && msg.role === 'model';
-                            return (
-                                <ChatMessage
-                                    key={`msg-${index}`}
-                                    messageId={`msg-${index}`}
-                                    msg={msg}
-                                    onCopy={handleCopyToClipboard}
-                                    onRegenerate={handleRegenerate}
-                                    isLastMessage={isLastModelMessage}
-                                    isAiThinking={isAiThinking}
-                                    copiedMessageId={copiedMessageId}
-                                    fontSizeClass={fontSizes[fontSizeIndex]}
-                                />
-                            )
-                        })}
-
-                         {isAiThinking && (
-                            <div className="flex items-start space-x-3 group/message">
-                                <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
-                                <div className="flex-1 space-y-3 pt-1">
-                                    <Skeleton className="h-4 w-12 rounded-lg" />
-                                    <Skeleton className="h-4 w-[90%] rounded-lg" />
-                                    <Skeleton className="h-4 w-[75%] rounded-lg" />
-                                    <Skeleton className="h-4 w-[85%] rounded-lg" />
+            <div className="flex-1 overflow-y-auto min-h-0">
+                <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
+                    {chatHistory.length === 0 && !isAiThinking && (
+                        <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
+                            {isExtracting ? (
+                                <div className="flex flex-col gap-4">
+                                  <div className="flex items-center gap-2 text-white">
+                                    <Skeleton className="h-5 w-5 rounded-full" />
+                                    <p>Analyzing document...</p>
+                                  </div>
+                                  <Progress value={50} className="w-full h-1" />
                                 </div>
+                            ) : documentText ? (
+                                <p className="text-white">I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
+                            ) : (
+                                <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                            )}
+                        </div>
+                    )}
+
+                    {chatHistory.map((msg, index) => {
+                        const isLastModelMessage = index === chatHistory.length - 1 && msg.role === 'model';
+                        return (
+                            <ChatMessage
+                                key={`msg-${index}`}
+                                messageId={`msg-${index}`}
+                                msg={msg}
+                                onCopy={handleCopyToClipboard}
+                                onRegenerate={handleRegenerate}
+                                isLastMessage={isLastModelMessage}
+                                isAiThinking={isAiThinking}
+                                copiedMessageId={copiedMessageId}
+                                fontSizeClass={fontSizes[fontSizeIndex]}
+                            />
+                        )
+                    })}
+
+                     {isAiThinking && (
+                        <div className="flex items-start space-x-3 group/message">
+                            <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
+                            <div className="flex-1 space-y-3 pt-1">
+                                <Skeleton className="h-4 w-12 rounded-lg" />
+                                <Skeleton className="h-4 w-[90%] rounded-lg" />
+                                <Skeleton className="h-4 w-[75%] rounded-lg" />
+                                <Skeleton className="h-4 w-[85%] rounded-lg" />
                             </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
                 </div>
             </div>
-            
-            <div className="w-full z-10 will-change-transform">
-                <ChatInputForm
-                  isAiThinking={isAiThinking}
-                  isExtracting={isExtracting}
-                  documentText={documentText}
-                  onChatSubmit={handleChatSubmit}
-                  isMobile={isMobile}
-                  chatInput={chatInput}
-                  setChatInput={setChatInput}
-                />
-            </div>
+        </div>
+        
+        <div className="w-full z-10 will-change-transform shrink-0">
+            <ChatInputForm
+              isAiThinking={isAiThinking}
+              isExtracting={isExtracting}
+              documentText={documentText}
+              onChatSubmit={handleChatSubmit}
+              isMobile={isMobile}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+            />
+        </div>
 
 
-            <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
-                <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
-                  <AlertDialogHeader2 className="p-6 pb-0">
-                    <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
-                    <AlertDialogDesc>
-                      Are you sure you want to start a new chat? Your current conversation history will be cleared.
-                    </AlertDialogDesc>
-                  </AlertDialogHeader2>
-                  <AlertDialogFooter className='flex-row justify-end items-center space-x-2 p-6 pt-4'>
-                    <AlertDialogCancel asChild><Button variant="outline" className='flex-1 sm:flex-none rounded-xl'>Cancel</Button></AlertDialogCancel>
-                    <AlertDialogAction asChild><Button variant="destructive" className='flex-1 sm:flex-none rounded-xl' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-          </div>
-        );
+        <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
+            <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
+              <AlertDialogHeader2 className="p-6 pb-0">
+                <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
+                <AlertDialogDesc>
+                  Are you sure you want to start a new chat? Your current conversation history will be cleared.
+                </AlertDialogDesc>
+              </AlertDialogHeader2>
+              <AlertDialogFooter className='flex-row justify-end items-center space-x-2 p-6 pt-4'>
+                <AlertDialogCancel asChild><Button variant="outline" className='flex-1 sm:flex-none rounded-xl'>Cancel</Button></AlertDialogCancel>
+                <AlertDialogAction asChild><Button variant="destructive" className='flex-1 sm:flex-none rounded-xl' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </>
+    );
 
     if (isMobile) {
         return (
