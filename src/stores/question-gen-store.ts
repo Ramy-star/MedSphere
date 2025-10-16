@@ -12,6 +12,7 @@ type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_
 interface GenerationTask {
   id: string;
   fileName: string;
+  sourceFileId: string;
   fileUrl?: string; // For generating from existing files
   file?: File; // For generating from new uploads
   status: GenerationStatus;
@@ -35,6 +36,7 @@ const updateTask = (state: QuestionGenerationState, partialTask: Partial<Generat
 });
 
 async function runGenerationProcess(
+    sourceFileId: string,
     fileUrl: string | undefined, 
     file: File | undefined, 
     genPrompt: string, 
@@ -84,11 +86,14 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
   (set, get) => ({
     task: null,
     startGenerationWithFile: async (file, genPrompt, jsonPrompt) => {
+        // This function is for new uploads, so we don't have a sourceFileId yet.
+        // This might need adjustment if new uploads should be associated with something.
         const taskId = `task_${Date.now()}`;
         set({
           task: {
             id: taskId,
             fileName: file.name,
+            sourceFileId: '', // No source ID for new uploads
             file: file,
             status: 'idle',
             textQuestions: null,
@@ -97,7 +102,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             progress: 0,
           },
         });
-        runGenerationProcess(undefined, file, genPrompt, jsonPrompt, set);
+        runGenerationProcess('', undefined, file, genPrompt, jsonPrompt, set);
     },
     startGeneration: (id, fileName, fileUrl) => {
         const taskId = `task_${Date.now()}`;
@@ -105,6 +110,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
           task: {
             id: taskId,
             fileName: fileName,
+            sourceFileId: id, // The ID of the source file
             fileUrl: fileUrl,
             status: 'idle',
             textQuestions: null,
@@ -115,7 +121,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         });
         const genPrompt = localStorage.getItem('questionGenPrompt') || '';
         const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
-        runGenerationProcess(fileUrl, undefined, genPrompt, jsonPrompt, set);
+        runGenerationProcess(id, fileUrl, undefined, genPrompt, jsonPrompt, set);
     },
     saveCurrentResults: async (userId: string) => {
         const { task } = get();
@@ -130,6 +136,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             jsonQuestions: task.jsonQuestions,
             createdAt: new Date().toISOString(),
             userId: userId,
+            sourceFileId: task.sourceFileId, // Save the source file ID
         });
     },
     clearTask: () => {

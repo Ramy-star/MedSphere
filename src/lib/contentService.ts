@@ -27,6 +27,7 @@ export type Content = {
     iconURL?: string; // For custom folder icons
     iconCloudinaryPublicId?: string; 
     shortId?: string;
+    sourceFileId?: string; // For generated files like quizzes
   };
   createdAt?: string;
   updatedAt?: string;
@@ -265,16 +266,18 @@ export const contentService = {
     }
   },
   
-  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest> {
+  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
     
     try {
-        const hash = await sha256file(file);
         const folder = 'content';
-        const public_id = `${folder}/${hash}`; 
-        
         const timestamp = Math.floor(Date.now() / 1000);
-        const paramsToSign = { public_id, folder, timestamp };
+        
+        // Only timestamp and folder are needed for a basic signed upload from browser
+        const paramsToSign = {
+            timestamp: timestamp,
+            folder: folder
+        };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
             method: 'POST',
@@ -292,9 +295,8 @@ export const contentService = {
         const formData = new FormData();
         formData.append('file', file);
         formData.append('api_key', apiKey);
-        formData.append('signature', signature);
         formData.append('timestamp', String(timestamp));
-        formData.append('public_id', public_id);
+        formData.append('signature', signature);
         formData.append('folder', folder);
 
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
@@ -326,7 +328,6 @@ export const contentService = {
                 const finalFileUrl = createProxiedUrl(data.secure_url);
                 const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
 
-
                 const newFileContent: Content = {
                     id,
                     name: file.name,
@@ -337,7 +338,8 @@ export const contentService = {
                         mime: mimeType,
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
-                        cloudinaryResourceType: 'raw'
+                        cloudinaryResourceType: 'raw',
+                        ...extraMetadata // Add extra metadata here
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),

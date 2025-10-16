@@ -32,6 +32,7 @@ type SavedQuestionSet = {
   jsonQuestions: string;
   createdAt: string;
   userId: string;
+  sourceFileId: string;
 };
 
 // Helper to get text content while preserving line breaks
@@ -230,7 +231,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             }
         };
         
-        const xhr = await contentService.createFile(parentId, file, callbacks);
+        // Pass the sourceFileId to the createFile function
+        const xhr = await contentService.createFile(parentId, file, callbacks, { sourceFileId: questionSet.sourceFileId });
         setUploadingFile(prev => prev ? { ...prev, xhr } : null);
     } catch(e: any) {
         toast({
@@ -265,7 +267,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     <span className="ml-0">{title}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    {isAdmin && type === 'text' && (
+                    {isAdmin && (type === 'text' || type === 'json') && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
                             {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
                         </Button>
@@ -433,5 +435,3 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    

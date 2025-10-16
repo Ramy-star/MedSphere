@@ -225,7 +225,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [showChat, setShowChat] = useState(false);
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | null>(null);
   
-  const [documentText, setDocumentText] = useState<string | null>(null);
+  const [sourceDocumentText, setSourceDocumentText] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -253,10 +253,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setPageNumber(1);
     setPageInput('1');
     setPdfScale(1);
-    setDocumentText(null);
+    setSourceDocumentText(null);
     setIsExtracting(false);
     setShowChat(false);
     setChatInitialQuestion(null);
+    setError(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -270,34 +271,71 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [item, resetState]);
 
-    const handleMarkdownTextExtraction = useCallback(async () => {
-        if (!item || item.metadata?.mime !== 'text/markdown' || !item.metadata.storagePath) return;
+    const handleTextExtraction = useCallback(async (contentItem: Content) => {
+    if (sourceDocumentText || isExtracting) return;
 
-        if (documentText || isExtracting) return;
+    const sourceFileId = contentItem.metadata?.sourceFileId;
+    let fileToExtract = contentItem;
 
-        setIsExtracting(true);
-        try {
-            const blob = await contentService.getFileContent(item.metadata.storagePath);
-            const text = await blob.text();
-            setDocumentText(text);
-        } catch (err: any) {
-            console.error("Failed to extract Markdown text:", err);
-            setDocumentText(null);
-            toast({ 
-                variant: 'destructive', 
-                title: 'Text Extraction Failed', 
-                description: err.message || 'Could not read document content for chat.' 
-            });
-        } finally {
-            setIsExtracting(false);
+    setIsExtracting(true);
+
+    try {
+        if (sourceFileId) {
+            const sourceFile = await contentService.getById(sourceFileId);
+            if (sourceFile) {
+                fileToExtract = sourceFile;
+                toast({
+                    title: "Context Loaded",
+                    description: `Answering based on "${sourceFile.name}".`,
+                });
+            } else {
+                toast({
+                    variant: 'destructive',
+                    title: "Source File Not Found",
+                    description: "Could not find the original source document.",
+                });
+            }
         }
-    }, [item, documentText, isExtracting, toast]);
+        
+        if (!fileToExtract.metadata?.storagePath) {
+            throw new Error("File has no content to analyze.");
+        }
+
+        const blob = await contentService.getFileContent(fileToExtract.metadata.storagePath);
+        let text = '';
+
+        if (fileToExtract.metadata.mime === 'application/pdf') {
+            const pdfjs = await import('pdfjs-dist');
+            pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+            const pdf = await pdfjs.getDocument(URL.createObjectURL(blob)).promise;
+            text = await contentService.extractTextFromPdf(pdf);
+        } else if (fileToExtract.metadata.mime === 'text/markdown' || fileToExtract.metadata.mime?.startsWith('text/')) {
+            text = await blob.text();
+        } else {
+            throw new Error("Cannot extract text from this file type for AI chat.");
+        }
+        
+        setSourceDocumentText(text);
+
+    } catch (err: any) {
+        console.error("Failed to extract text for chat:", err);
+        setSourceDocumentText(null);
+        toast({
+            variant: 'destructive',
+            title: 'Text Extraction Failed',
+            description: err.message || 'Could not read document content for chat.'
+        });
+    } finally {
+        setIsExtracting(false);
+    }
+}, [sourceDocumentText, isExtracting, toast]);
+
 
     useEffect(() => {
-        if (item?.metadata?.mime === 'text/markdown') {
-            handleMarkdownTextExtraction();
+        if (item && showChat && !sourceDocumentText && !isExtracting) {
+            handleTextExtraction(item);
         }
-    }, [item, handleMarkdownTextExtraction]);
+    }, [item, showChat, sourceDocumentText, isExtracting, handleTextExtraction]);
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -363,25 +401,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     } else {
         setPdfScale(1);
     }
-    
-    if (documentText || isExtracting) return;
-
-    setIsExtracting(true);
-    try {
-      const text = await contentService.extractTextFromPdf(pdf);
-      setDocumentText(text);
-    } catch (err: any) {
-      console.error("Failed to extract PDF text:", err);
-      setDocumentText(null);
-      toast({ 
-        variant: 'destructive', 
-        title: 'Text Extraction Failed', 
-        description: err.message || 'Could not read document content for chat.' 
-      });
-    } finally {
-      setIsExtracting(false);
-    }
-  }, [isMobile, documentText, isExtracting, toast]);
+  }, [isMobile]);
   
   useEffect(() => {
     setScaleInput(`${Math.round(pdfScale * 100)}%`);
@@ -482,7 +502,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const openUrl = isLink ? linkUrl : fileUrl;
   const isPdf = item?.metadata?.mime === 'application/pdf';
   const isMarkdown = item?.metadata?.mime === 'text/markdown';
-  const isChatAvailable = isPdf || isMarkdown;
+  const isTextFile = item?.metadata?.mime?.startsWith('text/');
+  const isChatAvailable = isPdf || isMarkdown || isTextFile;
   
   const renderLoadingSkeleton = () => (
     <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
@@ -701,7 +722,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           {isChatAvailable && (
              <ChatPanel
                   isMobile={isMobile}
-                  documentText={documentText}
+                  documentText={sourceDocumentText}
                   isExtracting={isExtracting}
                   onClose={() => setShowChat(false)}
                   initialQuestion={chatInitialQuestion}
