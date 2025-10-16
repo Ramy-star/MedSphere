@@ -148,42 +148,50 @@ export default function QuestionsCreatorPage() {
             const imagePromises = operatorList.fnArray.reduce((acc: Promise<string | null>[], fn, j) => {
                 if (fn === pdfjs.OPS.paintImageXObject) {
                     const imageName = operatorList.argsArray[j][0];
-                    const promise = page.objs.get(imageName).then((img: any) => {
-                        if (!img || !img.data) return null;
-                        
-                        const canvas = document.createElement('canvas');
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext('2d');
-                        if (!ctx) return null;
+                    const promise = new Promise<string | null>((resolve) => {
+                        page.objs.get(imageName, (img: any) => {
+                            if (!img || !img.data) {
+                                resolve(null);
+                                return;
+                            }
+                            
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            if (!ctx) {
+                                resolve(null);
+                                return;
+                            }
 
-                        const imageData = ctx.createImageData(img.width, img.height);
-                         if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
-                            let k = 0;
-                            for (let i = 0; i < img.data.length; i++) {
-                                const b = img.data[i];
-                                for (let bit = 0; bit < 8; bit++) {
-                                    if (k >= imageData.data.length) break;
-                                    const gray = (b & (1 << (7 - bit))) ? 0 : 255;
-                                    imageData.data[k++] = gray;
-                                    imageData.data[k++] = gray;
-                                    imageData.data[k++] = gray;
-                                    imageData.data[k++] = 255;
+                            const imageData = ctx.createImageData(img.width, img.height);
+                            if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
+                                let k = 0;
+                                for (let i = 0; i < img.data.length; i++) {
+                                    const b = img.data[i];
+                                    for (let bit = 0; bit < 8; bit++) {
+                                        if (k >= imageData.data.length) break;
+                                        const gray = (b & (1 << (7 - bit))) ? 0 : 255;
+                                        imageData.data[k++] = gray;
+                                        imageData.data[k++] = gray;
+                                        imageData.data[k++] = gray;
+                                        imageData.data[k++] = 255;
+                                    }
                                 }
+                            } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
+                                let i = 0;
+                                for (let j = 0; j < img.data.length; j += 3) {
+                                    imageData.data[i++] = img.data[j];
+                                    imageData.data[i++] = img.data[j + 1];
+                                    imageData.data[i++] = img.data[j + 2];
+                                    imageData.data[i++] = 255;
+                                }
+                            } else {
+                                imageData.data.set(img.data);
                             }
-                        } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
-                            let i = 0;
-                            for (let j = 0; j < img.data.length; j += 3) {
-                                imageData.data[i++] = img.data[j];
-                                imageData.data[i++] = img.data[j + 1];
-                                imageData.data[i++] = img.data[j + 2];
-                                imageData.data[i++] = 255;
-                            }
-                        } else {
-                             imageData.data.set(img.data);
-                        }
-                        ctx.putImageData(imageData, 0, 0);
-                        return canvas.toDataURL('image/png');
+                            ctx.putImageData(imageData, 0, 0);
+                            resolve(canvas.toDataURL('image/png'));
+                        });
                     });
                     acc.push(promise);
                 }
@@ -353,28 +361,21 @@ export default function QuestionsCreatorPage() {
   };
 
   const handleToggleEdit = (type: 'text' | 'json', isSavedSet = false, setId?: string) => {
-    const isCurrentlyEditing = isEditing[type] && (isSavedSet ? editingId === setId : !editingId);
+    const isThisCardEditing = isEditing[type] && (isSavedSet ? editingId === setId : !editingId);
   
-    if (isCurrentlyEditing) {
+    if (isThisCardEditing) {
+      // Save changes
       handleSaveEdit(type, setId);
     } else {
-      if (isSavedSet && setId) {
-        const set = savedQuestions.find(s => s.id === setId);
-        if (set) {
-          setEditingId(setId);
-          setEditingContent({
-            text: set.textQuestions,
-            json: set.jsonQuestions,
-          });
-        }
-      } else {
-        setEditingId(null); // Ensure we are editing the "current" one, not a saved set
-        setEditingContent({
-          text: textQuestions,
-          json: jsonQuestions,
-        });
-      }
-      setIsEditing({ text: false, json: false, [type]: true }); // Only one can be edited at a time
+      // Enter edit mode
+      const currentText = isSavedSet ? savedQuestions.find(s => s.id === setId)?.textQuestions : textQuestions;
+      const currentJson = isSavedSet ? savedQuestions.find(s => s.id === setId)?.jsonQuestions : jsonQuestions;
+      setEditingContent({
+        text: currentText ?? null,
+        json: currentJson ?? null,
+      });
+      setEditingId(isSavedSet ? setId : null);
+      setIsEditing({ text: false, json: false, [type]: true }); // Only one type can be edited at a time
     }
   };
 
