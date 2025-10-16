@@ -302,7 +302,7 @@ a.click();
             <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-4xl mx-auto">
                  <Card className="glass-card overflow-hidden rounded-3xl">
                     <CardHeader>
-                        <CardTitle>Prompt Management</CardTitle>
+                        <CardTitle className="flex items-center gap-3"><Pencil className="text-blue-400" />Prompt Management</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
@@ -322,7 +322,7 @@ a.click();
             <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-4xl mx-auto">
                  <Card className="glass-card rounded-3xl">
                     <CardHeader>
-                        <CardTitle>Saved Question Sets</CardTitle>
+                        <CardTitle className="flex items-center gap-3"><Save className="text-green-400" />Saved Question Sets</CardTitle>
                     </CardHeader>
                     <CardContent>
                         {savedQuestions.length > 0 ? (
@@ -381,5 +381,3 @@ a.click();
     </div>
   );
 }
-
-    
