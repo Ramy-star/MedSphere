@@ -4,7 +4,7 @@
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
@@ -23,7 +23,7 @@ import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { contentService } from '@/lib/contentService';
-import type { UploadingFile } from '@/components/UploadProgress';
+import { UploadProgress, type UploadingFile } from '@/components/UploadProgress';
 
 type SavedQuestionSet = {
   id: string;
@@ -267,7 +267,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 <div className="flex items-center gap-1">
                     {isAdmin && type === 'text' && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
-                            {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <FolderPlus className="h-4 w-4" />}
+                            {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
                         </Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
@@ -433,3 +433,5 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    
