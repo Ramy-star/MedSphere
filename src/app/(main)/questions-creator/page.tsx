@@ -126,7 +126,6 @@ export default function QuestionsCreatorPage() {
       
       const generatedText = await generateQuestions({ prompt: generationPrompt, documentContent: documentText });
       setTextQuestions(generatedText);
-      setIsGenerating(false);
       
       setIsConverting(true);
       const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: generatedText });
@@ -135,8 +134,8 @@ export default function QuestionsCreatorPage() {
     } catch (err: any) {
       console.error("Error during question generation process:", err);
       setError(err.message || 'An unexpected error occurred.');
-      setIsGenerating(false);
     } finally {
+      setIsGenerating(false);
       setIsConverting(false);
     }
   };
@@ -330,7 +329,7 @@ export default function QuestionsCreatorPage() {
                             </CardContent>
                         </Card>
                     </motion.div>
-                    <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
+                    <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="h-full">
                          <Card className={cn("glass-card rounded-3xl flex flex-col h-full", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
@@ -438,3 +437,5 @@ export default function QuestionsCreatorPage() {
     </div>
   );
 }
+
+    
