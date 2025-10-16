@@ -40,6 +40,18 @@ type SavedQuestionSet = {
   userId: string;
 };
 
+// Helper to get text content while preserving line breaks
+function getPreText(element: HTMLElement) {
+    let text = element.innerHTML;
+    text = text.replace(/<br\s*\/?>/gi, '\n'); // Convert <br> to newline
+    text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
+    text = text.replace(/<\/div>/gi, '');       // Remove </div>
+    // Basic un-escaping for display
+    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    return text;
+}
+
+
 function QuestionsCreatorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -68,7 +80,7 @@ function QuestionsCreatorContent() {
     { orderBy: ['createdAt', 'desc'], disabled: !user }
   );
 
-  const initialTab = searchParams.get('tab') || 'generate';
+  const initialTab = 'generate';
   const { toast } = useToast();
 
   useEffect(() => {
@@ -232,7 +244,7 @@ function QuestionsCreatorContent() {
         </h1>
       </div>
 
-      <Tabs defaultValue={initialTab} value={initialTab} onValueChange={handleTabChange} className="w-full mt-4">
+      <Tabs defaultValue={initialTab} value={searchParams.get('tab') || initialTab} onValueChange={handleTabChange} className="w-full mt-4">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-slate-900/50 border border-white/10 rounded-full p-1 h-12">
             <TabsTrigger value="generate" className="rounded-full">Generate</TabsTrigger>
             <TabsTrigger value="prompts" className="rounded-full">Prompts</TabsTrigger>
@@ -377,14 +389,13 @@ function QuestionsCreatorContent() {
           </DialogHeader>
           <div className="flex-1 overflow-auto p-6 pt-0 no-scrollbar">
             {isPreviewEditing ? (
-                 <pre
+                <pre
                     contentEditable={true}
                     suppressContentEditableWarning={true}
-                    onBlur={(e) => setPreviewContent(prev => prev ? {...prev, content: e.currentTarget.innerText} : null)}
+                    onBlur={(e) => setPreviewContent(prev => prev ? {...prev, content: getPreText(e.currentTarget)} : null)}
                     className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                >
-                    {previewContent?.content || ''}
-                </pre>
+                    dangerouslySetInnerHTML={{ __html: previewContent?.content.replace(/\n/g, '<br/>') || '' }}
+                />
             ) : (
                 <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
                     {previewContent?.content}
@@ -404,5 +415,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    

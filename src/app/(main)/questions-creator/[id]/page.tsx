@@ -33,6 +33,18 @@ type SavedQuestionSet = {
   userId: string;
 };
 
+// Helper to get text content while preserving line breaks
+function getPreText(element: HTMLElement) {
+    let text = element.innerHTML;
+    text = text.replace(/<br\s*\/?>/gi, '\n'); // Convert <br> to newline
+    text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
+    text = text.replace(/<\/div>/gi, '');       // Remove </div>
+    // Basic un-escaping for display
+    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    return text;
+}
+
+
 function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
   const { user } = useUser();
@@ -143,7 +155,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `questions.${fileExtension}`;
+    a.download = `${questionSet?.fileName.replace(/\.[^/.]+$/, "") || 'questions'}.${fileExtension}`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -261,11 +273,10 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     <pre
                         contentEditable={isAdmin}
                         suppressContentEditableWarning={true}
-                        onBlur={(e) => setEditingContent(prev => ({...prev, [type]: e.currentTarget.innerText}))}
+                        onBlur={(e) => setEditingContent(prev => ({...prev, [type]: getPreText(e.currentTarget)}))}
                         className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                    >
-                      {editingContent[type] || ''}
-                    </pre>
+                        dangerouslySetInnerHTML={{ __html: editingContent[type]?.replace(/\n/g, '<br/>') || '' }}
+                    />
                 ) : (
                     <div className="relative flex-1">
                         <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto no-scrollbar">
@@ -331,8 +342,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
          <p className="text-sm text-slate-400 mb-6 ml-12 -mt-4">{new Date(questionSet.createdAt).toLocaleString()}</p>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, questionSet.textQuestions, 'text')}
-            {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, questionSet.jsonQuestions, 'json')}
+            {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, editingContent.text, 'text')}
+            {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, editingContent.json, 'json')}
         </div>
         
         <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
@@ -357,14 +368,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </DialogHeader>
             <div className="flex-1 overflow-auto p-6 pt-0 no-scrollbar">
                 {isPreviewEditing ? (
-                    <pre
+                     <pre
                         contentEditable={isAdmin}
                         suppressContentEditableWarning={true}
-                        onBlur={(e) => setPreviewContent(prev => prev ? {...prev, content: e.currentTarget.innerText} : null)}
+                        onBlur={(e) => setPreviewContent(prev => prev ? {...prev, content: getPreText(e.currentTarget)} : null)}
                         className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                    >
-                        {previewContent?.content || ''}
-                    </pre>
+                        dangerouslySetInnerHTML={{ __html: previewContent?.content.replace(/\n/g, '<br/>') || '' }}
+                    />
                 ) : (
                     <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
                         {previewContent?.content}
@@ -402,5 +412,3 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    
