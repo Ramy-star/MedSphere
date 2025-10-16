@@ -58,8 +58,14 @@ export default function RootLayout({
     };
 
     setDynamicVh();
-    window.addEventListener('resize', setDynamicVh);
-    return () => window.removeEventListener('resize', setDynamicVh);
+    // Use visualViewport for more reliable resizing, especially with on-screen keyboards
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', setDynamicVh);
+      return () => window.visualViewport.removeEventListener('resize', setDynamicVh);
+    } else {
+      window.addEventListener('resize', setDynamicVh);
+      return () => window.removeEventListener('resize', setDynamicVh);
+    }
   }, []);
 
   const handleGetStarted = () => {
@@ -112,5 +118,3 @@ export default function RootLayout({
     </html>
   );
 }
-
-    

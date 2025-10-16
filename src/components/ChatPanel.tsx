@@ -153,6 +153,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const inputContainerRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
 
     const startNewChat = useCallback(() => {
         setChatHistory([]);
@@ -290,28 +291,47 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     }, [chatInput]);
 
     useEffect(() => {
-        if (!isMobile || typeof window === 'undefined' || !window.visualViewport) {
-          return;
-        }
-    
-        const vv = window.visualViewport;
-        const inputContainer = inputContainerRef.current;
-        if (!inputContainer) return;
+    if (!isMobile || typeof window === 'undefined' || !window.visualViewport) {
+      return;
+    }
+  
+    const vv = window.visualViewport;
+    if (!vv) return;
 
-        const handleResize = () => {
-          // The amount the keyboard covers the layout viewport
-          const offsetBottom = window.innerHeight - vv.height - vv.offsetTop;
-          
-          // Move the input container up by the amount the keyboard is covering
-          inputContainer.style.transform = `translateY(-${Math.max(0, offsetBottom)}px)`;
-        };
+    const inputContainer = inputContainerRef.current;
+    const messagesContainer = messagesContainerRef.current;
+
+    if (!inputContainer || !messagesContainer) return;
+
+    const handleResize = () => {
+      // The amount the keyboard covers the layout viewport.
+      const keyboardOffset = window.innerHeight - vv.height;
+      const inputBarHeight = inputContainer.clientHeight;
+      
+      // Move the input container up by the amount the keyboard is covering.
+      // This is instant and feels like the input is attached to the keyboard.
+      inputContainer.style.transform = `translateY(-${keyboardOffset}px)`;
+      
+      // Add padding to the bottom of the messages container so the last message
+      // is always visible above the keyboard and input bar.
+      const totalPadding = inputBarHeight + keyboardOffset;
+      messagesContainer.style.paddingBottom = `${totalPadding}px`;
+      
+      // Scroll to the bottom to keep the last message in view
+      if (messagesContainer.parentElement) {
+          messagesContainer.parentElement.scrollTop = messagesContainer.parentElement.scrollHeight;
+      }
+    };
+  
+    vv.addEventListener('resize', handleResize);
     
-        vv.addEventListener('resize', handleResize);
-    
-        return () => {
-          vv.removeEventListener('resize', handleResize);
-        };
-      }, [isMobile]);
+    // Initial call to set padding correctly
+    handleResize();
+
+    return () => {
+      vv.removeEventListener('resize', handleResize);
+    };
+  }, [isMobile]);
 
     const chatViewContent = (
         <>
@@ -360,9 +380,9 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             <div className='relative flex-1 flex flex-col overflow-hidden'>
                 <div 
                     ref={chatContainerRef} 
-                    className={cn("flex-1 space-y-6 overflow-y-auto p-4 sm:p-6")}
+                    className={cn("flex-1 overflow-y-auto")}
                 >
-                        
+                    <div ref={messagesContainerRef} className="space-y-6 p-4 sm:p-6">
                         {chatHistory.length === 0 && !isAiThinking && (
                             <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
                                 {isExtracting ? (
@@ -409,13 +429,13 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                                 </div>
                             </div>
                         )}
+                    </div>
                 </div>
-                 <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
             </div>
-            <motion.div 
+            <div 
                 ref={inputContainerRef}
                 className="mt-auto"
-                style={{ transition: 'transform 0.2s ease-out' }} // Smooth transition for the input bar
+                style={{ transition: 'none' }} // Ensure no transition is applied
             >
               <div className='p-2' style={{ backgroundColor: '#212121'}}>
                  <form
@@ -462,7 +482,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                     </div>
                 </form>
               </div>
-            </motion.div>
+            </div>
             <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
                 <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
                   <AlertDialogHeader2 className="p-6 pb-0">
@@ -512,5 +532,3 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         </motion.div>
     );
 }
-
-    
