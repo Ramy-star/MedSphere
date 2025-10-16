@@ -184,11 +184,11 @@ export default function QuestionsCreatorPage() {
     <Card className="glass-card min-h-[250px] flex flex-col">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
-          <div className="flex items-center">
+          <div className="flex items-center gap-3">
             {icon}
-            <span className="ml-3">{title}</span>
+            <span className="ml-0">{title}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, fileType)} disabled={!content}><Download className="h-4 w-4" /></Button>
           </div>
@@ -211,16 +211,13 @@ export default function QuestionsCreatorPage() {
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-2 pr-4 -mr-2">
-      <div className="text-center mb-10">
+      <div className="text-center">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
         </h1>
-        <p className="text-lg text-slate-400 mt-2 max-w-2xl mx-auto">
-          Automate question generation from your lectures and documents with the power of AI.
-        </p>
       </div>
 
-      <Tabs defaultValue="generate" className="w-full">
+      <Tabs defaultValue="generate" className="w-full mt-6">
         <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-slate-800/50 rounded-2xl p-1.5">
           <TabsTrigger value="generate" className="rounded-xl">Generate</TabsTrigger>
           <TabsTrigger value="prompts" className="rounded-xl">Prompts</TabsTrigger>
@@ -234,8 +231,7 @@ export default function QuestionsCreatorPage() {
                     <motion.div variants={cardVariants} initial="hidden" animate="visible">
                         <Card className="glass-card">
                         <CardHeader>
-                            <CardTitle>1. Upload Lecture</CardTitle>
-                            <CardDescription>Upload a lecture file to start generating questions.</CardDescription>
+                            <CardTitle className='flex items-center gap-3'><UploadCloud className='text-blue-400'/>1. Upload Lecture</CardTitle>
                         </CardHeader>
                         <CardContent>
                             <div
@@ -268,8 +264,7 @@ export default function QuestionsCreatorPage() {
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
                          <Card className={cn("glass-card", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
                             <CardHeader>
-                                <CardTitle>2. Save Results</CardTitle>
-                                <CardDescription>Save the generated questions for later use.</CardDescription>
+                                <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
                             <CardContent>
                                 <Button onClick={handleSaveCurrentQuestions} className="w-full rounded-2xl active:scale-95 transition-transform" disabled={!hasGeneratedContent}>
