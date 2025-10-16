@@ -264,62 +264,6 @@ export default function QuestionsCreatorPage() {
         setIsRepairing(false);
     }
   };
-
-  const handleCopy = (content: string | null, type: string) => {
-    if (!content) return;
-    navigator.clipboard.writeText(content);
-    toast({ title: 'Copied to Clipboard', description: `${type} questions have been copied.` });
-  };
-  
-  const handleDownload = (content: string | null, format: 'txt' | 'pdf' | 'docx' | 'json') => {
-    if (!content) return;
-
-    let blob: Blob;
-    let fileExtension = format;
-
-    if (format === 'pdf') {
-        const doc = new jsPDF();
-        doc.text(content, 10, 10);
-        doc.save('questions.pdf');
-        return;
-    }
-
-    if (format === 'docx') {
-        const doc = new DocxDocument({
-            sections: [{
-                properties: {},
-                children: [
-                    new Paragraph({
-                        children: [new TextRun(content)],
-                    }),
-                ],
-            }],
-        });
-
-        Packer.toBlob(doc).then(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'questions.docx';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-        return;
-    }
-    
-    blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
-    
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `questions.${fileExtension}`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
@@ -400,7 +344,7 @@ export default function QuestionsCreatorPage() {
                     </div>
                 ) : (
                     <div className="relative flex-1">
-                        <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-64 overflow-auto no-scrollbar">
+                        <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-48 overflow-auto no-scrollbar">
                             {content || 'Generated content will appear here...'}
                         </pre>
                     </div>
@@ -449,8 +393,8 @@ export default function QuestionsCreatorPage() {
                                 onDragEnter={handleDragEnter}
                                 onDragLeave={handleDragLeave}
                                 className={cn(
-                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center",
-                                    isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/20",
+                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/20",
+                                    isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/40",
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
                                 >
@@ -613,3 +557,4 @@ export default function QuestionsCreatorPage() {
 }
 
     
+
