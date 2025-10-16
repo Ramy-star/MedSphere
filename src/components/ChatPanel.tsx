@@ -301,15 +301,13 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
 
         const onViewportChange = () => {
           const keyboardHeight = window.innerHeight - vv.height;
-          setChatInputOffset(keyboardHeight > 0 ? keyboardHeight : 0);
+          setChatInputOffset(keyboardHeight > 0 ? keyboardHeight - (window.outerHeight - window.innerHeight) : 0);
         };
 
         vv.addEventListener('resize', onViewportChange);
-        vv.addEventListener('scroll', onViewportChange);
 
         return () => {
           vv.removeEventListener('resize', onViewportChange);
-          vv.removeEventListener('scroll', onViewportChange);
         };
       }, [isMobile]);
 
@@ -412,12 +410,11 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </div>
                  <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
             </div>
-            <div 
+            <motion.div 
                 className="p-2 mb-2 mt-auto"
-                style={{ 
-                    backgroundColor: '#212121',
-                    paddingBottom: `calc(env(safe-area-inset-bottom, 0) + 0.5rem)`
-                }}
+                style={{ backgroundColor: '#212121' }}
+                animate={{ paddingBottom: isMobile ? chatInputOffset : '0.5rem' }}
+                transition={{ type: 'tween', duration: 0, ease: 'linear' }}
             >
                  <form
                     onSubmit={handleChatSubmit}
@@ -462,7 +459,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                         />
                     </div>
                 </form>
-            </div>
+            </motion.div>
             <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
                 <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
                   <AlertDialogHeader2 className="p-6 pb-0">
@@ -484,15 +481,12 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         return (
              <motion.div
                 key="chat-panel-mobile"
-                initial={{ y: '100dvh' }}
-                animate={{ 
-                    y: 0,
-                    paddingBottom: `${chatInputOffset}px` 
-                }}
-                exit={{ y: '100dvh' }}
-                transition={{ type: "spring", stiffness: 400, damping: 40, duration: 0.2 }}
-                className="flex flex-col overflow-hidden h-[100dvh] w-full absolute inset-0 z-20"
-                style={{backgroundColor: '#212121'}}
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: "spring", stiffness: 400, damping: 40 }}
+                className="flex flex-col overflow-hidden h-full w-full absolute inset-0 z-20"
+                style={{backgroundColor: '#212121', height: '100dvh'}}
             >
                 {chatViewContent}
             </motion.div>
@@ -515,3 +509,5 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         </motion.div>
     );
 }
+
+    
