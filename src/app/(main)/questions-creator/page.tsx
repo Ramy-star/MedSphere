@@ -157,54 +157,62 @@ function QuestionsCreatorContent() {
                 const page = await pdf.getPage(i);
                 const operatorList = await page.getOperatorList();
                 
-                for (const j in operatorList.fnArray) {
-                  if (operatorList.fnArray[j] === pdfjs.OPS.paintImageXObject) {
-                    try {
-                      const imageName = operatorList.argsArray[j as any][0];
-                      const img = page.objs.get(imageName);
-    
-                      if (!img || !img.data) continue;
-    
-                      const canvas = document.createElement('canvas');
-                      canvas.width = img.width;
-                      canvas.height = img.height;
-                      const ctx = canvas.getContext('2d');
-                      if (!ctx) continue;
-    
-                      const imageData = ctx.createImageData(img.width, img.height);
-                      if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
-                          let k = 0;
-                          for (let i = 0; i < img.data.length; i++) {
-                              const b = img.data[i];
-                              for (let bit = 0; bit < 8; bit++) {
-                                  if (k >= imageData.data.length) break;
-                                  const gray = (b & (1 << (7 - bit))) ? 0 : 255;
-                                  imageData.data[k++] = gray;
-                                  imageData.data[k++] = gray;
-                                  imageData.data[k++] = gray;
-                                  imageData.data[k++] = 255;
-                              }
-                          }
-                      } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
-                          let i = 0;
-                          for (let j = 0; j < img.data.length; j += 3) {
-                              imageData.data[i++] = img.data[j];
-                              imageData.data[i++] = img.data[j + 1];
-                              imageData.data[i++] = img.data[j + 2];
-                              imageData.data[i++] = 255;
-                          }
-                      } else {
-                          imageData.data.set(img.data);
-                      }
-                      ctx.putImageData(imageData, 0, 0);
-                      const uri = canvas.toDataURL('image/png');
-                      if (uri) imageUris.push(uri);
-                    } catch (err) {
-                      console.error("Error processing image object:", err);
-                      // Continue to next image instead of failing
+                const imagePromises = operatorList.fnArray.reduce((acc: Promise<void>[], fn, j) => {
+                    if (fn === pdfjs.OPS.paintImageXObject) {
+                        const imageName = operatorList.argsArray[j as any][0];
+                        
+                        const promise = new Promise<void>(async (resolve, reject) => {
+                            try {
+                                const img = await page.objs.get(imageName);
+
+                                if (!img || !img.data) return resolve();
+            
+                                const canvas = document.createElement('canvas');
+                                canvas.width = img.width;
+                                canvas.height = img.height;
+                                const ctx = canvas.getContext('2d');
+                                if (!ctx) return resolve();
+            
+                                const imageData = ctx.createImageData(img.width, img.height);
+                                if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
+                                    let k = 0;
+                                    for (let i = 0; i < img.data.length; i++) {
+                                        const b = img.data[i];
+                                        for (let bit = 0; bit < 8; bit++) {
+                                            if (k >= imageData.data.length) break;
+                                            const gray = (b & (1 << (7 - bit))) ? 0 : 255;
+                                            imageData.data[k++] = gray;
+                                            imageData.data[k++] = gray;
+                                            imageData.data[k++] = gray;
+                                            imageData.data[k++] = 255;
+                                        }
+                                    }
+                                } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
+                                    let i = 0;
+                                    for (let j = 0; j < img.data.length; j += 3) {
+                                        imageData.data[i++] = img.data[j];
+                                        imageData.data[i++] = img.data[j + 1];
+                                        imageData.data[i++] = img.data[j + 2];
+                                        imageData.data[i++] = 255;
+                                    }
+                                } else {
+                                    imageData.data.set(img.data);
+                                }
+                                ctx.putImageData(imageData, 0, 0);
+                                const uri = canvas.toDataURL('image/png');
+                                if (uri) imageUris.push(uri);
+                                resolve();
+                            } catch (err) {
+                                console.error("Error processing image object:", err);
+                                resolve(); // Continue even if one image fails
+                            }
+                        });
+                        acc.push(promise);
                     }
-                  }
-                }
+                    return acc;
+                }, []);
+    
+                await Promise.all(imagePromises);
             }
         } else {
              throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
@@ -337,7 +345,6 @@ function QuestionsCreatorContent() {
                 <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     {icon}
-                    <span className="ml-0">{title}</span>
                 </div>
                 </CardTitle>
             </CardHeader>
