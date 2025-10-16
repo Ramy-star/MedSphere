@@ -23,8 +23,8 @@ import {
 } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { jsPDF } from 'jspdf';
-import { Packer } from 'docx';
-import { Document, Paragraph, TextRun } from 'docx';
+import { Packer, Document as DocxDocument, Paragraph, TextRun } from 'docx';
+import JSZip from 'jszip';
 
 
 type SavedQuestionSet = {
@@ -102,6 +102,51 @@ export default function QuestionsCreatorPage() {
       description: `The questions for "${fileName}" have been saved.`,
     });
   };
+  
+    const extractTextFromDocx = async (file: File) => {
+        const content = await file.arrayBuffer();
+        const zip = await JSZip.loadAsync(content);
+        const doc = zip.file("word/document.xml");
+        if (doc) {
+            const text = await doc.async("text");
+            const xml = new DOMParser().parseFromString(text, "text/xml");
+            const paragraphs = xml.getElementsByTagName("w:t");
+            let fullText = "";
+            for (let i = 0; i < paragraphs.length; i++) {
+                fullText += paragraphs[i].textContent + "\n";
+            }
+            return fullText;
+        }
+        return "";
+    };
+
+    const extractTextFromPptx = async (file: File): Promise<string> => {
+        const content = await file.arrayBuffer();
+        const zip = await JSZip.loadAsync(content);
+        const slideMasters = zip.folder("ppt/slides");
+        let fullText = "";
+
+        if (slideMasters) {
+            const slideFiles: Promise<string>[] = [];
+            slideMasters.forEach((relativePath, file) => {
+                if (relativePath.endsWith('.xml')) {
+                    slideFiles.push(file.async("text"));
+                }
+            });
+
+            const slides = await Promise.all(slideFiles);
+            slides.forEach(slideXml => {
+                const xml = new DOMParser().parseFromString(slideXml, "text/xml");
+                const paragraphs = xml.getElementsByTagName("a:t");
+                 for (let i = 0; i < paragraphs.length; i++) {
+                    fullText += paragraphs[i].textContent + " ";
+                }
+                fullText += "\n";
+            });
+        }
+        return fullText;
+    };
+
 
   const processFile = async (file: File) => {
     setFileName(file.name);
@@ -112,15 +157,21 @@ export default function QuestionsCreatorPage() {
 
     try {
       let documentText = '';
-      if (file.type === 'application/pdf') {
-        const pdfjs = await import('pdfjs-dist');
-        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-        const fileBuffer = await file.arrayBuffer();
-        const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
-        documentText = await contentService.extractTextFromPdf(pdf);
-      } else {
-        documentText = await file.text();
-      }
+        if (file.type === 'application/pdf') {
+            const pdfjs = await import('pdfjs-dist');
+            pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+            const fileBuffer = await file.arrayBuffer();
+            const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
+            documentText = await contentService.extractTextFromPdf(pdf);
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            documentText = await extractTextFromDocx(file);
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
+            documentText = await extractTextFromPptx(file);
+        } else if (file.type === 'text/plain') {
+            documentText = await file.text();
+        } else {
+            throw new Error(`Unsupported file type: ${file.type}. Please upload PDF, DOCX, PPTX or TXT files.`);
+        }
 
       if (!documentText) throw new Error('Could not extract text from the file.');
       
@@ -160,7 +211,7 @@ export default function QuestionsCreatorPage() {
     }
 
     if (format === 'docx') {
-        const doc = new Document({
+        const doc = new DocxDocument({
             sections: [{
                 properties: {},
                 children: [
