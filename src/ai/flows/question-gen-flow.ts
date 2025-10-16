@@ -73,35 +73,45 @@ export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise
     try {
         const { output } = await convertToJsonPrompt(input);
 
-        // Case 1: The output is a structured JSON object (most common).
+        // Case 1: The output is already a structured JSON object.
         if (typeof output === 'object' && output !== null) {
             return JSON.stringify(output, null, 2);
         }
 
-        // Case 2: The output is a string that is *already* valid JSON.
+        // Case 2: The output is a string. It might be a JSON string, or a markdown-wrapped JSON string.
         if (typeof output === 'string') {
+            // Attempt to find and parse JSON from a markdown block.
+            const jsonMatch = output.match(/```json\n([\s\S]*?)\n```/);
+            if (jsonMatch && jsonMatch[1]) {
+                try {
+                    const parsed = JSON.parse(jsonMatch[1]);
+                    return JSON.stringify(parsed, null, 2);
+                } catch (e) {
+                    // Fall through if parsing the extracted JSON fails.
+                }
+            }
+
+            // If not in a markdown block, try to parse the whole string directly.
             try {
-                // Validate and re-stringify to ensure it's well-formatted.
                 const parsed = JSON.parse(output);
                 return JSON.stringify(parsed, null, 2);
             } catch (e) {
                 // If parsing fails, it's not a valid JSON string.
-                // It might be an error message or just plain text from the model.
-                // In this scenario, returning it as-is can be helpful for debugging.
+                // This could be an error message or plain text from the model.
                 console.warn("Model output was a string but not valid JSON:", output);
-                throw new Error("The AI returned a response that could not be converted to JSON. Please check the generated text and try again.");
+                // We throw a specific, catchable error.
+                throw new Error("The AI returned a response that could not be converted to a valid JSON structure. Please check the generated text and try again.");
             }
         }
 
         // Fallback for any other unexpected type (e.g., number, boolean).
-        // This provides a clear error message instead of causing a server crash.
-        const errorMsg = `Could not convert to JSON. Received an unexpected type: ${typeof output}`;
+        const errorMsg = `Could not convert to JSON. The AI returned an unexpected data type: ${typeof output}`;
         console.error(errorMsg);
         throw new Error(errorMsg);
 
-    } catch (err) {
+    } catch (err: any) {
         console.error("Error in convertQuestionsToJson flow:", err);
-        // Re-throw the error to be caught by the client-side, which will show the user an error.
-        throw err;
+        // Re-throw the original error or a new one to be caught by the client-side caller.
+        throw new Error(err.message || "An unexpected error occurred during JSON conversion.");
     }
 }

@@ -53,7 +53,7 @@ export default function QuestionsCreatorPage() {
   const [savedQuestions, setSavedQuestions] = useState<SavedQuestionSet[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
-  const [previewContent, setPreviewContent] = useState<{title: string, content: string} | null>(null);
+  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
 
   const [editingContent, setEditingContent] = useState<{ text: string | null, json: string | null }>({
@@ -148,7 +148,7 @@ export default function QuestionsCreatorPage() {
             const imagePromises = operatorList.fnArray.reduce((acc: Promise<string | null>[], fn, j) => {
                 if (fn === pdfjs.OPS.paintImageXObject) {
                     const imageName = operatorList.argsArray[j][0];
-                    const promise = page.objs.get(imageName, async (img: any) => {
+                    const promise = page.objs.get(imageName).then((img: any) => {
                         if (!img || !img.data) return null;
                         
                         const canvas = document.createElement('canvas');
@@ -158,16 +158,17 @@ export default function QuestionsCreatorPage() {
                         if (!ctx) return null;
 
                         const imageData = ctx.createImageData(img.width, img.height);
-                        if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
-                            let i = 0;
-                            for (let j = 0; j < img.data.length; j++) {
-                                const b = img.data[j];
-                                for (let k = 0; k < 8; k++) {
-                                    const gray = (b & (1 << (7 - k))) ? 0 : 255;
-                                    imageData.data[i++] = gray;
-                                    imageData.data[i++] = gray;
-                                    imageData.data[i++] = gray;
-                                    imageData.data[i++] = 255;
+                         if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
+                            let k = 0;
+                            for (let i = 0; i < img.data.length; i++) {
+                                const b = img.data[i];
+                                for (let bit = 0; bit < 8; bit++) {
+                                    if (k >= imageData.data.length) break;
+                                    const gray = (b & (1 << (7 - bit))) ? 0 : 255;
+                                    imageData.data[k++] = gray;
+                                    imageData.data[k++] = gray;
+                                    imageData.data[k++] = gray;
+                                    imageData.data[k++] = 255;
                                 }
                             }
                         } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
@@ -217,10 +218,10 @@ export default function QuestionsCreatorPage() {
             toast({
                 variant: 'destructive',
                 title: 'JSON Conversion Failed',
-                description: jsonErr.message || "Could not convert text to JSON."
-            })
-            // Keep text questions, but show JSON failed.
-            setJsonQuestions(null);
+                description: jsonErr.message || "Could not convert text to JSON. The AI returned an invalid format."
+            });
+            // Keep text questions, but show JSON failed by setting it to an error message.
+            setJsonQuestions(`{ "error": "JSON conversion failed", "message": "${jsonErr.message.replace(/"/g, '\\"')}" }`);
         }
 
     } catch (err: any) {
@@ -320,7 +321,7 @@ export default function QuestionsCreatorPage() {
     setEditingContent(prev => ({ ...prev, [type]: value }));
   };
 
-    const handleSaveEdit = (type: 'text' | 'json', setId?: string) => {
+  const handleSaveEdit = (type: 'text' | 'json', setId?: string) => {
     const isSavedSet = !!setId;
     const contentToSave = editingContent[type];
 
@@ -339,7 +340,6 @@ export default function QuestionsCreatorPage() {
           return s;
         })
       );
-      setEditingId(null);
     } else {
       if (type === 'text') {
         setTextQuestions(contentToSave);
@@ -349,16 +349,15 @@ export default function QuestionsCreatorPage() {
     }
     
     setIsEditing(prev => ({ ...prev, [type]: false }));
-    setIsPreviewEditing(false);
+    setEditingId(null);
   };
 
   const handleToggleEdit = (type: 'text' | 'json', isSavedSet = false, setId?: string) => {
-    const isCurrentlyEditing = isEditing[type] && (!isSavedSet || editingId === setId);
-
+    const isCurrentlyEditing = isEditing[type] && (isSavedSet ? editingId === setId : !editingId);
+  
     if (isCurrentlyEditing) {
       handleSaveEdit(type, setId);
     } else {
-      // Start editing
       if (isSavedSet && setId) {
         const set = savedQuestions.find(s => s.id === setId);
         if (set) {
@@ -369,14 +368,31 @@ export default function QuestionsCreatorPage() {
           });
         }
       } else {
+        setEditingId(null); // Ensure we are editing the "current" one, not a saved set
         setEditingContent({
           text: textQuestions,
           json: jsonQuestions,
         });
       }
-      setIsEditing(prev => ({...prev, [type]: !isCurrentlyEditing}));
+      setIsEditing({ text: false, json: false, [type]: true }); // Only one can be edited at a time
     }
   };
+
+  const handlePreviewSave = () => {
+    if (!previewContent) return;
+    const { type, content, setId } = previewContent;
+    
+    if (setId) {
+        setSavedQuestions(prev => prev.map(s => s.id === setId ? {...s, [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content} : s));
+    } else {
+        if (type === 'text') setTextQuestions(content);
+        if (type === 'json') setJsonQuestions(content);
+    }
+    
+    setIsPreviewEditing(false);
+    toast({ title: 'Content Updated' });
+  };
+  
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -386,8 +402,8 @@ export default function QuestionsCreatorPage() {
   const hasGeneratedContent = textQuestions || jsonQuestions;
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json', isSavedSet = false, setId?: string) => {
-    const isEditingThisCard = (isSavedSet && editingId === setId && isEditing[type]);
-    const contentForDisplay = isEditingThisCard ? editingContent[type] : content;
+    const isThisCardEditing = isEditing[type] && (isSavedSet ? editingId === setId : !editingId);
+    const contentForDisplay = isThisCardEditing ? editingContent[type] : content;
 
     return (
         <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
@@ -398,11 +414,11 @@ export default function QuestionsCreatorPage() {
                     <span className="ml-0">{title}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || ""})} disabled={!content}><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || "", type, setId})} disabled={!content}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
                     
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type, isSavedSet, setId)} disabled={isLoading || !content}>
-                        {isEditingThisCard ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
+                        {isThisCardEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
                     </Button>
 
                     {type === 'text' ? (
@@ -430,11 +446,11 @@ export default function QuestionsCreatorPage() {
                         <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                         <p className="ml-3 text-slate-300">{loadingText}</p>
                     </div>
-                ) : isEditingThisCard ? (
+                ) : isThisCardEditing ? (
                     <Textarea
                         value={contentForDisplay || ''}
                         onChange={(e) => handleContentChange(type, e.target.value)}
-                        className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500"
+                        className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
                     />
                 ) : (
                     <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto no-scrollbar">
@@ -597,7 +613,7 @@ export default function QuestionsCreatorPage() {
           <DialogHeader className='p-6 pb-2 flex-row flex-none justify-between items-center'>
             <DialogTitle>{previewContent?.title}</DialogTitle>
              <div className="flex items-center gap-1">
-                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsPreviewEditing(!isPreviewEditing)}>
+                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
                     {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
                 </Button>
                 <DialogClose asChild>
