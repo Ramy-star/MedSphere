@@ -71,7 +71,7 @@ function QuestionsCreatorContent() {
     { orderBy: ['createdAt', 'desc'], disabled: !user }
   );
 
-  const initialTab = searchParams.get('tab') || (task?.fileUrl ? 'generate' : 'saved');
+  const initialTab = searchParams.get('tab') || 'generate';
   const { toast } = useToast();
 
   useEffect(() => {
@@ -402,5 +402,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
