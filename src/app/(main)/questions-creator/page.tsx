@@ -162,62 +162,54 @@ export default function QuestionsCreatorPage() {
                 const page = await pdf.getPage(i);
                 const operatorList = await page.getOperatorList();
                 
-                const imagePromises = operatorList.fnArray.reduce((acc: Promise<string | null>[], fn, j) => {
-                    if (fn === pdfjs.OPS.paintImageXObject) {
-                        const imageName = operatorList.argsArray[j][0];
-                         const promise = page.objs.get(imageName).then((img: any) => {
-                            if (!img || !img.data) {
-                                return null;
-                            }
-                            
-                            const canvas = document.createElement('canvas');
-                            canvas.width = img.width;
-                            canvas.height = img.height;
-                            const ctx = canvas.getContext('2d');
-                            if (!ctx) {
-                                return null;
-                            }
-
-                            const imageData = ctx.createImageData(img.width, img.height);
-                            if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
-                                let k = 0;
-                                for (let i = 0; i < img.data.length; i++) {
-                                    const b = img.data[i];
-                                    for (let bit = 0; bit < 8; bit++) {
-                                        if (k >= imageData.data.length) break;
-                                        const gray = (b & (1 << (7 - bit))) ? 0 : 255;
-                                        imageData.data[k++] = gray;
-                                        imageData.data[k++] = gray;
-                                        imageData.data[k++] = gray;
-                                        imageData.data[k++] = 255;
-                                    }
-                                }
-                            } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
-                                let i = 0;
-                                for (let j = 0; j < img.data.length; j += 3) {
-                                    imageData.data[i++] = img.data[j];
-                                    imageData.data[i++] = img.data[j + 1];
-                                    imageData.data[i++] = img.data[j + 2];
-                                    imageData.data[i++] = 255;
-                                }
-                            } else {
-                                imageData.data.set(img.data);
-                            }
-                            ctx.putImageData(imageData, 0, 0);
-                            return canvas.toDataURL('image/png');
-                        }).catch(err => {
-                             console.error("Error processing image object:", err);
-                             return null;
-                        });
-                        acc.push(promise);
+                for (const j in operatorList.fnArray) {
+                  if (operatorList.fnArray[j] === pdfjs.OPS.paintImageXObject) {
+                    try {
+                      const imageName = operatorList.argsArray[j as any][0];
+                      const img = page.objs.get(imageName);
+    
+                      if (!img || !img.data) continue;
+    
+                      const canvas = document.createElement('canvas');
+                      canvas.width = img.width;
+                      canvas.height = img.height;
+                      const ctx = canvas.getContext('2d');
+                      if (!ctx) continue;
+    
+                      const imageData = ctx.createImageData(img.width, img.height);
+                      if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
+                          let k = 0;
+                          for (let i = 0; i < img.data.length; i++) {
+                              const b = img.data[i];
+                              for (let bit = 0; bit < 8; bit++) {
+                                  if (k >= imageData.data.length) break;
+                                  const gray = (b & (1 << (7 - bit))) ? 0 : 255;
+                                  imageData.data[k++] = gray;
+                                  imageData.data[k++] = gray;
+                                  imageData.data[k++] = gray;
+                                  imageData.data[k++] = 255;
+                              }
+                          }
+                      } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
+                          let i = 0;
+                          for (let j = 0; j < img.data.length; j += 3) {
+                              imageData.data[i++] = img.data[j];
+                              imageData.data[i++] = img.data[j + 1];
+                              imageData.data[i++] = img.data[j + 2];
+                              imageData.data[i++] = 255;
+                          }
+                      } else {
+                          imageData.data.set(img.data);
+                      }
+                      ctx.putImageData(imageData, 0, 0);
+                      const uri = canvas.toDataURL('image/png');
+                      if (uri) imageUris.push(uri);
+                    } catch (err) {
+                      console.error("Error processing image object:", err);
+                      // Continue to next image instead of failing
                     }
-                    return acc;
-                }, []);
-
-                const pageImages = await Promise.all(imagePromises);
-                pageImages.forEach(uri => {
-                    if (uri) imageUris.push(uri);
-                });
+                  }
+                }
             }
         } else {
              throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
