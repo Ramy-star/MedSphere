@@ -52,6 +52,8 @@ export default function RootLayout({
 
   useEffect(() => {
     const setDynamicVh = () => {
+      // We are using a CSS variable --1dvh to represent 1% of the viewport height.
+      // This is to overcome the issue on mobile browsers where 100vh includes the URL bar.
       const vh = window.innerHeight;
       document.documentElement.style.setProperty('--1dvh', `${vh}px`);
     };
@@ -111,3 +113,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

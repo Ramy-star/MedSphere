@@ -152,7 +152,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
-    const [chatInputOffset, setChatInputOffset] = useState(0);
+    const inputContainerRef = useRef<HTMLDivElement>(null);
 
     const startNewChat = useCallback(() => {
         setChatHistory([]);
@@ -300,12 +300,12 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         }
     
         const vv = window.visualViewport;
-    
+        const inputContainer = inputContainerRef.current;
+        if (!inputContainer) return;
+
         const handleResize = () => {
-          // This calculates how much of the bottom of the layout viewport is covered by the virtual keyboard.
           const offsetBottom = window.innerHeight - vv.height - vv.offsetTop;
-          // We only apply the offset if the keyboard is assumed to be open (offset > 0)
-          setChatInputOffset(Math.max(0, offsetBottom));
+          inputContainer.style.transform = `translateY(-${Math.max(0, offsetBottom)}px)`;
         };
     
         vv.addEventListener('resize', handleResize);
@@ -414,12 +414,12 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </div>
                  <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
             </div>
-            <motion.div 
-                className="p-2 mb-2 mt-auto"
-                style={{ backgroundColor: '#212121', paddingBottom: chatInputOffset ? `${chatInputOffset}px` : '0.5rem' }}
-                animate={{ paddingBottom: isMobile && chatInputOffset > 0 ? `${chatInputOffset}px` : '0.5rem' }}
-                transition={{ type: 'tween', duration: 0, ease: 'linear' }}
+            <div 
+                ref={inputContainerRef}
+                className="mt-auto"
+                style={{ transition: 'none' }}
             >
+              <div className='p-2' style={{ backgroundColor: '#212121'}}>
                  <form
                     onSubmit={handleChatSubmit}
                     className={cn("relative mx-auto w-full max-w-[95%]",
@@ -463,7 +463,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                         />
                     </div>
                 </form>
-            </motion.div>
+              </div>
+            </div>
             <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
                 <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
                   <AlertDialogHeader2 className="p-6 pb-0">
@@ -513,3 +514,5 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         </motion.div>
     );
 }
+
+    
