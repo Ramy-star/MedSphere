@@ -8,6 +8,7 @@ import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, 
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
+import { reformatMarkdown } from '@/ai/flows/reformat-markdown-flow';
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
   const [showFolderSelector, setShowFolderSelector] = useState(false);
+  const [isSavingMd, setIsSavingMd] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
 
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -192,38 +194,53 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     if (!questionSet) return;
 
     setShowFolderSelector(false);
+    setIsSavingMd(true);
+    toast({ title: "Formatting Markdown...", description: "AI is re-formatting the questions for perfect output." });
 
-    const originalFileName = questionSet.fileName.replace(/\.[^/.]+$/, ""); // Remove extension
-    const newFileName = `${originalFileName}-Questions.md`;
-    const markdownContent = questionSet.textQuestions;
-    const file = new File([markdownContent], newFileName, { type: 'text/markdown' });
 
-    const tempId = `upload_${Date.now()}_${file.name}`;
-    
-    setUploadingFile({ id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file });
+    try {
+        const formattedContent = await reformatMarkdown({ rawText: questionSet.textQuestions });
 
-    const callbacks = {
-        onProgress: (progress: number) => {
-            setUploadingFile(prev => prev ? { ...prev, progress, status: 'uploading' } : null);
-        },
-        onSuccess: (content: any) => {
-             setUploadingFile(prev => prev ? { ...prev, status: 'success' } : null);
-             setTimeout(() => setUploadingFile(null), 3000);
-             toast({ title: "File Saved", description: `"${content.name}" has been saved.` });
-        },
-        onError: (error: Error) => {
-            console.error("Save to file failed:", error);
-            setUploadingFile(prev => prev ? { ...prev, status: 'error' } : null);
-            toast({
-                variant: 'destructive',
-                title: 'Save Failed',
-                description: error.message || `Could not save file. Please try again.`
-            })
-        }
-    };
-    
-    const xhr = await contentService.createFile(parentId, file, callbacks);
-    setUploadingFile(prev => prev ? { ...prev, xhr } : null);
+        const originalFileName = questionSet.fileName.replace(/\.[^/.]+$/, ""); // Remove extension
+        const newFileName = `${originalFileName}-Questions.md`;
+        
+        const file = new File([formattedContent], newFileName, { type: 'text/markdown' });
+
+        const tempId = `upload_${Date.now()}_${file.name}`;
+        
+        setUploadingFile({ id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file });
+
+        const callbacks = {
+            onProgress: (progress: number) => {
+                setUploadingFile(prev => prev ? { ...prev, progress, status: 'uploading' } : null);
+            },
+            onSuccess: (content: any) => {
+                setUploadingFile(prev => prev ? { ...prev, status: 'success' } : null);
+                setTimeout(() => setUploadingFile(null), 3000);
+                toast({ title: "File Saved", description: `"${content.name}" has been saved successfully.` });
+            },
+            onError: (error: Error) => {
+                console.error("Save to file failed:", error);
+                setUploadingFile(prev => prev ? { ...prev, status: 'error' } : null);
+                toast({
+                    variant: 'destructive',
+                    title: 'Save Failed',
+                    description: error.message || `Could not save file. Please try again.`
+                })
+            }
+        };
+        
+        const xhr = await contentService.createFile(parentId, file, callbacks);
+        setUploadingFile(prev => prev ? { ...prev, xhr } : null);
+    } catch(e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Formatting Failed',
+            description: e.message || 'Could not re-format the markdown content.'
+        });
+    } finally {
+        setIsSavingMd(false);
+    }
 };
 
 
@@ -249,7 +266,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 </div>
                 <div className="flex items-center gap-1">
                     {isAdmin && type === 'text' && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)}><FolderPlus className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
+                            {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <FolderPlus className="h-4 w-4" />}
+                        </Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)}><Copy className="h-4 w-4" /></Button>
@@ -385,6 +404,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             onOpenChange={setShowFolderSelector} 
             onSelectFolder={handleSaveToFile} 
         />
+        {uploadingFile && (
+            <div className="fixed bottom-4 right-4 w-80">
+                 <UploadProgress file={uploadingFile} onRetry={() => {}} onRemove={() => { setUploadingFile(null); uploadingFile.xhr?.abort(); }} />
+            </div>
+        )}
     </motion.div>
   );
 }
