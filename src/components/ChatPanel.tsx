@@ -138,10 +138,122 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
 });
 
 
+const ChatInputForm = React.memo(function ChatInputForm({
+  isMobile,
+  isAiThinking,
+  isExtracting,
+  documentText,
+  onChatSubmit,
+  onStopAi,
+}: {
+  isMobile: boolean,
+  isAiThinking: boolean,
+  isExtracting: boolean,
+  documentText: string | null,
+  onChatSubmit: (input: string) => Promise<void>,
+  onStopAi: () => void,
+}) {
+  const [chatInput, setChatInput] = useState('');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
+    e?.preventDefault();
+    if (isAiThinking || !chatInput.trim()) return;
+    onChatSubmit(chatInput);
+    setChatInput('');
+  };
+  
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
+
+  const handleInsertNewline = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (textareaRef.current) {
+        const { selectionStart, selectionEnd, value } = textareaRef.current;
+        const newValue = value.substring(0, selectionStart) + '\n' + value.substring(selectionEnd);
+        setChatInput(newValue);
+        setTimeout(() => {
+            if (textareaRef.current) {
+                textareaRef.current.selectionStart = selectionStart + 1;
+                textareaRef.current.selectionEnd = selectionStart + 1;
+                textareaRef.current.focus();
+            }
+        }, 0);
+    }
+  };
+
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (textarea) {
+        // Temporarily remove transition to get accurate scrollHeight
+        textarea.style.transition = 'none';
+        
+        textarea.style.height = 'auto'; // Reset height
+        const scrollHeight = textarea.scrollHeight;
+        const maxHeight = 150; 
+        textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+        
+        // Re-apply transition after a short delay
+        setTimeout(() => {
+            if (textarea) {
+               textarea.style.transition = 'height 0.2s ease-out';
+            }
+        }, 50);
+    }
+  }, [chatInput]);
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className={cn(
+        "relative mx-auto w-full max-w-[95%]",
+        (isExtracting || !documentText) && "opacity-50"
+      )}
+    >
+      <Textarea
+        ref={textareaRef}
+        className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
+        placeholder="Ask anything..."
+        value={chatInput}
+        onChange={(e) => setChatInput(e.target.value)}
+        onKeyDown={handleKeyDown}
+        disabled={isAiThinking || isExtracting || !documentText}
+        rows={1}
+        style={{backgroundColor: '#303030'}}
+      />
+      <div className="absolute right-3 bottom-2 flex h-[36px] items-center gap-1">
+        {isMobile && (
+            <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleInsertNewline}
+                className="w-8 h-8 rounded-full text-slate-400 hover:bg-white/10"
+                aria-label="Insert new line"
+            >
+                <CornerDownLeft className="w-5 h-5" />
+            </Button>
+        )}
+        <SendStopButton
+            size='md'
+            onSend={() => handleSubmit()}
+            onStop={onStopAi}
+            isSending={isAiThinking}
+            disabled={!chatInput.trim() || isExtracting || !documentText}
+        />
+      </div>
+    </form>
+  );
+});
+
+
+
 export default function ChatPanel({ isMobile, documentText, isExtracting, onClose }: ChatPanelProps) {
     const { toast } = useToast();
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const [chatInput, setChatInput] = useState('');
     const [isAiThinking, setIsAiThinking] = useState(false);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
@@ -149,72 +261,52 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const [fontSizeIndex, setFontSizeIndex] = useState(1);
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+    
     const inputContainerRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
 
-    // Mobile keyboard handling effect
+    // This effect handles keyboard appearance on mobile.
     useEffect(() => {
-        if (!isMobile || typeof window === 'undefined' || !window.visualViewport) {
-            return;
-        }
-
-        const vv = window.visualViewport;
         const inputContainer = inputContainerRef.current;
         const messagesContainer = messagesContainerRef.current;
-
-        if (!inputContainer || !messagesContainer) return;
+        
+        if (!isMobile || !inputContainer || !messagesContainer || typeof window === 'undefined' || !window.visualViewport) {
+            return;
+        }
+        
+        const vv = window.visualViewport;
 
         let inputContainerHeight = inputContainer.offsetHeight;
 
-        const updateLayout = () => {
-            if (!vv || !inputContainer || !messagesContainer) return;
-
-            // This is the space covered by the keyboard.
+        const handleResize = () => {
+            if (!vv) return;
             const keyboardOffset = window.innerHeight - vv.height;
-
-            // Move the input container up instantly with the keyboard
-            inputContainer.style.transform = `translateY(-${keyboardOffset}px)`;
             
-            // The total space needed at the bottom of the messages list
-            const totalPadding = inputContainerHeight + keyboardOffset;
-            messagesContainer.style.paddingBottom = `${totalPadding}px`;
-            
-            // Scroll to the bottom to keep the last message in view
-            if(messagesContainer) {
+            requestAnimationFrame(() => {
+                inputContainer.style.transform = `translateY(-${keyboardOffset}px)`;
+                messagesContainer.style.paddingBottom = `${inputContainerHeight + keyboardOffset}px`;
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            }
-        };
-
-        const onResize = () => {
-            updateLayout();
+            });
         };
 
         const observer = new ResizeObserver(() => {
             if (inputContainer) {
                 inputContainerHeight = inputContainer.offsetHeight;
-                updateLayout(); // Recalculate layout when input height changes
+                handleResize(); // Recalculate layout when input height changes
             }
         });
-
-        if (inputContainer) {
-            observer.observe(inputContainer);
-        }
-
-        vv.addEventListener('resize', onResize);
         
-        // Initial call
-        updateLayout();
+        observer.observe(inputContainer);
+        vv.addEventListener('resize', handleResize);
+        
+        handleResize(); // Initial call
 
         return () => {
-            vv.removeEventListener('resize', onResize);
-            if (inputContainer) {
-                observer.unobserve(inputContainer);
-            }
+            vv.removeEventListener('resize', handleResize);
+            observer.disconnect();
         };
     }, [isMobile]);
-
 
     const startNewChat = useCallback(() => {
         setChatHistory([]);
@@ -238,6 +330,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
            return;
         }
         
+        setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
         setIsAiThinking(true);
         abortControllerRef.current = new AbortController();
         
@@ -269,14 +362,9 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         }
       }, [documentText, toast]);
 
-    const handleChatSubmit = useCallback(async (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<Element, MouseEvent>) => {
-      e?.preventDefault();
-      if(isAiThinking || !chatInput.trim()) return;
-      const question = chatInput;
-      setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
-      setChatInput('');
-      await submitChat(question, chatHistory);
-  }, [chatInput, submitChat, isAiThinking, chatHistory]);
+    const handleChatSubmit = useCallback(async (input: string) => {
+      await submitChat(input, chatHistory);
+    }, [submitChat, chatHistory]);
 
     const handleRegenerate = useCallback(async () => {
         if (isAiThinking || chatHistory.length === 0) return;
@@ -286,9 +374,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         
         const lastUserMessage = chatHistory[lastUserMessageIndex];
         const historyBeforeLastInteraction = chatHistory.slice(0, lastUserMessageIndex);
-
-        setChatHistory(historyBeforeLastInteraction.concat(lastUserMessage));
-
+        
         await submitChat(lastUserMessage.text, historyBeforeLastInteraction);
     }, [isAiThinking, chatHistory, submitChat]);
 
@@ -312,28 +398,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         });
       }
 
-    const increaseFontSize = () => {
-        setFontSizeIndex(prev => Math.min(prev + 1, fontSizes.length - 1));
-      };
-      const decreaseFontSize = () => {
-        setFontSizeIndex(prev => Math.max(prev - 1, 0));
-      };
-
-    const handleInsertNewline = (e: React.MouseEvent) => {
-        e.preventDefault();
-        if (textareaRef.current) {
-            const { selectionStart, selectionEnd, value } = textareaRef.current;
-            const newValue = value.substring(0, selectionStart) + '\n' + value.substring(selectionEnd);
-            setChatInput(newValue);
-            setTimeout(() => {
-                if (textareaRef.current) {
-                    textareaRef.current.selectionStart = selectionStart + 1;
-                    textareaRef.current.selectionEnd = selectionStart + 1;
-                    textareaRef.current.focus();
-                }
-            }, 0);
-        }
-      };
+    const increaseFontSize = () => setFontSizeIndex(prev => Math.min(prev + 1, fontSizes.length - 1));
+    const decreaseFontSize = () => setFontSizeIndex(prev => Math.max(prev - 1, 0));
       
     useEffect(() => {
         if (messagesEndRef.current) {
@@ -341,15 +407,6 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         }
     }, [chatHistory, isAiThinking]);
 
-    useEffect(() => {
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            const scrollHeight = textarea.scrollHeight;
-            const maxHeight = 150; 
-            textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
-        }
-    }, [chatInput]);
 
     const chatViewContent = (
       <div className="flex flex-col h-full w-full overflow-hidden">
@@ -396,7 +453,6 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </TooltipProvider>
             </header>
             
-            {/* This container will scroll */}
             <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
                  <div className="space-y-6 p-4 sm:p-6">
                     {chatHistory.length === 0 && !isAiThinking && (
@@ -452,54 +508,19 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             <div
                 ref={inputContainerRef}
                 className={cn(
-                    "w-full z-20 will-change-transform", // 'will-change' is a performance hint
-                    isMobile ? "fixed bottom-0 left-0 right-0" : "relative"
+                    "w-full z-20",
+                    isMobile ? "fixed bottom-0 left-0 right-0 will-change-transform" : "relative"
                 )}
             >
               <div className='p-2' style={{backgroundColor: '#212121'}}>
-                 <form
-                    onSubmit={handleChatSubmit}
-                    className={cn("relative mx-auto w-full max-w-[95%]",
-                        (!chatInput.trim() || isExtracting || !documentText) && "opacity-50"
-                    )}
-                    >
-                    <Textarea
-                        ref={textareaRef}
-                        className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
-                        placeholder="Ask anything..."
-                        value={chatInput}
-                        onChange={(e) => setChatInput(e.target.value)}
-                         onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault();
-                                handleChatSubmit();
-                            }
-                        }}
-                        disabled={isAiThinking || isExtracting || !documentText}
-                        rows={1}
-                        style={{backgroundColor: '#303030'}}
-                    />
-                    <div className="absolute right-3 bottom-2 flex h-[36px] items-center gap-1">
-                        {isMobile && (
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={handleInsertNewline}
-                                className="w-8 h-8 rounded-full text-slate-400 hover:bg-white/10"
-                                aria-label="Insert new line"
-                            >
-                                <CornerDownLeft className="w-5 h-5" />
-                            </Button>
-                        )}
-                        <SendStopButton
-                            size='md'
-                            onSend={handleChatSubmit}
-                            onStop={handleStopAi}
-                            isSending={isAiThinking}
-                            disabled={!chatInput.trim() || isExtracting || !documentText}
-                        />
-                    </div>
-                </form>
+                <ChatInputForm 
+                  isMobile={isMobile}
+                  isAiThinking={isAiThinking}
+                  isExtracting={isExtracting}
+                  documentText={documentText}
+                  onChatSubmit={handleChatSubmit}
+                  onStopAi={handleStopAi}
+                />
               </div>
             </div>
 
@@ -541,4 +562,3 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         </div>
     );
 }
-

@@ -492,10 +492,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
 
     return (
-    <motion.div 
-        layout
+    <div
         ref={previewContainerRef}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
         className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden")}
     >
         <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
@@ -647,13 +645,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               />
             </div>
         </main>
-    </motion.div>
+    </div>
   )};
 
   return (
     <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent 
-        className="max-w-none w-screen h-[100dvh] p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0 gap-0"
+        className="max-w-none w-screen h-[var(--1dvh,100vh)] p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0 gap-0"
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
@@ -663,7 +661,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           </DialogDescription>
         </DialogHeader>
         
-        {renderFilePreview()}
+        <div className={cn("flex-1 flex flex-col transition-all duration-300 ease-in-out", showChat ? "w-1/2" : "w-full")}>
+            {renderFilePreview()}
+        </div>
+        
         
         <AnimatePresence>
           {showChat && (
