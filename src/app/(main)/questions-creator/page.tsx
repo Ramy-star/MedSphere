@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -10,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuestions, convertQuestionsToJson } from '@/ai/flows/question-gen-flow';
 import { contentService } from '@/lib/contentService';
-import { type PDFDocumentProxy } from 'pdfjs-dist';
+import { type PDFDocumentProxy, type PDFPageProxy } from 'pdfjs-dist';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDebounce } from 'use-debounce';
 import {
@@ -109,32 +110,102 @@ export default function QuestionsCreatorPage() {
     setIsGenerating(true);
 
     try {
-      let documentText = '';
-        if (file.type === 'application/pdf') {
-            const pdfjs = await import('pdfjs-dist');
-            pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-            const fileBuffer = await file.arrayBuffer();
-            const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
-            documentText = await contentService.extractTextFromPdf(pdf);
-        } else {
+        if (file.type !== 'application/pdf') {
             throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
         }
 
-      if (!documentText) throw new Error('Could not extract text from the file.');
+        const pdfjs = await import('pdfjs-dist');
+        const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
+        pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
+
+        const fileBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
+        
+        // 1. Extract text
+        const documentText = await contentService.extractTextFromPdf(pdf);
+
+        // 2. Extract images
+        const imageUris: string[] = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const operatorList = await page.getOperatorList();
+            
+            const imagePromises = operatorList.fnArray.reduce((acc: Promise<string | null>[], fn, j) => {
+                if (fn === pdfjs.OPS.paintImageXObject) {
+                    const imageName = operatorList.argsArray[j][0];
+                    const promise = page.objs.get(imageName, async (img: any) => {
+                        if (!img || !img.data) return null;
+                        
+                        const canvas = document.createElement('canvas');
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx) return null;
+
+                        const imageData = ctx.createImageData(img.width, img.height);
+                        if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
+                            // Grayscale image handling
+                            let i = 0;
+                            for (let j = 0; j < img.data.length; j++) {
+                                const b = img.data[j];
+                                for (let k = 0; k < 8; k++) {
+                                    const gray = (b & (1 << (7 - k))) ? 0 : 255;
+                                    imageData.data[i++] = gray;
+                                    imageData.data[i++] = gray;
+                                    imageData.data[i++] = gray;
+                                    imageData.data[i++] = 255;
+                                }
+                            }
+                        } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
+                            // RGB image handling
+                            let i = 0;
+                            for (let j = 0; j < img.data.length; j += 3) {
+                                imageData.data[i++] = img.data[j];
+                                imageData.data[i++] = img.data[j + 1];
+                                imageData.data[i++] = img.data[j + 2];
+                                imageData.data[i++] = 255;
+                            }
+                        } else {
+                            // For other kinds, just copy the data
+                             imageData.data.set(img.data);
+                        }
+                        ctx.putImageData(imageData, 0, 0);
+                        return canvas.toDataURL('image/png');
+                    });
+                    acc.push(promise);
+                }
+                return acc;
+            }, []);
+
+            const pageImages = await Promise.all(imagePromises);
+            pageImages.forEach(uri => {
+                if (uri) imageUris.push(uri);
+            });
+        }
+
+        if (!documentText && imageUris.length === 0) {
+            throw new Error('Could not extract any text or images from the file.');
+        }
+
+        // 3. Generate questions using text and images
+        const generatedText = await generateQuestions({
+            prompt: generationPrompt,
+            documentContent: documentText,
+            images: imageUris
+        });
+        setTextQuestions(generatedText);
       
-      const generatedText = await generateQuestions({ prompt: generationPrompt, documentContent: documentText });
-      setTextQuestions(generatedText);
-      
-      setIsConverting(true);
-      const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: generatedText });
-      setJsonQuestions(generatedJson);
+        // 4. Convert to JSON
+        setIsConverting(true);
+        const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: generatedText });
+        setJsonQuestions(generatedJson);
 
     } catch (err: any) {
-      console.error("Error during question generation process:", err);
-      setError(err.message || 'An unexpected error occurred.');
+        console.error("Error during question generation process:", err);
+        setError(err.message || 'An unexpected error occurred.');
     } finally {
-      setIsGenerating(false);
-      setIsConverting(false);
+        setIsGenerating(false);
+        setIsConverting(false);
     }
   };
 
@@ -333,7 +404,7 @@ export default function QuestionsCreatorPage() {
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col justify-end">
-                                <Button onClick={handleSaveCurrentQuestions} className="w-full rounded-2xl active:scale-95 transition-transform" disabled={!hasGeneratedContent}>
+                                <Button onClick={handleSaveCurrentQuestions} className="active:scale-95 transition-transform">
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
                             </CardContent>

@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI flows for the Questions Creator feature.
@@ -13,6 +14,7 @@ import { z } from 'genkit';
 const GenerateQuestionsInputSchema = z.object({
   prompt: z.string().describe('The user-defined prompt for generating questions.'),
   documentContent: z.string().describe('The text content extracted from the uploaded document.'),
+  images: z.array(z.string()).describe("A list of images from the document, as data URIs. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
 });
 export type GenerateQuestionsInput = z.infer<typeof GenerateQuestionsInputSchema>;
 
@@ -28,14 +30,20 @@ const generateQuestionsPrompt = ai.definePrompt({
     name: 'generateQuestionsPrompt',
     input: { schema: GenerateQuestionsInputSchema },
     prompt: `
-        You are an expert at creating educational material.
-        Follow the user's instructions precisely to generate questions from the document content.
+        You are an expert at creating educational material from documents.
+        Follow the user's instructions precisely to generate questions from the provided document content, which includes text and images.
+        Base your questions on both the text and the visual information in the images.
 
         USER'S PROMPT:
         {{{prompt}}}
 
-        DOCUMENT CONTENT:
+        DOCUMENT CONTENT (TEXT):
         {{{documentContent}}}
+
+        DOCUMENT CONTENT (IMAGES):
+        {{#each images}}
+        {{media url=this}}
+        {{/each}}
     `,
 });
 
@@ -65,7 +73,7 @@ export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise
     const response = await convertToJsonPrompt(input);
     const jsonOutput = response.output;
 
-    // Genkit's `output: { format: 'json' }` returns a JSON object. We need to stringify it.
+    // Genkit's \`output: { format: 'json' }\` returns a JSON object. We need to stringify it.
     if (typeof jsonOutput === 'object' && jsonOutput !== null) {
         return JSON.stringify(jsonOutput, null, 2);
     }
@@ -76,3 +84,5 @@ export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise
     // Fallback for unexpected types
     return 'Could not convert to JSON.';
 }
+
+    
