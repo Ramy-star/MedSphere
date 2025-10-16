@@ -189,7 +189,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
         >
           <Textarea
             ref={textareaRef}
-            className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
+            className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20 no-scrollbar"
             placeholder="Ask anything..."
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
