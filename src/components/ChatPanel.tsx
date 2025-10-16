@@ -161,8 +161,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
-       e.preventDefault();
-       handleSubmit();
+       // Allow default behavior (new line)
     }
   };
 
@@ -495,7 +494,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         return (
              <div
                 ref={chatPanelRef}
-                className="flex flex-col overflow-hidden w-full absolute inset-0 z-50"
+                className="flex flex-col overflow-hidden w-full absolute inset-0 z-50 transition-transform duration-300 ease-in-out"
                 style={{backgroundColor: '#212121', height: 'var(--1dvh, 100vh)'}}
             >
                 {chatViewContent}
@@ -505,7 +504,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     
     return (
         <div
-            className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 w-[512px]"
+            className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 w-[512px] transition-transform duration-300 ease-in-out"
             style={{backgroundColor: '#212121'}}
             aria-label="AI Chat Panel"
         >

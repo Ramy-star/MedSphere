@@ -15,7 +15,7 @@ import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 
 import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { AnimatePresence, motion } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 import {
   AlertDialog,
@@ -42,13 +42,8 @@ const ChatPanel = dynamic(() => import('./ChatPanel'), {
 });
 
 const ChatPanelSkeleton = () => (
-    <motion.div
-        layout
-        initial={{ width: 0, opacity: 0 }}
-        animate={{ width: 512, opacity: 1 }}
-        exit={{ width: 0, opacity: 0, transition: { duration: 0.2, ease: 'easeOut' } }}
-        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
-        className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10"
+    <div
+        className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 w-[512px]"
         style={{backgroundColor: '#212121'}}
         aria-label="AI Chat Panel"
     >
@@ -70,7 +65,7 @@ const ChatPanelSkeleton = () => (
                 </div>
             </div>
         </div>
-    </motion.div>
+    </div>
 );
 
 
@@ -665,21 +660,25 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           </DialogDescription>
         </DialogHeader>
         
-        <div className={cn("flex-1 flex flex-col transition-all duration-300 ease-in-out", showChat ? "w-1/2" : "w-full")}>
+        <div className={cn("flex-1 flex flex-col transition-all duration-300 ease-in-out", showChat && !isMobile ? "w-[calc(100%-512px)]" : "w-full")}>
             {renderFilePreview()}
         </div>
         
         
-        <AnimatePresence>
-          {showChat && (
-              <ChatPanel
+        <div className={cn(
+            "fixed top-0 h-full md:relative md:h-auto transition-transform duration-300 ease-in-out",
+            isMobile ? 'w-full z-20' : 'w-[512px]',
+            showChat ? 'translate-x-0' : 'translate-x-full'
+        )}>
+          {isChatAvailable && (
+             <ChatPanel
                   isMobile={isMobile}
                   documentText={documentText}
                   isExtracting={isExtracting}
                   onClose={() => setShowChat(false)}
               />
           )}
-        </AnimatePresence>
+        </div>
 
       </DialogContent>
     </Dialog>
