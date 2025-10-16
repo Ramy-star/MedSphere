@@ -269,10 +269,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [item, resetPdfState]);
   
-  const handleClose = () => {
+  const handleClose = useCallback(() => {
     onOpenChange(false);
+    // Add a delay to allow the dialog to animate out before resetting state
     setTimeout(resetPdfState, 300);
-  };
+  }, [onOpenChange, resetPdfState]);
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));

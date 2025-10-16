@@ -23,7 +23,6 @@ import { Textarea } from './ui/textarea';
 import { Skeleton } from './ui/skeleton';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import { cn } from '@/lib/utils';
-import SendStopButton from './SendStopButton';
 import { Progress } from './ui/progress';
 import { CopyIcon } from './icons/CopyIcon';
 
@@ -145,7 +144,6 @@ const ChatInputForm = React.memo(function ChatInputForm({
   documentText,
   onChatSubmit,
   onStopAi,
-  inputContainerRef,
 }: {
   isMobile: boolean;
   isAiThinking: boolean;
@@ -153,12 +151,11 @@ const ChatInputForm = React.memo(function ChatInputForm({
   documentText: string | null;
   onChatSubmit: (input: string) => Promise<void>;
   onStopAi: () => void;
-  inputContainerRef: React.RefObject<HTMLDivElement>;
 }) {
   const [chatInput, setChatInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = (e?: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
     if (isAiThinking || !chatInput.trim()) return;
     onChatSubmit(chatInput);
@@ -166,7 +163,8 @@ const ChatInputForm = React.memo(function ChatInputForm({
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // Allows new line with Shift+Enter, and sends with Enter on desktop
+    if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
       e.preventDefault();
       handleSubmit();
     }
@@ -183,13 +181,6 @@ const ChatInputForm = React.memo(function ChatInputForm({
   }, [chatInput]);
 
   return (
-    <div
-        ref={inputContainerRef}
-        className={cn(
-            "w-full z-20 will-change-transform",
-            isMobile ? "fixed bottom-0 left-0 right-0" : "absolute bottom-0 left-0 right-0"
-        )}
-    >
       <div className='p-2' style={{backgroundColor: '#212121'}}>
         <form
           onSubmit={handleSubmit}
@@ -200,7 +191,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
         >
           <Textarea
             ref={textareaRef}
-            className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-24 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
+            className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20"
             placeholder="Ask anything..."
             value={chatInput}
             onChange={(e) => setChatInput(e.target.value)}
@@ -209,21 +200,23 @@ const ChatInputForm = React.memo(function ChatInputForm({
             rows={1}
             style={{backgroundColor: '#303030'}}
           />
-          <div className="absolute right-3 bottom-2 flex h-[36px] items-center gap-1">
-             <SendStopButton
-                size='md'
-                onSend={() => handleSubmit()}
-                onStop={onStopAi}
-                isSending={isAiThinking}
-                disabled={!chatInput.trim() || isExtracting || !documentText}
-            />
+          <div className="absolute right-2 bottom-2 flex h-[36px] items-center gap-1">
+             {chatInput.trim() && (
+                <Button 
+                    type="submit" 
+                    size="icon" 
+                    className="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={handleSubmit}
+                    disabled={isAiThinking || !chatInput.trim()}
+                >
+                    <CornerDownLeft className="w-5 h-5" />
+                </Button>
+            )}
           </div>
         </form>
       </div>
-    </div>
   );
 });
-
 
 export default function ChatPanel({ isMobile, documentText, isExtracting, onClose }: ChatPanelProps) {
     const { toast } = useToast();
@@ -239,50 +232,56 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     
     const inputContainerRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const [keyboardOffset, setKeyboardOffset] = useState(0);
 
     // This effect handles keyboard appearance on mobile.
     useEffect(() => {
-        const inputContainer = inputContainerRef.current;
-        const messagesContainer = messagesContainerRef.current;
+        const inputRef = inputContainerRef.current;
+        const messagesRef = messagesContainerRef.current;
         
-        if (!isMobile || !inputContainer || !messagesContainer || typeof window === 'undefined' || !window.visualViewport) {
+        if (!isMobile || !inputRef || !messagesRef || typeof window === 'undefined' || !window.visualViewport) {
             return;
         }
-        
+
         const vv = window.visualViewport;
-        let initialInputHeight = inputContainer.offsetHeight;
+        if (!vv) return;
+
+        let initialInputHeight = inputRef.offsetHeight;
 
         const handleResize = () => {
-            if (!vv || !inputContainer || !messagesContainer) return;
-            
-            const keyboardOffset = window.innerHeight - vv.height;
-            const currentInputHeight = inputContainer.offsetHeight;
-
+            const offset = window.innerHeight - vv.height;
             requestAnimationFrame(() => {
-                inputContainer.style.transform = `translateY(-${keyboardOffset}px)`;
-                messagesContainer.style.paddingBottom = `${keyboardOffset + currentInputHeight}px`;
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+              if (inputRef) {
+                inputRef.style.transform = `translateY(-${offset}px)`;
+              }
+              if (messagesRef) {
+                messagesRef.style.paddingBottom = `${offset + initialInputHeight}px`;
+                messagesRef.scrollTop = messagesRef.scrollHeight;
+              }
             });
         };
-
+        
         const observer = new ResizeObserver(() => {
-            if (inputContainer) {
-                handleResize(); // Recalculate layout when input height changes
+            if (inputRef) {
+                initialInputHeight = inputRef.offsetHeight; // Update height on resize (e.g. textarea grows)
+                handleResize();
             }
         });
         
-        observer.observe(inputContainer);
+        observer.observe(inputRef);
         vv.addEventListener('resize', handleResize);
         
-        // Initial call
-        messagesContainer.style.paddingBottom = `${initialInputHeight}px`;
+        // Initial setup
+        if (messagesRef) {
+          messagesRef.style.paddingBottom = `${initialInputHeight}px`;
+        }
         handleResize();
 
         return () => {
             vv.removeEventListener('resize', handleResize);
             observer.disconnect();
-            if (inputContainer) inputContainer.style.transform = '';
-            if (messagesContainer) messagesContainer.style.paddingBottom = `${initialInputHeight}px`;
+            if (inputRef) inputRef.style.transform = '';
+            if (messagesRef) messagesRef.style.paddingBottom = `${initialInputHeight}px`;
         };
     }, [isMobile]);
 
@@ -387,8 +386,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
 
 
     const chatViewContent = (
-      <div className="flex flex-col h-full w-full overflow-hidden relative">
-            <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 sticky top-0 z-20", isMobile ? "bg-[#212121]" : "bg-transparent")}>
+      <div className="flex flex-col h-full w-full overflow-hidden">
+            <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14", isMobile ? "bg-[#212121]" : "bg-transparent")}>
                 <div className="flex items-center gap-2">
                     <AiAssistantIcon className="h-6 w-6" />
                     <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -483,15 +482,22 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </div>
             </div>
             
-            <ChatInputForm 
-              isMobile={isMobile}
-              isAiThinking={isAiThinking}
-              isExtracting={isExtracting}
-              documentText={documentText}
-              onChatSubmit={handleChatSubmit}
-              onStopAi={handleStopAi}
-              inputContainerRef={inputContainerRef}
-            />
+            <div
+                ref={inputContainerRef}
+                className={cn(
+                    "w-full z-20",
+                    isMobile ? "fixed bottom-0 left-0 right-0" : "relative"
+                )}
+            >
+              <ChatInputForm 
+                isMobile={isMobile}
+                isAiThinking={isAiThinking}
+                isExtracting={isExtracting}
+                documentText={documentText}
+                onChatSubmit={handleChatSubmit}
+                onStopAi={handleStopAi}
+              />
+            </div>
 
             <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
                 <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
@@ -513,7 +519,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     if (isMobile) {
         return (
              <div
-                className="flex flex-col overflow-hidden h-full w-full absolute inset-0 z-50"
+                className="flex flex-col overflow-hidden w-full absolute inset-0 z-50"
                 style={{backgroundColor: '#212121', height: 'var(--1dvh, 100vh)'}}
             >
                 {chatViewContent}
