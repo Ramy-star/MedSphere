@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -12,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -222,6 +221,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const [showChat, setShowChat] = useState(false);
+  const [selection, setSelection] = useState<{ text: string, popoverStyle: React.CSSProperties } | null>(null);
   
   const [documentText, setDocumentText] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -254,6 +254,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setDocumentText(null);
     setIsExtracting(false);
     setShowChat(false);
+    setSelection(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -638,9 +639,31 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   onPageChange={onPageChange}
                   isFullscreen={isFullscreen}
                   currentPage={pageNumber}
+                  onSelection={setSelection}
               />
             </div>
         </main>
+        {selection && (
+            <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="absolute z-20"
+                style={selection.popoverStyle}
+            >
+                <Button
+                    className="rounded-full h-9 bg-slate-800 text-white shadow-2xl border border-white/10 hover:bg-slate-700"
+                    onMouseDown={(e) => { // use onMouseDown to fire before selection is lost
+                        e.preventDefault();
+                        setShowChat(true);
+                        // Future: Pass selection.text to chat panel
+                        setSelection(null);
+                    }}
+                >
+                    <Wand2 className="w-4 h-4 mr-2 text-yellow-300" />
+                    Ask AI
+                </Button>
+            </motion.div>
+        )}
     </div>
   )};
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, forwardRef } from 'react';
@@ -22,12 +21,13 @@ type FilePreviewProps = {
   onPageChange?: (page: number) => void;
   isFullscreen?: boolean;
   currentPage?: number;
+  onSelection: (selection: { text: string, popoverStyle: React.CSSProperties } | null) => void;
 };
 
 // Define the type for the ref handle
 export type FilePreviewRef = PdfViewerRef;
 
-const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage }, ref) => {
+const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage, onSelection }, ref) => {
   const [contentUrl, setContentUrl] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const isMobile = useIsMobile();
@@ -98,7 +98,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
   
   if (mime === 'application/pdf') {
-    return <div {...commonProps} className={cn(commonProps.className, 'w-full h-full')}><PdfViewer ref={ref} file={contentUrl} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} isFullscreen={isFullscreen} currentPage={currentPage} /></div>;
+    return <div {...commonProps} className={cn(commonProps.className, 'w-full h-full')}><PdfViewer ref={ref} file={contentUrl} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} isFullscreen={isFullscreen} currentPage={currentPage} onSelection={onSelection} /></div>;
   }
   
   if (mime.startsWith('audio/')) {

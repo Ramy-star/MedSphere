@@ -4,33 +4,89 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { generateQuestions, convertQuestionsToJson } from '@/ai/flows/question-gen-flow';
+import { contentService } from '@/lib/contentService';
+import { type PDFDocumentProxy } from 'pdfjs-dist';
 
 export default function QuestionsCreatorPage() {
-  const [generationPrompt, setGenerationPrompt] = useState('');
-  const [jsonPrompt, setJsonPrompt] = useState('');
+  const [generationPrompt, setGenerationPrompt] = useState('Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.');
+  const [jsonPrompt, setJsonPrompt] = useState('Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.');
   const [isDragging, setIsDragging] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [textQuestions, setTextQuestions] = useState<string | null>(null);
   const [jsonQuestions, setJsonQuestions] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [isConverting, setIsConverting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const { toast } = useToast();
 
   const handleSavePrompts = () => {
-    // In a real app, you'd save this to localStorage, a DB, or state management
+    // In a real app, you'd save this to localStorage or a DB
+    localStorage.setItem('questionGenPrompt', generationPrompt);
+    localStorage.setItem('questionJsonPrompt', jsonPrompt);
     toast({
       title: 'Prompts Saved',
       description: 'Your question generation prompts have been updated.',
     });
   };
 
+  const processFile = async (file: File) => {
+    setFileName(file.name);
+    setTextQuestions(null);
+    setJsonQuestions(null);
+    setError(null);
+    setIsGenerating(true);
+
+    try {
+      let documentText = '';
+      if (file.type === 'application/pdf') {
+        const pdfjs = await import('pdfjs-dist');
+        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+        const fileBuffer = await file.arrayBuffer();
+        const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
+        documentText = await contentService.extractTextFromPdf(pdf);
+      } else {
+        documentText = await file.text();
+      }
+
+      if (!documentText) {
+        throw new Error('Could not extract text from the file.');
+      }
+      
+      const generatedText = await generateQuestions({
+        prompt: generationPrompt,
+        documentContent: documentText,
+      });
+
+      setTextQuestions(generatedText);
+      setIsGenerating(false);
+      
+      // Automatically start JSON conversion
+      setIsConverting(true);
+      const generatedJson = await convertQuestionsToJson({
+        prompt: jsonPrompt,
+        questionsText: generatedText,
+      });
+
+      setJsonQuestions(generatedJson);
+      setIsConverting(false);
+
+    } catch (err: any) {
+      console.error("Error during question generation process:", err);
+      setError(err.message || 'An unexpected error occurred.');
+      setIsGenerating(false);
+      setIsConverting(false);
+    }
+  }
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setFileName(file.name);
-      // Here you would start the upload and generation process
+      processFile(e.target.files[0]);
     }
   };
 
@@ -39,26 +95,17 @@ export default function QuestionsCreatorPage() {
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      const file = e.dataTransfer.files[0];
-      setFileName(file.name);
-      // Here you would start the upload and generation process
+      processFile(e.dataTransfer.files[0]);
     }
   };
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(true);
   };
-
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
   };
   
@@ -94,7 +141,6 @@ export default function QuestionsCreatorPage() {
                   </label>
                   <Textarea
                     id="gen-prompt"
-                    placeholder="e.g., 'Generate 10 multiple-choice questions based on the following text...'"
                     value={generationPrompt}
                     onChange={(e) => setGenerationPrompt(e.target.value)}
                     className="h-32 bg-slate-800/50 border-slate-700 rounded-xl"
@@ -106,7 +152,6 @@ export default function QuestionsCreatorPage() {
                   </label>
                   <Textarea
                     id="json-prompt"
-                    placeholder="e.g., 'Convert the following questions into a JSON array with fields: question, options, answer...'"
                     value={jsonPrompt}
                     onChange={(e) => setJsonPrompt(e.target.value)}
                     className="h-32 bg-slate-800/50 border-slate-700 rounded-xl"
@@ -133,7 +178,8 @@ export default function QuestionsCreatorPage() {
                   onDragLeave={handleDragLeave}
                   className={cn(
                     "relative border-2 border-dashed border-slate-600 rounded-xl p-8 text-center cursor-pointer transition-colors duration-300",
-                    isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/20"
+                    isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/20",
+                    (isGenerating || isConverting) && "pointer-events-none opacity-60"
                   )}
                 >
                   <input
@@ -142,6 +188,7 @@ export default function QuestionsCreatorPage() {
                     className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     onChange={handleFileChange}
                     accept=".pdf,.docx,.txt,.pptx"
+                    disabled={isGenerating || isConverting}
                   />
                   <div className="flex flex-col items-center justify-center text-slate-400">
                     <UploadCloud className="h-12 w-12 mb-4" />
@@ -151,6 +198,12 @@ export default function QuestionsCreatorPage() {
                     <p className="text-xs mt-1">PDF, DOCX, TXT, PPTX</p>
                   </div>
                 </div>
+                 {error && (
+                    <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
+                        <AlertCircle className="h-5 w-5" />
+                        <p className="text-sm">{error}</p>
+                    </div>
+                )}
               </CardContent>
             </Card>
           </motion.div>
@@ -165,23 +218,37 @@ export default function QuestionsCreatorPage() {
                 <CardDescription>Questions generated by the AI in plain text format.</CardDescription>
               </CardHeader>
               <CardContent>
-                <pre className="text-sm text-slate-300 bg-slate-800/50 p-4 rounded-xl whitespace-pre-wrap font-code">
-                  {textQuestions || 'Generated questions will appear here...'}
-                </pre>
+                {isGenerating ? (
+                    <div className="flex items-center justify-center h-24">
+                        <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+                        <p className="ml-3 text-slate-300">Generating questions...</p>
+                    </div>
+                ) : (
+                    <pre className="text-sm text-slate-300 bg-slate-800/50 p-4 rounded-xl whitespace-pre-wrap font-code max-h-96 overflow-auto">
+                        {textQuestions || 'Generated questions will appear here...'}
+                    </pre>
+                )}
               </CardContent>
             </Card>
           </motion.div>
 
-          <motion.div variants={cardVariants} initial.hidden="hidden" animate.visible="visible" transition={{ delay: 0.6 }}>
+          <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.6 }}>
             <Card className="glass-card min-h-[250px]">
               <CardHeader>
                 <CardTitle className="flex items-center"><FileJson className="mr-3 text-green-400" /> JSON Questions</CardTitle>
                 <CardDescription>Questions automatically converted to structured JSON.</CardDescription>
               </CardHeader>
               <CardContent>
-                 <pre className="text-sm text-slate-300 bg-slate-800/50 p-4 rounded-xl whitespace-pre-wrap font-code">
-                  {jsonQuestions || 'JSON output will appear here...'}
-                </pre>
+                {isConverting ? (
+                    <div className="flex items-center justify-center h-24">
+                        <Loader2 className="h-8 w-8 text-green-400 animate-spin" />
+                        <p className="ml-3 text-slate-300">Converting to JSON...</p>
+                    </div>
+                 ) : (
+                    <pre className="text-sm text-slate-300 bg-slate-800/50 p-4 rounded-xl whitespace-pre-wrap font-code max-h-96 overflow-auto">
+                        {jsonQuestions || 'JSON output will appear here...'}
+                    </pre>
+                 )}
               </CardContent>
             </Card>
           </motion.div>
