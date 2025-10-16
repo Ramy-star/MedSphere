@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, forwardRef } from 'react';
@@ -149,7 +150,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
             '--tw-prose-pre-bg': '#1A202C',
             '--tw-prose-th-borders': '#4A5568',
             '--tw-prose-td-borders': '#4A5568',
-        }}
+        } as React.CSSProperties}
       >
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content as string}</ReactMarkdown>
       </div>
