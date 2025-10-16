@@ -2,19 +2,30 @@
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, DocumentData, DocumentReference } from 'firebase/firestore';
 import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
-export function useDoc<T extends { id: string }>(collectionPath: string, docId?: string) {
+export function useDoc<T extends { id: string }>(collectionPathOrRef: string | DocumentReference, docId?: string) {
   const { db } = useFirebase();
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
+  const docRef = useMemo(() => {
+    if (typeof collectionPathOrRef === 'string') {
+      if (!docId || !db) return null;
+      return doc(db, collectionPathOrRef, docId);
+    }
+    return collectionPathOrRef;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [db, collectionPathOrRef, docId]);
+  
+  const path = typeof collectionPathOrRef === 'string' ? `${collectionPathOrRef}/${docId}` : collectionPathOrRef.path;
+
   useEffect(() => {
-    if (!docId || !db) {
+    if (!docRef || !db) {
       setData(null);
       setLoading(false);
       return;
@@ -23,7 +34,6 @@ export function useDoc<T extends { id: string }>(collectionPath: string, docId?:
     setLoading(true);
     let isMounted = true;
 
-    const docRef = doc(db, collectionPath, docId);
     const unsubscribe = onSnapshot(
       docRef,
       (doc) => {
@@ -40,12 +50,12 @@ export function useDoc<T extends { id: string }>(collectionPath: string, docId?:
       },
       (err) => {
         if (!isMounted) return;
-        console.error(`Error fetching document ${collectionPath}/${docId}:`, err);
+        console.error(`Error fetching document ${path}:`, err);
         setError(err);
         setLoading(false);
          if (err.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-                path: `${collectionPath}/${docId}`,
+                path: path,
                 operation: 'get',
             });
             errorEmitter.emit('permission-error', permissionError);
@@ -57,7 +67,7 @@ export function useDoc<T extends { id: string }>(collectionPath: string, docId?:
         isMounted = false;
         unsubscribe();
     };
-  }, [db, collectionPath, docId]);
+  }, [db, docRef, path]);
 
   return { data, loading, error };
 }

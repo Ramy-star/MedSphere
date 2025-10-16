@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +20,11 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { notFound, useRouter } from 'next/navigation';
+import { useDoc, useCollection } from '@/firebase/firestore/use-doc';
+import { useUser } from '@/firebase/auth/use-user';
+import { updateDoc, doc } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { Input } from '@/components/ui/input';
 
 
 type SavedQuestionSet = {
@@ -28,58 +33,50 @@ type SavedQuestionSet = {
   textQuestions: string;
   jsonQuestions: string;
   createdAt: string;
+  userId: string;
 };
 
-export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
+function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
-  const { id } = params;
-  const [questionSet, setQuestionSet] = useState<SavedQuestionSet | null>(null);
+  const { user } = useUser();
+  const { data: questionSet, loading } = useDoc<SavedQuestionSet>(`users/${user?.uid}/questionSets`, id);
+
   const [isEditing, setIsEditing] = useState({ text: false, json: false });
   const [editingContent, setEditingContent] = useState({ text: '', json: '' });
   const [isRepairing, setIsRepairing] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json'} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [editingTitle, setEditingTitle] = useState('');
 
 
   const { toast } = useToast();
 
   useEffect(() => {
-    const storedQuestions = localStorage.getItem('savedQuestionSets');
-    if (storedQuestions) {
-      const sets: SavedQuestionSet[] = JSON.parse(storedQuestions);
-      const currentSet = sets.find(s => s.id === id);
-      if (currentSet) {
-        setQuestionSet(currentSet);
-        setEditingContent({ text: currentSet.textQuestions, json: currentSet.jsonQuestions });
-      } else {
+    if (loading) return;
+    if (!questionSet) {
         notFound();
-      }
     } else {
-      notFound();
+        setEditingContent({ text: questionSet.textQuestions, json: questionSet.jsonQuestions });
+        setEditingTitle(questionSet.fileName);
     }
-  }, [id]);
+  }, [id, questionSet, loading]);
 
-  const updateQuestionSet = (updatedSet: SavedQuestionSet) => {
-    const storedQuestions = localStorage.getItem('savedQuestionSets');
-    if (storedQuestions) {
-      let sets: SavedQuestionSet[] = JSON.parse(storedQuestions);
-      sets = sets.map(s => s.id === id ? updatedSet : s);
-      localStorage.setItem('savedQuestionSets', JSON.stringify(sets));
-      setQuestionSet(updatedSet);
-    }
+  const updateQuestionSet = async (updatedData: Partial<SavedQuestionSet>) => {
+    if (!user?.uid || !id) return;
+    const docRef = doc(db, `users/${user.uid}/questionSets`, id);
+    await updateDoc(docRef, updatedData);
   };
   
-  const handleToggleEdit = (type: 'text' | 'json') => {
+  const handleToggleEdit = async (type: 'text' | 'json') => {
     if (isEditing[type]) {
       // Save
       if (questionSet) {
-        const updatedSet = {
-          ...questionSet,
-          textQuestions: type === 'text' ? editingContent.text : questionSet.textQuestions,
-          jsonQuestions: type === 'json' ? editingContent.json : questionSet.jsonQuestions,
+        const updatedData = {
+          [type === 'text' ? 'textQuestions' : 'jsonQuestions']: editingContent[type],
         };
-        updateQuestionSet(updatedSet);
+        await updateQuestionSet(updatedData);
         toast({ title: 'Saved', description: `${type === 'text' ? 'Text' : 'JSON'} questions have been updated.` });
       }
     }
@@ -95,8 +92,7 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
             desiredSchema: localStorage.getItem('questionJsonPrompt') || '',
         });
         
-        const updatedSet = { ...questionSet, jsonQuestions: repaired };
-        updateQuestionSet(updatedSet);
+        await updateQuestionSet({ jsonQuestions: repaired });
         setEditingContent(prev => ({...prev, json: repaired}));
         setJsonError(null);
         toast({
@@ -168,16 +164,14 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
     URL.revokeObjectURL(url);
   };
   
-  const handlePreviewSave = () => {
+  const handlePreviewSave = async () => {
     if (!previewContent || !questionSet) return;
     const { type, content } = previewContent;
     
-    const updatedSet = {
-        ...questionSet,
-        textQuestions: type === 'text' ? content : questionSet.textQuestions,
-        jsonQuestions: type === 'json' ? content : questionSet.jsonQuestions,
+    const updatedData = {
+        [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content,
     };
-    updateQuestionSet(updatedSet);
+    await updateQuestionSet(updatedData);
     
     if (type === 'text') setEditingContent(prev => ({...prev, text: content}));
     if (type === 'json') setEditingContent(prev => ({...prev, json: content}));
@@ -185,9 +179,17 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
     setIsPreviewEditing(false);
     toast({ title: 'Content Updated' });
   };
+  
+  const handleTitleSave = async () => {
+      if (editingTitle && questionSet && editingTitle !== questionSet.fileName) {
+          await updateQuestionSet({ fileName: editingTitle });
+          toast({ title: 'Title Updated' });
+      }
+      setIsEditingTitle(false);
+  }
 
 
-  if (!questionSet) {
+  if (loading || !questionSet) {
     return (
         <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
@@ -273,11 +275,30 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full mr-2" onClick={() => router.back()}>
                 <ArrowLeft className="h-5 w-5" />
             </Button>
-            <div>
-                <h1 className="text-2xl font-bold text-white">{questionSet.fileName}</h1>
-                <p className="text-sm text-slate-400">{new Date(questionSet.createdAt).toLocaleString()}</p>
-            </div>
+            {isEditingTitle ? (
+                <div className="flex items-center gap-2">
+                    <Input 
+                        value={editingTitle}
+                        onChange={e => setEditingTitle(e.target.value)}
+                        className="h-9 text-2xl font-bold bg-transparent border-b-2 border-blue-500 focus:ring-0 text-white"
+                        autoFocus
+                        onBlur={handleTitleSave}
+                        onKeyDown={e => e.key === 'Enter' && handleTitleSave()}
+                    />
+                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={handleTitleSave}>
+                        <Check className="h-5 w-5 text-green-400" />
+                    </Button>
+                </div>
+            ) : (
+                <div className="flex items-center gap-2">
+                    <h1 className="text-2xl font-bold text-white">{questionSet.fileName}</h1>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={() => setIsEditingTitle(true)}>
+                        <Pencil className="h-5 w-5" />
+                    </Button>
+                </div>
+            )}
         </div>
+         <p className="text-sm text-slate-400 mb-6 ml-12 -mt-4">{new Date(questionSet.createdAt).toLocaleString()}</p>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, questionSet.textQuestions, 'text')}
@@ -318,3 +339,23 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
   );
 }
 
+
+export default function SavedQuestionSetPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
+  const { user, loading } = useUser();
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    // Or a login prompt
+    return <div className="text-center p-8">Please log in to view saved questions.</div>
+  }
+  
+  return <SavedQuestionSetPageContent id={id} />;
+}

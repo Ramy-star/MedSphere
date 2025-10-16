@@ -27,6 +27,10 @@ import { jsPDF } from 'jspdf';
 import { Packer, Document as DocxDocument, Paragraph, TextRun } from 'docx';
 import JSZip from 'jszip';
 import Link from 'next/link';
+import { useUser } from '@/firebase/auth/use-user';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
 
 
 type SavedQuestionSet = {
@@ -35,6 +39,7 @@ type SavedQuestionSet = {
   textQuestions: string;
   jsonQuestions: string;
   createdAt: string;
+  userId: string;
 };
 
 type EditingState = {
@@ -54,7 +59,7 @@ export default function QuestionsCreatorPage() {
   const [error, setError] = useState<string | null>(null);
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [isRepairing, setIsRepairing] = useState(false);
-  const [savedQuestions, setSavedQuestions] = useState<SavedQuestionSet[]>([]);
+  
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
@@ -73,16 +78,18 @@ export default function QuestionsCreatorPage() {
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
   const [debouncedJsonPrompt] = useDebounce(jsonPrompt, 500);
 
+  const { user } = useUser();
+  const { data: savedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
+    user ? `users/${user.uid}/questionSets` : '',
+    { orderBy: ['createdAt', 'desc'], disabled: !user }
+  );
+
   const { toast } = useToast();
 
-  // Load prompts and saved questions from localStorage on mount
+  // Load prompts from localStorage on mount
   useEffect(() => {
     setGenerationPrompt(localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.');
     setJsonPrompt(localStorage.getItem('questionJsonPrompt') || 'Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.');
-    const storedQuestions = localStorage.getItem('savedQuestionSets');
-    if (storedQuestions) {
-      setSavedQuestions(JSON.parse(storedQuestions));
-    }
   }, []);
 
   // Save prompts to localStorage on change
@@ -94,32 +101,39 @@ export default function QuestionsCreatorPage() {
     if (debouncedJsonPrompt) localStorage.setItem('questionJsonPrompt', debouncedJsonPrompt);
   }, [debouncedJsonPrompt]);
 
-  // Save question sets to localStorage
-  useEffect(() => {
-    localStorage.setItem('savedQuestionSets', JSON.stringify(savedQuestions));
-  }, [savedQuestions]);
 
-  const handleSaveCurrentQuestions = () => {
-    if (!textQuestions || !jsonQuestions || !fileName) {
+  const handleSaveCurrentQuestions = async () => {
+    if (!textQuestions || !jsonQuestions || !fileName || !user) {
       toast({
         variant: 'destructive',
         title: 'Cannot Save',
-        description: 'You must generate questions before saving.',
+        description: 'You must be logged in and have generated questions before saving.',
       });
       return;
     }
-    const newSet: SavedQuestionSet = {
-      id: `qs-${Date.now()}`,
-      fileName,
-      textQuestions,
-      jsonQuestions,
-      createdAt: new Date().toISOString(),
-    };
-    setSavedQuestions(prev => [newSet, ...prev]);
-    toast({
-      title: 'Questions Saved',
-      description: `The questions for "${fileName}" have been saved.`,
-    });
+
+    try {
+      const collectionRef = collection(db, `users/${user.uid}/questionSets`);
+      await addDoc(collectionRef, {
+          fileName,
+          textQuestions,
+          jsonQuestions,
+          createdAt: new Date().toISOString(),
+          userId: user.uid,
+      });
+
+      toast({
+        title: 'Questions Saved',
+        description: `The questions for "${fileName}" have been saved to your account.`,
+      });
+    } catch(err) {
+       console.error("Error saving question set:", err);
+       toast({
+        variant: 'destructive',
+        title: 'Save Failed',
+        description: 'Could not save the question set to the cloud.',
+      });
+    }
   };
 
   const processFile = async (file: File) => {
@@ -152,50 +166,49 @@ export default function QuestionsCreatorPage() {
                 const imagePromises = operatorList.fnArray.reduce((acc: Promise<string | null>[], fn, j) => {
                     if (fn === pdfjs.OPS.paintImageXObject) {
                         const imageName = operatorList.argsArray[j][0];
-                        const promise = new Promise<string | null>((resolve) => {
-                             page.objs.get(imageName, (img: any) => {
-                                if (!img || !img.data) {
-                                    resolve(null);
-                                    return;
-                                }
-                                
-                                const canvas = document.createElement('canvas');
-                                canvas.width = img.width;
-                                canvas.height = img.height;
-                                const ctx = canvas.getContext('2d');
-                                if (!ctx) {
-                                    resolve(null);
-                                    return;
-                                }
+                         const promise = page.objs.get(imageName).then((img: any) => {
+                            if (!img || !img.data) {
+                                return null;
+                            }
+                            
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            if (!ctx) {
+                                return null;
+                            }
 
-                                const imageData = ctx.createImageData(img.width, img.height);
-                                if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
-                                    let k = 0;
-                                    for (let i = 0; i < img.data.length; i++) {
-                                        const b = img.data[i];
-                                        for (let bit = 0; bit < 8; bit++) {
-                                            if (k >= imageData.data.length) break;
-                                            const gray = (b & (1 << (7 - bit))) ? 0 : 255;
-                                            imageData.data[k++] = gray;
-                                            imageData.data[k++] = gray;
-                                            imageData.data[k++] = gray;
-                                            imageData.data[k++] = 255;
-                                        }
+                            const imageData = ctx.createImageData(img.width, img.height);
+                            if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
+                                let k = 0;
+                                for (let i = 0; i < img.data.length; i++) {
+                                    const b = img.data[i];
+                                    for (let bit = 0; bit < 8; bit++) {
+                                        if (k >= imageData.data.length) break;
+                                        const gray = (b & (1 << (7 - bit))) ? 0 : 255;
+                                        imageData.data[k++] = gray;
+                                        imageData.data[k++] = gray;
+                                        imageData.data[k++] = gray;
+                                        imageData.data[k++] = 255;
                                     }
-                                } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
-                                    let i = 0;
-                                    for (let j = 0; j < img.data.length; j += 3) {
-                                        imageData.data[i++] = img.data[j];
-                                        imageData.data[i++] = img.data[j + 1];
-                                        imageData.data[i++] = img.data[j + 2];
-                                        imageData.data[i++] = 255;
-                                    }
-                                } else {
-                                    imageData.data.set(img.data);
                                 }
-                                ctx.putImageData(imageData, 0, 0);
-                                resolve(canvas.toDataURL('image/png'));
-                            });
+                            } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
+                                let i = 0;
+                                for (let j = 0; j < img.data.length; j += 3) {
+                                    imageData.data[i++] = img.data[j];
+                                    imageData.data[i++] = img.data[j + 1];
+                                    imageData.data[i++] = img.data[j + 2];
+                                    imageData.data[i++] = 255;
+                                }
+                            } else {
+                                imageData.data.set(img.data);
+                            }
+                            ctx.putImageData(imageData, 0, 0);
+                            return canvas.toDataURL('image/png');
+                        }).catch(err => {
+                             console.error("Error processing image object:", err);
+                             return null;
                         });
                         acc.push(promise);
                     }
@@ -207,8 +220,32 @@ export default function QuestionsCreatorPage() {
                     if (uri) imageUris.push(uri);
                 });
             }
+        } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation' || file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+             const zip = await JSZip.loadAsync(file);
+             const textPromises: Promise<string>[] = [];
+             
+             if(file.type.includes('presentation')) { // PPTX
+                const slideMasters = /ppt\/slides\/_rels\/slide\d+\.xml\.rels/;
+                zip.forEach((relativePath, zipEntry) => {
+                    if (slideMasters.test(relativePath)) {
+                        textPromises.push(zipEntry.async('string').then(xml => {
+                            const slidePath = xml.match(/Target="..\/slides\/slide(\d+)\.xml"/);
+                            if (slidePath && slidePath[1]) {
+                                return zip.file(`ppt/slides/slide${slidePath[1]}.xml`)?.async('string') || '';
+                            }
+                            return '';
+                        }));
+                    }
+                });
+             } else { // DOCX
+                 textPromises.push(zip.file('word/document.xml')?.async('string') || Promise.resolve(''));
+             }
+
+            const allXmls = await Promise.all(textPromises);
+            documentText = allXmls.join(' ').replace(/<[^>]+>/g, ' ');
+
         } else {
-             throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
+             throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF, DOCX, or PPTX file.`);
         }
 
         if (!documentText && imageUris.length === 0) {
@@ -345,15 +382,19 @@ export default function QuestionsCreatorPage() {
     setEditingName(set.fileName);
   };
 
-  const handleSaveEditName = (id: string) => {
-    setSavedQuestions(prev => prev.map(s => s.id === id ? { ...s, fileName: editingName } : s));
+  const handleSaveEditName = async (id: string) => {
+    if (!user) return;
+    const docRef = doc(db, `users/${user.uid}/questionSets`, id);
+    await updateDoc(docRef, { fileName: editingName });
     setEditingId(null);
   };
 
-  const handleDeleteSet = (id: string, e: React.MouseEvent) => {
+  const handleDeleteSet = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    setSavedQuestions(prev => prev.filter(s => s.id !== id));
+    if (!user) return;
+    const docRef = doc(db, `users/${user.uid}/questionSets`, id);
+    await deleteDoc(docRef);
     toast({ title: 'Set Deleted', description: 'The question set has been removed.' });
   };
   
@@ -361,62 +402,37 @@ export default function QuestionsCreatorPage() {
     setEditingContent(prev => ({ ...prev, [type]: value }));
   };
 
-  const handleSaveEdit = (type: 'text' | 'json', setId?: string) => {
-    const isSavedSet = !!setId;
-    const contentToSave = editingContent[type];
-
-    if (contentToSave === null) return;
-
-    if (isSavedSet) {
-      setSavedQuestions(prev =>
-        prev.map(s => {
-          if (s.id === setId) {
-            return {
-              ...s,
-              textQuestions: type === 'text' ? contentToSave : s.textQuestions,
-              jsonQuestions: type === 'json' ? contentToSave : s.jsonQuestions,
-            };
-          }
-          return s;
-        })
-      );
+  const handleSaveEdit = (type: 'text' | 'json') => {
+    if (type === 'text') {
+      setTextQuestions(editingContent.text);
     } else {
-      if (type === 'text') {
-        setTextQuestions(contentToSave);
-      } else {
-        setJsonQuestions(contentToSave);
-      }
+      setJsonQuestions(editingContent.json);
     }
     
     setIsEditing(prev => ({ ...prev, [type]: false }));
-    setEditingId(null);
   };
 
-  const handleToggleEdit = (type: 'text' | 'json', isSavedSet = false, setId?: string) => {
-    const isThisCardEditing = isEditing[type] && (isSavedSet ? editingId === setId : !editingId);
+  const handleToggleEdit = (type: 'text' | 'json') => {
+    const isThisCardEditing = isEditing[type];
   
     if (isThisCardEditing) {
-      // Save changes
-      handleSaveEdit(type, setId);
+      handleSaveEdit(type);
     } else {
-      // Enter edit mode
-      const currentText = isSavedSet ? savedQuestions.find(s => s.id === setId)?.textQuestions : textQuestions;
-      const currentJson = isSavedSet ? savedQuestions.find(s => s.id === setId)?.jsonQuestions : jsonQuestions;
       setEditingContent({
-        text: currentText ?? null,
-        json: currentJson ?? null,
+        text: textQuestions,
+        json: jsonQuestions,
       });
-      setEditingId(isSavedSet ? setId : null);
-      setIsEditing({ text: false, json: false, [type]: true }); // Only one type can be edited at a time
+      setIsEditing({ text: false, json: false, [type]: true });
     }
   };
 
-  const handlePreviewSave = () => {
+  const handlePreviewSave = async () => {
     if (!previewContent) return;
     const { type, content, setId } = previewContent;
     
-    if (setId) {
-        setSavedQuestions(prev => prev.map(s => s.id === setId ? {...s, [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content} : s));
+    if (setId && user) {
+        const docRef = doc(db, `users/${user.uid}/questionSets`, setId);
+        await updateDoc(docRef, { [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content });
     } else {
         if (type === 'text') setTextQuestions(content);
         if (type === 'json') setJsonQuestions(content);
@@ -434,8 +450,8 @@ export default function QuestionsCreatorPage() {
 
   const hasGeneratedContent = textQuestions || jsonQuestions;
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json', isSavedSet = false, setId?: string) => {
-    const isThisCardEditing = isEditing[type] && (isSavedSet ? editingId === setId : !editingId);
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json') => {
+    const isThisCardEditing = isEditing[type];
     const contentForDisplay = isThisCardEditing ? editingContent[type] : content;
     const isJsonCardWithError = type === 'json' && jsonError;
 
@@ -448,10 +464,10 @@ export default function QuestionsCreatorPage() {
                     <span className="ml-0">{title}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || "", type, setId})} disabled={!content}><Eye className="h-4 w-4" /></Button>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || "", type })} disabled={!content}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
                     
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type, isSavedSet, setId)} disabled={isLoading || !content}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)} disabled={isLoading || !content}>
                         {isThisCardEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
                     </Button>
 
@@ -542,11 +558,11 @@ export default function QuestionsCreatorPage() {
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
                                 >
-                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf" disabled={isGenerating || isConverting} />
+                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf,.pptx,.docx" disabled={isGenerating || isConverting} />
                                 <div className="flex flex-col items-center justify-center text-slate-400">
                                     <UploadCloud className="h-12 w-12 mb-4" />
                                     <p className="font-semibold">{fileName ? `File: ${fileName}` : 'Drag & drop a file or click to upload'}</p>
-                                    <p className="text-xs mt-1">PDF only</p>
+                                    <p className="text-xs mt-1">PDF, DOCX, PPTX</p>
                                 </div>
                                 </div>
                                 {error && (
@@ -604,17 +620,45 @@ export default function QuestionsCreatorPage() {
 
         <TabsContent value="saved" className="mt-8">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-6xl mx-auto">
-                {savedQuestions.length > 0 ? (
+                {loadingSavedQuestions ? (
+                    <div className="text-center py-16"><Loader2 className="mx-auto h-12 w-12 text-slate-500 animate-spin" /></div>
+                ) : savedQuestions && savedQuestions.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {savedQuestions.map(set => (
-                            <Link key={set.id} href={`/questions-creator/${set.id}`}>
-                                <div className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-square flex flex-col justify-between">
+                            <Link key={set.id} href={`/questions-creator/${set.id}`} legacyBehavior>
+                                <a className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between">
                                     <div>
                                         <Folder className="w-10 h-10 text-yellow-400 mb-4" />
-                                        <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                        {editingId === set.id ? (
+                                            <div className="flex items-center gap-2">
+                                                <Input 
+                                                    value={editingName} 
+                                                    onChange={e => setEditingName(e.target.value)}
+                                                    onClick={e => e.stopPropagation()}
+                                                    onKeyDown={e => {
+                                                        if (e.key === 'Enter') {
+                                                            e.stopPropagation(); e.preventDefault(); handleSaveEditName(set.id);
+                                                        }
+                                                    }}
+                                                    className="bg-transparent border-b-2 border-blue-500 h-auto p-0 text-lg font-semibold focus:ring-0"
+                                                    autoFocus
+                                                />
+                                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={e => {e.stopPropagation(); e.preventDefault(); handleSaveEditName(set.id)}}><Check className="h-4 w-4 text-green-400"/></Button>
+                                            </div>
+                                        ) : (
+                                            <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                        )}
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <div className="absolute top-4 right-4">
+                                    <div className="absolute top-4 right-4 flex gap-1">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => {e.stopPropagation(); e.preventDefault(); handleStartEditName(set);}}
+                                        >
+                                            <Pencil className="h-4 w-4"/>
+                                        </Button>
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
@@ -624,7 +668,7 @@ export default function QuestionsCreatorPage() {
                                             <Trash2 className="h-4 w-4 text-red-400"/>
                                         </Button>
                                     </div>
-                                </div>
+                                </a>
                             </Link>
                         ))}
                     </div>
@@ -671,4 +715,3 @@ export default function QuestionsCreatorPage() {
     </div>
   );
 }
-
