@@ -31,6 +31,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useSearchParams } from 'next/navigation';
+import { Input } from '@/components/ui/input';
 import { Textarea as MyTextarea } from '@/components/ui/textarea'; // Renamed to avoid conflict
 
 
@@ -385,10 +386,10 @@ function QuestionsCreatorContent() {
       </div>
 
       <Tabs defaultValue={initialTab} className="w-full mt-4">
-        <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-slate-800/50 rounded-2xl p-1.5">
-          <TabsTrigger value="generate" className="rounded-xl">Generate</TabsTrigger>
-          <TabsTrigger value="prompts" className="rounded-xl">Prompts</TabsTrigger>
-          <TabsTrigger value="saved" className="rounded-xl">Saved Questions</TabsTrigger>
+        <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-slate-900/50 border border-white/10 rounded-full p-1 h-12">
+            <TabsTrigger value="generate" className="rounded-full">Generate</TabsTrigger>
+            <TabsTrigger value="prompts" className="rounded-full">Prompts</TabsTrigger>
+            <TabsTrigger value="saved" className="rounded-full">Saved Questions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="generate" className="mt-8">
@@ -406,7 +407,7 @@ function QuestionsCreatorContent() {
                                 onDragEnter={handleDragEnter}
                                 onDragLeave={handleDragLeave}
                                 className={cn(
-                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/50",
+                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/80",
                                     isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-700/40",
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
@@ -482,12 +483,34 @@ function QuestionsCreatorContent() {
                                 <a className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between">
                                     <div>
                                         <Folder className="w-10 h-10 text-yellow-400 mb-4" />
-                                        <div className="flex items-center gap-2 mt-2">
-                                          <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                        <div className="flex items-start gap-2 mt-2">
+                                          {editingId === set.id ? (
+                                            <div className="flex items-center gap-2">
+                                              <Input 
+                                                value={editingName} 
+                                                onChange={e => setEditingName(e.target.value)}
+                                                onClick={e => e.stopPropagation()}
+                                                onBlur={() => handleSaveEditName(set.id)}
+                                                onKeyDown={e => { if (e.key === 'Enter') handleSaveEditName(set.id) }}
+                                                className="text-lg font-semibold text-white bg-transparent border-none p-0 h-auto focus-visible:ring-0"
+                                                autoFocus
+                                              />
+                                            </div>
+                                          ) : (
+                                            <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                          )}
                                         </div>
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
                                     <div className="absolute top-4 right-4 flex gap-1">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => {e.preventDefault(); e.stopPropagation(); handleStartEditName(set); }}
+                                        >
+                                            <Pencil className="h-4 w-4 text-blue-300"/>
+                                        </Button>
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
