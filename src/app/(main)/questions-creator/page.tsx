@@ -329,26 +329,24 @@ function QuestionsCreatorContent() {
                 ) : savedQuestions && savedQuestions.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {savedQuestions.map(set => (
-                            <Link key={set.id} href={`/questions-creator/${set.id}`} legacyBehavior>
-                                <a className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between">
-                                    <div>
-                                        <Folder className="w-10 h-10 text-yellow-400 mb-4" />
-                                        <div className="flex items-start gap-2 mt-2">
-                                            <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
-                                        </div>
-                                        <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
+                            <Link key={set.id} href={`/questions-creator/${set.id}`} className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between">
+                                <div>
+                                    <Folder className="w-10 h-10 text-yellow-400 mb-4" />
+                                    <div className="flex items-start gap-2 mt-2">
+                                        <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
                                     </div>
-                                    <div className="absolute top-4 right-4 flex gap-1">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => handleDeleteSet(set.id, e)}
-                                        >
-                                            <Trash2 className="h-4 w-4 text-red-400"/>
-                                        </Button>
-                                    </div>
-                                </a>
+                                    <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
+                                </div>
+                                <div className="absolute top-4 right-4 flex gap-1">
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => handleDeleteSet(set.id, e)}
+                                    >
+                                        <Trash2 className="h-4 w-4 text-red-400"/>
+                                    </Button>
+                                </div>
                             </Link>
                         ))}
                     </div>
@@ -404,3 +402,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
