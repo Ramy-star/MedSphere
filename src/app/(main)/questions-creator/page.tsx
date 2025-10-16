@@ -331,11 +331,11 @@ export default function QuestionsCreatorPage() {
                         </Card>
                     </motion.div>
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
-                         <Card className={cn("glass-card rounded-3xl h-full flex flex-col justify-center", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
+                         <Card className={cn("glass-card rounded-3xl h-full flex flex-col", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
-                            <CardContent>
+                            <CardContent className="flex-1 flex flex-col justify-end">
                                 <Button onClick={handleSaveCurrentQuestions} className="w-full rounded-2xl active:scale-95 transition-transform" disabled={!hasGeneratedContent}>
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
