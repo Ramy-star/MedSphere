@@ -157,10 +157,18 @@ const ChatInputForm = React.memo(function ChatInputForm({
   const handleSubmit = (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
     if (isAiThinking || !chatInput.trim()) return;
-    onChatSubmit(chatInput);
-    setChatInput('');
+
+    const currentInput = chatInput;
+    onChatSubmit(currentInput);
+    
+    // Defer clearing input and blurring to avoid UI jump on mobile
     if (isMobile) {
-      textareaRef.current?.blur();
+      setTimeout(() => {
+        setChatInput('');
+        textareaRef.current?.blur();
+      }, 0);
+    } else {
+      setChatInput('');
     }
   };
   
@@ -251,28 +259,38 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         
         const handleResize = () => {
             if (!vv || !inputContainer || !messagesContainer) return;
+            // This is the keyboard height
             const offset = window.innerHeight - vv.height;
             
+            // We use requestAnimationFrame to ensure the style updates are smooth and batched.
             requestAnimationFrame(() => {
+                // Move the input container up by the keyboard height.
                 inputContainer.style.transform = `translateY(-${offset}px)`;
+                
+                // Add padding to the bottom of the messages container so the last message is visible.
+                // The padding is the keyboard height plus the input container's own height.
                 messagesContainer.style.paddingBottom = `${offset + inputContainer.offsetHeight}px`;
+                
+                // Scroll to the bottom to keep the conversation in view.
                 messagesContainer.scrollTop = messagesContainer.scrollHeight;
             });
         };
         
         vv.addEventListener('resize', handleResize);
         
-        // Use ResizeObserver to handle input height changes
+        // A ResizeObserver is used to detect changes in the input container's height (e.g., when typing multiple lines).
+        // This triggers our resize handler to adjust padding accordingly.
         const resizeObserver = new ResizeObserver(handleResize);
         resizeObserver.observe(inputContainer);
 
-        // Initial setup
+        // Run the handler once on setup.
         handleResize();
 
         return () => {
             vv.removeEventListener('resize', handleResize);
             resizeObserver.disconnect();
 
+            // Clean up inline styles on component unmount
             if (inputContainer) inputContainer.style.transform = '';
             if (messagesContainer) messagesContainer.style.paddingBottom = '';
         };
@@ -520,4 +538,5 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     );
 }
 
+    
     
