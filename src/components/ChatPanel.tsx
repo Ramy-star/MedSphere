@@ -487,3 +487,5 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
 
     
     
+
+    
