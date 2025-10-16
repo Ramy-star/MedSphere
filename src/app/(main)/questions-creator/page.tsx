@@ -342,7 +342,7 @@ function QuestionsCreatorContent() {
                                 <div>
                                     <Folder className="w-10 h-10 text-yellow-400 mb-4" />
                                     <div className="flex items-start gap-2 mt-2">
-                                        <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                        <h3 className="text-base font-semibold text-white break-words">{set.fileName}</h3>
                                     </div>
                                     <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                 </div>
