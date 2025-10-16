@@ -1,17 +1,14 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, use, useRef } from 'react';
+import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { jsPDF } from 'jspdf';
-import { Packer, Document as DocxDocument, Paragraph, TextRun } from 'docx';
 import {
   Dialog,
   DialogContent,
@@ -20,12 +17,13 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { notFound, useRouter } from 'next/navigation';
-import { useDoc, useCollection } from '@/firebase/firestore/use-doc';
+import { useDoc } from '@/firebase/firestore/use-doc';
 import { useUser } from '@/firebase/auth/use-user';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { Input } from '@/components/ui/input';
-
+import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
+import { contentService } from '@/lib/contentService';
+import type { UploadingFile } from '@/components/UploadProgress';
 
 type SavedQuestionSet = {
   id: string;
@@ -49,6 +47,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
+  const [showFolderSelector, setShowFolderSelector] = useState(false);
+  const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
+
   const titleRef = useRef<HTMLHeadingElement>(null);
 
 
@@ -171,6 +172,44 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
       setIsEditingTitle(false);
   }
 
+  const handleSaveToFile = async (parentId: string) => {
+    if (!questionSet) return;
+
+    setShowFolderSelector(false);
+
+    const originalFileName = questionSet.fileName.replace(/\.[^/.]+$/, ""); // Remove extension
+    const newFileName = `${originalFileName}-Questions.md`;
+    const markdownContent = questionSet.textQuestions;
+    const file = new File([markdownContent], newFileName, { type: 'text/markdown' });
+
+    const tempId = `upload_${Date.now()}_${file.name}`;
+    
+    setUploadingFile({ id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file });
+
+    const callbacks = {
+        onProgress: (progress: number) => {
+            setUploadingFile(prev => prev ? { ...prev, progress, status: 'uploading' } : null);
+        },
+        onSuccess: (content: any) => {
+             setUploadingFile(prev => prev ? { ...prev, status: 'success' } : null);
+             setTimeout(() => setUploadingFile(null), 3000);
+             toast({ title: "File Saved", description: `"${content.name}" has been saved.` });
+        },
+        onError: (error: Error) => {
+            console.error("Save to file failed:", error);
+            setUploadingFile(prev => prev ? { ...prev, status: 'error' } : null);
+            toast({
+                variant: 'destructive',
+                title: 'Save Failed',
+                description: error.message || `Could not save file. Please try again.`
+            })
+        }
+    };
+    
+    const xhr = await contentService.createFile(parentId, file, callbacks);
+    setUploadingFile(prev => prev ? { ...prev, xhr } : null);
+};
+
 
   if (loading || !questionSet) {
     return (
@@ -182,7 +221,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string, type: 'text' | 'json') => {
     const isThisCardEditing = isEditing[type];
-    const contentForDisplay = isThisCardEditing ? editingContent[type] : content;
     const isJsonCardWithError = type === 'json' && jsonError;
 
     return (
@@ -194,6 +232,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     <span className="ml-0">{title}</span>
                 </div>
                 <div className="flex items-center gap-1">
+                    {type === 'text' && (
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)}><FolderPlus className="h-4 w-4" /></Button>
+                    )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)}><Copy className="h-4 w-4" /></Button>
                     
@@ -314,6 +355,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </div>
             </DialogContent>
         </Dialog>
+        <FolderSelectorDialog 
+            open={showFolderSelector} 
+            onOpenChange={setShowFolderSelector} 
+            onSelectFolder={handleSaveToFile} 
+        />
     </motion.div>
   );
 }
@@ -338,5 +384,3 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    

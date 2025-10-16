@@ -3,10 +3,12 @@
 import { useEffect, useState, forwardRef } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfViewer, { type PdfViewerRef } from './PdfViewer';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { Skeleton } from './ui/skeleton';
 import { contentService } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+
 
 // Import react-pdf styles here to ensure they are loaded
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -27,9 +29,9 @@ type FilePreviewProps = {
 export type FilePreviewRef = PdfViewerRef;
 
 const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage }, ref) => {
-  const [contentUrl, setContentUrl] = useState<string | null>(null);
+  const [content, setContent] = useState<string | Blob | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const isMobile = useIsMobile();
+  const [contentUrl, setContentUrl] = useState<string|null>(null);
   
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -41,11 +43,17 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
             const blob = await contentService.getFileContent(url);
             if (isCancelled) return;
 
-            objectUrl = URL.createObjectURL(blob);
-            setContentUrl(objectUrl);
+            if (mime === 'text/markdown') {
+              const text = await blob.text();
+              setContent(text);
+            } else {
+              objectUrl = URL.createObjectURL(blob);
+              setContentUrl(objectUrl);
+              setContent(blob);
+            }
         } catch (error) {
             console.error("Error loading content for preview:", error);
-            setContentUrl(null); // Fallback to allow showing an error
+            setContent(null);
         } finally {
             if (!isCancelled) {
                 setIsLoading(false);
@@ -55,14 +63,13 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
     loadContent();
 
-    // Cleanup function to revoke the object URL and set cancellation flag
     return () => {
       isCancelled = true;
       if (objectUrl) {
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [url]);
+  }, [url, mime]);
 
   if (isLoading) {
       return (
@@ -72,8 +79,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
       );
   }
   
-  if (!contentUrl) {
-      // Handles the case where the fetch fails
+  if (!content) {
        return (
         <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
             <p className="text-xl font-semibold mb-3">⚠️ Preview could not be loaded</p>
@@ -86,6 +92,39 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   const commonProps = {
     className: cn('selectable')
   };
+
+  if (mime === 'text/markdown') {
+    return (
+      <div className="prose prose-sm max-w-full p-6 text-white selectable" style={{
+        '--tw-prose-body': '#E2E8F0',
+        '--tw-prose-headings': '#FFFFFF',
+        '--tw-prose-lead': '#A0AEC0',
+        '--tw-prose-links': '#63B3ED',
+        '--tw-prose-bold': '#FFFFFF',
+        '--tw-prose-counters': '#A0AEC0',
+        '--tw-prose-bullets': '#A0AEC0',
+        '--tw-prose-hr': '#4A5568',
+        '--tw-prose-quotes': '#A0AEC0',
+        '--tw-prose-quote-borders': '#4A5568',
+        '--tw-prose-captions': '#A0AEC0',
+        '--tw-prose-code': '#E2E8F0',
+        '--tw-prose-pre-code': '#E2E8F0',
+        '--tw-prose-pre-bg': '#1A202C',
+        '--tw-prose-th-borders': '#4A5568',
+        '--tw-prose-td-borders': '#4A5568',
+      }}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]}>{content as string}</ReactMarkdown>
+      </div>
+    );
+  }
+
+  if (!contentUrl) {
+    return (
+        <div className="w-full h-full flex items-center justify-center">
+          <Skeleton className="h-[90%] w-[90%] rounded-lg" />
+        </div>
+    );
+  }
 
   if (mime.startsWith('image/')) {
     return (

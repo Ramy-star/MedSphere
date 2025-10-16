@@ -324,6 +324,8 @@ export const contentService = {
                 const order = children.length;
                 
                 const finalFileUrl = createProxiedUrl(data.secure_url);
+                const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
+
 
                 const newFileContent: Content = {
                     id,
@@ -332,7 +334,7 @@ export const contentService = {
                     parentId: parentId,
                     metadata: {
                         size: data.bytes,
-                        mime: file.type || 'application/octet-stream',
+                        mime: mimeType,
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: 'raw'

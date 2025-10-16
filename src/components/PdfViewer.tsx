@@ -6,8 +6,6 @@ import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { useDebounce } from 'use-debounce';
-import { useIsMobile } from '@/hooks/use-mobile';
-import { useEvent } from 'react-use';
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
@@ -35,7 +33,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number }[]>([]);
   const { toast } = useToast();
   const containerRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
 
   const [debouncedScale] = useDebounce(scale, 100);
 
