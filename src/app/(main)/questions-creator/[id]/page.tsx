@@ -270,12 +270,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </CardHeader>
             <CardContent className="flex-grow flex flex-col">
                 {isThisCardEditing ? (
-                    <pre
-                        contentEditable={isAdmin}
-                        suppressContentEditableWarning={true}
-                        onBlur={(e) => setEditingContent(prev => ({...prev, [type]: getPreText(e.currentTarget)}))}
-                        className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                        dangerouslySetInnerHTML={{ __html: editingContent[type]?.replace(/\n/g, '<br/>') || '' }}
+                    <textarea
+                        value={editingContent[type]}
+                        onChange={(e) => setEditingContent(prev => ({...prev, [type]: e.target.value}))}
+                        readOnly={!isAdmin}
+                        className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar resize-none"
                     />
                 ) : (
                     <div className="relative flex-1">
@@ -368,12 +367,10 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </DialogHeader>
             <div className="flex-1 overflow-auto p-6 pt-0 no-scrollbar">
                 {isPreviewEditing ? (
-                     <pre
-                        contentEditable={isAdmin}
-                        suppressContentEditableWarning={true}
-                        onBlur={(e) => setPreviewContent(prev => prev ? {...prev, content: getPreText(e.currentTarget)} : null)}
-                        className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                        dangerouslySetInnerHTML={{ __html: previewContent?.content.replace(/\n/g, '<br/>') || '' }}
+                     <textarea
+                        value={previewContent?.content || ''}
+                        onChange={(e) => setPreviewContent(prev => prev ? {...prev, content: e.target.value} : null)}
+                        className="text-sm text-slate-300 bg-transparent p-0 whitespace-pre-wrap font-code w-full h-full overflow-auto no-scrollbar outline-none resize-none"
                     />
                 ) : (
                     <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
