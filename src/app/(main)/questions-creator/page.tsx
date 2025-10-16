@@ -21,6 +21,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { jsPDF } from 'jspdf';
+import { Packer } from 'docx';
+import { Document, Paragraph, TextRun } from 'docx';
 
 
 type SavedQuestionSet = {
@@ -142,16 +146,54 @@ export default function QuestionsCreatorPage() {
     navigator.clipboard.writeText(content);
     toast({ title: 'Copied to Clipboard', description: `${type} questions have been copied.` });
   };
-
-  const handleDownload = (content: string | null, fileType: 'txt' | 'json') => {
+  
+  const handleDownload = (content: string | null, format: 'txt' | 'pdf' | 'docx' | 'json') => {
     if (!content) return;
-    const blob = new Blob([content], { type: `application/${fileType}` });
+
+    let blob: Blob;
+    let fileExtension = format;
+
+    if (format === 'pdf') {
+        const doc = new jsPDF();
+        doc.text(content, 10, 10);
+        doc.save('questions.pdf');
+        return;
+    }
+
+    if (format === 'docx') {
+        const doc = new Document({
+            sections: [{
+                properties: {},
+                children: [
+                    new Paragraph({
+                        children: [new TextRun(content)],
+                    }),
+                ],
+            }],
+        });
+
+        Packer.toBlob(doc).then(blob => {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'questions.docx';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        });
+        return;
+    }
+    
+    // Default to txt or json
+    blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
+    
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `questions.${fileType}`;
+    a.download = `questions.${fileExtension}`;
     document.body.appendChild(a);
-a.click();
+    a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
@@ -191,7 +233,7 @@ a.click();
 
   const hasGeneratedContent = textQuestions || jsonQuestions;
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, fileType: 'txt' | 'json') => (
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, isTextCard: boolean = false) => (
     <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
@@ -202,7 +244,22 @@ a.click();
           <div className="flex items-center gap-1">
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || ""})} disabled={!content}><Eye className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, fileType)} disabled={!content}><Download className="h-4 w-4" /></Button>
+            {isTextCard ? (
+                 <Popover>
+                    <PopoverTrigger asChild>
+                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" disabled={!content}><Download className="h-4 w-4" /></Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-40 p-2">
+                        <div className="space-y-1">
+                             <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'txt')}>TXT</Button>
+                             <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'pdf')}>PDF</Button>
+                             <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'docx')}>DOCX</Button>
+                        </div>
+                    </PopoverContent>
+                </Popover>
+            ) : (
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'json')} disabled={!content}><Download className="h-4 w-4" /></Button>
+            )}
           </div>
         </CardTitle>
       </CardHeader>
@@ -223,13 +280,13 @@ a.click();
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto p-2">
-      <div className="text-center mb-2">
+      <div className="text-center mb-8">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
         </h1>
       </div>
 
-      <Tabs defaultValue="generate" className="w-full mt-4">
+      <Tabs defaultValue="generate" className="w-full mt-8">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-slate-800/50 rounded-2xl p-1.5">
           <TabsTrigger value="generate" className="rounded-xl">Generate</TabsTrigger>
           <TabsTrigger value="prompts" className="rounded-xl">Prompts</TabsTrigger>
@@ -237,44 +294,44 @@ a.click();
         </TabsList>
 
         <TabsContent value="generate" className="mt-8">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                 {/* Left Column */}
-                <div className="space-y-8">
+            <div className="space-y-8">
+                {/* Top Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <motion.div variants={cardVariants} initial="hidden" animate="visible">
-                        <Card className="glass-card rounded-3xl">
-                        <CardHeader>
-                            <CardTitle className='flex items-center gap-3'><UploadCloud className='text-blue-400'/>1. Upload Lecture</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                            <div
-                            onDrop={handleDrop}
-                            onDragOver={handleDragOver}
-                            onDragEnter={handleDragEnter}
-                            onDragLeave={handleDragLeave}
-                            className={cn(
-                                "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300",
-                                isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/20",
-                                (isGenerating || isConverting) && "pointer-events-none opacity-60"
-                            )}
-                            >
-                            <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf,.docx,.txt,.pptx" disabled={isGenerating || isConverting} />
-                            <div className="flex flex-col items-center justify-center text-slate-400">
-                                <UploadCloud className="h-12 w-12 mb-4" />
-                                <p className="font-semibold">{fileName ? `File: ${fileName}` : 'Drag & drop a file or click to upload'}</p>
-                                <p className="text-xs mt-1">PDF, DOCX, TXT, PPTX</p>
-                            </div>
-                            </div>
-                            {error && (
-                                <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
-                                    <AlertCircle className="h-5 w-5" />
-                                    <p className="text-sm">{error}</p>
+                        <Card className="glass-card rounded-3xl h-full">
+                            <CardHeader>
+                                <CardTitle className='flex items-center gap-3'><UploadCloud className='text-blue-400'/>1. Upload Lecture</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <div
+                                onDrop={handleDrop}
+                                onDragOver={handleDragOver}
+                                onDragEnter={handleDragEnter}
+                                onDragLeave={handleDragLeave}
+                                className={cn(
+                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center",
+                                    isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/20",
+                                    (isGenerating || isConverting) && "pointer-events-none opacity-60"
+                                )}
+                                >
+                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf,.docx,.txt,.pptx" disabled={isGenerating || isConverting} />
+                                <div className="flex flex-col items-center justify-center text-slate-400">
+                                    <UploadCloud className="h-12 w-12 mb-4" />
+                                    <p className="font-semibold">{fileName ? `File: ${fileName}` : 'Drag & drop a file or click to upload'}</p>
+                                    <p className="text-xs mt-1">PDF, DOCX, TXT, PPTX</p>
                                 </div>
-                            )}
-                        </CardContent>
+                                </div>
+                                {error && (
+                                    <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
+                                        <AlertCircle className="h-5 w-5" />
+                                        <p className="text-sm">{error}</p>
+                                    </div>
+                                )}
+                            </CardContent>
                         </Card>
                     </motion.div>
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
-                         <Card className={cn("glass-card rounded-3xl", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
+                         <Card className={cn("glass-card rounded-3xl h-full flex flex-col justify-center", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
@@ -286,13 +343,13 @@ a.click();
                         </Card>
                     </motion.div>
                 </div>
-                {/* Right Column */}
-                <div className="space-y-8">
+                {/* Bottom Row */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
-                        {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, textQuestions, isGenerating, "Generating questions...", "txt")}
+                        {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, textQuestions, isGenerating, "Generating questions...", true)}
                     </motion.div>
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.6 }}>
-                        {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, jsonQuestions, isConverting, "Converting to JSON...", "json")}
+                        {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, jsonQuestions, isConverting, "Converting to JSON...", false)}
                     </motion.div>
                 </div>
             </div>
@@ -352,8 +409,8 @@ a.click();
                                         </div>
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleString()}</p>
                                         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {renderOutputCard("Text", <FileText className="text-blue-400" />, set.textQuestions, false, "", "txt")}
-                                            {renderOutputCard("JSON", <FileJson className="text-green-400" />, set.jsonQuestions, false, "", "json")}
+                                            {renderOutputCard("Text", <FileText className="text-blue-400" />, set.textQuestions, false, "", true)}
+                                            {renderOutputCard("JSON", <FileJson className="text-green-400" />, set.jsonQuestions, false, "", false)}
                                         </div>
                                     </div>
                                 ))}
