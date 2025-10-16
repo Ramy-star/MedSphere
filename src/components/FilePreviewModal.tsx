@@ -660,15 +660,19 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
           </DialogDescription>
         </DialogHeader>
         
-        <div className={cn("flex-1 flex flex-col transition-all duration-300 ease-in-out", showChat && !isMobile ? "w-[calc(100%-512px)]" : "w-full")}>
+        <div className={cn(
+          "flex-1 flex flex-col transition-all duration-300 ease-in-out", 
+          showChat && !isMobile ? "w-[calc(100%-512px)]" : "w-full"
+        )}>
             {renderFilePreview()}
         </div>
         
         
         <div className={cn(
-            "fixed top-0 h-full md:relative md:h-auto transition-transform duration-300 ease-in-out",
-            isMobile ? 'w-full z-20' : 'w-[512px]',
-            showChat ? 'translate-x-0' : 'translate-x-full'
+            "h-full transition-all duration-300 ease-in-out overflow-hidden",
+            isMobile ? 'fixed top-0 left-0 w-full z-20' : 'relative',
+            isMobile && (showChat ? 'translate-x-0' : 'translate-x-full'),
+            !isMobile && (showChat ? 'w-[512px]' : 'w-0')
         )}>
           {isChatAvailable && (
              <ChatPanel
