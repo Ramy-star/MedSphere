@@ -282,15 +282,10 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            // Only run if there is text, to prevent initial incorrect resize
-            if (chatInput) {
-                textarea.style.height = 'auto';
-                const scrollHeight = textarea.scrollHeight;
-                textarea.style.height = `${scrollHeight}px`;
-            } else {
-                // Reset to default height when empty
-                textarea.style.height = '';
-            }
+            textarea.style.height = 'auto';
+            const scrollHeight = textarea.scrollHeight;
+            const maxHeight = 150; 
+            textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
         }
     }, [chatInput]);
 
@@ -304,7 +299,10 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         if (!inputContainer) return;
 
         const handleResize = () => {
+          // The amount the keyboard covers the layout viewport
           const offsetBottom = window.innerHeight - vv.height - vv.offsetTop;
+          
+          // Move the input container up by the amount the keyboard is covering
           inputContainer.style.transform = `translateY(-${Math.max(0, offsetBottom)}px)`;
         };
     
@@ -414,10 +412,10 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </div>
                  <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-[#212121] to-transparent pointer-events-none" />
             </div>
-            <div 
+            <motion.div 
                 ref={inputContainerRef}
                 className="mt-auto"
-                style={{ transition: 'none' }}
+                style={{ transition: 'transform 0.2s ease-out' }} // Smooth transition for the input bar
             >
               <div className='p-2' style={{ backgroundColor: '#212121'}}>
                  <form
@@ -464,7 +462,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                     </div>
                 </form>
               </div>
-            </div>
+            </motion.div>
             <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
                 <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
                   <AlertDialogHeader2 className="p-6 pb-0">
