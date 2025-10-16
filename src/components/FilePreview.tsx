@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, forwardRef } from 'react';
@@ -6,6 +7,7 @@ import PdfViewer, { type PdfViewerRef } from './PdfViewer';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Skeleton } from './ui/skeleton';
 import { contentService } from '@/lib/contentService';
+import { cn } from '@/lib/utils';
 
 // Import react-pdf styles here to ensure they are loaded
 import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
@@ -82,9 +84,13 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
       );
   }
 
+  const commonProps = {
+    className: cn('selectable')
+  };
+
   if (mime.startsWith('image/')) {
     return (
-        <div className="w-full h-full overflow-auto flex items-center justify-center p-4 md:p-8">
+        <div {...commonProps} className={cn(commonProps.className, "w-full h-full overflow-auto flex items-center justify-center p-4 md:p-8")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={contentUrl} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
         </div>
@@ -92,15 +98,15 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
   
   if (mime === 'application/pdf') {
-    return <PdfViewer ref={ref} file={contentUrl} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} isFullscreen={isFullscreen} currentPage={currentPage} />;
+    return <div {...commonProps} className={cn(commonProps.className, 'w-full h-full')}><PdfViewer ref={ref} file={contentUrl} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} isFullscreen={isFullscreen} currentPage={currentPage} /></div>;
   }
   
   if (mime.startsWith('audio/')) {
-    return <div className="w-full h-full flex items-center justify-center p-4"><audio controls src={contentUrl} className="w-full max-w-lg" /></div>;
+    return <div {...commonProps} className={cn(commonProps.className, "w-full h-full flex items-center justify-center p-4")}><audio controls src={contentUrl} className="w-full max-w-lg" /></div>;
   }
   
   if (mime.startsWith('video/')) {
-    return <div className="w-full h-full flex items-center justify-center bg-black"><video controls src={contentUrl} className="max-w-full max-h-full" /></div>;
+    return <div {...commonProps} className={cn(commonProps.className, "w-full h-full flex items-center justify-center bg-black")}><video controls src={contentUrl} className="max-w-full max-h-full" /></div>;
   }
 
   if (mime === 'text/html') {
@@ -108,7 +114,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
 
   if (mime.startsWith('text/')) {
-    return <iframe src={contentUrl} className="w-full h-full border-2 border-slate-700 rounded-lg bg-slate-800 text-white shadow-lg" title={itemName} />
+    return <iframe src={contentUrl} {...commonProps} className={cn(commonProps.className, "w-full h-full border-2 border-slate-700 rounded-lg bg-slate-800 text-white shadow-lg")} title={itemName} />
   }
 
   // Use Office viewer for docx, xlsx, pptx if it's a public URL (won't work for blob URLs from local storage)

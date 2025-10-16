@@ -65,7 +65,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
 
     return (
         <div className="group/message">
-            <div className="relative font-inter">
+            <div className="relative font-inter selectable">
                  <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     className={cn("prose prose-sm max-w-full", fontSizeClass)}
@@ -418,7 +418,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             </header>
             
             <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
-                 <div className="space-y-6 p-4 sm:p-6">
+                 <div className="space-y-6 p-4 sm:p-6 selectable">
                     {chatHistory.length === 0 && !isAiThinking && (
                         <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
                             {isExtracting ? (
@@ -430,7 +430,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                                   <Progress value={50} className="w-full h-1" />
                                 </div>
                             ) : documentText ? (
-                                <p className="text-white">Hello! I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
+                                <p className="text-white">I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
                             ) : (
                                 <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
                             )}
