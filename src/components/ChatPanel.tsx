@@ -230,13 +230,12 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const chatPanelRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
     const inputContainerRef = useRef<HTMLDivElement>(null);
-    const inputFormContainerRef = useRef<HTMLDivElement>(null);
 
     // This effect handles keyboard appearance on mobile.
     useEffect(() => {
         const panel = chatPanelRef.current;
         const messagesContainer = messagesContainerRef.current;
-        const inputContainer = inputFormContainerRef.current;
+        const inputContainer = inputContainerRef.current;
         
         if (!isMobile || !panel || !messagesContainer || !inputContainer || typeof window === 'undefined' || !window.visualViewport) {
             return;
@@ -245,6 +244,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         const vv = window.visualViewport;
         if (!vv) return;
 
+        let resizeObserver: ResizeObserver | null = null;
+        
         const handleResize = () => {
             if (!vv || !inputContainer || !messagesContainer) return;
             const offset = window.innerHeight - vv.height;
@@ -256,7 +257,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             });
         };
         
-        const resizeObserver = new ResizeObserver(() => {
+        resizeObserver = new ResizeObserver(() => {
             handleResize();
         });
         
@@ -264,12 +265,13 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         vv.addEventListener('resize', handleResize);
         
         // Initial setup
-        messagesContainer.style.paddingBottom = `${inputContainer.offsetHeight}px`;
         handleResize();
 
         return () => {
             vv.removeEventListener('resize', handleResize);
-            resizeObserver.disconnect();
+            if (resizeObserver && inputContainer) {
+              resizeObserver.unobserve(inputContainer);
+            }
             if (inputContainer) inputContainer.style.transform = '';
             if (messagesContainer) messagesContainer.style.paddingBottom = '';
         };
@@ -466,7 +468,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </div>
             </div>
             
-            <div ref={inputFormContainerRef} className="w-full z-10 will-change-transform">
+            <div ref={inputContainerRef} className="w-full z-10 will-change-transform">
                 <ChatInputForm
                   isAiThinking={isAiThinking}
                   isExtracting={isExtracting}
