@@ -12,7 +12,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2 } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -242,6 +242,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const fileContentRef = useRef<HTMLDivElement>(null);
   const scaleBeforeFullscreen = useRef<number>(1);
   const manualPageInputInProgress = useRef(false);
+  const [selection, setSelection] = useState<{ text: string; position: { top: number; left: number } } | null>(null);
+
 
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -258,6 +260,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setShowChat(false);
     setChatInitialQuestion(null);
     setError(null);
+    setSelection(null);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -493,6 +496,28 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }
 
+  const handleTextSelect = useCallback((text: string, position: { top: number; left: number }) => {
+    const containerRect = previewContainerRef.current?.getBoundingClientRect();
+    if (containerRect) {
+      setSelection({
+        text,
+        position: {
+          top: position.top - containerRect.top,
+          left: position.left - containerRect.left,
+        },
+      });
+    }
+  }, []);
+
+  const handleQuoteToChat = () => {
+    if (selection) {
+      setChatInitialQuestion(`"${selection.text}"\n\n`);
+      setShowChat(true);
+      setSelection(null);
+    }
+  };
+
+
   if (!item) return null;
   
   const { Icon, color } = getIconForFileType(item);
@@ -671,7 +696,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         </header>
 
         <main ref={fileContentRef} className="flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden">
-             <div className="[grid-area:1/1] overflow-auto">
+             <div className="[grid-area:1/1] overflow-auto no-scrollbar">
               <FilePreview 
                   key={item.id}
                   ref={pdfViewerRef}
@@ -683,8 +708,33 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   onPageChange={onPageChange}
                   isFullscreen={isFullscreen}
                   currentPage={pageNumber}
+                  onTextSelect={isMarkdown ? handleTextSelect : undefined}
+                  onSelectionChange={() => setSelection(null)}
               />
             </div>
+             {selection && isMarkdown && (
+                <div
+                    className="absolute z-20"
+                    style={{ top: selection.position.top - 50, left: selection.position.left }}
+                >
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    size="icon"
+                                    className="rounded-full h-10 w-10 bg-blue-600 hover:bg-blue-500 shadow-lg"
+                                    onClick={handleQuoteToChat}
+                                >
+                                    <MessageSquareQuote className="h-5 w-5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>Quote to AI Chat</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                </div>
+            )}
         </main>
     </div>
   )};

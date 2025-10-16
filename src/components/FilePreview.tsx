@@ -23,12 +23,14 @@ type FilePreviewProps = {
   onPageChange?: (page: number) => void;
   isFullscreen?: boolean;
   currentPage?: number;
+  onTextSelect?: (text: string, position: { top: number, left: number }) => void;
+  onSelectionChange?: () => void;
 };
 
 // Define the type for the ref handle
 export type FilePreviewRef = PdfViewerRef;
 
-const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage }, ref) => {
+const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage, onTextSelect, onSelectionChange }, ref) => {
   const [content, setContent] = useState<string | Blob | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [contentUrl, setContentUrl] = useState<string|null>(null);
@@ -71,6 +73,38 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     };
   }, [url, mime]);
 
+  const handleMouseUp = (event: React.MouseEvent) => {
+    if (!onTextSelect) return;
+
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+
+    if (selectedText) {
+      const range = selection!.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      onTextSelect(selectedText, { top: event.clientY, left: rect.left + rect.width / 2 });
+    } else {
+      onSelectionChange?.();
+    }
+  };
+
+  const handleSelectionChange = () => {
+    if (!onSelectionChange) return;
+    const selection = window.getSelection();
+    if (!selection || selection.isCollapsed) {
+        onSelectionChange();
+    }
+  };
+
+
+  useEffect(() => {
+    document.addEventListener('selectionchange', handleSelectionChange);
+    return () => {
+      document.removeEventListener('selectionchange', handleSelectionChange);
+    };
+  }, [handleSelectionChange]);
+
+
   if (isLoading) {
       return (
           <div className="w-full h-full flex items-center justify-center">
@@ -95,24 +129,28 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
   if (mime === 'text/markdown') {
     return (
-      <div className="prose prose-base max-w-full p-6 text-white selectable" style={{
-        '--tw-prose-body': '#E2E8F0',
-        '--tw-prose-headings': '#FFFFFF',
-        '--tw-prose-lead': '#A0AEC0',
-        '--tw-prose-links': '#63B3ED',
-        '--tw-prose-bold': '#FFFFFF',
-        '--tw-prose-counters': '#A0AEC0',
-        '--tw-prose-bullets': '#A0AEC0',
-        '--tw-prose-hr': '#4A5568',
-        '--tw-prose-quotes': '#A0AEC0',
-        '--tw-prose-quote-borders': '#4A5568',
-        '--tw-prose-captions': '#A0AEC0',
-        '--tw-prose-code': '#E2E8F0',
-        '--tw-prose-pre-code': '#E2E8F0',
-        '--tw-prose-pre-bg': '#1A202C',
-        '--tw-prose-th-borders': '#4A5568',
-        '--tw-prose-td-borders': '#4A5568',
-      }}>
+      <div 
+        className="prose prose-base max-w-full p-6 text-white selectable" 
+        onMouseUp={handleMouseUp}
+        style={{
+            '--tw-prose-body': '#E2E8F0',
+            '--tw-prose-headings': '#FFFFFF',
+            '--tw-prose-lead': '#A0AEC0',
+            '--tw-prose-links': '#63B3ED',
+            '--tw-prose-bold': '#FFFFFF',
+            '--tw-prose-counters': '#A0AEC0',
+            '--tw-prose-bullets': '#A0AEC0',
+            '--tw-prose-hr': '#4A5568',
+            '--tw-prose-quotes': '#A0AEC0',
+            '--tw-prose-quote-borders': '#4A5568',
+            '--tw-prose-captions': '#A0AEC0',
+            '--tw-prose-code': '#E2E8F0',
+            '--tw-prose-pre-code': '#E2E8F0',
+            '--tw-prose-pre-bg': '#1A202C',
+            '--tw-prose-th-borders': '#4A5568',
+            '--tw-prose-td-borders': '#4A5568',
+        }}
+      >
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{content as string}</ReactMarkdown>
       </div>
     );
