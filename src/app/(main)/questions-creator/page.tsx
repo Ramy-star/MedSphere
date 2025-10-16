@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -217,7 +218,7 @@ export default function QuestionsCreatorPage() {
         </h1>
       </div>
 
-      <Tabs defaultValue="generate" className="w-full mt-6">
+      <Tabs defaultValue="generate" className="w-full mt-4">
         <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-slate-800/50 rounded-2xl p-1.5">
           <TabsTrigger value="generate" className="rounded-xl">Generate</TabsTrigger>
           <TabsTrigger value="prompts" className="rounded-xl">Prompts</TabsTrigger>
@@ -358,4 +359,5 @@ export default function QuestionsCreatorPage() {
       </Tabs>
     </div>
   );
-}
+
+    
