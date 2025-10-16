@@ -30,8 +30,8 @@ import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { Input } from '@/components/ui/input';
 import { useSearchParams } from 'next/navigation';
+import { Textarea as MyTextarea } from '@/components/ui/textarea'; // Renamed to avoid conflict
 
 
 type SavedQuestionSet = {
@@ -345,6 +345,7 @@ function QuestionsCreatorContent() {
                 <CardTitle className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                     {icon}
+                    <span className="ml-0">{title}</span>
                 </div>
                 </CardTitle>
             </CardHeader>
@@ -459,11 +460,11 @@ function QuestionsCreatorContent() {
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
                         <label htmlFor="gen-prompt" className="text-sm font-medium text-slate-300">Question Generation Prompt</label>
-                        <Textarea id="gen-prompt" value={generationPrompt} onChange={(e) => setGenerationPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl" />
+                        <MyTextarea id="gen-prompt" value={generationPrompt} onChange={(e) => setGenerationPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl" />
                         </div>
                         <div className="space-y-2">
                         <label htmlFor="json-prompt" className="text-sm font-medium text-slate-300">Text-to-JSON Conversion Prompt</label>
-                        <Textarea id="json-prompt" value={jsonPrompt} onChange={(e) => setJsonPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl" />
+                        <MyTextarea id="json-prompt" value={jsonPrompt} onChange={(e) => setJsonPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl" />
                         </div>
                     </CardContent>
                 </Card>
@@ -483,7 +484,7 @@ function QuestionsCreatorContent() {
                                         <Folder className="w-10 h-10 text-yellow-400 mb-4" />
                                         {editingId === set.id ? (
                                             <div className="flex items-center gap-2 mt-2">
-                                                <Input 
+                                                <input 
                                                     value={editingName} 
                                                     onChange={e => setEditingName(e.target.value)}
                                                     onClick={e => e.stopPropagation()}
@@ -498,7 +499,17 @@ function QuestionsCreatorContent() {
                                                 />
                                             </div>
                                         ) : (
+                                          <div className="flex items-center gap-2">
                                             <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleStartEditName(set); }}
+                                            >
+                                                <Pencil className="h-4 w-4"/>
+                                            </Button>
+                                          </div>
                                         )}
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
@@ -546,7 +557,7 @@ function QuestionsCreatorContent() {
           </DialogHeader>
           <div className="flex-1 overflow-auto p-6 pt-0 no-scrollbar">
             {isPreviewEditing ? (
-                 <Textarea
+                 <MyTextarea
                     value={previewContent?.content || ''}
                     onChange={(e) => setPreviewContent(prev => prev ? {...prev, content: e.target.value} : null)}
                     className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
@@ -570,5 +581,7 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
 
     
