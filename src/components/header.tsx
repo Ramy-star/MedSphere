@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,8 @@ import { Logo } from './logo';
 import { AuthButton } from './auth-button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useQuestionGenerationStore } from '@/stores/question-gen-store';
+import { Progress } from './ui/progress';
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -19,6 +22,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [debouncedQuery] = useDebounce(query, 1000);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const { task } = useQuestionGenerationStore();
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -41,6 +45,8 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       setQuery('');
   }
 
+  const isGenerating = task && task.status !== 'completed' && task.status !== 'error';
+
   return (
     <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-3 min-h-[68px] flex items-center gap-4">
       <div className="flex items-center gap-2 cursor-default select-none">
@@ -50,7 +56,26 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
             <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
           </h1>
       </div>
-      <div className="flex items-center justify-end flex-grow gap-2">
+
+      {isGenerating && (
+        <div className="flex-1 max-w-sm hidden md:flex items-center gap-3">
+          <div className="w-full">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                   <Progress value={task?.progress ?? 0} className="h-1.5" />
+                </TooltipTrigger>
+                <TooltipContent side="bottom" align="start">
+                  <p>Generating questions for: {task?.fileName}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+      )}
+
+
+      <div className={cn("flex items-center justify-end flex-grow gap-2", isGenerating && "flex-grow-0")}>
         <div className="relative w-full max-w-[180px] sm:max-w-sm">
           <Search
             className={cn(

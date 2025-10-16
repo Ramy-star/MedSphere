@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, Suspense } from 'react';
+import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { generateQuestions, convertQuestionsToJson, repairJson } from '@/ai/flows/question-gen-flow';
 import { contentService } from '@/lib/contentService';
-import { type PDFDocumentProxy, type PDFPageProxy } from 'pdfjs-dist';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDebounce } from 'use-debounce';
 import {
@@ -30,8 +30,9 @@ import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { Textarea as MyTextarea } from '@/components/ui/textarea'; // Renamed to avoid conflict
+import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 
 
 type SavedQuestionSet = {
@@ -44,49 +45,40 @@ type SavedQuestionSet = {
 };
 
 function QuestionsCreatorContent() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
   const [isDragging, setIsDragging] = useState(false);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [textQuestions, setTextQuestions] = useState<string | null>(null);
-  const [jsonQuestions, setJsonQuestions] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [isConverting, setIsConverting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [jsonError, setJsonError] = useState<string | null>(null);
-  const [isRepairing, setIsRepairing] = useState(false);
-  
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
-
-  const [editingContent, setEditingContent] = useState<{ text: string | null, json: string | null }>({
-    text: null,
-    json: null,
-  });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState('');
 
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
   const [debouncedJsonPrompt] = useDebounce(jsonPrompt, 500);
+
+  const {
+    task,
+    startGenerationWithFile,
+    saveCurrentResults,
+    clearTask,
+  } = useQuestionGenerationStore();
 
   const { user } = useUser();
   const { data: savedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
     user ? `users/${user.uid}/questionSets` : '',
     { orderBy: ['createdAt', 'desc'], disabled: !user }
   );
-  
-  const searchParams = useSearchParams();
-  const initialTab = searchParams.get('tab') || 'generate';
 
+  const initialTab = searchParams.get('tab') || (task?.fileUrl ? 'generate' : 'saved');
   const { toast } = useToast();
 
-  // Load prompts from localStorage on mount
   useEffect(() => {
     setGenerationPrompt(localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.');
     setJsonPrompt(localStorage.getItem('questionJsonPrompt') || 'Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.');
   }, []);
 
-  // Save prompts to localStorage on change
   useEffect(() => {
     if (debouncedGenPrompt) localStorage.setItem('questionGenPrompt', debouncedGenPrompt);
   }, [debouncedGenPrompt]);
@@ -95,9 +87,24 @@ function QuestionsCreatorContent() {
     if (debouncedJsonPrompt) localStorage.setItem('questionJsonPrompt', debouncedJsonPrompt);
   }, [debouncedJsonPrompt]);
 
+  useEffect(() => {
+    if (task?.status === 'completed') {
+      toast({
+        title: 'Generation Complete',
+        description: `Questions for "${task.fileName}" have been generated.`,
+      });
+    } else if (task?.status === 'error') {
+      toast({
+        variant: 'destructive',
+        title: 'Generation Failed',
+        description: task.error || 'An unexpected error occurred.',
+      });
+    }
+  }, [task?.status, task?.fileName, task?.error, toast]);
+
 
   const handleSaveCurrentQuestions = async () => {
-    if (!textQuestions || !jsonQuestions || !fileName || !user) {
+    if (!task?.textQuestions || !task?.jsonQuestions || !task?.fileName || !user) {
       toast({
         variant: 'destructive',
         title: 'Cannot Save',
@@ -105,177 +112,15 @@ function QuestionsCreatorContent() {
       });
       return;
     }
-
-    try {
-      const collectionRef = collection(db, `users/${user.uid}/questionSets`);
-      await addDoc(collectionRef, {
-          fileName,
-          textQuestions,
-          jsonQuestions,
-          createdAt: new Date().toISOString(),
-          userId: user.uid,
-      });
-
-      toast({
+    await saveCurrentResults(user.uid);
+    toast({
         title: 'Questions Saved',
-        description: `The questions for "${fileName}" have been saved to your account.`,
-      });
-    } catch(err) {
-       console.error("Error saving question set:", err);
-       toast({
-        variant: 'destructive',
-        title: 'Save Failed',
-        description: 'Could not save the question set to the cloud.',
-      });
-    }
+        description: `The questions for "${task.fileName}" have been saved to your account.`,
+    });
   };
 
   const processFile = async (file: File) => {
-    setFileName(file.name);
-    setTextQuestions(null);
-    setJsonQuestions(null);
-    setError(null);
-    setJsonError(null);
-    setIsGenerating(true);
-    setIsConverting(false);
-
-    try {
-        let documentText = '';
-        let imageUris: string[] = [];
-
-        if (file.type === 'application/pdf') {
-            const pdfjs = await import('pdfjs-dist');
-            const pdfjsWorker = await import('pdfjs-dist/build/pdf.worker.entry');
-            pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-
-            const fileBuffer = await file.arrayBuffer();
-            const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
-            
-            documentText = await contentService.extractTextFromPdf(pdf);
-
-            for (let i = 1; i <= pdf.numPages; i++) {
-                const page = await pdf.getPage(i);
-                const operatorList = await page.getOperatorList();
-                
-                const imagePromises = operatorList.fnArray.reduce((acc: Promise<void>[], fn, j) => {
-                    if (fn === pdfjs.OPS.paintImageXObject) {
-                        const imageName = operatorList.argsArray[j as any][0];
-                        
-                        const promise = new Promise<void>(async (resolve, reject) => {
-                            try {
-                                const img = await page.objs.get(imageName);
-
-                                if (!img || !img.data) return resolve();
-            
-                                const canvas = document.createElement('canvas');
-                                canvas.width = img.width;
-                                canvas.height = img.height;
-                                const ctx = canvas.getContext('2d');
-                                if (!ctx) return resolve();
-            
-                                const imageData = ctx.createImageData(img.width, img.height);
-                                if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
-                                    let k = 0;
-                                    for (let i = 0; i < img.data.length; i++) {
-                                        const b = img.data[i];
-                                        for (let bit = 0; bit < 8; bit++) {
-                                            if (k >= imageData.data.length) break;
-                                            const gray = (b & (1 << (7 - bit))) ? 0 : 255;
-                                            imageData.data[k++] = gray;
-                                            imageData.data[k++] = gray;
-                                            imageData.data[k++] = gray;
-                                            imageData.data[k++] = 255;
-                                        }
-                                    }
-                                } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
-                                    let i = 0;
-                                    for (let j = 0; j < img.data.length; j += 3) {
-                                        imageData.data[i++] = img.data[j];
-                                        imageData.data[i++] = img.data[j + 1];
-                                        imageData.data[i++] = img.data[j + 2];
-                                        imageData.data[i++] = 255;
-                                    }
-                                } else {
-                                    imageData.data.set(img.data);
-                                }
-                                ctx.putImageData(imageData, 0, 0);
-                                const uri = canvas.toDataURL('image/png');
-                                if (uri) imageUris.push(uri);
-                                resolve();
-                            } catch (err) {
-                                console.error("Error processing image object:", err);
-                                resolve(); // Continue even if one image fails
-                            }
-                        });
-                        acc.push(promise);
-                    }
-                    return acc;
-                }, []);
-    
-                await Promise.all(imagePromises);
-            }
-        } else {
-             throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
-        }
-
-        if (!documentText && imageUris.length === 0) {
-            throw new Error('Could not extract any text or images from the file.');
-        }
-
-        const generatedText = await generateQuestions({
-            prompt: generationPrompt,
-            documentContent: documentText,
-            images: imageUris
-        });
-        setTextQuestions(generatedText);
-      
-        setIsConverting(true);
-        setIsGenerating(false);
-
-        try {
-            const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: generatedText });
-            setJsonQuestions(generatedJson);
-        } catch (jsonErr: any) {
-            console.error("Error during JSON conversion:", jsonErr);
-            setJsonError(jsonErr.message || "Could not convert text to JSON. The AI returned an invalid format.");
-            // Keep text questions, but show JSON failed by setting it to an error message.
-            setJsonQuestions(`{ "error": "JSON conversion failed", "message": "${(jsonErr.message || '').replace(/"/g, '\\"')}" }`);
-        }
-
-    } catch (err: any) {
-        console.error("Error during question generation process:", err);
-        setError(err.message || 'An unexpected error occurred.');
-    } finally {
-        setIsGenerating(false);
-        setIsConverting(false);
-    }
-  };
-
-  const handleRepairJson = async () => {
-    if (!jsonQuestions) return;
-    setIsRepairing(true);
-    try {
-        const repaired = await repairJson({
-            malformedJson: jsonQuestions,
-            desiredSchema: jsonPrompt,
-        });
-        setJsonQuestions(repaired);
-        setJsonError(null);
-        toast({
-            title: 'JSON Repaired',
-            description: 'The JSON structure has been successfully repaired.',
-        });
-    } catch (err: any) {
-        console.error("Error during JSON repair:", err);
-        toast({
-            variant: 'destructive',
-            title: 'Repair Failed',
-            description: err.message || 'Could not repair the JSON.',
-        });
-        setJsonError(err.message || 'Could not repair the JSON.');
-    } finally {
-        setIsRepairing(false);
-    }
+    startGenerationWithFile(file, generationPrompt, jsonPrompt);
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -319,9 +164,6 @@ function QuestionsCreatorContent() {
     if (setId && user) {
         const docRef = doc(db, `users/${user.uid}/questionSets`, setId);
         await updateDoc(docRef, { [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content });
-    } else {
-        if (type === 'text') setTextQuestions(content);
-        if (type === 'json') setJsonQuestions(content);
     }
     
     setIsPreviewEditing(false);
@@ -334,10 +176,11 @@ function QuestionsCreatorContent() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
-  const hasGeneratedContent = textQuestions || jsonQuestions;
+  const hasGeneratedContent = task?.textQuestions || task?.jsonQuestions;
+  const isGenerating = task && task.status !== 'completed' && task.status !== 'error';
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json') => {
-    const isJsonCardWithError = type === 'json' && jsonError;
+    const isJsonCardWithError = type === 'json' && task?.status === 'error';
 
     return (
         <Card className="glass-card min-h-[200px] flex flex-col rounded-3xl">
@@ -363,16 +206,24 @@ function QuestionsCreatorContent() {
                     </div>
                 )}
                 {isJsonCardWithError && (
-                    <div className="mt-2">
-                        <Button onClick={handleRepairJson} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white'>
-                            {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
-                            {isRepairing ? 'Repairing...' : 'Attempt to Repair JSON'}
-                        </Button>
+                    <div className="mt-2 text-red-400 bg-red-900/20 p-3 rounded-lg text-xs">
+                        <p>{task?.error}</p>
                     </div>
                 )}
             </CardContent>
         </Card>
     );
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value !== 'generate') {
+      if (task?.status === 'generating_text' || task?.status === 'converting_json') {
+        toast({ title: "Still working...", description: "Question generation is running in the background." });
+      } else {
+        clearTask();
+      }
+    }
+    router.push(`/questions-creator?tab=${value}`, { scroll: false });
   };
 
 
@@ -384,7 +235,7 @@ function QuestionsCreatorContent() {
         </h1>
       </div>
 
-      <Tabs defaultValue={initialTab} className="w-full mt-4">
+      <Tabs defaultValue={initialTab} value={initialTab} onValueChange={handleTabChange} className="w-full mt-4">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-slate-900/50 border border-white/10 rounded-full p-1 h-12">
             <TabsTrigger value="generate" className="rounded-full">Generate</TabsTrigger>
             <TabsTrigger value="prompts" className="rounded-full">Prompts</TabsTrigger>
@@ -408,20 +259,20 @@ function QuestionsCreatorContent() {
                                 className={cn(
                                     "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/80",
                                     isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-700/40",
-                                    (isGenerating || isConverting) && "pointer-events-none opacity-60"
+                                    isGenerating && "pointer-events-none opacity-60"
                                 )}
                                 >
-                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf" disabled={isGenerating || isConverting} />
+                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf" disabled={isGenerating} />
                                 <div className="flex flex-col items-center justify-center text-slate-400">
                                     <UploadCloud className="h-12 w-12 mb-4" />
-                                    <p className="font-semibold">{fileName ? `File: ${fileName}` : 'Drag & drop a file or click to upload'}</p>
+                                    <p className="font-semibold">{task?.fileName ? `File: ${task.fileName}` : 'Drag & drop a file or click to upload'}</p>
                                     <p className="text-xs mt-1">PDF</p>
                                 </div>
                                 </div>
-                                {error && (
+                                {task?.status === 'error' && (
                                     <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
                                         <AlertCircle className="h-5 w-5" />
-                                        <p className="text-sm">{error}</p>
+                                        <p className="text-sm">{task.error}</p>
                                     </div>
                                 )}
                             </CardContent>
@@ -442,10 +293,10 @@ function QuestionsCreatorContent() {
                 </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
-                        {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, textQuestions, isGenerating, "Generating questions...", 'text')}
+                        {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text', "Generating questions...", 'text')}
                     </motion.div>
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.6 }}>
-                        {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, jsonQuestions, isConverting, "Converting to JSON...", 'json')}
+                        {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", 'json')}
                     </motion.div>
                 </div>
             </div>
@@ -478,28 +329,26 @@ function QuestionsCreatorContent() {
                 ) : savedQuestions && savedQuestions.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {savedQuestions.map(set => (
-                            <Link 
-                                key={set.id} 
-                                href={`/questions-creator/${set.id}`}
-                                className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between"
-                            >
-                                <div>
-                                    <Folder className="w-10 h-10 text-yellow-400 mb-4" />
-                                    <div className="flex items-start gap-2 mt-2">
-                                        <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                            <Link key={set.id} href={`/questions-creator/${set.id}`} legacyBehavior>
+                                <a className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between">
+                                    <div>
+                                        <Folder className="w-10 h-10 text-yellow-400 mb-4" />
+                                        <div className="flex items-start gap-2 mt-2">
+                                            <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                        </div>
+                                        <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
-                                </div>
-                                <div className="absolute top-4 right-4 flex gap-1">
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={(e) => handleDeleteSet(set.id, e)}
-                                    >
-                                        <Trash2 className="h-4 w-4 text-red-400"/>
-                                    </Button>
-                                </div>
+                                    <div className="absolute top-4 right-4 flex gap-1">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => handleDeleteSet(set.id, e)}
+                                        >
+                                            <Trash2 className="h-4 w-4 text-red-400"/>
+                                        </Button>
+                                    </div>
+                                </a>
                             </Link>
                         ))}
                     </div>
@@ -555,5 +404,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    

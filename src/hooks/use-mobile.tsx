@@ -6,7 +6,8 @@ import { useState, useEffect } from "react";
 const MOBILE_BREAKPOINT = 768; // md breakpoint
 
 export function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(true); // Default to true
+  // Initialize state to `true` on the server, and `undefined` on the client until mounted.
+  const [isMobile, setIsMobile] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     const checkIsMobile = () => {
@@ -23,5 +24,7 @@ export function useIsMobile() {
     return () => window.removeEventListener("resize", checkIsMobile);
   }, []);
 
-  return isMobile;
+  // Return false if on server, otherwise the calculated value.
+  // This prevents hydration mismatches.
+  return isMobile === undefined ? false : isMobile;
 }

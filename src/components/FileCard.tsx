@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -21,6 +21,8 @@ import { cn } from '@/lib/utils';
 import { Link2Icon } from './icons/Link2Icon';
 import { useUser } from '@/firebase/auth/use-user';
 import { DropdownMenuSeparator } from './ui/dropdown-menu';
+import { useQuestionGenerationStore } from '@/stores/question-gen-store';
+import { useRouter } from 'next/navigation';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
     if (item.type === 'LINK') {
@@ -106,7 +108,9 @@ export const FileCard = React.memo(function FileCard({
     showDragHandle?: boolean,
 }) {
     const isMobile = useIsMobile();
+    const router = useRouter();
     const { user } = useUser();
+    const startGeneration = useQuestionGenerationStore((state) => state.startGeneration);
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
@@ -133,6 +137,13 @@ export const FileCard = React.memo(function FileCard({
           return;
       }
       onFileClick(item);
+    };
+
+    const handleCreateQuestions = () => {
+        if (item.metadata?.storagePath) {
+            startGeneration(item.id, item.name, item.metadata.storagePath);
+            router.push('/questions-creator?tab=generate');
+        }
     };
     
     return (
@@ -182,6 +193,12 @@ export const FileCard = React.memo(function FileCard({
                         align="end"
                         onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                     >
+                        {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && (
+                             <DropdownMenuItem onClick={handleCreateQuestions}>
+                                <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
+                                <span>Create Questions</span>
+                            </DropdownMenuItem>
+                        )}
                         {!isLink && (
                             <DropdownMenuItem 
                                 onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
