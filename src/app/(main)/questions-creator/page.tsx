@@ -182,11 +182,11 @@ function QuestionsCreatorContent() {
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+    visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
   };
 
   const hasGeneratedContent = task?.textQuestions || task?.jsonQuestions;
-  const isGenerating = task && task.status !== 'completed' && task.status !== 'error';
+  const isGenerating = !!(task && task.status !== 'completed' && task.status !== 'error');
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json') => {
     const isJsonCardWithError = type === 'json' && task?.status === 'error';
@@ -342,7 +342,7 @@ function QuestionsCreatorContent() {
                                 <div>
                                     <Folder className="w-10 h-10 text-yellow-400 mb-4" />
                                     <div className="flex items-start gap-2 mt-2">
-                                        <h3 className="text-base font-semibold text-white break-words">{set.fileName}</h3>
+                                        <h3 className="text-sm font-semibold text-white break-words">{set.fileName}</h3>
                                     </div>
                                     <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                 </div>
@@ -413,5 +413,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
