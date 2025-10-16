@@ -406,8 +406,8 @@ function QuestionsCreatorContent() {
                                 onDragEnter={handleDragEnter}
                                 onDragLeave={handleDragLeave}
                                 className={cn(
-                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-900/40",
-                                    isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/40",
+                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/50",
+                                    isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-700/40",
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
                                 >
@@ -482,35 +482,9 @@ function QuestionsCreatorContent() {
                                 <a className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between">
                                     <div>
                                         <Folder className="w-10 h-10 text-yellow-400 mb-4" />
-                                        {editingId === set.id ? (
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <input 
-                                                    value={editingName} 
-                                                    onChange={e => setEditingName(e.target.value)}
-                                                    onClick={e => e.stopPropagation()}
-                                                    onKeyDown={e => {
-                                                        if (e.key === 'Enter') {
-                                                            e.stopPropagation(); e.preventDefault(); handleSaveEditName(set.id);
-                                                        }
-                                                    }}
-                                                    onBlur={() => handleSaveEditName(set.id)}
-                                                    className="bg-transparent border-b-2 border-blue-500 h-auto p-0 text-lg font-semibold focus:ring-0"
-                                                    autoFocus
-                                                />
-                                            </div>
-                                        ) : (
-                                          <div className="flex items-center gap-2">
-                                            <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={(e) => { e.stopPropagation(); e.preventDefault(); handleStartEditName(set); }}
-                                            >
-                                                <Pencil className="h-4 w-4"/>
-                                            </Button>
-                                          </div>
-                                        )}
+                                        <div className="flex items-center gap-2 mt-2">
+                                          <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                        </div>
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
                                     <div className="absolute top-4 right-4 flex gap-1">
@@ -541,8 +515,6 @@ function QuestionsCreatorContent() {
         <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar" hideCloseButton={true}>
           <DialogHeader className='p-6 pb-2 flex-row flex-none justify-between items-center'>
             <DialogTitle className="flex items-center gap-3">
-                {previewContent?.type === 'text' && <FileText className="text-blue-400 h-5 w-5" />}
-                {previewContent?.type === 'json' && <FileJson className="text-green-400 h-5 w-5" />}
             </DialogTitle>
              <div className="flex items-center gap-1">
                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
@@ -581,7 +553,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
-
-    
