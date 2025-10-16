@@ -31,7 +31,6 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useSearchParams } from 'next/navigation';
-import { Input } from '@/components/ui/input';
 import { Textarea as MyTextarea } from '@/components/ui/textarea'; // Renamed to avoid conflict
 
 
@@ -433,7 +432,7 @@ function QuestionsCreatorContent() {
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
-                             <CardContent className="flex-1 flex flex-col justify-center items-center">
+                             <CardContent className="flex-1 flex flex-col justify-end items-center">
                                 <Button onClick={handleSaveCurrentQuestions} className="rounded-full w-auto self-center px-6 active:scale-95 transition-transform">
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
@@ -484,33 +483,11 @@ function QuestionsCreatorContent() {
                                     <div>
                                         <Folder className="w-10 h-10 text-yellow-400 mb-4" />
                                         <div className="flex items-start gap-2 mt-2">
-                                          {editingId === set.id ? (
-                                            <div className="flex items-center gap-2">
-                                              <Input 
-                                                value={editingName} 
-                                                onChange={e => setEditingName(e.target.value)}
-                                                onClick={e => e.stopPropagation()}
-                                                onBlur={() => handleSaveEditName(set.id)}
-                                                onKeyDown={e => { if (e.key === 'Enter') handleSaveEditName(set.id) }}
-                                                className="text-lg font-semibold text-white bg-transparent border-none p-0 h-auto focus-visible:ring-0"
-                                                autoFocus
-                                              />
-                                            </div>
-                                          ) : (
                                             <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
-                                          )}
                                         </div>
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
                                     <div className="absolute top-4 right-4 flex gap-1">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => {e.preventDefault(); e.stopPropagation(); handleStartEditName(set); }}
-                                        >
-                                            <Pencil className="h-4 w-4 text-blue-300"/>
-                                        </Button>
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
@@ -576,3 +553,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
