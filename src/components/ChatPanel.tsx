@@ -243,8 +243,6 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
 
         const vv = window.visualViewport;
         if (!vv) return;
-
-        let resizeObserver: ResizeObserver | null = null;
         
         const handleResize = () => {
             if (!vv || !inputContainer || !messagesContainer) return;
@@ -257,21 +255,19 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             });
         };
         
-        resizeObserver = new ResizeObserver(() => {
-            handleResize();
-        });
-        
-        resizeObserver.observe(inputContainer);
         vv.addEventListener('resize', handleResize);
         
+        // Use ResizeObserver to handle input height changes
+        const resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(inputContainer);
+
         // Initial setup
         handleResize();
 
         return () => {
             vv.removeEventListener('resize', handleResize);
-            if (resizeObserver && inputContainer) {
-              resizeObserver.unobserve(inputContainer);
-            }
+            resizeObserver.disconnect();
+
             if (inputContainer) inputContainer.style.transform = '';
             if (messagesContainer) messagesContainer.style.paddingBottom = '';
         };
