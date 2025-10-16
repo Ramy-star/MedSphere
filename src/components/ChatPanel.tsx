@@ -418,7 +418,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             </header>
             
             <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
-                 <div className="space-y-6 p-4 sm:p-6 selectable">
+                 <div className="space-y-6 px-4 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-3 selectable">
                     {chatHistory.length === 0 && !isAiThinking && (
                         <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
                             {isExtracting ? (
@@ -511,11 +511,13 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     
     return (
         <div
-            className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 w-[512px] transition-all duration-300 ease-in-out"
-            style={{backgroundColor: '#212121'}}
+            className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 transition-all duration-300 ease-in-out"
+            style={{backgroundColor: '#212121', width: '512px'}}
             aria-label="AI Chat Panel"
         >
             {chatViewContent}
         </div>
     );
 }
+
+    
