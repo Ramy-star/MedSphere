@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from './ui/button';
-import { X, RefreshCw, Check, Minus, Plus, MessageCirclePlus, CornerDownLeft } from 'lucide-react';
+import { X, RefreshCw, Check, Minus, Plus, ArrowUp } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
@@ -25,6 +25,7 @@ import { AiAssistantIcon } from './icons/AiAssistantIcon';
 import { cn } from '@/lib/utils';
 import { Progress } from './ui/progress';
 import { CopyIcon } from './icons/CopyIcon';
+import { MessageCirclePlus } from 'lucide-react';
 
 type ChatPanelProps = {
   isMobile: boolean;
@@ -138,19 +139,15 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
 
 
 const ChatInputForm = React.memo(function ChatInputForm({
-  isMobile,
   isAiThinking,
   isExtracting,
   documentText,
   onChatSubmit,
-  onStopAi,
 }: {
-  isMobile: boolean;
   isAiThinking: boolean;
   isExtracting: boolean;
   documentText: string | null;
   onChatSubmit: (input: string) => Promise<void>;
-  onStopAi: () => void;
 }) {
   const [chatInput, setChatInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -163,10 +160,8 @@ const ChatInputForm = React.memo(function ChatInputForm({
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    // Allows new line with Shift+Enter, and sends with Enter on desktop
-    if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
-      e.preventDefault();
-      handleSubmit();
+    if (e.key === 'Enter' && e.shiftKey) {
+       return;
     }
   };
 
@@ -209,7 +204,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
                     onClick={handleSubmit}
                     disabled={isAiThinking || !chatInput.trim()}
                 >
-                    <CornerDownLeft className="w-5 h-5" />
+                    <ArrowUp className="w-5 h-5" />
                 </Button>
             )}
           </div>
@@ -217,6 +212,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
       </div>
   );
 });
+
 
 export default function ChatPanel({ isMobile, documentText, isExtracting, onClose }: ChatPanelProps) {
     const { toast } = useToast();
@@ -230,58 +226,60 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     
-    const inputContainerRef = useRef<HTMLDivElement>(null);
+    const chatPanelRef = useRef<HTMLDivElement>(null);
     const messagesContainerRef = useRef<HTMLDivElement>(null);
-    const [keyboardOffset, setKeyboardOffset] = useState(0);
+    const inputContainerRef = useRef<HTMLDivElement>(null);
 
     // This effect handles keyboard appearance on mobile.
     useEffect(() => {
-        const inputRef = inputContainerRef.current;
-        const messagesRef = messagesContainerRef.current;
+        const panel = chatPanelRef.current;
+        const messagesContainer = messagesContainerRef.current;
+        const inputContainer = inputContainerRef.current;
         
-        if (!isMobile || !inputRef || !messagesRef || typeof window === 'undefined' || !window.visualViewport) {
+        if (!isMobile || !panel || !messagesContainer || !inputContainer || typeof window === 'undefined' || !window.visualViewport) {
             return;
         }
 
         const vv = window.visualViewport;
         if (!vv) return;
 
-        let initialInputHeight = inputRef.offsetHeight;
+        let initialInputHeight = inputContainer.offsetHeight;
 
         const handleResize = () => {
+            if (!vv) return;
             const offset = window.innerHeight - vv.height;
             requestAnimationFrame(() => {
-              if (inputRef) {
-                inputRef.style.transform = `translateY(-${offset}px)`;
+              if (inputContainer) {
+                inputContainer.style.transform = `translateY(-${offset}px)`;
               }
-              if (messagesRef) {
-                messagesRef.style.paddingBottom = `${offset + initialInputHeight}px`;
-                messagesRef.scrollTop = messagesRef.scrollHeight;
+              if (messagesContainer) {
+                messagesContainer.style.paddingBottom = `${offset + initialInputHeight}px`;
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
               }
             });
         };
         
         const observer = new ResizeObserver(() => {
-            if (inputRef) {
-                initialInputHeight = inputRef.offsetHeight; // Update height on resize (e.g. textarea grows)
-                handleResize();
+            if (inputContainer) {
+                initialInputHeight = inputContainer.offsetHeight; // Update height on resize (e.g. textarea grows)
+                handleResize(); // Recalculate padding
             }
         });
         
-        observer.observe(inputRef);
+        observer.observe(inputContainer);
         vv.addEventListener('resize', handleResize);
         
         // Initial setup
-        if (messagesRef) {
-          messagesRef.style.paddingBottom = `${initialInputHeight}px`;
+        if (messagesContainer) {
+          messagesContainer.style.paddingBottom = `${initialInputHeight}px`;
         }
         handleResize();
 
         return () => {
             vv.removeEventListener('resize', handleResize);
             observer.disconnect();
-            if (inputRef) inputRef.style.transform = '';
-            if (messagesRef) messagesRef.style.paddingBottom = `${initialInputHeight}px`;
+            if (inputContainer) inputContainer.style.transform = '';
+            if (messagesContainer) messagesContainer.style.paddingBottom = `${initialInputHeight}px`;
         };
     }, [isMobile]);
 
@@ -354,12 +352,6 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         
         await submitChat(lastUserMessage.text, historyBeforeLastInteraction);
     }, [isAiThinking, chatHistory, submitChat]);
-
-    const handleStopAi = () => {
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-        }
-    }
 
     const handleCopyToClipboard = (text: string, messageId: string) => {
         navigator.clipboard.writeText(text).then(() => {
@@ -490,12 +482,10 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 )}
             >
               <ChatInputForm 
-                isMobile={isMobile}
                 isAiThinking={isAiThinking}
                 isExtracting={isExtracting}
                 documentText={documentText}
                 onChatSubmit={handleChatSubmit}
-                onStopAi={handleStopAi}
               />
             </div>
 
@@ -519,6 +509,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     if (isMobile) {
         return (
              <div
+                ref={chatPanelRef}
                 className="flex flex-col overflow-hidden w-full absolute inset-0 z-50"
                 style={{backgroundColor: '#212121', height: 'var(--1dvh, 100vh)'}}
             >
