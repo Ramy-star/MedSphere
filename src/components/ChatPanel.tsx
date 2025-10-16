@@ -148,7 +148,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
     const [fontSizeIndex, setFontSizeIndex] = useState(1);
     
-    const chatContainerRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
     const inputContainerRef = useRef<HTMLDivElement>(null);
@@ -161,24 +161,25 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
 
         const vv = window.visualViewport;
         const inputContainer = inputContainerRef.current;
-        const chatContainer = chatContainerRef.current;
+        const messagesContainer = messagesContainerRef.current;
 
-        if (!inputContainer || !chatContainer) return;
+        if (!inputContainer || !messagesContainer) return;
 
         const handleResize = () => {
-            // Amount the keyboard covers the layout viewport
+             // Amount the keyboard covers the layout viewport
             const keyboardOffset = window.innerHeight - vv.height;
+            const inputContainerHeight = inputContainer.clientHeight;
             
             // Move the input container up instantly with the keyboard
             inputContainer.style.transform = `translateY(-${keyboardOffset}px)`;
             
             // Add padding to the bottom of the chat messages container
             // so the last message is always visible above the keyboard.
-            chatContainer.style.paddingBottom = `${inputContainer.clientHeight + keyboardOffset}px`;
+            messagesContainer.style.paddingBottom = `${inputContainerHeight + keyboardOffset}px`;
 
             // Scroll to the bottom to keep the last message in view
-            if (chatContainer.parentElement) {
-                chatContainer.parentElement.scrollTop = chatContainer.parentElement.scrollHeight;
+            if (messagesContainer) {
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
             }
         };
 
@@ -191,7 +192,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             vv.removeEventListener('resize', handleResize);
              // Reset styles on cleanup
             if (inputContainer) inputContainer.style.transform = 'translateY(0px)';
-            if (chatContainer) chatContainer.style.paddingBottom = `${inputContainer.clientHeight}px`;
+            if (messagesContainer) messagesContainer.style.paddingBottom = `${inputContainer.clientHeight}px`;
         };
     }, [isMobile]);
 
@@ -316,8 +317,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
       };
 
     useEffect(() => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+        if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
         }
     }, [chatHistory, isAiThinking]);
 
@@ -330,10 +331,9 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
 
             if (inputContainerRef.current) {
-                 const chatContainer = chatContainerRef.current;
-                 const inputContainer = inputContainerRef.current;
-                 if (chatContainer) {
-                    chatContainer.style.paddingBottom = `${inputContainer.clientHeight}px`;
+                 const messagesContainer = messagesContainerRef.current;
+                 if (messagesContainer) {
+                    messagesContainer.style.paddingBottom = `${inputContainerRef.current.clientHeight}px`;
                  }
             }
         }
@@ -341,7 +341,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
 
     const chatViewContent = (
         <>
-            <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 sticky top-0 bg-[#212121] z-20")}>
+            <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14 sticky top-0 z-20", isMobile ? "bg-[#212121]" : "bg-transparent")}>
                 <div className="flex items-center gap-2">
                     <AiAssistantIcon className="h-6 w-6" />
                     <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -383,8 +383,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </div>
                 </TooltipProvider>
             </header>
-            <div className="relative flex-1 overflow-y-auto">
-                 <div ref={chatContainerRef} className="space-y-6 p-4 sm:p-6">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
+                 <div className="space-y-6 p-4 sm:p-6">
                     {chatHistory.length === 0 && !isAiThinking && (
                         <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
                             {isExtracting ? (
@@ -436,7 +436,10 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             
             <div
                 ref={inputContainerRef}
-                className={cn("fixed bottom-0 left-0 right-0 z-20 w-full transition-transform duration-0", isMobile && "md:relative")}
+                className={cn(
+                    "w-full z-20 transition-transform duration-0", // No transition for instant movement
+                    isMobile ? "fixed bottom-0 left-0 right-0" : "relative"
+                )}
             >
               <div className='p-2' style={{backgroundColor: '#212121'}}>
                  <form
@@ -506,7 +509,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         return (
              <div
                 className="flex flex-col overflow-hidden h-full w-full absolute inset-0 z-20"
-                style={{backgroundColor: '#212121', height: 'var(--1dvh, 100dvh)'}}
+                style={{backgroundColor: '#212121', height: 'var(--1dvh, 100vh)'}}
             >
                 {chatViewContent}
             </div>
@@ -523,6 +526,3 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         </div>
     );
 }
-
-
-    
