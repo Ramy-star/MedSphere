@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -200,6 +201,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
         case 'ts':
             return { Icon: FileCode, color: 'text-gray-400' };
         case 'txt':
+        case 'md':
              return { Icon: FileText, color: 'text-gray-400' };
         case 'mp3':
         case 'wav':
@@ -267,6 +269,35 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       resetState();
     }
   }, [item, resetState]);
+
+    const handleMarkdownTextExtraction = useCallback(async () => {
+        if (!item || item.metadata?.mime !== 'text/markdown' || !item.metadata.storagePath) return;
+
+        if (documentText || isExtracting) return;
+
+        setIsExtracting(true);
+        try {
+            const blob = await contentService.getFileContent(item.metadata.storagePath);
+            const text = await blob.text();
+            setDocumentText(text);
+        } catch (err: any) {
+            console.error("Failed to extract Markdown text:", err);
+            setDocumentText(null);
+            toast({ 
+                variant: 'destructive', 
+                title: 'Text Extraction Failed', 
+                description: err.message || 'Could not read document content for chat.' 
+            });
+        } finally {
+            setIsExtracting(false);
+        }
+    }, [item, documentText, isExtracting, toast]);
+
+    useEffect(() => {
+        if (item?.metadata?.mime === 'text/markdown') {
+            handleMarkdownTextExtraction();
+        }
+    }, [item, handleMarkdownTextExtraction]);
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -450,7 +481,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const linkUrl = item?.metadata?.url;
   const openUrl = isLink ? linkUrl : fileUrl;
   const isPdf = item?.metadata?.mime === 'application/pdf';
-  const isChatAvailable = item.metadata?.mime === 'application/pdf';
+  const isMarkdown = item?.metadata?.mime === 'text/markdown';
+  const isChatAvailable = isPdf || isMarkdown;
   
   const renderLoadingSkeleton = () => (
     <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
