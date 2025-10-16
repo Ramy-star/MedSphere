@@ -70,26 +70,35 @@ const convertToJsonPrompt = ai.definePrompt({
 });
 
 export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise<string> {
-    const { output } = await convertToJsonPrompt(input);
+    try {
+        const { output } = await convertToJsonPrompt(input);
 
-    // Genkit's `output: { format: 'json' }` can return a JSON object or a string.
-    // We need to handle both cases to ensure a string is always returned.
-    if (typeof output === 'object' && output !== null) {
-        return JSON.stringify(output, null, 2);
-    }
-    
-    // If the output is already a string (which can happen), return it directly.
-    if (typeof output === 'string') {
-        // Attempt to parse and re-stringify to ensure it's valid, pretty-printed JSON.
-        // If parsing fails, it's likely just a string message, so return it as is.
-        try {
-            const parsed = JSON.parse(output);
-            return JSON.stringify(parsed, null, 2);
-        } catch (e) {
-            return output; // It's not a JSON string, so return as is.
+        // Case 1: The output is a structured JSON object (most common).
+        if (typeof output === 'object' && output !== null) {
+            return JSON.stringify(output, null, 2);
         }
+
+        // Case 2: The output is a string that is *already* valid JSON.
+        if (typeof output === 'string') {
+            try {
+                // Validate and re-stringify to ensure it's well-formatted.
+                const parsed = JSON.parse(output);
+                return JSON.stringify(parsed, null, 2);
+            } catch (e) {
+                // If parsing fails, it's not a valid JSON string.
+                // It might be an error message or just plain text from the model.
+                // In this scenario, returning it as-is can be helpful for debugging.
+                return output;
+            }
+        }
+
+        // Fallback for any other unexpected type (e.g., number, boolean).
+        // This provides a clear error message instead of causing a server crash.
+        return `Could not convert to JSON. Received an unexpected type: ${typeof output}`;
+
+    } catch (err) {
+        console.error("Error in convertQuestionsToJson flow:", err);
+        // Re-throw the error to be caught by the client-side, which will show the user an error.
+        throw err;
     }
-    
-    // Fallback for unexpected types (like number, boolean, etc.)
-    return `Could not convert to JSON. Received type: ${typeof output}`;
 }
