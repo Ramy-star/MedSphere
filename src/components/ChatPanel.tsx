@@ -159,13 +159,18 @@ const ChatInputForm = React.memo(function ChatInputForm({
     if (isAiThinking || !chatInput.trim()) return;
 
     const currentInput = chatInput;
-    onChatSubmit(currentInput);
     
     // Clear input and blur immediately to prevent layout jump on mobile.
     setChatInput('');
     if (isMobile) {
       textareaRef.current?.blur();
     }
+    
+    // Use setTimeout to push the expensive state update to the next event loop tick.
+    // This allows the keyboard to start its dismissal animation smoothly.
+    setTimeout(() => {
+        onChatSubmit(currentInput);
+    }, 0);
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
