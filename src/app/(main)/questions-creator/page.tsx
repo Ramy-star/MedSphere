@@ -41,11 +41,6 @@ type SavedQuestionSet = {
   userId: string;
 };
 
-type EditingState = {
-  text: boolean;
-  json: boolean;
-};
-
 export default function QuestionsCreatorPage() {
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
@@ -67,11 +62,6 @@ export default function QuestionsCreatorPage() {
   const [editingContent, setEditingContent] = useState<{ text: string | null, json: string | null }>({
     text: null,
     json: null,
-  });
-  
-  const [isEditing, setIsEditing] = useState<EditingState>({
-    text: false,
-    json: false,
   });
 
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
@@ -365,34 +355,6 @@ export default function QuestionsCreatorPage() {
     toast({ title: 'Set Deleted', description: 'The question set has been removed.' });
   };
   
-  const handleContentChange = (type: 'text' | 'json', value: string) => {
-    setEditingContent(prev => ({ ...prev, [type]: value }));
-  };
-
-  const handleSaveEdit = (type: 'text' | 'json') => {
-    if (type === 'text') {
-      setTextQuestions(editingContent.text);
-    } else {
-      setJsonQuestions(editingContent.json);
-    }
-    
-    setIsEditing(prev => ({ ...prev, [type]: false }));
-  };
-
-  const handleToggleEdit = (type: 'text' | 'json') => {
-    const isThisCardEditing = isEditing[type];
-  
-    if (isThisCardEditing) {
-      handleSaveEdit(type);
-    } else {
-      setEditingContent({
-        text: textQuestions,
-        json: jsonQuestions,
-      });
-      setIsEditing({ text: false, json: false, [type]: true });
-    }
-  };
-
   const handlePreviewSave = async () => {
     if (!previewContent) return;
     const { type, content, setId } = previewContent;
@@ -418,8 +380,6 @@ export default function QuestionsCreatorPage() {
   const hasGeneratedContent = textQuestions || jsonQuestions;
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json') => {
-    const isThisCardEditing = isEditing[type];
-    const contentForDisplay = isThisCardEditing ? editingContent[type] : content;
     const isJsonCardWithError = type === 'json' && jsonError;
 
     return (
@@ -434,10 +394,6 @@ export default function QuestionsCreatorPage() {
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || "", type })} disabled={!content}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
                     
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)} disabled={isLoading || !content}>
-                        {isThisCardEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
-                    </Button>
-
                     {type === 'text' ? (
                         <Popover>
                             <PopoverTrigger asChild>
@@ -463,20 +419,14 @@ export default function QuestionsCreatorPage() {
                         <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                         <p className="ml-3 text-slate-300">{loadingText}</p>
                     </div>
-                ) : isThisCardEditing ? (
-                    <Textarea
-                        value={contentForDisplay || ''}
-                        onChange={(e) => handleContentChange(type, e.target.value)}
-                        className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                    />
                 ) : (
                     <div className="relative flex-1">
-                        <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto no-scrollbar">
+                        <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-64 overflow-auto no-scrollbar">
                             {content || 'Generated content will appear here...'}
                         </pre>
                     </div>
                 )}
-                {isJsonCardWithError && !isThisCardEditing && (
+                {isJsonCardWithError && (
                     <div className="mt-2">
                         <Button onClick={handleRepairJson} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white'>
                             {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
@@ -682,3 +632,5 @@ export default function QuestionsCreatorPage() {
     </div>
   );
 }
+
+    
