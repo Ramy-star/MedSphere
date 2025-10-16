@@ -54,7 +54,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
     if (msg.role === 'user') {
         return (
             <div className="flex justify-end">
-                <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%]", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
+                <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%] selectable", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
                     <p className="text-white whitespace-pre-wrap break-words font-inter">{msg.text}</p>
                 </div>
             </div>
@@ -161,14 +161,10 @@ const ChatInputForm = React.memo(function ChatInputForm({
     const currentInput = chatInput;
     onChatSubmit(currentInput);
     
-    // Defer clearing input and blurring to avoid UI jump on mobile
+    // Clear input and blur immediately to prevent layout jump on mobile.
+    setChatInput('');
     if (isMobile) {
-      setTimeout(() => {
-        setChatInput('');
-        textareaRef.current?.blur();
-      }, 0);
-    } else {
-      setChatInput('');
+      textareaRef.current?.blur();
     }
   };
   
@@ -436,7 +432,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             </header>
             
             <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
-                 <div className="space-y-6 px-4 pt-4 pb-2 sm:px-6 sm:pt-6 sm:pb-3 selectable">
+                 <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
                     {chatHistory.length === 0 && !isAiThinking && (
                         <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
                             {isExtracting ? (
