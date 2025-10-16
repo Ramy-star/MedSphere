@@ -112,29 +112,19 @@ export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise
             const { output } = await convertToJsonPrompt(input);
 
             if (typeof output === 'object' && output !== null) {
+                // Return the stringified JSON with formatting to preserve newlines.
                 return JSON.stringify(output, null, 2);
             }
-
+            // If the output is already a string, assume it's a correctly formatted JSON string.
             if (typeof output === 'string') {
-                const jsonMatch = output.match(/```json\n([\s\S]*?)\n```/);
-                if (jsonMatch && jsonMatch[1]) {
-                    try {
-                        const parsed = JSON.parse(jsonMatch[1]);
-                        return JSON.stringify(parsed, null, 2); 
-                    } catch (e) {
-                         throw new Error(`The AI returned a response that could not be converted to a valid JSON structure. Raw output: ${output}`);
-                    }
-                }
-                try {
-                    const parsed = JSON.parse(output);
-                    return JSON.stringify(parsed, null, 2);
-                } catch (e) {
-                    console.warn("Model output was a string but not valid JSON:", output);
-                     throw new Error(`The AI returned a response that could not be converted to a valid JSON structure. Raw output: ${output}`);
+                // Basic validation to ensure it's likely JSON without re-parsing.
+                const trimmedOutput = output.trim();
+                if ((trimmedOutput.startsWith('{') && trimmedOutput.endsWith('}')) || (trimmedOutput.startsWith('[') && trimmedOutput.endsWith(']'))) {
+                    return output;
                 }
             }
-            const errorMsg = `Could not convert to JSON. The AI returned an unexpected data type: ${typeof output}`;
-            console.error(errorMsg);
+            
+            const errorMsg = `The AI returned a response that could not be converted to a valid JSON structure. Raw output: ${output}`;
             throw new Error(errorMsg);
 
         } catch (err: any) {
@@ -164,17 +154,18 @@ const repairJsonPrompt = ai.definePrompt({
 export async function repairJson(input: RepairJsonInput): Promise<string> {
      return runWithRetry(async () => {
         const { output } = await repairJsonPrompt(input);
+        
         if (typeof output === 'object' && output !== null) {
             return JSON.stringify(output, null, 2);
         }
+        
         if (typeof output === 'string') {
-            try {
-                const parsed = JSON.parse(output);
-                return JSON.stringify(parsed, null, 2);
-            } catch (e) {
-                throw new Error('The repair process also resulted in invalid JSON.');
+            const trimmedOutput = output.trim();
+            if ((trimmedOutput.startsWith('{') && trimmedOutput.endsWith('}')) || (trimmedOutput.startsWith('[') && trimmedOutput.endsWith(']'))) {
+                return output;
             }
         }
-        throw new Error('The repair process returned an unexpected data type.');
+        
+        throw new Error('The repair process resulted in invalid or unexpected data type.');
     });
 }
