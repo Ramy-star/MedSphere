@@ -129,42 +129,10 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     toast({ title: 'Copied to Clipboard', description: `${type} questions have been copied.` });
   };
   
-  const handleDownload = (content: string, format: 'txt' | 'pdf' | 'docx' | 'json') => {
+  const handleDownload = (content: string, format: 'txt' | 'json') => {
     let blob: Blob;
     let fileExtension = format;
 
-    if (format === 'pdf') {
-        const doc = new jsPDF();
-        doc.text(content, 10, 10);
-        doc.save('questions.pdf');
-        return;
-    }
-
-    if (format === 'docx') {
-        const doc = new DocxDocument({
-            sections: [{
-                properties: {},
-                children: [
-                    new Paragraph({
-                        children: [new TextRun(content)],
-                    }),
-                ],
-            }],
-        });
-
-        Packer.toBlob(doc).then(blob => {
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'questions.docx';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-        return;
-    }
-    
     blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
     
     const url = URL.createObjectURL(blob);
@@ -234,18 +202,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     </Button>
 
                     {type === 'text' ? (
-                        <Popover>
-                            <PopoverTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full"><Download className="h-4 w-4" /></Button>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-40 p-2">
-                                <div className="space-y-1">
-                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'txt')}>TXT</Button>
-                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'pdf')}>PDF</Button>
-                                    <Button variant="ghost" className="w-full justify-start rounded-lg" onClick={() => handleDownload(content, 'docx')}>DOCX</Button>
-                                </div>
-                            </PopoverContent>
-                        </Popover>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'txt')}><Download className="h-4 w-4" /></Button>
                     ) : (
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'json')}><Download className="h-4 w-4" /></Button>
                     )}
@@ -295,7 +252,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                   ref={titleRef}
                   contentEditable={isEditingTitle}
                   suppressContentEditableWarning={true}
-                  className="text-2xl font-bold text-white outline-none focus:ring-2 focus:ring-blue-500 focus:rounded-md"
                   onBlur={handleTitleSave}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
@@ -303,6 +259,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                       handleTitleSave();
                     }
                   }}
+                  className="text-2xl font-bold text-white outline-none focus:bg-white/10 focus:rounded-md"
                 >
                   {editingTitle}
                 </h1>
@@ -381,3 +338,5 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    
