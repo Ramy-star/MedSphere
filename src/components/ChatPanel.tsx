@@ -381,55 +381,57 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 </TooltipProvider>
             </header>
             
-            <div className="flex-1 overflow-y-auto">
-                 <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
-                    {chatHistory.length === 0 && !isAiThinking && (
-                        <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
-                            {isExtracting ? (
-                                <div className="flex flex-col gap-4">
-                                  <div className="flex items-center gap-2 text-white">
-                                    <Skeleton className="h-5 w-5 rounded-full" />
-                                    <p>Analyzing document...</p>
-                                  </div>
-                                  <Progress value={50} className="w-full h-1" />
-                                </div>
-                            ) : documentText ? (
-                                <p className="text-white">I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
-                            ) : (
-                                <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
-                            )}
-                        </div>
-                    )}
-
-                    {chatHistory.map((msg, index) => {
-                        const isLastModelMessage = index === chatHistory.length - 1 && msg.role === 'model';
-                        return (
-                            <ChatMessage
-                                key={`msg-${index}`}
-                                messageId={`msg-${index}`}
-                                msg={msg}
-                                onCopy={handleCopyToClipboard}
-                                onRegenerate={handleRegenerate}
-                                isLastMessage={isLastModelMessage}
-                                isAiThinking={isAiThinking}
-                                copiedMessageId={copiedMessageId}
-                                fontSizeClass={fontSizes[fontSizeIndex]}
-                            />
-                        )
-                    })}
-
-                     {isAiThinking && (
-                        <div className="flex items-start space-x-3 group/message">
-                            <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
-                            <div className="flex-1 space-y-3 pt-1">
-                                <Skeleton className="h-4 w-12 rounded-lg" />
-                                <Skeleton className="h-4 w-[90%] rounded-lg" />
-                                <Skeleton className="h-4 w-[75%] rounded-lg" />
-                                <Skeleton className="h-4 w-[85%] rounded-lg" />
+            <div className="flex-1 flex flex-col min-h-0">
+                <div className="flex-1 overflow-y-auto shrink-[1] min-h-0">
+                    <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
+                        {chatHistory.length === 0 && !isAiThinking && (
+                            <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
+                                {isExtracting ? (
+                                    <div className="flex flex-col gap-4">
+                                      <div className="flex items-center gap-2 text-white">
+                                        <Skeleton className="h-5 w-5 rounded-full" />
+                                        <p>Analyzing document...</p>
+                                      </div>
+                                      <Progress value={50} className="w-full h-1" />
+                                    </div>
+                                ) : documentText ? (
+                                    <p className="text-white">I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
+                                ) : (
+                                    <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                                )}
                             </div>
-                        </div>
-                    )}
-                    <div ref={messagesEndRef} />
+                        )}
+
+                        {chatHistory.map((msg, index) => {
+                            const isLastModelMessage = index === chatHistory.length - 1 && msg.role === 'model';
+                            return (
+                                <ChatMessage
+                                    key={`msg-${index}`}
+                                    messageId={`msg-${index}`}
+                                    msg={msg}
+                                    onCopy={handleCopyToClipboard}
+                                    onRegenerate={handleRegenerate}
+                                    isLastMessage={isLastModelMessage}
+                                    isAiThinking={isAiThinking}
+                                    copiedMessageId={copiedMessageId}
+                                    fontSizeClass={fontSizes[fontSizeIndex]}
+                                />
+                            )
+                        })}
+
+                         {isAiThinking && (
+                            <div className="flex items-start space-x-3 group/message">
+                                <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
+                                <div className="flex-1 space-y-3 pt-1">
+                                    <Skeleton className="h-4 w-12 rounded-lg" />
+                                    <Skeleton className="h-4 w-[90%] rounded-lg" />
+                                    <Skeleton className="h-4 w-[75%] rounded-lg" />
+                                    <Skeleton className="h-4 w-[85%] rounded-lg" />
+                                </div>
+                            </div>
+                        )}
+                        <div ref={messagesEndRef} />
+                    </div>
                 </div>
             </div>
             
@@ -484,8 +486,3 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         </div>
     );
 }
-
-    
-    
-
-    
