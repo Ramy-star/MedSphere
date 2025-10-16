@@ -159,6 +159,9 @@ const ChatInputForm = React.memo(function ChatInputForm({
     if (isAiThinking || !chatInput.trim()) return;
     onChatSubmit(chatInput);
     setChatInput('');
+    if (isMobile) {
+      textareaRef.current?.blur();
+    }
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
