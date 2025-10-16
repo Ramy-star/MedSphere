@@ -33,7 +33,7 @@ export default function MainLayout({
           !isHomePage && "glass-card"
         )}
       >
-        <div className="flex-shrink-0 min-h-[56px] flex flex-col">
+        <div className="flex-shrink-0 flex flex-col">
             <Breadcrumbs />
         </div>
         
