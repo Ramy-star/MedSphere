@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +20,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { jsPDF } from 'jspdf';
@@ -53,6 +54,7 @@ export default function QuestionsCreatorPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [previewContent, setPreviewContent] = useState<{title: string, content: string} | null>(null);
+  const [isPreviewEditing, setIsPreviewEditing] = useState(false);
 
   const [editingContent, setEditingContent] = useState<{ text: string | null, json: string | null }>({
     text: null,
@@ -122,6 +124,7 @@ export default function QuestionsCreatorPage() {
     setJsonQuestions(null);
     setError(null);
     setIsGenerating(true);
+    setIsConverting(false);
 
     try {
         if (file.type !== 'application/pdf') {
@@ -135,10 +138,8 @@ export default function QuestionsCreatorPage() {
         const fileBuffer = await file.arrayBuffer();
         const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
         
-        // 1. Extract text
         const documentText = await contentService.extractTextFromPdf(pdf);
 
-        // 2. Extract images
         const imageUris: string[] = [];
         for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
@@ -158,7 +159,6 @@ export default function QuestionsCreatorPage() {
 
                         const imageData = ctx.createImageData(img.width, img.height);
                         if (img.kind === pdfjs.ImageKind.GRAYSCALE_1BPP) {
-                            // Grayscale image handling
                             let i = 0;
                             for (let j = 0; j < img.data.length; j++) {
                                 const b = img.data[j];
@@ -171,7 +171,6 @@ export default function QuestionsCreatorPage() {
                                 }
                             }
                         } else if (img.kind === pdfjs.ImageKind.RGB_24BPP) {
-                            // RGB image handling
                             let i = 0;
                             for (let j = 0; j < img.data.length; j += 3) {
                                 imageData.data[i++] = img.data[j];
@@ -180,7 +179,6 @@ export default function QuestionsCreatorPage() {
                                 imageData.data[i++] = 255;
                             }
                         } else {
-                            // For other kinds, just copy the data
                              imageData.data.set(img.data);
                         }
                         ctx.putImageData(imageData, 0, 0);
@@ -201,7 +199,6 @@ export default function QuestionsCreatorPage() {
             throw new Error('Could not extract any text or images from the file.');
         }
 
-        // 3. Generate questions using text and images
         const generatedText = await generateQuestions({
             prompt: generationPrompt,
             documentContent: documentText,
@@ -209,10 +206,22 @@ export default function QuestionsCreatorPage() {
         });
         setTextQuestions(generatedText);
       
-        // 4. Convert to JSON
         setIsConverting(true);
-        const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: generatedText });
-        setJsonQuestions(generatedJson);
+        setIsGenerating(false);
+
+        try {
+            const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: generatedText });
+            setJsonQuestions(generatedJson);
+        } catch (jsonErr: any) {
+            console.error("Error during JSON conversion:", jsonErr);
+            toast({
+                variant: 'destructive',
+                title: 'JSON Conversion Failed',
+                description: jsonErr.message || "Could not convert text to JSON."
+            })
+            // Keep text questions, but show JSON failed.
+            setJsonQuestions(null);
+        }
 
     } catch (err: any) {
         console.error("Error during question generation process:", err);
@@ -267,7 +276,6 @@ export default function QuestionsCreatorPage() {
         return;
     }
     
-    // Default to txt or json
     blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
     
     const url = URL.createObjectURL(blob);
@@ -293,12 +301,12 @@ export default function QuestionsCreatorPage() {
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(false); };
   
-  const handleStartEdit = (set: SavedQuestionSet) => {
+  const handleStartEditName = (set: SavedQuestionSet) => {
     setEditingId(set.id);
     setEditingName(set.fileName);
   };
 
-  const handleSaveEdit = (id: string) => {
+  const handleSaveEditName = (id: string) => {
     setSavedQuestions(prev => prev.map(s => s.id === id ? { ...s, fileName: editingName } : s));
     setEditingId(null);
   };
@@ -308,31 +316,50 @@ export default function QuestionsCreatorPage() {
     toast({ title: 'Set Deleted', description: 'The question set has been removed.' });
   };
   
-  const handleToggleEdit = (type: 'text' | 'json', isSaved: boolean = false, setId?: string) => {
-    const isCurrentlyEditing = isEditing[type] && (!isSaved || editingId === setId);
-    
-    if (isCurrentlyEditing) {
-      if (isSaved && setId) {
-        // Save logic for saved questions
-        setSavedQuestions(prev => prev.map(s => {
+  const handleContentChange = (type: 'text' | 'json', value: string) => {
+    setEditingContent(prev => ({ ...prev, [type]: value }));
+  };
+
+    const handleSaveEdit = (type: 'text' | 'json', setId?: string) => {
+    const isSavedSet = !!setId;
+    const contentToSave = editingContent[type];
+
+    if (contentToSave === null) return;
+
+    if (isSavedSet) {
+      setSavedQuestions(prev =>
+        prev.map(s => {
           if (s.id === setId) {
             return {
               ...s,
-              textQuestions: type === 'text' ? editingContent.text ?? s.textQuestions : s.textQuestions,
-              jsonQuestions: type === 'json' ? editingContent.json ?? s.jsonQuestions : s.jsonQuestions,
-            }
+              textQuestions: type === 'text' ? contentToSave : s.textQuestions,
+              jsonQuestions: type === 'json' ? contentToSave : s.jsonQuestions,
+            };
           }
           return s;
-        }));
-        setEditingId(null);
+        })
+      );
+      setEditingId(null);
+    } else {
+      if (type === 'text') {
+        setTextQuestions(contentToSave);
       } else {
-        // Save logic for currently generated questions
-        if (type === 'text') setTextQuestions(editingContent.text);
-        else setJsonQuestions(editingContent.json);
+        setJsonQuestions(contentToSave);
       }
+    }
+    
+    setIsEditing(prev => ({ ...prev, [type]: false }));
+    setIsPreviewEditing(false);
+  };
+
+  const handleToggleEdit = (type: 'text' | 'json', isSavedSet = false, setId?: string) => {
+    const isCurrentlyEditing = isEditing[type] && (!isSavedSet || editingId === setId);
+
+    if (isCurrentlyEditing) {
+      handleSaveEdit(type, setId);
     } else {
       // Start editing
-      if (isSaved && setId) {
+      if (isSavedSet && setId) {
         const set = savedQuestions.find(s => s.id === setId);
         if (set) {
           setEditingId(setId);
@@ -347,15 +374,9 @@ export default function QuestionsCreatorPage() {
           json: jsonQuestions,
         });
       }
+      setIsEditing(prev => ({...prev, [type]: !isCurrentlyEditing}));
     }
-    
-    setIsEditing(prev => ({...prev, [type]: !isCurrentlyEditing}));
   };
-  
-  const handleContentChange = (type: 'text' | 'json', value: string) => {
-    setEditingContent(prev => ({ ...prev, [type]: value }));
-  };
-
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -365,49 +386,9 @@ export default function QuestionsCreatorPage() {
   const hasGeneratedContent = textQuestions || jsonQuestions;
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json', isSavedSet = false, setId?: string) => {
-    const isEditingThisCard = (isSavedSet && editingId === setId) || (!isSavedSet && isEditing[type]);
-    const contentForDisplay = isSavedSet ? (editingId === setId ? editingContent[type] : content) : (isEditing[type] ? editingContent[type] : content);
+    const isEditingThisCard = (isSavedSet && editingId === setId && isEditing[type]);
+    const contentForDisplay = isEditingThisCard ? editingContent[type] : content;
 
-    const handleSave = () => {
-        if(isSavedSet && setId) {
-            setSavedQuestions(prev => prev.map(s => {
-                if (s.id === setId) {
-                    return {
-                        ...s,
-                        textQuestions: type === 'text' ? editingContent.text ?? s.textQuestions : s.textQuestions,
-                        jsonQuestions: type === 'json' ? editingContent.json ?? s.jsonQuestions : s.jsonQuestions
-                    };
-                }
-                return s;
-            }));
-            setEditingId(null);
-        } else {
-             if (type === 'text') setTextQuestions(editingContent.text);
-             else setJsonQuestions(editingContent.json);
-             setIsEditing(prev => ({...prev, [type]: false}));
-        }
-    }
-
-    const handleEditClick = () => {
-        if (isSavedSet && setId) {
-            setEditingId(setId);
-             const set = savedQuestions.find(s => s.id === setId);
-             if (set) {
-                setEditingContent({
-                    text: set.textQuestions,
-                    json: set.jsonQuestions,
-                });
-            }
-        } else {
-            setEditingContent({
-                text: textQuestions,
-                json: jsonQuestions,
-            });
-            setIsEditing(prev => ({...prev, [type]: true}));
-        }
-    }
-
-    
     return (
         <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
             <CardHeader>
@@ -420,11 +401,9 @@ export default function QuestionsCreatorPage() {
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || ""})} disabled={!content}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
                     
-                    {isEditingThisCard ? (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleSave}><Check className="h-4 w-4 text-green-400" /></Button>
-                    ) : (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={handleEditClick} disabled={isLoading || !content}><Pencil className="h-4 w-4" /></Button>
-                    )}
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type, isSavedSet, setId)} disabled={isLoading || !content}>
+                        {isEditingThisCard ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
+                    </Button>
 
                     {type === 'text' ? (
                         <Popover>
@@ -458,7 +437,7 @@ export default function QuestionsCreatorPage() {
                         className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500"
                     />
                 ) : (
-                    <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto">
+                    <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto no-scrollbar">
                         {content || 'Generated content will appear here...'}
                     </pre>
                 )}
@@ -485,7 +464,6 @@ export default function QuestionsCreatorPage() {
 
         <TabsContent value="generate" className="mt-8">
             <div className="space-y-8">
-                {/* Top Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" className="h-full">
                         <Card className="glass-card rounded-3xl h-full flex flex-col">
@@ -526,14 +504,13 @@ export default function QuestionsCreatorPage() {
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
                              <CardContent className="flex-1 flex flex-col justify-end">
-                                <Button onClick={handleSaveCurrentQuestions} className="rounded-full active:scale-95 transition-transform">
+                                <Button onClick={handleSaveCurrentQuestions} className="rounded-full w-auto self-center px-6 active:scale-95 transition-transform">
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
                             </CardContent>
                         </Card>
                     </motion.div>
                 </div>
-                {/* Bottom Row */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
                         {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, textQuestions, isGenerating, "Generating questions...", 'text')}
@@ -577,27 +554,29 @@ export default function QuestionsCreatorPage() {
                                 {savedQuestions.map(set => (
                                     <div key={set.id} className="bg-slate-800/50 p-4 rounded-2xl">
                                         <div className="flex items-center justify-between">
-                                            {editingId === set.id ? (
+                                            {editingId === set.id && !isEditing.text && !isEditing.json ? (
                                                 <input
                                                     type="text"
                                                     value={editingName}
                                                     onChange={(e) => setEditingName(e.target.value)}
-                                                    className="bg-transparent text-white text-lg font-semibold border-none focus:ring-0 w-full outline-none"
+                                                    onBlur={() => handleSaveEditName(set.id)}
+                                                    onKeyDown={(e) => e.key === 'Enter' && handleSaveEditName(set.id)}
+                                                    className="bg-slate-900/70 text-white text-lg font-semibold border-none focus:ring-1 focus:ring-blue-500 rounded-md w-full outline-none px-2 py-1"
                                                     autoFocus
                                                 />
                                             ) : (
-                                                <h3 className="text-lg font-semibold text-white">{set.fileName}</h3>
+                                                <h3 className="text-lg font-semibold text-white px-2 py-1">{set.fileName}</h3>
                                             )}
                                             <div className="flex items-center gap-1">
-                                                {editingId === set.id ? (
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleSaveEdit(set.id)}><Check className="h-4 w-4 text-green-400"/></Button>
+                                                {editingId === set.id && !isEditing.text && !isEditing.json ? (
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleSaveEditName(set.id)}><Check className="h-4 w-4 text-green-400"/></Button>
                                                 ) : (
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleStartEdit(set)}><Pencil className="h-4 w-4"/></Button>
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleStartEditName(set)}><Pencil className="h-4 w-4"/></Button>
                                                 )}
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDeleteSet(set.id)}><Trash2 className="h-4 w-4 text-red-400"/></Button>
                                             </div>
                                         </div>
-                                        <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleString()}</p>
+                                        <p className="text-xs text-slate-400 mt-1 px-2">{new Date(set.createdAt).toLocaleString()}</p>
                                         <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                                             {renderOutputCard("Text", <FileText className="text-blue-400" />, set.textQuestions, false, "", 'text', true, set.id)}
                                             {renderOutputCard("JSON", <FileJson className="text-green-400" />, set.jsonQuestions, false, "", 'json', true, set.id)}
@@ -613,20 +592,36 @@ export default function QuestionsCreatorPage() {
             </motion.div>
         </TabsContent>
       </Tabs>
-      <Dialog open={!!previewContent} onOpenChange={(isOpen) => !isOpen && setPreviewContent(null)}>
+      <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
         <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0">
-          <DialogHeader className='p-6 pb-0 sr-only'>
+          <DialogHeader className='p-6 pb-2 flex-row flex-none justify-between items-center'>
             <DialogTitle>{previewContent?.title}</DialogTitle>
+             <div className="flex items-center gap-1">
+                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setIsPreviewEditing(!isPreviewEditing)}>
+                    {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
+                </Button>
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                        <X className="h-4 w-4" />
+                    </Button>
+                </DialogClose>
+            </div>
           </DialogHeader>
-          <div className="flex-1 overflow-auto p-6 no-scrollbar">
-            <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
-                {previewContent?.content}
-            </pre>
+          <div className="flex-1 overflow-auto p-6 pt-0 no-scrollbar">
+            {isPreviewEditing ? (
+                 <Textarea
+                    value={previewContent?.content || ''}
+                    onChange={(e) => setPreviewContent(prev => prev ? {...prev, content: e.target.value} : null)}
+                    className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500"
+                />
+            ) : (
+                <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
+                    {previewContent?.content}
+                </pre>
+            )}
           </div>
         </DialogContent>
       </Dialog>
     </div>
   );
 }
-
-    

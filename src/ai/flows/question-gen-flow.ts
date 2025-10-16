@@ -88,13 +88,16 @@ export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise
                 // If parsing fails, it's not a valid JSON string.
                 // It might be an error message or just plain text from the model.
                 // In this scenario, returning it as-is can be helpful for debugging.
-                return output;
+                console.warn("Model output was a string but not valid JSON:", output);
+                throw new Error("The AI returned a response that could not be converted to JSON. Please check the generated text and try again.");
             }
         }
 
         // Fallback for any other unexpected type (e.g., number, boolean).
         // This provides a clear error message instead of causing a server crash.
-        return `Could not convert to JSON. Received an unexpected type: ${typeof output}`;
+        const errorMsg = `Could not convert to JSON. Received an unexpected type: ${typeof output}`;
+        console.error(errorMsg);
+        throw new Error(errorMsg);
 
     } catch (err) {
         console.error("Error in convertQuestionsToJson flow:", err);
