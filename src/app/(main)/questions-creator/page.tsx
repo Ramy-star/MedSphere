@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -26,6 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { jsPDF } from 'jspdf';
 import { Packer, Document as DocxDocument, Paragraph, TextRun } from 'docx';
 import JSZip from 'jszip';
+import Link from 'next/link';
 
 
 type SavedQuestionSet = {
@@ -152,7 +153,7 @@ export default function QuestionsCreatorPage() {
                     if (fn === pdfjs.OPS.paintImageXObject) {
                         const imageName = operatorList.argsArray[j][0];
                         const promise = new Promise<string | null>((resolve) => {
-                            page.objs.get(imageName, (img: any) => {
+                             page.objs.get(imageName, (img: any) => {
                                 if (!img || !img.data) {
                                     resolve(null);
                                     return;
@@ -349,7 +350,9 @@ export default function QuestionsCreatorPage() {
     setEditingId(null);
   };
 
-  const handleDeleteSet = (id: string) => {
+  const handleDeleteSet = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
     setSavedQuestions(prev => prev.filter(s => s.id !== id));
     toast({ title: 'Set Deleted', description: 'The question set has been removed.' });
   };
@@ -560,7 +563,7 @@ export default function QuestionsCreatorPage() {
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
-                             <CardContent className="flex-1 flex flex-col justify-end">
+                             <CardContent className="flex-1 flex flex-col justify-center items-center">
                                 <Button onClick={handleSaveCurrentQuestions} className="rounded-full w-auto self-center px-6 active:scale-95 transition-transform">
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
@@ -600,57 +603,43 @@ export default function QuestionsCreatorPage() {
         </TabsContent>
 
         <TabsContent value="saved" className="mt-8">
-            <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-4xl mx-auto">
-                 <Card className="glass-card rounded-3xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Save className="text-green-400" />Saved Question Sets</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {savedQuestions.length > 0 ? (
-                            <div className="space-y-4">
-                                {savedQuestions.map(set => (
-                                    <div key={set.id} className="bg-slate-800/50 p-4 rounded-2xl">
-                                        <div className="flex items-center justify-between">
-                                            {editingId === set.id && !isEditing.text && !isEditing.json ? (
-                                                <input
-                                                    type="text"
-                                                    value={editingName}
-                                                    onChange={(e) => setEditingName(e.target.value)}
-                                                    onBlur={() => handleSaveEditName(set.id)}
-                                                    onKeyDown={(e) => e.key === 'Enter' && handleSaveEditName(set.id)}
-                                                    className="bg-slate-900/70 text-white text-lg font-semibold border-none focus:ring-1 focus:ring-blue-500 rounded-md w-full outline-none px-2 py-1"
-                                                    autoFocus
-                                                />
-                                            ) : (
-                                                <h3 className="text-lg font-semibold text-white px-2 py-1">{set.fileName}</h3>
-                                            )}
-                                            <div className="flex items-center gap-1">
-                                                {editingId === set.id && !isEditing.text && !isEditing.json ? (
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleSaveEditName(set.id)}><Check className="h-4 w-4 text-green-400"/></Button>
-                                                ) : (
-                                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleStartEditName(set)}><Pencil className="h-4 w-4"/></Button>
-                                                )}
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDeleteSet(set.id)}><Trash2 className="h-4 w-4 text-red-400"/></Button>
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-slate-400 mt-1 px-2">{new Date(set.createdAt).toLocaleString()}</p>
-                                        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {renderOutputCard("Text", <FileText className="text-blue-400" />, set.textQuestions, false, "", 'text', true, set.id)}
-                                            {renderOutputCard("JSON", <FileJson className="text-green-400" />, set.jsonQuestions, false, "", 'json', true, set.id)}
-                                        </div>
+             <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-6xl mx-auto">
+                {savedQuestions.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {savedQuestions.map(set => (
+                            <Link key={set.id} href={`/questions-creator/${set.id}`}>
+                                <div className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-square flex flex-col justify-between">
+                                    <div>
+                                        <Folder className="w-10 h-10 text-yellow-400 mb-4" />
+                                        <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                        <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-center text-slate-400 py-8">No question sets saved yet.</p>
-                        )}
-                    </CardContent>
-                </Card>
+                                    <div className="absolute top-4 right-4">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={(e) => handleDeleteSet(set.id, e)}
+                                        >
+                                            <Trash2 className="h-4 w-4 text-red-400"/>
+                                        </Button>
+                                    </div>
+                                </div>
+                            </Link>
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16">
+                        <Folder className="mx-auto h-12 w-12 text-slate-500" />
+                        <h3 className="mt-4 text-lg font-semibold text-white">No Saved Questions</h3>
+                        <p className="mt-2 text-sm text-slate-400">Your saved question sets will appear here.</p>
+                    </div>
+                )}
             </motion.div>
         </TabsContent>
       </Tabs>
       <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
-        <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0">
+        <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar">
           <DialogHeader className='p-6 pb-2 flex-row flex-none justify-between items-center'>
             <DialogTitle>{previewContent?.title}</DialogTitle>
              <div className="flex items-center gap-1">
@@ -669,7 +658,7 @@ export default function QuestionsCreatorPage() {
                  <Textarea
                     value={previewContent?.content || ''}
                     onChange={(e) => setPreviewContent(prev => prev ? {...prev, content: e.target.value} : null)}
-                    className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500"
+                    className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
                 />
             ) : (
                 <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
@@ -682,3 +671,4 @@ export default function QuestionsCreatorPage() {
     </div>
   );
 }
+
