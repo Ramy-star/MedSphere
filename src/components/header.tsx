@@ -57,25 +57,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           </h1>
       </div>
 
-      {isGenerating && (
-        <div className="flex-1 max-w-sm hidden md:flex items-center gap-3">
-          <div className="w-full">
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                   <Progress value={task?.progress ?? 0} className="h-1.5" />
-                </TooltipTrigger>
-                <TooltipContent side="bottom" align="start">
-                  <p>Generating questions for: {task?.fileName}</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
-      )}
-
-
-      <div className={cn("flex items-center justify-end flex-grow gap-2", isGenerating && "flex-grow-0")}>
+      <div className="flex items-center justify-end flex-grow gap-2">
         <div className="relative w-full max-w-[180px] sm:max-w-sm">
           <Search
             className={cn(
