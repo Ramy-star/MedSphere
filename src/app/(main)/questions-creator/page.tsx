@@ -1,9 +1,8 @@
 
 'use client';
 
-import { useState, useEffect, useMemo, Suspense, useCallback } from 'react';
+import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -23,15 +22,12 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { jsPDF } from 'jspdf';
-import { Packer, Document as DocxDocument, Paragraph, TextRun } from 'docx';
 import Link from 'next/link';
 import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { Textarea as MyTextarea } from '@/components/ui/textarea'; // Renamed to avoid conflict
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 
 
@@ -66,6 +62,7 @@ function QuestionsCreatorContent() {
   } = useQuestionGenerationStore();
 
   const { user } = useUser();
+  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   const { data: savedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
     user ? `users/${user.uid}/questionSets` : '',
     { orderBy: ['createdAt', 'desc'], disabled: !user }
@@ -311,11 +308,11 @@ function QuestionsCreatorContent() {
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
                         <label htmlFor="gen-prompt" className="text-sm font-medium text-slate-300">Question Generation Prompt</label>
-                        <MyTextarea id="gen-prompt" value={generationPrompt} onChange={(e) => setGenerationPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl" />
+                        <textarea id="gen-prompt" value={generationPrompt} onChange={(e) => setGenerationPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl w-full p-2 text-sm text-slate-200" />
                         </div>
                         <div className="space-y-2">
                         <label htmlFor="json-prompt" className="text-sm font-medium text-slate-300">Text-to-JSON Conversion Prompt</label>
-                        <MyTextarea id="json-prompt" value={jsonPrompt} onChange={(e) => setJsonPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl" />
+                        <textarea id="json-prompt" value={jsonPrompt} onChange={(e) => setJsonPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl w-full p-2 text-sm text-slate-200" />
                         </div>
                     </CardContent>
                 </Card>
@@ -337,6 +334,7 @@ function QuestionsCreatorContent() {
                                     </div>
                                     <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                 </div>
+                                {isAdmin && (
                                 <div className="absolute top-4 right-4 flex gap-1">
                                     <Button 
                                         variant="ghost" 
@@ -347,6 +345,7 @@ function QuestionsCreatorContent() {
                                         <Trash2 className="h-4 w-4 text-red-400"/>
                                     </Button>
                                 </div>
+                                )}
                             </Link>
                         ))}
                     </div>
@@ -378,11 +377,14 @@ function QuestionsCreatorContent() {
           </DialogHeader>
           <div className="flex-1 overflow-auto p-6 pt-0 no-scrollbar">
             {isPreviewEditing ? (
-                 <MyTextarea
-                    value={previewContent?.content || ''}
-                    onChange={(e) => setPreviewContent(prev => prev ? {...prev, content: e.target.value} : null)}
+                 <pre
+                    contentEditable={true}
+                    suppressContentEditableWarning={true}
+                    onBlur={(e) => setPreviewContent(prev => prev ? {...prev, content: e.currentTarget.innerText} : null)}
                     className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                />
+                >
+                    {previewContent?.content || ''}
+                </pre>
             ) : (
                 <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
                     {previewContent?.content}
@@ -402,3 +404,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    

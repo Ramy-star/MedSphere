@@ -3,7 +3,6 @@
 
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -37,6 +36,7 @@ type SavedQuestionSet = {
 function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
   const { user } = useUser();
+  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   const { data: questionSet, loading } = useDoc<SavedQuestionSet>(`users/${user?.uid}/questionSets`, id);
 
   const [isEditing, setIsEditing] = useState({ text: false, json: false });
@@ -130,11 +130,15 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     toast({ title: 'Copied to Clipboard', description: `${type} questions have been copied.` });
   };
   
-  const handleDownload = (content: string, format: 'txt' | 'json') => {
+  const handleDownload = (content: string, format: 'txt' | 'json' | 'md') => {
     let blob: Blob;
     let fileExtension = format;
 
-    blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
+    if (format === 'md') {
+        blob = new Blob([content], { type: 'text/markdown' });
+    } else {
+        blob = new Blob([content], { type: format === 'json' ? 'application/json' : 'text/plain' });
+    }
     
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -232,18 +236,20 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     <span className="ml-0">{title}</span>
                 </div>
                 <div className="flex items-center gap-1">
-                    {type === 'text' && (
+                    {isAdmin && type === 'text' && (
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)}><FolderPlus className="h-4 w-4" /></Button>
                     )}
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)}><Copy className="h-4 w-4" /></Button>
                     
+                    {isAdmin && (
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)}>
                         {isThisCardEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
                     </Button>
+                    )}
 
                     {type === 'text' ? (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'txt')}><Download className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'md')}><Download className="h-4 w-4" /></Button>
                     ) : (
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'json')}><Download className="h-4 w-4" /></Button>
                     )}
@@ -252,11 +258,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </CardHeader>
             <CardContent className="flex-grow flex flex-col">
                 {isThisCardEditing ? (
-                    <Textarea
-                        value={editingContent[type] || ''}
-                        onChange={(e) => setEditingContent(prev => ({...prev, [type]: e.target.value}))}
+                    <pre
+                        contentEditable={isAdmin}
+                        suppressContentEditableWarning={true}
+                        onBlur={(e) => setEditingContent(prev => ({...prev, [type]: e.currentTarget.innerText}))}
                         className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                    />
+                    >
+                      {editingContent[type] || ''}
+                    </pre>
                 ) : (
                     <div className="relative flex-1">
                         <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto no-scrollbar">
@@ -291,7 +300,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             <div className="flex items-center gap-2">
                 <h1
                   ref={titleRef}
-                  contentEditable={isEditingTitle}
+                  contentEditable={isEditingTitle && isAdmin}
                   suppressContentEditableWarning={true}
                   onBlur={handleTitleSave}
                   onKeyDown={(e) => {
@@ -304,7 +313,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 >
                   {editingTitle}
                 </h1>
-                {isEditingTitle ? (
+                {isAdmin && (
+                  <>
+                  {isEditingTitle ? (
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={handleTitleSave}>
                         <Check className="h-5 w-5 text-green-400" />
                     </Button>
@@ -312,6 +323,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={() => setIsEditingTitle(true)}>
                         <Pencil className="h-5 w-5" />
                     </Button>
+                )}
+                  </>
                 )}
             </div>
         </div>
@@ -330,9 +343,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     {previewContent?.type === 'json' && <FileJson className="text-green-400 h-5 w-5" />}
                 </DialogTitle>
                 <div className="flex items-center gap-1">
+                    {isAdmin && (
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
                         {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
                     </Button>
+                    )}
                     <DialogClose asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
                             <X className="h-4 w-4" />
@@ -342,11 +357,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </DialogHeader>
             <div className="flex-1 overflow-auto p-6 pt-0 no-scrollbar">
                 {isPreviewEditing ? (
-                    <Textarea
-                        value={previewContent?.content || ''}
-                        onChange={(e) => setPreviewContent(prev => prev ? {...prev, content: e.target.value} : null)}
+                    <pre
+                        contentEditable={isAdmin}
+                        suppressContentEditableWarning={true}
+                        onBlur={(e) => setPreviewContent(prev => prev ? {...prev, content: e.currentTarget.innerText} : null)}
                         className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar"
-                    />
+                    >
+                        {previewContent?.content || ''}
+                    </pre>
                 ) : (
                     <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
                         {previewContent?.content}
@@ -384,3 +402,5 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    
