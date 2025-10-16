@@ -295,19 +295,23 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     }, [chatInput]);
 
     useEffect(() => {
-        if (!isMobile || !window.visualViewport) return;
-
+        if (!isMobile || typeof window === 'undefined' || !window.visualViewport) {
+          return;
+        }
+    
         const vv = window.visualViewport;
-
-        const onViewportChange = () => {
-          const keyboardHeight = window.innerHeight - vv.height;
-          setChatInputOffset(keyboardHeight > 0 ? keyboardHeight - (window.outerHeight - window.innerHeight) : 0);
+    
+        const handleResize = () => {
+          // This calculates how much of the bottom of the layout viewport is covered by the virtual keyboard.
+          const offsetBottom = window.innerHeight - vv.height - vv.offsetTop;
+          // We only apply the offset if the keyboard is assumed to be open (offset > 0)
+          setChatInputOffset(Math.max(0, offsetBottom));
         };
-
-        vv.addEventListener('resize', onViewportChange);
-
+    
+        vv.addEventListener('resize', handleResize);
+    
         return () => {
-          vv.removeEventListener('resize', onViewportChange);
+          vv.removeEventListener('resize', handleResize);
         };
       }, [isMobile]);
 
@@ -412,8 +416,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             </div>
             <motion.div 
                 className="p-2 mb-2 mt-auto"
-                style={{ backgroundColor: '#212121' }}
-                animate={{ paddingBottom: isMobile ? chatInputOffset : '0.5rem' }}
+                style={{ backgroundColor: '#212121', paddingBottom: chatInputOffset ? `${chatInputOffset}px` : '0.5rem' }}
+                animate={{ paddingBottom: isMobile && chatInputOffset > 0 ? `${chatInputOffset}px` : '0.5rem' }}
                 transition={{ type: 'tween', duration: 0, ease: 'linear' }}
             >
                  <form
@@ -486,7 +490,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                 exit={{ y: '100%' }}
                 transition={{ type: "spring", stiffness: 400, damping: 40 }}
                 className="flex flex-col overflow-hidden h-full w-full absolute inset-0 z-20"
-                style={{backgroundColor: '#212121', height: '100dvh'}}
+                style={{backgroundColor: '#212121', height: 'var(--1dvh, 100dvh)'}}
             >
                 {chatViewContent}
             </motion.div>
@@ -509,5 +513,3 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
         </motion.div>
     );
 }
-
-    

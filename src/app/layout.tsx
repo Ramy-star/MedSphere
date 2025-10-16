@@ -50,6 +50,17 @@ export default function RootLayout({
     }
   }, []);
 
+  useEffect(() => {
+    const setDynamicVh = () => {
+      const vh = window.innerHeight;
+      document.documentElement.style.setProperty('--1dvh', `${vh}px`);
+    };
+
+    setDynamicVh();
+    window.addEventListener('resize', setDynamicVh);
+    return () => window.removeEventListener('resize', setDynamicVh);
+  }, []);
+
   const handleGetStarted = () => {
     localStorage.setItem(WELCOME_SCREEN_KEY, 'true');
     setShowWelcome(false);
