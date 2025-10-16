@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -24,7 +23,6 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { jsPDF } from 'jspdf';
 import { Packer, Document as DocxDocument, Paragraph, TextRun } from 'docx';
-import JSZip from 'jszip';
 
 
 type SavedQuestionSet = {
@@ -102,51 +100,6 @@ export default function QuestionsCreatorPage() {
       description: `The questions for "${fileName}" have been saved.`,
     });
   };
-  
-    const extractTextFromDocx = async (file: File) => {
-        const content = await file.arrayBuffer();
-        const zip = await JSZip.loadAsync(content);
-        const doc = zip.file("word/document.xml");
-        if (doc) {
-            const text = await doc.async("text");
-            const xml = new DOMParser().parseFromString(text, "text/xml");
-            const paragraphs = xml.getElementsByTagName("w:t");
-            let fullText = "";
-            for (let i = 0; i < paragraphs.length; i++) {
-                fullText += paragraphs[i].textContent + "\n";
-            }
-            return fullText;
-        }
-        return "";
-    };
-
-    const extractTextFromPptx = async (file: File): Promise<string> => {
-        const content = await file.arrayBuffer();
-        const zip = await JSZip.loadAsync(content);
-        const slideMasters = zip.folder("ppt/slides");
-        let fullText = "";
-
-        if (slideMasters) {
-            const slideFiles: Promise<string>[] = [];
-            slideMasters.forEach((relativePath, file) => {
-                if (relativePath.endsWith('.xml')) {
-                    slideFiles.push(file.async("text"));
-                }
-            });
-
-            const slides = await Promise.all(slideFiles);
-            slides.forEach(slideXml => {
-                const xml = new DOMParser().parseFromString(slideXml, "text/xml");
-                const paragraphs = xml.getElementsByTagName("a:t");
-                 for (let i = 0; i < paragraphs.length; i++) {
-                    fullText += paragraphs[i].textContent + " ";
-                }
-                fullText += "\n";
-            });
-        }
-        return fullText;
-    };
-
 
   const processFile = async (file: File) => {
     setFileName(file.name);
@@ -163,14 +116,8 @@ export default function QuestionsCreatorPage() {
             const fileBuffer = await file.arrayBuffer();
             const pdf = await pdfjs.getDocument(fileBuffer).promise as PDFDocumentProxy;
             documentText = await contentService.extractTextFromPdf(pdf);
-        } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
-            documentText = await extractTextFromDocx(file);
-        } else if (file.type === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') {
-            documentText = await extractTextFromPptx(file);
-        } else if (file.type === 'text/plain') {
-            documentText = await file.text();
         } else {
-            throw new Error(`Unsupported file type: ${file.type}. Please upload PDF, DOCX, PPTX or TXT files.`);
+            throw new Error(`Unsupported file type: ${file.type}. Please upload a PDF file.`);
         }
 
       if (!documentText) throw new Error('Could not extract text from the file.');
@@ -364,11 +311,11 @@ export default function QuestionsCreatorPage() {
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
                                 >
-                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf,.docx,.txt,.pptx" disabled={isGenerating || isConverting} />
+                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf" disabled={isGenerating || isConverting} />
                                 <div className="flex flex-col items-center justify-center text-slate-400">
                                     <UploadCloud className="h-12 w-12 mb-4" />
                                     <p className="font-semibold">{fileName ? `File: ${fileName}` : 'Drag & drop a file or click to upload'}</p>
-                                    <p className="text-xs mt-1">PDF, DOCX, TXT, PPTX</p>
+                                    <p className="text-xs mt-1">PDF only</p>
                                 </div>
                                 </div>
                                 {error && (
@@ -386,7 +333,7 @@ export default function QuestionsCreatorPage() {
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
                             <CardContent className="flex-1 flex flex-col justify-end">
-                                <Button onClick={handleSaveCurrentQuestions} className="rounded-2xl active:scale-95 transition-transform" disabled={!hasGeneratedContent}>
+                                <Button onClick={handleSaveCurrentQuestions} className="w-full rounded-2xl active:scale-95 transition-transform" disabled={!hasGeneratedContent}>
                                     <Save className="mr-2 h-4 w-4" /> Save Current Questions
                                 </Button>
                             </CardContent>
