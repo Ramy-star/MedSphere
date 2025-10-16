@@ -70,19 +70,26 @@ const convertToJsonPrompt = ai.definePrompt({
 });
 
 export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise<string> {
-    const response = await convertToJsonPrompt(input);
-    const jsonOutput = response.output;
+    const { output } = await convertToJsonPrompt(input);
 
-    // Genkit's \`output: { format: 'json' }\` returns a JSON object. We need to stringify it.
-    if (typeof jsonOutput === 'object' && jsonOutput !== null) {
-        return JSON.stringify(jsonOutput, null, 2);
+    // Genkit's `output: { format: 'json' }` can return a JSON object or a string.
+    // We need to handle both cases to ensure a string is always returned.
+    if (typeof output === 'object' && output !== null) {
+        return JSON.stringify(output, null, 2);
     }
-    // If for some reason it's already a string (less likely), return it directly.
-    if (typeof jsonOutput === 'string') {
-        return jsonOutput;
-    }
-    // Fallback for unexpected types
-    return 'Could not convert to JSON.';
-}
-
     
+    // If the output is already a string (which can happen), return it directly.
+    if (typeof output === 'string') {
+        // Attempt to parse and re-stringify to ensure it's valid, pretty-printed JSON.
+        // If parsing fails, it's likely just a string message, so return it as is.
+        try {
+            const parsed = JSON.parse(output);
+            return JSON.stringify(parsed, null, 2);
+        } catch (e) {
+            return output; // It's not a JSON string, so return as is.
+        }
+    }
+    
+    // Fallback for unexpected types (like number, boolean, etc.)
+    return `Could not convert to JSON. Received type: ${typeof output}`;
+}
