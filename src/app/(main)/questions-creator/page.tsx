@@ -527,9 +527,12 @@ function QuestionsCreatorContent() {
         </TabsContent>
       </Tabs>
       <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
-        <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar">
+        <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar" hideCloseButton={true}>
           <DialogHeader className='p-6 pb-2 flex-row flex-none justify-between items-center'>
-            <DialogTitle>{previewContent?.title}</DialogTitle>
+            <DialogTitle className="flex items-center gap-3">
+                {previewContent?.type === 'text' && <FileText className="text-blue-400 h-5 w-5" />}
+                {previewContent?.type === 'json' && <FileJson className="text-green-400 h-5 w-5" />}
+            </DialogTitle>
              <div className="flex items-center gap-1">
                  <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
                     {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
