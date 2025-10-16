@@ -95,7 +95,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
   if (mime === 'text/markdown') {
     return (
-      <div className="prose prose-sm max-w-full p-6 text-white selectable" style={{
+      <div className="prose prose-base max-w-full p-6 text-white selectable" style={{
         '--tw-prose-body': '#E2E8F0',
         '--tw-prose-headings': '#FFFFFF',
         '--tw-prose-lead': '#A0AEC0',
