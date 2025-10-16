@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +14,14 @@ import { contentService } from '@/lib/contentService';
 import { type PDFDocumentProxy } from 'pdfjs-dist';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useDebounce } from 'use-debounce';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+
 
 type SavedQuestionSet = {
   id: string;
@@ -36,6 +44,8 @@ export default function QuestionsCreatorPage() {
   const [savedQuestions, setSavedQuestions] = useState<SavedQuestionSet[]>([]);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [previewContent, setPreviewContent] = useState<{title: string, content: string} | null>(null);
+
 
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
   const [debouncedJsonPrompt] = useDebounce(jsonPrompt, 500);
@@ -141,7 +151,7 @@ export default function QuestionsCreatorPage() {
     a.href = url;
     a.download = `questions.${fileType}`;
     document.body.appendChild(a);
-    a.click();
+a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
@@ -182,7 +192,7 @@ export default function QuestionsCreatorPage() {
   const hasGeneratedContent = textQuestions || jsonQuestions;
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, fileType: 'txt' | 'json') => (
-    <Card className="glass-card min-h-[250px] flex flex-col">
+    <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
       <CardHeader>
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -190,6 +200,7 @@ export default function QuestionsCreatorPage() {
             <span className="ml-0">{title}</span>
           </div>
           <div className="flex items-center gap-1">
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content: content || ""})} disabled={!content}><Eye className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)} disabled={!content}><Copy className="h-4 w-4" /></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, fileType)} disabled={!content}><Download className="h-4 w-4" /></Button>
           </div>
@@ -202,7 +213,7 @@ export default function QuestionsCreatorPage() {
                 <p className="ml-3 text-slate-300">{loadingText}</p>
             </div>
         ) : (
-            <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-xl whitespace-pre-wrap font-code w-full h-96 overflow-auto">
+            <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto">
                 {content || 'Generated content will appear here...'}
             </pre>
         )}
@@ -211,7 +222,7 @@ export default function QuestionsCreatorPage() {
   );
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto p-2 pr-4 -mr-2">
+    <div className="flex-1 flex flex-col overflow-y-auto p-2">
       <div className="text-center">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
@@ -219,7 +230,7 @@ export default function QuestionsCreatorPage() {
       </div>
 
       <Tabs defaultValue="generate" className="w-full mt-4">
-        <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-slate-800/50 rounded-2xl p-1.5">
+        <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-slate-800/50 rounded-2xl p-1.5">
           <TabsTrigger value="generate" className="rounded-xl">Generate</TabsTrigger>
           <TabsTrigger value="prompts" className="rounded-xl">Prompts</TabsTrigger>
           <TabsTrigger value="saved" className="rounded-xl">Saved Questions</TabsTrigger>
@@ -230,7 +241,7 @@ export default function QuestionsCreatorPage() {
                  {/* Left Column */}
                 <div className="space-y-8">
                     <motion.div variants={cardVariants} initial="hidden" animate="visible">
-                        <Card className="glass-card">
+                        <Card className="glass-card rounded-3xl">
                         <CardHeader>
                             <CardTitle className='flex items-center gap-3'><UploadCloud className='text-blue-400'/>1. Upload Lecture</CardTitle>
                         </CardHeader>
@@ -263,7 +274,7 @@ export default function QuestionsCreatorPage() {
                         </Card>
                     </motion.div>
                     <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
-                         <Card className={cn("glass-card", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
+                         <Card className={cn("glass-card rounded-3xl", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
                             <CardHeader>
                                 <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
                             </CardHeader>
@@ -289,10 +300,9 @@ export default function QuestionsCreatorPage() {
         
         <TabsContent value="prompts" className="mt-8">
             <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-4xl mx-auto">
-                 <Card className="glass-card overflow-hidden">
+                 <Card className="glass-card overflow-hidden rounded-3xl">
                     <CardHeader>
                         <CardTitle>Prompt Management</CardTitle>
-                        <CardDescription>Set the prompts used for question generation and JSON conversion. Changes are saved automatically.</CardDescription>
                     </CardHeader>
                     <CardContent className="space-y-6">
                         <div className="space-y-2">
@@ -310,10 +320,9 @@ export default function QuestionsCreatorPage() {
 
         <TabsContent value="saved" className="mt-8">
             <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-4xl mx-auto">
-                 <Card className="glass-card">
+                 <Card className="glass-card rounded-3xl">
                     <CardHeader>
                         <CardTitle>Saved Question Sets</CardTitle>
-                        <CardDescription>Review, edit, and use your previously generated question sets.</CardDescription>
                     </CardHeader>
                     <CardContent>
                         {savedQuestions.length > 0 ? (
@@ -357,7 +366,20 @@ export default function QuestionsCreatorPage() {
             </motion.div>
         </TabsContent>
       </Tabs>
+      <Dialog open={!!previewContent} onOpenChange={(isOpen) => !isOpen && setPreviewContent(null)}>
+        <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl">
+          <DialogHeader>
+            <DialogTitle>{previewContent?.title}</DialogTitle>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto -mx-6 -mb-6 px-6 pb-6">
+            <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-full">
+                {previewContent?.content}
+            </pre>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
+}
 
     
