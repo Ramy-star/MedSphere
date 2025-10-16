@@ -24,14 +24,13 @@ type PdfViewerProps = {
   onPageChange?: (page: number) => void;
   isFullscreen?: boolean;
   currentPage?: number;
-  onSelection: (selection: { text: string, popoverStyle: React.CSSProperties } | null) => void;
 };
 
 export type PdfViewerRef = {
   scrollToPage: (page: number) => void;
 };
 
-const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, isFullscreen, currentPage, onSelection }, ref) => {
+const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSuccess, scale, onPageChange, isFullscreen, currentPage }, ref) => {
   const [numPages, setNumPages] = useState<number>(0);
   const [pageDimensions, setPageDimensions] = useState<{ width: number; height: number }[]>([]);
   const { toast } = useToast();
@@ -61,33 +60,6 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   });
 
   const virtualItems = rowVirtualizer.getVirtualItems();
-
-  const handleSelection = useCallback(() => {
-    if (isMobile) return;
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !selection.rangeCount) {
-        onSelection(null);
-        return;
-    }
-
-    const selectedText = selection.toString().trim();
-    if (selectedText.length > 0) {
-        const range = selection.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        
-        onSelection({
-            text: selectedText,
-            popoverStyle: {
-                top: `${rect.top - 50}px`,
-                left: `${rect.left + rect.width / 2 - 50}px`,
-            }
-        });
-    } else {
-        onSelection(null);
-    }
-  }, [isMobile, onSelection]);
-  
-  useEvent('selectionchange', handleSelection, typeof window !== 'undefined' ? document : null);
 
   useEffect(() => {
     if (!onPageChange || !virtualItems.length) return;

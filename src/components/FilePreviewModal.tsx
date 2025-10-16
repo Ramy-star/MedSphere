@@ -221,7 +221,6 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const [showChat, setShowChat] = useState(false);
-  const [selection, setSelection] = useState<{ text: string, popoverStyle: React.CSSProperties } | null>(null);
   const [chatInitialQuestion, setChatInitialQuestion] = useState<string | null>(null);
   
   const [documentText, setDocumentText] = useState<string | null>(null);
@@ -255,7 +254,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setDocumentText(null);
     setIsExtracting(false);
     setShowChat(false);
-    setSelection(null);
     setChatInitialQuestion(null);
   }, []);
 
@@ -632,31 +630,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   onPageChange={onPageChange}
                   isFullscreen={isFullscreen}
                   currentPage={pageNumber}
-                  onSelection={setSelection}
               />
             </div>
         </main>
-        {selection && (
-            <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="absolute z-20"
-                style={selection.popoverStyle}
-            >
-                <Button
-                    className="rounded-full h-9 bg-slate-800 text-white shadow-2xl border border-white/10 hover:bg-slate-700"
-                    onMouseDown={(e) => {
-                        e.preventDefault();
-                        setChatInitialQuestion(selection.text);
-                        setShowChat(true);
-                        setSelection(null);
-                    }}
-                >
-                    <Wand2 className="w-4 h-4 mr-2 text-yellow-300" />
-                    Ask AI
-                </Button>
-            </motion.div>
-        )}
     </div>
   )};
 
