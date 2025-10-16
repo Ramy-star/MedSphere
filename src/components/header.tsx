@@ -9,6 +9,7 @@ import { useDebounce } from 'use-debounce';
 import { Logo } from './logo';
 import { AuthButton } from './auth-button';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -20,23 +21,19 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
 
   useEffect(() => {
-    // Navigate to search results if there is a debounced query
     if (debouncedQuery) {
       router.push(`/search?q=${debouncedQuery}`);
     } 
-    // If the debounced query becomes empty AND we are on the search page, navigate home
     else if (!query && pathname === '/search') {
       router.push('/');
     }
   }, [debouncedQuery, query, router, pathname]);
   
   useEffect(() => {
-    // Sync query state with URL search params when they change (e.g., browser back/forward)
     const currentQuery = searchParams.get('q');
     if (currentQuery !== query) {
         setQuery(currentQuery || '');
     }
-    // We only want this to run when searchParams change, not when the local query state changes.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
@@ -53,7 +50,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
             <span className="font-normal" style={{ color: '#00D309' }}>Sphere</span>
           </h1>
       </div>
-      <div className="flex items-center justify-end flex-grow gap-4">
+      <div className="flex items-center justify-end flex-grow gap-2">
         <div className="relative w-full max-w-[180px] sm:max-w-sm">
           <Search
             className={cn(
@@ -81,9 +78,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               </Button>
           )}
         </div>
-        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => router.push('/questions-creator')}>
-            <Wand2 className="h-5 w-5 text-yellow-300" />
-        </Button>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                     <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
+                        <Wand2 className="h-5 w-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                    <p>Questions Creator</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
         <AuthButton />
       </div>
     </header>

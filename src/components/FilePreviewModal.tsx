@@ -222,6 +222,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const { toast } = useToast();
   const [showChat, setShowChat] = useState(false);
   const [selection, setSelection] = useState<{ text: string, popoverStyle: React.CSSProperties } | null>(null);
+  const [chatInitialQuestion, setChatInitialQuestion] = useState<string | null>(null);
   
   const [documentText, setDocumentText] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -245,7 +246,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const MAX_ZOOM = 5;
   const MIN_ZOOM = 0.1;
 
-  const resetPdfState = useCallback(() => {
+  const resetState = useCallback(() => {
     setPdfProxy(null);
     setNumPages(undefined);
     setPageNumber(1);
@@ -255,21 +256,19 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setIsExtracting(false);
     setShowChat(false);
     setSelection(null);
+    setChatInitialQuestion(null);
   }, []);
 
   const handleClose = useCallback(() => {
     onOpenChange(false);
-    // Add a delay to allow the dialog to animate out before resetting state
-    setTimeout(resetPdfState, 300);
-  }, [onOpenChange, resetPdfState]);
+    setTimeout(resetState, 300);
+  }, [onOpenChange, resetState]);
 
-  // All hooks should be called unconditionally at the top level.
-  // We'll check for `item` later before rendering.
   useEffect(() => {
-    if(item) {
-        resetPdfState();
+    if (item) {
+      resetState();
     }
-  }, [item, resetPdfState]);
+  }, [item, resetState]);
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -445,10 +444,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }
 
-  // This is the correct place for the early return, after all hooks have been called.
-  if (!item) {
-    return null;
-  }
+  if (!item) return null;
   
   const { Icon, color } = getIconForFileType(item);
   const fileUrl = item?.metadata?.storagePath;
@@ -494,8 +490,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden")}
     >
         <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
-            {/* Left Section */}
-             <div className="flex items-center gap-1 overflow-hidden flex-1">
+            <div className="flex items-center gap-1 overflow-hidden flex-1">
                 <div className="flex items-center gap-1 md:hidden">
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                         <X className="w-5 h-5" />
@@ -531,8 +526,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-            {/* Center Section */}
-             <div className={cn("flex-1 items-center justify-center", isPdf && (isMobile ? 'flex' : 'hidden md:flex'))}>
+            <div className={cn("flex-1 items-center justify-center", isPdf && (isMobile ? 'flex' : 'hidden md:flex'))}>
                  <PdfControls
                     isMobile={isMobile}
                     numPages={numPages}
@@ -556,7 +550,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 />
             </div>
 
-            {/* Right Section */}
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
               <TooltipProvider delayDuration={100}>
                 <div className='hidden md:flex items-center gap-1 sm:gap-2'>
@@ -652,10 +645,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             >
                 <Button
                     className="rounded-full h-9 bg-slate-800 text-white shadow-2xl border border-white/10 hover:bg-slate-700"
-                    onMouseDown={(e) => { // use onMouseDown to fire before selection is lost
+                    onMouseDown={(e) => {
                         e.preventDefault();
+                        setChatInitialQuestion(selection.text);
                         setShowChat(true);
-                        // Future: Pass selection.text to chat panel
                         setSelection(null);
                     }}
                 >
@@ -703,6 +696,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   documentText={documentText}
                   isExtracting={isExtracting}
                   onClose={() => setShowChat(false)}
+                  initialQuestion={chatInitialQuestion}
+                  onInitialQuestionConsumed={() => setChatInitialQuestion(null)}
               />
           )}
         </div>
