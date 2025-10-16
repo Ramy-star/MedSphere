@@ -46,6 +46,7 @@ export async function chatAboutDocument(
 
   for (let i = 0; i < maxRetries; i++) {
     try {
+      // Use the original input for all attempts
       const { text } = await chatPrompt(input, {
         config: {
           signal: options?.signal,
