@@ -157,7 +157,7 @@ export default function QuestionsCreatorPage() {
                   if (operatorList.fnArray[j] === pdfjs.OPS.paintImageXObject) {
                     try {
                       const imageName = operatorList.argsArray[j as any][0];
-                      const img = await page.objs.get(imageName);
+                      const img = page.objs.get(imageName);
     
                       if (!img || !img.data) continue;
     
@@ -275,9 +275,9 @@ export default function QuestionsCreatorPage() {
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
   };
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => e.preventDefault();
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); setIsDragging(false); };
+  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation();};
+  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
   
   const handleStartEditName = (set: SavedQuestionSet) => {
     setEditingId(set.id);
@@ -394,7 +394,7 @@ export default function QuestionsCreatorPage() {
                                 onDragEnter={handleDragEnter}
                                 onDragLeave={handleDragLeave}
                                 className={cn(
-                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/40",
+                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/20",
                                     isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-800/40",
                                     (isGenerating || isConverting) && "pointer-events-none opacity-60"
                                 )}
@@ -492,14 +492,6 @@ export default function QuestionsCreatorPage() {
                                         <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
                                     <div className="absolute top-4 right-4 flex gap-1">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={(e) => {e.stopPropagation(); e.preventDefault(); handleStartEditName(set);}}
-                                        >
-                                            <Pencil className="h-4 w-4"/>
-                                        </Button>
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 

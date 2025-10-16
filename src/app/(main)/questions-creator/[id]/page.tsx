@@ -280,7 +280,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     <Input 
                         value={editingTitle}
                         onChange={e => setEditingTitle(e.target.value)}
-                        className="h-9 text-2xl font-bold bg-transparent border-b-2 border-blue-500 focus:ring-0 text-white"
+                        className="h-9 text-2xl font-bold bg-transparent border-0 ring-0 focus:ring-0 focus:outline-none p-0 text-white"
                         autoFocus
                         onBlur={handleTitleSave}
                         onKeyDown={e => e.key === 'Enter' && handleTitleSave()}
