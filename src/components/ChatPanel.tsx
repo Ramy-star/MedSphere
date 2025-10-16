@@ -143,11 +143,13 @@ const ChatInputForm = React.memo(function ChatInputForm({
   isExtracting,
   documentText,
   onChatSubmit,
+  isMobile,
 }: {
   isAiThinking: boolean;
   isExtracting: boolean;
   documentText: string | null;
   onChatSubmit: (input: string) => Promise<void>;
+  isMobile: boolean;
 }) {
   const [chatInput, setChatInput] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -160,8 +162,9 @@ const ChatInputForm = React.memo(function ChatInputForm({
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-       // Allow default behavior (new line)
+    if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
+        e.preventDefault();
+        handleSubmit(e as any);
     }
   };
 
@@ -469,6 +472,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
                   isExtracting={isExtracting}
                   documentText={documentText}
                   onChatSubmit={handleChatSubmit}
+                  isMobile={isMobile}
                 />
             </div>
 
@@ -504,7 +508,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     
     return (
         <div
-            className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 w-[512px] transition-transform duration-300 ease-in-out"
+            className="flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 w-[512px] transition-all duration-300 ease-in-out"
             style={{backgroundColor: '#212121'}}
             aria-label="AI Chat Panel"
         >
