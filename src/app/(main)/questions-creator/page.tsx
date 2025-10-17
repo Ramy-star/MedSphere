@@ -329,13 +329,12 @@ function QuestionsCreatorContent() {
                     <Card className="glass-card overflow-hidden rounded-3xl flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3"><FileText className="text-blue-400" />Question Generation Prompt</CardTitle>
-                             <CardDescription>This prompt instructs the AI on how to generate the initial set of questions from the document.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1 flex flex-col">
                             <textarea
                                 value={generationPrompt}
                                 onChange={(e) => setGenerationPrompt(e.target.value)}
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-48"
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-64"
                             />
                              <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-end">
                                 <Save className="mr-2 h-4 w-4" /> Save
@@ -345,13 +344,12 @@ function QuestionsCreatorContent() {
                     <Card className="glass-card overflow-hidden rounded-3xl flex flex-col">
                         <CardHeader>
                             <CardTitle className="flex items-center gap-3"><FileJson className="text-green-400" />Text-to-JSON Conversion Prompt</CardTitle>
-                             <CardDescription>This prompt tells the AI how to structure the generated questions into a clean JSON format.</CardDescription>
                         </CardHeader>
                         <CardContent className="flex-1 flex flex-col">
                             <textarea
                                 value={jsonPrompt}
                                 onChange={(e) => setJsonPrompt(e.target.value)}
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-48"
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-64"
                             />
                              <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-end">
                                 <Save className="mr-2 h-4 w-4" /> Save

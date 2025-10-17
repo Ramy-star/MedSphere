@@ -24,6 +24,7 @@ import { db } from '@/firebase';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { contentService } from '@/lib/contentService';
 import { UploadProgress, type UploadingFile } from '@/components/UploadProgress';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 type SavedQuestionSet = {
   id: string;
@@ -266,27 +267,52 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     {icon}
                     <span className="ml-0">{title}</span>
                 </div>
-                <div className="flex items-center gap-1">
-                    {isAdmin && (type === 'text' || type === 'json') && (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
-                            {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
-                        </Button>
-                    )}
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)}><Copy className="h-4 w-4" /></Button>
-                    
-                    {isAdmin && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)}>
-                        {isThisCardEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
-                    </Button>
-                    )}
+                 <TooltipProvider>
+                    <div className="flex items-center gap-1">
+                        {isAdmin && (type === 'text' || type === 'json') && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
+                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Save as Markdown File</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Preview</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)}><Copy className="h-4 w-4" /></Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Copy</p></TooltipContent>
+                        </Tooltip>
+                        
+                        {isAdmin && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)}>
+                                        {isThisCardEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>{isThisCardEditing ? 'Save Changes' : 'Edit'}</p></TooltipContent>
+                            </Tooltip>
+                        )}
 
-                    {type === 'text' ? (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'md')}><Download className="h-4 w-4" /></Button>
-                    ) : (
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, 'json')}><Download className="h-4 w-4" /></Button>
-                    )}
-                </div>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, type === 'text' ? 'md' : 'json')}>
+                                    <Download className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Download .{type === 'text' ? 'md' : 'json'}</p></TooltipContent>
+                        </Tooltip>
+                    </div>
+                </TooltipProvider>
                 </CardTitle>
             </CardHeader>
             <CardContent className="flex-grow flex flex-col">

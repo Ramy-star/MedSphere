@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
@@ -138,6 +139,19 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
         </div>
     );
 });
+
+const TypingIndicator = () => (
+    <div className="flex items-start space-x-3 group/message">
+        <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
+        <div className="bg-slate-700/50 rounded-2xl px-4 py-3">
+            <div className="flex items-center justify-center space-x-1">
+                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce"></span>
+            </div>
+        </div>
+    </div>
+);
 
 
 const ChatInputForm = React.memo(function ChatInputForm({
@@ -495,17 +509,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                         )
                     })}
 
-                     {isAiThinking && (
-                        <div className="flex items-start space-x-3 group/message">
-                            <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
-                            <div className="flex-1 space-y-3 pt-1">
-                                <Skeleton className="h-4 w-12 rounded-lg" />
-                                <Skeleton className="h-4 w-[90%] rounded-lg" />
-                                <Skeleton className="h-4 w-[75%] rounded-lg" />
-                                <Skeleton className="h-4 w-[85%] rounded-lg" />
-                            </div>
-                        </div>
-                    )}
+                     {isAiThinking && <TypingIndicator />}
                     <div ref={messagesEndRef} />
                 </div>
             </div>
