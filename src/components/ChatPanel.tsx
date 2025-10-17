@@ -105,7 +105,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                             className="h-8 w-8 rounded-full text-white hover:bg-white/10"
                             aria-label="Copy AI response to clipboard"
                         >
-                            {copiedMessageId === messageId ? <Check className="w-6 h-6 transition-all" /> : <CopyIcon className="w-6 h-6" />}
+                            {copiedMessageId === messageId ? <Check className="w-5 h-5 transition-all" /> : <CopyIcon className="w-5 h-5" />}
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
@@ -125,7 +125,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                             className="h-8 w-8 rounded-full text-white hover:bg-white/10"
                             aria-label="Regenerate response"
                         >
-                            <RefreshCw className="w-6 h-6 transition-all" />
+                            <RefreshCw className="w-5 h-5 transition-all" />
                         </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
@@ -152,7 +152,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
   isAiThinking: boolean;
   isExtracting: boolean;
   documentText: string | null;
-  onChatSubmit: (input: string) => Promise<void>;
+  onChatSubmit: (input: string) => Promise<void>,
   isMobile: boolean;
   chatInput: string;
   setChatInput: (value: string) => void;
@@ -366,7 +366,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                      <Tooltip>
                       <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
-                            <Minus className="w-6 h-6" />
+                            <Minus className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Decrease font size</p></TooltipContent>
@@ -374,7 +374,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                      <Tooltip>
                        <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
-                            <Plus className="w-6 h-6" />
+                            <Plus className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Increase font size</p></TooltipContent>
@@ -382,7 +382,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                      <Tooltip>
                        <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" aria-label="Start a new chat session">
-                            <MessageCirclePlus className="w-6 h-6" />
+                            <MessageCirclePlus className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Start New Chat</p></TooltipContent>
@@ -390,7 +390,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                      <Tooltip>
                        <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" aria-label="Close chat panel">
-                            <X className="w-6 h-6" />
+                            <X className="w-5 h-5" />
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Close Chat</p></TooltipContent>
