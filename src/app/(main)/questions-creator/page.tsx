@@ -63,6 +63,7 @@ function QuestionsCreatorContent() {
   const searchParams = useSearchParams();
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
+  const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false });
   const [isDragging, setIsDragging] = useState(false);
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
@@ -95,11 +96,13 @@ function QuestionsCreatorContent() {
   const handleSaveGenPrompt = () => {
     localStorage.setItem('questionGenPrompt', generationPrompt);
     toast({ title: 'Prompt Saved', description: 'Your question generation prompt has been saved.' });
+    setIsEditingPrompts(prev => ({...prev, gen: false}));
   }
 
   const handleSaveJsonPrompt = () => {
     localStorage.setItem('questionJsonPrompt', jsonPrompt);
     toast({ title: 'Prompt Saved', description: 'Your JSON conversion prompt has been saved.' });
+    setIsEditingPrompts(prev => ({...prev, json: false}));
   }
 
   useEffect(() => {
@@ -245,11 +248,9 @@ function QuestionsCreatorContent() {
                             </Button>
                         </div>
                     ) : (
-                        <textarea
-                            value={content || ''}
-                            readOnly
-                            className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
-                        />
+                       <pre className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar overflow-auto h-96 font-code whitespace-pre-wrap">
+                            {content}
+                        </pre>
                     )}
                 </div>
             </div>
@@ -356,36 +357,56 @@ function QuestionsCreatorContent() {
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
-                       <div className="flex items-start gap-4">
-                           <FileText className="w-8 h-8 text-blue-400 mb-4 shrink-0" />
-                           <div>
-                               <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
+                       <div className="flex items-center justify-between">
+                           <div className="flex items-start gap-4">
+                               <FileText className="w-8 h-8 text-blue-400 shrink-0" />
+                               <div>
+                                   <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
+                               </div>
+                           </div>
+                           <div className="flex items-center gap-2">
+                               <Button onClick={() => setIsEditingPrompts(p => ({...p, gen: !p.gen}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                   {isEditingPrompts.gen ? <Check className="h-5 w-5 text-green-400" /> : <Pencil className="h-5 w-5" />}
+                               </Button>
+                               {isEditingPrompts.gen && (
+                                   <Button onClick={handleSaveGenPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                       <Save className="h-5 w-5" />
+                                   </Button>
+                               )}
                            </div>
                        </div>
                         <textarea
                            value={generationPrompt}
                            onChange={(e) => setGenerationPrompt(e.target.value)}
-                           className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                           readOnly={!isEditingPrompts.gen}
+                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                        />
-                       <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center px-6 active:scale-95">
-                           <Save className="mr-2 h-4 w-4" /> Save
-                       </Button>
                    </div>
                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
-                       <div className="flex items-start gap-4">
-                           <FileJson className="w-8 h-8 text-green-400 mb-4 shrink-0" />
-                           <div>
-                               <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
+                       <div className="flex items-center justify-between">
+                           <div className="flex items-start gap-4">
+                               <FileJson className="w-8 h-8 text-green-400 shrink-0" />
+                               <div>
+                                   <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
+                               </div>
+                           </div>
+                            <div className="flex items-center gap-2">
+                               <Button onClick={() => setIsEditingPrompts(p => ({...p, json: !p.json}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                   {isEditingPrompts.json ? <Check className="h-5 w-5 text-green-400" /> : <Pencil className="h-5 w-5" />}
+                               </Button>
+                               {isEditingPrompts.json && (
+                                   <Button onClick={handleSaveJsonPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                       <Save className="h-5 w-5" />
+                                   </Button>
+                               )}
                            </div>
                        </div>
                        <textarea
                            value={jsonPrompt}
                            onChange={(e) => setJsonPrompt(e.target.value)}
-                           className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                           readOnly={!isEditingPrompts.json}
+                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                        />
-                       <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center px-6 active:scale-95">
-                           <Save className="mr-2 h-4 w-4" /> Save
-                       </Button>
                    </div>
                 </div>
             </motion.div>
@@ -398,7 +419,7 @@ function QuestionsCreatorContent() {
                 ) : savedQuestions && savedQuestions.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {savedQuestions.map(set => (
-                            <Link key={set.id} href={`/questions-creator/${set.id}`} className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between">
+                            <Link key={set.id} href={`/questions-creator/${set.id}`} className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col">
                                 <div className="flex justify-between items-start">
                                     <Folder className="w-8 h-8 text-yellow-400 shrink-0" />
                                     {isAdmin && (
@@ -510,5 +531,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
