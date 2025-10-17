@@ -773,6 +773,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         )}>
           {isChatAvailable && (
              <ChatPanel
+                  showChat={showChat}
                   isMobile={isMobile}
                   documentText={sourceDocumentText}
                   isExtracting={isExtracting}

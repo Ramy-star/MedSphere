@@ -28,6 +28,7 @@ import { CopyIcon } from './icons/CopyIcon';
 import { MessageCirclePlus } from 'lucide-react';
 
 type ChatPanelProps = {
+  showChat: boolean;
   isMobile: boolean;
   documentText: string | null;
   isExtracting: boolean;
@@ -222,7 +223,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
 });
 
 
-export default function ChatPanel({ isMobile, documentText, isExtracting, onClose, initialQuestion, onInitialQuestionConsumed }: ChatPanelProps) {
+export default function ChatPanel({ showChat, isMobile, documentText, isExtracting, onClose, initialQuestion, onInitialQuestionConsumed }: ChatPanelProps) {
     const { toast } = useToast();
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
@@ -339,10 +340,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
     const chatViewContent = (
       <>
         {/* Header - Fixed */}
-        <header className={cn(
-            "flex-shrink-0 flex items-center justify-between whitespace-nowrap px-4 py-3 h-14",
-            isMobile ? "bg-[#212121]" : "bg-transparent"
-        )}>
+        <header className="flex-shrink-0 flex items-center justify-between whitespace-nowrap px-4 py-3 h-14 bg-[#212121]">
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
                 <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
@@ -384,8 +382,8 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             </div>
             </TooltipProvider>
         </header>
-
-        {/* Messages Area - Flexible and Scrollable */}
+        
+        {/* This div handles the flexible message area */}
         <div className="flex-1 overflow-y-auto min-h-0">
             <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
                 {chatHistory.length === 0 && !isAiThinking && (
@@ -438,7 +436,7 @@ export default function ChatPanel({ isMobile, documentText, isExtracting, onClos
             </div>
         </div>
         
-        {/* Input Form - Fixed */}
+        {/* Input Form - Fixed at the bottom */}
         <div className="flex-shrink-0 w-full z-10 will-change-transform">
             <ChatInputForm
               isAiThinking={isAiThinking}
