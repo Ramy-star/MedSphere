@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
@@ -163,8 +162,20 @@ const ChatInputForm = React.memo(function ChatInputForm({
   const handleSubmit = (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
     if (isAiThinking || !chatInput.trim()) return;
-    onChatSubmit(chatInput);
+
+    const currentInput = chatInput;
+    
+    // Clear input and blur immediately to prevent layout jump on mobile.
     setChatInput('');
+    if (isMobile) {
+      textareaRef.current?.blur();
+    }
+    
+    // Use setTimeout to push the expensive state update to the next event loop tick.
+    // This allows the keyboard to start its dismissal animation smoothly.
+    setTimeout(() => {
+        onChatSubmit(currentInput);
+    }, 0);
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -235,6 +246,10 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
+
+    const chatPanelRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const inputContainerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
       if (initialQuestion) {
@@ -242,6 +257,55 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         onInitialQuestionConsumed();
       }
     }, [initialQuestion, onInitialQuestionConsumed]);
+
+    // This effect handles keyboard appearance on mobile.
+    useEffect(() => {
+        const panel = chatPanelRef.current;
+        const messagesContainer = messagesContainerRef.current;
+        const inputContainer = inputContainerRef.current;
+        
+        if (!isMobile || !panel || !messagesContainer || !inputContainer || typeof window === 'undefined' || !window.visualViewport) {
+            return;
+        }
+
+        const vv = window.visualViewport;
+        if (!vv) return;
+        
+        const handleResize = () => {
+            if (!vv || !inputContainer || !messagesContainer) return;
+            // This is the keyboard height
+            const offset = window.innerHeight - vv.height;
+            
+            // We use requestAnimationFrame to ensure the style updates are smooth and batched.
+            requestAnimationFrame(() => {
+                // Move the input container up by the keyboard height.
+                inputContainer.style.transform = `translateY(-${offset}px)`;
+                
+                // Add padding to the bottom of the messages container so the last message is visible.
+                // The padding is the keyboard height plus the input container's own height.
+                messagesContainer.style.paddingBottom = `${offset + inputContainer.offsetHeight}px`;
+                
+                // Scroll to the bottom to keep the conversation in view.
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        };
+        
+        vv.addEventListener('resize', handleResize);
+        
+        const resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(inputContainer);
+
+        handleResize();
+
+        return () => {
+            vv.removeEventListener('resize', handleResize);
+            resizeObserver.disconnect();
+
+            if (inputContainer) inputContainer.style.transform = '';
+            if (messagesContainer) messagesContainer.style.paddingBottom = '';
+        };
+    }, [isMobile]);
+
 
     const startNewChat = useCallback(() => {
         setChatHistory([]);
@@ -338,149 +402,141 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
 
 
     const chatViewContent = (
-      <>
-        {/* Part 1: Header (Fixed size) */}
-        <header className="flex-shrink-0 flex items-center justify-between whitespace-nowrap px-4 py-3 h-14 bg-[#212121]">
-            <div className="flex items-center gap-2">
-                <AiAssistantIcon className="h-6 w-6" />
-                <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
-            </div>
-            <TooltipProvider delayDuration={100}>
-            <div className="flex items-center">
-                    <Tooltip>
-                    <TooltipTrigger asChild>
+      <div className="flex flex-col h-full w-full overflow-hidden">
+            <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14", isMobile ? "bg-[#212121]" : "bg-transparent")}>
+                <div className="flex items-center gap-2">
+                    <AiAssistantIcon className="h-6 w-6" />
+                    <h2 className="text-lg font-semibold text-white">AI Assistant</h2>
+                </div>
+                <TooltipProvider delayDuration={100}>
+                <div className="flex items-center">
+                     <Tooltip>
+                      <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={decreaseFontSize} disabled={fontSizeIndex === 0} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
                             <Minus className="w-6 h-6" />
                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Decrease font size</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                    <TooltipTrigger asChild>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Decrease font size</p></TooltipContent>
+                     </Tooltip>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={increaseFontSize} disabled={fontSizeIndex === fontSizes.length - 1} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
                             <Plus className="w-6 h-6" />
                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Increase font size</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                    <TooltipTrigger asChild>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Increase font size</p></TooltipContent>
+                     </Tooltip>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={handleNewChat} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" aria-label="Start a new chat session">
                             <MessageCirclePlus className="w-6 h-6" />
                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Start New Chat</p></TooltipContent>
-                    </Tooltip>
-                    <Tooltip>
-                    <TooltipTrigger asChild>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Start New Chat</p></TooltipContent>
+                     </Tooltip>
+                     <Tooltip>
+                       <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" onClick={onClose} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9" aria-label="Close chat panel">
                             <X className="w-6 h-6" />
                         </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Close Chat</p></TooltipContent>
-                    </Tooltip>
-            </div>
-            </TooltipProvider>
-        </header>
-        
-        {/* Part 2: Messages Area (Flexible and scrollable) */}
-        <div className="flex-1 overflow-y-auto min-h-0">
-            <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
-                {chatHistory.length === 0 && !isAiThinking && (
-                    <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
-                        {isExtracting ? (
-                            <div className="flex flex-col gap-4">
-                                <div className="flex items-center gap-2 text-white">
-                                <Skeleton className="h-5 w-5 rounded-full" />
-                                <p>Analyzing document...</p>
+                      </TooltipTrigger>
+                      <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Close Chat</p></TooltipContent>
+                     </Tooltip>
+                </div>
+                </TooltipProvider>
+            </header>
+            
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
+                 <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
+                    {chatHistory.length === 0 && !isAiThinking && (
+                        <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
+                            {isExtracting ? (
+                                <div className="flex flex-col gap-4">
+                                  <div className="flex items-center gap-2 text-white">
+                                    <Skeleton className="h-5 w-5 rounded-full" />
+                                    <p>Analyzing document...</p>
+                                  </div>
+                                  <Progress value={50} className="w-full h-1" />
                                 </div>
-                                <Progress value={50} className="w-full h-1" />
-                            </div>
-                        ) : documentText ? (
-                            <p className="text-white">I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
-                        ) : (
-                            <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
-                        )}
-                    </div>
-                )}
-
-                {chatHistory.map((msg, index) => {
-                    const isLastModelMessage = index === chatHistory.length - 1 && msg.role === 'model';
-                    return (
-                        <ChatMessage
-                            key={`msg-${index}`}
-                            messageId={`msg-${index}`}
-                            msg={msg}
-                            onCopy={handleCopyToClipboard}
-                            onRegenerate={handleRegenerate}
-                            isLastMessage={isLastModelMessage}
-                            isAiThinking={isAiThinking}
-                            copiedMessageId={copiedMessageId}
-                            fontSizeClass={fontSizes[fontSizeIndex]}
-                        />
-                    )
-                })}
-
-                    {isAiThinking && (
-                    <div className="flex items-start space-x-3 group/message">
-                        <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
-                        <div className="flex-1 space-y-3 pt-1">
-                            <Skeleton className="h-4 w-12 rounded-lg" />
-                            <Skeleton className="h-4 w-[90%] rounded-lg" />
-                            <Skeleton className="h-4 w-[75%] rounded-lg" />
-                            <Skeleton className="h-4 w-[85%] rounded-lg" />
+                            ) : documentText ? (
+                                <p className="text-white">I am your AI assistant. Ask me anything about this document, or ask me to create a quiz!</p>
+                            ) : (
+                                <p className="text-yellow-400">Document content is not available or could not be extracted. Chat is disabled.</p>
+                            )}
                         </div>
-                    </div>
-                )}
-                <div ref={messagesEndRef} />
+                    )}
+
+                    {chatHistory.map((msg, index) => {
+                        const isLastModelMessage = index === chatHistory.length - 1 && msg.role === 'model';
+                        return (
+                            <ChatMessage
+                                key={`msg-${index}`}
+                                messageId={`msg-${index}`}
+                                msg={msg}
+                                onCopy={handleCopyToClipboard}
+                                onRegenerate={handleRegenerate}
+                                isLastMessage={isLastModelMessage}
+                                isAiThinking={isAiThinking}
+                                copiedMessageId={copiedMessageId}
+                                fontSizeClass={fontSizes[fontSizeIndex]}
+                            />
+                        )
+                    })}
+
+                     {isAiThinking && (
+                        <div className="flex items-start space-x-3 group/message">
+                            <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
+                            <div className="flex-1 space-y-3 pt-1">
+                                <Skeleton className="h-4 w-12 rounded-lg" />
+                                <Skeleton className="h-4 w-[90%] rounded-lg" />
+                                <Skeleton className="h-4 w-[75%] rounded-lg" />
+                                <Skeleton className="h-4 w-[85%] rounded-lg" />
+                            </div>
+                        </div>
+                    )}
+                    <div ref={messagesEndRef} />
+                </div>
             </div>
-        </div>
-        
-        {/* Part 3: Input Form (Fixed size) */}
-        <div className="flex-shrink-0 w-full z-10 will-change-transform">
-            <ChatInputForm
-              isAiThinking={isAiThinking}
-              isExtracting={isExtracting}
-              documentText={documentText}
-              onChatSubmit={handleChatSubmit}
-              isMobile={isMobile}
-              chatInput={chatInput}
-              setChatInput={setChatInput}
-            />
-        </div>
+            
+            <div ref={inputContainerRef} className="w-full z-10 will-change-transform">
+                <ChatInputForm
+                  isAiThinking={isAiThinking}
+                  isExtracting={isExtracting}
+                  documentText={documentText}
+                  onChatSubmit={handleChatSubmit}
+                  isMobile={isMobile}
+                  chatInput={chatInput}
+                  setChatInput={setChatInput}
+                />
+            </div>
 
 
-        <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
-            <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
-              <AlertDialogHeader2 className="p-6 pb-0">
-                <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
-                <AlertDialogDesc>
-                  Are you sure you want to start a new chat? Your current conversation history will be cleared.
-                </AlertDialogDesc>
-              </AlertDialogHeader2>
-              <AlertDialogFooter className='flex-row justify-end items-center space-x-2 p-6 pt-4'>
-                <AlertDialogCancel asChild><Button variant="outline" className='flex-1 sm:flex-none rounded-xl'>Cancel</Button></AlertDialogCancel>
-                <AlertDialogAction asChild><Button variant="destructive" className='flex-1 sm:flex-none rounded-xl' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-        </AlertDialog>
-      </>
-    );
-
-    const mainContainerClasses = cn(
-        "flex flex-col overflow-hidden transition-transform duration-300 ease-in-out",
-        "bg-[#212121]" // Common background
-    );
+            <AlertDialog open={showConfirmNewChat} onOpenChange={setShowConfirmNewChat}>
+                <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
+                  <AlertDialogHeader2 className="p-6 pb-0">
+                    <AlertDialogTitle2>Start New Chat?</AlertDialogTitle2>
+                    <AlertDialogDesc>
+                      Are you sure you want to start a new chat? Your current conversation history will be cleared.
+                    </AlertDialogDesc>
+                  </AlertDialogHeader2>
+                  <AlertDialogFooter className='flex-row justify-end items-center space-x-2 p-6 pt-4'>
+                    <AlertDialogCancel asChild><Button variant="outline" className='flex-1 sm:flex-none rounded-xl'>Cancel</Button></AlertDialogCancel>
+                    <AlertDialogAction asChild><Button variant="destructive" className='flex-1 sm:flex-none rounded-xl' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+          </div>
+        );
 
     if (isMobile) {
         return (
              <div
+                ref={chatPanelRef}
                 className={cn(
-                    mainContainerClasses,
-                    "absolute inset-0 z-50",
-                    showChat ? 'translate-x-0' : 'translate-x-full'
+                  "flex flex-col overflow-hidden w-full absolute inset-0 z-50 transition-transform duration-300 ease-in-out",
+                   showChat ? 'translate-x-0' : 'translate-x-full'
                 )}
-                style={{ height: 'var(--1dvh, 100vh)' }}
+                style={{backgroundColor: '#212121', height: 'var(--1dvh, 100vh)'}}
             >
                 {chatViewContent}
             </div>
@@ -490,10 +546,10 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     return (
         <div
             className={cn(
-                mainContainerClasses,
-                "h-full border-l border-white/10",
+                "flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 transition-all duration-300 ease-in-out",
                 showChat ? 'w-[512px]' : 'w-0'
             )}
+            style={{backgroundColor: '#212121'}}
             aria-label="AI Chat Panel"
         >
             {showChat && chatViewContent}
