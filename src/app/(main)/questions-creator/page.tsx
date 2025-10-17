@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
@@ -274,8 +274,8 @@ function QuestionsCreatorContent() {
 
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar">
-      <div className="text-center">
+    <div className="flex-1 flex flex-col p-2 overflow-y-auto no-scrollbar">
+      <div className="text-center pt-8">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
         </h1>
@@ -363,8 +363,8 @@ function QuestionsCreatorContent() {
                    {renderOutputCard(
                        "Text Questions",
                        <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
-                       task?.textQuestions,
-                       isGenerating && task.status !== 'converting_json' && task.status !== 'completed',
+                       task?.textQuestions ?? null,
+                       isGenerating && task?.status !== 'converting_json' && task?.status !== 'completed',
                        task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...',
                        showTextRetry
                    )}
@@ -372,8 +372,8 @@ function QuestionsCreatorContent() {
                    {renderOutputCard(
                        "JSON Questions",
                        <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
-                       task?.jsonQuestions,
-                       isGenerating && task.status === 'converting_json',
+                       task?.jsonQuestions ?? null,
+                       isGenerating && task?.status === 'converting_json',
                        'Converting to JSON...',
                        showJsonRetry
                    )}
@@ -585,3 +585,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
