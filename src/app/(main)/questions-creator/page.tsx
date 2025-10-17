@@ -171,7 +171,15 @@ function QuestionsCreatorContent() {
   };
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation();};
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
+  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    // Check if the relatedTarget is inside the drop zone before setting isDragging to false
+    if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget as Node)) {
+        return;
+    }
+    setIsDragging(false);
+  };
   
   const handleDeleteSet = async () => {
     if (!itemToDelete || !user) return;
@@ -288,7 +296,7 @@ function QuestionsCreatorContent() {
                     initial="hidden"
                     animate="visible"
                     className={cn(
-                        "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between",
+                        "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between",
                         isDragging && "border-blue-500 bg-blue-900/20",
                         isGenerating && "pointer-events-none opacity-60"
                     )}
@@ -305,10 +313,12 @@ function QuestionsCreatorContent() {
                         onChange={handleFileChange}
                         className="hidden"
                     />
-                    <div>
-                        <FileUp className="w-10 h-10 text-blue-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-white break-words">{task?.fileName || '1. Upload Lecture'}</h3>
-                        <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
+                    <div className="flex items-start gap-4">
+                        <FileUp className="w-10 h-10 text-blue-400 shrink-0" />
+                        <div>
+                            <h3 className="text-lg font-semibold text-white break-words">{task?.fileName || '1. Upload Lecture'}</h3>
+                            <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
+                        </div>
                     </div>
                      {task?.status === 'error' && !showTextRetry && !showJsonRetry && (
                         <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
@@ -324,15 +334,17 @@ function QuestionsCreatorContent() {
                     animate="visible"
                     transition={{ delay: 0.1 }}
                     className={cn(
-                        "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between",
-                        (!hasGeneratedContent || isSaved) && "opacity-50 pointer-events-none"
+                        "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between",
+                        (!hasGeneratedContent || isGenerating) && "opacity-50 pointer-events-none"
                     )}
                      onClick={handleSaveCurrentQuestions}
                 >
-                    <div>
-                        <Save className="w-10 h-10 text-green-400 mb-4" />
-                        <h3 className="text-lg font-semibold text-white break-words">2. Save Results</h3>
-                        <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
+                    <div className="flex items-start gap-4">
+                        <Save className="w-10 h-10 text-green-400 shrink-0" />
+                        <div>
+                            <h3 className="text-lg font-semibold text-white break-words">2. Save Results</h3>
+                            <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
+                        </div>
                     </div>
                      {isSaved && hasGeneratedContent && (
                         <div className="mt-4 flex items-center gap-2 text-green-400 bg-green-900/20 p-3 rounded-lg">
@@ -343,7 +355,7 @@ function QuestionsCreatorContent() {
                 </motion.div>
                 
                 <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text', "Generating questions...", showTextRetry)}
+                    {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text' || task?.status === 'extracting', task?.status === 'extracting' ? "Extracting text..." : "Generating questions...", showTextRetry)}
                     {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
                 </motion.div>
             </div>
@@ -352,38 +364,38 @@ function QuestionsCreatorContent() {
         <TabsContent value="prompts" className="mt-8">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
-                        <div>
-                            <div className="flex items-center gap-3">
-                                <FileText className="w-8 h-8 text-blue-400 mb-4" />
-                                <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
-                            </div>
-                             <textarea
-                                value={generationPrompt}
-                                onChange={(e) => setGenerationPrompt(e.target.value)}
-                                className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
-                            />
-                        </div>
-                        <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center px-6">
-                            <Save className="mr-2 h-4 w-4" /> Save
-                        </Button>
-                    </div>
-                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
-                        <div>
-                             <div className="flex items-center gap-3">
-                                <FileJson className="w-8 h-8 text-green-400 mb-4" />
-                                <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
-                            </div>
-                            <textarea
-                                value={jsonPrompt}
-                                onChange={(e) => setJsonPrompt(e.target.value)}
-                                className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
-                            />
-                        </div>
-                        <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center px-6">
-                            <Save className="mr-2 h-4 w-4" /> Save
-                        </Button>
-                    </div>
+                    <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+                       <div className="flex items-start gap-4">
+                           <FileText className="w-8 h-8 text-blue-400 mb-4 shrink-0" />
+                           <div>
+                               <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
+                           </div>
+                       </div>
+                        <textarea
+                           value={generationPrompt}
+                           onChange={(e) => setGenerationPrompt(e.target.value)}
+                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
+                       />
+                       <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center px-6">
+                           <Save className="mr-2 h-4 w-4" /> Save
+                       </Button>
+                   </div>
+                    <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+                       <div className="flex items-start gap-4">
+                           <FileJson className="w-8 h-8 text-green-400 mb-4 shrink-0" />
+                           <div>
+                               <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
+                           </div>
+                       </div>
+                       <textarea
+                           value={jsonPrompt}
+                           onChange={(e) => setJsonPrompt(e.target.value)}
+                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
+                       />
+                       <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center px-6">
+                           <Save className="mr-2 h-4 w-4" /> Save
+                       </Button>
+                   </div>
                 </div>
             </motion.div>
         </TabsContent>
@@ -395,13 +407,13 @@ function QuestionsCreatorContent() {
                 ) : savedQuestions && savedQuestions.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {savedQuestions.map(set => (
-                            <Link key={set.id} href={`/questions-creator/${set.id}`} className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between">
-                                <div>
-                                    <Folder className="w-10 h-10 text-yellow-400 mb-4" />
-                                    <div className="flex items-start gap-2 mt-2">
+                            <Link key={set.id} href={`/questions-creator/${set.id}`} className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between">
+                                <div className="flex items-start gap-4">
+                                    <Folder className="w-10 h-10 text-yellow-400 shrink-0" />
+                                    <div>
                                         <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                        <p className="text-sm text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
-                                    <p className="text-sm text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                 </div>
                                 {isAdmin && (
                                 <div className="absolute top-4 right-4 flex gap-1">
@@ -443,7 +455,7 @@ function QuestionsCreatorContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-                <Button variant="outline" className="rounded-xl" onClick={() => setShowUnsavedWarning(false)}>Cancel</Button>
+                <Button variant="outline" className="rounded-xl">Cancel</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
                 <Button onClick={handleConfirmContinue} className="rounded-xl">Continue</Button>
@@ -463,7 +475,7 @@ function QuestionsCreatorContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
-            <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
+            <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl">Delete</Button></AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -31,7 +31,6 @@ interface QuestionGenerationState {
   startGeneration: (id: string, fileName: string, fileUrl: string) => void;
   saveCurrentResults: (userId: string) => Promise<void>;
   clearTask: () => void;
-  markAsSaved: () => void;
   retryGeneration: (genPrompt: string, jsonPrompt: string) => Promise<void>;
 }
 
@@ -41,23 +40,34 @@ const updateTask = (state: QuestionGenerationState, partialTask: Partial<Generat
 });
 
 async function runGenerationProcess(
-    task: GenerationTask,
+    initialTask: GenerationTask,
     genPrompt: string, 
     jsonPrompt: string,
-    set: (updater: (state: QuestionGenerationState) => QuestionGenerationState) => void
+    set: (updater: (state: QuestionGenerationState) => QuestionGenerationState) => void,
+    get: () => QuestionGenerationState
 ) {
-    let { documentText, textQuestions } = task;
+    let documentText = initialTask.documentText;
+    let textQuestions = initialTask.textQuestions;
+    const failedStep = initialTask.failedStep;
+    
+    // Determine starting status
+    let startStatus: GenerationStatus = 'extracting';
+    if (failedStep === 'generating_text' || documentText) {
+        startStatus = 'generating_text';
+    } else if (failedStep === 'converting_json' || textQuestions) {
+        startStatus = 'converting_json';
+    }
 
     try {
         // Step 1: Text Extraction (if not already done)
-        if (!documentText) {
+        if (startStatus === 'extracting' && !documentText) {
             set(state => updateTask(state, { status: 'extracting', progress: 10, error: null, failedStep: null }));
             const pdfjs = await import('pdfjs-dist');
             pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 
-            let fileSource: any = task.fileUrl;
-            if (task.file) {
-                fileSource = await task.file.arrayBuffer();
+            let fileSource: any = initialTask.fileUrl;
+            if (initialTask.file) {
+                fileSource = await initialTask.file.arrayBuffer();
             }
 
             const pdf = await pdfjs.getDocument(fileSource).promise as PDFDocumentProxy;
@@ -66,7 +76,7 @@ async function runGenerationProcess(
         }
 
         // Step 2: Generate Text Questions (if not already done)
-        if (!textQuestions) {
+        if (['extracting', 'generating_text'].includes(startStatus) && !textQuestions) {
             set(state => updateTask(state, { status: 'generating_text', progress: 50, error: null, failedStep: null }));
             const generatedText = await generateQuestions({
                 prompt: genPrompt,
@@ -87,13 +97,15 @@ async function runGenerationProcess(
 
     } catch (err: any) {
         console.error("Error during question generation process:", err);
-        const currentStatus = task.status;
-        let failedStep: FailedStep = null;
-        if(currentStatus === 'extracting') failedStep = 'extracting';
-        if(currentStatus === 'generating_text') failedStep = 'generating_text';
-        if(currentStatus === 'converting_json') failedStep = 'converting_json';
+        const currentTask = get().task;
+        const currentStatus = currentTask ? currentTask.status : 'idle';
+
+        let finalFailedStep: FailedStep = null;
+        if(currentStatus === 'extracting') finalFailedStep = 'extracting';
+        else if(currentStatus === 'generating_text') finalFailedStep = 'generating_text';
+        else if(currentStatus === 'converting_json') finalFailedStep = 'converting_json';
         
-        set(state => updateTask(state, { status: 'error', failedStep, error: err.message || 'An unexpected error occurred.' }));
+        set(state => updateTask(state, { status: 'error', failedStep: finalFailedStep, error: err.message || 'An unexpected error occurred.' }));
     }
 }
 
@@ -118,7 +130,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             progress: 0,
         };
         set({ task: newTask, isSaved: true });
-        runGenerationProcess(newTask, genPrompt, jsonPrompt, set);
+        runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
     },
     startGeneration: (id, fileName, fileUrl) => {
         const taskId = `task_${Date.now()}`;
@@ -138,14 +150,14 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         set({ task: newTask, isSaved: true });
         const genPrompt = localStorage.getItem('questionGenPrompt') || '';
         const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
-        runGenerationProcess(newTask, genPrompt, jsonPrompt, set);
+        runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
     },
     retryGeneration: async (genPrompt, jsonPrompt) => {
         const { task } = get();
         if(!task || task.status !== 'error') return;
 
         // Reset error state and re-run
-        runGenerationProcess(task, genPrompt, jsonPrompt, set);
+        runGenerationProcess(task, genPrompt, jsonPrompt, set, get);
     },
     saveCurrentResults: async (userId: string) => {
         const { task } = get();
@@ -168,8 +180,5 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     clearTask: () => {
         set({ task: null, isSaved: true });
     },
-    markAsSaved: () => {
-      set({ isSaved: true });
-    }
   })
 );
