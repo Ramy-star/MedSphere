@@ -70,6 +70,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
         return (
              <Link 
                 href={`/folder/${item.id}`}
+                onClick={(e) => e.preventDefault()}
                 className="relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5"
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
@@ -118,7 +119,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
     // Grid view (default)
     return (
       <div onMouseEnter={() => prefetcher.prefetchChildren(item.id)}>
-        <Link href={`/folder/${item.id}`} className="block">
+        <Link href={`/folder/${item.id}`} onClick={(e) => e.preventDefault()} className="block">
           <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors cursor-pointer">
               <div className="flex justify-between items-start mb-4">
                   {renderIcon()}
