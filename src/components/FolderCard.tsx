@@ -20,7 +20,21 @@ import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
 
 
-export const FolderCard = React.memo(function FolderCard({ item, onRename, onDelete, onIconChange, displayAs = 'grid' }: { item: Content, onRename: () => void, onDelete: () => void, onIconChange: (item: Content) => void, displayAs?: 'grid' | 'list' }) {
+export const FolderCard = React.memo(function FolderCard({ 
+    item, 
+    onRename, 
+    onDelete, 
+    onIconChange, 
+    onClick,
+    displayAs = 'grid' 
+}: { 
+    item: Content, 
+    onRename: () => void, 
+    onDelete: () => void, 
+    onIconChange: (item: Content) => void, 
+    onClick: (item: Content) => void,
+    displayAs?: 'grid' | 'list' 
+}) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
     const { user } = useUser();
@@ -48,7 +62,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
       <DropdownMenuContent 
           className="w-48 p-2"
           align="end"
-          onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+          onClick={(e) => { e.stopPropagation(); }}
       >
           <DropdownMenuItem onClick={onRename}>
               <Edit className="mr-2 h-4 w-4" />
@@ -68,9 +82,8 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
 
     if (displayAs === 'list') {
         return (
-             <Link 
-                href={`/folder/${item.id}`}
-                onClick={(e) => e.preventDefault()}
+             <div 
+                onClick={() => onClick(item)}
                 className="relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5"
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
@@ -103,7 +116,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                                     variant="ghost" 
                                     size="icon" 
                                     className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
-                                    onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                                    onClick={(e) => { e.stopPropagation(); }}
                                 >
                                     <MoreVertical className="w-5 h-5" />
                                 </Button>
@@ -112,14 +125,16 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                         </DropdownMenu>
                     )}
                  </div>
-            </Link>
+            </div>
         )
     }
 
     // Grid view (default)
     return (
-      <div onMouseEnter={() => prefetcher.prefetchChildren(item.id)}>
-        <Link href={`/folder/${item.id}`} onClick={(e) => e.preventDefault()} className="block">
+      <div 
+        onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
+        onClick={() => onClick(item)}
+      >
           <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors cursor-pointer">
               <div className="flex justify-between items-start mb-4">
                   {renderIcon()}
@@ -130,7 +145,7 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
                                   variant="ghost" 
                                   size="icon" 
                                   className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                                  onClick={(e) => { e.stopPropagation(); }}
                               >
                                   <MoreVertical className="w-5 h-5" />
                               </Button>
@@ -141,7 +156,6 @@ export const FolderCard = React.memo(function FolderCard({ item, onRename, onDel
               </div>
               <h3 className="text-lg font-semibold text-white">{item.name}</h3>
           </div>
-        </Link>
       </div>
     );
 });

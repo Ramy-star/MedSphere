@@ -32,6 +32,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import React from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { ChangeIconDialog } from './ChangeIconDialog';
+import { useRouter } from 'next/navigation';
 
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
@@ -93,6 +94,7 @@ const SortableList = ({
     items,
     uploadingFiles,
     onItemClick,
+    onFolderClick,
     onRenameClick,
     onDeleteClick,
     onIconChangeClick,
@@ -105,6 +107,7 @@ const SortableList = ({
     items: Content[];
     uploadingFiles: UploadingFile[];
     onItemClick: (item: Content) => void;
+    onFolderClick: (item: Content) => void;
     onRenameClick: (item: Content) => void;
     onDeleteClick: (item: Content) => void;
     onIconChangeClick: (item: Content) => void;
@@ -148,6 +151,7 @@ const SortableList = ({
                                     onRename={() => onRenameClick(it)}
                                     onDelete={() => onDeleteClick(it)}
                                     onIconChange={() => onIconChangeClick(it)}
+                                    onClick={onFolderClick}
                                     displayAs={isSubjectView ? 'grid' : 'list'}
                                 />;
                             } else if (it.type === 'FILE' || it.type === 'LINK') {
@@ -200,6 +204,7 @@ const NonSortableList = ({
     items,
     uploadingFiles,
     onItemClick,
+    onFolderClick,
     onRenameClick,
     onDeleteClick,
     onIconChangeClick,
@@ -211,6 +216,7 @@ const NonSortableList = ({
     items: Content[];
     uploadingFiles: UploadingFile[];
     onItemClick: (item: Content) => void;
+    onFolderClick: (item: Content) => void;
     onRenameClick: (item: Content) => void;
     onDeleteClick: (item: Content) => void;
     onIconChangeClick: (item: Content) => void;
@@ -249,6 +255,7 @@ const NonSortableList = ({
                              onRename={() => onRenameClick(it)}
                              onDelete={() => onDeleteClick(it)}
                              onIconChange={() => onIconChangeClick(it)}
+                             onClick={onFolderClick}
                              displayAs={isSubjectView ? 'grid' : 'list'}
                          />;
                      } else if (it.type === 'FILE' || it.type === 'LINK') {
@@ -324,6 +331,7 @@ export function FolderGrid({
   const isMobile = useIsMobile();
   const { toast } = useToast();
   const { user } = useUser();
+  const router = useRouter();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
   useEffect(() => {
@@ -333,6 +341,10 @@ export function FolderGrid({
       setItems([]);
     }
   }, [fetchedItems]);
+
+  const handleFolderClick = (folder: Content) => {
+    router.push(`/folder/${folder.id}`);
+  };
 
   const handleFileClick = (file: Content) => {
     if (file.type === 'LINK') {
@@ -424,6 +436,7 @@ export function FolderGrid({
         items: items,
         uploadingFiles,
         onItemClick: handleFileClick,
+        onFolderClick: handleFolderClick,
         onRenameClick: (item: Content) => setItemToRename(item),
         onDeleteClick: (item: Content) => setItemToDelete(item),
         onIconChangeClick: (item: Content) => setItemForIconChange(item),
