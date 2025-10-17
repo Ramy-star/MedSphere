@@ -43,7 +43,7 @@ function getPreText(element: HTMLElement) {
     text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
     text = text.replace(/<\/div>/gi, '');       // Remove </div>
     // Basic un-escaping for display
-    text = text.replace(/&lt;/g, '<').replace(/&gt;', '>').replace(/&amp;/g, '&');
+    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     return text;
 }
 
@@ -52,7 +52,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
-  const { data: questionSet, loading } = useDoc<SavedQuestionSet>(`users/${user?.uid}/questionSets`, id);
+  const { data: questionSet, loading } = useDoc<SavedQuestionSet>(user ? `users/${user.uid}/questionSets` : '', id);
 
   const [isEditing, setIsEditing] = useState({ text: false, json: false });
   const [editingContent, setEditingContent] = useState({ text: '', json: '' });
@@ -369,6 +369,12 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                           handleTitleSave();
                         }
                       }}
+                      onBlur={() => {
+                        if (isEditingTitle) {
+                           setIsEditingTitle(false);
+                           setEditingTitle(questionSet.fileName); // Revert on blur if not saved
+                        }
+                      }}
                       className="text-2xl font-bold text-white outline-none focus:bg-white/10 focus:rounded-md px-1"
                     >
                       {editingTitle}
@@ -399,8 +405,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 </div>
             </div>
         </TooltipProvider>
-         <p className="text-sm text-slate-400 mb-6 ml-12 -mt-4">{new Date(questionSet.createdAt).toLocaleDateString()}</p>
-        
+         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
             {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
