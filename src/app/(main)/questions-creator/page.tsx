@@ -79,6 +79,7 @@ function QuestionsCreatorContent() {
     saveCurrentResults,
     isSaved,
     retryGeneration,
+    clearTask,
   } = useQuestionGenerationStore();
 
   const { user } = useUser();
@@ -147,6 +148,7 @@ function QuestionsCreatorContent() {
       setPendingFile(file);
       setShowUnsavedWarning(true);
     } else {
+      clearTask(); // Clear previous task before starting a new one
       proceedWithGeneration(file);
     }
   };
@@ -199,7 +201,6 @@ function QuestionsCreatorContent() {
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
   };
 
-  const hasGeneratedContent = task?.textQuestions || task?.jsonQuestions;
   const isGenerating = !!(task && ['extracting', 'generating_text', 'converting_json'].includes(task.status));
   const showTextRetry = task?.status === 'error' && (task.failedStep === 'generating_text' || task.failedStep === 'extracting');
   const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
@@ -212,22 +213,29 @@ function QuestionsCreatorContent() {
 
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, showRetryButton: boolean) => {
+    const hasContent = !!content || isLoading || showRetryButton;
+    
     return (
-        <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+        <div className={cn(
+            "relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out",
+             !hasContent && "h-24 justify-center"
+          )}>
            <div className="flex items-start gap-4">
                {icon}
                <div>
                    <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
+                   {!hasContent && <p className="text-sm text-slate-400 mt-1">Generated content will appear here.</p>}
                </div>
            </div>
-            <div className="mt-4 flex-grow flex flex-col">
+           {hasContent && (
+             <div className="mt-4 flex-grow flex flex-col">
                 {isLoading ? (
-                    <div className="flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
+                    <div className="flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl min-h-[24rem]">
                         <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                         <p className="ml-3 text-slate-300">{loadingText}</p>
                     </div>
                 ) : showRetryButton ? (
-                    <div className="flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4">
+                    <div className="flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4 min-h-[24rem]">
                         <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
                         <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
                         <Button onClick={handleRetry} className="rounded-xl active:scale-95">
@@ -237,16 +245,18 @@ function QuestionsCreatorContent() {
                     </div>
                 ) : (
                     <pre className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar overflow-auto h-96 font-code whitespace-pre-wrap flex-grow">
-                        {content || 'Generated content will appear here...'}
+                        {content || ''}
                     </pre>
                 )}
             </div>
+           )}
         </div>
     );
 };
 
 
   const handleTabChange = (value: string) => {
+    // Do not show warning when just switching tabs
     router.push(`/questions-creator?tab=${value}`, { scroll: false });
   };
 
@@ -286,7 +296,7 @@ function QuestionsCreatorContent() {
                      <input
                         ref={fileInputRef}
                         type="file"
-                        accept="application/pdf"
+                        accept="application/pdf, text/markdown, .md"
                         onChange={handleFileChange}
                         className="hidden"
                     />
@@ -294,7 +304,7 @@ function QuestionsCreatorContent() {
                         <FileUp className="w-10 h-10 text-blue-400 shrink-0" />
                         <div>
                             <h3 className="text-lg font-semibold text-white break-words">1. Upload Lecture</h3>
-                            <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
+                            <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF or MD file.</p>
                         </div>
                     </div>
                      {task?.fileName && (
@@ -312,7 +322,7 @@ function QuestionsCreatorContent() {
                     transition={{ delay: 0.1 }}
                     className={cn(
                         "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between",
-                        (!hasGeneratedContent || isGenerating) && "opacity-50 pointer-events-none"
+                        (task?.status !== 'completed' || isGenerating) && "opacity-50 pointer-events-none"
                     )}
                      onClick={handleSaveCurrentQuestions}
                 >
@@ -332,8 +342,8 @@ function QuestionsCreatorContent() {
                 </motion.div>
                 
                 <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, task?.textQuestions ?? null, isGenerating && task?.status !== 'converting_json' && task?.status !== 'completed', task?.status === 'extracting' ? "Extracting text..." : "Generating questions...", showTextRetry)}
-                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, task?.jsonQuestions ?? null, isGenerating && task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
+                    {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 shrink-0" />, task?.textQuestions ?? null, isGenerating && task?.status !== 'converting_json' && task?.status !== 'completed', task?.status === 'extracting' ? "Extracting text..." : "Generating questions...", showTextRetry)}
+                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 shrink-0" />, task?.jsonQuestions ?? null, isGenerating && task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
                 </motion.div>
             </div>
         </TabsContent>
@@ -499,5 +509,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
