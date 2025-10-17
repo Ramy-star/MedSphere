@@ -149,13 +149,13 @@ const ChatInputForm = React.memo(function ChatInputForm({
   chatInput,
   setChatInput
 }: {
-  isAiThinking: boolean;
-  isExtracting: boolean;
-  documentText: string | null;
+  isAiThinking: boolean,
+  isExtracting: boolean,
+  documentText: string | null,
   onChatSubmit: (input: string) => Promise<void>,
-  isMobile: boolean;
-  chatInput: string;
-  setChatInput: (value: string) => void;
+  isMobile: boolean,
+  chatInput: string,
+  setChatInput: (value: string) => void
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -252,6 +252,8 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const chatPanelRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
+    const inputContainerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
       if (initialQuestion) {
@@ -259,6 +261,63 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         onInitialQuestionConsumed();
       }
     }, [initialQuestion, onInitialQuestionConsumed]);
+
+    // This effect handles keyboard appearance on mobile.
+    useEffect(() => {
+        const panel = chatPanelRef.current;
+        const messagesContainer = messagesContainerRef.current;
+        const inputContainer = inputContainerRef.current;
+        
+        if (!isMobile || !panel || !messagesContainer || !inputContainer || typeof window === 'undefined' || !window.visualViewport) {
+            return;
+        }
+
+        const vv = window.visualViewport;
+        if (!vv) return;
+        
+        const handleResize = () => {
+            if (!vv || !inputContainer || !messagesContainer) return;
+            // This is the keyboard height
+            const offset = window.innerHeight - vv.height;
+            
+            // We use requestAnimationFrame to ensure the style updates are smooth and batched.
+            requestAnimationFrame(() => {
+                if (inputContainer.style.transform !== `translateY(-${offset}px)`) {
+                  // Move the input container up by the keyboard height.
+                  inputContainer.style.transform = `translateY(-${offset}px)`;
+                }
+                
+                const newPadding = `${offset + inputContainer.offsetHeight}px`;
+                if (messagesContainer.style.paddingBottom !== newPadding) {
+                  // Add padding to the bottom of the messages container so the last message is visible.
+                  // The padding is the keyboard height plus the input container's own height.
+                  messagesContainer.style.paddingBottom = newPadding;
+                }
+                
+                // Scroll to the bottom to keep the conversation in view.
+                messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            });
+        };
+        
+        vv.addEventListener('resize', handleResize);
+        
+        // A ResizeObserver is used to detect changes in the input container's height (e.g., when typing multiple lines).
+        // This triggers our resize handler to adjust padding accordingly.
+        const resizeObserver = new ResizeObserver(handleResize);
+        resizeObserver.observe(inputContainer);
+
+        // Run the handler once on setup.
+        handleResize();
+
+        return () => {
+            vv.removeEventListener('resize', handleResize);
+            resizeObserver.disconnect();
+
+            // Clean up inline styles on component unmount
+            if (inputContainer) inputContainer.style.transform = '';
+            if (messagesContainer) messagesContainer.style.paddingBottom = '';
+        };
+    }, [isMobile]);
 
     const startNewChat = useCallback(() => {
         setChatHistory([]);
@@ -399,7 +458,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                 </TooltipProvider>
             </header>
             
-            <div className="flex-1 overflow-y-auto">
+            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
                  <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
                     {chatHistory.length === 0 && !isAiThinking && (
                         <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
@@ -451,7 +510,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                 </div>
             </div>
             
-            <div className="w-full z-10 will-change-transform">
+            <div ref={inputContainerRef} className="w-full z-10 will-change-transform">
                 <ChatInputForm
                   isAiThinking={isAiThinking}
                   isExtracting={isExtracting}
