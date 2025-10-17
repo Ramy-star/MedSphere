@@ -1,6 +1,5 @@
 
 'use client';
-import Link from 'next/link';
 import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
@@ -18,6 +17,7 @@ import Image from 'next/image';
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
+import { useRouter } from 'next/navigation';
 
 
 export const FolderCard = React.memo(function FolderCard({ 
@@ -38,6 +38,7 @@ export const FolderCard = React.memo(function FolderCard({
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
     const { user } = useUser();
+    const router = useRouter();
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     
     const renderIcon = () => {
@@ -79,11 +80,19 @@ export const FolderCard = React.memo(function FolderCard({
           </DropdownMenuItem>
       </DropdownMenuContent>
     );
+    
+    const handleCardClick = (e: React.MouseEvent) => {
+        // This is the important part. If the click came from inside a dropdown trigger, ignore it.
+        if (e.target instanceof Element && e.target.closest('[data-radix-dropdown-menu-trigger]')) {
+            return;
+        }
+        onClick(item);
+    }
 
     if (displayAs === 'list') {
         return (
              <div 
-                onClick={() => onClick(item)}
+                onClick={handleCardClick}
                 className="relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5"
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
@@ -115,7 +124,7 @@ export const FolderCard = React.memo(function FolderCard({
                                 <Button 
                                     variant="ghost" 
                                     size="icon" 
-                                    className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
+                                    className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
                                     onClick={(e) => { e.stopPropagation(); }}
                                 >
                                     <MoreVertical className="w-5 h-5" />
@@ -133,29 +142,28 @@ export const FolderCard = React.memo(function FolderCard({
     return (
       <div 
         onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
-        onClick={() => onClick(item)}
+        onClick={handleCardClick}
+        className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors cursor-pointer"
       >
-          <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors cursor-pointer">
-              <div className="flex justify-between items-start mb-4">
-                  {renderIcon()}
-                  {isAdmin && (
-                      <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                              <Button 
-                                  variant="ghost" 
-                                  size="icon" 
-                                  className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={(e) => { e.stopPropagation(); }}
-                              >
-                                  <MoreVertical className="w-5 h-5" />
-                              </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownContent />
-                      </DropdownMenu>
-                  )}
-              </div>
-              <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+          <div className="flex justify-between items-start mb-4">
+              {renderIcon()}
+              {isAdmin && (
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
+                              onClick={(e) => { e.stopPropagation(); }}
+                          >
+                              <MoreVertical className="w-5 h-5" />
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownContent />
+                  </DropdownMenu>
+              )}
           </div>
+          <h3 className="text-lg font-semibold text-white">{item.name}</h3>
       </div>
     );
 });

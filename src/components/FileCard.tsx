@@ -185,7 +185,7 @@ export const FileCard = React.memo(function FileCard({
                         <Button 
                             variant="ghost" 
                             size="icon" 
-                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700"
+                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
                             onClick={(e) => { e.stopPropagation(); }}
                         >
                             <MoreVertical className="w-5 h-5" />
