@@ -339,7 +339,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
 
     const chatViewContent = (
       <>
-        {/* Header - Fixed part */}
+        {/* Part 1: Header (Fixed size) */}
         <header className="flex-shrink-0 flex items-center justify-between whitespace-nowrap px-4 py-3 h-14 bg-[#212121]">
             <div className="flex items-center gap-2">
                 <AiAssistantIcon className="h-6 w-6" />
@@ -383,7 +383,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
             </TooltipProvider>
         </header>
         
-        {/* Messages Area - Flexible and scrollable part */}
+        {/* Part 2: Messages Area (Flexible and scrollable) */}
         <div className="flex-1 overflow-y-auto min-h-0">
             <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
                 {chatHistory.length === 0 && !isAiThinking && (
@@ -436,7 +436,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
             </div>
         </div>
         
-        {/* Input Form - Fixed part */}
+        {/* Part 3: Input Form (Fixed size) */}
         <div className="flex-shrink-0 w-full z-10 will-change-transform">
             <ChatInputForm
               isAiThinking={isAiThinking}
@@ -478,7 +478,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                 className={cn(
                     mainContainerClasses,
                     "absolute inset-0 z-50",
-                    isMobile && (showChat ? 'translate-x-0' : 'translate-x-full')
+                    showChat ? 'translate-x-0' : 'translate-x-full'
                 )}
                 style={{ height: 'var(--1dvh, 100vh)' }}
             >
@@ -496,7 +496,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
             )}
             aria-label="AI Chat Panel"
         >
-            {chatViewContent}
+            {showChat && chatViewContent}
         </div>
     );
 }
