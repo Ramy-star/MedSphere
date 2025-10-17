@@ -184,7 +184,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   
   const handleTitleSave = async () => {
       const newTitle = titleRef.current?.textContent || editingTitle;
-      if (newTitle && questionSet && newTitle !== questionSet.fileName) {
+      if (!newTitle) {
+          setIsEditingTitle(false);
+          return;
+      }
+      if (questionSet && newTitle !== questionSet.fileName) {
           await updateQuestionSet({ fileName: newTitle });
           setEditingTitle(newTitle);
           toast({ title: 'Title Updated' });
@@ -348,41 +352,58 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         transition={{ duration: 0.5 }}
         className="flex-1 flex flex-col p-2 overflow-y-auto no-scrollbar"
     >
-        <div className="flex items-center mb-6">
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full mr-2 active:scale-95" onClick={() => router.push('/questions-creator?tab=saved')}>
-                <ArrowLeft className="h-5 w-5" />
-            </Button>
-            <div className="flex items-center gap-2">
-                <h1
-                  ref={titleRef}
-                  contentEditable={isEditingTitle && isAdmin}
-                  suppressContentEditableWarning={true}
-                  onBlur={handleTitleSave}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleTitleSave();
-                    }
-                  }}
-                  className="text-2xl font-bold text-white outline-none focus:bg-white/10 focus:rounded-md"
-                >
-                  {editingTitle}
-                </h1>
-                {isAdmin && (
-                  <>
-                  {isEditingTitle ? (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={handleTitleSave}>
-                        <Check className="h-5 w-5 text-green-400" />
-                    </Button>
-                ) : (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={() => setIsEditingTitle(true)}>
-                        <Pencil className="h-5 w-5" />
-                    </Button>
-                )}
-                  </>
-                )}
+        <TooltipProvider>
+            <div className="flex items-center mb-6">
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full mr-2 active:scale-95" onClick={() => router.push('/questions-creator?tab=saved')}>
+                            <ArrowLeft className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent><p>Back</p></TooltipContent>
+                </Tooltip>
+                <div className="flex items-center gap-2">
+                    <h1
+                      ref={titleRef}
+                      contentEditable={isEditingTitle && isAdmin}
+                      suppressContentEditableWarning={true}
+                      onBlur={isEditingTitle ? handleTitleSave : undefined}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleTitleSave();
+                        }
+                      }}
+                      className="text-2xl font-bold text-white outline-none focus:bg-white/10 focus:rounded-md px-1"
+                    >
+                      {editingTitle}
+                    </h1>
+                    {isAdmin && (
+                      <>
+                      {isEditingTitle ? (
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={handleTitleSave}>
+                                    <Check className="h-5 w-5 text-green-400" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Save Title</p></TooltipContent>
+                          </Tooltip>
+                    ) : (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={() => setIsEditingTitle(true)}>
+                                    <Pencil className="h-5 w-5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Edit Title</p></TooltipContent>
+                        </Tooltip>
+                    )}
+                      </>
+                    )}
+                </div>
             </div>
-        </div>
+        </TooltipProvider>
          <p className="text-sm text-slate-400 mb-6 ml-12 -mt-4">{new Date(questionSet.createdAt).toLocaleDateString()}</p>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -459,3 +480,5 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    

@@ -34,6 +34,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 type SavedQuestionSet = {
@@ -86,8 +87,11 @@ function QuestionsCreatorContent() {
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   const { data: savedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
-    user ? `users/${user.uid}/questionSets` : undefined,
-    { orderBy: ['createdAt', 'desc'] }
+    `users/${user?.uid}/questionSets`,
+    { 
+      orderBy: ['createdAt', 'desc'],
+      disabled: !user,
+    }
   );
 
   const initialTab = 'generate';
@@ -143,6 +147,7 @@ function QuestionsCreatorContent() {
   };
   
   const proceedWithGeneration = (file: File) => {
+    clearTask(); // Clear previous task before starting a new one
     startGenerationWithFile(file, generationPrompt, jsonPrompt);
   };
 
@@ -151,7 +156,6 @@ function QuestionsCreatorContent() {
       setPendingFile(file);
       setShowUnsavedWarning(true);
     } else {
-      clearTask(); // Clear previous task before starting a new one
       proceedWithGeneration(file);
     }
   };
@@ -327,7 +331,7 @@ function QuestionsCreatorContent() {
                     transition={{ delay: 0.1 }}
                     className={cn(
                         "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between",
-                        (task?.status !== 'completed' || isGenerating) && "opacity-50 pointer-events-none"
+                        (task?.status !== 'completed') && "opacity-50 pointer-events-none"
                     )}
                      onClick={handleSaveCurrentQuestions}
                 >
@@ -346,9 +350,85 @@ function QuestionsCreatorContent() {
                     )}
                 </motion.div>
                 
-                <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 shrink-0" />, task?.textQuestions ?? null, isGenerating && task?.status !== 'converting_json' && task?.status !== 'completed', task?.status === 'extracting' ? "Extracting text..." : "Generating questions...", showTextRetry)}
-                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 shrink-0" />, task?.jsonQuestions ?? null, isGenerating && task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
+                <motion.div 
+                  variants={cardVariants} 
+                  initial="hidden" 
+                  animate="visible" 
+                  transition={{ delay: 0.2 }} 
+                  className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"
+                >
+                    <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-start gap-4">
+                                <FileText className="w-8 h-8 text-blue-400 shrink-0" />
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white break-words">Text Questions</h3>
+                                </div>
+                            </div>
+                        </div>
+                         <div className="mt-4 flex-grow flex flex-col">
+                            {isGenerating && task.status !== 'converting_json' && task.status !== 'completed' ? (
+                                <div className="flex-grow flex items-center justify-center text-center bg-slate-800/60 border-slate-700 rounded-xl">
+                                    <div>
+                                        <Loader2 className="h-8 w-8 text-blue-400 animate-spin mx-auto" />
+                                        <p className="ml-3 text-slate-300 mt-2">{task.status === 'extracting' ? "Extracting text..." : "Generating questions..."}</p>
+                                    </div>
+                                </div>
+                            ) : showTextRetry ? (
+                                <div className="flex-grow flex flex-col items-center justify-center text-center bg-slate-800/60 border-slate-700 rounded-xl p-4">
+                                    <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
+                                    <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
+                                    <Button onClick={handleRetry} className="rounded-xl active:scale-95">
+                                        <RotateCw className="mr-2 h-4 w-4" />
+                                        Retry
+                                    </Button>
+                                </div>
+                            ) : (
+                               <textarea
+                                   value={task?.textQuestions ?? ''}
+                                   readOnly
+                                   placeholder="Generated text questions will appear here..."
+                                   className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                               />
+                            )}
+                         </div>
+                    </div>
+                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-start gap-4">
+                                <FileJson className="w-8 h-8 text-green-400 shrink-0" />
+                                <div>
+                                    <h3 className="text-lg font-semibold text-white break-words">JSON Questions</h3>
+                                </div>
+                            </div>
+                        </div>
+                         <div className="mt-4 flex-grow flex flex-col">
+                             {isGenerating && task.status === 'converting_json' ? (
+                                <div className="flex-grow flex items-center justify-center text-center bg-slate-800/60 border-slate-700 rounded-xl">
+                                    <div>
+                                        <Loader2 className="h-8 w-8 text-green-400 animate-spin mx-auto" />
+                                        <p className="ml-3 text-slate-300 mt-2">Converting to JSON...</p>
+                                    </div>
+                                </div>
+                            ) : showJsonRetry ? (
+                                <div className="flex-grow flex flex-col items-center justify-center text-center bg-slate-800/60 border-slate-700 rounded-xl p-4">
+                                    <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
+                                    <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
+                                    <Button onClick={handleRetry} className="rounded-xl active:scale-95">
+                                        <RotateCw className="mr-2 h-4 w-4" />
+                                        Retry
+                                    </Button>
+                                </div>
+                             ) : (
+                                <textarea
+                                    value={task?.jsonQuestions ?? ''}
+                                    readOnly
+                                    placeholder="Generated JSON will appear here..."
+                                    className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                                />
+                             )}
+                         </div>
+                    </div>
                 </motion.div>
             </div>
         </TabsContent>
@@ -364,16 +444,29 @@ function QuestionsCreatorContent() {
                                    <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
                                </div>
                            </div>
-                           <div className="flex items-center gap-2">
-                               <Button onClick={() => setIsEditingPrompts(p => ({...p, gen: !p.gen}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                   {isEditingPrompts.gen ? <Check className="h-5 w-5 text-green-400" /> : <Pencil className="h-5 w-5" />}
-                               </Button>
-                               {isEditingPrompts.gen && (
-                                   <Button onClick={handleSaveGenPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                       <Save className="h-5 w-5" />
-                                   </Button>
-                               )}
-                           </div>
+                           <TooltipProvider>
+                               <div className="flex items-center gap-2">
+                                   {isEditingPrompts.gen ? (
+                                       <Tooltip>
+                                           <TooltipTrigger asChild>
+                                               <Button onClick={handleSaveGenPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                                   <Check className="h-5 w-5 text-green-400" />
+                                               </Button>
+                                           </TooltipTrigger>
+                                           <TooltipContent><p>Save</p></TooltipContent>
+                                       </Tooltip>
+                                   ) : (
+                                        <Tooltip>
+                                           <TooltipTrigger asChild>
+                                               <Button onClick={() => setIsEditingPrompts(p => ({...p, gen: true}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                                   <Pencil className="h-5 w-5" />
+                                               </Button>
+                                           </TooltipTrigger>
+                                           <TooltipContent><p>Edit</p></TooltipContent>
+                                       </Tooltip>
+                                   )}
+                               </div>
+                           </TooltipProvider>
                        </div>
                         <textarea
                            value={generationPrompt}
@@ -390,16 +483,29 @@ function QuestionsCreatorContent() {
                                    <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
                                </div>
                            </div>
-                            <div className="flex items-center gap-2">
-                               <Button onClick={() => setIsEditingPrompts(p => ({...p, json: !p.json}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                   {isEditingPrompts.json ? <Check className="h-5 w-5 text-green-400" /> : <Pencil className="h-5 w-5" />}
-                               </Button>
-                               {isEditingPrompts.json && (
-                                   <Button onClick={handleSaveJsonPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                       <Save className="h-5 w-5" />
-                                   </Button>
-                               )}
-                           </div>
+                           <TooltipProvider>
+                                <div className="flex items-center gap-2">
+                                   {isEditingPrompts.json ? (
+                                       <Tooltip>
+                                           <TooltipTrigger asChild>
+                                                <Button onClick={handleSaveJsonPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                                   <Check className="h-5 w-5 text-green-400" />
+                                                </Button>
+                                           </TooltipTrigger>
+                                           <TooltipContent><p>Save</p></TooltipContent>
+                                       </Tooltip>
+                                   ) : (
+                                        <Tooltip>
+                                           <TooltipTrigger asChild>
+                                                <Button onClick={() => setIsEditingPrompts(p => ({...p, json: true}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                                   <Pencil className="h-5 w-5" />
+                                                </Button>
+                                           </TooltipTrigger>
+                                           <TooltipContent><p>Edit</p></TooltipContent>
+                                       </Tooltip>
+                                   )}
+                               </div>
+                           </TooltipProvider>
                        </div>
                        <textarea
                            value={jsonPrompt}
@@ -531,3 +637,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
