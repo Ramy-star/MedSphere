@@ -115,6 +115,15 @@ async function runGenerationProcess(
 }
 
 const startNewGenerationFromFile = (file: File, genPrompt: string, jsonPrompt: string, set: any, get: any) => {
+    const { task, isSaved } = get();
+
+    // Check for unsaved work first. If found, show confirmation and stop.
+    if (task && task.status === 'completed' && !isSaved) {
+        set((state: QuestionGenerationState) => updateTask(state, { status: 'awaiting_confirmation', nextFile: file }));
+        return;
+    }
+    
+    // If no unsaved work, proceed with the new generation.
     const taskId = `task_${Date.now()}`;
     const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
     const newTask: GenerationTask = {
@@ -135,6 +144,15 @@ const startNewGenerationFromFile = (file: File, genPrompt: string, jsonPrompt: s
 };
 
 const startNewGenerationFromUrl = (id: string, fileName: string, fileUrl: string, genPrompt: string, jsonPrompt: string, set: any, get: any) => {
+    const { task, isSaved } = get();
+
+    // Check for unsaved work first. If found, show confirmation and stop.
+    if (task && task.status === 'completed' && !isSaved) {
+        set((state: QuestionGenerationState) => updateTask(state, { status: 'awaiting_confirmation', nextGenArgs: { id, fileName, fileUrl } }));
+        return;
+    }
+
+    // If no unsaved work, proceed with the new generation.
     const taskId = `task_${Date.now()}`;
     const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
     const newTask: GenerationTask = {
@@ -160,30 +178,58 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     task: null,
     isSaved: false,
     startGenerationWithFile: async (file, genPrompt, jsonPrompt) => {
-        const { task, isSaved } = get();
-        if (task && task.status === 'completed' && !isSaved) {
-            set(state => updateTask(state, { status: 'awaiting_confirmation', nextFile: file }));
-            return;
-        }
+        // This function now directly calls the new "checked" start function.
         startNewGenerationFromFile(file, genPrompt, jsonPrompt, set, get);
     },
     startGenerationFromUrl: (id, fileName, fileUrl, genPrompt, jsonPrompt) => {
-        const { task, isSaved } = get();
-        if (task && task.status === 'completed' && !isSaved) {
-            set(state => updateTask(state, { status: 'awaiting_confirmation', nextGenArgs: { id, fileName, fileUrl } }));
-            return;
-        }
+        // This function now directly calls the new "checked" start function.
         startNewGenerationFromUrl(id, fileName, fileUrl, genPrompt, jsonPrompt, set, get);
     },
     confirmContinue: (genPrompt, jsonPrompt) => {
         const { task } = get();
         if (!task) return;
 
+        // The user has confirmed. Now we can safely start the new generation
+        // using the data we stored in `nextFile` or `nextGenArgs`.
         if (task.nextFile) {
-            startNewGenerationFromFile(task.nextFile, genPrompt, jsonPrompt, set, get);
+            const file = task.nextFile;
+            const taskId = `task_${Date.now()}`;
+            const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+            const newTask: GenerationTask = {
+                id: taskId,
+                fileName: fileNameWithoutExt,
+                sourceFileId: '',
+                file: file,
+                status: 'idle',
+                failedStep: null,
+                documentText: null,
+                textQuestions: null,
+                jsonQuestions: null,
+                error: null,
+                progress: 0,
+            };
+            set({ task: newTask, isSaved: false });
+            runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
+
         } else if (task.nextGenArgs) {
             const { id, fileName, fileUrl } = task.nextGenArgs;
-            startNewGenerationFromUrl(id, fileName, fileUrl, genPrompt, jsonPrompt, set, get);
+            const taskId = `task_${Date.now()}`;
+            const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+            const newTask: GenerationTask = {
+                id: taskId,
+                fileName: fileNameWithoutExt,
+                sourceFileId: id,
+                fileUrl: fileUrl,
+                status: 'idle',
+                failedStep: null,
+                documentText: null,
+                textQuestions: null,
+                jsonQuestions: null,
+                error: null,
+                progress: 0,
+            };
+            set({ task: newTask, isSaved: false });
+            runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
         }
     },
     retryGeneration: async (genPrompt, jsonPrompt) => {
@@ -217,7 +263,14 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         }, 5000);
     },
     clearTask: () => {
-        set({ task: null, isSaved: false });
+        const { task } = get();
+        // If the task is awaiting confirmation, just revert the status.
+        if(task && task.status === 'awaiting_confirmation') {
+            set(state => updateTask(state, { status: 'completed', nextFile: undefined, nextGenArgs: undefined }));
+        } else {
+            // Otherwise, clear everything.
+            set({ task: null, isSaved: false });
+        }
     },
   })
 );
