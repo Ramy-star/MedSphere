@@ -4,15 +4,10 @@
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
-import { generateQuestions, convertQuestionsToJson, repairJson } from '@/ai/flows/question-gen-flow';
-import { contentService } from '@/lib/contentService';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { useDebounce } from 'use-debounce';
 import {
   Dialog,
   DialogContent,
@@ -21,7 +16,6 @@ import {
   DialogDescription,
   DialogClose,
 } from '@/components/ui/dialog';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
 import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -71,15 +65,10 @@ function QuestionsCreatorContent() {
   const [isDragging, setIsDragging] = useState(false);
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editingName, setEditingName] = useState('');
   const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
   const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
   const [pendingFile, setPendingFile] = useState<File | null>(null);
 
-
-  const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
-  const [debouncedJsonPrompt] = useDebounce(jsonPrompt, 500);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -88,8 +77,8 @@ function QuestionsCreatorContent() {
     startGenerationWithFile,
     saveCurrentResults,
     clearTask,
-    markAsSaved,
     isSaved,
+    retryGeneration,
   } = useQuestionGenerationStore();
 
   const { user } = useUser();
@@ -123,7 +112,7 @@ function QuestionsCreatorContent() {
         title: 'Generation Complete',
         description: `Questions for "${task.fileName}" have been generated.`,
       });
-    } else if (task?.status === 'error') {
+    } else if (task?.status === 'error' && !task.error?.includes('Aborted')) { // Don't toast for user-aborted actions
       toast({
         variant: 'destructive',
         title: 'Generation Failed',
@@ -183,18 +172,6 @@ function QuestionsCreatorContent() {
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(false); };
   
-  const handleStartEditName = (set: SavedQuestionSet) => {
-    setEditingId(set.id);
-    setEditingName(set.fileName);
-  };
-
-  const handleSaveEditName = async (id: string) => {
-    if (!user) return;
-    const docRef = doc(db, `users/${user.uid}/questionSets`, id);
-    await updateDoc(docRef, { fileName: editingName });
-    setEditingId(null);
-  };
-
   const handleDeleteSet = async () => {
     if (!itemToDelete || !user) return;
     const docRef = doc(db, `users/${user.uid}/questionSets`, itemToDelete.id);
@@ -224,10 +201,17 @@ function QuestionsCreatorContent() {
 
   const hasGeneratedContent = task?.textQuestions || task?.jsonQuestions;
   const isGenerating = !!(task && task.status !== 'completed' && task.status !== 'error' && task.status !== 'idle');
+  const showTextRetry = task?.status === 'error' && (task.failedStep === 'generating_text' || task.failedStep === 'extracting');
+  const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json') => {
-    const isJsonCardWithError = type === 'json' && task?.status === 'error';
 
+  const handleRetry = useCallback(() => {
+    if(!task) return;
+    retryGeneration(generationPrompt, jsonPrompt);
+  }, [task, retryGeneration, generationPrompt, jsonPrompt]);
+
+
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, showRetry: boolean) => {
     return (
         <Card className="glass-card min-h-[200px] flex flex-col rounded-3xl">
             <CardHeader>
@@ -244,16 +228,20 @@ function QuestionsCreatorContent() {
                         <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                         <p className="ml-3 text-slate-300">{loadingText}</p>
                     </div>
+                ) : showRetry ? (
+                    <div className="flex flex-col items-center justify-center w-full h-full text-center">
+                        <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
+                        <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
+                        <Button onClick={handleRetry} className="rounded-xl">
+                            <RotateCw className="mr-2 h-4 w-4" />
+                            Retry
+                        </Button>
+                    </div>
                 ) : (
                     <div className="relative flex-1">
                         <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-48 overflow-auto no-scrollbar">
                             {content || 'Generated content will appear here...'}
                         </pre>
-                    </div>
-                )}
-                {isJsonCardWithError && (
-                    <div className="mt-2 text-red-400 bg-red-900/20 p-3 rounded-lg text-xs">
-                        <p>{task?.error}</p>
                     </div>
                 )}
             </CardContent>
@@ -268,11 +256,9 @@ function QuestionsCreatorContent() {
       } else if (task?.status === 'completed' && !isSaved) {
         setPendingFile(null); // Clear any pending file
         setShowUnsavedWarning(true);
-        // Prevent tab change
+        // Prevent tab change by not updating router, but let the tab visually switch back if needed.
+        // Or, more simply, just let them switch and abandon the results. The warning is the main thing.
         return;
-      }
-      else {
-        clearTask();
       }
     }
     router.push(`/questions-creator?tab=${value}`, { scroll: false });
@@ -311,12 +297,19 @@ function QuestionsCreatorContent() {
                     onDragLeave={handleDragLeave}
                     onClick={() => fileInputRef.current?.click()}
                 >
+                     <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handleFileChange}
+                        className="hidden"
+                    />
                     <div>
                         <FileUp className="w-10 h-10 text-blue-400 mb-4" />
                         <h3 className="text-lg font-semibold text-white break-words">{task?.fileName || '1. Upload Lecture'}</h3>
                         <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
                     </div>
-                     {task?.status === 'error' && (
+                     {task?.status === 'error' && !showTextRetry && !showJsonRetry && (
                         <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
                             <AlertCircle className="h-5 w-5" />
                             <p className="text-sm">{task.error}</p>
@@ -331,7 +324,7 @@ function QuestionsCreatorContent() {
                     transition={{ delay: 0.1 }}
                     className={cn(
                         "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between",
-                        !hasGeneratedContent && "opacity-50 pointer-events-none"
+                        (!hasGeneratedContent || isSaved) && "opacity-50 pointer-events-none"
                     )}
                      onClick={handleSaveCurrentQuestions}
                 >
@@ -340,11 +333,17 @@ function QuestionsCreatorContent() {
                         <h3 className="text-lg font-semibold text-white break-words">2. Save Results</h3>
                         <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
                     </div>
+                     {isSaved && hasGeneratedContent && (
+                        <div className="mt-4 flex items-center gap-2 text-green-400 bg-green-900/20 p-3 rounded-lg">
+                            <Check className="h-5 w-5" />
+                            <p className="text-sm">Questions have been saved!</p>
+                        </div>
+                    )}
                 </motion.div>
                 
                 <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text', "Generating questions...", 'text')}
-                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", 'json')}
+                    {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text', "Generating questions...", showTextRetry)}
+                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
                 </motion.div>
             </div>
         </TabsContent>
@@ -352,10 +351,12 @@ function QuestionsCreatorContent() {
         <TabsContent value="prompts" className="mt-8">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                     <div className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors flex flex-col justify-between">
+                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
                         <div>
-                            <FileText className="w-10 h-10 text-blue-400 mb-4" />
-                            <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
+                            <div className="flex items-center gap-3">
+                                <FileText className="w-8 h-8 text-blue-400 mb-4" />
+                                <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
+                            </div>
                              <textarea
                                 value={generationPrompt}
                                 onChange={(e) => setGenerationPrompt(e.target.value)}
@@ -366,10 +367,12 @@ function QuestionsCreatorContent() {
                             <Save className="mr-2 h-4 w-4" /> Save
                         </Button>
                     </div>
-                     <div className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors flex flex-col justify-between">
+                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
                         <div>
-                            <FileJson className="w-10 h-10 text-green-400 mb-4" />
-                            <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
+                             <div className="flex items-center gap-3">
+                                <FileJson className="w-8 h-8 text-green-400 mb-4" />
+                                <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
+                            </div>
                             <textarea
                                 value={jsonPrompt}
                                 onChange={(e) => setJsonPrompt(e.target.value)}
@@ -439,10 +442,10 @@ function QuestionsCreatorContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-                <Button variant="glass" onClick={() => setShowUnsavedWarning(false)}>Cancel</Button>
+                <Button variant="outline" className="rounded-xl" onClick={() => setShowUnsavedWarning(false)}>Cancel</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-                <Button onClick={handleConfirmContinue}>Continue</Button>
+                <Button onClick={handleConfirmContinue} className="rounded-xl">Continue</Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -458,8 +461,8 @@ function QuestionsCreatorContent() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel asChild><Button variant="glass">Cancel</Button></AlertDialogCancel>
-            <AlertDialogAction asChild><Button variant="destructive" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
+            <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
+            <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -506,5 +509,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
