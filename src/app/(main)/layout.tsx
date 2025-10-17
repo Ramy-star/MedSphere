@@ -39,7 +39,11 @@ export default function MainLayout({
             <Breadcrumbs />
         </div>
         
-        <div className={cn("flex-1 flex flex-col overflow-hidden", isHomePage && "pt-0", !isQuestionsCreatorPage && !isHomePage && "pt-4")}>
+        <div className={cn(
+          "flex-1 flex flex-col overflow-hidden", 
+          isHomePage && "pt-0", 
+          !isQuestionsCreatorPage && !isHomePage && "pt-4"
+        )}>
           {children}
         </div>
       </motion.main>
