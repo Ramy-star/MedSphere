@@ -188,10 +188,14 @@ const ChatInputForm = React.memo(function ChatInputForm({
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-        textarea.style.height = 'auto'; // Reset height
-        const scrollHeight = textarea.scrollHeight;
-        const maxHeight = 150; 
-        textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+        if (chatInput) {
+            textarea.style.height = 'auto'; // Reset height
+            const scrollHeight = textarea.scrollHeight;
+            const maxHeight = 150; 
+            textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+        } else {
+            textarea.style.height = 'auto'; // Reset to default when empty
+        }
     }
   }, [chatInput]);
 
@@ -248,8 +252,6 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const chatPanelRef = useRef<HTMLDivElement>(null);
-    const messagesContainerRef = useRef<HTMLDivElement>(null);
-    const inputContainerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
       if (initialQuestion) {
@@ -257,55 +259,6 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         onInitialQuestionConsumed();
       }
     }, [initialQuestion, onInitialQuestionConsumed]);
-
-    // This effect handles keyboard appearance on mobile.
-    useEffect(() => {
-        const panel = chatPanelRef.current;
-        const messagesContainer = messagesContainerRef.current;
-        const inputContainer = inputContainerRef.current;
-        
-        if (!isMobile || !panel || !messagesContainer || !inputContainer || typeof window === 'undefined' || !window.visualViewport) {
-            return;
-        }
-
-        const vv = window.visualViewport;
-        if (!vv) return;
-        
-        const handleResize = () => {
-            if (!vv || !inputContainer || !messagesContainer) return;
-            // This is the keyboard height
-            const offset = window.innerHeight - vv.height;
-            
-            // We use requestAnimationFrame to ensure the style updates are smooth and batched.
-            requestAnimationFrame(() => {
-                // Move the input container up by the keyboard height.
-                inputContainer.style.transform = `translateY(-${offset}px)`;
-                
-                // Add padding to the bottom of the messages container so the last message is visible.
-                // The padding is the keyboard height plus the input container's own height.
-                messagesContainer.style.paddingBottom = `${offset + inputContainer.offsetHeight}px`;
-                
-                // Scroll to the bottom to keep the conversation in view.
-                messagesContainer.scrollTop = messagesContainer.scrollHeight;
-            });
-        };
-        
-        vv.addEventListener('resize', handleResize);
-        
-        const resizeObserver = new ResizeObserver(handleResize);
-        resizeObserver.observe(inputContainer);
-
-        handleResize();
-
-        return () => {
-            vv.removeEventListener('resize', handleResize);
-            resizeObserver.disconnect();
-
-            if (inputContainer) inputContainer.style.transform = '';
-            if (messagesContainer) messagesContainer.style.paddingBottom = '';
-        };
-    }, [isMobile]);
-
 
     const startNewChat = useCallback(() => {
         setChatHistory([]);
@@ -446,7 +399,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                 </TooltipProvider>
             </header>
             
-            <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
+            <div className="flex-1 overflow-y-auto">
                  <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
                     {chatHistory.length === 0 && !isAiThinking && (
                         <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
@@ -498,7 +451,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                 </div>
             </div>
             
-            <div ref={inputContainerRef} className="w-full z-10 will-change-transform">
+            <div className="w-full z-10 will-change-transform">
                 <ChatInputForm
                   isAiThinking={isAiThinking}
                   isExtracting={isExtracting}
@@ -528,13 +481,18 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
           </div>
         );
 
+    const mainContainerClasses = cn(
+      "flex-shrink-0 flex flex-col overflow-hidden transition-all duration-300 ease-in-out",
+    );
+
     if (isMobile) {
         return (
              <div
                 ref={chatPanelRef}
                 className={cn(
-                  "flex flex-col overflow-hidden w-full absolute inset-0 z-50 transition-transform duration-300 ease-in-out",
-                   showChat ? 'translate-x-0' : 'translate-x-full'
+                  mainContainerClasses,
+                  "w-full absolute inset-0 z-50",
+                  showChat ? 'translate-x-0' : 'translate-x-full'
                 )}
                 style={{backgroundColor: '#212121', height: 'var(--1dvh, 100vh)'}}
             >
@@ -546,7 +504,8 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     return (
         <div
             className={cn(
-                "flex-shrink-0 flex flex-col overflow-hidden h-full border-l border-white/10 transition-all duration-300 ease-in-out",
+                mainContainerClasses,
+                "h-full border-l border-white/10",
                 showChat ? 'w-[512px]' : 'w-0'
             )}
             style={{backgroundColor: '#212121'}}
