@@ -61,17 +61,24 @@ function getPreText(element: HTMLElement) {
     return text;
 }
 
-const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQuestionSet, isAdmin: boolean, onDeleteClick: (set: SavedQuestionSet) => void }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: set.id });
+const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick, isDragging }: { set: SavedQuestionSet, isAdmin: boolean, onDeleteClick: (set: SavedQuestionSet) => void, isDragging: boolean }) => {
+    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: set.id });
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         zIndex: isDragging ? 1 : 'auto',
     };
+    
+    const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        if (isDragging) {
+            e.preventDefault();
+        }
+    };
+
 
     return (
-        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
-            <Link href={`/questions-creator/${set.id}`} className={cn("relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col", isDragging && 'shadow-2xl shadow-blue-500/50')}>
+        <Link href={`/questions-creator/${set.id}`} onClick={handleLinkClick} draggable={false}>
+            <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={cn("relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col", isDragging && 'shadow-2xl shadow-blue-500/50')}>
                 <div className="flex justify-between items-start">
                     <Folder className="w-8 h-8 text-yellow-400 shrink-0" />
                     {isAdmin && (
@@ -92,8 +99,8 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
                     )}
                 </div>
                 <h3 className="text-lg font-semibold text-white break-words mt-4">{set.fileName}</h3>
-            </Link>
-        </div>
+            </div>
+        </Link>
     );
 };
 
@@ -104,10 +111,10 @@ function QuestionsCreatorContent() {
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
   const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false });
-  const [isDragging, setIsDragging] = useState(false);
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -116,6 +123,7 @@ function QuestionsCreatorContent() {
     task,
     isSaved,
     startGenerationWithFile,
+    startGenerationFromUrl,
     saveCurrentResults,
     retryGeneration,
     clearTask,
@@ -140,7 +148,7 @@ function QuestionsCreatorContent() {
     }
   }, [fetchedSavedQuestions]);
 
-  const initialTab = searchParams.get('tab') || 'generate';
+  const activeTab = searchParams.get('tab') || 'generate';
   const { toast } = useToast();
 
   const handleSaveGenPrompt = () => {
@@ -194,6 +202,8 @@ function QuestionsCreatorContent() {
       startGenerationWithFile(e.target.files[0], generationPrompt, jsonPrompt);
     }
   };
+  
+  const [isDragging, setIsDragging] = useState(false);
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
@@ -244,6 +254,7 @@ function QuestionsCreatorContent() {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
+    setActiveDragId(null);
     const { active, over } = event;
     if (over && active.id !== over.id) {
         setSavedQuestions((currentItems) => {
@@ -268,6 +279,10 @@ function QuestionsCreatorContent() {
             return newOrderedItems;
         });
     }
+  };
+
+  const handleDragStart = (event: DragEndEvent) => {
+    setActiveDragId(event.active.id as string);
   };
 
 
@@ -349,7 +364,7 @@ function QuestionsCreatorContent() {
         </h1>
       </div>
 
-      <Tabs defaultValue={initialTab} value={searchParams.get('tab') || initialTab} onValueChange={handleTabChange} className="w-full mt-6 flex flex-col items-center">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-6 flex flex-col items-center">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
             <TabsTrigger value="generate" className="rounded-full">Generate</TabsTrigger>
             <TabsTrigger value="prompts" className="rounded-full">Prompts</TabsTrigger>
@@ -539,7 +554,7 @@ function QuestionsCreatorContent() {
                 {loadingSavedQuestions ? (
                     <div className="text-center py-16"><Loader2 className="mx-auto h-12 w-12 text-slate-500 animate-spin" /></div>
                 ) : savedQuestions && savedQuestions.length > 0 ? (
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
                         <SortableContext items={savedQuestions.map(s => s.id)} strategy={rectSortingStrategy}>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {savedQuestions.map(set => (
@@ -548,6 +563,7 @@ function QuestionsCreatorContent() {
                                         set={set}
                                         isAdmin={isAdmin}
                                         onDeleteClick={setItemToDelete}
+                                        isDragging={activeDragId === set.id}
                                     />
                                 ))}
                             </div>
@@ -641,5 +657,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
