@@ -61,46 +61,57 @@ function getPreText(element: HTMLElement) {
     return text;
 }
 
-const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick, isDragging }: { set: SavedQuestionSet, isAdmin: boolean, onDeleteClick: (set: SavedQuestionSet) => void, isDragging: boolean }) => {
-    const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: set.id });
+const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQuestionSet, isAdmin: boolean, onDeleteClick: (set: SavedQuestionSet) => void }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: set.id });
+    const router = useRouter();
+
     const style = {
         transform: CSS.Transform.toString(transform),
         transition,
         zIndex: isDragging ? 1 : 'auto',
     };
-    
-    const handleLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-        if (isDragging) {
-            e.preventDefault();
+
+    const handleClick = () => {
+        // Only navigate if not dragging. The 'isDragging' state is provided by useSortable.
+        if (!isDragging) {
+            router.push(`/questions-creator/${set.id}`);
         }
     };
 
-
     return (
-        <Link href={`/questions-creator/${set.id}`} onClick={handleLinkClick} draggable={false}>
-            <div ref={setNodeRef} style={style} {...attributes} {...listeners} className={cn("relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col", isDragging && 'shadow-2xl shadow-blue-500/50')}>
-                <div className="flex justify-between items-start">
-                    <Folder className="w-8 h-8 text-yellow-400 shrink-0" />
-                    {isAdmin && (
-                        <div className="flex gap-1 absolute top-2 right-2">
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95 z-10"
-                                onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    onDeleteClick(set);
-                                }}
-                            >
-                                <Trash2 className="h-4 w-4 text-red-400"/>
-                            </Button>
-                        </div>
-                    )}
-                </div>
-                <h3 className="text-lg font-semibold text-white break-words mt-4">{set.fileName}</h3>
+        <div 
+            ref={setNodeRef} 
+            style={style} 
+            {...attributes} 
+            {...listeners} 
+            onClick={handleClick}
+            className={cn(
+                "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col", 
+                isDragging && 'shadow-2xl shadow-blue-500/50'
+            )}
+        >
+            <div className="flex justify-between items-start">
+                <Folder className="w-8 h-8 text-yellow-400 shrink-0" />
+                {isAdmin && (
+                    <div className="flex gap-1 absolute top-2 right-2">
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95 z-10"
+                            onMouseDown={(e) => e.stopPropagation()} // Prevent drag from starting on button click
+                            onClick={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                onDeleteClick(set);
+                            }}
+                        >
+                            <Trash2 className="h-4 w-4 text-red-400"/>
+                        </Button>
+                    </div>
+                )}
             </div>
-        </Link>
+            <h3 className="text-lg font-semibold text-white break-words mt-4">{set.fileName}</h3>
+        </div>
     );
 };
 
@@ -108,6 +119,8 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick, isDragging }: { 
 function QuestionsCreatorContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'generate';
+
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
   const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false });
@@ -148,7 +161,6 @@ function QuestionsCreatorContent() {
     }
   }, [fetchedSavedQuestions]);
 
-  const activeTab = searchParams.get('tab') || 'generate';
   const { toast } = useToast();
 
   const handleSaveGenPrompt = () => {
@@ -357,7 +369,7 @@ function QuestionsCreatorContent() {
 
 
   return (
-    <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar pt-2">
+    <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar pt-8">
       <div className="text-center">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
@@ -366,9 +378,9 @@ function QuestionsCreatorContent() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-6 flex flex-col items-center">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
-            <TabsTrigger value="generate" className="rounded-full">Generate</TabsTrigger>
-            <TabsTrigger value="prompts" className="rounded-full">Prompts</TabsTrigger>
-            <TabsTrigger value="saved" className="rounded-full">Saved Questions</TabsTrigger>
+            <TabsTrigger value="generate">Generate</TabsTrigger>
+            <TabsTrigger value="prompts">Prompts</TabsTrigger>
+            <TabsTrigger value="saved">Saved Questions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="generate" className="w-full max-w-7xl mx-auto mt-4">
@@ -563,7 +575,6 @@ function QuestionsCreatorContent() {
                                         set={set}
                                         isAdmin={isAdmin}
                                         onDeleteClick={setItemToDelete}
-                                        isDragging={activeDragId === set.id}
                                     />
                                 ))}
                             </div>
@@ -657,3 +668,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
