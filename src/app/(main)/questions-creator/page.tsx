@@ -141,6 +141,7 @@ function QuestionsCreatorContent() {
     retryGeneration,
     clearTask,
     confirmContinue,
+    cancelConfirmation,
   } = useQuestionGenerationStore();
 
   const { user } = useUser();
@@ -591,7 +592,7 @@ function QuestionsCreatorContent() {
         </TabsContent>
       </Tabs>
 
-      <AlertDialog open={task?.status === 'awaiting_confirmation'} onOpenChange={(open) => {if(!open) clearTask()}}>
+      <AlertDialog open={task?.status === 'awaiting_confirmation'} onOpenChange={(open) => {if(!open) cancelConfirmation()}}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
@@ -601,7 +602,7 @@ function QuestionsCreatorContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-                <Button variant="outline" className="rounded-xl" onClick={clearTask}>Cancel</Button>
+                <Button variant="outline" className="rounded-xl" onClick={cancelConfirmation}>Cancel</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
                 <Button onClick={handleConfirmContinue} className="rounded-xl bg-blue-600 hover:bg-blue-700">Continue</Button>
@@ -668,5 +669,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
