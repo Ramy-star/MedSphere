@@ -34,10 +34,10 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription as AlertDialogDesc,
+  AlertDialogDescription,
   AlertDialogFooter,
-  AlertDialogHeader as AlertDialogHeader2,
-  AlertDialogTitle as AlertDialogTitle2,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
 
@@ -267,7 +267,7 @@ function QuestionsCreatorContent() {
         </TabsList>
 
         <TabsContent value="generate" className="mt-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div
                     variants={cardVariants}
                     initial="hidden"
@@ -315,16 +315,12 @@ function QuestionsCreatorContent() {
                     </div>
                 </motion.div>
                 
-                <div className="md:col-span-2 lg:col-span-1 lg:row-start-2 lg:col-start-3 space-y-6">
-                 <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
+                <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
                     {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text', "Generating questions...", 'text')}
                 </motion.div>
                 <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
                     {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", 'json')}
                 </motion.div>
-                </div>
-
-
             </div>
         </TabsContent>
         
@@ -410,13 +406,13 @@ function QuestionsCreatorContent() {
 
       <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
         <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
-          <AlertDialogHeader2 className="p-6 pb-0">
-            <AlertDialogTitle2>Are you sure?</AlertDialogTitle2>
-            <AlertDialogDesc>
+          <AlertDialogHeader className="p-6 pb-0">
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
               This will permanently delete the question set for "{itemToDelete?.fileName}". This action cannot be undone.
-            </AlertDialogDesc>
-          </AlertDialogHeader2>
-          <AlertDialogFooter className="p-6 pt-4 sm:justify-center">
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="p-6 pt-4">
             <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
             <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
           </AlertDialogFooter>
@@ -465,3 +461,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
