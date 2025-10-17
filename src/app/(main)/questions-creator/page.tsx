@@ -140,7 +140,7 @@ function QuestionsCreatorContent() {
     }
   }, [fetchedSavedQuestions]);
 
-  const initialTab = 'generate';
+  const initialTab = searchParams.get('tab') || 'generate';
   const { toast } = useToast();
 
   const handleSaveGenPrompt = () => {
@@ -641,3 +641,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
