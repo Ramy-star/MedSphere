@@ -74,6 +74,9 @@ function QuestionsCreatorContent() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
   const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
+  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
+  const [pendingFile, setPendingFile] = useState<File | null>(null);
+
 
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
   const [debouncedJsonPrompt] = useDebounce(jsonPrompt, 500);
@@ -85,6 +88,8 @@ function QuestionsCreatorContent() {
     startGenerationWithFile,
     saveCurrentResults,
     clearTask,
+    markAsSaved,
+    isSaved,
   } = useQuestionGenerationStore();
 
   const { user } = useUser();
@@ -113,7 +118,7 @@ function QuestionsCreatorContent() {
   }, []);
 
   useEffect(() => {
-    if (task?.status === 'completed') {
+    if (task?.status === 'completed' && !isSaved) {
       toast({
         title: 'Generation Complete',
         description: `Questions for "${task.fileName}" have been generated.`,
@@ -125,7 +130,7 @@ function QuestionsCreatorContent() {
         description: task.error || 'An unexpected error occurred.',
       });
     }
-  }, [task?.status, task?.fileName, task?.error, toast]);
+  }, [task?.status, task?.fileName, task?.error, toast, isSaved]);
 
 
   const handleSaveCurrentQuestions = async () => {
@@ -143,9 +148,26 @@ function QuestionsCreatorContent() {
         description: `The questions for "${task.fileName}" have been saved to your account.`,
     });
   };
+  
+  const proceedWithGeneration = (file: File) => {
+    startGenerationWithFile(file, generationPrompt, jsonPrompt);
+  };
 
   const processFile = async (file: File) => {
-    startGenerationWithFile(file, generationPrompt, jsonPrompt);
+    if (task?.status === 'completed' && !isSaved) {
+      setPendingFile(file);
+      setShowUnsavedWarning(true);
+    } else {
+      proceedWithGeneration(file);
+    }
+  };
+
+  const handleConfirmContinue = () => {
+    if (pendingFile) {
+      proceedWithGeneration(pendingFile);
+    }
+    setShowUnsavedWarning(false);
+    setPendingFile(null);
   };
   
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,7 +223,7 @@ function QuestionsCreatorContent() {
   };
 
   const hasGeneratedContent = task?.textQuestions || task?.jsonQuestions;
-  const isGenerating = !!(task && task.status !== 'completed' && task.status !== 'error');
+  const isGenerating = !!(task && task.status !== 'completed' && task.status !== 'error' && task.status !== 'idle');
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, type: 'text' | 'json') => {
     const isJsonCardWithError = type === 'json' && task?.status === 'error';
@@ -243,7 +265,13 @@ function QuestionsCreatorContent() {
     if (value !== 'generate') {
       if (task?.status === 'generating_text' || task?.status === 'converting_json') {
         toast({ title: "Still working...", description: "Question generation is running in the background." });
-      } else {
+      } else if (task?.status === 'completed' && !isSaved) {
+        setPendingFile(null); // Clear any pending file
+        setShowUnsavedWarning(true);
+        // Prevent tab change
+        return;
+      }
+      else {
         clearTask();
       }
     }
@@ -283,7 +311,6 @@ function QuestionsCreatorContent() {
                     onDragLeave={handleDragLeave}
                     onClick={() => fileInputRef.current?.click()}
                 >
-                    <input type="file" ref={fileInputRef} id="file-upload" className="hidden" onChange={handleFileChange} accept=".pdf" disabled={isGenerating} />
                     <div>
                         <FileUp className="w-10 h-10 text-blue-400 mb-4" />
                         <h3 className="text-lg font-semibold text-white break-words">{task?.fileName || '1. Upload Lecture'}</h3>
@@ -311,14 +338,12 @@ function QuestionsCreatorContent() {
                     <div>
                         <Save className="w-10 h-10 text-green-400 mb-4" />
                         <h3 className="text-lg font-semibold text-white break-words">2. Save Results</h3>
-                        <p className="text-sm text-slate-400 mt-1">Save the generated questions to your library.</p>
+                        <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
                     </div>
                 </motion.div>
                 
-                <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
+                <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
                     {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text', "Generating questions...", 'text')}
-                </motion.div>
-                <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
                     {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", 'json')}
                 </motion.div>
             </div>
@@ -379,7 +404,7 @@ function QuestionsCreatorContent() {
                                     <Button 
                                         variant="ghost" 
                                         size="icon" 
-                                        className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
                                         onClick={(e) => {
                                             e.preventDefault();
                                             e.stopPropagation();
@@ -404,17 +429,37 @@ function QuestionsCreatorContent() {
         </TabsContent>
       </Tabs>
 
+      <AlertDialog open={showUnsavedWarning} onOpenChange={setShowUnsavedWarning}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have unsaved generated questions. If you continue, these changes will be lost.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild>
+                <Button variant="glass" onClick={() => setShowUnsavedWarning(false)}>Cancel</Button>
+            </AlertDialogCancel>
+            <AlertDialogAction asChild>
+                <Button onClick={handleConfirmContinue}>Continue</Button>
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+
       <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
-        <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
-          <AlertDialogHeader className="p-6 pb-0">
+        <AlertDialogContent>
+          <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
               This will permanently delete the question set for "{itemToDelete?.fileName}". This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter className="p-6 pt-4">
-            <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
-            <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
+          <AlertDialogFooter>
+            <AlertDialogCancel asChild><Button variant="glass">Cancel</Button></AlertDialogCancel>
+            <AlertDialogAction asChild><Button variant="destructive" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

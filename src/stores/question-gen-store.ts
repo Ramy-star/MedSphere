@@ -24,10 +24,12 @@ interface GenerationTask {
 
 interface QuestionGenerationState {
   task: GenerationTask | null;
+  isSaved: boolean;
   startGenerationWithFile: (file: File, genPrompt: string, jsonPrompt: string) => Promise<void>;
   startGeneration: (id: string, fileName: string, fileUrl: string) => void;
   saveCurrentResults: (userId: string) => Promise<void>;
   clearTask: () => void;
+  markAsSaved: () => void;
 }
 
 const updateTask = (state: QuestionGenerationState, partialTask: Partial<GenerationTask>): QuestionGenerationState => ({
@@ -73,7 +75,10 @@ async function runGenerationProcess(
 
         set(state => updateTask(state, { status: 'converting_json', progress: 80 }));
         const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: generatedText });
-        set(state => updateTask(state, { jsonQuestions: generatedJson, status: 'completed', progress: 100 }));
+        set(state => ({
+            ...updateTask(state, { jsonQuestions: generatedJson, status: 'completed', progress: 100 }),
+            isSaved: false // Mark as unsaved upon completion
+        }));
 
     } catch (err: any) {
         console.error("Error during question generation process:", err);
@@ -85,6 +90,7 @@ async function runGenerationProcess(
 export const useQuestionGenerationStore = create<QuestionGenerationState>()(
   (set, get) => ({
     task: null,
+    isSaved: true,
     startGenerationWithFile: async (file, genPrompt, jsonPrompt) => {
         // This function is for new uploads, so we don't have a sourceFileId yet.
         // This might need adjustment if new uploads should be associated with something.
@@ -101,6 +107,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
           },
+          isSaved: true, // Reset saved state for new task
         });
         runGenerationProcess('', undefined, file, genPrompt, jsonPrompt, set);
     },
@@ -118,6 +125,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
           },
+          isSaved: true, // Reset saved state for new task
         });
         const genPrompt = localStorage.getItem('questionGenPrompt') || '';
         const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
@@ -138,9 +146,14 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             userId: userId,
             sourceFileId: task.sourceFileId, // Save the source file ID
         });
+        
+        set({ isSaved: true });
     },
     clearTask: () => {
-        set({ task: null });
+        set({ task: null, isSaved: true });
     },
+    markAsSaved: () => {
+      set({ isSaved: true });
+    }
   })
 );
