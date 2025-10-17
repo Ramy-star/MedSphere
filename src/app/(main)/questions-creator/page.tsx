@@ -34,10 +34,10 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
+  AlertDialogDescription as AlertDialogDesc,
   AlertDialogFooter,
   AlertDialogHeader as AlertDialogHeader2,
   AlertDialogTitle as AlertDialogTitle2,
-  AlertDialogDescription as AlertDialogDesc,
 } from "@/components/ui/alert-dialog"
 
 
@@ -334,9 +334,9 @@ function QuestionsCreatorContent() {
                             <textarea
                                 value={generationPrompt}
                                 onChange={(e) => setGenerationPrompt(e.target.value)}
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-64"
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-80"
                             />
-                             <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-end">
+                             <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center">
                                 <Save className="mr-2 h-4 w-4" /> Save
                             </Button>
                         </CardContent>
@@ -349,9 +349,9 @@ function QuestionsCreatorContent() {
                             <textarea
                                 value={jsonPrompt}
                                 onChange={(e) => setJsonPrompt(e.target.value)}
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-64"
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-80"
                             />
-                             <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-end">
+                             <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center">
                                 <Save className="mr-2 h-4 w-4" /> Save
                             </Button>
                         </CardContent>
@@ -413,7 +413,7 @@ function QuestionsCreatorContent() {
               This will permanently delete the question set for "{itemToDelete?.fileName}". This action cannot be undone.
             </AlertDialogDesc>
           </AlertDialogHeader2>
-          <AlertDialogFooter className="p-6 pt-4 flex-row justify-end items-center space-x-2">
+          <AlertDialogFooter className="p-6 pt-4">
             <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl flex-1 sm:flex-none">Cancel</Button></AlertDialogCancel>
             <AlertDialogAction asChild><Button variant="destructive" className="flex-1 sm:flex-none" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
           </AlertDialogFooter>

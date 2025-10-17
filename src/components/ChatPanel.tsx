@@ -145,9 +145,9 @@ const TypingIndicator = () => (
         <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
         <div className="bg-slate-700/50 rounded-2xl px-4 py-3">
             <div className="flex items-center justify-center space-x-1">
-                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-bounce"></span>
+                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-dot-bounce [animation-delay:-0.3s]"></span>
+                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-dot-bounce [animation-delay:-0.15s]"></span>
+                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-dot-bounce"></span>
             </div>
         </div>
     </div>
@@ -535,7 +535,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                       Are you sure you want to start a new chat? Your current conversation history will be cleared.
                     </AlertDialogDesc>
                   </AlertDialogHeader2>
-                  <AlertDialogFooter className='flex-row justify-end items-center space-x-2 p-6 pt-4'>
+                  <AlertDialogFooter className='p-6 pt-4'>
                     <AlertDialogCancel asChild><Button variant="outline" className='flex-1 sm:flex-none rounded-xl'>Cancel</Button></AlertDialogCancel>
                     <AlertDialogAction asChild><Button variant="destructive" className='flex-1 sm:flex-none rounded-xl' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
                   </AlertDialogFooter>

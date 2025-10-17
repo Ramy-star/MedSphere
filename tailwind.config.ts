@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -86,6 +87,13 @@ export default {
       },
       animation: {
         'spin-slow': 'spin 1.6s linear infinite',
+        'dot-bounce': 'dot-bounce 1.4s infinite ease-in-out both',
+      },
+      keyframes: {
+        'dot-bounce': {
+          '0%, 80%, 100%': { transform: 'scale(0)' },
+          '40%': { transform: 'scale(1.0)' },
+        },
       }
     },
   },

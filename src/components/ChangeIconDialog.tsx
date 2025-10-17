@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -152,7 +153,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
             <div 
               className={cn(
                 "w-full h-48 border-2 border-dashed border-slate-600 rounded-lg flex items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-slate-800/50 transition-all duration-300",
-                isDragging && "border-blue-500 bg-slate-800/50 scale-105"
+                isDragging && "border-blue-500 bg-slate-700/50 scale-105"
               )}
               onClick={triggerFileSelect}
               onDragEnter={handleDragEnter}
@@ -198,7 +199,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
 
           </div>
 
-          <DialogFooter className="pt-6 flex-row justify-end items-center space-x-2">
+          <DialogFooter className="pt-6">
             <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={handleClose} disabled={uploadStatus === 'uploading'}>Cancel</Button>
             <Button type="button" className="rounded-xl flex-1 sm:flex-none" onClick={handleUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}>
               {uploadStatus === 'uploading' ? 'Uploading...' : 'Save Icon'}
