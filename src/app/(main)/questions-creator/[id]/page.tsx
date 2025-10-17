@@ -52,7 +52,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
-  const { data: questionSet, loading } = useDoc<SavedQuestionSet>(user ? `users/${user.uid}/questionSets` : '', id);
+  const { data: questionSet, loading } = useDoc<SavedQuestionSet>(user ? `users/${user.uid}/questionSets` : '', id, {
+    disabled: !id || !user
+  });
 
   const [isEditing, setIsEditing] = useState({ text: false, json: false });
   const [editingContent, setEditingContent] = useState({ text: '', json: '' });
@@ -74,7 +76,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   useEffect(() => {
     if (loading) return;
     if (!questionSet) {
-        notFound();
+        //notFound();
     } else {
         setEditingContent({ text: questionSet.textQuestions, json: questionSet.jsonQuestions });
         setEditingTitle(questionSet.fileName);
@@ -477,5 +479,3 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    

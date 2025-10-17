@@ -7,25 +7,30 @@ import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
-export function useDoc<T extends { id: string }>(collectionPathOrRef: string | DocumentReference, docId?: string) {
+type DocOptions = {
+    disabled?: boolean;
+};
+
+export function useDoc<T extends { id: string }>(collectionPathOrRef: string | DocumentReference, docId?: string, options: DocOptions = {}) {
   const { db } = useFirebase();
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
   const docRef = useMemo(() => {
+    if (options.disabled) return null;
     if (typeof collectionPathOrRef === 'string') {
       if (!docId || !db) return null;
       return doc(db, collectionPathOrRef, docId);
     }
     return collectionPathOrRef;
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [db, collectionPathOrRef, docId]);
+  }, [db, collectionPathOrRef, docId, options.disabled]);
   
   const path = typeof collectionPathOrRef === 'string' ? `${collectionPathOrRef}/${docId}` : collectionPathOrRef.path;
 
   useEffect(() => {
-    if (!docRef || !db) {
+    if (!docRef || !db || options.disabled) {
       setData(null);
       setLoading(false);
       return;
@@ -67,7 +72,7 @@ export function useDoc<T extends { id: string }>(collectionPathOrRef: string | D
         isMounted = false;
         unsubscribe();
     };
-  }, [db, docRef, path]);
+  }, [db, docRef, path, options.disabled]);
 
   return { data, loading, error };
 }
