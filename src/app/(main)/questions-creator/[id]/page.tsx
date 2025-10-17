@@ -83,7 +83,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
   useEffect(() => {
     if (isEditingTitle && titleRef.current) {
+      // Focus and move cursor to the end
       titleRef.current.focus();
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(titleRef.current);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
     }
   }, [isEditingTitle]);
 
@@ -165,7 +172,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     const { type, content } = previewContent;
     
     const updatedData = {
-        [type === 'text' ? 'textQuestions'- : 'jsonQuestions']: content,
+        [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content,
     };
     await updateQuestionSet(updatedData);
     
@@ -178,8 +185,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   
   const handleTitleSave = async () => {
       const newTitle = titleRef.current?.textContent || editingTitle;
-      if (!newTitle) {
+      if (!newTitle.trim()) {
           setIsEditingTitle(false);
+          if (titleRef.current) titleRef.current.textContent = editingTitle; // revert
           return;
       }
       if (questionSet && newTitle !== questionSet.fileName) {
@@ -363,6 +371,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                           handleTitleSave();
                         }
                       }}
+                      onBlur={isEditingTitle ? handleTitleSave : undefined}
                       className="text-2xl font-bold text-white outline-none focus:bg-white/10 focus:rounded-md px-1"
                     >
                       {editingTitle}
