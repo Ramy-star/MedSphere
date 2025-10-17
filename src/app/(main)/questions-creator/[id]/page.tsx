@@ -260,19 +260,20 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     const isJsonCardWithError = type === 'json' && jsonError;
 
     return (
-        <Card className="glass-card min-h-[250px] flex flex-col rounded-3xl">
-            <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+        <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+                <div className="flex items-start gap-4">
                     {icon}
-                    <span className="ml-0">{title}</span>
+                    <div>
+                        <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
+                    </div>
                 </div>
-                 <TooltipProvider>
+                <TooltipProvider>
                     <div className="flex items-center gap-1">
                         {isAdmin && (type === 'text' || type === 'json') && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
                                         {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
                                     </Button>
                                 </TooltipTrigger>
@@ -281,13 +282,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         )}
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Preview</p></TooltipContent>
                         </Tooltip>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleCopy(content, title)}><Copy className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCopy(content, title)}><Copy className="h-4 w-4" /></Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Copy</p></TooltipContent>
                         </Tooltip>
@@ -295,7 +296,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         {isAdmin && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleToggleEdit(type)}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleToggleEdit(type)}>
                                         {isThisCardEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
                                     </Button>
                                 </TooltipTrigger>
@@ -305,7 +306,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => handleDownload(content, type === 'text' ? 'md' : 'json')}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleDownload(content, type === 'text' ? 'md' : 'json')}>
                                     <Download className="h-4 w-4" />
                                 </Button>
                             </TooltipTrigger>
@@ -313,33 +314,30 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         </Tooltip>
                     </div>
                 </TooltipProvider>
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col">
+            </div>
+            <div className="mt-4 flex-grow flex flex-col">
                 {isThisCardEditing ? (
                     <textarea
                         value={editingContent[type]}
                         onChange={(e) => setEditingContent(prev => ({...prev, [type]: e.target.value}))}
                         readOnly={!isAdmin}
-                        className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto border-blue-500 ring-2 ring-blue-500 no-scrollbar resize-none"
+                        className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                     />
                 ) : (
-                    <div className="relative flex-1">
-                        <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-96 overflow-auto no-scrollbar">
-                            {content}
-                        </pre>
-                    </div>
+                    <pre className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar overflow-auto h-96 font-code whitespace-pre-wrap">
+                        {content}
+                    </pre>
                 )}
                 {isJsonCardWithError && !isThisCardEditing && (
                     <div className="mt-2">
-                        <Button onClick={handleRepairJson} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white'>
+                        <Button onClick={handleRepairJson} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white active:scale-95'>
                             {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
                             {isRepairing ? 'Repairing...' : 'Attempt to Repair JSON'}
                         </Button>
                     </div>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
   };
   
@@ -351,7 +349,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         className="flex-1 flex flex-col p-2 overflow-y-auto no-scrollbar"
     >
         <div className="flex items-center mb-6">
-            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full mr-2" onClick={() => router.push('/questions-creator?tab=saved')}>
+            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full mr-2 active:scale-95" onClick={() => router.push('/questions-creator?tab=saved')}>
                 <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="flex items-center gap-2">
@@ -373,11 +371,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 {isAdmin && (
                   <>
                   {isEditingTitle ? (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={handleTitleSave}>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={handleTitleSave}>
                         <Check className="h-5 w-5 text-green-400" />
                     </Button>
                 ) : (
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={() => setIsEditingTitle(true)}>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={() => setIsEditingTitle(true)}>
                         <Pencil className="h-5 w-5" />
                     </Button>
                 )}
@@ -388,8 +386,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
          <p className="text-sm text-slate-400 mb-6 ml-12 -mt-4">{new Date(questionSet.createdAt).toLocaleDateString()}</p>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, editingContent.text, 'text')}
-            {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, editingContent.json, 'json')}
+            {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
+            {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
         </div>
         
         <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
@@ -401,12 +399,12 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 </DialogTitle>
                 <div className="flex items-center gap-1">
                     {isAdmin && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
                         {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
                     </Button>
                     )}
                     <DialogClose asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95">
                             <X className="h-4 w-4" />
                         </Button>
                     </DialogClose>

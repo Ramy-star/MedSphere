@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 
 type SavedQuestionSet = {
@@ -133,24 +133,15 @@ function QuestionsCreatorContent() {
       return;
     }
     await saveCurrentResults(user.uid);
-    toast({
-        title: 'Questions Saved',
-        description: `The questions for "${task.fileName}" have been saved to your account.`,
-    });
-  };
-  
-  const proceedWithGeneration = (file: File) => {
-    startGenerationWithFile(file, generationPrompt, jsonPrompt);
-  };
-
-  const processFile = async (file: File) => {
-    if (task?.status === 'completed' && !isSaved) {
-      setPendingFile(file);
-      setShowUnsavedWarning(true);
-    } else {
-      proceedWithGeneration(file);
+    if (!get().isSaved) {
+      toast({
+          title: 'Questions Saved',
+          description: `The questions for "${task.fileName}" have been saved to your account.`,
+      });
     }
   };
+  
+  const { isSaved: isTaskSaved } = useQuestionGenerationStore();
 
   const handleConfirmContinue = () => {
     if (pendingFile) {
@@ -160,6 +151,19 @@ function QuestionsCreatorContent() {
     setPendingFile(null);
   };
   
+  const proceedWithGeneration = (file: File) => {
+    startGenerationWithFile(file, generationPrompt, jsonPrompt);
+  };
+
+  const processFile = async (file: File) => {
+    if (task?.status === 'completed' && !isTaskSaved) {
+      setPendingFile(file);
+      setShowUnsavedWarning(true);
+    } else {
+      proceedWithGeneration(file);
+    }
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
   };
@@ -222,47 +226,44 @@ function QuestionsCreatorContent() {
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, showRetry: boolean) => {
     return (
-        <Card className="glass-card min-h-[200px] flex flex-col rounded-3xl">
-            <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                    {icon}
-                    <span className="ml-0">{title}</span>
+        <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+            <div className="flex items-start gap-4">
+                {icon}
+                <div>
+                    <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
                 </div>
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="flex-grow flex flex-col">
+            </div>
+            <div className="mt-4 flex-grow flex flex-col">
                 {isLoading ? (
-                    <div className="flex items-center justify-center w-full h-full">
+                    <div className="flex items-center justify-center w-full h-full text-center flex-grow">
                         <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                         <p className="ml-3 text-slate-300">{loadingText}</p>
                     </div>
                 ) : showRetry ? (
-                    <div className="flex flex-col items-center justify-center w-full h-full text-center">
+                    <div className="flex flex-col items-center justify-center w-full h-full text-center flex-grow">
                         <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
                         <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
-                        <Button onClick={handleRetry} className="rounded-xl">
+                        <Button onClick={handleRetry} className="rounded-xl active:scale-95">
                             <RotateCw className="mr-2 h-4 w-4" />
                             Retry
                         </Button>
                     </div>
                 ) : (
-                    <div className="relative flex-1">
-                        <pre className="text-sm text-slate-300 bg-slate-900/50 p-4 rounded-2xl whitespace-pre-wrap font-code w-full h-48 overflow-auto no-scrollbar">
-                            {content || 'Generated content will appear here...'}
-                        </pre>
-                    </div>
+                    <pre className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar overflow-auto h-48 font-code whitespace-pre-wrap flex-grow">
+                        {content || 'Generated content will appear here...'}
+                    </pre>
                 )}
-            </CardContent>
-        </Card>
+            </div>
+        </div>
     );
-  };
+};
+
 
   const handleTabChange = (value: string) => {
     if (value !== 'generate') {
       if (task?.status === 'generating_text' || task?.status === 'converting_json') {
         toast({ title: "Still working...", description: "Question generation is running in the background." });
-      } else if (task?.status === 'completed' && !isSaved) {
+      } else if (task?.status === 'completed' && !isTaskSaved) {
         setPendingFile(null); // Clear any pending file
         setShowUnsavedWarning(true);
         // Prevent tab change by not updating router, but let the tab visually switch back if needed.
@@ -316,7 +317,7 @@ function QuestionsCreatorContent() {
                     <div className="flex items-start gap-4">
                         <FileUp className="w-10 h-10 text-blue-400 shrink-0" />
                         <div>
-                            <h3 className="text-lg font-semibold text-white break-words">{task?.fileName || '1. Upload Lecture'}</h3>
+                            <h3 className="text-lg font-semibold text-white break-words">1. Upload Lecture</h3>
                             <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
                         </div>
                     </div>
@@ -324,6 +325,12 @@ function QuestionsCreatorContent() {
                         <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
                             <AlertCircle className="h-5 w-5" />
                             <p className="text-sm">{task.error}</p>
+                        </div>
+                    )}
+                     {task?.fileName && !isGenerating && (
+                        <div className="mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/20 p-3 rounded-lg">
+                            <FileText className="h-5 w-5" />
+                            <p className="text-sm truncate">{task.fileName}</p>
                         </div>
                     )}
                 </motion.div>
@@ -346,7 +353,7 @@ function QuestionsCreatorContent() {
                             <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
                         </div>
                     </div>
-                     {isSaved && hasGeneratedContent && (
+                     {isTaskSaved && hasGeneratedContent && (
                         <div className="mt-4 flex items-center gap-2 text-green-400 bg-green-900/20 p-3 rounded-lg">
                             <Check className="h-5 w-5" />
                             <p className="text-sm">Questions have been saved!</p>
@@ -355,8 +362,8 @@ function QuestionsCreatorContent() {
                 </motion.div>
                 
                 <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text' || task?.status === 'extracting', task?.status === 'extracting' ? "Extracting text..." : "Generating questions...", showTextRetry)}
-                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
+                    {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, task?.textQuestions ?? null, task?.status === 'generating_text' || task?.status === 'extracting', task?.status === 'extracting' ? "Extracting text..." : "Generating questions...", showTextRetry)}
+                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
                 </motion.div>
             </div>
         </TabsContent>
@@ -374,9 +381,9 @@ function QuestionsCreatorContent() {
                         <textarea
                            value={generationPrompt}
                            onChange={(e) => setGenerationPrompt(e.target.value)}
-                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
+                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                        />
-                       <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center px-6">
+                       <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center px-6 active:scale-95">
                            <Save className="mr-2 h-4 w-4" /> Save
                        </Button>
                    </div>
@@ -390,9 +397,9 @@ function QuestionsCreatorContent() {
                        <textarea
                            value={jsonPrompt}
                            onChange={(e) => setJsonPrompt(e.target.value)}
-                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
+                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                        />
-                       <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center px-6">
+                       <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center px-6 active:scale-95">
                            <Save className="mr-2 h-4 w-4" /> Save
                        </Button>
                    </div>
@@ -475,7 +482,7 @@ function QuestionsCreatorContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
-            <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl">Delete</Button></AlertDialogAction>
+            <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -522,5 +529,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
