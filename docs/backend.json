@@ -50,9 +50,10 @@
         "textQuestions": { "type": "string", "description": "The questions in plain text format." },
         "jsonQuestions": { "type": "string", "description": "The questions in JSON format." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the set was created." },
-        "sourceFileId": { "type": "string", "description": "The ID of the original source file." }
+        "sourceFileId": { "type": "string", "description": "The ID of the original source file." },
+        "order": { "type": "number", "description": "The display order of the question set." }
       },
-      "required": ["id", "userId", "fileName", "textQuestions", "jsonQuestions", "createdAt", "sourceFileId"]
+      "required": ["id", "userId", "fileName", "textQuestions", "jsonQuestions", "createdAt", "sourceFileId", "order"]
     }
   },
   "auth": {

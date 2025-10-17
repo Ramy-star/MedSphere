@@ -29,7 +29,7 @@ interface QuestionGenerationState {
   isSaved: boolean;
   startGenerationWithFile: (file: File, genPrompt: string, jsonPrompt: string) => Promise<void>;
   startGeneration: (id: string, fileName: string, fileUrl: string) => void;
-  saveCurrentResults: (userId: string) => Promise<void>;
+  saveCurrentResults: (userId: string, currentItemCount: number) => Promise<void>;
   clearTask: () => void;
   retryGeneration: (genPrompt: string, jsonPrompt: string) => Promise<void>;
 }
@@ -161,7 +161,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         if(!task || task.status !== 'error') return;
         runGenerationProcess(task, genPrompt, jsonPrompt, set, get);
     },
-    saveCurrentResults: async (userId: string) => {
+    saveCurrentResults: async (userId: string, currentItemCount: number) => {
         const { task } = get();
 
         if (!task || task.status !== 'completed' || !task.textQuestions || !task.jsonQuestions || !task.fileName) {
@@ -176,6 +176,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             createdAt: new Date().toISOString(),
             userId: userId,
             sourceFileId: task.sourceFileId,
+            order: currentItemCount,
         });
         
         set({ isSaved: true });
@@ -190,5 +191,3 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     },
   })
 );
-
-    

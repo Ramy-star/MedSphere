@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'rea
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -19,7 +19,7 @@ import {
 import Link from 'next/link';
 import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
@@ -35,7 +35,9 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 type SavedQuestionSet = {
   id: string;
@@ -45,6 +47,7 @@ type SavedQuestionSet = {
   createdAt: string;
   userId: string;
   sourceFileId: string;
+  order: number;
 };
 
 // Helper to get text content while preserving line breaks
@@ -57,6 +60,42 @@ function getPreText(element: HTMLElement) {
     text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     return text;
 }
+
+const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQuestionSet, isAdmin: boolean, onDeleteClick: (set: SavedQuestionSet) => void }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: set.id });
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 1 : 'auto',
+    };
+
+    return (
+        <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+            <Link href={`/questions-creator/${set.id}`} className={cn("relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col", isDragging && 'shadow-2xl shadow-blue-500/50')}>
+                <div className="flex justify-between items-start">
+                    <Folder className="w-8 h-8 text-yellow-400 shrink-0" />
+                    {isAdmin && (
+                        <div className="flex gap-1 absolute top-2 right-2">
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95 z-10"
+                                onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    onDeleteClick(set);
+                                }}
+                            >
+                                <Trash2 className="h-4 w-4 text-red-400"/>
+                            </Button>
+                        </div>
+                    )}
+                </div>
+                <h3 className="text-lg font-semibold text-white break-words mt-4">{set.fileName}</h3>
+            </Link>
+        </div>
+    );
+};
 
 
 function QuestionsCreatorContent() {
@@ -86,13 +125,21 @@ function QuestionsCreatorContent() {
 
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
-  const { data: savedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
+  const { data: fetchedSavedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
     user ? `users/${user.uid}/questionSets` : '',
     { 
-      orderBy: ['createdAt', 'desc'],
+      orderBy: ['order', 'asc'],
       disabled: !user,
     }
   );
+
+  const [savedQuestions, setSavedQuestions] = useState<SavedQuestionSet[]>([]);
+
+  useEffect(() => {
+    if (fetchedSavedQuestions) {
+        setSavedQuestions(fetchedSavedQuestions);
+    }
+  }, [fetchedSavedQuestions]);
 
   const initialTab = 'generate';
   const { toast } = useToast();
@@ -134,7 +181,7 @@ function QuestionsCreatorContent() {
       });
       return;
     }
-    await saveCurrentResults(user.uid);
+    await saveCurrentResults(user.uid, savedQuestions.length);
     toast({ title: 'Questions Saved', description: 'Your generated questions have been saved to your library.' });
   };
   
@@ -202,6 +249,41 @@ function QuestionsCreatorContent() {
     toast({ title: 'Content Updated' });
   };
   
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Require pointer to move 8px before activating a drag
+      },
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+        setSavedQuestions((currentItems) => {
+            const oldIndex = currentItems.findIndex((item) => item.id === active.id);
+            const newIndex = currentItems.findIndex((item) => item.id === over.id);
+            const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
+            
+            // Persist the new order to Firestore
+            if (user) {
+                const batch = writeBatch(db);
+                newOrderedItems.forEach((item, index) => {
+                    const docRef = doc(db, `users/${user.uid}/questionSets`, item.id);
+                    batch.update(docRef, { order: index });
+                });
+                batch.commit().catch(err => {
+                    console.error("Failed to update order:", err);
+                    toast({ variant: 'destructive', title: 'Error', description: 'Could not save new order.' });
+                    // Optionally revert state on failure
+                    setSavedQuestions(currentItems);
+                });
+            }
+            return newOrderedItems;
+        });
+    }
+  };
+
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -275,20 +357,20 @@ function QuestionsCreatorContent() {
 
   return (
     <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar">
-      <div className="text-center pt-2">
+      <div className="text-center pt-8">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
         </h1>
       </div>
 
-      <Tabs defaultValue={initialTab} value={searchParams.get('tab') || initialTab} onValueChange={handleTabChange} className="w-full mt-6 flex flex-col items-center">
+      <Tabs defaultValue={initialTab} value={searchParams.get('tab') || initialTab} onValueChange={handleTabChange} className="w-full mt-8 flex flex-col items-center">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
             <TabsTrigger value="generate" className="rounded-full">Generate</TabsTrigger>
             <TabsTrigger value="prompts" className="rounded-full">Prompts</TabsTrigger>
             <TabsTrigger value="saved" className="rounded-full">Saved Questions</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="generate" className="w-full max-w-7xl mx-auto mt-4">
+        <TabsContent value="generate" className="w-full max-w-7xl mx-auto mt-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div
                     variants={cardVariants}
@@ -381,7 +463,7 @@ function QuestionsCreatorContent() {
             </div>
         </TabsContent>
         
-        <TabsContent value="prompts" className="w-full max-w-7xl mx-auto mt-4">
+        <TabsContent value="prompts" className="w-full max-w-7xl mx-auto mt-8">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
@@ -466,37 +548,25 @@ function QuestionsCreatorContent() {
             </motion.div>
         </TabsContent>
 
-        <TabsContent value="saved" className="w-full max-w-6xl mx-auto mt-4">
+        <TabsContent value="saved" className="w-full max-w-6xl mx-auto mt-8">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-6xl mx-auto">
                 {loadingSavedQuestions ? (
                     <div className="text-center py-16"><Loader2 className="mx-auto h-12 w-12 text-slate-500 animate-spin" /></div>
                 ) : savedQuestions && savedQuestions.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {savedQuestions.map(set => (
-                            <Link key={set.id} href={`/questions-creator/${set.id}`} className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col">
-                                <div className="flex justify-between items-start">
-                                    <Folder className="w-8 h-8 text-yellow-400 shrink-0" />
-                                    {isAdmin && (
-                                    <div className="flex gap-1">
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
-                                            onClick={(e) => {
-                                                e.preventDefault();
-                                                e.stopPropagation();
-                                                setItemToDelete(set);
-                                            }}
-                                        >
-                                            <Trash2 className="h-4 w-4 text-red-400"/>
-                                        </Button>
-                                    </div>
-                                    )}
-                                </div>
-                                <h3 className="text-lg font-semibold text-white break-words mt-4">{set.fileName}</h3>
-                            </Link>
-                        ))}
-                    </div>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={savedQuestions.map(s => s.id)} strategy={rectSortingStrategy}>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {savedQuestions.map(set => (
+                                    <SortableQuestionSetCard 
+                                        key={set.id}
+                                        set={set}
+                                        isAdmin={isAdmin}
+                                        onDeleteClick={setItemToDelete}
+                                    />
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
                 ) : (
                     <div className="text-center py-16">
                         <Folder className="mx-auto h-12 w-12 text-slate-500" />
@@ -585,7 +655,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
-
-    
