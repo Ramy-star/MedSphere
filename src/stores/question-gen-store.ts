@@ -114,6 +114,46 @@ async function runGenerationProcess(
     }
 }
 
+const startNewGenerationFromFile = (file: File, genPrompt: string, jsonPrompt: string, set: any, get: any) => {
+    const taskId = `task_${Date.now()}`;
+    const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+    const newTask: GenerationTask = {
+        id: taskId,
+        fileName: fileNameWithoutExt,
+        sourceFileId: '',
+        file: file,
+        status: 'idle',
+        failedStep: null,
+        documentText: null,
+        textQuestions: null,
+        jsonQuestions: null,
+        error: null,
+        progress: 0,
+    };
+    set({ task: newTask, isSaved: false });
+    runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
+};
+
+const startNewGenerationFromUrl = (id: string, fileName: string, fileUrl: string, genPrompt: string, jsonPrompt: string, set: any, get: any) => {
+    const taskId = `task_${Date.now()}`;
+    const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+    const newTask: GenerationTask = {
+        id: taskId,
+        fileName: fileNameWithoutExt,
+        sourceFileId: id,
+        fileUrl: fileUrl,
+        status: 'idle',
+        failedStep: null,
+        documentText: null,
+        textQuestions: null,
+        jsonQuestions: null,
+        error: null,
+        progress: 0,
+    };
+    set({ task: newTask, isSaved: false });
+    runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
+};
+
 
 export const useQuestionGenerationStore = create<QuestionGenerationState>()(
   (set, get) => ({
@@ -125,24 +165,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             set(state => updateTask(state, { status: 'awaiting_confirmation', nextFile: file }));
             return;
         }
-
-        const taskId = `task_${Date.now()}`;
-        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
-        const newTask: GenerationTask = {
-            id: taskId,
-            fileName: fileNameWithoutExt,
-            sourceFileId: '', 
-            file: file,
-            status: 'idle',
-            failedStep: null,
-            documentText: null,
-            textQuestions: null,
-            jsonQuestions: null,
-            error: null,
-            progress: 0,
-        };
-        set({ task: newTask, isSaved: false });
-        runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
+        startNewGenerationFromFile(file, genPrompt, jsonPrompt, set, get);
     },
     startGenerationFromUrl: (id, fileName, fileUrl, genPrompt, jsonPrompt) => {
         const { task, isSaved } = get();
@@ -150,34 +173,17 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             set(state => updateTask(state, { status: 'awaiting_confirmation', nextGenArgs: { id, fileName, fileUrl } }));
             return;
         }
-
-        const taskId = `task_${Date.now()}`;
-        const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
-        const newTask: GenerationTask = {
-            id: taskId,
-            fileName: fileNameWithoutExt,
-            sourceFileId: id,
-            fileUrl: fileUrl,
-            status: 'idle',
-            failedStep: null,
-            documentText: null,
-            textQuestions: null,
-            jsonQuestions: null,
-            error: null,
-            progress: 0,
-        };
-        set({ task: newTask, isSaved: false });
-        runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
+        startNewGenerationFromUrl(id, fileName, fileUrl, genPrompt, jsonPrompt, set, get);
     },
     confirmContinue: (genPrompt, jsonPrompt) => {
         const { task } = get();
         if (!task) return;
 
         if (task.nextFile) {
-            get().startGenerationWithFile(task.nextFile, genPrompt, jsonPrompt);
+            startNewGenerationFromFile(task.nextFile, genPrompt, jsonPrompt, set, get);
         } else if (task.nextGenArgs) {
             const { id, fileName, fileUrl } = task.nextGenArgs;
-            get().startGenerationFromUrl(id, fileName, fileUrl, genPrompt, jsonPrompt);
+            startNewGenerationFromUrl(id, fileName, fileUrl, genPrompt, jsonPrompt, set, get);
         }
     },
     retryGeneration: async (genPrompt, jsonPrompt) => {
