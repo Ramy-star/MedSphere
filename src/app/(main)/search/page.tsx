@@ -31,9 +31,11 @@ import { ChangeIconDialog } from '@/components/ChangeIconDialog';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { SearchX } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 function SearchResults() {
     const searchParams = useSearchParams();
+    const router = useRouter();
     const query = searchParams.get('q');
     const [results, setResults] = useState<Content[]>([]);
     const [isSearching, setIsSearching] = useState(false);
@@ -79,6 +81,10 @@ function SearchResults() {
             return;
         }
         setPreviewFile(item);
+    };
+
+    const handleFolderClick = (item: Content) => {
+        router.push(`/folder/${item.id}`);
     };
     
     const handleRename = useCallback(async (newName: string) => {
@@ -129,6 +135,7 @@ function SearchResults() {
                                             onRename={() => setItemToRename(item)}
                                             onDelete={() => setItemToDelete(item)}
                                             onIconChange={() => setItemForIconChange(item)}
+                                            onClick={handleFolderClick}
                                             displayAs='list'
                                         />
                                     )}
