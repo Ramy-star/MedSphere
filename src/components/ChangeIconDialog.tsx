@@ -50,7 +50,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
       reader.onloadend = () => {
         setPreview(reader.result as string);
       };
-      reader.readDataURL(file);
+      reader.readAsDataURL(file);
       setUploadStatus('idle');
       setError(null);
     }
@@ -210,4 +210,3 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
     </Dialog>
   );
 }
-
