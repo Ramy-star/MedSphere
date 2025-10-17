@@ -43,7 +43,7 @@ function getPreText(element: HTMLElement) {
     text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
     text = text.replace(/<\/div>/gi, '');       // Remove </div>
     // Basic un-escaping for display
-    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    text = text.replace(/&lt;/g, '<').replace(/&gt;', '>').replace(/&amp;/g, '&');
     return text;
 }
 
@@ -319,28 +319,24 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     </div>
                 </TooltipProvider>
             </div>
-            <div className="mt-4 flex-grow flex flex-col">
-                {isThisCardEditing ? (
-                    <textarea
-                        value={editingContent[type]}
-                        onChange={(e) => setEditingContent(prev => ({...prev, [type]: e.target.value}))}
-                        readOnly={!isAdmin}
-                        className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
-                    />
-                ) : (
-                    <pre className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar overflow-auto h-96 font-code whitespace-pre-wrap">
-                        {content}
-                    </pre>
-                )}
-                {isJsonCardWithError && !isThisCardEditing && (
-                    <div className="mt-2">
-                        <Button onClick={handleRepairJson} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white active:scale-95'>
-                            {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
-                            {isRepairing ? 'Repairing...' : 'Attempt to Repair JSON'}
-                        </Button>
-                    </div>
-                )}
-            </div>
+             <textarea
+                value={isThisCardEditing ? editingContent[type] : content}
+                readOnly={!isThisCardEditing || !isAdmin}
+                className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                onChange={(e) => {
+                    if (isThisCardEditing) {
+                        setEditingContent(prev => ({...prev, [type]: e.target.value}))
+                    }
+                }}
+            />
+            {isJsonCardWithError && !isThisCardEditing && (
+                <div className="mt-2">
+                    <Button onClick={handleRepairJson} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white active:scale-95'>
+                        {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
+                        {isRepairing ? 'Repairing...' : 'Attempt to Repair JSON'}
+                    </Button>
+                </div>
+            )}
         </div>
     );
   };
@@ -367,7 +363,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                       ref={titleRef}
                       contentEditable={isEditingTitle && isAdmin}
                       suppressContentEditableWarning={true}
-                      onBlur={isEditingTitle ? handleTitleSave : undefined}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
