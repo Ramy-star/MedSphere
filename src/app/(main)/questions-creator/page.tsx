@@ -281,14 +281,14 @@ function QuestionsCreatorContent() {
         </h1>
       </div>
 
-      <Tabs defaultValue={initialTab} value={searchParams.get('tab') || initialTab} onValueChange={handleTabChange} className="w-full mt-4">
+      <Tabs defaultValue={initialTab} value={searchParams.get('tab') || initialTab} onValueChange={handleTabChange} className="w-full mt-6">
         <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1 h-12">
             <TabsTrigger value="generate" className="rounded-full">Generate</TabsTrigger>
             <TabsTrigger value="prompts" className="rounded-full">Prompts</TabsTrigger>
             <TabsTrigger value="saved" className="rounded-full">Saved Questions</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="generate" className="mt-8">
+        <TabsContent value="generate" className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <motion.div
                     variants={cardVariants}
@@ -381,7 +381,7 @@ function QuestionsCreatorContent() {
             </div>
         </TabsContent>
         
-        <TabsContent value="prompts" className="mt-8">
+        <TabsContent value="prompts" className="mt-4">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
@@ -466,7 +466,7 @@ function QuestionsCreatorContent() {
             </motion.div>
         </TabsContent>
 
-        <TabsContent value="saved" className="mt-8">
+        <TabsContent value="saved" className="mt-4">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-6xl mx-auto">
                 {loadingSavedQuestions ? (
                     <div className="text-center py-16"><Loader2 className="mx-auto h-12 w-12 text-slate-500 animate-spin" /></div>
