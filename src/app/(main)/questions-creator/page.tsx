@@ -133,16 +133,8 @@ function QuestionsCreatorContent() {
       return;
     }
     await saveCurrentResults(user.uid);
-    if (!get().isSaved) {
-      toast({
-          title: 'Questions Saved',
-          description: `The questions for "${task.fileName}" have been saved to your account.`,
-      });
-    }
   };
   
-  const { isSaved: isTaskSaved } = useQuestionGenerationStore();
-
   const handleConfirmContinue = () => {
     if (pendingFile) {
       proceedWithGeneration(pendingFile);
@@ -156,7 +148,7 @@ function QuestionsCreatorContent() {
   };
 
   const processFile = async (file: File) => {
-    if (task?.status === 'completed' && !isTaskSaved) {
+    if (task?.status === 'completed' && !isSaved) {
       setPendingFile(file);
       setShowUnsavedWarning(true);
     } else {
@@ -226,7 +218,7 @@ function QuestionsCreatorContent() {
 
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, showRetry: boolean) => {
     return (
-        <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+      <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
             <div className="flex items-start gap-4">
                 {icon}
                 <div>
@@ -235,12 +227,12 @@ function QuestionsCreatorContent() {
             </div>
             <div className="mt-4 flex-grow flex flex-col">
                 {isLoading ? (
-                    <div className="flex items-center justify-center w-full h-full text-center flex-grow">
+                    <div className="flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
                         <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                         <p className="ml-3 text-slate-300">{loadingText}</p>
                     </div>
                 ) : showRetry ? (
-                    <div className="flex flex-col items-center justify-center w-full h-full text-center flex-grow">
+                    <div className="flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4">
                         <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
                         <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
                         <Button onClick={handleRetry} className="rounded-xl active:scale-95">
@@ -263,7 +255,7 @@ function QuestionsCreatorContent() {
     if (value !== 'generate') {
       if (task?.status === 'generating_text' || task?.status === 'converting_json') {
         toast({ title: "Still working...", description: "Question generation is running in the background." });
-      } else if (task?.status === 'completed' && !isTaskSaved) {
+      } else if (task?.status === 'completed' && !isSaved) {
         setPendingFile(null); // Clear any pending file
         setShowUnsavedWarning(true);
         // Prevent tab change by not updating router, but let the tab visually switch back if needed.
@@ -327,7 +319,7 @@ function QuestionsCreatorContent() {
                             <p className="text-sm">{task.error}</p>
                         </div>
                     )}
-                     {task?.fileName && !isGenerating && (
+                     {task?.fileName && (
                         <div className="mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/20 p-3 rounded-lg">
                             <FileText className="h-5 w-5" />
                             <p className="text-sm truncate">{task.fileName}</p>
@@ -353,7 +345,7 @@ function QuestionsCreatorContent() {
                             <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
                         </div>
                     </div>
-                     {isTaskSaved && hasGeneratedContent && (
+                     {isSaved && hasGeneratedContent && task?.status === 'completed' && (
                         <div className="mt-4 flex items-center gap-2 text-green-400 bg-green-900/20 p-3 rounded-lg">
                             <Check className="h-5 w-5" />
                             <p className="text-sm">Questions have been saved!</p>
@@ -529,3 +521,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    

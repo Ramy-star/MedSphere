@@ -129,7 +129,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
         };
-        set({ task: newTask, isSaved: true });
+        set({ task: newTask, isSaved: true }); // Reset isSaved to true for the new task
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
     },
     startGeneration: (id, fileName, fileUrl) => {
@@ -147,7 +147,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
         };
-        set({ task: newTask, isSaved: true });
+        set({ task: newTask, isSaved: true }); // Reset isSaved to true for the new task
         const genPrompt = localStorage.getItem('questionGenPrompt') || '';
         const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
@@ -160,8 +160,10 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         runGenerationProcess(task, genPrompt, jsonPrompt, set, get);
     },
     saveCurrentResults: async (userId: string) => {
-        const { task } = get();
-        if (!task || !task.textQuestions || !task.jsonQuestions || !task.fileName) {
+        const { task, isSaved } = get();
+        if (isSaved) return; // Prevent saving if already saved
+
+        if (!task || task.status !== 'completed' || !task.textQuestions || !task.jsonQuestions || !task.fileName) {
             throw new Error("No completed task to save.");
         }
 
@@ -182,3 +184,5 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     },
   })
 );
+
+    
