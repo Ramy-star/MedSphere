@@ -17,6 +17,8 @@ export default function MainLayout({
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const isHomePage = pathname === '/';
+  const isQuestionsCreatorPage = pathname.startsWith('/questions-creator');
+
 
   return (
     <div className="flex flex-1 w-full p-2 sm:p-4 gap-4 overflow-hidden">
@@ -37,7 +39,7 @@ export default function MainLayout({
             <Breadcrumbs />
         </div>
         
-        <div className={cn("flex-1 flex flex-col overflow-hidden pt-4", isHomePage && "pt-0")}>
+        <div className={cn("flex-1 flex flex-col overflow-hidden", isHomePage && "pt-0", !isQuestionsCreatorPage && !isHomePage && "pt-4")}>
           {children}
         </div>
       </motion.main>

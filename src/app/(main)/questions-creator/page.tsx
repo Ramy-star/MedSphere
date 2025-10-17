@@ -274,8 +274,8 @@ function QuestionsCreatorContent() {
 
 
   return (
-    <div className="flex-1 flex flex-col p-2 overflow-y-auto no-scrollbar">
-      <div className="text-center pt-8">
+    <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar">
+      <div className="text-center pt-2">
         <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
           Questions Creator
         </h1>
