@@ -200,7 +200,7 @@ function SearchResults() {
                           This will permanently delete "{itemToDelete?.name}" and all its contents. This action cannot be undone.
                         </AlertDialogDescription>
                       </AlertDialogHeader>
-                      <AlertDialogFooter className="p-6 pt-4 flex-row justify-end items-center space-x-2">
+                      <AlertDialogFooter className="p-6 pt-4">
                         <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl flex-1 sm:flex-none">Cancel</Button></AlertDialogCancel>
                         <AlertDialogAction asChild><Button variant="destructive" className="flex-1 sm:flex-none" onClick={handleDelete}>Delete</Button></AlertDialogAction>
                       </AlertDialogFooter>
