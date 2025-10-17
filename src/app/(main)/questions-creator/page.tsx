@@ -229,25 +229,29 @@ function QuestionsCreatorContent() {
            </div>
            {hasContent && (
              <div className="mt-4 flex-grow flex flex-col">
-                {isLoading ? (
-                    <div className="flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl min-h-[24rem]">
-                        <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
-                        <p className="ml-3 text-slate-300">{loadingText}</p>
-                    </div>
-                ) : showRetryButton ? (
-                    <div className="flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4 min-h-[24rem]">
-                        <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
-                        <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
-                        <Button onClick={handleRetry} className="rounded-xl active:scale-95">
-                            <RotateCw className="mr-2 h-4 w-4" />
-                            Retry
-                        </Button>
-                    </div>
-                ) : (
-                    <pre className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar overflow-auto h-96 font-code whitespace-pre-wrap flex-grow">
-                        {content || ''}
-                    </pre>
-                )}
+                <div className="relative flex-grow">
+                    {isLoading ? (
+                        <div className="absolute inset-0 flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
+                            <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+                            <p className="ml-3 text-slate-300">{loadingText}</p>
+                        </div>
+                    ) : showRetryButton ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4">
+                            <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
+                            <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
+                            <Button onClick={handleRetry} className="rounded-xl active:scale-95">
+                                <RotateCw className="mr-2 h-4 w-4" />
+                                Retry
+                            </Button>
+                        </div>
+                    ) : (
+                        <textarea
+                            value={content || ''}
+                            readOnly
+                            className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                        />
+                    )}
+                </div>
             </div>
            )}
         </div>
@@ -399,7 +403,6 @@ function QuestionsCreatorContent() {
                                     <Folder className="w-10 h-10 text-yellow-400 shrink-0" />
                                     <div>
                                         <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
-                                        <p className="text-sm text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                     </div>
                                 </div>
                                 {isAdmin && (
