@@ -276,7 +276,7 @@ function QuestionsCreatorContent() {
                                 onDrop={handleDrop}
                                 onDragOver={handleDragOver}
                                 onDragEnter={handleDragEnter}
-                                onDragLeave={handleLeave}
+                                onDragLeave={handleDragLeave}
                                 className={cn(
                                     "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/80",
                                     isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-700/40",
@@ -464,4 +464,5 @@ export default function QuestionsCreatorPage() {
 }
 
     
+
 
