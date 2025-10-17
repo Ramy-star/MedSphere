@@ -413,9 +413,9 @@ function QuestionsCreatorContent() {
               This will permanently delete the question set for "{itemToDelete?.fileName}". This action cannot be undone.
             </AlertDialogDesc>
           </AlertDialogHeader2>
-          <AlertDialogFooter className="p-6 pt-4">
+          <AlertDialogFooter className="p-6 pt-4 sm:justify-center">
             <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
-            <AlertDialogAction asChild><Button variant="destructive" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
+            <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -426,11 +426,11 @@ function QuestionsCreatorContent() {
             <DialogTitle className="flex items-center gap-3">
             </DialogTitle>
              <div className="flex items-center gap-1">
-                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
+                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
                     {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
                 </Button>
                 <DialogClose asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95">
                         <X className="h-4 w-4" />
                     </Button>
                 </DialogClose>
@@ -464,6 +464,7 @@ export default function QuestionsCreatorPage() {
 }
 
     
+
 
 
 
