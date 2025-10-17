@@ -84,12 +84,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   useEffect(() => {
     if (isEditingTitle && titleRef.current) {
       titleRef.current.focus();
-      // Select all text
-      const range = document.createRange();
-      range.selectNodeContents(titleRef.current);
-      const sel = window.getSelection();
-      sel?.removeAllRanges();
-      sel?.addRange(range);
     }
   }, [isEditingTitle]);
 
@@ -171,7 +165,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     const { type, content } = previewContent;
     
     const updatedData = {
-        [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content,
+        [type === 'text' ? 'textQuestions'- : 'jsonQuestions']: content,
     };
     await updateQuestionSet(updatedData);
     
@@ -367,12 +361,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         if (e.key === 'Enter') {
                           e.preventDefault();
                           handleTitleSave();
-                        }
-                      }}
-                      onBlur={() => {
-                        if (isEditingTitle) {
-                           setIsEditingTitle(false);
-                           setEditingTitle(questionSet.fileName); // Revert on blur if not saved
                         }
                       }}
                       className="text-2xl font-bold text-white outline-none focus:bg-white/10 focus:rounded-md px-1"
