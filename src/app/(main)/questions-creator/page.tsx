@@ -33,7 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 type SavedQuestionSet = {
@@ -77,7 +77,6 @@ function QuestionsCreatorContent() {
     task,
     startGenerationWithFile,
     saveCurrentResults,
-    clearTask,
     isSaved,
     retryGeneration,
   } = useQuestionGenerationStore();
@@ -108,19 +107,14 @@ function QuestionsCreatorContent() {
   }, []);
 
   useEffect(() => {
-    if (task?.status === 'completed' && !isSaved) {
-      toast({
-        title: 'Generation Complete',
-        description: `Questions for "${task.fileName}" have been generated.`,
-      });
-    } else if (task?.status === 'error' && !task.error?.includes('Aborted')) { // Don't toast for user-aborted actions
+    if (task?.status === 'error' && !task.error?.includes('Aborted')) { // Don't toast for user-aborted actions
       toast({
         variant: 'destructive',
         title: 'Generation Failed',
         description: task.error || 'An unexpected error occurred.',
       });
     }
-  }, [task?.status, task?.fileName, task?.error, toast, isSaved]);
+  }, [task?.status, task?.error, toast]);
 
 
   const handleSaveCurrentQuestions = async () => {
@@ -133,6 +127,7 @@ function QuestionsCreatorContent() {
       return;
     }
     await saveCurrentResults(user.uid);
+    toast({ title: 'Questions Saved', description: 'Your generated questions have been saved to your library.' });
   };
   
   const handleConfirmContinue = () => {
@@ -205,7 +200,7 @@ function QuestionsCreatorContent() {
   };
 
   const hasGeneratedContent = task?.textQuestions || task?.jsonQuestions;
-  const isGenerating = !!(task && task.status !== 'completed' && task.status !== 'error' && task.status !== 'idle');
+  const isGenerating = !!(task && ['extracting', 'generating_text', 'converting_json'].includes(task.status));
   const showTextRetry = task?.status === 'error' && (task.failedStep === 'generating_text' || task.failedStep === 'extracting');
   const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
 
@@ -216,22 +211,22 @@ function QuestionsCreatorContent() {
   }, [task, retryGeneration, generationPrompt, jsonPrompt]);
 
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, showRetry: boolean) => {
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, showRetryButton: boolean) => {
     return (
-      <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
-            <div className="flex items-start gap-4">
-                {icon}
-                <div>
-                    <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
-                </div>
-            </div>
+        <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+           <div className="flex items-start gap-4">
+               {icon}
+               <div>
+                   <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
+               </div>
+           </div>
             <div className="mt-4 flex-grow flex flex-col">
                 {isLoading ? (
                     <div className="flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
                         <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                         <p className="ml-3 text-slate-300">{loadingText}</p>
                     </div>
-                ) : showRetry ? (
+                ) : showRetryButton ? (
                     <div className="flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4">
                         <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
                         <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
@@ -241,7 +236,7 @@ function QuestionsCreatorContent() {
                         </Button>
                     </div>
                 ) : (
-                    <pre className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar overflow-auto h-48 font-code whitespace-pre-wrap flex-grow">
+                    <pre className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar overflow-auto h-96 font-code whitespace-pre-wrap flex-grow">
                         {content || 'Generated content will appear here...'}
                     </pre>
                 )}
@@ -252,17 +247,6 @@ function QuestionsCreatorContent() {
 
 
   const handleTabChange = (value: string) => {
-    if (value !== 'generate') {
-      if (task?.status === 'generating_text' || task?.status === 'converting_json') {
-        toast({ title: "Still working...", description: "Question generation is running in the background." });
-      } else if (task?.status === 'completed' && !isSaved) {
-        setPendingFile(null); // Clear any pending file
-        setShowUnsavedWarning(true);
-        // Prevent tab change by not updating router, but let the tab visually switch back if needed.
-        // Or, more simply, just let them switch and abandon the results. The warning is the main thing.
-        return;
-      }
-    }
     router.push(`/questions-creator?tab=${value}`, { scroll: false });
   };
 
@@ -313,12 +297,6 @@ function QuestionsCreatorContent() {
                             <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
                         </div>
                     </div>
-                     {task?.status === 'error' && !showTextRetry && !showJsonRetry && (
-                        <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
-                            <AlertCircle className="h-5 w-5" />
-                            <p className="text-sm">{task.error}</p>
-                        </div>
-                    )}
                      {task?.fileName && (
                         <div className="mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/20 p-3 rounded-lg">
                             <FileText className="h-5 w-5" />
@@ -345,7 +323,7 @@ function QuestionsCreatorContent() {
                             <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
                         </div>
                     </div>
-                     {isSaved && hasGeneratedContent && task?.status === 'completed' && (
+                     {isSaved && (
                         <div className="mt-4 flex items-center gap-2 text-green-400 bg-green-900/20 p-3 rounded-lg">
                             <Check className="h-5 w-5" />
                             <p className="text-sm">Questions have been saved!</p>
@@ -354,8 +332,8 @@ function QuestionsCreatorContent() {
                 </motion.div>
                 
                 <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, task?.textQuestions ?? null, task?.status === 'generating_text' || task?.status === 'extracting', task?.status === 'extracting' ? "Extracting text..." : "Generating questions...", showTextRetry)}
-                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
+                    {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, task?.textQuestions ?? null, isGenerating && task?.status !== 'converting_json' && task?.status !== 'completed', task?.status === 'extracting' ? "Extracting text..." : "Generating questions...", showTextRetry)}
+                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, task?.jsonQuestions ?? null, isGenerating && task?.status === 'converting_json', "Converting to JSON...", showJsonRetry)}
                 </motion.div>
             </div>
         </TabsContent>
@@ -457,7 +435,7 @@ function QuestionsCreatorContent() {
                 <Button variant="outline" className="rounded-xl">Cancel</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-                <Button onClick={handleConfirmContinue} className="rounded-xl">Continue</Button>
+                <Button onClick={handleConfirmContinue} className="rounded-xl bg-blue-600 hover:bg-blue-700">Continue</Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

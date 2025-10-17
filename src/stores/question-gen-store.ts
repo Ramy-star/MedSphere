@@ -50,8 +50,8 @@ async function runGenerationProcess(
     let textQuestions = initialTask.textQuestions;
     const failedStep = initialTask.failedStep;
     
-    // Determine starting status
-    let startStatus: GenerationStatus = 'extracting';
+    // Determine starting status based on what's already completed or what failed
+    let startStatus: 'extracting' | 'generating_text' | 'converting_json' = 'extracting';
     if (failedStep === 'generating_text' || documentText) {
         startStatus = 'generating_text';
     } else if (failedStep === 'converting_json' || textQuestions) {
@@ -88,12 +88,14 @@ async function runGenerationProcess(
         }
 
         // Step 3: Convert to JSON
-        set(state => updateTask(state, { status: 'converting_json', progress: 80, error: null, failedStep: null }));
-        const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: textQuestions! });
-        set(state => ({
-            ...updateTask(state, { jsonQuestions: generatedJson, status: 'completed', progress: 100, failedStep: null }),
-            isSaved: false // Mark as unsaved upon completion
-        }));
+        if (['extracting', 'generating_text', 'converting_json'].includes(startStatus)) {
+            set(state => updateTask(state, { status: 'converting_json', progress: 80, error: null, failedStep: null }));
+            const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: textQuestions! });
+            set(state => ({
+                ...updateTask(state, { jsonQuestions: generatedJson, status: 'completed', progress: 100, failedStep: null }),
+                isSaved: false // Mark as unsaved upon completion
+            }));
+        }
 
     } catch (err: any) {
         console.error("Error during question generation process:", err);
@@ -129,7 +131,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
         };
-        set({ task: newTask, isSaved: true }); // Reset isSaved to true for the new task
+        set({ task: newTask, isSaved: true });
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
     },
     startGeneration: (id, fileName, fileUrl) => {
@@ -155,13 +157,10 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     retryGeneration: async (genPrompt, jsonPrompt) => {
         const { task } = get();
         if(!task || task.status !== 'error') return;
-
-        // Reset error state and re-run
         runGenerationProcess(task, genPrompt, jsonPrompt, set, get);
     },
     saveCurrentResults: async (userId: string) => {
-        const { task, isSaved } = get();
-        if (isSaved) return; // Prevent saving if already saved
+        const { task } = get();
 
         if (!task || task.status !== 'completed' || !task.textQuestions || !task.jsonQuestions || !task.fileName) {
             throw new Error("No completed task to save.");
@@ -178,6 +177,11 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         });
         
         set({ isSaved: true });
+
+        // Auto-clear after 5 seconds
+        setTimeout(() => {
+            get().clearTask();
+        }, 5000);
     },
     clearTask: () => {
         set({ task: null, isSaved: true });
