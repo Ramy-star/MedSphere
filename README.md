@@ -9,11 +9,6 @@
   MedSphere is a modern, intuitive web application designed to help medical students organize their complex study materials efficiently. From lecture notes and research papers to videos and presentations, MedSphere provides a centralized hub for all your academic needs, powered by a robust and scalable tech stack.
 </p>
 
-<!-- Optional: Add a demo video or GIF here -->
-<div align="center">
-  <img src="https://placehold.co/800x450/0B0F12/FFF?text=App+Demo+Video" alt="MedSphere Demo" />
-</div>
-
 ---
 
 ## ✨ Core Features
@@ -41,42 +36,3 @@ This project is built with a modern, scalable, and type-safe technology stack:
 -   **[Lucide React](https://lucide.dev/)**: For a beautiful and consistent icon set.
 -   **[Framer Motion](https://www.framer.com/motion/)**: For smooth and fluid animations.
 
----
-
-## 🚀 Getting Started
-
-To get a local copy up and running, follow these simple steps.
-
-### Prerequisites
-
--   Node.js (v18 or higher)
--   npm or yarn
-
-### Installation
-
-1.  **Clone the repo:**
-    ```sh
-    git clone https://github.com/your_username/medsphere.git
-    ```
-2.  **Install NPM packages:**
-    ```sh
-    npm install
-    ```
-3.  **Set up environment variables:**
-    Create a `.env.local` file in the root directory and add your Firebase and Cloudinary credentials.
-4.  **Run the development server:**
-    ```sh
-    npm run dev
-    ```
-    Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
----
-
-## 🗺️ Roadmap
-
--   [ ] **Interactive Tour:** An interactive, guided tour for new users to explore the app's features.
--   [ ] **Advanced AI Quizzes:** Generate more complex question types (e.g., fill-in-the-blank, matching).
--   [ ] **Collaboration:** Share folders and files with peers for group study.
--   [ ] **Offline Mode Enhancements:** Improved caching and background sync for a better offline experience.
-
-See the [open issues](https://github.com/your_username/medsphere/issues) for a full list of proposed features (and known issues).
