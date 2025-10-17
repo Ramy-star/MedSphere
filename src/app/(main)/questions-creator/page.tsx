@@ -33,6 +33,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 type SavedQuestionSet = {
@@ -509,3 +510,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
