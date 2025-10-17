@@ -29,6 +29,15 @@ import { addDoc, collection, deleteDoc, doc, updateDoc } from 'firebase/firestor
 import { db } from '@/firebase';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogFooter,
+  AlertDialogHeader as AlertDialogHeader2,
+  AlertDialogTitle as AlertDialogTitle2,
+  AlertDialogDescription as AlertDialogDesc,
+} from "@/components/ui/alert-dialog"
 
 
 type SavedQuestionSet = {
@@ -62,6 +71,7 @@ function QuestionsCreatorContent() {
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingName, setEditingName] = useState('');
+  const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
 
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
   const [debouncedJsonPrompt] = useDebounce(jsonPrompt, 500);
@@ -83,18 +93,20 @@ function QuestionsCreatorContent() {
   const initialTab = 'generate';
   const { toast } = useToast();
 
+  const handleSaveGenPrompt = () => {
+    localStorage.setItem('questionGenPrompt', generationPrompt);
+    toast({ title: 'Prompt Saved', description: 'Your question generation prompt has been saved.' });
+  }
+
+  const handleSaveJsonPrompt = () => {
+    localStorage.setItem('questionJsonPrompt', jsonPrompt);
+    toast({ title: 'Prompt Saved', description: 'Your JSON conversion prompt has been saved.' });
+  }
+
   useEffect(() => {
     setGenerationPrompt(localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.');
     setJsonPrompt(localStorage.getItem('questionJsonPrompt') || 'Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.');
   }, []);
-
-  useEffect(() => {
-    if (debouncedGenPrompt) localStorage.setItem('questionGenPrompt', debouncedGenPrompt);
-  }, [debouncedGenPrompt]);
-
-  useEffect(() => {
-    if (debouncedJsonPrompt) localStorage.setItem('questionJsonPrompt', debouncedJsonPrompt);
-  }, [debouncedJsonPrompt]);
 
   useEffect(() => {
     if (task?.status === 'completed') {
@@ -157,13 +169,12 @@ function QuestionsCreatorContent() {
     setEditingId(null);
   };
 
-  const handleDeleteSet = async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    e.preventDefault();
-    if (!user) return;
-    const docRef = doc(db, `users/${user.uid}/questionSets`, id);
+  const handleDeleteSet = async () => {
+    if (!itemToDelete || !user) return;
+    const docRef = doc(db, `users/${user.uid}/questionSets`, itemToDelete.id);
     await deleteDoc(docRef);
     toast({ title: 'Set Deleted', description: 'The question set has been removed.' });
+    setItemToDelete(null);
   };
   
   const handlePreviewSave = async () => {
@@ -312,22 +323,41 @@ function QuestionsCreatorContent() {
         </TabsContent>
         
         <TabsContent value="prompts" className="mt-8">
-            <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-4xl mx-auto">
-                 <Card className="glass-card overflow-hidden rounded-3xl">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-3"><Pencil className="text-blue-400" />Prompt Management</CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-6">
-                        <div className="space-y-2">
-                        <label htmlFor="gen-prompt" className="text-sm font-medium text-slate-300">Question Generation Prompt</label>
-                        <textarea id="gen-prompt" value={generationPrompt} onChange={(e) => setGenerationPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl w-full p-2 text-sm text-slate-200" />
-                        </div>
-                        <div className="space-y-2">
-                        <label htmlFor="json-prompt" className="text-sm font-medium text-slate-300">Text-to-JSON Conversion Prompt</label>
-                        <textarea id="json-prompt" value={jsonPrompt} onChange={(e) => setJsonPrompt(e.target.value)} className="h-32 bg-slate-800/60 border-slate-700 rounded-xl w-full p-2 text-sm text-slate-200" />
-                        </div>
-                    </CardContent>
-                </Card>
+             <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-7xl mx-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Card className="glass-card overflow-hidden rounded-3xl flex flex-col">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3"><FileText className="text-blue-400" />Question Generation Prompt</CardTitle>
+                             <CardDescription>This prompt instructs the AI on how to generate the initial set of questions from the document.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-1 flex flex-col">
+                            <textarea
+                                value={generationPrompt}
+                                onChange={(e) => setGenerationPrompt(e.target.value)}
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-48"
+                            />
+                             <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-end">
+                                <Save className="mr-2 h-4 w-4" /> Save
+                            </Button>
+                        </CardContent>
+                    </Card>
+                    <Card className="glass-card overflow-hidden rounded-3xl flex flex-col">
+                        <CardHeader>
+                            <CardTitle className="flex items-center gap-3"><FileJson className="text-green-400" />Text-to-JSON Conversion Prompt</CardTitle>
+                             <CardDescription>This prompt tells the AI how to structure the generated questions into a clean JSON format.</CardDescription>
+                        </CardHeader>
+                        <CardContent className="flex-1 flex flex-col">
+                            <textarea
+                                value={jsonPrompt}
+                                onChange={(e) => setJsonPrompt(e.target.value)}
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-48"
+                            />
+                             <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-end">
+                                <Save className="mr-2 h-4 w-4" /> Save
+                            </Button>
+                        </CardContent>
+                    </Card>
+                </div>
             </motion.div>
         </TabsContent>
 
@@ -352,7 +382,11 @@ function QuestionsCreatorContent() {
                                         variant="ghost" 
                                         size="icon" 
                                         className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={(e) => handleDeleteSet(set.id, e)}
+                                        onClick={(e) => {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            setItemToDelete(set);
+                                        }}
                                     >
                                         <Trash2 className="h-4 w-4 text-red-400"/>
                                     </Button>
@@ -371,6 +405,22 @@ function QuestionsCreatorContent() {
             </motion.div>
         </TabsContent>
       </Tabs>
+
+      <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white">
+          <AlertDialogHeader2 className="p-6 pb-0">
+            <AlertDialogTitle2>Are you sure?</AlertDialogTitle2>
+            <AlertDialogDesc>
+              This will permanently delete the question set for "{itemToDelete?.fileName}". This action cannot be undone.
+            </AlertDialogDesc>
+          </AlertDialogHeader2>
+          <AlertDialogFooter className="p-6 pt-4 flex-row justify-end items-center space-x-2">
+            <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl flex-1 sm:flex-none">Cancel</Button></AlertDialogCancel>
+            <AlertDialogAction asChild><Button variant="destructive" className="flex-1 sm:flex-none" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
         <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar" hideCloseButton={true}>
           <DialogHeader className='p-6 pb-2 flex-row flex-none justify-between items-center'>
