@@ -6,7 +6,7 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
 
-type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'completed' | 'error';
+type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'completed' | 'error' | 'awaiting_confirmation';
 type FailedStep = 'extracting' | 'generating_text' | 'converting_json' | null;
 
 interface GenerationTask {
@@ -22,16 +22,19 @@ interface GenerationTask {
   jsonQuestions: string | null;
   error: string | null;
   progress: number;
+  nextFile?: File; // To hold the file for the next generation
+  nextGenArgs?: {id: string, fileName: string, fileUrl: string};
 }
 
 interface QuestionGenerationState {
   task: GenerationTask | null;
   isSaved: boolean;
   startGenerationWithFile: (file: File, genPrompt: string, jsonPrompt: string) => Promise<void>;
-  startGeneration: (id: string, fileName: string, fileUrl: string) => void;
+  startGenerationFromUrl: (id: string, fileName: string, fileUrl: string, genPrompt: string, jsonPrompt: string) => void;
   saveCurrentResults: (userId: string, currentItemCount: number) => Promise<void>;
   clearTask: () => void;
   retryGeneration: (genPrompt: string, jsonPrompt: string) => Promise<void>;
+  confirmContinue: (genPrompt: string, jsonPrompt: string) => void;
 }
 
 const updateTask = (state: QuestionGenerationState, partialTask: Partial<GenerationTask>): QuestionGenerationState => ({
@@ -117,6 +120,12 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     task: null,
     isSaved: false,
     startGenerationWithFile: async (file, genPrompt, jsonPrompt) => {
+        const { task, isSaved } = get();
+        if (task && task.status === 'completed' && !isSaved) {
+            set(state => updateTask(state, { status: 'awaiting_confirmation', nextFile: file }));
+            return;
+        }
+
         const taskId = `task_${Date.now()}`;
         const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
         const newTask: GenerationTask = {
@@ -135,7 +144,13 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         set({ task: newTask, isSaved: false });
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
     },
-    startGeneration: (id, fileName, fileUrl) => {
+    startGenerationFromUrl: (id, fileName, fileUrl, genPrompt, jsonPrompt) => {
+        const { task, isSaved } = get();
+        if (task && task.status === 'completed' && !isSaved) {
+            set(state => updateTask(state, { status: 'awaiting_confirmation', nextGenArgs: { id, fileName, fileUrl } }));
+            return;
+        }
+
         const taskId = `task_${Date.now()}`;
         const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
         const newTask: GenerationTask = {
@@ -151,10 +166,19 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
         };
-        set({ task: newTask, isSaved: false }); // Reset isSaved to false for the new task
-        const genPrompt = localStorage.getItem('questionGenPrompt') || '';
-        const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
+        set({ task: newTask, isSaved: false });
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
+    },
+    confirmContinue: (genPrompt, jsonPrompt) => {
+        const { task } = get();
+        if (!task) return;
+
+        if (task.nextFile) {
+            get().startGenerationWithFile(task.nextFile, genPrompt, jsonPrompt);
+        } else if (task.nextGenArgs) {
+            const { id, fileName, fileUrl } = task.nextGenArgs;
+            get().startGenerationFromUrl(id, fileName, fileUrl, genPrompt, jsonPrompt);
+        }
     },
     retryGeneration: async (genPrompt, jsonPrompt) => {
         const { task } = get();

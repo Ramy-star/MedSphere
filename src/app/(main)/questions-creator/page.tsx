@@ -108,8 +108,6 @@ function QuestionsCreatorContent() {
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
-  const [showUnsavedWarning, setShowUnsavedWarning] = useState(false);
-  const [pendingFile, setPendingFile] = useState<File | null>(null);
 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -121,6 +119,7 @@ function QuestionsCreatorContent() {
     saveCurrentResults,
     retryGeneration,
     clearTask,
+    confirmContinue,
   } = useQuestionGenerationStore();
 
   const { user } = useUser();
@@ -186,35 +185,22 @@ function QuestionsCreatorContent() {
   };
   
   const handleConfirmContinue = () => {
-    if (pendingFile) {
-      proceedWithGeneration(pendingFile);
-    }
-    setShowUnsavedWarning(false);
-    setPendingFile(null);
+    confirmContinue(generationPrompt, jsonPrompt);
   };
   
-  const proceedWithGeneration = (file: File) => {
-    clearTask(); // Clear previous task before starting a new one
-    startGenerationWithFile(file, generationPrompt, jsonPrompt);
-  };
-
-  const processFile = async (file: File) => {
-    if (task?.status === 'completed' && !isSaved) {
-      setPendingFile(file);
-      setShowUnsavedWarning(true);
-    } else {
-      proceedWithGeneration(file);
-    }
-  };
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) processFile(e.target.files[0]);
+    if (e.target.files && e.target.files[0]) {
+      startGenerationWithFile(e.target.files[0], generationPrompt, jsonPrompt);
+    }
   };
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]);
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      startGenerationWithFile(e.dataTransfer.files[0], generationPrompt, jsonPrompt);
+    }
   };
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation();};
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setIsDragging(true); };
@@ -578,7 +564,7 @@ function QuestionsCreatorContent() {
         </TabsContent>
       </Tabs>
 
-      <AlertDialog open={showUnsavedWarning} onOpenChange={setShowUnsavedWarning}>
+      <AlertDialog open={task?.status === 'awaiting_confirmation'} onOpenChange={(open) => {if(!open) clearTask()}}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
@@ -588,7 +574,7 @@ function QuestionsCreatorContent() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel asChild>
-                <Button variant="outline" className="rounded-xl">Cancel</Button>
+                <Button variant="outline" className="rounded-xl" onClick={clearTask}>Cancel</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
                 <Button onClick={handleConfirmContinue} className="rounded-xl bg-blue-600 hover:bg-blue-700">Continue</Button>
