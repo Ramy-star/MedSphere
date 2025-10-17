@@ -101,8 +101,8 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
                 )}
               />
               <DialogFooter className="pt-4">
-                <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" className="rounded-xl flex-1 sm:flex-none">Create Link</Button>
+                <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="submit" className="rounded-xl">Create Link</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -111,3 +111,4 @@ export function NewLinkDialog({ open, onOpenChange, onAddLink }: NewLinkDialogPr
     </Dialog>
   );
 }
+

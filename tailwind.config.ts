@@ -88,11 +88,22 @@ export default {
       animation: {
         'spin-slow': 'spin 1.6s linear infinite',
         'dot-bounce': 'dot-bounce 1.4s infinite ease-in-out both',
+        'dot-bounce-more': 'dot-bounce-more 1.4s infinite ease-in-out both',
       },
       keyframes: {
         'dot-bounce': {
           '0%, 80%, 100%': { transform: 'scale(0)' },
           '40%': { transform: 'scale(1.0)' },
+        },
+        'dot-bounce-more': {
+            '0%, 100%': {
+                transform: 'translateY(-25%)',
+                'animation-timing-function': 'cubic-bezier(0.8, 0, 1, 1)',
+            },
+            '50%': {
+                transform: 'translateY(25%)',
+                'animation-timing-function': 'cubic-bezier(0, 0, 0.2, 1)',
+            },
         },
       }
     },
@@ -105,3 +116,4 @@ export default {
     }
   ],
 } satisfies Config;
+

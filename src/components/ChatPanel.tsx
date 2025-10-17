@@ -141,14 +141,11 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
 });
 
 const TypingIndicator = () => (
-    <div className="flex items-start space-x-3 group/message">
-        <AiAssistantIcon className="h-6 w-6 flex-shrink-0" />
-        <div className="bg-slate-700/50 rounded-2xl px-4 py-3">
-            <div className="flex items-center justify-center space-x-1">
-                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-dot-bounce [animation-delay:-0.3s]"></span>
-                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-dot-bounce [animation-delay:-0.15s]"></span>
-                <span className="w-1.5 h-1.5 bg-slate-300 rounded-full animate-dot-bounce"></span>
-            </div>
+    <div className="flex items-center space-x-2">
+        <div className="flex items-center justify-center space-x-1.5 rounded-full bg-slate-700/50 p-3">
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-300 animate-dot-bounce-more" style={{ animationDelay: '0s' }}></span>
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-300 animate-dot-bounce-more" style={{ animationDelay: '0.2s' }}></span>
+            <span className="h-1.5 w-1.5 rounded-full bg-slate-300 animate-dot-bounce-more" style={{ animationDelay: '0.4s' }}></span>
         </div>
     </div>
 );
@@ -238,7 +235,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
                 <Button 
                     type="submit" 
                     size="icon" 
-                    className="w-9 h-9 rounded-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-9 h-9 rounded-full bg-[#0169cc] hover:bg-blue-700 text-white"
                     onClick={handleSubmit}
                     disabled={isAiThinking || !chatInput.trim()}
                 >
@@ -536,8 +533,8 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                     </AlertDialogDesc>
                   </AlertDialogHeader2>
                   <AlertDialogFooter className='p-6 pt-4'>
-                    <AlertDialogCancel asChild><Button variant="outline" className='flex-1 sm:flex-none rounded-xl'>Cancel</Button></AlertDialogCancel>
-                    <AlertDialogAction asChild><Button variant="destructive" className='flex-1 sm:flex-none rounded-xl' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
+                    <AlertDialogCancel asChild><Button variant="outline" className='rounded-xl'>Cancel</Button></AlertDialogCancel>
+                    <AlertDialogAction asChild><Button variant="destructive" className='rounded-xl' onClick={startNewChat}>New Chat</Button></AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -578,3 +575,4 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         </div>
     );
 }
+

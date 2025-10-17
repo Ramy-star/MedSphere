@@ -50,7 +50,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
       reader.onloadend = () => {
         setPreview(reader.result as string);
       };
-      reader.readAsDataURL(file);
+      reader.readDataURL(file);
       setUploadStatus('idle');
       setError(null);
     }
@@ -200,8 +200,8 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
           </div>
 
           <DialogFooter className="pt-6">
-            <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={handleClose} disabled={uploadStatus === 'uploading'}>Cancel</Button>
-            <Button type="button" className="rounded-xl flex-1 sm:flex-none" onClick={handleUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}>
+            <Button type="button" variant="outline" className="rounded-xl" onClick={handleClose} disabled={uploadStatus === 'uploading'}>Cancel</Button>
+            <Button type="button" className="rounded-xl" onClick={handleUpload} disabled={!selectedFile || uploadStatus === 'uploading' || uploadStatus === 'success'}>
               {uploadStatus === 'uploading' ? 'Uploading...' : 'Save Icon'}
             </Button>
           </DialogFooter>
@@ -210,3 +210,4 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
     </Dialog>
   );
 }
+

@@ -276,7 +276,7 @@ function QuestionsCreatorContent() {
                                 onDrop={handleDrop}
                                 onDragOver={handleDragOver}
                                 onDragEnter={handleDragEnter}
-                                onDragLeave={handleDragLeave}
+                                onDragLeave={handleLeave}
                                 className={cn(
                                     "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/80",
                                     isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-700/40",
@@ -334,7 +334,7 @@ function QuestionsCreatorContent() {
                             <textarea
                                 value={generationPrompt}
                                 onChange={(e) => setGenerationPrompt(e.target.value)}
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-80"
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
                             />
                              <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center">
                                 <Save className="mr-2 h-4 w-4" /> Save
@@ -349,7 +349,7 @@ function QuestionsCreatorContent() {
                             <textarea
                                 value={jsonPrompt}
                                 onChange={(e) => setJsonPrompt(e.target.value)}
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-80"
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
                             />
                              <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center">
                                 <Save className="mr-2 h-4 w-4" /> Save
@@ -414,8 +414,8 @@ function QuestionsCreatorContent() {
             </AlertDialogDesc>
           </AlertDialogHeader2>
           <AlertDialogFooter className="p-6 pt-4">
-            <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl flex-1 sm:flex-none">Cancel</Button></AlertDialogCancel>
-            <AlertDialogAction asChild><Button variant="destructive" className="flex-1 sm:flex-none" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
+            <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
+            <AlertDialogAction asChild><Button variant="destructive" onClick={handleDeleteSet}>Delete</Button></AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
@@ -464,3 +464,4 @@ export default function QuestionsCreatorPage() {
 }
 
     
+

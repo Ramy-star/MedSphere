@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -159,7 +160,7 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder }: Fol
                 )}
             </ScrollArea>
         </div>
-        <DialogFooter className="p-6 pt-4 flex-row justify-end items-center space-x-2 border-t border-slate-800">
+        <DialogFooter className="p-6 pt-4 border-t border-slate-800">
           <Button type="button" variant="outline" className="rounded-xl" onClick={handleClose}>Cancel</Button>
           <Button type="button" className="rounded-xl" onClick={handleConfirm} disabled={!selectedFolder}>
             Save Here
@@ -169,3 +170,4 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder }: Fol
     </Dialog>
   );
 }
+
