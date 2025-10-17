@@ -7,6 +7,7 @@ import { useEffect, useState, useMemo, Fragment } from 'react';
 import { Skeleton } from './ui/skeleton';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { cn } from '@/lib/utils';
 
 type Crumb = {
   id: string;
@@ -80,7 +81,7 @@ export function Breadcrumbs() {
 
   const homeElement = (
     <div className="flex items-center">
-      <Link href="/" className="flex items-center gap-1 hover:text-white transition-colors">
+      <Link href="/" className={cn("flex items-center gap-1 hover:text-white transition-all active:scale-95")}>
         <HomeIcon size={14} />
         <span>Home</span>
       </Link>
@@ -109,7 +110,7 @@ export function Breadcrumbs() {
             {isLast ? (
               <span className="font-semibold text-white">{crumb.name}</span>
             ) : (
-              <Link href={crumb.path} className="hover:text-white transition-colors">
+              <Link href={crumb.path} className={cn("hover:text-white transition-all active:scale-95")}>
                 {crumb.name}
               </Link>
             )}
