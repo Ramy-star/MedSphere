@@ -118,9 +118,10 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     isSaved: false,
     startGenerationWithFile: async (file, genPrompt, jsonPrompt) => {
         const taskId = `task_${Date.now()}`;
+        const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
         const newTask: GenerationTask = {
             id: taskId,
-            fileName: file.name,
+            fileName: fileNameWithoutExt,
             sourceFileId: '', 
             file: file,
             status: 'idle',
@@ -136,9 +137,10 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     },
     startGeneration: (id, fileName, fileUrl) => {
         const taskId = `task_${Date.now()}`;
+        const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
         const newTask: GenerationTask = {
             id: taskId,
-            fileName: fileName,
+            fileName: fileNameWithoutExt,
             sourceFileId: id,
             fileUrl: fileUrl,
             status: 'idle',
@@ -188,3 +190,5 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     },
   })
 );
+
+    

@@ -75,9 +75,9 @@ function QuestionsCreatorContent() {
 
   const {
     task,
+    isSaved,
     startGenerationWithFile,
     saveCurrentResults,
-    isSaved,
     retryGeneration,
     clearTask,
   } = useQuestionGenerationStore();
@@ -85,8 +85,8 @@ function QuestionsCreatorContent() {
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   const { data: savedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
-    user ? `users/${user.uid}/questionSets` : '',
-    { orderBy: ['createdAt', 'desc'], disabled: !user }
+    user ? `users/${user.uid}/questionSets` : undefined,
+    { orderBy: ['createdAt', 'desc'] }
   );
 
   const initialTab = 'generate';
@@ -202,7 +202,7 @@ function QuestionsCreatorContent() {
   };
 
   const isGenerating = !!(task && ['extracting', 'generating_text', 'converting_json'].includes(task.status));
-  const showTextRetry = task?.status === 'error' && (task.failedStep === 'generating_text' || task.failedStep === 'extracting');
+  const showTextRetry = task?.status === 'error' && (task.failedStep === 'extracting' || task.failedStep === 'generating_text');
   const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
 
 
@@ -248,7 +248,7 @@ function QuestionsCreatorContent() {
                         <textarea
                             value={content || ''}
                             readOnly
-                            className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                            className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                         />
                     )}
                 </div>
@@ -365,7 +365,7 @@ function QuestionsCreatorContent() {
                         <textarea
                            value={generationPrompt}
                            onChange={(e) => setGenerationPrompt(e.target.value)}
-                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                           className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                        />
                        <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center px-6 active:scale-95">
                            <Save className="mr-2 h-4 w-4" /> Save
@@ -381,7 +381,7 @@ function QuestionsCreatorContent() {
                        <textarea
                            value={jsonPrompt}
                            onChange={(e) => setJsonPrompt(e.target.value)}
-                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+                           className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                        />
                        <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center px-6 active:scale-95">
                            <Save className="mr-2 h-4 w-4" /> Save
@@ -399,28 +399,26 @@ function QuestionsCreatorContent() {
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {savedQuestions.map(set => (
                             <Link key={set.id} href={`/questions-creator/${set.id}`} className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between">
-                                <div className="flex items-start gap-4">
-                                    <Folder className="w-10 h-10 text-yellow-400 shrink-0" />
-                                    <div>
-                                        <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
+                                <div className="flex justify-between items-start">
+                                    <Folder className="w-8 h-8 text-yellow-400 shrink-0" />
+                                    {isAdmin && (
+                                    <div className="flex gap-1">
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setItemToDelete(set);
+                                            }}
+                                        >
+                                            <Trash2 className="h-4 w-4 text-red-400"/>
+                                        </Button>
                                     </div>
+                                    )}
                                 </div>
-                                {isAdmin && (
-                                <div className="absolute top-4 right-4 flex gap-1">
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95"
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setItemToDelete(set);
-                                        }}
-                                    >
-                                        <Trash2 className="h-4 w-4 text-red-400"/>
-                                    </Button>
-                                </div>
-                                )}
+                                <h3 className="text-lg font-semibold text-white break-words mt-4">{set.fileName}</h3>
                             </Link>
                         ))}
                     </div>
@@ -512,3 +510,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
