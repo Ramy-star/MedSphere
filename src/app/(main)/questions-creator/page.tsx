@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -48,6 +48,7 @@ type SavedQuestionSet = {
   jsonQuestions: string;
   createdAt: string;
   userId: string;
+  sourceFileId: string;
 };
 
 // Helper to get text content while preserving line breaks
@@ -76,6 +77,8 @@ function QuestionsCreatorContent() {
 
   const [debouncedGenPrompt] = useDebounce(generationPrompt, 500);
   const [debouncedJsonPrompt] = useDebounce(jsonPrompt, 500);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
     task,
@@ -264,98 +267,98 @@ function QuestionsCreatorContent() {
         </TabsList>
 
         <TabsContent value="generate" className="mt-8">
-            <div className="space-y-8">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <motion.div variants={cardVariants} initial="hidden" animate="visible" className="h-full">
-                        <Card className="glass-card rounded-3xl h-full flex flex-col">
-                            <CardHeader>
-                                <CardTitle className='flex items-center gap-3'><UploadCloud className='text-blue-400'/>1. Upload Lecture</CardTitle>
-                            </CardHeader>
-                            <CardContent>
-                                <div
-                                onDrop={handleDrop}
-                                onDragOver={handleDragOver}
-                                onDragEnter={handleDragEnter}
-                                onDragLeave={handleDragLeave}
-                                className={cn(
-                                    "relative border-2 border-dashed border-slate-600 rounded-2xl p-8 text-center cursor-pointer transition-colors duration-300 h-full flex flex-col justify-center bg-slate-800/80",
-                                    isDragging ? "border-blue-500 bg-blue-900/20" : "hover:border-slate-500 hover:bg-slate-700/40",
-                                    isGenerating && "pointer-events-none opacity-60"
-                                )}
-                                >
-                                <input type="file" id="file-upload" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileChange} accept=".pdf" disabled={isGenerating} />
-                                <div className="flex flex-col items-center justify-center text-slate-400">
-                                    <UploadCloud className="h-12 w-12 mb-4" />
-                                    <p className="font-semibold">{task?.fileName ? `File: ${task.fileName}` : 'Drag & drop a file or click to upload'}</p>
-                                    <p className="text-xs mt-1">PDF</p>
-                                </div>
-                                </div>
-                                {task?.status === 'error' && (
-                                    <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
-                                        <AlertCircle className="h-5 w-5" />
-                                        <p className="text-sm">{task.error}</p>
-                                    </div>
-                                )}
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-                    <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }} className="h-full">
-                         <Card className={cn("glass-card rounded-3xl flex flex-col h-full", !hasGeneratedContent && "opacity-50 pointer-events-none")}>
-                            <CardHeader>
-                                <CardTitle className='flex items-center gap-3'><Save className='text-green-400'/>2. Save Results</CardTitle>
-                            </CardHeader>
-                             <CardContent className="flex-1 flex flex-col justify-end items-center">
-                                <Button onClick={handleSaveCurrentQuestions} className="rounded-full w-auto self-center px-6 active:scale-95 transition-transform">
-                                    <Save className="mr-2 h-4 w-4" /> Save Current Questions
-                                </Button>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <motion.div
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className={cn(
+                        "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between",
+                        isDragging && "border-blue-500 bg-blue-900/20",
+                        isGenerating && "pointer-events-none opacity-60"
+                    )}
+                    onDrop={handleDrop}
+                    onDragOver={handleDragOver}
+                    onDragEnter={handleDragEnter}
+                    onDragLeave={handleDragLeave}
+                    onClick={() => fileInputRef.current?.click()}
+                >
+                    <input type="file" ref={fileInputRef} id="file-upload" className="hidden" onChange={handleFileChange} accept=".pdf" disabled={isGenerating} />
+                    <div>
+                        <FileUp className="w-10 h-10 text-blue-400 mb-4" />
+                        <h3 className="text-lg font-semibold text-white break-words">{task?.fileName || '1. Upload Lecture'}</h3>
+                        <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
+                    </div>
+                     {task?.status === 'error' && (
+                        <div className="mt-4 flex items-center gap-2 text-red-400 bg-red-900/20 p-3 rounded-lg">
+                            <AlertCircle className="h-5 w-5" />
+                            <p className="text-sm">{task.error}</p>
+                        </div>
+                    )}
+                </motion.div>
+
+                <motion.div
+                    variants={cardVariants}
+                    initial="hidden"
+                    animate="visible"
+                    transition={{ delay: 0.1 }}
+                    className={cn(
+                        "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer aspect-w-1 aspect-h-1 flex flex-col justify-between",
+                        !hasGeneratedContent && "opacity-50 pointer-events-none"
+                    )}
+                     onClick={handleSaveCurrentQuestions}
+                >
+                    <div>
+                        <Save className="w-10 h-10 text-green-400 mb-4" />
+                        <h3 className="text-lg font-semibold text-white break-words">2. Save Results</h3>
+                        <p className="text-sm text-slate-400 mt-1">Save the generated questions to your library.</p>
+                    </div>
+                </motion.div>
+                
+                <div className="md:col-span-2 lg:col-span-1 lg:row-start-2 lg:col-start-3 space-y-6">
+                 <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.2 }}>
+                    {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text', "Generating questions...", 'text')}
+                </motion.div>
+                <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.3 }}>
+                    {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", 'json')}
+                </motion.div>
                 </div>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-                    <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.4 }}>
-                        {renderOutputCard("Text Questions", <FileText className="text-blue-400" />, task?.textQuestions ?? null, task?.status === 'generating_text', "Generating questions...", 'text')}
-                    </motion.div>
-                    <motion.div variants={cardVariants} initial="hidden" animate="visible" transition={{ delay: 0.6 }}>
-                        {renderOutputCard("JSON Questions", <FileJson className="text-green-400" />, task?.jsonQuestions ?? null, task?.status === 'converting_json', "Converting to JSON...", 'json')}
-                    </motion.div>
-                </div>
+
+
             </div>
         </TabsContent>
         
         <TabsContent value="prompts" className="mt-8">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <Card className="glass-card overflow-hidden rounded-3xl flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3"><FileText className="text-blue-400" />Question Generation Prompt</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col">
-                            <textarea
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                     <div className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors flex flex-col justify-between">
+                        <div>
+                            <FileText className="w-10 h-10 text-blue-400 mb-4" />
+                            <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
+                             <textarea
                                 value={generationPrompt}
                                 onChange={(e) => setGenerationPrompt(e.target.value)}
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
+                                className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
                             />
-                             <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center">
-                                <Save className="mr-2 h-4 w-4" /> Save
-                            </Button>
-                        </CardContent>
-                    </Card>
-                    <Card className="glass-card overflow-hidden rounded-3xl flex flex-col">
-                        <CardHeader>
-                            <CardTitle className="flex items-center gap-3"><FileJson className="text-green-400" />Text-to-JSON Conversion Prompt</CardTitle>
-                        </CardHeader>
-                        <CardContent className="flex-1 flex flex-col">
+                        </div>
+                        <Button onClick={handleSaveGenPrompt} className="mt-4 rounded-xl self-center px-6">
+                            <Save className="mr-2 h-4 w-4" /> Save
+                        </Button>
+                    </div>
+                     <div className="relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors flex flex-col justify-between">
+                        <div>
+                            <FileJson className="w-10 h-10 text-green-400 mb-4" />
+                            <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
                             <textarea
                                 value={jsonPrompt}
                                 onChange={(e) => setJsonPrompt(e.target.value)}
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
+                                className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96"
                             />
-                             <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center">
-                                <Save className="mr-2 h-4 w-4" /> Save
-                            </Button>
-                        </CardContent>
-                    </Card>
+                        </div>
+                        <Button onClick={handleSaveJsonPrompt} className="mt-4 rounded-xl self-center px-6">
+                            <Save className="mr-2 h-4 w-4" /> Save
+                        </Button>
+                    </div>
                 </div>
             </motion.div>
         </TabsContent>
@@ -371,9 +374,9 @@ function QuestionsCreatorContent() {
                                 <div>
                                     <Folder className="w-10 h-10 text-yellow-400 mb-4" />
                                     <div className="flex items-start gap-2 mt-2">
-                                        <h3 className="text-sm font-semibold text-white break-words">{set.fileName}</h3>
+                                        <h3 className="text-lg font-semibold text-white break-words">{set.fileName}</h3>
                                     </div>
-                                    <p className="text-xs text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
+                                    <p className="text-sm text-slate-400 mt-1">{new Date(set.createdAt).toLocaleDateString()}</p>
                                 </div>
                                 {isAdmin && (
                                 <div className="absolute top-4 right-4 flex gap-1">
@@ -462,9 +465,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
-
-
-
-
