@@ -115,7 +115,7 @@ async function runGenerationProcess(
 export const useQuestionGenerationStore = create<QuestionGenerationState>()(
   (set, get) => ({
     task: null,
-    isSaved: true,
+    isSaved: false,
     startGenerationWithFile: async (file, genPrompt, jsonPrompt) => {
         const taskId = `task_${Date.now()}`;
         const newTask: GenerationTask = {
@@ -131,7 +131,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
         };
-        set({ task: newTask, isSaved: true });
+        set({ task: newTask, isSaved: false });
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
     },
     startGeneration: (id, fileName, fileUrl) => {
@@ -149,7 +149,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
         };
-        set({ task: newTask, isSaved: true }); // Reset isSaved to true for the new task
+        set({ task: newTask, isSaved: false }); // Reset isSaved to false for the new task
         const genPrompt = localStorage.getItem('questionGenPrompt') || '';
         const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
@@ -184,9 +184,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         }, 5000);
     },
     clearTask: () => {
-        set({ task: null, isSaved: true });
+        set({ task: null, isSaved: false });
     },
   })
 );
-
-    
