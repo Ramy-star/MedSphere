@@ -140,6 +140,7 @@ function QuestionsCreatorContent() {
     startGenerationFromUrl,
     saveCurrentResults,
     clearTask,
+    retryGeneration,
     confirmContinue,
     cancelConfirmation,
   } = useQuestionGenerationStore();
