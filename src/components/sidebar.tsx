@@ -30,40 +30,40 @@ import { allSubjectIcons } from '@/lib/file-data';
 
 type TreeNode = Content & { children?: TreeNode[] };
 
-function buildTree(items: Content[]): TreeNode[] {
-    const itemMap = new Map<string, TreeNode>(items.map(item => [item.id, { ...item, children: [] }]));
+function buildTree(items: Content[], itemMap: Map<string, TreeNode>): TreeNode[] {
     const roots: TreeNode[] = [];
-
+    
+    // First pass: add all items to the map
     items.forEach(item => {
-        // We only care about items that are not files/links for the sidebar tree
-        if (item.type === 'FILE' || item.type === 'LINK') return;
-
-        const node = itemMap.get(item.id)!;
-        if (item.parentId && itemMap.has(item.parentId)) {
-            const parent = itemMap.get(item.parentId)!;
-            if (!parent.children) parent.children = [];
-            
-            const parentChildren = parent.children as TreeNode[];
-            // Ensure no duplicates
-            if (!parentChildren.some(child => child.id === node.id)) {
-                parentChildren.push(node);
+        if (item.type !== 'FILE' && item.type !== 'LINK') {
+            if (!itemMap.has(item.id)) {
+                itemMap.set(item.id, { ...item, children: [] });
             }
-        } else if(item.parentId === null) {
-            // Ensure no duplicate roots
+        }
+    });
+
+    // Second pass: build the tree structure
+    itemMap.forEach(node => {
+        if (node.parentId && itemMap.has(node.parentId)) {
+            const parent = itemMap.get(node.parentId)!;
+            if (parent.children && !parent.children.some(child => child.id === node.id)) {
+                 parent.children.push(node);
+            }
+        } else if (node.parentId === null) {
             if (!roots.some(root => root.id === node.id)) {
                 roots.push(node);
             }
         }
     });
 
-    // Sort children by 'order' property for all nodes
+    // Sort children for all nodes
     itemMap.forEach(node => {
         if (node.children) {
             node.children.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
         }
     });
     
-    // Sort roots as well
+    // Sort root nodes
     roots.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
     return roots;
@@ -110,13 +110,22 @@ const TreeItem = ({
         path = `/folder/${node.id}`;
     }
 
+    const getActiveColor = () => {
+        if (!isNodeActive) return 'text-slate-300';
+        switch (node.type) {
+            case 'LEVEL': return 'text-blue-400';
+            case 'SEMESTER': return 'text-green-400';
+            case 'SUBJECT':
+            case 'FOLDER':
+                return 'text-yellow-400';
+            default: return 'text-white';
+        }
+    };
+
     return (
         <div className="w-full">
             <div 
-                className={cn(
-                    'group p-1.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center justify-between',
-                     isNodeActive && 'bg-white/10 text-white'
-                )}
+                className={cn('group p-1.5 rounded-xl w-full text-slate-300 flex items-center justify-between')}
                 style={{ paddingLeft: `${level * 12 + 10}px`}}
             >
                 {hasChildren ? (
@@ -137,10 +146,10 @@ const TreeItem = ({
                 <div 
                     onClick={() => onLinkClick(path)}
                     onMouseEnter={() => prefetcher.prefetchChildren(node.id)}
-                    className="flex-1 flex items-center gap-3 overflow-hidden cursor-pointer p-1 rounded-md"
+                    className="flex-1 flex items-center gap-3 overflow-hidden cursor-pointer p-1 rounded-md hover:bg-white/10"
                 >
                     {getIconForType(node)}
-                    <span className="font-medium whitespace-nowrap leading-none text-sm truncate">
+                    <span className={cn("font-medium whitespace-nowrap leading-none text-sm truncate transition-colors", isNodeActive ? getActiveColor() : 'group-hover:text-white')}>
                         {node.name}
                     </span>
                 </div>
@@ -157,7 +166,7 @@ const TreeItem = ({
                             open: { opacity: 1, height: 'auto' },
                             collapsed: { opacity: 0, height: 0 }
                         }}
-                        transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+                        transition={{ duration: 0.3, ease: 'easeOut' }}
                         className="overflow-hidden"
                     >
                         {node.children!.map((child) => (
@@ -186,15 +195,15 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
   
   const { data: allItems } = useCollection<Content>('content');
 
-  const { tree, itemMap } = useMemo(() => {
-    if (!allItems) {
-      return { tree: [], itemMap: new Map() };
-    }
-    const map = new Map(allItems.map(item => [item.id, item]));
+  const itemMap = useMemo(() => new Map<string, TreeNode>(), []);
+
+  const tree = useMemo(() => {
+    if (!allItems) return [];
+    // Clear and rebuild map to ensure it's fresh
+    itemMap.clear();
     const folderItems = allItems.filter(item => item.type !== 'FILE' && item.type !== 'LINK');
-    const treeData = buildTree(folderItems);
-    return { tree: treeData, itemMap: map };
-  }, [allItems]);
+    return buildTree(folderItems, itemMap);
+  }, [allItems, itemMap]);
 
   const [openItems, setOpenItems] = useState(new Set<string>());
   const [activePath, setActivePath] = useState(new Set<string>());
@@ -212,10 +221,8 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
         currentId = pathParts[2];
     } else if (pathParts[1] === 'level' && pathParts.length >= 3) {
         const levelName = decodeURIComponent(pathParts[2]);
-        const level = allItems.find(l => l.name === levelName);
-        if (level) {
-            currentId = level.id;
-        }
+        const level = allItems.find(l => l.type === 'LEVEL' && l.name === levelName);
+        if (level) currentId = level.id;
     }
 
     if (!currentId) {
@@ -224,7 +231,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     }
 
     const newActivePath = new Set<string>();
-    const newOpenItems = new Set<string>(openItems);
+    const newOpenItems = new Set<string>(); // Start with a fresh set
     let tempItem = itemMap.get(currentId);
 
     while (tempItem) {
@@ -236,24 +243,31 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     }
 
     setActivePath(newActivePath);
-    // Only expand the path if the sidebar is open, to avoid changing state unnecessarily
-    if(open) {
-      setOpenItems(newOpenItems);
-    }
-  }, [pathname, open, allItems, itemMap, openItems]);
+    setOpenItems(newOpenItems);
+  }, [pathname, allItems, itemMap]);
 
   useEffect(() => {
     if(allItems) {
       findAndOpenActivePath();
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, allItems, open]);
+  }, [pathname, allItems, findAndOpenActivePath]);
 
   const handleToggle = (id: string) => {
     setOpenItems(prev => {
         const newSet = new Set(prev);
         if (newSet.has(id)) {
             newSet.delete(id);
+            // Recursively close all children
+            const closeChildren = (itemId: string) => {
+                const item = itemMap.get(itemId);
+                if (item && item.children) {
+                    item.children.forEach(child => {
+                        newSet.delete(child.id);
+                        closeChildren(child.id);
+                    });
+                }
+            };
+            closeChildren(id);
         } else {
             newSet.add(id);
         }
@@ -270,7 +284,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
 
   const collapsedViewContent = useMemo(() => {
      if (!tree) return null;
-     return tree.map((level, index) => {
+     return tree.map((level) => {
        const isPathActive = activePath.has(level.id);
        const path = `/level/${encodeURIComponent(level.name)}`;
        const shortName = level.name.replace('Level', 'Lvl');
@@ -280,17 +294,14 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 onClick={() => handleLinkClick(path)}
                 onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
                 className={cn(
-                  'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300 hover:text-white',
-                  isPathActive && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white'
+                  'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300',
+                  isPathActive ? 'bg-white/10 text-white' : 'hover:bg-white/10'
                 )}
-                whileHover={{ backgroundColor: isPathActive ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
+                whileHover={{ backgroundColor: isPathActive ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}
                 transition={{ duration: 0.2 }}
                 layout
             >
-              <div className="flex items-center gap-2">
-                <Layers className="h-5 w-5 text-slate-400 shrink-0" />
-                <span className="font-semibold text-sm">{shortName}</span>
-              </div>
+              <span className="font-semibold text-sm">{shortName}</span>
             </motion.button>
        )
      })
@@ -305,9 +316,8 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 <motion.div
                     className="flex items-center gap-3 overflow-hidden"
                     initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
-                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    animate={{ opacity: 1, x: 0, transition: { duration: 0.4, ease: "easeOut" } }}
+                    exit={{ opacity: 0, x: -20, transition: { duration: 0.2, ease: "easeIn" } }}
                 >
                     <div className="p-1.5 rounded-xl bg-gradient-to-br from-green-400/30 to-green-600/30">
                         <GraduationCap className="text-green-300 flex-shrink-0" size={20} />
@@ -333,9 +343,8 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
         <motion.nav
           key={open ? 'expanded' : 'collapsed'}
           initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
+          animate={{ opacity: 1, transition: { delay: 0.1, duration: 0.3 } }}
+          exit={{ opacity: 0, transition: { duration: 0.1 } }}
           className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1"
         >
           {open ? (
@@ -377,7 +386,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   return (
     <motion.aside
       animate={{
-        width: isDesktopSidebarOpen ? 288 : 120,
+        width: isDesktopSidebarOpen ? 288 : 100,
       }}
       transition={{
         type: 'spring',
