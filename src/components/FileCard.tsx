@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -136,7 +136,7 @@ export const FileCard = React.memo(function FileCard({
     const isLink = item.type === 'LINK';
     const linkUrl = item.metadata?.url;
     const storagePath = item.metadata?.storagePath;
-    const openUrl = isLink ? linkUrl : storagePath;
+    const browserUrl = isLink ? linkUrl : storagePath;
 
     const handleClick = (e: React.MouseEvent) => {
       // Prevent dropdown trigger from also triggering this
@@ -223,16 +223,21 @@ export const FileCard = React.memo(function FileCard({
                         align="end"
                         onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                     >
+                         <DropdownMenuItem onClick={() => onFileClick(item)}>
+                            <Eye className="mr-2 h-4 w-4" />
+                            <span>Open</span>
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => window.open(browserUrl, '_blank')} disabled={!browserUrl}>
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            <span>Open in browser</span>
+                        </DropdownMenuItem>
+
                         {isAdmin && item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && (
                              <DropdownMenuItem onClick={handleCreateQuestions}>
                                 <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                 <span>Create Questions</span>
                             </DropdownMenuItem>
                         )}
-                         <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl}>
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            <span>Open</span>
-                        </DropdownMenuItem>
                         {!isLink && (
                             <DropdownMenuItem 
                                 onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
