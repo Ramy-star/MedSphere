@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
@@ -84,7 +85,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onRegenerate, isLastM
                     </div>
                 )}
                 <div className={cn("rounded-full px-4 py-2.5 max-w-[90%] selectable self-end", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
-                    <p className="text-white whitespace-pre-wrap break-words font-inter">{msg.text}</p>
+                    <p className="text-white whitespace-pre-wrap break-words font-inter" style={{ wordBreak: 'break-word' }}>{msg.text}</p>
                 </div>
             </div>
         );
@@ -205,7 +206,6 @@ const ChatInputForm = React.memo(function ChatInputForm({
     const trimmedInput = chatInput.trim();
     if (isAiThinking || (!trimmedInput && !quotedText)) return;
 
-    const currentInput = trimmedInput;
     const currentQuotedText = quotedText;
     
     setChatInput('');
@@ -214,7 +214,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
     // Use setTimeout to push the expensive state update to the next event loop tick.
     // This allows the keyboard to start its dismissal animation smoothly.
     setTimeout(() => {
-        onChatSubmit(currentInput, currentQuotedText || undefined);
+        onChatSubmit(trimmedInput, currentQuotedText || undefined);
         if (isMobile) {
           textareaRef.current?.blur();
         }
@@ -618,4 +618,3 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         </div>
     );
 }
-
