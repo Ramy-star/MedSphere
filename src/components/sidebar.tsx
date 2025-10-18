@@ -165,7 +165,7 @@ const TreeItem = ({
                             open: { opacity: 1, height: 'auto' },
                             collapsed: { opacity: 0, height: 0 }
                         }}
-                        transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
                         className="overflow-hidden"
                     >
                         {node.children!.map((child) => (
@@ -320,7 +320,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 layout
             >
                 <div className="flex flex-col items-center justify-center leading-none">
-                    <span className="font-semibold text-sm whitespace-nowrap">{`Lvl`}</span>
+                    <span className="font-semibold text-sm whitespace-nowrap">Lvl</span>
                     <span className="font-semibold text-sm whitespace-nowrap">{index + 1}</span>
                 </div>
             </motion.button>
@@ -408,7 +408,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   return (
     <motion.aside
       animate={{
-        width: isDesktopSidebarOpen ? 288 : 80,
+        width: isDesktopSidebarOpen ? 288 : 72,
       }}
       transition={{
         type: 'spring',
