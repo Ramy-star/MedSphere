@@ -110,7 +110,7 @@ export const FileCard = React.memo(function FileCard({
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
-    onUpdate: (file: File) => void,
+    onUpdate?: (file: File) => void,
     showDragHandle?: boolean,
 }) {
     const isMobile = useIsMobile();
@@ -158,13 +158,23 @@ export const FileCard = React.memo(function FileCard({
     
     const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (file) {
+        if (file && onUpdate) {
             onUpdate(file);
         }
         // Reset the input value to allow selecting the same file again
         if(event.target) {
             event.target.value = '';
         }
+    };
+
+    const handleUpdateClick = (e: React.MouseEvent) => {
+        // Prevent the click from bubbling to the parent card click
+        e.preventDefault();
+        e.stopPropagation();
+        if (e.nativeEvent && typeof (e.nativeEvent as any).stopImmediatePropagation === 'function') {
+            (e.nativeEvent as any).stopImmediatePropagation();
+        }
+        updateFileInputRef.current?.click();
     };
 
     return (
@@ -254,10 +264,10 @@ export const FileCard = React.memo(function FileCard({
                                         <span>Create Questions</span>
                                     </DropdownMenuItem>
                                 )}
-                                {!isLink && (
-                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); updateFileInputRef.current?.click(); }}>
-                                        <RefreshCw className="mr-2 h-4 w-4" />
-                                        <span>Update</span>
+                                {!isLink && onUpdate && (
+                                    <DropdownMenuItem onClick={handleUpdateClick}>
+                                      <RefreshCw className="mr-2 h-4 w-4" />
+                                      <span>Update</span>
                                     </DropdownMenuItem>
                                 )}
                                 <DropdownMenuItem onSelect={onRename}>
@@ -276,3 +286,4 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
+
