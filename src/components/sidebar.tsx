@@ -393,6 +393,8 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
 export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: boolean) => void }) {
   const isMobile = useIsMobile();
   const { isDesktopSidebarOpen, setDesktopSidebarOpen } = useSidebarStore();
+  const EXPANDED_WIDTH = 288;
+  const COLLAPSED_WIDTH = 80;
 
   if (isMobile) {
     return (
@@ -407,7 +409,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   return (
     <motion.aside
       animate={{
-        width: isDesktopSidebarOpen ? 288 : 80,
+        width: isDesktopSidebarOpen ? EXPANDED_WIDTH : COLLAPSED_WIDTH,
       }}
       transition={{
         type: 'spring',
