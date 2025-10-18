@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useState, forwardRef, MouseEvent, useCallback } from 'react';
+import { useEffect, useState, forwardRef, MouseEvent, useCallback, useRef } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfViewer, { type PdfViewerRef } from './PdfViewer';
 import { Skeleton } from './ui/skeleton';
@@ -35,6 +34,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   const [content, setContent] = useState<string | Blob | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [contentUrl, setContentUrl] = useState<string|null>(null);
+  const selectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -73,40 +73,34 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
       }
     };
   }, [url, mime]);
-
-  const handleMouseUp = useCallback((event: MouseEvent | globalThis.MouseEvent) => {
-    // This function is now primarily for getting the final cursor position.
-    // The selection logic itself is handled by handleSelectionChange.
+  
+  const handleMouseUp = useCallback((event: globalThis.MouseEvent) => {
     if (!onTextSelect) return;
     
-    const selection = window.getSelection();
-    const selectedText = selection?.toString().trim();
-    
-    if (selectedText) {
-      const range = selection!.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      const clientX = (event as globalThis.MouseEvent).clientX;
-      const clientY = (event as globalThis.MouseEvent).clientY;
-      // Use the final mouse/touch position for more accurate popup placement
-      onTextSelect(selectedText, { top: clientY, left: clientX });
+    // Use a small timeout to let the selection stabilize
+    if (selectionTimeoutRef.current) {
+        clearTimeout(selectionTimeoutRef.current);
     }
+    selectionTimeoutRef.current = setTimeout(() => {
+        const selection = window.getSelection();
+        const selectedText = selection?.toString().trim();
+        
+        if (selectedText) {
+            const range = selection!.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            onTextSelect(selectedText, { top: rect.top, left: rect.left + rect.width / 2 });
+        }
+    }, 50);
+
   }, [onTextSelect]);
 
-  const handleSelectionChange = useCallback(() => {
-    // This is the core logic for detecting selection changes.
-    if (!onTextSelect) return;
 
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !selection.rangeCount) {
-        onSelectionChange?.();
-        return;
-    }
-    
-    const selectedText = selection.toString().trim();
-    if (!selectedText) {
-        onSelectionChange?.();
-    }
-    // Note: The position is now set on mouseup for better accuracy.
+  const handleSelectionChange = useCallback(() => {
+      if (!onTextSelect || !onSelectionChange) return;
+      const selection = window.getSelection();
+      if (!selection || selection.isCollapsed) {
+          onSelectionChange();
+      }
   }, [onTextSelect, onSelectionChange]);
 
 
