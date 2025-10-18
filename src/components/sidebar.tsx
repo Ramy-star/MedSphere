@@ -101,7 +101,7 @@ const TreeItem = ({
 }) => {
     const isNodeOpen = openItems.has(node.id);
     const isNodeActive = activePath.has(node.id);
-    const hasChildren = node.children && node.children.length > 0;
+    const hasChildren = !!(node.children && node.children.length > 0);
     
     let path: string;
     if (node.type === 'LEVEL') {
@@ -405,7 +405,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   return (
     <motion.aside
       animate={{
-        width: isDesktopSidebarOpen ? 288 : 100,
+        width: isDesktopSidebarOpen ? 288 : 80,
       }}
       transition={{
         type: 'spring',
