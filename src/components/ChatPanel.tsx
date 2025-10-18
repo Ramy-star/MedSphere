@@ -84,8 +84,14 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onRegenerate, isLastM
                         <p className="text-slate-400 line-clamp-1">{truncatedQuote}</p>
                     </div>
                 )}
-                <div className={cn("rounded-full px-4 py-2.5 max-w-[90%] selectable self-end", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
-                    <p className="text-white whitespace-pre-wrap break-words font-inter" style={{ wordBreak: 'break-word' }}>{msg.text}</p>
+                <div 
+                    className={cn(
+                        "rounded-[28px] px-4 py-2.5 max-w-[90%] selectable self-end text-white font-inter", 
+                        fontSizeClass
+                    )} 
+                    style={{backgroundColor: '#003f7a', wordBreak: 'break-word', whiteSpace: 'pre-wrap'}}
+                >
+                    {msg.text}
                 </div>
             </div>
         );
@@ -390,21 +396,22 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     }, [chatHistory.length, startNewChat]);
 
     const submitChat = useCallback(async (question: string, historyToUse: ChatMessage[], localQuotedText?: string) => {
-        if (!question.trim() && !localQuotedText) return;
+        const trimmedQuestion = question.trim();
+        if (!trimmedQuestion && !localQuotedText) return;
 
         if (!documentText) {
            toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
            return;
         }
 
-        let fullQuestionForModel = question;
+        let fullQuestionForModel = trimmedQuestion;
         if(localQuotedText) {
-            fullQuestionForModel = `Regarding this quote:\n\n> ${localQuotedText}\n\n${question}`;
+            fullQuestionForModel = `Regarding this quote:\n\n> ${localQuotedText}\n\n${trimmedQuestion}`;
         }
         
         const userMessage: ChatMessage = {
             role: 'user',
-            text: question,
+            text: trimmedQuestion,
             quotedText: localQuotedText,
         };
         
