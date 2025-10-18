@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -122,11 +123,13 @@ export function FolderGrid({
   const router = useRouter();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
-  const [sortedItems, setSortedItems] = useState(fetchedItems || []);
+  const [sortedItems, setSortedItems] = useState<Content[]>([]);
 
   useEffect(() => {
-    setSortedItems(fetchedItems || []);
-  }, [fetchedItems]);
+    // Filter out items that are currently being updated
+    const idsBeingUpdated = new Set(uploadingFiles.filter(f => f.isUpdate).map(f => f.originalId));
+    setSortedItems(fetchedItems?.filter(item => !idsBeingUpdated.has(item.id)) || []);
+  }, [fetchedItems, uploadingFiles]);
 
   const handleFolderClick = (folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -215,7 +218,7 @@ export function FolderGrid({
     }
   };
   
-  const newUploads = uploadingFiles.filter(f => !f.isUpdate);
+  const allUploads = uploadingFiles; // Both new and updating files
   const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT');
   
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -235,11 +238,11 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
         
-       {/* Render new uploads at the top */}
+       {/* Render all uploads (new and updating) */}
         <div className="flex flex-col">
             <AnimatePresence>
-                {newUploads.map(file => (
-                    <motion.div key={file.id} variants={itemVariants(isMobile)} exit="exit">
+                {allUploads.map(file => (
+                    <motion.div key={file.id} variants={itemVariants(isMobile)} initial="hidden" animate="visible" exit="exit">
                         <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                     </motion.div>
                 ))}
@@ -247,13 +250,13 @@ export function FolderGrid({
         </div>
 
 
-      {loading && sortedItems.length === 0 && newUploads.length === 0 && (
+      {loading && sortedItems.length === 0 && allUploads.length === 0 && (
          <div className="text-center py-16">
             {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
-      {!loading && sortedItems.length === 0 && newUploads.length === 0 && (
+      {!loading && sortedItems.length === 0 && allUploads.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
@@ -283,10 +286,6 @@ export function FolderGrid({
                 const itemKey = item.id;
                 const isLastItem = index === sortedItems.length - 1;
 
-                const uploadingFile = uploadingFiles.find(
-                  (f) => f.isUpdate && f.originalId === item.id
-                );
-
                 const renderedContent = () => {
                     switch (item.type) {
                         case 'SUBJECT':
@@ -312,9 +311,6 @@ export function FolderGrid({
                                     onDelete={() => setItemToDelete(item)}
                                     onUpdate={(file) => onUpdateFile(item, file)}
                                     showDragHandle={!isMobile}
-                                    uploadingFile={uploadingFile}
-                                    onRemoveUpload={onRemove}
-                                    onRetryUpload={onRetry}
                                 />
                             );
                         default:
@@ -391,5 +387,3 @@ export function FolderGrid({
     </div>
   );
 }
-
-    
