@@ -16,9 +16,10 @@ export default function ChatQuote({ text, onClose, className = "" }: Props) {
       role="status"
       aria-label="Quote notice"
       className={cn(
-        "relative max-w-full mx-auto rounded-xl bg-black/50 text-white text-sm px-4 py-3 shadow-md ring-1 ring-white/10 backdrop-blur-sm",
+        "relative text-white text-sm px-4 py-3 rounded-t-2xl",
         className
       )}
+      style={{ backgroundColor: '#424242' }}
     >
       {/* Close button */}
       {onClose && (
@@ -34,7 +35,7 @@ export default function ChatQuote({ text, onClose, className = "" }: Props) {
       {/* Quote text (selectable) */}
       <blockquote className="select-text whitespace-pre-wrap break-words leading-snug pr-8">
         <CornerRightDown className="inline-block h-4 w-4 mr-2 -mt-1 text-slate-400" />
-        <span className="text-slate-300">{text}</span>
+        <span className="text-slate-300 line-clamp-2">{text}</span>
       </blockquote>
     </div>
   );

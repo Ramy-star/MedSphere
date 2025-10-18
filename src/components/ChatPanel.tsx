@@ -186,7 +186,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
 
   const handleSubmit = (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
-    if (isAiThinking || !chatInput.trim()) return;
+    if (isAiThinking || (!chatInput.trim() && !quotedText)) return;
 
     const currentInput = chatInput;
     const currentQuotedText = quotedText;
@@ -233,35 +233,39 @@ const ChatInputForm = React.memo(function ChatInputForm({
             (isExtracting || !documentText) && "opacity-50"
           )}
         >
-            {quotedText && (
-                <div className="mb-2">
+            <form onSubmit={handleSubmit} className="relative flex flex-col w-full border border-white/10 rounded-2xl shadow-lg shadow-black/20">
+                {quotedText && (
                     <ChatQuote text={quotedText} onClose={onClearQuote} />
-                </div>
-            )}
-            <form onSubmit={handleSubmit}>
-                <Textarea
-                    ref={textareaRef}
-                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20 no-scrollbar"
-                    placeholder="Ask anything..."
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    disabled={isAiThinking || isExtracting || !documentText}
-                    rows={1}
-                    style={{backgroundColor: '#303030'}}
-                />
-                <div className="absolute right-2 bottom-2 flex h-[36px] items-center gap-1">
-                    {chatInput.trim() && (
-                        <Button 
-                            type="submit" 
-                            size="icon" 
-                            className="w-9 h-9 rounded-full bg-[#0169cc] hover:bg-blue-700 text-white"
-                            onClick={handleSubmit}
-                            disabled={isAiThinking || !chatInput.trim()}
-                        >
-                            <ArrowUp className="w-5 h-5" />
-                        </Button>
-                    )}
+                )}
+                <div className="relative flex">
+                    <Textarea
+                        ref={textareaRef}
+                        className={cn(
+                            "w-full bg-transparent py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter no-scrollbar",
+                            "border-0",
+                            quotedText ? "rounded-b-2xl rounded-t-none" : "rounded-2xl"
+                        )}
+                        style={{backgroundColor: '#303030'}}
+                        placeholder="Ask anything..."
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        disabled={isAiThinking || isExtracting || !documentText}
+                        rows={1}
+                    />
+                    <div className="absolute right-2 bottom-2 flex h-[36px] items-center gap-1">
+                        {chatInput.trim() && (
+                            <Button 
+                                type="submit" 
+                                size="icon" 
+                                className="w-9 h-9 rounded-full bg-[#0169cc] hover:bg-blue-700 text-white"
+                                onClick={handleSubmit}
+                                disabled={isAiThinking || !chatInput.trim()}
+                            >
+                                <ArrowUp className="w-5 h-5" />
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </form>
         </div>
@@ -368,7 +372,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     }, [chatHistory.length, startNewChat]);
 
     const submitChat = useCallback(async (question: string, historyToUse: ChatMessage[], localQuotedText?: string) => {
-        if (!question.trim()) return;
+        if (!question.trim() && !localQuotedText) return;
 
         if (!documentText) {
            toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
