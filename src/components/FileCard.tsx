@@ -187,7 +187,7 @@ export const FileCard = React.memo(function FileCard({
 
     if (uploadingFile) {
         return (
-            <div className={cn("relative group flex items-center w-full my-1.5")}>
+            <div className={cn("relative group flex items-center w-full my-1.5 p-2 md:p-2")}>
                 <UploadProgress
                     file={uploadingFile}
                     onRetry={() => onRetryUpload?.(uploadingFile.id)}
@@ -306,7 +306,3 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
-
-    
-
-    

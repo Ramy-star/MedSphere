@@ -62,8 +62,10 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
         onSuccess: (content) => {
-             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success', xhr: undefined } : f));
-             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 2000);
+             // We don't remove the successful update from the list immediately,
+             // we let the main collection re-render handle showing the new file.
+             // After a delay, we clean up the uploadingFiles state.
+             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 500);
              toast({ title: "File Updated", description: `"${newFile.name}" has been uploaded.` });
         },
         onError: (error) => {
@@ -77,7 +79,7 @@ function FolderPageContent({ id }: { id: string }) {
         }
     };
     
-    const uploadingFile: UploadingFile = {
+    const uploadingFile: Omit<UploadingFile, 'xhr'> = {
       id: tempId,
       name: newFile.name,
       size: newFile.size,
@@ -87,8 +89,12 @@ function FolderPageContent({ id }: { id: string }) {
       isUpdate: true,
       originalId: itemToUpdate.id,
     };
-    setUploadingFiles(prev => [...prev, uploadingFile]);
     
+    // Set state before calling the async operation that provides the xhr
+    setUploadingFiles(prev => [...prev, uploadingFile as UploadingFile]);
+
+    // Now, get the xhr and update the state again with it.
+    // This second update must happen to allow cancellation.
     const xhr = await contentService.updateFile(itemToUpdate.id, newFile, callbacks);
 
     setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, xhr } : f));
@@ -164,5 +170,3 @@ function FolderPage({ params }: { params: Promise<{ id: string }> }) {
 
 
 export default FolderPage;
-
-    
