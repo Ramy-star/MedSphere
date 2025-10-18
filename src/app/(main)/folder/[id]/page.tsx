@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, useCallback, use } from 'react';
@@ -61,13 +62,13 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
         onSuccess: (content) => {
-             // No need to set success status here, as the component will be unmounted
-             // The list will refresh from Firestore, and the old item will be gone.
+             // The visual item is already removed, so we just need to clear this from the uploading list.
              setUploadingFiles(prev => prev.filter(f => f.id !== tempId));
              toast({ title: "File Updated", description: `"${newFile.name}" has been uploaded.` });
         },
         onError: (error) => {
             console.error("Update failed in component:", error);
+            // If there's an error, the original item will reappear from Firestore, so we can show an error state.
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'error', xhr: undefined } : f));
             toast({
                 variant: 'destructive',
@@ -77,7 +78,8 @@ function FolderPageContent({ id }: { id: string }) {
         }
     };
 
-    // Add to uploading files list immediately to show progress bar
+    // Add to uploading files list immediately to show progress bar.
+    // This will cause the FolderGrid to filter out the old item and show the progress.
     const uploadingFile: UploadingFile = {
       id: tempId,
       name: newFile.name,

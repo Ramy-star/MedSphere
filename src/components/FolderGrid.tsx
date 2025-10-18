@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -92,7 +93,6 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
 
 const SortableList = ({
     items,
-    uploadingFiles,
     onItemClick,
     onFolderClick,
     onRenameClick,
@@ -101,12 +101,9 @@ const SortableList = ({
     onFileUpdate,
     isSubjectView,
     isMobile,
-    onDragEnd,
-    onRetry,
-    onRemove
+    onDragEnd
 }: {
     items: Content[];
-    uploadingFiles: UploadingFile[];
     onItemClick: (item: Content) => void;
     onFolderClick: (item: Content) => void;
     onRenameClick: (item: Content) => void;
@@ -116,8 +113,6 @@ const SortableList = ({
     isSubjectView: boolean;
     isMobile: boolean;
     onDragEnd: (event: DragEndEvent) => void;
-    onRetry: (fileId: string) => void;
-    onRemove: (fileId: string) => void;
 }) => {
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
     const containerClasses = isSubjectView
@@ -132,7 +127,6 @@ const SortableList = ({
                         {items.map((it: Content, index: number) => {
                             const itemKey = it.id;
                             const isLastItem = index === items.length - 1;
-                            const updatingFile = uploadingFiles.find(f => f.isUpdate && f.originalId === it.id);
 
                             let content;
                             if (it.type === 'SUBJECT') {
@@ -154,8 +148,6 @@ const SortableList = ({
                                     onDelete={() => onDeleteClick(it)}
                                     onUpdate={(file) => onFileUpdate(it, file)}
                                     showDragHandle={!isMobile}
-                                    uploadingFile={updatingFile}
-                                    onRemoveUpload={onRemove}
                                 />;
                             } else {
                                 content = null;
@@ -196,7 +188,6 @@ const SortableList = ({
 
 const NonSortableList = ({
     items,
-    uploadingFiles,
     onItemClick,
     onFolderClick,
     onRenameClick,
@@ -204,12 +195,9 @@ const NonSortableList = ({
     onIconChangeClick,
     onFileUpdate,
     isSubjectView,
-    isMobile,
-    onRetry,
-    onRemove
+    isMobile
 }: {
     items: Content[];
-    uploadingFiles: UploadingFile[];
     onItemClick: (item: Content) => void;
     onFolderClick: (item: Content) => void;
     onRenameClick: (item: Content) => void;
@@ -218,8 +206,6 @@ const NonSortableList = ({
     onFileUpdate: (item: Content, file: File) => void;
     isSubjectView: boolean;
     isMobile: boolean;
-    onRetry: (fileId: string) => void;
-    onRemove: (fileId: string) => void;
 }) => {
     const containerClasses = isSubjectView
         ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
@@ -231,7 +217,6 @@ const NonSortableList = ({
                 {items.map((it, index) => {
                      const itemKey = it.id;
                      const isLastItem = index === items.length - 1;
-                     const updatingFile = uploadingFiles.find(f => f.isUpdate && f.originalId === it.id);
  
                      let content;
                      if (it.type === 'SUBJECT') {
@@ -253,8 +238,6 @@ const NonSortableList = ({
                              onDelete={() => onDeleteClick(it)}
                              onUpdate={(file) => onFileUpdate(it, file)}
                              showDragHandle={false} // No drag handle for non-admins
-                             uploadingFile={updatingFile}
-                             onRemoveUpload={onRemove}
                          />;
                      } else {
                          content = null;
@@ -326,16 +309,15 @@ export function FolderGrid({
   const router = useRouter();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
-  // Separate new uploads from updates
-  const newUploadingFiles = uploadingFiles.filter(f => !f.isUpdate);
-
   useEffect(() => {
     if (fetchedItems) {
-      setItems(fetchedItems);
+      // Filter out items that are currently being updated
+      const updatingIds = new Set(uploadingFiles.filter(f => f.isUpdate).map(f => f.originalId));
+      setItems(fetchedItems.filter(item => !updatingIds.has(item.id)));
     } else {
       setItems([]);
     }
-  }, [fetchedItems]);
+  }, [fetchedItems, uploadingFiles]);
 
   const handleFolderClick = (folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -348,7 +330,6 @@ export function FolderGrid({
         }
         return;
     }
-    // Always open in-app preview now
     setPreviewFile(file);
   };
 
@@ -389,7 +370,6 @@ export function FolderGrid({
     if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
-    // This is important to allow the drop event to fire
     e.dataTransfer.dropEffect = 'copy';
   };
 
@@ -431,7 +411,6 @@ export function FolderGrid({
   const renderList = () => {
     const listProps = {
         items: items,
-        uploadingFiles: uploadingFiles,
         onItemClick: handleFileClick,
         onFolderClick: handleFolderClick,
         onRenameClick: (item: Content) => setItemToRename(item),
@@ -439,9 +418,7 @@ export function FolderGrid({
         onIconChangeClick: (item: Content) => setItemForIconChange(item),
         onFileUpdate: onUpdateFile,
         isSubjectView,
-        isMobile,
-        onRetry,
-        onRemove,
+        isMobile
     };
     
     if (isAdmin) {
@@ -462,10 +439,10 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
         
-       {/* New Uploads always at the top */}
+       {/* All Uploads (new and updates) */}
         <div className="flex flex-col">
             <AnimatePresence>
-                {newUploadingFiles.map(file => (
+                {uploadingFiles.map(file => (
                     <motion.div key={file.id} variants={itemVariants(isMobile)} exit="exit">
                         <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                     </motion.div>
@@ -474,13 +451,13 @@ export function FolderGrid({
         </div>
 
 
-      {loading && items.length === 0 && newUploadingFiles.length === 0 && (
+      {loading && items.length === 0 && uploadingFiles.length === 0 && (
          <div className="text-center py-16">
             {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
-      {!loading && items.length === 0 && newUploadingFiles.length === 0 && (
+      {!loading && items.length === 0 && uploadingFiles.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
