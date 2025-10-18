@@ -364,7 +364,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { delay: 0.1, duration: 0.3 } }}
           exit={{ opacity: 0, transition: { duration: 0.1 } }}
-          className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1"
+          className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1 no-scrollbar"
         >
           {open ? (
             tree.map(node => (
@@ -392,7 +392,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   const isMobile = useIsMobile();
   const { isDesktopSidebarOpen, setDesktopSidebarOpen } = useSidebarStore();
   const EXPANDED_WIDTH = 288;
-  const COLLAPSED_WIDTH = 100;
+  const COLLAPSED_WIDTH = 90;
 
   if (isMobile) {
     return (
