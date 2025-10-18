@@ -336,10 +336,9 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
             {open && (
                 <motion.div
                     className="flex items-center gap-3 overflow-hidden"
-                    initial={{ opacity: 0, x: -20, scaleX: 0 }}
-                    animate={{ opacity: 1, x: 0, scaleX: 1, transition: { duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] } }}
-                    exit={{ opacity: 0, x: -20, scaleX: 0, transition: { duration: 0.2, ease: "easeIn" } }}
-                    style={{ transformOrigin: 'left' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0, transition: { duration: 0.3, ease: "easeOut" } }}
+                    exit={{ opacity: 0, x: -20, transition: { duration: 0.2 } }}
                 >
                     <div className="p-1.5 rounded-xl bg-gradient-to-br from-green-400/30 to-green-600/30">
                         <GraduationCap className="text-green-300 flex-shrink-0" size={20} />
@@ -408,7 +407,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   return (
     <motion.aside
       animate={{
-        width: isDesktopSidebarOpen ? 288 : 72,
+        width: isDesktopSidebarOpen ? 288 : 80,
       }}
       transition={{
         type: 'spring',
