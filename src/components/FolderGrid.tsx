@@ -129,20 +129,20 @@ const SortableList = ({
             <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
                 <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
                     <AnimatePresence>
-                        {uploadingFiles.map(file => (
-                          <motion.div
-                             key={file.id}
-                              variants={itemVariants(isMobile)}
-                              exit="exit"
-                              className={cn(isMobile && "px-4")}
-                          >
-                              {/* This component is not sortable, so it's outside the SortableItemWrapper */}
-                              <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
-                          </motion.div>
-                        ))}
                         {items.map((it: Content, index: number) => {
                             const itemKey = it.id;
                             const isLastItem = index === items.length - 1;
+
+                            // Check if this item is being updated
+                            const updatingFile = uploadingFiles.find(f => f.id.startsWith('update_') && f.id.endsWith(it.id));
+
+                            if (updatingFile) {
+                                return (
+                                    <motion.div key={updatingFile.id} variants={itemVariants(isMobile)} exit="exit" className={cn("border-white/10", !isSubjectView && !isLastItem && "border-b")}>
+                                        <UploadProgress file={updatingFile} onRetry={() => {}} onRemove={onRemove} />
+                                    </motion.div>
+                                );
+                            }
 
                             let content;
                             if (it.type === 'SUBJECT') {
@@ -237,19 +237,19 @@ const NonSortableList = ({
     return (
         <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
             <AnimatePresence>
-                {uploadingFiles.map(file => (
-                    <motion.div
-                        key={file.id}
-                        variants={itemVariants(isMobile)}
-                        exit="exit"
-                        // No extra padding on mobile for non-sortable list either
-                    >
-                        <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
-                    </motion.div>
-                ))}
                 {items.map((it, index) => {
                      const itemKey = it.id;
                      const isLastItem = index === items.length - 1;
+
+                     const updatingFile = uploadingFiles.find(f => f.id.startsWith('update_') && f.id.endsWith(it.id));
+
+                     if (updatingFile) {
+                         return (
+                             <motion.div key={updatingFile.id} variants={itemVariants(isMobile)} exit="exit" className={cn("border-white/10", !isSubjectView && !isLastItem && "border-b")}>
+                                 <UploadProgress file={updatingFile} onRetry={() => {}} onRemove={onRemove} />
+                             </motion.div>
+                         );
+                     }
  
                      let content;
                      if (it.type === 'SUBJECT') {
@@ -311,7 +311,7 @@ const NonSortableList = ({
 
 export function FolderGrid({ 
     parentId, 
-    uploadingFiles, 
+    uploadingFiles: allUploadingFiles, 
     onFileSelected,
     onUpdateFile,
     onRetry, 
@@ -341,6 +341,11 @@ export function FolderGrid({
   const { user } = useUser();
   const router = useRouter();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+
+  // Separate new uploads from updates
+  const newUploadingFiles = allUploadingFiles.filter(f => f.id.startsWith('upload_'));
+  const updatingFiles = allUploadingFiles.filter(f => f.id.startsWith('update_'));
+
 
   useEffect(() => {
     if (fetchedItems) {
@@ -402,6 +407,8 @@ export function FolderGrid({
     if (!isAdmin) return;
     e.preventDefault();
     e.stopPropagation();
+    // This is important to allow the drop event to fire
+    e.dataTransfer.dropEffect = 'copy';
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
@@ -442,7 +449,7 @@ export function FolderGrid({
   const renderList = () => {
     const listProps = {
         items: items,
-        uploadingFiles,
+        uploadingFiles: updatingFiles, // Pass only updating files here
         onItemClick: handleFileClick,
         onFolderClick: handleFolderClick,
         onRenameClick: (item: Content) => setItemToRename(item),
@@ -472,14 +479,26 @@ export function FolderGrid({
         className={cn("relative h-full", isDraggingOver && "opacity-50")}
     >
       <DropZone isVisible={isDraggingOver} />
+        
+       {/* New Uploads always at the top */}
+        <div className="flex flex-col">
+            <AnimatePresence>
+                {newUploadingFiles.map(file => (
+                    <motion.div key={file.id} variants={itemVariants(isMobile)} exit="exit">
+                        <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
+                    </motion.div>
+                ))}
+            </AnimatePresence>
+        </div>
 
-      {loading && items.length === 0 && (
+
+      {loading && items.length === 0 && newUploadingFiles.length === 0 && (
          <div className="text-center py-16">
             {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
-      {!loading && items.length === 0 && uploadingFiles.length === 0 && (
+      {!loading && items.length === 0 && newUploadingFiles.length === 0 && updatingFiles.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
@@ -501,7 +520,7 @@ export function FolderGrid({
           </div>
       )}
 
-      {(items.length > 0 || uploadingFiles.length > 0) && renderList()}
+      {(items.length > 0 || updatingFiles.length > 0) && renderList()}
 
       <FilePreviewModal
         item={previewFile}

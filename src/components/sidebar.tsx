@@ -27,6 +27,7 @@ import { prefetcher } from '@/lib/prefetchService';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
 import { allSubjectIcons } from '@/lib/file-data';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import Image from 'next/image';
 
 
 type TreeNode = Content & { children?: TreeNode[] };
@@ -71,6 +72,19 @@ function buildTree(items: Content[], itemMap: Map<string, TreeNode>): TreeNode[]
 }
 
 const getIconForType = (item: Content) => {
+    if (item.metadata?.iconURL) {
+      return (
+        <div className="relative w-5 h-5 shrink-0">
+          <Image
+            src={item.metadata.iconURL}
+            alt={item.name}
+            fill
+            className="object-cover rounded-sm pointer-events-none select-none"
+            sizes="20px"
+          />
+        </div>
+      );
+    }
     switch (item.type) {
       case 'LEVEL':
         return <Layers className="h-5 w-5 text-slate-400 shrink-0" />;

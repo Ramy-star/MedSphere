@@ -234,7 +234,7 @@ export const FileCard = React.memo(function FileCard({
                         align="end"
                         onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
                     >
-                         <DropdownMenuItem onClick={() => onFileClick(item)}>
+                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onFileClick(item); }}>
                             <Eye className="mr-2 h-4 w-4" />
                             <span>Open</span>
                         </DropdownMenuItem>
@@ -242,13 +242,6 @@ export const FileCard = React.memo(function FileCard({
                             <ExternalLink className="mr-2 h-4 w-4" />
                             <span>Open in browser</span>
                         </DropdownMenuItem>
-
-                        {isAdmin && item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && (
-                             <DropdownMenuItem onClick={handleCreateQuestions}>
-                                <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
-                                <span>Create Questions</span>
-                            </DropdownMenuItem>
-                        )}
                         {!isLink && (
                             <DropdownMenuItem 
                                 onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
@@ -258,15 +251,22 @@ export const FileCard = React.memo(function FileCard({
                                 <span>Download</span>
                             </DropdownMenuItem>
                         )}
-                        {isAdmin && !isLink && (
-                             <DropdownMenuItem onClick={handleUpdateClick}>
-                                <RefreshCw className="mr-2 h-4 w-4" />
-                                <span>Update</span>
-                            </DropdownMenuItem>
-                        )}
+                        
                         {isAdmin && (
                             <>
                                 <DropdownMenuSeparator />
+                                {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && (
+                                    <DropdownMenuItem onClick={handleCreateQuestions}>
+                                        <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
+                                        <span>Create Questions</span>
+                                    </DropdownMenuItem>
+                                )}
+                                {!isLink && (
+                                    <DropdownMenuItem onClick={handleUpdateClick}>
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        <span>Update</span>
+                                    </DropdownMenuItem>
+                                )}
                                 <DropdownMenuItem onClick={onRename}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
