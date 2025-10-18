@@ -25,6 +25,7 @@ import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 import { useRouter } from 'next/navigation';
 import { FileQuestion } from './icons/FileQuestion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { UploadProgress, UploadingFile } from './UploadProgress';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
     if (item.type === 'LINK') {
@@ -105,6 +106,8 @@ export const FileCard = React.memo(function FileCard({
     onDelete, 
     onUpdate,
     showDragHandle = true,
+    uploadingFile,
+    onRemoveUpload,
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
@@ -112,6 +115,8 @@ export const FileCard = React.memo(function FileCard({
     onDelete: () => void,
     onUpdate?: (file: File) => void,
     showDragHandle?: boolean,
+    uploadingFile?: UploadingFile,
+    onRemoveUpload?: (id: string) => void,
 }) {
     const isMobile = useIsMobile();
     const router = useRouter();
@@ -140,6 +145,7 @@ export const FileCard = React.memo(function FileCard({
     const browserUrl = isLink ? linkUrl : storagePath;
 
     const handleClick = (e: React.MouseEvent) => {
+      if (uploadingFile) return; // Prevent clicks during update
       // Ignore clicks on interactive elements within the card
       if (e.target instanceof HTMLElement && e.target.closest('button, a, input, [role="menuitem"], [data-radix-dropdown-menu-trigger]')) {
           return;
@@ -176,6 +182,18 @@ export const FileCard = React.memo(function FileCard({
         }
         updateFileInputRef.current?.click();
     };
+
+    if (uploadingFile) {
+        return (
+            <div className={cn("relative group flex items-center w-full my-1.5")}>
+                <UploadProgress
+                    file={uploadingFile}
+                    onRetry={() => {}} // Retry for updates not implemented here
+                    onRemove={() => onRemoveUpload?.(uploadingFile.id)}
+                />
+            </div>
+        )
+    }
 
     return (
         <div 

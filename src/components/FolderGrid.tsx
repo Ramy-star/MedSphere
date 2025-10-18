@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -131,17 +132,7 @@ const SortableList = ({
                         {items.map((it: Content, index: number) => {
                             const itemKey = it.id;
                             const isLastItem = index === items.length - 1;
-
-                            // Check if this item is being updated
                             const updatingFile = uploadingFiles.find(f => f.isUpdate && f.originalId === it.id);
-
-                            if (updatingFile) {
-                                return (
-                                    <motion.div key={updatingFile.id} variants={itemVariants(isMobile)} exit="exit" className={cn("border-white/10", !isSubjectView && "border-b")}>
-                                        <UploadProgress file={updatingFile} onRetry={() => {}} onRemove={onRemove} />
-                                    </motion.div>
-                                );
-                            }
 
                             let content;
                             if (it.type === 'SUBJECT') {
@@ -163,6 +154,8 @@ const SortableList = ({
                                     onDelete={() => onDeleteClick(it)}
                                     onUpdate={(file) => onFileUpdate(it, file)}
                                     showDragHandle={!isMobile}
+                                    uploadingFile={updatingFile}
+                                    onRemoveUpload={onRemove}
                                 />;
                             } else {
                                 content = null;
@@ -182,7 +175,6 @@ const SortableList = ({
                             if (isMobile && it.type === 'SUBJECT') {
                               return <div key={itemKey}>{content}</div>
                             }
-
 
                             return (
                                 <motion.div
@@ -239,16 +231,7 @@ const NonSortableList = ({
                 {items.map((it, index) => {
                      const itemKey = it.id;
                      const isLastItem = index === items.length - 1;
-
                      const updatingFile = uploadingFiles.find(f => f.isUpdate && f.originalId === it.id);
-
-                     if (updatingFile) {
-                         return (
-                             <motion.div key={updatingFile.id} variants={itemVariants(isMobile)} exit="exit" className={cn("border-white/10", !isSubjectView && "border-b")}>
-                                 <UploadProgress file={updatingFile} onRetry={() => {}} onRemove={onRemove} />
-                             </motion.div>
-                         );
-                     }
  
                      let content;
                      if (it.type === 'SUBJECT') {
@@ -270,6 +253,8 @@ const NonSortableList = ({
                              onDelete={() => onDeleteClick(it)}
                              onUpdate={(file) => onFileUpdate(it, file)}
                              showDragHandle={false} // No drag handle for non-admins
+                             uploadingFile={updatingFile}
+                             onRemoveUpload={onRemove}
                          />;
                      } else {
                          content = null;
@@ -517,7 +502,7 @@ export function FolderGrid({
           </div>
       )}
 
-      {(items.length > 0 || uploadingFiles.filter(f => f.isUpdate).length > 0) && renderList()}
+      {items.length > 0 && renderList()}
 
       <FilePreviewModal
         item={previewFile}

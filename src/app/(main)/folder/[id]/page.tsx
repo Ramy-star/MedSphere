@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, use } from 'react';
@@ -60,8 +61,9 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
         onSuccess: (content) => {
-             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success', xhr: undefined } : f));
-             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 2000);
+             // No need to set success status here, as the component will be unmounted
+             // The list will refresh from Firestore, and the old item will be gone.
+             setUploadingFiles(prev => prev.filter(f => f.id !== tempId));
              toast({ title: "File Updated", description: `"${newFile.name}" has been uploaded.` });
         },
         onError: (error) => {
