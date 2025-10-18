@@ -15,7 +15,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from './ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Content, contentService } from '@/lib/contentService';
+import { Content } from '@/lib/contentService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sheet,
@@ -74,13 +74,13 @@ const getIconForType = (item: Content) => {
       case 'LEVEL':
         return <Layers className="h-5 w-5 text-slate-400 shrink-0" />;
       case 'SEMESTER':
-        return <Calendar size={18} className="text-green-400" />;
+        return <Calendar size={18} className="text-slate-400" />;
       case 'SUBJECT':
          const SubjectIcon = (item.iconName && allSubjectIcons[item.iconName]) || Book;
          return <SubjectIcon className={cn("h-5 w-5 shrink-0", item.color || "text-gray-300")} />;
       case 'FOLDER':
       default:
-        return <FolderIcon className="h-5 w-5 text-yellow-500/80 shrink-0" />;
+        return <FolderIcon className="h-5 w-5 text-slate-400 shrink-0" />;
     }
 };
 
@@ -95,7 +95,7 @@ const TreeItem = ({
     node: TreeNode;
     openItems: Set<string>;
     activePath: Set<string>;
-    onToggle: (id: string) => void;
+    onToggle: (id: string, hasChildren: boolean) => void;
     onLinkClick: (path: string) => void;
     level: number;
 }) => {
@@ -128,30 +128,29 @@ const TreeItem = ({
                 className={cn('group p-1.5 rounded-xl w-full text-slate-300 flex items-center justify-between')}
                 style={{ paddingLeft: `${level * 12 + 10}px`}}
             >
-                {hasChildren ? (
-                     <button onClick={() => onToggle(node.id)} className="p-1 -ml-1 rounded-md hover:bg-white/10">
-                        <ChevronDown
-                            className={cn(
-                            "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
-                            isNodeOpen ? 'rotate-0' : '-rotate-90'
-                            )}
-                            aria-hidden="true"
-                        />
+                <div className="flex-1 flex items-center gap-3 overflow-hidden">
+                    <button onClick={() => onToggle(node.id, hasChildren)} className="p-1 -ml-1 rounded-md hover:bg-white/10" disabled={!hasChildren}>
+                        {hasChildren ? (
+                            <ChevronDown
+                                className={cn(
+                                "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+                                isNodeOpen ? 'rotate-0' : '-rotate-90'
+                                )}
+                                aria-hidden="true"
+                            />
+                        ) : <div className="w-4 h-4" />}
                     </button>
-                ) : (
-                    // Placeholder for alignment
-                    <div className="w-6 h-6" />
-                )}
-
-                <div 
-                    onClick={() => onLinkClick(path)}
-                    onMouseEnter={() => prefetcher.prefetchChildren(node.id)}
-                    className="flex-1 flex items-center gap-3 overflow-hidden cursor-pointer p-1 rounded-md hover:bg-white/10"
-                >
-                    {getIconForType(node)}
-                    <span className={cn("font-medium whitespace-nowrap leading-none text-sm truncate transition-colors", isNodeActive ? getActiveColor() : 'group-hover:text-white')}>
-                        {node.name}
-                    </span>
+                    
+                    <div 
+                        onClick={() => onLinkClick(path)}
+                        onMouseEnter={() => prefetcher.prefetchChildren(node.id)}
+                        className="flex-1 flex items-center gap-3 overflow-hidden cursor-pointer p-1 rounded-md"
+                    >
+                        {getIconForType(node)}
+                        <span className={cn("font-medium whitespace-nowrap leading-none text-sm truncate transition-colors", getActiveColor())}>
+                            {node.name}
+                        </span>
+                    </div>
                 </div>
             </div>
             
@@ -166,7 +165,7 @@ const TreeItem = ({
                             open: { opacity: 1, height: 'auto' },
                             collapsed: { opacity: 0, height: 0 }
                         }}
-                        transition={{ duration: 0.3, ease: 'easeOut' }}
+                        transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
                         className="overflow-hidden"
                     >
                         {node.children!.map((child) => (
@@ -231,7 +230,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     }
 
     const newActivePath = new Set<string>();
-    const newOpenItems = new Set<string>(); // Start with a fresh set
+    const newOpenItems = new Set<string>(openItems); // Preserve currently open items
     let tempItem = itemMap.get(currentId);
 
     while (tempItem) {
@@ -244,6 +243,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
 
     setActivePath(newActivePath);
     setOpenItems(newOpenItems);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, allItems, itemMap]);
 
   useEffect(() => {
@@ -252,12 +252,13 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     }
   }, [pathname, allItems, findAndOpenActivePath]);
 
-  const handleToggle = (id: string) => {
+  const handleToggle = (id: string, hasChildren: boolean) => {
+    if (!hasChildren) return;
     setOpenItems(prev => {
         const newSet = new Set(prev);
         if (newSet.has(id)) {
             newSet.delete(id);
-            // Recursively close all children
+             // Recursively close all children
             const closeChildren = (itemId: string) => {
                 const item = itemMap.get(itemId);
                 if (item && item.children) {
@@ -294,10 +295,10 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 onClick={() => handleLinkClick(path)}
                 onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
                 className={cn(
-                  'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300',
-                  isPathActive ? 'bg-white/10 text-white' : 'hover:bg-white/10'
+                  'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300 transition-colors',
+                  isPathActive ? 'bg-blue-500/20 text-blue-300' : 'hover:bg-white/10'
                 )}
-                whileHover={{ backgroundColor: isPathActive ? 'rgba(255, 255, 255, 0.1)' : 'rgba(255, 255, 255, 0.1)' }}
+                whileHover={!isPathActive ? { backgroundColor: 'rgba(255, 255, 255, 0.1)' } : {}}
                 transition={{ duration: 0.2 }}
                 layout
             >
@@ -316,7 +317,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 <motion.div
                     className="flex items-center gap-3 overflow-hidden"
                     initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0, transition: { duration: 0.4, ease: "easeOut" } }}
+                    animate={{ opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] } }}
                     exit={{ opacity: 0, x: -20, transition: { duration: 0.2, ease: "easeIn" } }}
                 >
                     <div className="p-1.5 rounded-xl bg-gradient-to-br from-green-400/30 to-green-600/30">
