@@ -1,3 +1,4 @@
+
 'use client';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
@@ -10,6 +11,7 @@ import { useMemo } from 'react';
 import { Button } from './ui/button';
 import { Content } from '@/lib/contentService';
 import { LucideIcon, Folder, Layers, Calendar } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
 export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?: (file: File) => void }) {
@@ -98,8 +100,24 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
           </div>
         )}
         <div className="hidden md:flex items-center gap-1">
-          <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
-          <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button onClick={() => window.history.back()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowLeft size={16} /></Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Back</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button onClick={() => window.history.forward()} variant="ghost" size="icon" className="w-8 h-8 rounded-full hover:bg-slate-700 text-slate-400 hover:text-white"><ArrowRight size={16} /></Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Forward</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
     </div>

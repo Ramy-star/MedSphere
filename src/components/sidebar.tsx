@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -25,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
 import { allSubjectIcons } from '@/lib/file-data';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 type TreeNode = Content & { children?: TreeNode[] };
@@ -100,7 +102,7 @@ const TreeItem = ({
 }) => {
     const isNodeOpen = openItems.has(node.id);
     const isNodeActive = activePath.has(node.id);
-    const hasChildren = !!(node.children && node.children.length > 0);
+    const hasChildren = node.children && node.children.length > 0;
     
     let path: string;
     if (node.type === 'LEVEL') {
@@ -127,8 +129,8 @@ const TreeItem = ({
                 className={cn('group p-1.5 rounded-xl w-full text-slate-300 flex items-center justify-between')}
                 style={{ paddingLeft: `${level * 12 + 10}px`}}
             >
-                <div className="flex-1 flex items-center gap-2 overflow-hidden">
-                    <button onClick={() => onToggle(node.id, hasChildren)} className="p-1 rounded-full hover:bg-white/10" disabled={!hasChildren}>
+                <div className="flex-1 flex items-center gap-3 overflow-hidden">
+                    <button onClick={() => onToggle(node.id, hasChildren)} className="p-1 -ml-1 rounded-full hover:bg-white/10" disabled={!hasChildren}>
                         {hasChildren ? (
                             <ChevronDown
                                 className={cn(
@@ -347,14 +349,23 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
             )}
         </AnimatePresence>
         
-        <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={() => onOpenChange(!open)} 
-            className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8 rounded-full -mr-1"
-        >
-            <Menu size={20} />
-        </Button>
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        onClick={() => onOpenChange(!open)} 
+                        className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8 rounded-full -mr-1"
+                    >
+                        <Menu size={20} />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                    <p>{open ? 'Collapse sidebar' : 'Expand sidebar'}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
       </div>
       
       <AnimatePresence mode="wait">

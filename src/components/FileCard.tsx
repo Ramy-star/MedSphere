@@ -24,6 +24,7 @@ import { DropdownMenuSeparator } from './ui/dropdown-menu';
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 import { useRouter } from 'next/navigation';
 import { FileQuestion } from './icons/FileQuestion';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
     if (item.type === 'LINK') {
@@ -208,16 +209,25 @@ export const FileCard = React.memo(function FileCard({
                 </p>
                 
                 <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                            onClick={(e) => { e.stopPropagation(); }}
-                        >
-                            <MoreVertical className="w-5 h-5" />
-                        </Button>
-                    </DropdownMenuTrigger>
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <DropdownMenuTrigger asChild>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                        onClick={(e) => { e.stopPropagation(); }}
+                                    >
+                                        <MoreVertical className="w-5 h-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                                <p>More options</p>
+                            </TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
                     <DropdownMenuContent 
                         className="w-48 p-2"
                         align="end"
