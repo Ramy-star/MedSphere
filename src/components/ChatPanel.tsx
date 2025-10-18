@@ -67,7 +67,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         <p className="text-slate-400 line-clamp-1">{truncatedQuote}</p>
                     </div>
                 )}
-                <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%] selectable self-end", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
+                <div className={cn("rounded-full px-4 py-2.5 max-w-[90%] selectable self-end", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
                     <p className="text-white whitespace-pre-wrap break-words font-inter">{msg.text}</p>
                 </div>
             </div>
