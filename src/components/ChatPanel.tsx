@@ -36,6 +36,7 @@ type ChatPanelProps = {
   onClose: () => void;
   initialQuotedText?: string | null;
   onInitialQuotedTextConsumed: () => void;
+  questionsText?: string | null;
 };
 
 type ChatMessage = {
@@ -276,7 +277,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
 });
 
 
-export default function ChatPanel({ showChat, isMobile, documentText, isExtracting, onClose, initialQuotedText, onInitialQuotedTextConsumed }: ChatPanelProps) {
+export default function ChatPanel({ showChat, isMobile, documentText, isExtracting, onClose, initialQuotedText, onInitialQuotedTextConsumed, questionsText }: ChatPanelProps) {
     const { toast } = useToast();
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
@@ -401,6 +402,8 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                 question: fullQuestionForModel,
                 documentContent: documentText,
                 chatHistory: historyToUse,
+                hasQuestions: !!questionsText,
+                questionsContent: questionsText || '',
             }, { signal: abortControllerRef.current.signal });
             
             setChatHistory(prev => [...historyToUse, userMessage, { role: 'model', text: response }]);
@@ -422,7 +425,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
             setIsAiThinking(false);
             abortControllerRef.current = null;
         }
-      }, [documentText, toast]);
+      }, [documentText, toast, questionsText]);
 
     const handleChatSubmit = useCallback(async (input: string, localQuotedText?: string) => {
       await submitChat(input, chatHistory, localQuotedText);
@@ -617,5 +620,3 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         </div>
     );
 }
-
-    

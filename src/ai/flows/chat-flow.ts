@@ -20,6 +20,8 @@ const ChatInputSchema = z.object({
   question: z.string().describe('The question the user is asking about the document.'),
   documentContent: z.string().describe('The full text content of the document.'),
   chatHistory: z.array(ChatHistoryMessageSchema).describe('The history of the conversation so far.'),
+  hasQuestions: z.boolean().optional().describe('Whether the context includes a set of questions.'),
+  questionsContent: z.string().optional().describe('The content of the questions file, if available.'),
 });
 export type ChatInput = z.infer<typeof ChatInputSchema>;
 

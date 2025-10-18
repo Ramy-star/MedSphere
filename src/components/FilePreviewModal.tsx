@@ -227,7 +227,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [showChat, setShowChat] = useState(false);
   const [initialQuotedText, setInitialQuotedText] = useState<string | null>(null);
   
-  const [sourceDocumentText, setSourceDocumentText] = useState<string | null>(null);
+  const [documentContext, setDocumentContext] = useState<{ lectureText: string | null, questionText: string | null }>({ lectureText: null, questionText: null });
   const [isExtracting, setIsExtracting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -257,7 +257,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setPageNumber(1);
     setPageInput('1');
     setPdfScale(1);
-    setSourceDocumentText(null);
+    setDocumentContext({ lectureText: null, questionText: null });
     setIsExtracting(false);
     setShowChat(false);
     setInitialQuotedText(null);
@@ -276,71 +276,82 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   }, [item, resetState]);
 
-    const handleTextExtraction = useCallback(async (contentItem: Content) => {
-    if (sourceDocumentText || isExtracting) return;
-
-    const sourceFileId = contentItem.metadata?.sourceFileId;
-    let fileToExtract = contentItem;
-
-    setIsExtracting(true);
-
-    try {
-        if (sourceFileId) {
-            const sourceFile = await contentService.getById(sourceFileId);
-            if (sourceFile) {
-                fileToExtract = sourceFile;
-                toast({
-                    title: "Context Loaded",
-                    description: `Answering based on "${sourceFile.name}".`,
-                });
+    const handleTextExtraction = useCallback(async (currentItem: Content) => {
+        if (documentContext.lectureText || isExtracting) return;
+    
+        setIsExtracting(true);
+        setError(null);
+        let lectureText: string | null = null;
+        let questionText: string | null = null;
+    
+        try {
+            // Check if the current item is a question file
+            const isQuestionFile = currentItem.metadata?.sourceFileId && currentItem.metadata?.mime === 'text/markdown';
+            
+            let lectureFile: Content | null = null;
+    
+            if (isQuestionFile) {
+                // It's a question file, so its content is the questionText
+                const questionBlob = await contentService.getFileContent(currentItem.metadata!.storagePath!);
+                questionText = await questionBlob.text();
+    
+                // The lecture file is the source document
+                const sourceFile = await contentService.getById(currentItem.metadata!.sourceFileId!);
+                if (sourceFile) {
+                    lectureFile = sourceFile;
+                    toast({
+                        title: "Context Loaded",
+                        description: `Answering based on "${sourceFile.name}".`,
+                    });
+                } else {
+                     throw new Error("Could not find the original source document for context.");
+                }
             } else {
-                toast({
-                    variant: 'destructive',
-                    title: "Source File Not Found",
-                    description: "Could not find the original source document.",
-                });
+                // It's a regular lecture file, its content is the lectureText
+                lectureFile = currentItem;
             }
+    
+            // Now, extract text from the determined lectureFile
+            if (lectureFile && lectureFile.metadata?.storagePath) {
+                const lectureBlob = await contentService.getFileContent(lectureFile.metadata.storagePath);
+                
+                if (lectureFile.metadata.mime === 'application/pdf') {
+                    const pdfjs = await import('pdfjs-dist');
+                    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+                    const pdf = await pdfjs.getDocument(URL.createObjectURL(lectureBlob)).promise;
+                    lectureText = await contentService.extractTextFromPdf(pdf);
+                } else if (lectureFile.metadata.mime?.startsWith('text/')) {
+                    lectureText = await lectureBlob.text();
+                } else {
+                    throw new Error("Cannot extract text from this file type for AI chat.");
+                }
+            } else {
+                if (!isQuestionFile) { // only throw if it wasn't a question file without a lecture
+                    throw new Error("File has no content to analyze.");
+                }
+            }
+            
+            setDocumentContext({ lectureText, questionText });
+    
+        } catch (err: any) {
+            console.error("Failed to extract text for chat:", err);
+            setDocumentContext({ lectureText: null, questionText: null });
+            toast({
+                variant: 'destructive',
+                title: 'Text Extraction Failed',
+                description: err.message || 'Could not read document content for chat.'
+            });
+        } finally {
+            setIsExtracting(false);
         }
-        
-        if (!fileToExtract.metadata?.storagePath) {
-            throw new Error("File has no content to analyze.");
-        }
-
-        const blob = await contentService.getFileContent(fileToExtract.metadata.storagePath);
-        let text = '';
-
-        if (fileToExtract.metadata.mime === 'application/pdf') {
-            const pdfjs = await import('pdfjs-dist');
-            pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-            const pdf = await pdfjs.getDocument(URL.createObjectURL(blob)).promise;
-            text = await contentService.extractTextFromPdf(pdf);
-        } else if (fileToExtract.metadata.mime === 'text/markdown' || fileToExtract.metadata.mime?.startsWith('text/')) {
-            text = await blob.text();
-        } else {
-            throw new Error("Cannot extract text from this file type for AI chat.");
-        }
-        
-        setSourceDocumentText(text);
-
-    } catch (err: any) {
-        console.error("Failed to extract text for chat:", err);
-        setSourceDocumentText(null);
-        toast({
-            variant: 'destructive',
-            title: 'Text Extraction Failed',
-            description: err.message || 'Could not read document content for chat.'
-        });
-    } finally {
-        setIsExtracting(false);
-    }
-}, [sourceDocumentText, isExtracting, toast]);
+    }, [documentContext.lectureText, isExtracting, toast]);
 
 
     useEffect(() => {
-        if (item && showChat && !sourceDocumentText && !isExtracting) {
+        if (item && showChat && !documentContext.lectureText && !isExtracting) {
             handleTextExtraction(item);
         }
-    }, [item, showChat, sourceDocumentText, isExtracting, handleTextExtraction]);
+    }, [item, showChat, documentContext.lectureText, isExtracting, handleTextExtraction]);
   
   const goToPage = useCallback(async (page: number) => {
       const newPage = Math.max(1, Math.min(page, numPages || 1));
@@ -719,12 +730,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
             {selection && isQuoteAvailable && (
                 <div
-                    className="absolute z-20 -translate-x-1/2"
+                    className="absolute z-20"
                     style={{ top: selection.position.top - 50, left: selection.position.left }}
                 >
                      <button
                         onClick={handleQuoteToChat}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700 -translate-x-1/2"
                         style={{ backgroundColor: '#212121' }}
                     >
                         <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
@@ -770,11 +781,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
              <ChatPanel
                   showChat={showChat}
                   isMobile={isMobile}
-                  documentText={sourceDocumentText}
+                  documentText={documentContext.lectureText}
                   isExtracting={isExtracting}
                   onClose={() => setShowChat(false)}
                   initialQuotedText={initialQuotedText}
                   onInitialQuotedTextConsumed={() => setInitialQuotedText(null)}
+                  questionsText={documentContext.questionText}
               />
           )}
         </div>
