@@ -1,4 +1,5 @@
 
+
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc, collectionGroup } from 'firebase/firestore';
@@ -266,7 +267,7 @@ export const contentService = {
     }
   },
   
-  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}): Promise<XMLHttpRequest> {
+  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}, order?: number): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
     
     try {
@@ -322,8 +323,11 @@ export const contentService = {
                 }
 
                 const id = uuidv4();
-                const children = await this.getChildren(parentId);
-                const order = children.length;
+                let finalOrder = order;
+                if(finalOrder === undefined) {
+                  const children = await this.getChildren(parentId);
+                  finalOrder = children.length;
+                }
                 
                 const finalFileUrl = createProxiedUrl(data.secure_url);
                 const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
@@ -343,7 +347,7 @@ export const contentService = {
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
-                    order: order
+                    order: finalOrder,
                 };
                 
                 await setDoc(doc(db, 'content', id), newFileContent);
@@ -453,13 +457,13 @@ export const contentService = {
       }
       const existingContent = docSnap.data() as Content;
       const parentId = existingContent.parentId;
+      const order = existingContent.order; // Preserve the order
       
       // Step 1: Delete the old file completely
       await this.delete(id);
       
-      // Step 2: Create the new file
-      // Note: `createFile` returns an XHR object, which we'll return as well.
-      return this.createFile(parentId, newFile, callbacks);
+      // Step 2: Create the new file, passing the original order
+      return this.createFile(parentId, newFile, callbacks, {}, order);
 
     } catch (e: any) {
       console.error("Update (delete and replace) failed:", e);

@@ -126,10 +126,10 @@ export function FolderGrid({
   const [sortedItems, setSortedItems] = useState<Content[]>([]);
 
   useEffect(() => {
-    // Filter out items that are currently being updated
-    const idsBeingUpdated = new Set(uploadingFiles.filter(f => f.isUpdate).map(f => f.originalId));
-    setSortedItems(fetchedItems?.filter(item => !idsBeingUpdated.has(item.id)) || []);
-  }, [fetchedItems, uploadingFiles]);
+    if (fetchedItems) {
+      setSortedItems(fetchedItems);
+    }
+  }, [fetchedItems]);
 
   const handleFolderClick = (folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -218,7 +218,6 @@ export function FolderGrid({
     }
   };
   
-  const allUploads = uploadingFiles; // Both new and updating files
   const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT');
   
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
@@ -226,6 +225,21 @@ export function FolderGrid({
   const containerClasses = isSubjectView
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
     : "flex flex-col";
+
+  const newUploads = uploadingFiles.filter(f => !f.isUpdate);
+
+  const itemsToRender = useMemo(() => {
+    const updatingMap = new Map(uploadingFiles.filter(f => f.isUpdate).map(f => [f.originalId, f]));
+    
+    return sortedItems.map(item => {
+      const updatingFile = updatingMap.get(item.id);
+      if (updatingFile) {
+        return { type: 'upload', upload: updatingFile };
+      }
+      return { type: 'item', item };
+    });
+  }, [sortedItems, uploadingFiles]);
+
 
   return (
     <div
@@ -238,25 +252,27 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
         
-       {/* Render all uploads (new and updating) */}
-        <div className="flex flex-col">
-            <AnimatePresence>
-                {allUploads.map(file => (
-                    <motion.div key={file.id} variants={itemVariants(isMobile)} initial="hidden" animate="visible" exit="exit">
-                        <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
-                    </motion.div>
-                ))}
-            </AnimatePresence>
-        </div>
+       {/* Render new uploads at the top */}
+       {newUploads.length > 0 && (
+         <div className="flex flex-col">
+              <AnimatePresence>
+                  {newUploads.map(file => (
+                      <motion.div key={file.id} variants={itemVariants(isMobile)} initial="hidden" animate="visible" exit="exit">
+                          <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
+                      </motion.div>
+                  ))}
+              </AnimatePresence>
+          </div>
+       )}
 
 
-      {loading && sortedItems.length === 0 && allUploads.length === 0 && (
+      {loading && itemsToRender.length === 0 && newUploads.length === 0 && (
          <div className="text-center py-16">
             {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
-      {!loading && sortedItems.length === 0 && allUploads.length === 0 && (
+      {!loading && itemsToRender.length === 0 && newUploads.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
@@ -282,10 +298,21 @@ export function FolderGrid({
         <SortableContext items={sortedItems.map(i => i.id)} strategy={verticalListSortingStrategy} disabled={!isAdmin || isSubjectView}>
           <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
             <AnimatePresence>
-              {sortedItems.map((item, index) => {
-                const itemKey = item.id;
-                const isLastItem = index === sortedItems.length - 1;
+              {itemsToRender.map((renderable, index) => {
+                const isLastItem = index === itemsToRender.length - 1;
+                
+                if (renderable.type === 'upload') {
+                  const upload = renderable.upload;
+                  return (
+                     <motion.div key={upload.id} variants={itemVariants(isMobile)} exit="exit" className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}>
+                       <UploadProgress file={upload} onRetry={onRetry} onRemove={onRemove} />
+                     </motion.div>
+                  )
+                }
 
+                const item = renderable.item;
+                const itemKey = item.id;
+                
                 const renderedContent = () => {
                     switch (item.type) {
                         case 'SUBJECT':
