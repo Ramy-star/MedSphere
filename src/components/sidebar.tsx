@@ -307,6 +307,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
      return tree.map((level) => {
        const isPathActive = activePath.has(level.id);
        const path = `/level/${encodeURIComponent(level.name)}`;
+       const shortName = level.name.replace('Level', 'Lvl');
        return (
             <motion.button
                 key={level.id}
@@ -319,10 +320,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 transition={{ duration: 0.2 }}
                 layout
             >
-              <div className="flex flex-col items-center justify-center">
-                  <span className="font-semibold text-xs -mb-0.5 whitespace-nowrap">Lvl</span>
-                  <span className="font-bold text-base whitespace-nowrap">{level.name.split(' ')[1]}</span>
-              </div>
+              <span className="font-semibold text-sm">{shortName}</span>
             </motion.button>
        )
      })
@@ -394,7 +392,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   const isMobile = useIsMobile();
   const { isDesktopSidebarOpen, setDesktopSidebarOpen } = useSidebarStore();
   const EXPANDED_WIDTH = 288;
-  const COLLAPSED_WIDTH = 80;
+  const COLLAPSED_WIDTH = 100;
 
   if (isMobile) {
     return (
