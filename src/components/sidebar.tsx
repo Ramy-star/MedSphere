@@ -157,7 +157,7 @@ const TreeItem = ({
                             open: { opacity: 1, height: 'auto' },
                             collapsed: { opacity: 0, height: 0 }
                         }}
-                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                        transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
                         className="overflow-hidden"
                     >
                         {node.children!.map((child) => (
@@ -268,12 +268,12 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     }
   };
 
-  // This is for the collapsed view. We will only render a flat list of top-level items.
   const collapsedViewContent = useMemo(() => {
      if (!tree) return null;
      return tree.map((level, index) => {
        const isPathActive = activePath.has(level.id);
        const path = `/level/${encodeURIComponent(level.name)}`;
+       const shortName = level.name.replace('Level', 'Lvl');
        return (
             <motion.button
                 key={level.id}
@@ -287,7 +287,10 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 transition={{ duration: 0.2 }}
                 layout
             >
+              <div className="flex items-center gap-2">
                 <Layers className="h-5 w-5 text-slate-400 shrink-0" />
+                <span className="font-semibold text-sm">{shortName}</span>
+              </div>
             </motion.button>
        )
      })
@@ -325,25 +328,33 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
             <Menu size={20} />
         </Button>
       </div>
-
-      <nav className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1">
-        {open ? (
-          tree.map(node => (
-            <TreeItem 
-              key={node.id} 
-              node={node} 
-              openItems={openItems}
-              activePath={activePath}
-              onToggle={handleToggle}
-              onLinkClick={handleLinkClick}
-              level={0} 
-            />
-          ))
-        ) : (
-          // Collapsed view content
-          collapsedViewContent
-        )}
-      </nav>
+      
+      <AnimatePresence mode="wait">
+        <motion.nav
+          key={open ? 'expanded' : 'collapsed'}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1"
+        >
+          {open ? (
+            tree.map(node => (
+              <TreeItem 
+                key={node.id} 
+                node={node} 
+                openItems={openItems}
+                activePath={activePath}
+                onToggle={handleToggle}
+                onLinkClick={handleLinkClick}
+                level={0} 
+              />
+            ))
+          ) : (
+            collapsedViewContent
+          )}
+        </motion.nav>
+      </AnimatePresence>
     </div>
   )
 }
@@ -366,7 +377,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   return (
     <motion.aside
       animate={{
-        width: isDesktopSidebarOpen ? 288 : 80,
+        width: isDesktopSidebarOpen ? 288 : 120,
       }}
       transition={{
         type: 'spring',
