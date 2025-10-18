@@ -140,8 +140,8 @@ export const FileCard = React.memo(function FileCard({
     const browserUrl = isLink ? linkUrl : storagePath;
 
     const handleClick = (e: React.MouseEvent) => {
-      // Prevent dropdown trigger from also triggering this
-      if (e.target instanceof HTMLElement && e.target.closest('[data-radix-dropdown-menu-trigger]')) {
+      // Ignore clicks on interactive elements within the card
+      if (e.target instanceof HTMLElement && e.target.closest('[data-radix-dropdown-menu-trigger], [role="menuitem"]')) {
           return;
       }
       onFileClick(item);
@@ -156,14 +156,7 @@ export const FileCard = React.memo(function FileCard({
         }
     };
     
-    const handleUpdateClick = (e: React.MouseEvent) => {
-      // Prevent the click from bubbling to the parent card click
-      e.preventDefault();
-      e.stopPropagation();
-      // stopImmediatePropagation on the native event to be extra sure
-      if (e.nativeEvent && typeof (e.nativeEvent as any).stopImmediatePropagation === 'function') {
-        (e.nativeEvent as any).stopImmediatePropagation();
-      }
+    const handleUpdateClick = () => {
       updateFileInputRef.current?.click();
     };
 
@@ -224,7 +217,6 @@ export const FileCard = React.memo(function FileCard({
                                         variant="ghost" 
                                         size="icon" 
                                         className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                        onClick={(e) => { e.stopPropagation(); }}
                                     >
                                         <MoreVertical className="w-5 h-5" />
                                     </Button>
@@ -238,19 +230,18 @@ export const FileCard = React.memo(function FileCard({
                     <DropdownMenuContent 
                         className="w-48 p-2"
                         align="end"
-                        onClick={(e) => { e.stopPropagation(); }}
                     >
-                         <DropdownMenuItem onClick={(e) => onFileClick(item)}>
+                         <DropdownMenuItem onSelect={() => onFileClick(item)}>
                             <Eye className="mr-2 h-4 w-4" />
                             <span>Open</span>
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => window.open(browserUrl, '_blank')} disabled={!browserUrl}>
+                        <DropdownMenuItem onSelect={() => window.open(browserUrl, '_blank')} disabled={!browserUrl}>
                             <ExternalLink className="mr-2 h-4 w-4" />
                             <span>Open in browser</span>
                         </DropdownMenuItem>
                         {!isLink && (
                             <DropdownMenuItem 
-                                onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
+                                onSelect={() => storagePath && handleForceDownload(storagePath, item.name)} 
                                 disabled={!storagePath}
                             >
                                 <Download className="mr-2 h-4 w-4" />
@@ -262,22 +253,22 @@ export const FileCard = React.memo(function FileCard({
                             <>
                                 <DropdownMenuSeparator />
                                 {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf' || item.metadata?.mime === 'text/markdown') && (
-                                    <DropdownMenuItem onClick={handleCreateQuestions}>
+                                    <DropdownMenuItem onSelect={handleCreateQuestions}>
                                         <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                         <span>Create Questions</span>
                                     </DropdownMenuItem>
                                 )}
                                 {!isLink && (
-                                    <DropdownMenuItem onClick={handleUpdateClick}>
+                                    <DropdownMenuItem onSelect={handleUpdateClick}>
                                         <RefreshCw className="mr-2 h-4 w-4" />
                                         <span>Update</span>
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem onClick={onRename}>
+                                <DropdownMenuItem onSelect={onRename}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>
