@@ -3,7 +3,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from './ui/button';
-import { X, RefreshCw, Check, Minus, Plus, ArrowUp } from 'lucide-react';
+import { X, RefreshCw, Check, Minus, Plus, ArrowUp, CornerRightDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
@@ -41,6 +41,7 @@ type ChatPanelProps = {
 type ChatMessage = {
     role: 'user' | 'model';
     text: string;
+    quotedText?: string;
 };
 
 type ChatMessageProps = {
@@ -56,9 +57,17 @@ type ChatMessageProps = {
 
 const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate, isLastMessage, isAiThinking, copiedMessageId, messageId, fontSizeClass }: ChatMessageProps) {
     if (msg.role === 'user') {
+        const truncatedQuote = msg.quotedText ? (msg.quotedText.length > 150 ? msg.quotedText.substring(0, 150) + '...' : msg.quotedText) : null;
+        
         return (
-            <div className="flex justify-end">
-                <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%] selectable", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
+            <div className="flex flex-col items-end gap-2">
+                {truncatedQuote && (
+                     <div className="flex items-start gap-2 max-w-[90%] text-sm text-slate-400">
+                        <CornerRightDown className="w-4 h-4 mt-0.5 shrink-0" />
+                        <p className="truncate">{truncatedQuote}</p>
+                    </div>
+                )}
+                <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%] selectable self-end", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
                     <p className="text-white whitespace-pre-wrap break-words font-inter">{msg.text}</p>
                 </div>
             </div>
@@ -180,14 +189,15 @@ const ChatInputForm = React.memo(function ChatInputForm({
     if (isAiThinking || !chatInput.trim()) return;
 
     const currentInput = chatInput;
+    const currentQuotedText = quotedText;
     
     setChatInput('');
+    onClearQuote(); // Clear the quote from the UI immediately
     
     // Use setTimeout to push the expensive state update to the next event loop tick.
     // This allows the keyboard to start its dismissal animation smoothly.
     setTimeout(() => {
-        onChatSubmit(currentInput, quotedText || undefined);
-        onClearQuote(); // Clear the quote after submitting
+        onChatSubmit(currentInput, currentQuotedText || undefined);
         if (isMobile) {
           textareaRef.current?.blur();
         }
@@ -280,7 +290,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     
     useEffect(() => {
       if (initialQuestion) {
-        setQuotedText(initialQuestion);
+        setChatInput(initialQuestion);
         onInitialQuestionConsumed();
       }
     }, [initialQuestion, onInitialQuestionConsumed]);
@@ -365,28 +375,34 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
            return;
         }
 
-        let userQuestion = question;
+        let fullQuestionForModel = question;
         if(localQuotedText) {
-            userQuestion = `Regarding this quote:\n\n> ${localQuotedText}\n\n${question}`;
+            fullQuestionForModel = `Regarding this quote:\n\n> ${localQuotedText}\n\n${question}`;
         }
         
-        setChatHistory(prev => [...prev, { role: 'user' as const, text: userQuestion }]);
+        const userMessage: ChatMessage = {
+            role: 'user',
+            text: question,
+            quotedText: localQuotedText,
+        };
+        
+        setChatHistory(prev => [...prev, userMessage]);
         setIsAiThinking(true);
         abortControllerRef.current = new AbortController();
         
         try {
             const response = await chatAboutDocument({
-                question: userQuestion,
+                question: fullQuestionForModel,
                 documentContent: documentText,
                 chatHistory: historyToUse,
             }, { signal: abortControllerRef.current.signal });
             
-            setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: userQuestion }, { role: 'model' as const, text: response }]);
+            setChatHistory(prev => [...historyToUse, userMessage, { role: 'model', text: response }]);
 
         } catch (error: any) {
             if (error.name === 'AbortError') {
               console.log("Chat request aborted.");
-              setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: userQuestion }]);
+              setChatHistory(prev => [...historyToUse, userMessage]);
             } else {
                 console.error("Error calling AI flow:", error);
                 toast({
@@ -394,7 +410,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                     title: "AI Assistant Error",
                     description: "The AI assistant could not be reached. Please try again later."
                 });
-                 setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: userQuestion }]);
+                 setChatHistory(prev => [...historyToUse, userMessage]);
             }
         } finally {
             setIsAiThinking(false);
@@ -402,9 +418,9 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         }
       }, [documentText, toast]);
 
-    const handleChatSubmit = useCallback(async (input: string) => {
-      await submitChat(input, chatHistory, quotedText || undefined);
-    }, [submitChat, chatHistory, quotedText]);
+    const handleChatSubmit = useCallback(async (input: string, localQuotedText?: string) => {
+      await submitChat(input, chatHistory, localQuotedText);
+    }, [submitChat, chatHistory]);
 
     const handleRegenerate = useCallback(async () => {
         if (isAiThinking || chatHistory.length === 0) return;
@@ -415,7 +431,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         const lastUserMessage = chatHistory[lastUserMessageIndex];
         const historyBeforeLastInteraction = chatHistory.slice(0, lastUserMessageIndex);
         
-        await submitChat(lastUserMessage.text, historyBeforeLastInteraction);
+        await submitChat(lastUserMessage.text, historyBeforeLastInteraction, lastUserMessage.quotedText);
     }, [isAiThinking, chatHistory, submitChat]);
 
     const handleCopyToClipboard = (text: string, messageId: string) => {

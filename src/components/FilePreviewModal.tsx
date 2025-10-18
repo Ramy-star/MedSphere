@@ -513,7 +513,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleQuoteToChat = () => {
     if (selection) {
-      setChatInitialQuestion(`"${selection.text}"\n\n`);
+      setChatInitialQuestion(selection.text);
       setShowChat(true);
       setSelection(null);
     }
