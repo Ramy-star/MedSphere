@@ -26,6 +26,7 @@ import { cn } from '@/lib/utils';
 import { Progress } from './ui/progress';
 import { CopyIcon } from './icons/CopyIcon';
 import { MessageCirclePlus } from 'lucide-react';
+import ChatQuote from './ChatQuote';
 
 type ChatPanelProps = {
   showChat: boolean;
@@ -158,15 +159,19 @@ const ChatInputForm = React.memo(function ChatInputForm({
   onChatSubmit,
   isMobile,
   chatInput,
-  setChatInput
+  setChatInput,
+  quotedText,
+  onClearQuote,
 }: {
   isAiThinking: boolean,
   isExtracting: boolean,
   documentText: string | null,
-  onChatSubmit: (input: string) => Promise<void>,
+  onChatSubmit: (input: string, quotedText?: string) => Promise<void>,
   isMobile: boolean,
   chatInput: string,
-  setChatInput: (value: string) => void
+  setChatInput: (value: string) => void,
+  quotedText: string | null,
+  onClearQuote: () => void,
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -176,16 +181,16 @@ const ChatInputForm = React.memo(function ChatInputForm({
 
     const currentInput = chatInput;
     
-    // Clear input and blur immediately to prevent layout jump on mobile.
     setChatInput('');
-    if (isMobile) {
-      textareaRef.current?.blur();
-    }
     
     // Use setTimeout to push the expensive state update to the next event loop tick.
     // This allows the keyboard to start its dismissal animation smoothly.
     setTimeout(() => {
-        onChatSubmit(currentInput);
+        onChatSubmit(currentInput, quotedText || undefined);
+        onClearQuote(); // Clear the quote after submitting
+        if (isMobile) {
+          textareaRef.current?.blur();
+        }
     }, 0);
   };
   
@@ -212,38 +217,44 @@ const ChatInputForm = React.memo(function ChatInputForm({
 
   return (
       <div className='p-2' style={{backgroundColor: '#212121'}}>
-        <form
-          onSubmit={handleSubmit}
+        <div
           className={cn(
             "relative mx-auto w-full max-w-[95%]",
             (isExtracting || !documentText) && "opacity-50"
           )}
         >
-          <Textarea
-            ref={textareaRef}
-            className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20 no-scrollbar"
-            placeholder="Ask anything..."
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            disabled={isAiThinking || isExtracting || !documentText}
-            rows={1}
-            style={{backgroundColor: '#303030'}}
-          />
-          <div className="absolute right-2 bottom-2 flex h-[36px] items-center gap-1">
-             {chatInput.trim() && (
-                <Button 
-                    type="submit" 
-                    size="icon" 
-                    className="w-9 h-9 rounded-full bg-[#0169cc] hover:bg-blue-700 text-white"
-                    onClick={handleSubmit}
-                    disabled={isAiThinking || !chatInput.trim()}
-                >
-                    <ArrowUp className="w-5 h-5" />
-                </Button>
+            {quotedText && (
+                <div className="mb-2">
+                    <ChatQuote text={quotedText} onClose={onClearQuote} />
+                </div>
             )}
-          </div>
-        </form>
+            <form onSubmit={handleSubmit}>
+                <Textarea
+                    ref={textareaRef}
+                    className="w-full rounded-3xl border border-white/10 py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter shadow-lg shadow-black/20 no-scrollbar"
+                    placeholder="Ask anything..."
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    disabled={isAiThinking || isExtracting || !documentText}
+                    rows={1}
+                    style={{backgroundColor: '#303030'}}
+                />
+                <div className="absolute right-2 bottom-2 flex h-[36px] items-center gap-1">
+                    {chatInput.trim() && (
+                        <Button 
+                            type="submit" 
+                            size="icon" 
+                            className="w-9 h-9 rounded-full bg-[#0169cc] hover:bg-blue-700 text-white"
+                            onClick={handleSubmit}
+                            disabled={isAiThinking || !chatInput.trim()}
+                        >
+                            <ArrowUp className="w-5 h-5" />
+                        </Button>
+                    )}
+                </div>
+            </form>
+        </div>
       </div>
   );
 });
@@ -256,6 +267,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     const [isAiThinking, setIsAiThinking] = useState(false);
     const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
+    const [quotedText, setQuotedText] = useState<string | null>(null);
     const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
     const [fontSizeIndex, setFontSizeIndex] = useState(1);
     
@@ -268,7 +280,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     
     useEffect(() => {
       if (initialQuestion) {
-        setChatInput(`"${initialQuestion}"\n\n`);
+        setQuotedText(initialQuestion);
         onInitialQuestionConsumed();
       }
     }, [initialQuestion, onInitialQuestionConsumed]);
@@ -332,6 +344,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
 
     const startNewChat = useCallback(() => {
         setChatHistory([]);
+        setQuotedText(null);
         setIsAiThinking(false);
         setShowConfirmNewChat(false);
       }, []);
@@ -344,31 +357,36 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     }
     }, [chatHistory.length, startNewChat]);
 
-    const submitChat = useCallback(async (question: string, historyToUse: ChatMessage[]) => {
+    const submitChat = useCallback(async (question: string, historyToUse: ChatMessage[], localQuotedText?: string) => {
         if (!question.trim()) return;
 
         if (!documentText) {
            toast({ variant: 'destructive', title: 'Document Content Unavailable', description: 'Cannot chat without document content. The content might still be loading or failed to load.' });
            return;
         }
+
+        let userQuestion = question;
+        if(localQuotedText) {
+            userQuestion = `Regarding this quote:\n\n> ${localQuotedText}\n\n${question}`;
+        }
         
-        setChatHistory(prev => [...prev, { role: 'user' as const, text: question }]);
+        setChatHistory(prev => [...prev, { role: 'user' as const, text: userQuestion }]);
         setIsAiThinking(true);
         abortControllerRef.current = new AbortController();
         
         try {
             const response = await chatAboutDocument({
-                question: question,
+                question: userQuestion,
                 documentContent: documentText,
                 chatHistory: historyToUse,
             }, { signal: abortControllerRef.current.signal });
             
-            setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: question }, { role: 'model' as const, text: response }]);
+            setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: userQuestion }, { role: 'model' as const, text: response }]);
 
         } catch (error: any) {
             if (error.name === 'AbortError') {
               console.log("Chat request aborted.");
-              setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: question }]);
+              setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: userQuestion }]);
             } else {
                 console.error("Error calling AI flow:", error);
                 toast({
@@ -376,7 +394,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                     title: "AI Assistant Error",
                     description: "The AI assistant could not be reached. Please try again later."
                 });
-                 setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: question }]);
+                 setChatHistory(prev => [...historyToUse, { role: 'user' as const, text: userQuestion }]);
             }
         } finally {
             setIsAiThinking(false);
@@ -385,8 +403,8 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
       }, [documentText, toast]);
 
     const handleChatSubmit = useCallback(async (input: string) => {
-      await submitChat(input, chatHistory);
-    }, [submitChat, chatHistory]);
+      await submitChat(input, chatHistory, quotedText || undefined);
+    }, [submitChat, chatHistory, quotedText]);
 
     const handleRegenerate = useCallback(async () => {
         if (isAiThinking || chatHistory.length === 0) return;
@@ -520,6 +538,8 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                   isMobile={isMobile}
                   chatInput={chatInput}
                   setChatInput={setChatInput}
+                  quotedText={quotedText}
+                  onClearQuote={() => setQuotedText(null)}
                 />
             </div>
 
@@ -575,4 +595,3 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         </div>
     );
 }
-
