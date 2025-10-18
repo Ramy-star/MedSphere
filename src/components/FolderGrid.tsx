@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -90,74 +89,6 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   );
 };
 
-const renderItem = ({
-  item,
-  uploadingFile,
-  isSubjectView,
-  isMobile,
-  onFileClick,
-  onFolderClick,
-  onRenameClick,
-  onDeleteClick,
-  onIconChangeClick,
-  onFileUpdate,
-  onUploadRetry,
-  onUploadRemove,
-}: {
-  item: Content;
-  uploadingFile?: UploadingFile;
-  isSubjectView: boolean;
-  isMobile: boolean;
-  onFileClick: (item: Content) => void;
-  onFolderClick: (item: Content) => void;
-  onRenameClick: (item: Content) => void;
-  onDeleteClick: (item: Content) => void;
-  onIconChangeClick: (item: Content) => void;
-  onFileUpdate: (itemToUpdate: Content, newFile: File) => void;
-  onUploadRetry: (id: string) => void;
-  onUploadRemove: (id: string) => void;
-}) => {
-  if (uploadingFile) {
-    return (
-      <UploadProgress
-        file={uploadingFile}
-        onRetry={onUploadRetry}
-        onRemove={onUploadRemove}
-      />
-    );
-  }
-
-  switch (item.type) {
-    case 'SUBJECT':
-      return <SubjectCard subject={item} />;
-    case 'FOLDER':
-      return (
-        <FolderCard
-          item={item}
-          onRename={() => onRenameClick(item)}
-          onDelete={() => onDeleteClick(item)}
-          onIconChange={() => onIconChangeClick(item)}
-          onClick={onFolderClick}
-          displayAs={isSubjectView ? 'grid' : 'list'}
-        />
-      );
-    case 'FILE':
-    case 'LINK':
-      return (
-        <FileCard
-          item={item}
-          onFileClick={onFileClick}
-          onRename={() => onRenameClick(item)}
-          onDelete={() => onDeleteClick(item)}
-          onUpdate={(file) => onFileUpdate(item, file)}
-          showDragHandle={!isMobile}
-        />
-      );
-    default:
-      return null;
-  }
-};
-
 
 export function FolderGrid({ 
     parentId, 
@@ -191,36 +122,11 @@ export function FolderGrid({
   const router = useRouter();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
-  // Memoize the combined list of items to render
-  const itemsToRender = useMemo(() => {
-    const updatingFilesMap = new Map(
-      uploadingFiles
-        .filter((f) => f.isUpdate && f.originalId)
-        .map((f) => [f.originalId, f])
-    );
-
-    // If an item is being updated, we will replace it with a placeholder
-    // that will render the UploadProgress component.
-    return (fetchedItems || []).map((item) => {
-      if (updatingFilesMap.has(item.id)) {
-        // This is a placeholder for an item being updated.
-        // It carries the original item's ID for sorting/keying
-        // and a flag to identify it.
-        return {
-          ...item,
-          __isUpdatingPlaceholder: true,
-          __uploadingFile: updatingFilesMap.get(item.id),
-        };
-      }
-      return item;
-    });
-  }, [fetchedItems, uploadingFiles]);
-
-  const [sortedItems, setSortedItems] = useState(itemsToRender);
+  const [sortedItems, setSortedItems] = useState(fetchedItems || []);
 
   useEffect(() => {
-    setSortedItems(itemsToRender);
-  }, [itemsToRender]);
+    setSortedItems(fetchedItems || []);
+  }, [fetchedItems]);
 
   const handleFolderClick = (folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -375,37 +281,57 @@ export function FolderGrid({
             <AnimatePresence>
               {sortedItems.map((item, index) => {
                 const itemKey = item.id;
-                // @ts-ignore - Check for our custom placeholder property
-                const isUpdating = item.__isUpdatingPlaceholder;
-                // @ts-ignore
-                const uploadingFile = item.__uploadingFile;
                 const isLastItem = index === sortedItems.length - 1;
 
-                const renderedContent = renderItem({
-                  item: item,
-                  uploadingFile: isUpdating ? uploadingFile : undefined,
-                  isSubjectView,
-                  isMobile,
-                  onFileClick: handleFileClick,
-                  onFolderClick: handleFolderClick,
-                  onRenameClick: setItemToRename,
-                  onDeleteClick: setItemToDelete,
-                  onIconChangeClick: setItemForIconChange,
-                  onFileUpdate: onUpdateFile,
-                  onUploadRetry: onRetry,
-                  onUploadRemove: onRemove,
-                });
+                const uploadingFile = uploadingFiles.find(
+                  (f) => f.isUpdate && f.originalId === item.id
+                );
+
+                const renderedContent = () => {
+                    switch (item.type) {
+                        case 'SUBJECT':
+                            return <SubjectCard subject={item} />;
+                        case 'FOLDER':
+                            return (
+                                <FolderCard
+                                    item={item}
+                                    onRename={() => setItemToRename(item)}
+                                    onDelete={() => setItemToDelete(item)}
+                                    onIconChange={() => setItemForIconChange(item)}
+                                    onClick={handleFolderClick}
+                                    displayAs={isSubjectView ? 'grid' : 'list'}
+                                />
+                            );
+                        case 'FILE':
+                        case 'LINK':
+                            return (
+                                <FileCard
+                                    item={item}
+                                    onFileClick={handleFileClick}
+                                    onRename={() => setItemToRename(item)}
+                                    onDelete={() => setItemToDelete(item)}
+                                    onUpdate={(file) => onUpdateFile(item, file)}
+                                    showDragHandle={!isMobile}
+                                    uploadingFile={uploadingFile}
+                                    onRemoveUpload={onRemove}
+                                    onRetryUpload={onRetry}
+                                />
+                            );
+                        default:
+                            return null;
+                    }
+                };
                 
                 if (isMobile && item.type !== 'SUBJECT') {
                   return (
                       <div key={itemKey} className={cn("border-white/10", !isLastItem && !isSubjectView && "border-b")}>
-                        {renderedContent}
+                        {renderedContent()}
                       </div>
                   );
                 }
 
                 if (isMobile && item.type === 'SUBJECT') {
-                    return <div key={itemKey}>{renderedContent}</div>;
+                    return <div key={itemKey}>{renderedContent()}</div>;
                 }
 
                 return (
@@ -416,9 +342,9 @@ export function FolderGrid({
                     className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
                   >
                     {isAdmin && !isSubjectView ? (
-                      <SortableItemWrapper id={item.id}>{renderedContent}</SortableItemWrapper>
+                      <SortableItemWrapper id={item.id}>{renderedContent()}</SortableItemWrapper>
                     ) : (
-                      renderedContent
+                      renderedContent()
                     )}
                   </motion.div>
                 );

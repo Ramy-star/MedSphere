@@ -108,6 +108,7 @@ export const FileCard = React.memo(function FileCard({
     showDragHandle = true,
     uploadingFile,
     onRemoveUpload,
+    onRetryUpload,
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
@@ -117,6 +118,7 @@ export const FileCard = React.memo(function FileCard({
     showDragHandle?: boolean,
     uploadingFile?: UploadingFile,
     onRemoveUpload?: (id: string) => void,
+    onRetryUpload?: (id: string) => void,
 }) {
     const isMobile = useIsMobile();
     const router = useRouter();
@@ -188,7 +190,7 @@ export const FileCard = React.memo(function FileCard({
             <div className={cn("relative group flex items-center w-full my-1.5")}>
                 <UploadProgress
                     file={uploadingFile}
-                    onRetry={() => {}} // Retry for updates not implemented here
+                    onRetry={() => onRetryUpload?.(uploadingFile.id)}
                     onRemove={() => onRemoveUpload?.(uploadingFile.id)}
                 />
             </div>
@@ -304,3 +306,5 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
+
+    
