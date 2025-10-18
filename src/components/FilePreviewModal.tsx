@@ -719,22 +719,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     className="absolute z-20 -translate-x-1/2"
                     style={{ top: selection.position.top - 50, left: selection.position.left }}
                 >
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    size="icon"
-                                    className="rounded-full h-10 w-10 bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-black/30 hover:from-blue-600 hover:to-indigo-700 active:scale-95 transition-all"
-                                    onClick={handleQuoteToChat}
-                                >
-                                    <MessageSquareQuote className="h-5 w-5" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="top">
-                                <p>Quote to Chat</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
+                     <button
+                        onClick={handleQuoteToChat}
+                        className="flex items-center gap-2 px-4 py-2 rounded-full text-white shadow-lg transition-transform active:scale-95"
+                        style={{ backgroundColor: '#212121' }}
+                    >
+                        <span className="text-xl font-bold leading-none select-none" style={{ transform: 'translateY(-2px)' }}>”</span>
+                        <span className="text-sm font-medium">Ask AI</span>
+                    </button>
                 </div>
             )}
         </main>
