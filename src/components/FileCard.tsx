@@ -11,6 +11,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
@@ -20,7 +21,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Link2Icon } from './icons/Link2Icon';
 import { useUser } from '@/firebase/auth/use-user';
-import { DropdownMenuSeparator } from './ui/dropdown-menu';
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 import { useRouter } from 'next/navigation';
 import { FileQuestion } from './icons/FileQuestion';
