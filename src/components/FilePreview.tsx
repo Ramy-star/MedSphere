@@ -145,7 +145,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   
   if (mime === 'application/pdf') {
     return (
-        <div {...commonProps} className={cn(commonProps.className, 'w-full h-full pdf-text-selection-fix')}>
+        <div {...commonProps} className={cn(commonProps.className, 'w-full h-full')}>
             <PdfViewer 
                 ref={ref} 
                 file={contentUrl!} 
