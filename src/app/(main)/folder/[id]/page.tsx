@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState, useCallback, use } from 'react';
@@ -61,9 +60,12 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
         onSuccess: (content) => {
+             // We don't need to do anything with the 'content' object here
+             // because the list will auto-update from Firestore.
+             // Just remove the uploading file indicator after a delay.
              setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success', xhr: undefined } : f));
              setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 2000);
-             toast({ title: "File Updated", description: `"${content.name}" has been updated.` });
+             toast({ title: "File Updated", description: `"${newFile.name}" has been uploaded.` });
         },
         onError: (error) => {
             console.error("Update failed in component:", error);
@@ -76,11 +78,19 @@ function FolderPageContent({ id }: { id: string }) {
         }
     };
     
-    const xhr = await contentService.updateFile(itemToUpdate.id, newFile, callbacks);
+    // Add to uploading files list immediately to show progress bar
     setUploadingFiles(prev => [
-      ...prev.filter(f => f.id !== `update_${itemToUpdate.id}`), // remove any previous attempts
-      { id: tempId, name: newFile.name, size: newFile.size, progress: 0, status: 'uploading', file: newFile, xhr }
+      ...prev.filter(f => f.id !== `update_${itemToUpdate.id}`), // remove any previous attempts for this item
+      { id: tempId, name: newFile.name, size: newFile.size, progress: 0, status: 'uploading', file: newFile }
     ]);
+    
+    // The service now handles deleting the old and creating the new file.
+    // It will return an XHR object for the new upload.
+    const xhr = await contentService.updateFile(itemToUpdate.id, newFile, callbacks);
+
+    // Update the uploading file with the XHR object for cancellation.
+    setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, xhr } : f));
+
   }, [toast]);
 
 
