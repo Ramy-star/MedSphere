@@ -204,8 +204,20 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     return buildTree(folderItems, itemMap);
   }, [allItems, itemMap]);
 
-  const [openItems, setOpenItems] = useState(new Set<string>());
+  const [openItems, setOpenItems] = useState(() => {
+      if (typeof window !== 'undefined') {
+          const saved = localStorage.getItem('sidebarOpenItems');
+          if (saved) {
+              return new Set<string>(JSON.parse(saved));
+          }
+      }
+      return new Set<string>();
+  });
   const [activePath, setActivePath] = useState(new Set<string>());
+
+  useEffect(() => {
+      localStorage.setItem('sidebarOpenItems', JSON.stringify(Array.from(openItems)));
+  }, [openItems]);
 
   const findAndOpenActivePath = useCallback(() => {
     if (!allItems || pathname === '/') {
@@ -230,20 +242,27 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     }
 
     const newActivePath = new Set<string>();
-    const newOpenItems = new Set<string>(openItems); // Preserve currently open items
     let tempItem = itemMap.get(currentId);
 
     while (tempItem) {
         newActivePath.add(tempItem.id);
-        if (tempItem.parentId) {
-            newOpenItems.add(tempItem.parentId);
-        }
         tempItem = tempItem.parentId ? itemMap.get(tempItem.parentId) : undefined;
     }
-
     setActivePath(newActivePath);
-    setOpenItems(newOpenItems);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+
+    // Only auto-open path if local storage is empty (first visit logic)
+    const savedOpenItems = localStorage.getItem('sidebarOpenItems');
+    if (!savedOpenItems) {
+        const newOpenItems = new Set<string>();
+        let itemToOpen = itemMap.get(currentId);
+        while(itemToOpen) {
+            if (itemToOpen.parentId) {
+                newOpenItems.add(itemToOpen.parentId);
+            }
+            itemToOpen = itemToOpen.parentId ? itemMap.get(itemToOpen.parentId) : undefined;
+        }
+        setOpenItems(newOpenItems);
+    }
   }, [pathname, allItems, itemMap]);
 
   useEffect(() => {
