@@ -202,9 +202,10 @@ const ChatInputForm = React.memo(function ChatInputForm({
 
   const handleSubmit = (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
     e?.preventDefault();
-    if (isAiThinking || (!chatInput.trim() && !quotedText)) return;
+    const trimmedInput = chatInput.trim();
+    if (isAiThinking || (!trimmedInput && !quotedText)) return;
 
-    const currentInput = chatInput;
+    const currentInput = trimmedInput;
     const currentQuotedText = quotedText;
     
     setChatInput('');
@@ -618,4 +619,3 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     );
 }
 
-    
