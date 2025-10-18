@@ -34,8 +34,8 @@ type ChatPanelProps = {
   documentText: string | null;
   isExtracting: boolean;
   onClose: () => void;
-  initialQuestion?: string | null;
-  onInitialQuestionConsumed: () => void;
+  initialQuotedText?: string | null;
+  onInitialQuotedTextConsumed: () => void;
 };
 
 type ChatMessage = {
@@ -270,7 +270,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
 });
 
 
-export default function ChatPanel({ showChat, isMobile, documentText, isExtracting, onClose, initialQuestion, onInitialQuestionConsumed }: ChatPanelProps) {
+export default function ChatPanel({ showChat, isMobile, documentText, isExtracting, onClose, initialQuotedText, onInitialQuotedTextConsumed }: ChatPanelProps) {
     const { toast } = useToast();
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
@@ -289,11 +289,11 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     const inputContainerRef = useRef<HTMLDivElement>(null);
     
     useEffect(() => {
-      if (initialQuestion) {
-        setChatInput(initialQuestion);
-        onInitialQuestionConsumed();
+      if (initialQuotedText) {
+        setQuotedText(initialQuotedText);
+        onInitialQuotedTextConsumed();
       }
-    }, [initialQuestion, onInitialQuestionConsumed]);
+    }, [initialQuotedText, onInitialQuotedTextConsumed]);
 
     // This effect handles keyboard appearance on mobile.
     useEffect(() => {

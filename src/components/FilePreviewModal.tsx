@@ -225,7 +225,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const [showChat, setShowChat] = useState(false);
-  const [chatInitialQuestion, setChatInitialQuestion] = useState<string | null>(null);
+  const [initialQuotedText, setInitialQuotedText] = useState<string | null>(null);
   
   const [sourceDocumentText, setSourceDocumentText] = useState<string | null>(null);
   const [isExtracting, setIsExtracting] = useState(false);
@@ -260,7 +260,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setSourceDocumentText(null);
     setIsExtracting(false);
     setShowChat(false);
-    setChatInitialQuestion(null);
+    setInitialQuotedText(null);
     setError(null);
     setSelection(null);
   }, []);
@@ -513,7 +513,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
   const handleQuoteToChat = () => {
     if (selection) {
-      setChatInitialQuestion(selection.text);
+      setInitialQuotedText(selection.text);
       setShowChat(true);
       setSelection(null);
     }
@@ -778,8 +778,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   documentText={sourceDocumentText}
                   isExtracting={isExtracting}
                   onClose={() => setShowChat(false)}
-                  initialQuestion={chatInitialQuestion}
-                  onInitialQuestionConsumed={() => setChatInitialQuestion(null)}
+                  initialQuotedText={initialQuotedText}
+                  onInitialQuotedTextConsumed={() => setInitialQuotedText(null)}
               />
           )}
         </div>
