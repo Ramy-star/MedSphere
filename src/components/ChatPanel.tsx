@@ -64,7 +64,7 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                 {truncatedQuote && (
                      <div className="flex items-start gap-2 max-w-[90%] text-sm text-slate-400">
                         <CornerRightDown className="w-4 h-4 mt-0.5 shrink-0" />
-                        <p className="truncate">{truncatedQuote}</p>
+                        <p className="text-slate-400 line-clamp-1">{truncatedQuote}</p>
                     </div>
                 )}
                 <div className={cn("rounded-3xl px-4 py-2.5 max-w-[90%] selectable self-end", fontSizeClass)} style={{backgroundColor: '#003f7a'}}>
@@ -233,7 +233,11 @@ const ChatInputForm = React.memo(function ChatInputForm({
             (isExtracting || !documentText) && "opacity-50"
           )}
         >
-            <form onSubmit={handleSubmit} className="relative flex flex-col w-full border border-white/10 rounded-2xl shadow-lg shadow-black/20">
+            <form 
+                onSubmit={handleSubmit} 
+                className="relative flex flex-col w-full border border-white/10 rounded-2xl shadow-lg shadow-black/20"
+                style={{backgroundColor: '#303030'}}
+            >
                 {quotedText && (
                     <ChatQuote text={quotedText} onClose={onClearQuote} />
                 )}
@@ -242,10 +246,8 @@ const ChatInputForm = React.memo(function ChatInputForm({
                         ref={textareaRef}
                         className={cn(
                             "w-full bg-transparent py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter no-scrollbar",
-                            "border-0",
-                            quotedText ? "rounded-b-2xl rounded-t-none" : "rounded-2xl"
+                            "border-0 rounded-2xl"
                         )}
-                        style={{backgroundColor: '#303030'}}
                         placeholder="Ask anything..."
                         value={chatInput}
                         onChange={(e) => setChatInput(e.target.value)}
