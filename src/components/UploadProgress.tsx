@@ -1,4 +1,3 @@
-
 'use client';
 
 import { File as FileIcon, X, AlertTriangle, CheckCircle2, RotateCw } from 'lucide-react';
@@ -15,6 +14,8 @@ export type UploadingFile = {
   status: 'uploading' | 'success' | 'error';
   file: File; // Keep the original file object for retries
   xhr?: XMLHttpRequest;
+  isUpdate?: boolean; // Flag to indicate if this is an update
+  originalId?: string; // ID of the file being updated
 };
 
 export type UploadCallbacks = {
@@ -63,7 +64,7 @@ export function UploadProgress({ file, onRetry, onRemove }: { file: UploadingFil
             </div>
             
             <div className="flex items-center gap-1 shrink-0 ml-2">
-                 {file.status === 'error' && (
+                 {file.status === 'error' && !file.isUpdate && (
                     <Button variant="ghost" size="icon" className="w-7 h-7 rounded-full text-slate-300 hover:text-white" onClick={() => onRetry(file.id)} title="Retry">
                         <RotateCw className="w-4 h-4" />
                     </Button>
@@ -80,5 +81,3 @@ export function UploadProgress({ file, onRetry, onRemove }: { file: UploadingFil
         </div>
     );
 }
-
-    

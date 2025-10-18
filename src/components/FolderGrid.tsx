@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -134,11 +133,11 @@ const SortableList = ({
                             const isLastItem = index === items.length - 1;
 
                             // Check if this item is being updated
-                            const updatingFile = uploadingFiles.find(f => f.id.startsWith('update_') && f.id.endsWith(it.id));
+                            const updatingFile = uploadingFiles.find(f => f.isUpdate && f.originalId === it.id);
 
                             if (updatingFile) {
                                 return (
-                                    <motion.div key={updatingFile.id} variants={itemVariants(isMobile)} exit="exit" className={cn("border-white/10", !isSubjectView && !isLastItem && "border-b")}>
+                                    <motion.div key={updatingFile.id} variants={itemVariants(isMobile)} exit="exit" className={cn("border-white/10", !isSubjectView && "border-b")}>
                                         <UploadProgress file={updatingFile} onRetry={() => {}} onRemove={onRemove} />
                                     </motion.div>
                                 );
@@ -241,11 +240,11 @@ const NonSortableList = ({
                      const itemKey = it.id;
                      const isLastItem = index === items.length - 1;
 
-                     const updatingFile = uploadingFiles.find(f => f.id.startsWith('update_') && f.id.endsWith(it.id));
+                     const updatingFile = uploadingFiles.find(f => f.isUpdate && f.originalId === it.id);
 
                      if (updatingFile) {
                          return (
-                             <motion.div key={updatingFile.id} variants={itemVariants(isMobile)} exit="exit" className={cn("border-white/10", !isSubjectView && !isLastItem && "border-b")}>
+                             <motion.div key={updatingFile.id} variants={itemVariants(isMobile)} exit="exit" className={cn("border-white/10", !isSubjectView && "border-b")}>
                                  <UploadProgress file={updatingFile} onRetry={() => {}} onRemove={onRemove} />
                              </motion.div>
                          );
@@ -311,7 +310,7 @@ const NonSortableList = ({
 
 export function FolderGrid({ 
     parentId, 
-    uploadingFiles: allUploadingFiles, 
+    uploadingFiles, 
     onFileSelected,
     onUpdateFile,
     onRetry, 
@@ -343,9 +342,7 @@ export function FolderGrid({
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
   // Separate new uploads from updates
-  const newUploadingFiles = allUploadingFiles.filter(f => f.id.startsWith('upload_'));
-  const updatingFiles = allUploadingFiles.filter(f => f.id.startsWith('update_'));
-
+  const newUploadingFiles = uploadingFiles.filter(f => !f.isUpdate);
 
   useEffect(() => {
     if (fetchedItems) {
@@ -449,7 +446,7 @@ export function FolderGrid({
   const renderList = () => {
     const listProps = {
         items: items,
-        uploadingFiles: updatingFiles, // Pass only updating files here
+        uploadingFiles: uploadingFiles,
         onItemClick: handleFileClick,
         onFolderClick: handleFolderClick,
         onRenameClick: (item: Content) => setItemToRename(item),
@@ -498,7 +495,7 @@ export function FolderGrid({
         </div>
       )}
 
-      {!loading && items.length === 0 && newUploadingFiles.length === 0 && updatingFiles.length === 0 && (
+      {!loading && items.length === 0 && newUploadingFiles.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
@@ -520,7 +517,7 @@ export function FolderGrid({
           </div>
       )}
 
-      {(items.length > 0 || updatingFiles.length > 0) && renderList()}
+      {(items.length > 0 || uploadingFiles.filter(f => f.isUpdate).length > 0) && renderList()}
 
       <FilePreviewModal
         item={previewFile}

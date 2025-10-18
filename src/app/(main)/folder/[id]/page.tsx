@@ -60,9 +60,6 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
         onSuccess: (content) => {
-             // We don't need to do anything with the 'content' object here
-             // because the list will auto-update from Firestore.
-             // Just remove the uploading file indicator after a delay.
              setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success', xhr: undefined } : f));
              setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 2000);
              toast({ title: "File Updated", description: `"${newFile.name}" has been uploaded.` });
@@ -77,12 +74,19 @@ function FolderPageContent({ id }: { id: string }) {
             });
         }
     };
-    
+
     // Add to uploading files list immediately to show progress bar
-    setUploadingFiles(prev => [
-      ...prev.filter(f => f.id !== `update_${itemToUpdate.id}`), // remove any previous attempts for this item
-      { id: tempId, name: newFile.name, size: newFile.size, progress: 0, status: 'uploading', file: newFile }
-    ]);
+    const uploadingFile: UploadingFile = {
+      id: tempId,
+      name: newFile.name,
+      size: newFile.size,
+      progress: 0,
+      status: 'uploading',
+      file: newFile,
+      isUpdate: true,
+      originalId: itemToUpdate.id,
+    };
+    setUploadingFiles(prev => [...prev, uploadingFile]);
     
     // The service now handles deleting the old and creating the new file.
     // It will return an XHR object for the new upload.
