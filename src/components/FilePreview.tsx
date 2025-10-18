@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState, forwardRef } from 'react';
+import { useEffect, useState, forwardRef, MouseEvent, useCallback } from 'react';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfViewer, { type PdfViewerRef } from './PdfViewer';
 import { Skeleton } from './ui/skeleton';
@@ -74,28 +74,31 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     };
   }, [url, mime]);
 
-  const handleMouseUp = (event: React.MouseEvent) => {
+  const handleMouseUp = useCallback((event: MouseEvent) => {
     if (!onTextSelect) return;
 
-    const selection = window.getSelection();
-    const selectedText = selection?.toString().trim();
+    // A small delay to allow the browser to finalize the selection
+    setTimeout(() => {
+      const selection = window.getSelection();
+      const selectedText = selection?.toString().trim();
+      
+      if (selectedText) {
+        const range = selection!.getRangeAt(0);
+        const rect = range.getBoundingClientRect();
+        onTextSelect(selectedText, { top: event.clientY, left: rect.left + rect.width / 2 });
+      } else {
+        onSelectionChange?.();
+      }
+    }, 50);
+  }, [onTextSelect, onSelectionChange]);
 
-    if (selectedText) {
-      const range = selection!.getRangeAt(0);
-      const rect = range.getBoundingClientRect();
-      onTextSelect(selectedText, { top: event.clientY, left: rect.left + rect.width / 2 });
-    } else {
-      onSelectionChange?.();
-    }
-  };
-
-  const handleSelectionChange = () => {
+  const handleSelectionChange = useCallback(() => {
     if (!onSelectionChange) return;
     const selection = window.getSelection();
     if (!selection || selection.isCollapsed) {
         onSelectionChange();
     }
-  };
+  }, [onSelectionChange]);
 
 
   useEffect(() => {
@@ -127,6 +130,22 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   const commonProps = {
     className: cn('selectable')
   };
+  
+  if (mime === 'application/pdf') {
+    return (
+        <div {...commonProps} className={cn(commonProps.className, 'w-full h-full')} onMouseUp={handleMouseUp}>
+            <PdfViewer 
+                ref={ref} 
+                file={contentUrl!} 
+                onLoadSuccess={onPdfLoadSuccess} 
+                scale={pdfScale} 
+                onPageChange={onPageChange} 
+                isFullscreen={isFullscreen} 
+                currentPage={currentPage}
+            />
+        </div>
+    );
+  }
 
   if (mime === 'text/markdown') {
     return (
@@ -172,10 +191,6 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
             <img src={contentUrl} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
         </div>
     );
-  }
-  
-  if (mime === 'application/pdf') {
-    return <div {...commonProps} className={cn(commonProps.className, 'w-full h-full')}><PdfViewer ref={ref} file={contentUrl} onLoadSuccess={onPdfLoadSuccess} scale={pdfScale} onPageChange={onPageChange} isFullscreen={isFullscreen} currentPage={currentPage} /></div>;
   }
   
   if (mime.startsWith('audio/')) {

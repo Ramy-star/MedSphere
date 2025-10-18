@@ -531,6 +531,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isMarkdown = item?.metadata?.mime === 'text/markdown';
   const isTextFile = item?.metadata?.mime?.startsWith('text/');
   const isChatAvailable = isPdf || isMarkdown || isTextFile;
+  const isQuoteAvailable = isPdf || isMarkdown;
   
   const renderLoadingSkeleton = () => (
     <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
@@ -710,11 +711,11 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   onPageChange={onPageChange}
                   isFullscreen={isFullscreen}
                   currentPage={pageNumber}
-                  onTextSelect={isMarkdown ? handleTextSelect : undefined}
+                  onTextSelect={isQuoteAvailable ? handleTextSelect : undefined}
                   onSelectionChange={() => setSelection(null)}
               />
             </div>
-            {selection && isMarkdown && (
+            {selection && isQuoteAvailable && (
                 <div
                     className="absolute z-20 -translate-x-1/2"
                     style={{ top: selection.position.top - 50, left: selection.position.left }}
@@ -724,7 +725,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
                         style={{ backgroundColor: '#212121' }}
                     >
-                        <span className="text-lg font-bold leading-none select-none">”</span>
+                        <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
                         <span className="text-sm font-medium">Ask AI</span>
                     </button>
                 </div>
