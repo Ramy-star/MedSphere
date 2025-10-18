@@ -63,13 +63,6 @@
   .prose hr {
     @apply !w-full border-slate-700 my-6;
   }
-
-  /* Fix for PDF text layer selection */
-  .react-pdf__Page__textContent span::selection {
-    background-color: #99c1da;
-    color: transparent;
-    text-shadow: 0 0 0 #000; /* Use black text shadow to simulate original text */
-  }
 }
 
 @layer components {
