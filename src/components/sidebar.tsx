@@ -319,7 +319,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 transition={{ duration: 0.2 }}
                 layout
             >
-              <div className="flex flex-col items-center">
+              <div className="flex flex-col items-center justify-center">
                   <span className="font-semibold text-xs -mb-0.5 whitespace-nowrap">Lvl</span>
                   <span className="font-bold text-base whitespace-nowrap">{level.name.split(' ')[1]}</span>
               </div>
