@@ -141,7 +141,7 @@ export const FileCard = React.memo(function FileCard({
 
     const handleClick = (e: React.MouseEvent) => {
       // Ignore clicks on interactive elements within the card
-      if (e.target instanceof HTMLElement && e.target.closest('[data-radix-dropdown-menu-trigger], [role="menuitem"]')) {
+      if (e.target instanceof HTMLElement && e.target.closest('button, a, input, [role="menuitem"], [data-radix-dropdown-menu-trigger]')) {
           return;
       }
       onFileClick(item);
@@ -156,10 +156,6 @@ export const FileCard = React.memo(function FileCard({
         }
     };
     
-    const handleUpdateClick = () => {
-      updateFileInputRef.current?.click();
-    };
-
     const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file) {
@@ -259,7 +255,7 @@ export const FileCard = React.memo(function FileCard({
                                     </DropdownMenuItem>
                                 )}
                                 {!isLink && (
-                                    <DropdownMenuItem onSelect={handleUpdateClick}>
+                                    <DropdownMenuItem onSelect={(e) => { e.preventDefault(); updateFileInputRef.current?.click(); }}>
                                         <RefreshCw className="mr-2 h-4 w-4" />
                                         <span>Update</span>
                                     </DropdownMenuItem>
@@ -280,7 +276,3 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
-
-    
-
-    
