@@ -74,7 +74,7 @@ const getIconForType = (item: Content) => {
       case 'LEVEL':
         return <Layers className="h-5 w-5 text-slate-400 shrink-0" />;
       case 'SEMESTER':
-        return <Calendar size={18} className="text-slate-400" />;
+        return <Calendar size={18} className="text-green-400" />;
       case 'SUBJECT':
          const SubjectIcon = (item.iconName && allSubjectIcons[item.iconName]) || Book;
          return <SubjectIcon className={cn("h-5 w-5 shrink-0", item.color || "text-gray-300")} />;
@@ -296,7 +296,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
                 className={cn(
                   'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300 transition-colors',
-                  isPathActive ? 'bg-blue-500/20 text-blue-300' : 'hover:bg-white/10'
+                  isPathActive ? 'bg-blue-500/20 text-blue-300' : 'hover:bg-transparent'
                 )}
                 whileHover={!isPathActive ? { backgroundColor: 'rgba(255, 255, 255, 0.1)' } : {}}
                 transition={{ duration: 0.2 }}
