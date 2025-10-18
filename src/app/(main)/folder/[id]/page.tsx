@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback, use } from 'react';
@@ -52,6 +53,37 @@ function FolderPageContent({ id }: { id: string }) {
 
   }, [id, toast]);
 
+  const handleUpdateFile = useCallback(async (itemToUpdate: Content, newFile: File) => {
+    const tempId = `update_${Date.now()}_${itemToUpdate.id}`;
+
+    const callbacks: UploadCallbacks = {
+        onProgress: (progress) => {
+            setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
+        },
+        onSuccess: (content) => {
+             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success', xhr: undefined } : f));
+             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 2000);
+             toast({ title: "File Updated", description: `"${content.name}" has been updated.` });
+        },
+        onError: (error) => {
+            console.error("Update failed in component:", error);
+            setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'error', xhr: undefined } : f));
+            toast({
+                variant: 'destructive',
+                title: 'Update Failed',
+                description: error.message || `Could not update ${itemToUpdate.name}. Please try again.`
+            });
+        }
+    };
+    
+    const xhr = await contentService.updateFile(itemToUpdate.id, newFile, callbacks);
+    setUploadingFiles(prev => [
+      ...prev.filter(f => f.id !== `update_${itemToUpdate.id}`), // remove any previous attempts
+      { id: tempId, name: newFile.name, size: newFile.size, progress: 0, status: 'uploading', file: newFile, xhr }
+    ]);
+  }, [toast]);
+
+
   const handleRetryUpload = useCallback(async (fileId: string) => {
     const fileToRetry = uploadingFiles.find(f => f.id === fileId);
     if (fileToRetry && fileToRetry.file && id) {
@@ -104,6 +136,7 @@ function FolderPageContent({ id }: { id: string }) {
                 parentId={id} 
                 uploadingFiles={uploadingFiles} 
                 onFileSelected={processFileUpload}
+                onUpdateFile={handleUpdateFile}
                 onRetry={handleRetryUpload}
                 onRemove={handleRemoveUpload}
             />

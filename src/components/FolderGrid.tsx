@@ -98,6 +98,7 @@ const SortableList = ({
     onRenameClick,
     onDeleteClick,
     onIconChangeClick,
+    onFileUpdate,
     isSubjectView,
     isMobile,
     onDragEnd,
@@ -111,6 +112,7 @@ const SortableList = ({
     onRenameClick: (item: Content) => void;
     onDeleteClick: (item: Content) => void;
     onIconChangeClick: (item: Content) => void;
+    onFileUpdate: (item: Content, file: File) => void;
     isSubjectView: boolean;
     isMobile: boolean;
     onDragEnd: (event: DragEndEvent) => void;
@@ -160,6 +162,7 @@ const SortableList = ({
                                     onFileClick={onItemClick}
                                     onRename={() => onRenameClick(it)}
                                     onDelete={() => onDeleteClick(it)}
+                                    onUpdate={(file) => onFileUpdate(it, file)}
                                     showDragHandle={!isMobile}
                                 />;
                             } else {
@@ -208,6 +211,7 @@ const NonSortableList = ({
     onRenameClick,
     onDeleteClick,
     onIconChangeClick,
+    onFileUpdate,
     isSubjectView,
     isMobile,
     onRetry,
@@ -220,6 +224,7 @@ const NonSortableList = ({
     onRenameClick: (item: Content) => void;
     onDeleteClick: (item: Content) => void;
     onIconChangeClick: (item: Content) => void;
+    onFileUpdate: (item: Content, file: File) => void;
     isSubjectView: boolean;
     isMobile: boolean;
     onRetry: (fileId: string) => void;
@@ -264,6 +269,7 @@ const NonSortableList = ({
                              onFileClick={onItemClick}
                              onRename={() => onRenameClick(it)}
                              onDelete={() => onDeleteClick(it)}
+                             onUpdate={(file) => onFileUpdate(it, file)}
                              showDragHandle={false} // No drag handle for non-admins
                          />;
                      } else {
@@ -306,13 +312,15 @@ const NonSortableList = ({
 export function FolderGrid({ 
     parentId, 
     uploadingFiles, 
-    onFileSelected, 
+    onFileSelected,
+    onUpdateFile,
     onRetry, 
     onRemove 
 }: { 
     parentId: string, 
     uploadingFiles: UploadingFile[], 
     onFileSelected: (file: File) => void,
+    onUpdateFile: (item: Content, file: File) => void,
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
 }) {
@@ -440,6 +448,7 @@ export function FolderGrid({
         onRenameClick: (item: Content) => setItemToRename(item),
         onDeleteClick: (item: Content) => setItemToDelete(item),
         onIconChangeClick: (item: Content) => setItemForIconChange(item),
+        onFileUpdate: onUpdateFile,
         isSubjectView,
         isMobile,
         onRetry,

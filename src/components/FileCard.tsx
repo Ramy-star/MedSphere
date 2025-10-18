@@ -1,7 +1,7 @@
 
 'use client';
 import { 
-    MoreVertical, Edit, Trash2, Download, ExternalLink,
+    MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
     File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
-import React from 'react';
+import React, { useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -102,12 +102,14 @@ export const FileCard = React.memo(function FileCard({
     onFileClick, 
     onRename, 
     onDelete, 
+    onUpdate,
     showDragHandle = true,
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
     onRename: () => void, 
     onDelete: () => void,
+    onUpdate: (file: File) => void,
     showDragHandle?: boolean,
 }) {
     const isMobile = useIsMobile();
@@ -115,6 +117,7 @@ export const FileCard = React.memo(function FileCard({
     const { user } = useUser();
     const startGenerationFromUrl = useQuestionGenerationStore((state) => state.startGenerationFromUrl);
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+    const updateFileInputRef = useRef<HTMLInputElement>(null);
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
     const displaySize = item.type === 'LINK' 
@@ -126,6 +129,7 @@ export const FileCard = React.memo(function FileCard({
             : '--';
 
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
+    const displayName = item.name.replace(/\.[^/.]+$/, "");
     
     const { Icon, color } = getIconForFileType(item);
     
@@ -151,11 +155,32 @@ export const FileCard = React.memo(function FileCard({
         }
     };
     
+    const handleUpdateClick = () => {
+        updateFileInputRef.current?.click();
+    };
+
+    const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            onUpdate(file);
+        }
+        // Reset the input value to allow selecting the same file again
+        if(event.target) {
+            event.target.value = '';
+        }
+    };
+
     return (
         <div 
             className="relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5"
             onClick={handleClick}
         >
+             <input
+                type="file"
+                ref={updateFileInputRef}
+                className="hidden"
+                onChange={handleFileUpdate}
+            />
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
                 {showDragHandle && !isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
             </div>
@@ -164,7 +189,7 @@ export const FileCard = React.memo(function FileCard({
                 <Icon className={`w-6 h-6 ${color} shrink-0`} />
                 <div className="flex-1 overflow-hidden">
                     <h3 className={cn("text-sm font-medium text-white/90 break-words", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
-                        {item.name}
+                        {displayName}
                     </h3>
                     {isMobile && (
                         <p className="text-xs text-slate-400 mt-0.5">
@@ -204,6 +229,10 @@ export const FileCard = React.memo(function FileCard({
                                 <span>Create Questions</span>
                             </DropdownMenuItem>
                         )}
+                         <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl}>
+                            <ExternalLink className="mr-2 h-4 w-4" />
+                            <span>Open</span>
+                        </DropdownMenuItem>
                         {!isLink && (
                             <DropdownMenuItem 
                                 onClick={() => storagePath && handleForceDownload(storagePath, item.name)} 
@@ -213,10 +242,12 @@ export const FileCard = React.memo(function FileCard({
                                 <span>Download</span>
                             </DropdownMenuItem>
                         )}
-                        <DropdownMenuItem onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl}>
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            <span>Open in new tab</span>
-                        </DropdownMenuItem>
+                        {isAdmin && !isLink && (
+                             <DropdownMenuItem onClick={handleUpdateClick}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                <span>Update</span>
+                            </DropdownMenuItem>
+                        )}
                         {isAdmin && (
                             <>
                                 <DropdownMenuSeparator />
