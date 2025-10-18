@@ -448,31 +448,21 @@ export const contentService = {
     }
   },
 
-  async updateFile(id: string, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest> {
-    const docRef = doc(db, 'content', id);
+  async updateFile(itemToUpdate: Content, newFile: File, callbacks: UploadCallbacks): Promise<void> {
     try {
-      const docSnap = await getDoc(docRef);
-      if (!docSnap.exists()) {
-        throw new Error("File to update does not exist.");
-      }
-      const existingContent = docSnap.data() as Content;
-      const parentId = existingContent.parentId;
-      const order = existingContent.order; // Preserve the order
+      const parentId = itemToUpdate.parentId;
+      const order = itemToUpdate.order; // Preserve the order
       
       // Step 1: Delete the old file completely
-      await this.delete(id);
+      await this.delete(itemToUpdate.id);
       
-      // Step 2: Create the new file, passing the original order
-      return this.createFile(parentId, newFile, callbacks, {}, order);
+      // Step 2: Create the new file, passing the original order.
+      // We don't need to return the XHR here as the callbacks will handle everything.
+      await this.createFile(parentId, newFile, callbacks, {}, order);
 
     } catch (e: any) {
       console.error("Update (delete and replace) failed:", e);
       callbacks.onError(e);
-      // Return a dummy XHR object on failure to satisfy the return type
-      const dummyXhr = new XMLHttpRequest();
-      // Use setTimeout to ensure this runs after the current call stack clears
-      setTimeout(() => dummyXhr.dispatchEvent(new Event('error')), 0);
-      return dummyXhr;
     }
   },
   

@@ -62,15 +62,15 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
         onSuccess: (content) => {
-             // We don't remove the successful update from the list immediately,
-             // we let the main collection re-render handle showing the new file.
+             // The main collection re-render will handle showing the new file.
              // After a delay, we clean up the uploadingFiles state.
              setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 500);
              toast({ title: "File Updated", description: `"${newFile.name}" has been uploaded.` });
         },
         onError: (error) => {
             console.error("Update failed in component:", error);
-            setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'error', xhr: undefined } : f));
+            // On error, we remove the uploading indicator to allow retry
+            setUploadingFiles(prev => prev.filter(f => f.id !== tempId));
             toast({
                 variant: 'destructive',
                 title: 'Update Failed',
@@ -79,7 +79,7 @@ function FolderPageContent({ id }: { id: string }) {
         }
     };
     
-    const uploadingFile: Omit<UploadingFile, 'xhr'> = {
+    const uploadingFile: UploadingFile = {
       id: tempId,
       name: newFile.name,
       size: newFile.size,
@@ -88,16 +88,14 @@ function FolderPageContent({ id }: { id: string }) {
       file: newFile,
       isUpdate: true,
       originalId: itemToUpdate.id,
+      xhr: undefined
     };
     
-    // Set state before calling the async operation that provides the xhr
-    setUploadingFiles(prev => [...prev, uploadingFile as UploadingFile]);
-
-    // Now, get the xhr and update the state again with it.
-    // This second update must happen to allow cancellation.
-    const xhr = await contentService.updateFile(itemToUpdate.id, newFile, callbacks);
-
-    setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, xhr } : f));
+    // Add to state immediately to show progress bar
+    setUploadingFiles(prev => [...prev, uploadingFile]);
+    
+    // Start the update process, which will eventually use the callbacks
+    await contentService.updateFile(itemToUpdate, newFile, callbacks);
 
   }, [toast]);
 
