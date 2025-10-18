@@ -157,8 +157,14 @@ export const FileCard = React.memo(function FileCard({
     };
     
     const handleUpdateClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        updateFileInputRef.current?.click();
+      // Prevent the click from bubbling to the parent card click
+      e.preventDefault();
+      e.stopPropagation();
+      // stopImmediatePropagation on the native event to be extra sure
+      if (e.nativeEvent && typeof (e.nativeEvent as any).stopImmediatePropagation === 'function') {
+        (e.nativeEvent as any).stopImmediatePropagation();
+      }
+      updateFileInputRef.current?.click();
     };
 
     const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -255,7 +261,7 @@ export const FileCard = React.memo(function FileCard({
                         {isAdmin && (
                             <>
                                 <DropdownMenuSeparator />
-                                {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && (
+                                {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf' || item.metadata?.mime === 'text/markdown') && (
                                     <DropdownMenuItem onClick={handleCreateQuestions}>
                                         <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                         <span>Create Questions</span>
@@ -283,5 +289,7 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
+
+    
 
     
