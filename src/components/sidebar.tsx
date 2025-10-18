@@ -392,7 +392,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   const isMobile = useIsMobile();
   const { isDesktopSidebarOpen, setDesktopSidebarOpen } = useSidebarStore();
   const EXPANDED_WIDTH = 288;
-  const COLLAPSED_WIDTH = 100;
+  const COLLAPSED_WIDTH = 90;
 
   if (isMobile) {
     return (
