@@ -141,7 +141,7 @@ export const FileCard = React.memo(function FileCard({
 
     const handleClick = (e: React.MouseEvent) => {
       // Prevent dropdown trigger from also triggering this
-      if (e.target instanceof HTMLElement && (e.target.closest('[data-radix-collection-item]') || e.target.closest('button'))) {
+      if (e.target instanceof HTMLElement && e.target.closest('[data-radix-dropdown-menu-trigger]')) {
           return;
       }
       onFileClick(item);
@@ -232,9 +232,9 @@ export const FileCard = React.memo(function FileCard({
                     <DropdownMenuContent 
                         className="w-48 p-2"
                         align="end"
-                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); }}
+                        onClick={(e) => { e.stopPropagation(); }}
                     >
-                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); onFileClick(item); }}>
+                         <DropdownMenuItem onClick={(e) => onFileClick(item)}>
                             <Eye className="mr-2 h-4 w-4" />
                             <span>Open</span>
                         </DropdownMenuItem>
