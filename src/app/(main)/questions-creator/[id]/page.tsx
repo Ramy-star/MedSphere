@@ -109,11 +109,24 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         const updatedData = {
           [type === 'text' ? 'textQuestions' : 'jsonQuestions']: editingContent[type],
         };
-        await updateQuestionSet(updatedData);
-        toast({ title: 'Saved', description: `${type === 'text' ? 'Text' : 'JSON'} questions have been updated.` });
+        // Only save if content has changed
+        if (editingContent[type] !== questionSet[type === 'text' ? 'textQuestions' : 'jsonQuestions']) {
+            await updateQuestionSet(updatedData);
+            toast({ title: 'Saved', description: `${type === 'text' ? 'Text' : 'JSON'} questions have been updated.` });
+        }
       }
     }
     setIsEditing(prev => ({ ...prev, [type]: !prev[type] }));
+  };
+
+  const handleCancelEdit = (type: 'text' | 'json') => {
+    if (questionSet) {
+      setEditingContent(prev => ({
+        ...prev,
+        [type]: type === 'text' ? questionSet.textQuestions : questionSet.jsonQuestions
+      }));
+    }
+    setIsEditing(prev => ({ ...prev, [type]: false }));
   };
 
   const handleRepairJson = async () => {
@@ -200,6 +213,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
       setIsEditingTitle(false);
   }
 
+  const handleTitleCancel = () => {
+    if (titleRef.current && questionSet) {
+      titleRef.current.textContent = questionSet.fileName;
+      setEditingTitle(questionSet.fileName);
+    }
+    setIsEditingTitle(false);
+  };
+
   const handleSaveToFile = async (parentId: string) => {
     if (!questionSet) return;
 
@@ -278,7 +299,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 </div>
                 <TooltipProvider>
                     <div className="flex items-center gap-1">
-                        {isAdmin && (type === 'text' || type === 'json') && (
+                        {isAdmin && type === 'text' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
@@ -302,14 +323,35 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         </Tooltip>
                         
                         {isAdmin && (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleToggleEdit(type)}>
-                                        {isThisCardEditing ? <Check className="h-4 w-4 text-green-400" /> : <Pencil className="h-4 w-4" />}
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>{isThisCardEditing ? 'Save Changes' : 'Edit'}</p></TooltipContent>
-                            </Tooltip>
+                          isThisCardEditing ? (
+                              <div className="flex items-center">
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleToggleEdit(type)}>
+                                              <Check className="h-4 w-4 text-green-400" />
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent><p>Save Changes</p></TooltipContent>
+                                  </Tooltip>
+                                  <Tooltip>
+                                      <TooltipTrigger asChild>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCancelEdit(type)}>
+                                              <X className="h-4 w-4 text-red-400" />
+                                          </Button>
+                                      </TooltipTrigger>
+                                      <TooltipContent><p>Cancel</p></TooltipContent>
+                                  </Tooltip>
+                              </div>
+                          ) : (
+                              <Tooltip>
+                                  <TooltipTrigger asChild>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleToggleEdit(type)}>
+                                          <Pencil className="h-4 w-4" />
+                                      </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent><p>Edit</p></TooltipContent>
+                              </Tooltip>
+                          )
                         )}
 
                         <Tooltip>
@@ -379,27 +421,35 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                       {editingTitle}
                     </h1>
                     {isAdmin && (
-                      <>
-                      {isEditingTitle ? (
+                      isEditingTitle ? (
+                        <div className="flex items-center">
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={handleTitleSave}>
+                                      <Check className="h-5 w-5 text-green-400" />
+                                  </Button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Save Title</p></TooltipContent>
+                            </Tooltip>
+                             <Tooltip>
+                              <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={handleTitleCancel}>
+                                      <X className="h-5 w-5 text-red-400" />
+                                  </Button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Cancel</p></TooltipContent>
+                            </Tooltip>
+                        </div>
+                      ) : (
                           <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={handleTitleSave}>
-                                    <Check className="h-5 w-5 text-green-400" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Save Title</p></TooltipContent>
+                              <TooltipTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={() => setIsEditingTitle(true)}>
+                                      <Pencil className="h-5 w-5" />
+                                  </Button>
+                              </TooltipTrigger>
+                              <TooltipContent><p>Edit Title</p></TooltipContent>
                           </Tooltip>
-                    ) : (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full active:scale-95" onClick={() => setIsEditingTitle(true)}>
-                                    <Pencil className="h-5 w-5" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Edit Title</p></TooltipContent>
-                        </Tooltip>
-                    )}
-                      </>
+                      )
                     )}
                 </div>
             </div>
@@ -479,3 +529,5 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    

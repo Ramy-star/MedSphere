@@ -123,6 +123,7 @@ function QuestionsCreatorContent() {
 
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
+  const [originalPrompts, setOriginalPrompts] = useState({ gen: '', json: '' });
   const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false });
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
@@ -138,7 +139,6 @@ function QuestionsCreatorContent() {
     startGenerationWithFile,
     startGenerationFromUrl,
     saveCurrentResults,
-    retryGeneration,
     clearTask,
     confirmContinue,
     cancelConfirmation,
@@ -166,19 +166,34 @@ function QuestionsCreatorContent() {
 
   const handleSaveGenPrompt = () => {
     localStorage.setItem('questionGenPrompt', generationPrompt);
+    setOriginalPrompts(prev => ({ ...prev, gen: generationPrompt }));
     toast({ title: 'Prompt Saved', description: 'Your question generation prompt has been saved.' });
+    setIsEditingPrompts(prev => ({...prev, gen: false}));
+  }
+
+  const handleCancelGenPrompt = () => {
+    setGenerationPrompt(originalPrompts.gen);
     setIsEditingPrompts(prev => ({...prev, gen: false}));
   }
 
   const handleSaveJsonPrompt = () => {
     localStorage.setItem('questionJsonPrompt', jsonPrompt);
+    setOriginalPrompts(prev => ({ ...prev, json: jsonPrompt }));
     toast({ title: 'Prompt Saved', description: 'Your JSON conversion prompt has been saved.' });
     setIsEditingPrompts(prev => ({...prev, json: false}));
   }
 
+  const handleCancelJsonPrompt = () => {
+    setJsonPrompt(originalPrompts.json);
+    setIsEditingPrompts(prev => ({...prev, json: false}));
+  }
+
   useEffect(() => {
-    setGenerationPrompt(localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.');
-    setJsonPrompt(localStorage.getItem('questionJsonPrompt') || 'Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.');
+    const gen = localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.';
+    const json = localStorage.getItem('questionJsonPrompt') || 'Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.';
+    setGenerationPrompt(gen);
+    setJsonPrompt(json);
+    setOriginalPrompts({ gen, json });
   }, []);
 
   useEffect(() => {
@@ -489,8 +504,9 @@ function QuestionsCreatorContent() {
                                </div>
                            </div>
                            <TooltipProvider>
-                               <div className="flex items-center gap-2">
+                               <div className="flex items-center gap-0">
                                    {isEditingPrompts.gen ? (
+                                     <>
                                        <Tooltip>
                                            <TooltipTrigger asChild>
                                                <Button onClick={handleSaveGenPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
@@ -499,6 +515,15 @@ function QuestionsCreatorContent() {
                                            </TooltipTrigger>
                                            <TooltipContent><p>Save</p></TooltipContent>
                                        </Tooltip>
+                                       <Tooltip>
+                                           <TooltipTrigger asChild>
+                                               <Button onClick={handleCancelGenPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                                   <X className="h-5 w-5 text-red-400" />
+                                               </Button>
+                                           </TooltipTrigger>
+                                           <TooltipContent><p>Cancel</p></TooltipContent>
+                                       </Tooltip>
+                                     </>
                                    ) : (
                                         <Tooltip>
                                            <TooltipTrigger asChild>
@@ -528,8 +553,9 @@ function QuestionsCreatorContent() {
                                </div>
                            </div>
                            <TooltipProvider>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-0">
                                    {isEditingPrompts.json ? (
+                                     <>
                                        <Tooltip>
                                            <TooltipTrigger asChild>
                                                 <Button onClick={handleSaveJsonPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
@@ -538,6 +564,15 @@ function QuestionsCreatorContent() {
                                            </TooltipTrigger>
                                            <TooltipContent><p>Save</p></TooltipContent>
                                        </Tooltip>
+                                       <Tooltip>
+                                           <TooltipTrigger asChild>
+                                                <Button onClick={handleCancelJsonPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                                   <X className="h-5 w-5 text-red-400" />
+                                                </Button>
+                                           </TooltipTrigger>
+                                           <TooltipContent><p>Cancel</p></TooltipContent>
+                                       </Tooltip>
+                                     </>
                                    ) : (
                                         <Tooltip>
                                            <TooltipTrigger asChild>
@@ -669,3 +704,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
