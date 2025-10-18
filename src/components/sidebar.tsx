@@ -116,7 +116,7 @@ const TreeItem = ({
 }) => {
     const isNodeOpen = openItems.has(node.id);
     const isNodeActive = activePath.has(node.id);
-    const hasChildren = node.children && node.children.length > 0;
+    const hasChildren = !!(node.children && node.children.length > 0);
     
     let path: string;
     if (node.type === 'LEVEL') {
