@@ -235,7 +235,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
         >
             <form 
                 onSubmit={handleSubmit} 
-                className="relative flex flex-col w-full rounded-full shadow-lg shadow-black/20"
+                className="relative flex flex-col w-full rounded-[28px] shadow-lg shadow-black/20"
                 style={{backgroundColor: '#303030'}}
             >
                 {quotedText && (
@@ -246,7 +246,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
                         ref={textareaRef}
                         className={cn(
                             "w-full bg-transparent py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter no-scrollbar",
-                            "border-0 rounded-full"
+                            "border-0 rounded-[28px]"
                         )}
                         placeholder="Ask anything..."
                         value={chatInput}
