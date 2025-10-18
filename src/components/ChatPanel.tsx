@@ -617,3 +617,5 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         </div>
     );
 }
+
+    
