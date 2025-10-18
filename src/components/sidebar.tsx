@@ -7,13 +7,15 @@ import {
   GraduationCap,
   Layers,
   Menu,
+  Folder as FolderIcon,
+  Book,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Button } from './ui/button';
 import { usePathname, useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Content } from '@/lib/contentService';
+import { Content, contentService } from '@/lib/contentService';
 import { useIsMobile } from '@/hooks/use-mobile';
 import {
   Sheet,
@@ -23,6 +25,158 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
 import { useSidebarStore } from '@/hooks/use-sidebar-store';
+import { allSubjectIcons } from '@/lib/file-data';
+
+
+type TreeNode = Content & { children?: TreeNode[] };
+
+function buildTree(items: Content[]): TreeNode[] {
+    const itemMap = new Map<string, TreeNode>(items.map(item => [item.id, { ...item, children: [] }]));
+    const roots: TreeNode[] = [];
+
+    items.forEach(item => {
+        // We only care about items that are not files/links for the sidebar tree
+        if (item.type === 'FILE' || item.type === 'LINK') return;
+
+        const node = itemMap.get(item.id)!;
+        if (item.parentId && itemMap.has(item.parentId)) {
+            const parent = itemMap.get(item.parentId)!;
+            if (!parent.children) parent.children = [];
+            
+            const parentChildren = parent.children as TreeNode[];
+            // Ensure no duplicates
+            if (!parentChildren.some(child => child.id === node.id)) {
+                parentChildren.push(node);
+            }
+        } else if(item.parentId === null) {
+            // Ensure no duplicate roots
+            if (!roots.some(root => root.id === node.id)) {
+                roots.push(node);
+            }
+        }
+    });
+
+    // Sort children by 'order' property for all nodes
+    itemMap.forEach(node => {
+        if (node.children) {
+            node.children.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+        }
+    });
+    
+    // Sort roots as well
+    roots.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+
+    return roots;
+}
+
+const getIconForType = (item: Content) => {
+    switch (item.type) {
+      case 'LEVEL':
+        return <Layers className="h-5 w-5 text-slate-400 shrink-0" />;
+      case 'SEMESTER':
+        return <Calendar size={18} className="text-green-400" />;
+      case 'SUBJECT':
+         const SubjectIcon = (item.iconName && allSubjectIcons[item.iconName]) || Book;
+         return <SubjectIcon className={cn("h-5 w-5 shrink-0", item.color || "text-gray-300")} />;
+      case 'FOLDER':
+      default:
+        return <FolderIcon className="h-5 w-5 text-yellow-500/80 shrink-0" />;
+    }
+};
+
+const TreeItem = ({
+    node,
+    openItems,
+    activePath,
+    onToggle,
+    onLinkClick,
+    level = 0
+}: {
+    node: TreeNode;
+    openItems: Set<string>;
+    activePath: Set<string>;
+    onToggle: (id: string) => void;
+    onLinkClick: (path: string) => void;
+    level: number;
+}) => {
+    const isNodeOpen = openItems.has(node.id);
+    const isNodeActive = activePath.has(node.id);
+    const hasChildren = node.children && node.children.length > 0;
+    
+    let path: string;
+    if (node.type === 'LEVEL') {
+        path = `/level/${encodeURIComponent(node.name)}`;
+    } else {
+        path = `/folder/${node.id}`;
+    }
+
+    return (
+        <div className="w-full">
+            <div 
+                className={cn(
+                    'group p-1.5 rounded-xl w-full text-slate-300 hover:text-white flex items-center justify-between',
+                     isNodeActive && 'bg-white/10 text-white'
+                )}
+                style={{ paddingLeft: `${level * 12 + 10}px`}}
+            >
+                {hasChildren ? (
+                     <button onClick={() => onToggle(node.id)} className="p-1 -ml-1 rounded-md hover:bg-white/10">
+                        <ChevronDown
+                            className={cn(
+                            "h-4 w-4 shrink-0 text-slate-400 transition-transform duration-200",
+                            isNodeOpen ? 'rotate-0' : '-rotate-90'
+                            )}
+                            aria-hidden="true"
+                        />
+                    </button>
+                ) : (
+                    // Placeholder for alignment
+                    <div className="w-6 h-6" />
+                )}
+
+                <div 
+                    onClick={() => onLinkClick(path)}
+                    onMouseEnter={() => prefetcher.prefetchChildren(node.id)}
+                    className="flex-1 flex items-center gap-3 overflow-hidden cursor-pointer p-1 rounded-md"
+                >
+                    {getIconForType(node)}
+                    <span className="font-medium whitespace-nowrap leading-none text-sm truncate">
+                        {node.name}
+                    </span>
+                </div>
+            </div>
+            
+            <AnimatePresence initial={false}>
+                {isNodeOpen && hasChildren && (
+                    <motion.div
+                        key="content"
+                        initial="collapsed"
+                        animate="open"
+                        exit="collapsed"
+                        variants={{
+                            open: { opacity: 1, height: 'auto' },
+                            collapsed: { opacity: 0, height: 0 }
+                        }}
+                        transition={{ duration: 0.2, ease: 'easeOut' }}
+                        className="overflow-hidden"
+                    >
+                        {node.children!.map((child) => (
+                           <TreeItem
+                                key={child.id}
+                                node={child}
+                                openItems={openItems}
+                                activePath={activePath}
+                                onToggle={onToggle}
+                                onLinkClick={onLinkClick}
+                                level={level + 1}
+                            />
+                        ))}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
 
 
 function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (open: boolean) => void }) {
@@ -32,30 +186,22 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
   
   const { data: allItems } = useCollection<Content>('content');
 
-  const { levels, semestersByLevel, itemMap } = useMemo(() => {
+  const { tree, itemMap } = useMemo(() => {
     if (!allItems) {
-      return { levels: [], semestersByLevel: {} as { [levelId: string]: Content[] }, itemMap: new Map() };
+      return { tree: [], itemMap: new Map() };
     }
-    const levels = allItems.filter(item => item.type === 'LEVEL').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    const semesters = allItems.filter(item => item.type === 'SEMESTER').sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    
-    const semesterMap: { [levelId: string]: Content[] } = {};
-    levels.forEach(level => {
-        semesterMap[level.id] = semesters.filter(s => s.parentId === level.id);
-    });
-
     const map = new Map(allItems.map(item => [item.id, item]));
-
-    return { levels, semestersByLevel: semesterMap, itemMap: map };
+    const folderItems = allItems.filter(item => item.type !== 'FILE' && item.type !== 'LINK');
+    const treeData = buildTree(folderItems);
+    return { tree: treeData, itemMap: map };
   }, [allItems]);
 
-  const [activePath, setActivePath] = useState({ levelId: '', semesterId: '' });
-  const [openLevelId, setOpenLevelId] = useState('');
-  
-  const findActivePath = useCallback(() => {
+  const [openItems, setOpenItems] = useState(new Set<string>());
+  const [activePath, setActivePath] = useState(new Set<string>());
+
+  const findAndOpenActivePath = useCallback(() => {
     if (!allItems || pathname === '/') {
-        setActivePath({ levelId: '', semesterId: '' });
-        setOpenLevelId('');
+        setActivePath(new Set());
         return;
     }
 
@@ -73,41 +219,46 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     }
 
     if (!currentId) {
-      setActivePath({ levelId: '', semesterId: '' });
-      return;
+        setActivePath(new Set());
+        return;
     }
 
-    let levelId = '';
-    let semesterId = '';
+    const newActivePath = new Set<string>();
+    const newOpenItems = new Set<string>(openItems);
     let tempItem = itemMap.get(currentId);
 
     while (tempItem) {
-        if (tempItem.type === 'SEMESTER') {
-            semesterId = tempItem.id;
-        }
-        if (tempItem.type === 'LEVEL') {
-            levelId = tempItem.id;
-            break;
+        newActivePath.add(tempItem.id);
+        if (tempItem.parentId) {
+            newOpenItems.add(tempItem.parentId);
         }
         tempItem = tempItem.parentId ? itemMap.get(tempItem.parentId) : undefined;
     }
 
-    if (levelId) {
-        setActivePath({ levelId, semesterId });
-        if (open) setOpenLevelId(levelId);
-    } else {
-         setActivePath({ levelId: '', semesterId: '' });
+    setActivePath(newActivePath);
+    // Only expand the path if the sidebar is open, to avoid changing state unnecessarily
+    if(open) {
+      setOpenItems(newOpenItems);
     }
-  }, [pathname, open, allItems, itemMap]);
+  }, [pathname, open, allItems, itemMap, openItems]);
 
   useEffect(() => {
     if(allItems) {
-      findActivePath();
+      findAndOpenActivePath();
     }
-  }, [findActivePath, allItems]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, allItems, open]);
 
-  const handleLevelChange = (levelId: string) => {
-    setOpenLevelId(prevOpenLevelId => (prevOpenLevelId === levelId ? '' : levelId));
+  const handleToggle = (id: string) => {
+    setOpenItems(prev => {
+        const newSet = new Set(prev);
+        if (newSet.has(id)) {
+            newSet.delete(id);
+        } else {
+            newSet.add(id);
+        }
+        return newSet;
+    });
   };
 
   const handleLinkClick = (path: string) => {
@@ -115,7 +266,32 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     if (isMobile) {
       onOpenChange(false);
     }
-  }
+  };
+
+  // This is for the collapsed view. We will only render a flat list of top-level items.
+  const collapsedViewContent = useMemo(() => {
+     if (!tree) return null;
+     return tree.map((level, index) => {
+       const isPathActive = activePath.has(level.id);
+       const path = `/level/${encodeURIComponent(level.name)}`;
+       return (
+            <motion.button
+                key={level.id}
+                onClick={() => handleLinkClick(path)}
+                onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
+                className={cn(
+                  'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300 hover:text-white',
+                  isPathActive && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white'
+                )}
+                whileHover={{ backgroundColor: isPathActive ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
+                transition={{ duration: 0.2 }}
+                layout
+            >
+                <Layers className="h-5 w-5 text-slate-400 shrink-0" />
+            </motion.button>
+       )
+     })
+  }, [tree, activePath, handleLinkClick]);
 
 
   return (
@@ -151,122 +327,22 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
       </div>
 
       <nav className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1">
-        {levels && levels.map((level, index) => {
-        const isLevelActive = openLevelId === level.id;
-        const isPathActive = activePath.levelId === level.id;
-        const Icon = Layers;
-        return (
-            <div key={level.id} className="w-full">
-            <motion.button
-                onClick={() => {
-                  if (open) {
-                    handleLevelChange(level.id);
-                  } else {
-                    handleLinkClick(`/level/${encodeURIComponent(level.name)}`);
-                  }
-                }}
-                onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
-                className={cn(
-                  'p-2.5 rounded-2xl w-full text-slate-300 hover:text-white flex items-center',
-                  open ? 'justify-between' : 'justify-center',
-                  isPathActive && !open && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white',
-                  open && isLevelActive && 'bg-gradient-to-r from-blue-500/20 to-blue-600/20 text-white'
-                )}
-                whileHover={{ backgroundColor: isPathActive ? 'rgba(59, 130, 246, 0.2)' : 'rgba(255, 255, 255, 0.1)' }}
-                transition={{ duration: 0.2 }}
-                layout
-            >
-                <div className="flex items-center gap-3 overflow-hidden">
-                    <motion.div layout="position">
-                        <Icon className="h-5 w-5 text-slate-400 shrink-0" />
-                    </motion.div>
-                    <AnimatePresence>
-                    {open && (
-                      <motion.span
-                        className="font-medium whitespace-nowrap leading-none"
-                        initial={{ opacity: 0, x: -10 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        exit={{ opacity: 0, x: -10, transition: { duration: 0.1 } }}
-                        transition={{ duration: 0.2, delay: 0.1 }}
-                      >
-                        {level.name}
-                      </motion.span>
-                    )}
-                    </AnimatePresence>
-                </div>
-                 <AnimatePresence>
-                    {!open && (
-                         <motion.div
-                            className="flex-1 flex justify-center items-center"
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                          >
-                           <span className="font-semibold text-sm whitespace-nowrap leading-none">{`Lvl ${index + 1}`}</span>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
-                <AnimatePresence>
-                {open && (
-                    <motion.div
-                    key={`chevron-${level.id}`}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1, transition: { delay: 0.2 } }}
-                    exit={{ opacity: 0, transition: { duration: 0.1 } }}
-                    >
-                    <ChevronDown
-                        className={cn(
-                        "h-5 w-5 shrink-0 text-slate-400 transition-transform duration-200",
-                        isLevelActive ? 'text-white rotate-180' : ''
-                        )}
-                        aria-hidden="true"
-                    />
-                    </motion.div>
-                )}
-                </AnimatePresence>
-            </motion.button>
-                <AnimatePresence initial={false}>
-                {isLevelActive && open && (
-                <motion.div
-                    key="content"
-                    initial="collapsed"
-                    animate="open"
-                    exit="collapsed"
-                    variants={{
-                        open: { opacity: 1, height: 'auto' },
-                        collapsed: { opacity: 0, height: 0 }
-                    }}
-                    transition={{ duration: 0.3, ease: 'easeInOut' }}
-                    className="pl-4 pr-1 pt-1 space-y-1 overflow-hidden"
-                >
-                    {(semestersByLevel[level.id] || []).map((semester) => {
-                    const isSemesterActive = activePath.semesterId === semester.id;
-                    return (
-                        <motion.button 
-                          key={semester.id} 
-                          onClick={() => handleLinkClick(`/folder/${semester.id}`)}
-                          onMouseEnter={() => prefetcher.prefetchChildren(semester.id)}
-                          className={cn(
-                            "flex w-full items-center justify-between p-2.5 rounded-2xl text-slate-400 hover:bg-slate-800/50 hover:text-white cursor-pointer text-left",
-                            isSemesterActive && 'bg-gradient-to-r from-green-500/20 to-green-600/20 text-white'
-                          )}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.2, ease: 'easeOut' }}
-                        >
-                        <div className="flex items-center gap-3">
-                            <Calendar size={18} className="text-green-400" />
-                            <span className="whitespace-nowrap">{semester.name}</span>
-                        </div>
-                        </motion.button>
-                    );
-                    })}
-                </motion.div>
-                )}
-            </AnimatePresence>
-            </div>
-        )
-        })}
+        {open ? (
+          tree.map(node => (
+            <TreeItem 
+              key={node.id} 
+              node={node} 
+              openItems={openItems}
+              activePath={activePath}
+              onToggle={handleToggle}
+              onLinkClick={handleLinkClick}
+              level={0} 
+            />
+          ))
+        ) : (
+          // Collapsed view content
+          collapsedViewContent
+        )}
       </nav>
     </div>
   )
