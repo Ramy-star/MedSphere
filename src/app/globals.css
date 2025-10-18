@@ -65,7 +65,7 @@
   }
 
   .pdf-text-selection-fix .react-pdf__Page__textContent span::selection {
-    color: transparent !important;
+    color: transparent;
   }
 }
 
