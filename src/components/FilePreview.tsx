@@ -74,39 +74,51 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     };
   }, [url, mime]);
 
-  const handleMouseUp = useCallback((event: MouseEvent) => {
+  const handleMouseUp = useCallback((event: MouseEvent | globalThis.MouseEvent) => {
+    // This function is now primarily for getting the final cursor position.
+    // The selection logic itself is handled by handleSelectionChange.
     if (!onTextSelect) return;
-
-    // A small delay to allow the browser to finalize the selection
-    setTimeout(() => {
-      const selection = window.getSelection();
-      const selectedText = selection?.toString().trim();
-      
-      if (selectedText) {
-        const range = selection!.getRangeAt(0);
-        const rect = range.getBoundingClientRect();
-        onTextSelect(selectedText, { top: event.clientY, left: rect.left + rect.width / 2 });
-      } else {
-        onSelectionChange?.();
-      }
-    }, 50);
-  }, [onTextSelect, onSelectionChange]);
+    
+    const selection = window.getSelection();
+    const selectedText = selection?.toString().trim();
+    
+    if (selectedText) {
+      const range = selection!.getRangeAt(0);
+      const rect = range.getBoundingClientRect();
+      const clientX = (event as globalThis.MouseEvent).clientX;
+      const clientY = (event as globalThis.MouseEvent).clientY;
+      // Use the final mouse/touch position for more accurate popup placement
+      onTextSelect(selectedText, { top: clientY, left: clientX });
+    }
+  }, [onTextSelect]);
 
   const handleSelectionChange = useCallback(() => {
-    if (!onSelectionChange) return;
+    // This is the core logic for detecting selection changes.
+    if (!onTextSelect) return;
+
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) {
-        onSelectionChange();
+    if (!selection || selection.isCollapsed || !selection.rangeCount) {
+        onSelectionChange?.();
+        return;
     }
-  }, [onSelectionChange]);
+    
+    const selectedText = selection.toString().trim();
+    if (!selectedText) {
+        onSelectionChange?.();
+    }
+    // Note: The position is now set on mouseup for better accuracy.
+  }, [onTextSelect, onSelectionChange]);
 
 
   useEffect(() => {
     document.addEventListener('selectionchange', handleSelectionChange);
+    // We now use the global mouseup event to position the quote button
+    document.addEventListener('mouseup', handleMouseUp);
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange);
+      document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [handleSelectionChange]);
+  }, [handleSelectionChange, handleMouseUp]);
 
 
   if (isLoading) {
@@ -133,7 +145,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   
   if (mime === 'application/pdf') {
     return (
-        <div {...commonProps} className={cn(commonProps.className, 'w-full h-full')} onMouseUp={handleMouseUp}>
+        <div {...commonProps} className={cn(commonProps.className, 'w-full h-full pdf-text-selection-fix')}>
             <PdfViewer 
                 ref={ref} 
                 file={contentUrl!} 
@@ -151,7 +163,6 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     return (
       <div 
         className="prose prose-base max-w-full p-6 text-white selectable" 
-        onMouseUp={handleMouseUp}
         style={{
             '--tw-prose-body': '#E2E8F0',
             '--tw-prose-headings': '#FFFFFF',

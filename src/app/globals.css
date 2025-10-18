@@ -63,6 +63,10 @@
   .prose hr {
     @apply !w-full border-slate-700 my-6;
   }
+
+  .pdf-text-selection-fix .react-pdf__Page__textContent span::selection {
+    color: transparent !important;
+  }
 }
 
 @layer components {
