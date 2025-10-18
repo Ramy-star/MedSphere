@@ -156,7 +156,8 @@ export const FileCard = React.memo(function FileCard({
         }
     };
     
-    const handleUpdateClick = () => {
+    const handleUpdateClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
         updateFileInputRef.current?.click();
     };
 

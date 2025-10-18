@@ -469,7 +469,7 @@ export function FolderGrid({
         onDragLeave={handleDragLeave}
         onDragOver={handleDragOver}
         onDrop={handleDrop}
-        className={cn("h-full", isDraggingOver && "opacity-50")}
+        className={cn("relative h-full", isDraggingOver && "opacity-50")}
     >
       <DropZone isVisible={isDraggingOver} />
 

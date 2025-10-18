@@ -130,7 +130,7 @@ const TreeItem = ({
                 style={{ paddingLeft: `${level * 12 + 10}px`}}
             >
                 <div className="flex-1 flex items-center gap-3 overflow-hidden">
-                    <button onClick={() => onToggle(node.id, hasChildren)} className="p-1 -ml-1 rounded-full hover:bg-white/10" disabled={!hasChildren}>
+                    <button onClick={() => onToggle(node.id, hasChildren)} className="p-1 rounded-full hover:bg-white/10" disabled={!hasChildren}>
                         {hasChildren ? (
                             <ChevronDown
                                 className={cn(

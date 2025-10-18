@@ -444,7 +444,8 @@ export const contentService = {
     }
   },
 
-  async updateFile(id: string, newFile: File, callbacks: UploadCallbacks): Promise<void> {
+  async updateFile(id: string, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest> {
+    const xhr = new XMLHttpRequest();
     const docRef = doc(db, 'content', id);
 
     try {
@@ -486,7 +487,7 @@ export const contentService = {
         formData.append('overwrite', 'true');
 
 
-        const xhr = new XMLHttpRequest();
+        
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
         
         xhr.upload.onprogress = (event) => {
@@ -530,6 +531,7 @@ export const contentService = {
     } catch (e: any) {
         callbacks.onError(e);
     }
+    return xhr;
   },
   
   async getById(id: string): Promise<Content | null> {
