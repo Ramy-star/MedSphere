@@ -63,6 +63,13 @@
   .prose hr {
     @apply !w-full border-slate-700 my-6;
   }
+
+  /* Fix for PDF text layer selection */
+  .react-pdf__Page__textContent span::selection {
+    /* The text shadow paints over the text, hiding the ugly font render, while keeping the selection highlight */
+    text-shadow: 0 0 0.1px Highlight;
+    color: transparent;
+  }
 }
 
 @layer components {
