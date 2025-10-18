@@ -230,13 +230,11 @@ export function FolderGrid({
 
   const itemsToRender = useMemo(() => {
     const updatingMap = new Map(uploadingFiles.filter(f => f.isUpdate).map(f => [f.originalId, f]));
-    
     return sortedItems.map(item => {
-      const updatingFile = updatingMap.get(item.id);
-      if (updatingFile) {
-        return { type: 'upload', upload: updatingFile };
-      }
-      return { type: 'item', item };
+      return {
+        item: item,
+        uploadingFile: updatingMap.get(item.id),
+      };
     });
   }, [sortedItems, uploadingFiles]);
 
@@ -298,19 +296,8 @@ export function FolderGrid({
         <SortableContext items={sortedItems.map(i => i.id)} strategy={verticalListSortingStrategy} disabled={!isAdmin || isSubjectView}>
           <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
             <AnimatePresence>
-              {itemsToRender.map((renderable, index) => {
+              {itemsToRender.map(({ item, uploadingFile }, index) => {
                 const isLastItem = index === itemsToRender.length - 1;
-                
-                if (renderable.type === 'upload') {
-                  const upload = renderable.upload;
-                  return (
-                     <motion.div key={upload.id} variants={itemVariants(isMobile)} exit="exit" className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}>
-                       <UploadProgress file={upload} onRetry={onRetry} onRemove={onRemove} />
-                     </motion.div>
-                  )
-                }
-
-                const item = renderable.item;
                 const itemKey = item.id;
                 
                 const renderedContent = () => {
@@ -333,10 +320,13 @@ export function FolderGrid({
                             return (
                                 <FileCard
                                     item={item}
+                                    uploadingFile={uploadingFile}
                                     onFileClick={handleFileClick}
                                     onRename={() => setItemToRename(item)}
                                     onDelete={() => setItemToDelete(item)}
                                     onUpdate={(file) => onUpdateFile(item, file)}
+                                    onRetry={onRetry}
+                                    onRemoveUpload={onRemove}
                                     showDragHandle={!isMobile}
                                 />
                             );
@@ -414,3 +404,5 @@ export function FolderGrid({
     </div>
   );
 }
+
+    

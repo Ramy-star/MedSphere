@@ -62,13 +62,12 @@ function FolderPageContent({ id }: { id: string }) {
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, progress, status: 'uploading' } : f));
         },
         onSuccess: (content) => {
-             // The visual item is already removed, so we just need to clear this from the uploading list.
-             setUploadingFiles(prev => prev.filter(f => f.id !== tempId));
+             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'success', xhr: undefined } : f));
+             setTimeout(() => setUploadingFiles(prev => prev.filter(f => f.id !== tempId)), 2000);
              toast({ title: "File Updated", description: `"${newFile.name}" has been uploaded.` });
         },
         onError: (error) => {
             console.error("Update failed in component:", error);
-            // If there's an error, the original item will reappear from Firestore, so we can show an error state.
             setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, status: 'error', xhr: undefined } : f));
             toast({
                 variant: 'destructive',
@@ -77,9 +76,7 @@ function FolderPageContent({ id }: { id: string }) {
             });
         }
     };
-
-    // Add to uploading files list immediately to show progress bar.
-    // This will cause the FolderGrid to filter out the old item and show the progress.
+    
     const uploadingFile: UploadingFile = {
       id: tempId,
       name: newFile.name,
@@ -92,11 +89,8 @@ function FolderPageContent({ id }: { id: string }) {
     };
     setUploadingFiles(prev => [...prev, uploadingFile]);
     
-    // The service now handles deleting the old and creating the new file.
-    // It will return an XHR object for the new upload.
     const xhr = await contentService.updateFile(itemToUpdate.id, newFile, callbacks);
 
-    // Update the uploading file with the XHR object for cancellation.
     setUploadingFiles(prev => prev.map(f => f.id === tempId ? { ...f, xhr } : f));
 
   }, [toast]);
@@ -105,7 +99,6 @@ function FolderPageContent({ id }: { id: string }) {
   const handleRetryUpload = useCallback(async (fileId: string) => {
     const fileToRetry = uploadingFiles.find(f => f.id === fileId);
     if (fileToRetry && fileToRetry.file && id) {
-      // Optimistically set status to uploading
       setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'uploading', progress: 0 } : f));
 
       const callbacks: UploadCallbacks = {
@@ -171,3 +164,5 @@ function FolderPage({ params }: { params: Promise<{ id: string }> }) {
 
 
 export default FolderPage;
+
+    
