@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from './ui/button';
-import { X, RefreshCw, Check, Minus, Plus, ArrowUp, CornerRightDown } from 'lucide-react';
+import { X, RefreshCw, Check, Minus, Plus, ArrowUp, CornerRightDown, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
@@ -308,6 +308,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     const [isAiThinking, setIsAiThinking] = useState(false);
     const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
     const [quotedText, setQuotedText] = useState<string | null>(null);
+    const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
     const [fontSizeIndex, setFontSizeIndex] = useState(1);
     
@@ -476,9 +477,32 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         }
     }, [chatHistory, isAiThinking]);
 
+    const handleScrollToBottom = () => {
+        if (messagesContainerRef.current) {
+            messagesContainerRef.current.scrollTo({
+                top: messagesContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    };
+    
+    useEffect(() => {
+        const container = messagesContainerRef.current;
+        if (!container) return;
+    
+        const handleScroll = () => {
+            const { scrollTop, scrollHeight, clientHeight } = container;
+            const isScrolledUp = scrollHeight - scrollTop > clientHeight + 150;
+            setShowScrollToBottom(isScrolledUp);
+        };
+    
+        container.addEventListener('scroll', handleScroll, { passive: true });
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, []);
+
 
     const chatViewContent = (
-      <div className="flex flex-col h-full w-full overflow-hidden">
+      <div className="flex flex-col h-full w-full overflow-hidden relative">
             <header className={cn("flex items-center justify-between whitespace-nowrap px-4 py-3 shrink-0 h-14", isMobile ? "bg-[#212121]" : "bg-transparent")}>
                 <div className="flex items-center gap-2">
                     <AiAssistantIcon className="h-6 w-6" />
@@ -561,6 +585,16 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                 </div>
             </div>
             
+             {showScrollToBottom && (
+                <button
+                    onClick={handleScrollToBottom}
+                    className="absolute bottom-24 right-6 z-20 w-9 h-9 rounded-full border border-white bg-[#212121] flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-90"
+                    aria-label="Scroll to bottom"
+                >
+                    <ChevronDown className="w-5 h-5" />
+                </button>
+            )}
+
             <div ref={inputContainerRef} className="w-full z-10 will-change-transform">
                 <ChatInputForm
                   isAiThinking={isAiThinking}
