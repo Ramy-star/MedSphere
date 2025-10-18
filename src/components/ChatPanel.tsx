@@ -18,7 +18,7 @@ import {
   AlertDialogHeader as AlertDialogHeader2,
   AlertDialogTitle as AlertDialogTitle2,
 } from "@/components/ui/alert-dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Textarea } from './ui/textarea';
 import { Skeleton } from './ui/skeleton';
 import { AiAssistantIcon } from './icons/AiAssistantIcon';
@@ -47,16 +47,31 @@ type ChatMessage = {
 
 type ChatMessageProps = {
     msg: ChatMessage;
-    onCopy: (text: string, id: string) => void;
     onRegenerate: () => void;
     isLastMessage: boolean;
     isAiThinking: boolean;
-    copiedMessageId: string | null;
-    messageId: string;
     fontSizeClass: string;
 };
 
-const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate, isLastMessage, isAiThinking, copiedMessageId, messageId, fontSizeClass }: ChatMessageProps) {
+const ChatMessage = React.memo(function ChatMessage({ msg, onRegenerate, isLastMessage, isAiThinking, fontSizeClass }: ChatMessageProps) {
+    const { toast } = useToast();
+    const [isCopied, setIsCopied] = useState(false);
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(msg.text).then(() => {
+            setIsCopied(true);
+            toast({ title: "Copied to clipboard" });
+            setTimeout(() => setIsCopied(false), 2000);
+        }).catch(err => {
+            console.error('Failed to copy: ', err);
+            toast({
+                variant: "destructive",
+                title: "Failed to Copy",
+                description: "Could not copy the message."
+            });
+        });
+    };
+    
     if (msg.role === 'user') {
         const truncatedQuote = msg.quotedText ? (msg.quotedText.length > 150 ? msg.quotedText.substring(0, 150) + '...' : msg.quotedText) : null;
         
@@ -113,11 +128,11 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onCopy, onRegenerate,
                         <Button
                             variant="ghost"
                             size="icon"
-                            onClick={() => onCopy(msg.text, messageId)}
+                            onClick={handleCopy}
                             className="h-8 w-8 rounded-full text-white hover:bg-white/10"
                             aria-label="Copy AI response to clipboard"
                         >
-                            {copiedMessageId === messageId ? <Check className="w-5 h-5 transition-all" /> : <CopyIcon className="w-5 h-5" />}
+                            {isCopied ? <Check className="w-5 h-5 transition-all" /> : <CopyIcon className="w-5 h-5" />}
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
@@ -282,7 +297,6 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [chatInput, setChatInput] = useState('');
     const [isAiThinking, setIsAiThinking] = useState(false);
-    const [copiedMessageId, setCopiedMessageId] = useState<string | null>(null);
     const [showConfirmNewChat, setShowConfirmNewChat] = useState(false);
     const [quotedText, setQuotedText] = useState<string | null>(null);
     const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
@@ -443,20 +457,6 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         await submitChat(lastUserMessage.text, historyBeforeLastInteraction, lastUserMessage.quotedText);
     }, [isAiThinking, chatHistory, submitChat]);
 
-    const handleCopyToClipboard = (text: string, messageId: string) => {
-        navigator.clipboard.writeText(text).then(() => {
-            setCopiedMessageId(messageId);
-            setTimeout(() => setCopiedMessageId(null), 2000);
-        }).catch(err => {
-            console.error('Failed to copy: ', err);
-            toast({
-                variant: "destructive",
-                title: "Failed to Copy",
-                description: "Could not copy the message."
-            })
-        });
-      }
-
     const increaseFontSize = () => setFontSizeIndex(prev => Math.min(prev + 1, fontSizes.length - 1));
     const decreaseFontSize = () => setFontSizeIndex(prev => Math.max(prev - 1, 0));
       
@@ -537,13 +537,10 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
                         return (
                             <ChatMessage
                                 key={`msg-${index}`}
-                                messageId={`msg-${index}`}
                                 msg={msg}
-                                onCopy={handleCopyToClipboard}
                                 onRegenerate={handleRegenerate}
                                 isLastMessage={isLastModelMessage}
                                 isAiThinking={isAiThinking}
-                                copiedMessageId={copiedMessageId}
                                 fontSizeClass={fontSizes[fontSizeIndex]}
                             />
                         )
@@ -620,3 +617,5 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         </div>
     );
 }
+
+    
