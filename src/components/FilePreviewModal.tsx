@@ -721,10 +721,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 >
                      <button
                         onClick={handleQuoteToChat}
-                        className="flex items-center gap-2 px-4 py-2 rounded-full text-white shadow-lg transition-transform active:scale-95"
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
                         style={{ backgroundColor: '#212121' }}
                     >
-                        <span className="text-xl font-bold leading-none select-none" style={{ transform: 'translateY(-2px)' }}>”</span>
+                        <span className="text-lg font-bold leading-none select-none">”</span>
                         <span className="text-sm font-medium">Ask AI</span>
                     </button>
                 </div>
