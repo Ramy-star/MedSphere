@@ -562,6 +562,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       }
       return renderLoadingSkeleton();
     }
+    
+    const displayName = item.name.replace(/\.[^/.]+$/, "");
 
     return (
     <div
@@ -600,7 +602,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     </Button>
                     <Icon className={cn("w-5 h-5 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
-                       <span className={cn("text-sm text-white font-medium truncate")}>{item.name}</span>
+                       <span className={cn("text-sm text-white font-medium truncate")}>{displayName}</span>
                     </div>
                 </div>
             </div>
