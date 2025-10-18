@@ -304,9 +304,10 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
 
   const collapsedViewContent = useMemo(() => {
      if (!tree) return null;
-     return tree.map((level, index) => {
+     return tree.map((level) => {
        const isPathActive = activePath.has(level.id);
        const path = `/level/${encodeURIComponent(level.name)}`;
+       const shortName = level.name.replace('Level', 'Lvl');
        return (
             <motion.button
                 key={level.id}
@@ -314,15 +315,15 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                 onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
                 className={cn(
                   'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300 transition-colors',
-                  isPathActive ? 'bg-blue-500/20 text-blue-300' : 'hover:bg-white/10'
+                  isPathActive ? 'bg-blue-500/20 text-blue-300' : 'hover:bg-transparent'
                 )}
                 transition={{ duration: 0.2 }}
                 layout
             >
-                <div className="flex flex-col items-center justify-center leading-none">
-                    <span className="font-semibold text-sm whitespace-nowrap">Lvl</span>
-                    <span className="font-semibold text-sm whitespace-nowrap">{index + 1}</span>
-                </div>
+              <div className="flex flex-col items-center">
+                  <span className="font-semibold text-xs -mb-0.5">Lvl</span>
+                  <span className="font-bold text-base">{level.name.split(' ')[1]}</span>
+              </div>
             </motion.button>
        )
      })
@@ -336,11 +337,9 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
             {open && (
                 <motion.div
                     className="flex items-center gap-3 overflow-hidden"
-                    initial={{ opacity: 0, x: -20, scaleX: 0 }}
-                    animate={{ opacity: 1, x: 0, scaleX: 1 }}
-                    exit={{ opacity: 0, x: -20, scaleX: 0, transition: { duration: 0.2 } }}
-                    transition={{ duration: 0.3, ease: [0.04, 0.62, 0.23, 0.98] }}
-                    style={{ transformOrigin: 'left' }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] } }}
+                    exit={{ opacity: 0, x: -20, transition: { duration: 0.2, ease: "easeIn" } }}
                 >
                     <div className="p-1.5 rounded-xl bg-gradient-to-br from-green-400/30 to-green-600/30">
                         <GraduationCap className="text-green-300 flex-shrink-0" size={20} />
@@ -409,7 +408,7 @@ export function Sidebar({ open, setOpen }: { open?: boolean, setOpen?: (open: bo
   return (
     <motion.aside
       animate={{
-        width: isDesktopSidebarOpen ? 288 : 80,
+        width: isDesktopSidebarOpen ? 288 : 72,
       }}
       transition={{
         type: 'spring',
