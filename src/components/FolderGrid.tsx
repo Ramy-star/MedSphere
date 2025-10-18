@@ -1,7 +1,7 @@
 
 
 'use client';
-import { useEffect, useState, useRef, Dispatch, SetStateAction } from 'react';
+import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -90,189 +90,72 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   );
 };
 
-
-const SortableList = ({
-    items,
-    onItemClick,
-    onFolderClick,
-    onRenameClick,
-    onDeleteClick,
-    onIconChangeClick,
-    onFileUpdate,
-    isSubjectView,
-    isMobile,
-    onDragEnd
+const renderItem = ({
+  item,
+  uploadingFile,
+  isSubjectView,
+  isMobile,
+  onFileClick,
+  onFolderClick,
+  onRenameClick,
+  onDeleteClick,
+  onIconChangeClick,
+  onFileUpdate,
+  onUploadRetry,
+  onUploadRemove,
 }: {
-    items: Content[];
-    onItemClick: (item: Content) => void;
-    onFolderClick: (item: Content) => void;
-    onRenameClick: (item: Content) => void;
-    onDeleteClick: (item: Content) => void;
-    onIconChangeClick: (item: Content) => void;
-    onFileUpdate: (item: Content, file: File) => void;
-    isSubjectView: boolean;
-    isMobile: boolean;
-    onDragEnd: (event: DragEndEvent) => void;
+  item: Content;
+  uploadingFile?: UploadingFile;
+  isSubjectView: boolean;
+  isMobile: boolean;
+  onFileClick: (item: Content) => void;
+  onFolderClick: (item: Content) => void;
+  onRenameClick: (item: Content) => void;
+  onDeleteClick: (item: Content) => void;
+  onIconChangeClick: (item: Content) => void;
+  onFileUpdate: (itemToUpdate: Content, newFile: File) => void;
+  onUploadRetry: (id: string) => void;
+  onUploadRemove: (id: string) => void;
 }) => {
-    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
-    const containerClasses = isSubjectView
-        ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-        : "flex flex-col";
-
+  if (uploadingFile) {
     return (
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={onDragEnd}>
-            <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
-                    <AnimatePresence>
-                        {items.map((it: Content, index: number) => {
-                            const itemKey = it.id;
-                            const isLastItem = index === items.length - 1;
-
-                            let content;
-                            if (it.type === 'SUBJECT') {
-                                content = <SubjectCard subject={it} />;
-                            } else if (it.type === 'FOLDER') {
-                                content = <FolderCard
-                                    item={it}
-                                    onRename={() => onRenameClick(it)}
-                                    onDelete={() => onDeleteClick(it)}
-                                    onIconChange={() => onIconChangeClick(it)}
-                                    onClick={onFolderClick}
-                                    displayAs={isSubjectView ? 'grid' : 'list'}
-                                />;
-                            } else if (it.type === 'FILE' || it.type === 'LINK') {
-                                content = <FileCard
-                                    item={it}
-                                    onFileClick={onItemClick}
-                                    onRename={() => onRenameClick(it)}
-                                    onDelete={() => onDeleteClick(it)}
-                                    onUpdate={(file) => onFileUpdate(it, file)}
-                                    showDragHandle={!isMobile}
-                                />;
-                            } else {
-                                content = null;
-                            }
-                            
-                             if (isMobile && it.type !== 'SUBJECT') {
-                                return (
-                                   <div
-                                      key={itemKey}
-                                      className={cn("border-white/10", !isLastItem && !isSubjectView && "border-b")}
-                                    >
-                                      {content}
-                                    </div>
-                                );
-                            }
-
-                            if (isMobile && it.type === 'SUBJECT') {
-                              return <div key={itemKey}>{content}</div>
-                            }
-
-                            return (
-                                <motion.div
-                                    key={itemKey}
-                                    variants={itemVariants(isMobile)}
-                                    exit="exit"
-                                    className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
-                                >
-                                    {isSubjectView ? <motion.div variants={itemVariants(isMobile)}>{content}</motion.div> : <SortableItemWrapper id={it.id}>{content}</SortableItemWrapper>}
-                                </motion.div>
-                            )
-                        })}
-                    </AnimatePresence>
-                </motion.div>
-            </SortableContext>
-        </DndContext>
-    )
-}
-
-const NonSortableList = ({
-    items,
-    onItemClick,
-    onFolderClick,
-    onRenameClick,
-    onDeleteClick,
-    onIconChangeClick,
-    onFileUpdate,
-    isSubjectView,
-    isMobile
-}: {
-    items: Content[];
-    onItemClick: (item: Content) => void;
-    onFolderClick: (item: Content) => void;
-    onRenameClick: (item: Content) => void;
-    onDeleteClick: (item: Content) => void;
-    onIconChangeClick: (item: Content) => void;
-    onFileUpdate: (item: Content, file: File) => void;
-    isSubjectView: boolean;
-    isMobile: boolean;
-}) => {
-    const containerClasses = isSubjectView
-        ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
-        : "flex flex-col";
-    
-    return (
-        <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
-            <AnimatePresence>
-                {items.map((it, index) => {
-                     const itemKey = it.id;
-                     const isLastItem = index === items.length - 1;
- 
-                     let content;
-                     if (it.type === 'SUBJECT') {
-                         content = <SubjectCard subject={it} />;
-                     } else if (it.type === 'FOLDER') {
-                         content = <FolderCard
-                             item={it}
-                             onRename={() => onRenameClick(it)}
-                             onDelete={() => onDeleteClick(it)}
-                             onIconChange={() => onIconChangeClick(it)}
-                             onClick={onFolderClick}
-                             displayAs={isSubjectView ? 'grid' : 'list'}
-                         />;
-                     } else if (it.type === 'FILE' || it.type === 'LINK') {
-                         content = <FileCard
-                             item={it}
-                             onFileClick={onItemClick}
-                             onRename={() => onRenameClick(it)}
-                             onDelete={() => onDeleteClick(it)}
-                             onUpdate={(file) => onFileUpdate(it, file)}
-                             showDragHandle={false} // No drag handle for non-admins
-                         />;
-                     } else {
-                         content = null;
-                     }
- 
-                     if (isMobile && it.type !== 'SUBJECT') {
-                        return (
-                           <div
-                              key={itemKey}
-                              className={cn("border-white/10", !isLastItem && !isSubjectView && "border-b")}
-                            >
-                              {content}
-                            </div>
-                        );
-                    }
-
-                    if (isMobile && it.type === 'SUBJECT') {
-                      return <div key={itemKey}>{content}</div>
-                    }
-
-                     return (
-                         <motion.div
-                             key={itemKey}
-                             variants={itemVariants(isMobile)}
-                             exit="exit"
-                             // Add border here for mobile consistency
-                             className={cn("border-white/10", !isSubjectView && !isLastItem && "border-b")}
-                         >
-                             {content}
-                         </motion.div>
-                     );
-                })}
-            </AnimatePresence>
-        </motion.div>
+      <UploadProgress
+        file={uploadingFile}
+        onRetry={onUploadRetry}
+        onRemove={onUploadRemove}
+      />
     );
+  }
+
+  switch (item.type) {
+    case 'SUBJECT':
+      return <SubjectCard subject={item} />;
+    case 'FOLDER':
+      return (
+        <FolderCard
+          item={item}
+          onRename={() => onRenameClick(item)}
+          onDelete={() => onDeleteClick(item)}
+          onIconChange={() => onIconChangeClick(item)}
+          onClick={onFolderClick}
+          displayAs={isSubjectView ? 'grid' : 'list'}
+        />
+      );
+    case 'FILE':
+    case 'LINK':
+      return (
+        <FileCard
+          item={item}
+          onFileClick={onFileClick}
+          onRename={() => onRenameClick(item)}
+          onDelete={() => onDeleteClick(item)}
+          onUpdate={(file) => onFileUpdate(item, file)}
+          showDragHandle={!isMobile}
+        />
+      );
+    default:
+      return null;
+  }
 };
 
 
@@ -295,7 +178,6 @@ export function FolderGrid({
       where: ['parentId', '==', parentId],
       orderBy: ['order', 'asc']
   });
-  const [items, setItems] = useState<Content[]>([]);
 
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
@@ -309,15 +191,36 @@ export function FolderGrid({
   const router = useRouter();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
-  useEffect(() => {
-    if (fetchedItems) {
-      // Filter out items that are currently being updated
-      const updatingIds = new Set(uploadingFiles.filter(f => f.isUpdate).map(f => f.originalId));
-      setItems(fetchedItems.filter(item => !updatingIds.has(item.id)));
-    } else {
-      setItems([]);
-    }
+  // Memoize the combined list of items to render
+  const itemsToRender = useMemo(() => {
+    const updatingFilesMap = new Map(
+      uploadingFiles
+        .filter((f) => f.isUpdate && f.originalId)
+        .map((f) => [f.originalId, f])
+    );
+
+    // If an item is being updated, we will replace it with a placeholder
+    // that will render the UploadProgress component.
+    return (fetchedItems || []).map((item) => {
+      if (updatingFilesMap.has(item.id)) {
+        // This is a placeholder for an item being updated.
+        // It carries the original item's ID for sorting/keying
+        // and a flag to identify it.
+        return {
+          ...item,
+          __isUpdatingPlaceholder: true,
+          __uploadingFile: updatingFilesMap.get(item.id),
+        };
+      }
+      return item;
+    });
   }, [fetchedItems, uploadingFiles]);
+
+  const [sortedItems, setSortedItems] = useState(itemsToRender);
+
+  useEffect(() => {
+    setSortedItems(itemsToRender);
+  }, [itemsToRender]);
 
   const handleFolderClick = (folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -391,7 +294,7 @@ export function FolderGrid({
     if (!isAdmin) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
-        setItems(currentItems => {
+        setSortedItems(currentItems => {
             const oldIndex = currentItems.findIndex((item) => item.id === active.id);
             const newIndex = currentItems.findIndex((item) => item.id === over.id);
             if (oldIndex === -1 || newIndex === -1) return currentItems;
@@ -405,28 +308,15 @@ export function FolderGrid({
         });
     }
   };
-
-  const isSubjectView = items.length > 0 && items.every(it => it.type === 'SUBJECT');
   
-  const renderList = () => {
-    const listProps = {
-        items: items,
-        onItemClick: handleFileClick,
-        onFolderClick: handleFolderClick,
-        onRenameClick: (item: Content) => setItemToRename(item),
-        onDeleteClick: (item: Content) => setItemToDelete(item),
-        onIconChangeClick: (item: Content) => setItemForIconChange(item),
-        onFileUpdate: onUpdateFile,
-        isSubjectView,
-        isMobile
-    };
-    
-    if (isAdmin) {
-      return <SortableList {...listProps} onDragEnd={handleDragEnd} />;
-    }
-    return <NonSortableList {...listProps} />;
-  }
+  const newUploads = uploadingFiles.filter(f => !f.isUpdate);
+  const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT');
+  
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  const containerClasses = isSubjectView
+    ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
+    : "flex flex-col";
 
   return (
     <div
@@ -439,10 +329,10 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
         
-       {/* All Uploads (new and updates) */}
+       {/* Render new uploads at the top */}
         <div className="flex flex-col">
             <AnimatePresence>
-                {uploadingFiles.map(file => (
+                {newUploads.map(file => (
                     <motion.div key={file.id} variants={itemVariants(isMobile)} exit="exit">
                         <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                     </motion.div>
@@ -451,13 +341,13 @@ export function FolderGrid({
         </div>
 
 
-      {loading && items.length === 0 && uploadingFiles.length === 0 && (
+      {loading && sortedItems.length === 0 && newUploads.length === 0 && (
          <div className="text-center py-16">
             {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
-      {!loading && items.length === 0 && uploadingFiles.length === 0 && (
+      {!loading && sortedItems.length === 0 && newUploads.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
@@ -479,7 +369,64 @@ export function FolderGrid({
           </div>
       )}
 
-      {items.length > 0 && renderList()}
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={sortedItems.map(i => i.id)} strategy={verticalListSortingStrategy} disabled={!isAdmin || isSubjectView}>
+          <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
+            <AnimatePresence>
+              {sortedItems.map((item, index) => {
+                const itemKey = item.id;
+                // @ts-ignore - Check for our custom placeholder property
+                const isUpdating = item.__isUpdatingPlaceholder;
+                // @ts-ignore
+                const uploadingFile = item.__uploadingFile;
+                const isLastItem = index === sortedItems.length - 1;
+
+                const renderedContent = renderItem({
+                  item: item,
+                  uploadingFile: isUpdating ? uploadingFile : undefined,
+                  isSubjectView,
+                  isMobile,
+                  onFileClick: handleFileClick,
+                  onFolderClick: handleFolderClick,
+                  onRenameClick: setItemToRename,
+                  onDeleteClick: setItemToDelete,
+                  onIconChangeClick: setItemForIconChange,
+                  onFileUpdate: onUpdateFile,
+                  onUploadRetry: onRetry,
+                  onUploadRemove: onRemove,
+                });
+                
+                if (isMobile && item.type !== 'SUBJECT') {
+                  return (
+                      <div key={itemKey} className={cn("border-white/10", !isLastItem && !isSubjectView && "border-b")}>
+                        {renderedContent}
+                      </div>
+                  );
+                }
+
+                if (isMobile && item.type === 'SUBJECT') {
+                    return <div key={itemKey}>{renderedContent}</div>;
+                }
+
+                return (
+                  <motion.div
+                    key={itemKey}
+                    variants={itemVariants(isMobile)}
+                    exit="exit"
+                    className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
+                  >
+                    {isAdmin && !isSubjectView ? (
+                      <SortableItemWrapper id={item.id}>{renderedContent}</SortableItemWrapper>
+                    ) : (
+                      renderedContent
+                    )}
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
+          </motion.div>
+        </SortableContext>
+      </DndContext>
 
       <FilePreviewModal
         item={previewFile}
@@ -518,3 +465,5 @@ export function FolderGrid({
     </div>
   );
 }
+
+    
