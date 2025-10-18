@@ -445,93 +445,31 @@ export const contentService = {
   },
 
   async updateFile(id: string, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest> {
-    const xhr = new XMLHttpRequest();
     const docRef = doc(db, 'content', id);
-
     try {
-        const docSnap = await getDoc(docRef);
-        if (!docSnap.exists()) {
-            throw new Error("File to update does not exist.");
-        }
-        const existingContent = docSnap.data() as Content;
-
-        const publicId = existingContent.metadata?.cloudinaryPublicId;
-        if (!publicId) {
-             throw new Error("Cannot update file without a Cloudinary public_id.");
-        }
-        
-        const timestamp = Math.floor(Date.now() / 1000);
-        const paramsToSign = { 
-          public_id: publicId, 
-          overwrite: true,
-          timestamp,
-        };
-
-        const sigResponse = await fetch('/api/sign-cloudinary-params', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paramsToSign })
-        });
-        
-        if (!sigResponse.ok) {
-            throw new Error(`Failed to get Cloudinary signature for update: ${sigResponse.statusText}`);
-        }
-        const { signature, apiKey, cloudName } = await sigResponse.json();
-
-        const formData = new FormData();
-        formData.append('file', newFile);
-        formData.append('api_key', apiKey);
-        formData.append('timestamp', String(timestamp));
-        formData.append('signature', signature);
-        formData.append('public_id', publicId);
-        formData.append('overwrite', 'true');
-
-
-        
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
-        
-        xhr.upload.onprogress = (event) => {
-             if (event.lengthComputable) {
-                const progress = (event.loaded / event.total) * 100;
-                callbacks.onProgress(progress);
-            }
-        };
-
-        xhr.onload = async () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                const data = JSON.parse(xhr.responseText);
-                
-                const finalFileUrl = createProxiedUrl(data.secure_url);
-
-                const updatedData = {
-                    name: newFile.name,
-                    updatedAt: new Date().toISOString(),
-                    metadata: {
-                        ...existingContent.metadata,
-                        size: data.bytes,
-                        mime: newFile.type || 'application/octet-stream',
-                        storagePath: finalFileUrl,
-                        cloudinaryPublicId: data.public_id,
-                        cloudinaryResourceType: 'raw' as const,
-                    },
-                };
-                await updateDoc(docRef, updatedData);
-                callbacks.onSuccess({ ...existingContent, ...updatedData });
-            } else {
-                 callbacks.onError(new Error(`Cloudinary update failed: ${xhr.statusText}`));
-            }
-        };
-
-         xhr.onerror = () => {
-            callbacks.onError(new Error('Network error during file update.'));
-        };
-
-        xhr.send(formData);
+      const docSnap = await getDoc(docRef);
+      if (!docSnap.exists()) {
+        throw new Error("File to update does not exist.");
+      }
+      const existingContent = docSnap.data() as Content;
+      const parentId = existingContent.parentId;
+      
+      // Step 1: Delete the old file completely
+      await this.delete(id);
+      
+      // Step 2: Create the new file
+      // Note: `createFile` returns an XHR object, which we'll return as well.
+      return this.createFile(parentId, newFile, callbacks);
 
     } catch (e: any) {
-        callbacks.onError(e);
+      console.error("Update (delete and replace) failed:", e);
+      callbacks.onError(e);
+      // Return a dummy XHR object on failure to satisfy the return type
+      const dummyXhr = new XMLHttpRequest();
+      // Use setTimeout to ensure this runs after the current call stack clears
+      setTimeout(() => dummyXhr.dispatchEvent(new Event('error')), 0);
+      return dummyXhr;
     }
-    return xhr;
   },
   
   async getById(id: string): Promise<Content | null> {
