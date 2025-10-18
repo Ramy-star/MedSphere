@@ -82,6 +82,10 @@
   .selectable {
     @apply select-text;
   }
+  /* Fix for PDF text selection issue */
+  .react-pdf__Page__textContent {
+    mix-blend-mode: multiply;
+  }
 }
 
 input:focus {
