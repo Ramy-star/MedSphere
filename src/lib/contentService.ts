@@ -267,7 +267,7 @@ export const contentService = {
     }
   },
   
-  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}, order?: number): Promise<XMLHttpRequest> {
+  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
     
     try {
@@ -323,11 +323,7 @@ export const contentService = {
                 }
 
                 const id = uuidv4();
-                let finalOrder = order;
-                if(finalOrder === undefined) {
-                  const children = await this.getChildren(parentId);
-                  finalOrder = children.length;
-                }
+                const children = await this.getChildren(parentId);
                 
                 const finalFileUrl = createProxiedUrl(data.secure_url);
                 const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
@@ -347,7 +343,7 @@ export const contentService = {
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
-                    order: finalOrder,
+                    order: children.length,
                 };
                 
                 await setDoc(doc(db, 'content', id), newFileContent);
@@ -381,6 +377,19 @@ export const contentService = {
         const itemRef = doc(db, 'content', itemId);
         const itemSnap = await getDoc(itemRef);
         if (!itemSnap.exists()) throw new Error("Item not found");
+
+        const existingItem = itemSnap.data() as Content;
+        const oldPublicId = existingItem.metadata?.iconCloudinaryPublicId;
+
+        // If there's an old icon, delete it from Cloudinary first
+        if (oldPublicId) {
+            console.log(`Deleting old icon: ${oldPublicId}`);
+            await fetch('/api/delete-cloudinary', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ publicId: oldPublicId, resourceType: 'image' }),
+            }).catch(err => console.error("Failed to delete old icon, proceeding with upload anyway:", err)); // Don't block upload if deletion fails
+        }
 
         const hash = await sha256file(iconFile);
         const folder = 'icons';
@@ -448,17 +457,15 @@ export const contentService = {
     }
   },
 
-  async updateFile(itemToUpdate: Content, newFile: File, callbacks: UploadCallbacks): Promise<void> {
+  async updateFile(itemToUpdate: Content, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest | undefined> {
     try {
       const parentId = itemToUpdate.parentId;
-      const order = itemToUpdate.order; // Preserve the order
       
       // Step 1: Delete the old file completely
       await this.delete(itemToUpdate.id);
       
-      // Step 2: Create the new file, passing the original order.
-      // We don't need to return the XHR here as the callbacks will handle everything.
-      await this.createFile(parentId, newFile, callbacks, {}, order);
+      // Step 2: Create the new file
+      return await this.createFile(parentId, newFile, callbacks);
 
     } catch (e: any) {
       console.error("Update (delete and replace) failed:", e);

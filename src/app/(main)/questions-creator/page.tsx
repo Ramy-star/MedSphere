@@ -143,6 +143,7 @@ function QuestionsCreatorContent() {
     retryGeneration,
     confirmContinue,
     cancelConfirmation,
+    abortGeneration,
   } = useQuestionGenerationStore();
 
   const { user } = useUser();
@@ -432,9 +433,19 @@ function QuestionsCreatorContent() {
                         </div>
                     </div>
                      {task?.fileName && (
-                        <div className="mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/20 p-3 rounded-lg">
+                        <div className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/20 p-3 rounded-lg">
                             <FileText className="h-5 w-5" />
-                            <p className="text-sm truncate">{task.fileName}</p>
+                            <p className="text-sm truncate flex-1">{task.fileName}</p>
+                            <button
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    abortGeneration();
+                                }}
+                                className="p-1 rounded-full hover:bg-white/10 text-slate-300"
+                                aria-label="Cancel generation"
+                            >
+                                <X className="h-4 w-4" />
+                            </button>
                         </div>
                     )}
                 </motion.div>

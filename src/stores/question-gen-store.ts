@@ -24,6 +24,7 @@ interface GenerationTask {
   progress: number;
   nextFile?: File; // To hold the file for the next generation
   nextGenArgs?: {id: string, fileName: string, fileUrl: string};
+  abortController: AbortController;
 }
 
 interface QuestionGenerationState {
@@ -36,9 +37,10 @@ interface QuestionGenerationState {
   retryGeneration: (genPrompt: string, jsonPrompt: string) => Promise<void>;
   confirmContinue: (genPrompt: string, jsonPrompt: string) => void;
   cancelConfirmation: () => void;
+  abortGeneration: () => void;
 }
 
-const updateTask = (state: QuestionGenerationState, partialTask: Partial<GenerationTask>): QuestionGenerationState => ({
+const updateTask = (state: QuestionGenerationState, partialTask: Partial<Omit<GenerationTask, 'abortController'>>): QuestionGenerationState => ({
   ...state,
   task: state.task ? { ...state.task, ...partialTask } : null,
 });
@@ -53,6 +55,7 @@ async function runGenerationProcess(
     let documentText = initialTask.documentText;
     let textQuestions = initialTask.textQuestions;
     const failedStep = initialTask.failedStep;
+    const { signal } = initialTask.abortController;
     
     // Determine starting status based on what's already completed or what failed
     let startStatus: 'extracting' | 'generating_text' | 'converting_json' = 'extracting';
@@ -63,6 +66,7 @@ async function runGenerationProcess(
     }
 
     try {
+        if (signal.aborted) throw new Error('Aborted');
         // Step 1: Text Extraction (if not already done)
         if (startStatus === 'extracting' && !documentText) {
             set(state => updateTask(state, { status: 'extracting', progress: 10, error: null, failedStep: null }));
@@ -73,12 +77,13 @@ async function runGenerationProcess(
             if (initialTask.file) {
                 fileSource = await initialTask.file.arrayBuffer();
             }
-
+             if (signal.aborted) throw new Error('Aborted');
             const pdf = await pdfjs.getDocument(fileSource).promise as PDFDocumentProxy;
             documentText = await contentService.extractTextFromPdf(pdf);
             set(state => updateTask(state, { documentText, progress: 30 }));
         }
 
+        if (signal.aborted) throw new Error('Aborted');
         // Step 2: Generate Text Questions (if not already done)
         if (['extracting', 'generating_text'].includes(startStatus) && !textQuestions) {
             set(state => updateTask(state, { status: 'generating_text', progress: 50, error: null, failedStep: null }));
@@ -87,14 +92,17 @@ async function runGenerationProcess(
                 documentContent: documentText!,
                 images: [] // images not currently supported in this flow
             });
+             if (signal.aborted) throw new Error('Aborted');
             textQuestions = generatedText;
             set(state => updateTask(state, { textQuestions, progress: 70 }));
         }
 
+        if (signal.aborted) throw new Error('Aborted');
         // Step 3: Convert to JSON
         if (['extracting', 'generating_text', 'converting_json'].includes(startStatus)) {
             set(state => updateTask(state, { status: 'converting_json', progress: 80, error: null, failedStep: null }));
             const generatedJson = await convertQuestionsToJson({ prompt: jsonPrompt, questionsText: textQuestions! });
+             if (signal.aborted) throw new Error('Aborted');
             set(state => ({
                 ...updateTask(state, { jsonQuestions: generatedJson, status: 'completed', progress: 100, failedStep: null }),
                 isSaved: false // Mark as unsaved upon completion
@@ -122,6 +130,10 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     startGenerationWithFile: async (file, genPrompt, jsonPrompt) => {
         const { task, isSaved } = get();
 
+        if (task && task.status !== 'idle' && task.status !== 'error') {
+            task.abortController.abort();
+        }
+
         if (task && task.status === 'completed' && !isSaved) {
             set((state: QuestionGenerationState) => updateTask(state, { status: 'awaiting_confirmation', nextFile: file, nextGenArgs: undefined }));
             return;
@@ -141,12 +153,18 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             jsonQuestions: null,
             error: null,
             progress: 0,
+            abortController: new AbortController(),
         };
         set({ task: newTask, isSaved: false });
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
     },
     startGenerationFromUrl: (id, fileName, fileUrl, genPrompt, jsonPrompt) => {
         const { task, isSaved } = get();
+
+        if (task && task.status !== 'idle' && task.status !== 'error') {
+            task.abortController.abort();
+        }
+
         if (task && task.status === 'completed' && !isSaved) {
             set((state: QuestionGenerationState) => updateTask(state, { status: 'awaiting_confirmation', nextGenArgs: { id, fileName, fileUrl }, nextFile: undefined }));
             return;
@@ -166,6 +184,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             jsonQuestions: null,
             error: null,
             progress: 0,
+            abortController: new AbortController(),
         };
         set({ task: newTask, isSaved: false });
         runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
@@ -190,6 +209,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
                 jsonQuestions: null,
                 error: null,
                 progress: 0,
+                abortController: new AbortController(),
             };
             set({ task: newTask, isSaved: false });
             runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
@@ -210,6 +230,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
                 jsonQuestions: null,
                 error: null,
                 progress: 0,
+                abortController: new AbortController(),
             };
             set({ task: newTask, isSaved: false });
             runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
@@ -218,7 +239,9 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     retryGeneration: async (genPrompt, jsonPrompt) => {
         const { task } = get();
         if(!task || task.status !== 'error') return;
-        runGenerationProcess(task, genPrompt, jsonPrompt, set, get);
+        const newTask = { ...task, abortController: new AbortController() };
+        set({ task: newTask });
+        runGenerationProcess(newTask, genPrompt, jsonPrompt, set, get);
     },
     saveCurrentResults: async (userId: string, currentItemCount: number) => {
         const { task } = get();
@@ -246,6 +269,10 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         }, 5000);
     },
     clearTask: () => {
+        const { task } = get();
+        if (task) {
+            task.abortController.abort();
+        }
         set({ task: null, isSaved: false });
     },
     cancelConfirmation: () => {
@@ -254,5 +281,12 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             set(state => updateTask(state, { status: 'completed', nextFile: undefined, nextGenArgs: undefined }));
         }
     },
+    abortGeneration: () => {
+        const { task } = get();
+        if (task && (task.status === 'extracting' || task.status === 'generating_text' || task.status === 'converting_json')) {
+            task.abortController.abort();
+        }
+        set({ task: null, isSaved: false });
+    }
   })
 );
