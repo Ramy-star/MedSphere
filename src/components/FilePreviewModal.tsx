@@ -532,14 +532,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       return renderLoadingSkeleton();
     }
     
-    const displayName = item.name.replace(/\.(pdf|md)$/i, "").replace(/\(Quiz\)$/i, "");
+    const displayName = item.name.replace(/\.(pdf|md|txt|docx?|pptx?|xlsx?)$/i, "").replace(/\(Quiz\)$/i, "");
 
     return (
     <div
         ref={previewContainerRef}
         className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden")}
     >
-        <header className={cn("flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 z-10", isQuiz ? 'bg-transparent' : 'bg-[#2f3b47]')}>
+        <header className={cn("flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 z-10 bg-[#2f3b47]")}>
             <div className="flex items-center gap-1 overflow-hidden flex-1">
                 <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
@@ -624,7 +624,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className="flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden" style={isQuiz ? { background: '#f5f7fa' } : {}}>
+        <main ref={fileContentRef} className={cn("flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden", isQuiz && "flex items-center justify-center")} style={isQuiz ? {} : { background: '#13161C' }}>
              <div className="[grid-area:1/1] overflow-auto no-scrollbar">
               <FilePreview 
                   key={item.id}
@@ -643,31 +643,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   quizData={item.metadata?.quizData}
               />
             </div>
-             {selection && isQuoteAvailable && (
-                <div
-                  className="absolute z-20 -translate-x-1/2"
-                  style={{ top: selection.position.top, left: selection.position.left }}
-                >
-                    {isMobile ? (
-                       <button
-                            onClick={handleQuoteToChat}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
-                            style={{ backgroundColor: '#212121' }}
-                        >
-                            <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                            <span className="text-sm font-medium">Ask AI</span>
-                        </button>
-                    ) : (
-                         <button
-                            onClick={handleQuoteToChat}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
-                            style={{ backgroundColor: '#212121' }}
-                        >
-                            <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                            <span className="text-sm font-medium">Ask AI</span>
-                        </button>
-                    )}
-                </div>
+            {selection && isQuoteAvailable && (
+              <div
+                className="absolute z-20 -translate-x-1/2"
+                style={{ top: selection.position.top, left: selection.position.left }}
+              >
+                  <button
+                      onClick={handleQuoteToChat}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                      style={{ backgroundColor: '#212121' }}
+                  >
+                      <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
+                      <span className="text-sm font-medium">Ask AI</span>
+                  </button>
+              </div>
             )}
         </main>
     </div>
