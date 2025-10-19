@@ -42,6 +42,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   const [contentUrl, setContentUrl] = useState<string|null>(null);
   const selectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -193,12 +194,11 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
   const commonProps = {
     className: cn('selectable'),
-    ref: containerRef,
   };
   
   if (mime === 'application/pdf') {
     return (
-        <div {...commonProps} className={cn(commonProps.className, 'w-full h-full')}>
+        <div {...commonProps} ref={containerRef} className={cn(commonProps.className, 'w-full h-full')}>
             <PdfViewer 
                 ref={ref} 
                 file={contentUrl!} 
@@ -216,6 +216,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     return (
       <div 
         {...commonProps}
+        ref={containerRef}
         className="prose prose-base max-w-full p-6 text-white selectable" 
         style={{
             '--tw-prose-body': '#E2E8F0',
@@ -251,7 +252,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
   if (mime?.startsWith('image/')) {
     return (
-        <div {...commonProps} className={cn(commonProps.className, "w-full h-full overflow-auto flex items-center justify-center p-4 md:p-8")}>
+        <div {...commonProps} ref={containerRef} className={cn(commonProps.className, "w-full h-full overflow-auto flex items-center justify-center p-4 md:p-8")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={contentUrl} alt={itemName} className="max-w-full max-h-full object-contain rounded-lg shadow-lg" />
         </div>
@@ -259,19 +260,19 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
   
   if (mime?.startsWith('audio/')) {
-    return <div {...commonProps} className={cn(commonProps.className, "w-full h-full flex items-center justify-center p-4")}><audio controls src={contentUrl} className="w-full max-w-lg" /></div>;
+    return <div {...commonProps} ref={containerRef} className={cn(commonProps.className, "w-full h-full flex items-center justify-center p-4")}><audio controls src={contentUrl} className="w-full max-w-lg" /></div>;
   }
   
   if (mime?.startsWith('video/')) {
-    return <div {...commonProps} className={cn(commonProps.className, "w-full h-full flex items-center justify-center bg-black")}><video controls src={contentUrl} className="max-w-full max-h-full" /></div>;
+    return <div {...commonProps} ref={containerRef} className={cn(commonProps.className, "w-full h-full flex items-center justify-center bg-black")}><video controls src={contentUrl} className="max-w-full max-h-full" /></div>;
   }
 
   if (mime === 'text/html') {
-    return <iframe src={contentUrl} className="w-full h-full border-2 border-slate-700 rounded-lg bg-white text-black shadow-lg" title={itemName} sandbox="allow-scripts allow-same-origin" />;
+    return <iframe ref={iframeRef} src={contentUrl} className={cn("w-full h-full border-2 border-slate-700 rounded-lg bg-white text-black shadow-lg", commonProps.className)} title={itemName} sandbox="allow-scripts allow-same-origin" />;
   }
 
   if (mime?.startsWith('text/')) {
-    return <iframe src={contentUrl} {...commonProps} className={cn(commonProps.className, "w-full h-full border-2 border-slate-700 rounded-lg bg-slate-800 text-white shadow-lg")} title={itemName} />
+    return <iframe ref={iframeRef} src={contentUrl} className={cn(commonProps.className, "w-full h-full border-2 border-slate-700 rounded-lg bg-slate-800 text-white shadow-lg")} title={itemName} />
   }
 
   // Use Office viewer for docx, xlsx, pptx if it's a public URL (won't work for blob URLs from local storage)
