@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, use, useRef } from 'react';
@@ -235,18 +234,18 @@ a.click();
     setIsSavingMd(true);
     toast({ title: "Formatting Markdown...", description: "AI is re-formatting the questions for perfect output." });
 
-
     try {
         const formattedContent = await reformatMarkdown({ rawText: questionSet.textQuestions });
 
         const originalFileName = questionSet.fileName.replace(/\.[^/.]+$/, ""); // Remove extension
-        const newFileName = `${originalFileName} - Questions.md`;
+        const newFileName = `${originalFileName} - Questions`;
+        const newFileNameWithExt = `${newFileName}.md`;
         
-        const file = new File([formattedContent], newFileName, { type: 'text/markdown' });
+        const file = new File([formattedContent], newFileNameWithExt, { type: 'text/markdown' });
 
         const tempId = `upload_${Date.now()}_${file.name}`;
         
-        setUploadingFile({ id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file });
+        setUploadingFile({ id: tempId, name: newFileName, size: file.size, progress: 0, status: 'uploading', file: file });
 
         const callbacks = {
             onProgress: (progress: number) => {
@@ -289,7 +288,7 @@ a.click();
     setShowFolderSelector(false);
     try {
         await contentService.createInteractiveQuiz(parentId, questionSet.fileName, questionSet.jsonQuestions, questionSet.sourceFileId);
-        toast({ title: 'Interactive Quiz Created', description: `Quiz for "${questionSet.fileName}" has been saved.` });
+        toast({ title: 'Interactive Quiz Created', description: `Quiz for "${questionSet.fileName}" has been created.` });
     } catch (error: any) {
         console.error("Failed to create interactive quiz:", error);
         toast({
@@ -582,3 +581,4 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+

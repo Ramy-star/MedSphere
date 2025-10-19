@@ -1,5 +1,4 @@
 
-
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc, collectionGroup } from 'firebase/firestore';
@@ -376,10 +375,12 @@ export const contentService = {
                 
                 const finalFileUrl = createProxiedUrl(data.secure_url);
                 const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
+                
+                const fileNameWithoutExt = file.name.endsWith('.md') ? file.name.slice(0, -3) : file.name;
 
                 const newFileContent: Content = {
                     id,
-                    name: file.name,
+                    name: fileNameWithoutExt,
                     type: 'FILE',
                     parentId: parentId,
                     metadata: {
@@ -667,3 +668,4 @@ export const contentService = {
     }
   }
 };
+
