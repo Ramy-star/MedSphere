@@ -76,6 +76,10 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   
+  if (!children) {
+    return null;
+  }
+  
   const isFolder = (children as React.ReactElement)?.props?.item?.type === 'FOLDER';
 
   const childrenWithProps = React.cloneElement(children as React.ReactElement, {
@@ -317,6 +321,7 @@ export function FolderGrid({
                             );
                         case 'FILE':
                         case 'LINK':
+                        case 'INTERACTIVE_QUIZ':
                             return (
                                 <FileCard
                                     item={item}

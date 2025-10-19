@@ -538,12 +538,12 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             onSelectFolder={(folderId) => {
                 if (isSavingMd) {
                     handleSaveToFile(folderId);
-                    setIsSavingMd(false);
-                }
-                if (isCreatingQuiz) {
+                } else if (isCreatingQuiz) {
                     handleCreateQuiz(folderId);
-                    setIsCreatingQuiz(false);
                 }
+                // Reset states
+                setIsSavingMd(false);
+                setIsCreatingQuiz(false);
             }} 
         />
         {uploadingFile && (
