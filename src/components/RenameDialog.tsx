@@ -83,9 +83,9 @@ export function RenameDialog({ item, onOpenChange, onRename }: RenameDialogProps
                   </FormItem>
                 )}
               />
-              <DialogFooter className="pt-2">
-                <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" className="rounded-xl">Rename</Button>
+              <DialogFooter className="pt-2 sm:justify-start">
+                <Button type="submit" className="rounded-xl flex-1 sm:flex-none">Rename</Button>
+                <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>Cancel</Button>
               </DialogFooter>
             </form>
           </Form>
@@ -94,4 +94,3 @@ export function RenameDialog({ item, onOpenChange, onRename }: RenameDialogProps
     </Dialog>
   );
 }
-

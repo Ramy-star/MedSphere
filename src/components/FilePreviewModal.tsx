@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -515,9 +515,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             description: "Could not download the file.",
         });
     }
-  }
+  };
 
   const handleTextSelect = useCallback((text: string, position: { top: number; left: number }) => {
+    if (isMobile) return;
     const containerRect = previewContainerRef.current?.getBoundingClientRect();
     if (containerRect) {
       setSelection({
@@ -528,7 +529,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         },
       });
     }
-  }, []);
+  }, [isMobile]);
 
   const handleQuoteToChat = () => {
     if (selection) {
@@ -590,21 +591,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         ref={previewContainerRef}
         className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden")}
     >
-        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] z-10">
+        <header className={cn("flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 z-10", isQuiz ? 'bg-transparent' : 'bg-[#2f3b47]')}>
             <div className="flex items-center gap-1 overflow-hidden flex-1">
-                <div className="flex items-center gap-1 md:hidden">
+                <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                         <X className="w-5 h-5" />
                     </Button>
                     <TooltipProvider delayDuration={100}>
-                      <Tooltip>
+                      {isMobile && !isQuiz && (
+                        <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
                                 <Download className="w-5 h-5" />
                             </Button>
                            </TooltipTrigger>
                           <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
-                      </Tooltip>
+                        </Tooltip>
+                      )}
                       {openUrl && !isQuiz && (
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -619,9 +622,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
 
                 <div className="hidden md:flex items-center gap-3 overflow-hidden">
-                    <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
-                       <X className="w-6 h-6" />
-                    </Button>
                     <Icon className={cn("w-5 h-5 shrink-0", color)} />
                     <div className='flex items-center gap-2'>
                        <span className={cn("text-sm text-white font-medium truncate")}>{displayName}</span>
