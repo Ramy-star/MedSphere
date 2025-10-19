@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -421,7 +421,7 @@ function QuestionsCreatorContent() {
                      <input
                         ref={fileInputRef}
                         type="file"
-                        accept="application/pdf, text/markdown, .md"
+                        accept="application/pdf"
                         onChange={handleFileChange}
                         className="hidden"
                     />
@@ -429,7 +429,7 @@ function QuestionsCreatorContent() {
                         <FileUp className="w-10 h-10 text-blue-400 shrink-0" />
                         <div>
                             <h3 className="text-lg font-semibold text-white break-words">1. Upload Lecture</h3>
-                            <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF or MD file.</p>
+                            <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
                         </div>
                     </div>
                      {task?.fileName && (

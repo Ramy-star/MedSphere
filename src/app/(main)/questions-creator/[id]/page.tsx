@@ -3,7 +3,7 @@
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
@@ -182,7 +182,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     a.href = url;
     a.download = `${questionSet?.fileName.replace(/\.[^/.]+$/, "") || 'questions'}.${fileExtension}`;
     document.body.appendChild(a);
-    a.click();
+a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
@@ -254,6 +254,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 setUploadingFile(prev => prev ? { ...prev, status: 'success' } : null);
                 setTimeout(() => setUploadingFile(null), 3000);
                 toast({ title: "File Saved", description: `"${content.name}" has been saved successfully.` });
+                setIsSavingMd(false);
             },
             onError: (error: Error) => {
                 console.error("Save to file failed:", error);
@@ -263,6 +264,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     title: 'Save Failed',
                     description: error.message || `Could not save file. Please try again.`
                 })
+                setIsSavingMd(false);
             }
         };
         
@@ -275,7 +277,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             title: 'Formatting Failed',
             description: e.message || 'Could not re-format the markdown content.'
         });
-    } finally {
         setIsSavingMd(false);
     }
 };
@@ -328,10 +329,10 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsSavingMd(true); setShowFolderSelector(true); }} disabled={isSavingMd}>
-                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <HelpCircle className="h-4 w-4 text-red-400" />}
+                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileQuestion className="h-4 w-4 text-red-400" />}
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Save as Markdown File</p></TooltipContent>
+                                <TooltipContent><p>Save as File</p></TooltipContent>
                             </Tooltip>
                         )}
                         {isAdmin && type === 'json' && (
@@ -534,16 +535,20 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         </Dialog>
         <FolderSelectorDialog 
             open={showFolderSelector} 
-            onOpenChange={setShowFolderSelector} 
+            onOpenChange={(isOpen) => {
+                if (!isOpen) {
+                    // This is the cancel/close action
+                    setIsSavingMd(false);
+                    setIsCreatingQuiz(false);
+                }
+                setShowFolderSelector(isOpen);
+            }} 
             onSelectFolder={(folderId) => {
                 if (isSavingMd) {
                     handleSaveToFile(folderId);
                 } else if (isCreatingQuiz) {
                     handleCreateQuiz(folderId);
                 }
-                // Reset states
-                setIsSavingMd(false);
-                setIsCreatingQuiz(false);
             }} 
         />
         {uploadingFile && (
