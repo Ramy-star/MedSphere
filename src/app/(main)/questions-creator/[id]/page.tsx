@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use, useRef } from 'react';
@@ -329,7 +330,7 @@ a.click();
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsSavingMd(true); setShowFolderSelector(true); }} disabled={isSavingMd}>
-                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileQuestion className="h-4 w-4 text-red-400" />}
+                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <HelpCircle className="h-4 w-4 text-red-400" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Save as File</p></TooltipContent>
