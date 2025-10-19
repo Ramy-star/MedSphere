@@ -229,7 +229,8 @@ const ChatInputForm = React.memo(function ChatInputForm({
   };
   
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    // On mobile, Enter key should create a new line. On desktop, it should submit.
+    if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
         e.preventDefault();
         handleSubmit(e);
     }

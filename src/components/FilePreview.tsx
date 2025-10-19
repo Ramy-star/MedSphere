@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState, forwardRef, MouseEvent, useCallback, useRef } from 'react';
@@ -90,18 +91,28 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     };
   }, [url, mime, itemType]);
   
-  const handleSelectionEvent = useCallback((event: Event) => {
+  const handleSelectionEvent = useCallback((event: Event | React.TouchEvent) => {
     if (!onTextSelect) return;
 
-    // Prevent the default context menu on mobile
-    if (event.type === 'touchend') {
-        event.preventDefault();
-    }
-    
     // Use a small timeout to let the selection stabilize
     if (selectionTimeoutRef.current) {
         clearTimeout(selectionTimeoutRef.current);
     }
+
+    // Prevent context menu on touch devices
+    if (event.type === 'touchend') {
+        const touchEvent = event as React.TouchEvent;
+        // Basic check to see if it's a long press
+        if (touchEvent.touches.length === 0) { // On touchend, touches array is empty
+            setTimeout(() => {
+                const selection = window.getSelection();
+                if (selection && !selection.isCollapsed) {
+                    event.preventDefault();
+                }
+            }, 10);
+        }
+    }
+
     selectionTimeoutRef.current = setTimeout(() => {
         const selection = window.getSelection();
         const selectedText = selection?.toString().trim();
@@ -111,7 +122,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
             const rect = range.getBoundingClientRect();
             onTextSelect(selectedText, { top: rect.top, left: rect.left + rect.width / 2 });
         }
-    }, 50); // A short delay can help capture the final selection
+    }, 300); // Increased delay for better stability on mobile
 
   }, [onTextSelect]);
 
@@ -131,12 +142,12 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
     document.addEventListener('selectionchange', handleSelectionChange);
     container.addEventListener('mouseup', handleSelectionEvent);
-    container.addEventListener('touchend', handleSelectionEvent);
+    container.addEventListener('touchend', handleSelectionEvent as any);
 
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange);
       container.removeEventListener('mouseup', handleSelectionEvent);
-      container.removeEventListener('touchend', handleSelectionEvent);
+      container.removeEventListener('touchend', handleSelectionEvent as any);
     };
   }, [handleSelectionChange, handleSelectionEvent]);
 

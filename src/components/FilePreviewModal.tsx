@@ -1,4 +1,5 @@
 
+
 'use client';
 import {
   Dialog,
@@ -125,17 +126,6 @@ const PdfControls = ({
     // Desktop controls
     return (
       <div className="flex items-center gap-2 text-white">
-        <TooltipProvider delayDuration={100}>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
-                        <ChevronLeft className="w-5 h-5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}><p>Previous Page</p></TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-
         <form onSubmit={handlePageInputSubmit} className="flex items-center">
             <Input
               ref={pageInputRef}
@@ -148,18 +138,10 @@ const PdfControls = ({
             />
             <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
         </form>
-         <TooltipProvider delayDuration={100}>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
-                        <ChevronRight className="w-5 h-5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8}><p>Next Page</p></TooltipContent>
-            </Tooltip>
 
-            <div className="h-6 w-px bg-slate-600 mx-2"></div>
+        <div className="h-6 w-px bg-slate-600 mx-2"></div>
 
+        <TooltipProvider delayDuration={100}>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" onClick={zoomOut} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
@@ -168,18 +150,20 @@ const PdfControls = ({
                 </TooltipTrigger>
                 <TooltipContent side="bottom" sideOffset={8}><p>Zoom Out</p></TooltipContent>
             </Tooltip>
+        </TooltipProvider>
 
-            <form onSubmit={handleScaleInputSubmit}>
-                <Input
-                    type="text"
-                    value={scaleInput}
-                    onChange={handleScaleInputChange}
-                    onBlur={handleScaleInputBlur}
-                    className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500 p-0"
-                    onFocus={(e) => e.target.select()}
-                />
-            </form>
-            
+        <form onSubmit={handleScaleInputSubmit}>
+            <Input
+                type="text"
+                value={scaleInput}
+                onChange={handleScaleInputChange}
+                onBlur={handleScaleInputBlur}
+                className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500 p-0"
+                onFocus={(e) => e.target.select()}
+            />
+        </form>
+        
+        <TooltipProvider delayDuration={100}>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" onClick={zoomIn} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
@@ -658,16 +642,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 <ExternalLink className="w-5 h-5" />
                             </Button>
                         </TooltipTrigger>
-                        <TooltipContent side="bottom" sideOffset={8}><p>Open in new tab</p></TooltipContent>
+                        <TooltipContent side="bottom" sideOffset={8}><p>Open in browser</p></TooltipContent>
                     </Tooltip>
                     {isPdf && (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => { if(isFullscreen) { document.exitFullscreen(); } else { fileContentRef.current?.requestFullscreen(); } }} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                    {isFullscreen ? <Shrink className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                                    <Presentation className="w-5 h-5" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom" sideOffset={8}><p>{isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}</p></TooltipContent>
+                            <TooltipContent side="bottom" sideOffset={8}><p>Present</p></TooltipContent>
                         </Tooltip>
                     )}
                 </div>
@@ -691,8 +675,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className={cn("flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden", isQuiz && "sm:p-4")} style={{ background: '#13161C' }}>
-             <div className={cn("overflow-auto no-scrollbar", isQuiz ? 'md:max-w-6xl md:mx-auto w-full' : '[grid-area:1/1]')}>
+        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz ? 'w-full h-full' : 'grid grid-rows-1 grid-cols-1')} style={{ background: '#13161C' }}>
+             <div className={cn("no-scrollbar", isQuiz ? 'w-full h-full overflow-y-auto' : '[grid-area:1/1] overflow-auto')}>
               <FilePreview 
                   key={item.id}
                   ref={pdfViewerRef}
@@ -711,19 +695,23 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               />
             </div>
             {selection && isQuoteAvailable && (
-              <div
-                className="absolute z-20 -translate-x-1/2"
-                style={{ top: selection.position.top, left: selection.position.left }}
-              >
-                <button
-                    onClick={handleQuoteToChat}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
-                    style={{ backgroundColor: '#212121' }}
+                <div
+                    className="absolute z-20"
+                    style={{ 
+                        top: selection.position.top, 
+                        left: selection.position.left,
+                        transform: 'translateX(-50%)' 
+                    }}
                 >
-                    <MessageSquareQuote className="h-4 w-4" />
-                    <span className="text-sm font-medium">Ask AI</span>
-                </button>
-              </div>
+                    <button
+                        onClick={handleQuoteToChat}
+                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                        style={{ backgroundColor: '#212121' }}
+                    >
+                        <MessageSquareQuote className="h-4 w-4" />
+                        <span className="text-sm font-medium">Ask AI</span>
+                    </button>
+                </div>
             )}
         </main>
     </div>
