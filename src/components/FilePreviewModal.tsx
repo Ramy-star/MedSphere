@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, TestTube } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -175,7 +175,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     }
     
     if (item.type === 'INTERACTIVE_QUIZ') {
-        return { Icon: TestTube, color: 'text-lime-400' };
+        return { Icon: Lightbulb, color: 'text-yellow-400' };
     }
 
     const fileName = item.name;
@@ -552,7 +552,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isTextFile = item?.metadata?.mime?.startsWith('text/');
   const isQuiz = item?.type === 'INTERACTIVE_QUIZ';
   const isChatAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
-  const isQuoteAvailable = isPdf || isMarkdown || isTextFile;
+  const isQuoteAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
   
   const renderLoadingSkeleton = () => (
     <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
@@ -606,14 +606,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                            </TooltipTrigger>
                           <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                       </Tooltip>
-                      <Tooltip>
-                          <TooltipTrigger asChild>
-                             <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                <ExternalLink className="w-5 h-5" />
-                            </Button>
-                           </TooltipTrigger>
-                          <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
-                      </Tooltip>
+                      {openUrl && !isQuiz && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                               <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                  <ExternalLink className="w-5 h-5" />
+                              </Button>
+                             </TooltipTrigger>
+                            <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
+                        </Tooltip>
+                      )}
                     </TooltipProvider>
                 </div>
 
@@ -628,28 +630,44 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-            <div className={cn("flex-1 items-center justify-center", isPdf && (isMobile ? 'flex' : 'hidden md:flex'))}>
-                 <PdfControls
-                    isMobile={isMobile}
-                    numPages={numPages}
-                    pageNumber={pageNumber}
-                    pdfScale={pdfScale}
-                    goToPage={goToPage}
-                    zoomIn={zoomIn}
-                    zoomOut={zoomOut}
-                    pageInput={pageInput}
-                    setPageInput={(v) => {
-                      manualPageInputInProgress.current = true;
-                      setPageInput(v);
-                    }}
-                    handlePageInputSubmit={handlePageInputSubmit}
-                    handlePageInputBlur={handlePageInputBlur}
-                    scaleInput={scaleInput}
-                    handleScaleInputChange={handleScaleInputChange}
-                    handleScaleInputSubmit={handleScaleInputSubmit}
-                    handleScaleInputBlur={handleScaleInputBlur}
-                    pageInputRef={pageInputRef}
-                />
+            <div className={cn("flex-1 items-center justify-center", (isPdf || isQuiz) && (isMobile ? 'flex' : 'hidden md:flex'))}>
+                 {isPdf ? (
+                    <PdfControls
+                        isMobile={isMobile}
+                        numPages={numPages}
+                        pageNumber={pageNumber}
+                        pdfScale={pdfScale}
+                        goToPage={goToPage}
+                        zoomIn={zoomIn}
+                        zoomOut={zoomOut}
+                        pageInput={pageInput}
+                        setPageInput={(v) => {
+                          manualPageInputInProgress.current = true;
+                          setPageInput(v);
+                        }}
+                        handlePageInputSubmit={handlePageInputSubmit}
+                        handlePageInputBlur={handlePageInputBlur}
+                        scaleInput={scaleInput}
+                        handleScaleInputChange={handleScaleInputChange}
+                        handleScaleInputSubmit={handleScaleInputSubmit}
+                        handleScaleInputBlur={handleScaleInputBlur}
+                        pageInputRef={pageInputRef}
+                    />
+                 ) : isQuiz ? (
+                    <div className="flex items-center gap-0 text-white">
+                        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => {}}>
+                            <Minus className="w-4 h-4" />
+                        </Button>
+                        <Input
+                            type="text"
+                            value="100%"
+                            className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
+                        />
+                        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => {}}>
+                            <Plus className="w-4 h-4" />
+                        </Button>
+                    </div>
+                 ) : null}
             </div>
 
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
@@ -665,41 +683,43 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                            </TooltipTrigger>
                            <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                         </Tooltip>
-                        {!isMobile && (
-                           <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                onClick={() => {
-                                    if (fileContentRef.current) {
-                                    fileContentRef.current.requestFullscreen();
-                                    toast({
-                                        title: "Presentation Mode",
-                                        description: "To exit fullscreen, press the ESC key.",
-                                        duration: 3000,
-                                    })
-                                    }
-                                }} 
-                                disabled={!fileUrl} 
-                                className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
-                                >
-                                    <Presentation className="w-5 h-5" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Present</p></TooltipContent>
-                           </Tooltip>
-                        )}
                     </>
                     )}
-                    <Tooltip>
+                    {(openUrl && !isQuiz && !isMobile) && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                    <ExternalLink className="w-5 h-5" />
+                                </Button>
+                            </TooltipTrigger>
+                           <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
+                        </Tooltip>
+                    )}
+                    {(!isMobile && (isPdf || isQuiz)) && (
+                       <Tooltip>
                         <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                <ExternalLink className="w-5 h-5" />
+                            <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => {
+                                if (fileContentRef.current) {
+                                fileContentRef.current.requestFullscreen();
+                                toast({
+                                    title: "Presentation Mode",
+                                    description: "To exit fullscreen, press the ESC key.",
+                                    duration: 3000,
+                                })
+                                }
+                            }} 
+                            disabled={!fileUrl && !isQuiz} 
+                            className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
+                            >
+                                <Presentation className="w-5 h-5" />
                             </Button>
                         </TooltipTrigger>
-                       <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
-                    </Tooltip>
+                        <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Present</p></TooltipContent>
+                       </Tooltip>
+                    )}
                 </div>
                 </TooltipProvider>
                 {isChatAvailable && (
@@ -721,7 +741,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className="flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden">
+        <main ref={fileContentRef} className="flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden" style={isQuiz ? { background: '#f5f7fa' } : {}}>
              <div className="[grid-area:1/1] overflow-auto no-scrollbar">
               <FilePreview 
                   key={item.id}
