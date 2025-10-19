@@ -91,19 +91,19 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     };
   }, [url, mime, itemType]);
   
-  const handleSelectionEvent = useCallback((event: Event | React.TouchEvent) => {
+  const handleSelectionEvent = useCallback((event: Event | React.TouchEvent | React.MouseEvent) => {
     if (!onTextSelect) return;
 
     // Use a small timeout to let the selection stabilize
     if (selectionTimeoutRef.current) {
         clearTimeout(selectionTimeoutRef.current);
     }
-
+    
     // Prevent context menu on touch devices
     if (event.type === 'touchend') {
-        event.preventDefault();
+      event.preventDefault();
     }
-
+    
     selectionTimeoutRef.current = setTimeout(() => {
         const selection = window.getSelection();
         const selectedText = selection?.toString().trim();
@@ -133,12 +133,12 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
     document.addEventListener('selectionchange', handleSelectionChange);
     container.addEventListener('mouseup', handleSelectionEvent);
-    container.addEventListener('touchend', handleSelectionEvent as any);
+    container.addEventListener('touchend', handleSelectionEvent);
 
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange);
       container.removeEventListener('mouseup', handleSelectionEvent);
-      container.removeEventListener('touchend', handleSelectionEvent as any);
+      container.removeEventListener('touchend', handleSelectionEvent);
     };
   }, [handleSelectionChange, handleSelectionEvent]);
 

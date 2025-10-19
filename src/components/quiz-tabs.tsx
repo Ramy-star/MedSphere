@@ -420,7 +420,7 @@ const GlobalStyles = () => (
                 font-size: 15px;
             }
             .page-container {
-                padding: 15px;
+                padding: 0 15px;
                 margin: 10px auto;
                 border-radius: 8px;
             }
