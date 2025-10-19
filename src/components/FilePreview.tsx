@@ -40,6 +40,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   const [isLoading, setIsLoading] = useState(true);
   const [contentUrl, setContentUrl] = useState<string|null>(null);
   const selectionTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     let objectUrl: string | null = null;
@@ -89,8 +90,13 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     };
   }, [url, mime, itemType]);
   
-  const handleSelectionEvent = useCallback((event: globalThis.MouseEvent | globalThis.TouchEvent) => {
+  const handleSelectionEvent = useCallback((event: Event) => {
     if (!onTextSelect) return;
+
+    // Prevent the default context menu on mobile
+    if (event.type === 'touchend') {
+        event.preventDefault();
+    }
     
     // Use a small timeout to let the selection stabilize
     if (selectionTimeoutRef.current) {
@@ -105,7 +111,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
             const rect = range.getBoundingClientRect();
             onTextSelect(selectedText, { top: rect.top, left: rect.left + rect.width / 2 });
         }
-    }, 50);
+    }, 50); // A short delay can help capture the final selection
 
   }, [onTextSelect]);
 
@@ -120,14 +126,17 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
 
   useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
     document.addEventListener('selectionchange', handleSelectionChange);
-    // Use both mouseup and touchend for broad compatibility
-    document.addEventListener('mouseup', handleSelectionEvent);
-    document.addEventListener('touchend', handleSelectionEvent);
+    container.addEventListener('mouseup', handleSelectionEvent);
+    container.addEventListener('touchend', handleSelectionEvent);
+
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange);
-      document.removeEventListener('mouseup', handleSelectionEvent);
-      document.removeEventListener('touchend', handleSelectionEvent);
+      container.removeEventListener('mouseup', handleSelectionEvent);
+      container.removeEventListener('touchend', handleSelectionEvent);
     };
   }, [handleSelectionChange, handleSelectionEvent]);
 
@@ -154,7 +163,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         // Ensure lectures is always an array
         const lectures: Lecture[] = Array.isArray(parsedData) ? parsedData : [parsedData];
         
-        return <div className="selectable w-full max-w-5xl mx-auto"><QuizContainer lectures={lectures} /></div>;
+        return <div className="selectable h-full"><QuizContainer lectures={lectures} /></div>;
     } catch (e) {
         console.error("Failed to parse quiz data:", e);
         return (
@@ -177,7 +186,8 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   }
 
   const commonProps = {
-    className: cn('selectable')
+    className: cn('selectable'),
+    ref: containerRef,
   };
   
   if (mime === 'application/pdf') {
@@ -199,6 +209,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
   if (mime === 'text/markdown') {
     return (
       <div 
+        {...commonProps}
         className="prose prose-base max-w-full p-6 text-white selectable" 
         style={{
             '--tw-prose-body': '#E2E8F0',

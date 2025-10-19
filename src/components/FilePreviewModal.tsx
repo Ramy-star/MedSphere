@@ -81,6 +81,10 @@ type PdfControlsProps = {
     handlePageInputSubmit: (e: React.FormEvent) => void,
     handlePageInputBlur: (e: React.FocusEvent) => void,
     pageInputRef: React.RefObject<HTMLInputElement>,
+    scaleInput: string;
+    handleScaleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    handleScaleInputSubmit: (e: React.FormEvent) => void;
+    handleScaleInputBlur: (e: React.FocusEvent) => void;
 };
 
 
@@ -94,6 +98,12 @@ const PdfControls = ({
     handlePageInputSubmit,
     handlePageInputBlur,
     pageInputRef,
+    zoomIn,
+    zoomOut,
+    scaleInput,
+    handleScaleInputChange,
+    handleScaleInputSubmit,
+    handleScaleInputBlur,
 }: PdfControlsProps) => {
 
     useEffect(() => {
@@ -114,7 +124,18 @@ const PdfControls = ({
 
     // Desktop controls
     return (
-      <div className="flex items-center gap-0 text-white">
+      <div className="flex items-center gap-2 text-white">
+        <TooltipProvider delayDuration={100}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => goToPage(pageNumber - 1)} disabled={pageNumber <= 1} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
+                        <ChevronLeft className="w-5 h-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}><p>Previous Page</p></TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+
         <form onSubmit={handlePageInputSubmit} className="flex items-center">
             <Input
               ref={pageInputRef}
@@ -127,6 +148,47 @@ const PdfControls = ({
             />
             <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
         </form>
+         <TooltipProvider delayDuration={100}>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={() => goToPage(pageNumber + 1)} disabled={pageNumber >= (numPages || 0)} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
+                        <ChevronRight className="w-5 h-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}><p>Next Page</p></TooltipContent>
+            </Tooltip>
+
+            <div className="h-6 w-px bg-slate-600 mx-2"></div>
+
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={zoomOut} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
+                        <Minus className="w-5 h-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}><p>Zoom Out</p></TooltipContent>
+            </Tooltip>
+
+            <form onSubmit={handleScaleInputSubmit}>
+                <Input
+                    type="text"
+                    value={scaleInput}
+                    onChange={handleScaleInputChange}
+                    onBlur={handleScaleInputBlur}
+                    className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500 p-0"
+                    onFocus={(e) => e.target.select()}
+                />
+            </form>
+            
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" onClick={zoomIn} className="text-slate-300 hover:bg-white/10 rounded-full w-9 h-9">
+                        <Plus className="w-5 h-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8}><p>Zoom In</p></TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
     </div>
     );
 };
@@ -501,6 +563,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isQuiz = item?.type === 'INTERACTIVE_QUIZ';
   const isChatAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
   const isQuoteAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
+  const displayName = item.name.replace(/\.[^/.]+$/, "");
   
   const renderLoadingSkeleton = () => (
     <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
@@ -532,8 +595,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       return renderLoadingSkeleton();
     }
     
-    const displayName = item.name;
-
     return (
     <div
         ref={previewContainerRef}
@@ -545,18 +606,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                         <X className="w-5 h-5" />
                     </Button>
-                    <TooltipProvider delayDuration={100}>
-                      {isMobile && !isQuiz && !isLink && (
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                <Download className="w-5 h-5" />
-                            </Button>
-                           </TooltipTrigger>
-                          <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
-                        </Tooltip>
-                      )}
-                    </TooltipProvider>
                 </div>
 
                 <div className="hidden md:flex items-center gap-3 overflow-hidden">
@@ -567,7 +616,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-            <div className={cn("flex-1 items-center justify-center", isPdf && (isMobile ? 'flex' : 'hidden md:flex'))}>
+            <div className={cn("flex-1 items-center justify-center", (isPdf || isQuiz) && (isMobile ? 'flex' : 'hidden md:flex'))}>
                  {isPdf && (
                     <PdfControls
                         isMobile={isMobile}
@@ -582,26 +631,44 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         handlePageInputSubmit={handlePageInputSubmit}
                         handlePageInputBlur={handlePageInputBlur}
                         pageInputRef={pageInputRef}
-                        zoomIn={() => {}} 
-                        zoomOut={() => {}} 
+                        zoomIn={zoomIn} 
+                        zoomOut={zoomOut}
+                        scaleInput={scaleInput}
+                        handleScaleInputChange={handleScaleInputChange}
+                        handleScaleInputSubmit={handleScaleInputSubmit}
+                        handleScaleInputBlur={handleScaleInputBlur}
                     />
                  )}
             </div>
 
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
               <TooltipProvider delayDuration={100}>
-                <div className='hidden md:flex items-center gap-1 sm:gap-2'>
-                    {!isLink && !isQuiz && (
-                    <>
+                <div className={cn('hidden md:flex items-center gap-1 sm:gap-2', isQuiz && 'opacity-0 pointer-events-none')}>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                <Download className="w-5 h-5" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" sideOffset={8}><p>Download</p></TooltipContent>
+                    </Tooltip>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                <ExternalLink className="w-5 h-5" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="bottom" sideOffset={8}><p>Open in new tab</p></TooltipContent>
+                    </Tooltip>
+                    {isPdf && (
                         <Tooltip>
-                           <TooltipTrigger asChild>
-                              <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                  <Download className="w-5 h-5" />
-                              </Button>
-                           </TooltipTrigger>
-                           <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={() => { if(isFullscreen) { document.exitFullscreen(); } else { fileContentRef.current?.requestFullscreen(); } }} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                    {isFullscreen ? <Shrink className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" sideOffset={8}><p>{isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}</p></TooltipContent>
                         </Tooltip>
-                    </>
                     )}
                 </div>
                 </TooltipProvider>
@@ -624,8 +691,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className="flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden" style={{ background: '#13161C' }}>
-             <div className="[grid-area:1/1] overflow-auto no-scrollbar">
+        <main ref={fileContentRef} className={cn("flex-1 grid grid-rows-1 grid-cols-1 overflow-hidden", isQuiz && "sm:p-4")} style={{ background: '#13161C' }}>
+             <div className={cn("overflow-auto no-scrollbar", isQuiz ? 'md:max-w-6xl md:mx-auto w-full' : '[grid-area:1/1]')}>
               <FilePreview 
                   key={item.id}
                   ref={pdfViewerRef}
@@ -648,33 +715,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 className="absolute z-20 -translate-x-1/2"
                 style={{ top: selection.position.top, left: selection.position.left }}
               >
-                { isMobile ? (
-                   <button
-                        onClick={handleQuoteToChat}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
-                        style={{ backgroundColor: '#212121' }}
-                    >
-                        <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                        <span className="text-sm font-medium">Ask AI</span>
-                    </button>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip open={true}>
-                      <TooltipTrigger asChild>
-                         <button
-                            onClick={handleQuoteToChat}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
-                            style={{ backgroundColor: '#212121' }}
-                        >
-                            <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                        </button>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom" sideOffset={8}>
-                        <p>Ask AI about selection</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
+                <button
+                    onClick={handleQuoteToChat}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                    style={{ backgroundColor: '#212121' }}
+                >
+                    <MessageSquareQuote className="h-4 w-4" />
+                    <span className="text-sm font-medium">Ask AI</span>
+                </button>
               </div>
             )}
         </main>
@@ -691,9 +739,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         hideCloseButton={true}
       >
         <DialogHeader className="sr-only">
-          <DialogTitle>File Preview: {item.name}</DialogTitle>
+          <DialogTitle>File Preview: {displayName}</DialogTitle>
           <DialogDescription>
-            Previewing file {item.name}. You can download, share, or chat with the document if supported.
+            Previewing file {displayName}. You can download, share, or chat with the document if supported.
           </DialogDescription>
         </DialogHeader>
         
