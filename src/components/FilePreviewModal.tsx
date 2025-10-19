@@ -81,6 +81,7 @@ type PdfControlsProps = {
     setPageInput: (value: string) => void,
     handlePageInputSubmit: (e: React.FormEvent) => void,
     handlePageInputBlur: (e: React.FocusEvent) => void,
+    pageInputRef: React.RefObject<HTMLInputElement>,
 };
 
 
@@ -140,20 +141,17 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     if (item.type === 'INTERACTIVE_QUIZ') {
         return { Icon: Lightbulb, color: 'text-yellow-400' };
     }
-
-    const fileName = item.name;
     const mimeType = item.metadata?.mime;
-    const extension = fileName.split('.').pop()?.toLowerCase();
 
+    if(mimeType === 'text/markdown') return { Icon: HelpCircle, color: 'text-red-400' };
     if (mimeType?.startsWith('image/')) return { Icon: FileImage, color: 'text-purple-400' };
     if (mimeType?.startsWith('video/')) return { Icon: FileVideo, color: 'text-red-400' };
     if (mimeType?.startsWith('audio/')) return { Icon: Music, color: 'text-orange-400' };
+    if (mimeType === 'application/pdf') return { Icon: FileText, color: 'text-red-400' };
+
+    const extension = item.name.split('.').pop()?.toLowerCase();
     
     switch (extension) {
-        case 'pdf':
-            return { Icon: FileText, color: 'text-red-400' };
-        case 'md':
-            return { Icon: HelpCircle, color: 'text-red-400' };
         case 'docx':
         case 'doc':
             return { Icon: FileText, color: 'text-blue-500' };
@@ -171,18 +169,6 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
             return { Icon: FileCode, color: 'text-gray-400' };
         case 'txt':
              return { Icon: FileText, color: 'text-gray-400' };
-        case 'mp3':
-        case 'wav':
-             return { Icon: Music, color: 'text-orange-400' };
-        case 'mp4':
-        case 'mov':
-             return { Icon: FileVideo, color: 'text-red-400' };
-        case 'png':
-        case 'jpg':
-        case 'jpeg':
-        case 'gif':
-        case 'svg':
-             return { Icon: FileImage, color: 'text-purple-400' };
         default:
             return { Icon: FileIcon, color: 'text-gray-400' };
     }
@@ -660,36 +646,36 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               />
             </div>
             {selection && isQuoteAvailable && (
-                <div
-                  className="absolute z-20"
-                  style={{ top: selection.position.top, left: selection.position.left }}
-                >
-                  {isMobile ? (
-                    <button
-                      onClick={handleQuoteToChat}
-                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700 -translate-x-1/2"
-                      style={{ backgroundColor: '#212121' }}
-                    >
-                      <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                      <span className="text-sm font-medium">Ask AI</span>
-                    </button>
-                  ) : (
-                    <TooltipProvider>
-                      <Tooltip open={true}>
-                        <TooltipTrigger asChild>
-                          <button
-                            onClick={handleQuoteToChat}
-                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700 -translate-x-1/2"
-                            style={{ backgroundColor: '#212121' }}
-                          >
-                            <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                            <span className="text-sm font-medium">Ask AI</span>
-                          </button>
-                        </TooltipTrigger>
-                      </Tooltip>
-                    </TooltipProvider>
-                  )}
-                </div>
+              <div
+                className="absolute z-20 -translate-x-1/2"
+                style={{ top: selection.position.top, left: selection.position.left }}
+              >
+                {isMobile ? (
+                  <button
+                    onClick={handleQuoteToChat}
+                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                    style={{ backgroundColor: '#212121' }}
+                  >
+                    <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
+                    <span className="text-sm font-medium">Ask AI</span>
+                  </button>
+                ) : (
+                  <TooltipProvider>
+                    <Tooltip open={true}>
+                      <TooltipTrigger asChild>
+                        <button
+                          onClick={handleQuoteToChat}
+                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                          style={{ backgroundColor: '#212121' }}
+                        >
+                          <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
+                          <span className="text-sm font-medium">Ask AI</span>
+                        </button>
+                      </TooltipTrigger>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             )}
         </main>
     </div>
@@ -743,3 +729,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
