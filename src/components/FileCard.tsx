@@ -1,7 +1,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, TestTube
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -32,7 +32,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     }
     
     if (item.type === 'INTERACTIVE_QUIZ') {
-        return { Icon: TestTube, color: 'text-lime-400' };
+        return { Icon: Lightbulb, color: 'text-yellow-400' };
     }
 
     const fileName = item.name;

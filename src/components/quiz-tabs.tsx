@@ -82,7 +82,6 @@ const GlobalStyles = () => (
         }
         .page-container {
             max-width: 1200px;
-            margin: 20px auto;
             background-color: var(--container-bg);
             box-shadow: var(--container-shadow);
             padding: 30px;

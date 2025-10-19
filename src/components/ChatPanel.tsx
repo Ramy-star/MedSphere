@@ -4,7 +4,7 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from './ui/button';
-import { X, RefreshCw, Check, Minus, Plus, ArrowUp, CornerRightDown, ChevronDown } from 'lucide-react';
+import { X, RefreshCw, Check, Minus, Plus, ArrowUp, CornerRightDown, ChevronDown, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
@@ -208,7 +208,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
 }) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const handleSubmit = (e?: React.FormEvent<HTMLFormElement> | React.MouseEvent<HTMLButtonElement>) => {
+  const handleSubmit = (e?: React.FormEvent<HTMLFormElement> | React.KeyboardEvent<HTMLTextAreaElement>) => {
     e?.preventDefault();
     const trimmedInput = chatInput.trim();
     if (isAiThinking || (!trimmedInput && !quotedText)) return;
@@ -231,7 +231,7 @@ const ChatInputForm = React.memo(function ChatInputForm({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !isMobile) {
         e.preventDefault();
-        handleSubmit(e as any);
+        handleSubmit(e);
     }
   };
 
@@ -286,7 +286,6 @@ const ChatInputForm = React.memo(function ChatInputForm({
                                 type="submit" 
                                 size="icon" 
                                 className="w-9 h-9 rounded-full bg-[#0169cc] hover:bg-blue-700 text-white"
-                                onClick={handleSubmit}
                                 disabled={isAiThinking || !chatInput.trim()}
                             >
                                 <ArrowUp className="w-5 h-5" />

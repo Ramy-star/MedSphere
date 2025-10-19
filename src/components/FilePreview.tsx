@@ -148,14 +148,10 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     }
     try {
         const parsedData = JSON.parse(quizData);
-        // The data might be an object with a 'lectures' property, or it might be the array itself.
-        const lectures: Lecture[] = parsedData.lectures || parsedData;
+        // Ensure lectures is always an array
+        const lectures: Lecture[] = Array.isArray(parsedData) ? parsedData : [parsedData];
         
-        if (!Array.isArray(lectures) && typeof lectures !== 'object') {
-             throw new Error("Parsed quiz data is not a valid Lecture array or object.");
-        }
-        
-        return <QuizContainer lectures={lectures} />;
+        return <div className="selectable"><QuizContainer lectures={lectures} /></div>;
     } catch (e) {
         console.error("Failed to parse quiz data:", e);
         return (
