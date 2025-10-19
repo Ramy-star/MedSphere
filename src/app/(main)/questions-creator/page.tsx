@@ -433,7 +433,7 @@ function QuestionsCreatorContent() {
                         </div>
                     </div>
                      {task?.fileName && (
-                        <div className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/40 p-3 rounded-lg">
+                        <div className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg">
                             <FileText className="h-5 w-5" />
                             <p className="text-sm truncate flex-1">{task.fileName}</p>
                             <button
@@ -469,7 +469,7 @@ function QuestionsCreatorContent() {
                         </div>
                     </div>
                      {isSaved && (
-                        <div className="mt-4 flex items-center gap-2 text-green-400 bg-green-900/40 p-3 rounded-lg">
+                        <div className="mt-4 flex items-center gap-2 text-green-400 bg-green-900/50 p-3 rounded-lg">
                             <Check className="h-5 w-5" />
                             <p className="text-sm">Questions have been saved!</p>
                         </div>
