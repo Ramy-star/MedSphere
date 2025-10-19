@@ -327,7 +327,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         {isAdmin && type === 'text' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setShowFolderSelector(true)} disabled={isSavingMd}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsSavingMd(true); setShowFolderSelector(true); }} disabled={isSavingMd}>
                                         {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
                                     </Button>
                                 </TooltipTrigger>
@@ -337,7 +337,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         {isAdmin && type === 'json' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setShowFolderSelector(true)} disabled={isCreatingQuiz}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsCreatingQuiz(true); setShowFolderSelector(true); }} disabled={isCreatingQuiz}>
                                         {isCreatingQuiz ? <Loader2 className="h-4 w-4 animate-spin"/> : <TestTube className="h-4 w-4 text-lime-400" />}
                                     </Button>
                                 </TooltipTrigger>
@@ -536,9 +536,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             open={showFolderSelector} 
             onOpenChange={setShowFolderSelector} 
             onSelectFolder={(folderId) => {
-                if (isSavingMd || isCreatingQuiz) { // Logic to decide which action to take
-                    if (isSavingMd) handleSaveToFile(folderId);
-                    if (isCreatingQuiz) handleCreateQuiz(folderId);
+                if (isSavingMd) {
+                    handleSaveToFile(folderId);
+                    setIsSavingMd(false);
+                }
+                if (isCreatingQuiz) {
+                    handleCreateQuiz(folderId);
+                    setIsCreatingQuiz(false);
                 }
             }} 
         />

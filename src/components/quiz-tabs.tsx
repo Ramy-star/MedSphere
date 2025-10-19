@@ -5,6 +5,20 @@ import type { Lecture } from '@/lib/types';
 // --- STYLES ---
 const GlobalStyles = () => (
     <style>{`
+        /* --- Keyframes for Animations --- */
+        @keyframes accordion-down {
+          from { height: 0; }
+          to { height: var(--radix-accordion-content-height); }
+        }
+        @keyframes accordion-up {
+          from { height: var(--radix-accordion-content-height); }
+          to { height: 0; }
+        }
+        @keyframes staggerFadeIn {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
         /* --- CSS Variables --- */
         :root {
             /* Fonts */
@@ -218,10 +232,6 @@ const GlobalStyles = () => (
         }
         
         /* --- Staggered fade-in animation --- */
-        @keyframes staggerFadeIn {
-            from { opacity: 0; transform: translateY(15px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
         .stagger-fade-in {
             animation: staggerFadeIn 0.7s ease-out forwards;
         }
@@ -703,7 +713,7 @@ export function QuizContainer({ lectures }: { lectures: Lecture[] }) {
             if(tabsContainer){
               tabsContainer.removeEventListener('scroll', checkTabOverflow);
             }
-            window.removeEventListener('resize', checkTabOverflow);
+            window.addEventListener('resize', checkTabOverflow);
             resizeObserver.disconnect();
         };
     }, []);
