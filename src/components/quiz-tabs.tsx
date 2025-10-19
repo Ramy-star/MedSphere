@@ -1,6 +1,6 @@
 'use client';
 import React from 'react';
-import type { Lecture } from '@/lib/types';
+import type { Lecture, MCQ, WrittenCase } from '@/lib/types';
 
 // --- STYLES ---
 const GlobalStyles = () => (
