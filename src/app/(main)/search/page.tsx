@@ -61,7 +61,7 @@ function SearchResults() {
         try {
             const searchResults = await search(query, allItems);
             // Filter results to only include files and links
-            const fileResults = searchResults.filter(item => item.type === 'FILE' || item.type === 'LINK');
+            const fileResults = searchResults.filter(item => item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ');
             setResults(fileResults);
         } catch (error) {
             console.error("Search failed:", error);
@@ -121,7 +121,7 @@ function SearchResults() {
                                     key={item.id}
                                     className={cn("border-white/10", index !== results.length - 1 && "border-b")}
                                 >
-                                    {(item.type === 'FILE' || item.type === 'LINK') && (
+                                    {(item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ') && (
                                          <FileCard
                                             item={item}
                                             onFileClick={() => handleFileClick(item)}
