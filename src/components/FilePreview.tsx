@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, forwardRef, MouseEvent, useCallback, useRef } from 'react';
@@ -88,7 +89,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     };
   }, [url, mime, itemType]);
   
-  const handleMouseUp = useCallback((event: globalThis.MouseEvent) => {
+  const handleSelectionEvent = useCallback((event: globalThis.MouseEvent | globalThis.TouchEvent) => {
     if (!onTextSelect) return;
     
     // Use a small timeout to let the selection stabilize
@@ -120,13 +121,15 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
   useEffect(() => {
     document.addEventListener('selectionchange', handleSelectionChange);
-    // We now use the global mouseup event to position the quote button
-    document.addEventListener('mouseup', handleMouseUp);
+    // Use both mouseup and touchend for broad compatibility
+    document.addEventListener('mouseup', handleSelectionEvent);
+    document.addEventListener('touchend', handleSelectionEvent);
     return () => {
       document.removeEventListener('selectionchange', handleSelectionChange);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mouseup', handleSelectionEvent);
+      document.removeEventListener('touchend', handleSelectionEvent);
     };
-  }, [handleSelectionChange, handleMouseUp]);
+  }, [handleSelectionChange, handleSelectionEvent]);
 
 
   if (isLoading) {
