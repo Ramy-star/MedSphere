@@ -67,6 +67,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [showFolderSelector, setShowFolderSelector] = useState(false);
   const [isSavingMd, setIsSavingMd] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
+  const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false });
 
   const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -157,9 +158,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     }
   };
   
-  const handleCopy = (content: string, type: string) => {
+  const handleCopy = (content: string, type: 'text' | 'json') => {
     navigator.clipboard.writeText(content);
-    toast({ title: 'Copied to Clipboard', description: `${type} questions have been copied.` });
+    toast({ title: 'Copied to Clipboard', description: `${type === 'text' ? 'Text' : 'JSON'} questions have been copied.` });
+    setCopiedStatus(prev => ({ ...prev, [type]: true }));
+    setTimeout(() => {
+        setCopiedStatus(prev => ({ ...prev, [type]: false }));
+    }, 2000);
   };
   
   const handleDownload = (content: string, format: 'txt' | 'json' | 'md') => {
@@ -287,6 +292,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const renderOutputCard = (title: string, icon: React.ReactNode, content: string, type: 'text' | 'json') => {
     const isThisCardEditing = isEditing[type];
     const isJsonCardWithError = type === 'json' && jsonError;
+    const isCopied = copiedStatus[type];
 
     return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
@@ -317,7 +323,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         </Tooltip>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCopy(content, title)}><Copy className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCopy(content, type)}>
+                                  {isCopied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
+                                </Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Copy</p></TooltipContent>
                         </Tooltip>
