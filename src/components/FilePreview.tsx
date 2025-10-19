@@ -147,7 +147,14 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         );
     }
     try {
-        const lectures: Lecture[] = JSON.parse(quizData);
+        const parsedData = JSON.parse(quizData);
+        // The data might be an object with a 'lectures' property, or it might be the array itself.
+        const lectures: Lecture[] = parsedData.lectures || parsedData;
+        
+        if (!Array.isArray(lectures) && typeof lectures !== 'object') {
+             throw new Error("Parsed quiz data is not a valid Lecture array or object.");
+        }
+        
         return <QuizContainer lectures={lectures} />;
     } catch (e) {
         console.error("Failed to parse quiz data:", e);

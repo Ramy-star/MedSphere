@@ -646,7 +646,10 @@ const LectureContent: React.FC<{ lecture: Lecture }> = ({ lecture }) => {
 };
 
 
-export function QuizContainer({ lectures }: { lectures: Lecture[] }) {
+export function QuizContainer({ lectures: rawLectures }: { lectures: Lecture[] | Lecture }) {
+    // Ensure lectures is always an array
+    const lectures = Array.isArray(rawLectures) ? rawLectures : (rawLectures ? [rawLectures] : []);
+    
     const [activeLectureId, setActiveLectureId] = React.useState(lectures[0]?.id);
     
     const tabsWrapperRef = React.useRef<HTMLDivElement>(null);
@@ -675,12 +678,15 @@ export function QuizContainer({ lectures }: { lectures: Lecture[] }) {
             }
         });
 
-        // Cleanup function to remove links when the component unmounts
+        // Cleanup function to remove classes and links when the component unmounts
         return () => {
             document.body.classList.remove('quiz-active');
             fontLinks.forEach(linkInfo => {
                 const linkElement = document.getElementById(linkInfo.id);
                 if (linkElement) {
+                    // In a Next.js app with client-side navigation, it might be better
+                    // to not remove the fonts to avoid re-fetching on every navigation.
+                    // If this component is the only one using them, removal is fine.
                     // document.head.removeChild(linkElement);
                 }
             });
@@ -713,7 +719,7 @@ export function QuizContainer({ lectures }: { lectures: Lecture[] }) {
             if(tabsContainer){
               tabsContainer.removeEventListener('scroll', checkTabOverflow);
             }
-            window.addEventListener('resize', checkTabOverflow);
+            window.removeEventListener('resize', checkTabOverflow);
             resizeObserver.disconnect();
         };
     }, []);
