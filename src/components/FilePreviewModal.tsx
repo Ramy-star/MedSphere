@@ -94,13 +94,13 @@ const PdfControls = ({
     numPages,
     pageNumber,
     goToPage,
+    zoomIn,
+    zoomOut,
     pageInput,
     setPageInput,
     handlePageInputSubmit,
     handlePageInputBlur,
     pageInputRef,
-    zoomIn,
-    zoomOut,
     scaleInput,
     handleScaleInputChange,
     handleScaleInputSubmit,
@@ -600,7 +600,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-            <div className={cn("flex-1 items-center justify-center", (isPdf || isQuiz) && (isMobile ? 'flex' : 'hidden md:flex'))}>
+            <div className={cn("flex-1 items-center justify-center", isPdf && (isMobile ? 'flex' : 'hidden md:flex'))}>
                  {isPdf && (
                     <PdfControls
                         isMobile={isMobile}
@@ -627,7 +627,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
               <TooltipProvider delayDuration={100}>
-                <div className={cn('hidden md:flex items-center gap-1 sm:gap-2', isQuiz && 'opacity-0 pointer-events-none')}>
+                <div className={cn('flex items-center gap-1 sm:gap-2', isQuiz && 'opacity-0 pointer-events-none')}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
@@ -644,7 +644,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         </TooltipTrigger>
                         <TooltipContent side="bottom" sideOffset={8}><p>Open in browser</p></TooltipContent>
                     </Tooltip>
-                    {isPdf && (
+                    {isPdf && !isMobile && (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => { if(isFullscreen) { document.exitFullscreen(); } else { fileContentRef.current?.requestFullscreen(); } }} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
@@ -675,7 +675,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')} style={{ background: '#13161C' }}>
+        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz && "flex items-center justify-center p-0 md:p-4")}>
              <div className={cn("no-scrollbar overflow-auto", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')}>
               <FilePreview 
                   key={item.id}

@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import type { Lecture, MCQ, WrittenCase } from '@/lib/types';
@@ -81,13 +82,17 @@ const GlobalStyles = () => (
             transition: background-color 0.3s ease, color 0.3s ease;
         }
         .page-container {
-            max-width: 1200px;
+            width: 100%;
             background-color: var(--container-bg);
-            box-shadow: var(--container-shadow);
-            padding: 30px;
             overflow-x: hidden;
-            border-radius: 12px;
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        @media (min-width: 768px) {
+            .page-container {
+                box-shadow: var(--container-shadow);
+                padding: 30px;
+                border-radius: 12px;
+            }
         }
         .header {
             background: none;
@@ -505,7 +510,7 @@ const MCQQuestion: React.FC<{ questionData: MCQ; lectureId: string; index: numbe
     };
 
     return (
-        <div className="question question-animate">
+        <div className="question question-animate selectable">
             <p className="font-semibold">{questionData.q}</p>
             <div className="mt-2 mb-2">
                 {questionData.o.map((option, i) => (
@@ -544,7 +549,7 @@ const MCQQuestion: React.FC<{ questionData: MCQ; lectureId: string; index: numbe
 
 const WrittenQuestion: React.FC<{ questionCase: WrittenCase; lectureId: string; caseIndex: number }> = ({ questionCase, lectureId, caseIndex }) => {
     return (
-        <div className="question question-animate">
+        <div className="question question-animate selectable">
             <div className="case-description" dangerouslySetInnerHTML={{ __html: questionCase.case }} />
             {questionCase.subqs.map((subq, subqIndex) => {
                 const [isAnswerVisible, setAnswerVisible] = React.useState(false);
