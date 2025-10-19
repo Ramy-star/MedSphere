@@ -174,7 +174,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         // Ensure lectures is always an array
         const lectures: Lecture[] = Array.isArray(parsedData) ? parsedData : [parsedData];
         
-        return <div className="selectable h-full"><QuizContainer lectures={lectures} /></div>;
+        return <div ref={containerRef} className="selectable h-full"><QuizContainer lectures={lectures} /></div>;
     } catch (e) {
         console.error("Failed to parse quiz data:", e);
         return (
@@ -221,7 +221,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     return (
       <div 
         {...commonProps}
-        className="prose prose-base max-w-full p-6 text-white selectable" 
+        className="prose prose-base max-w-full p-6 text-white" 
         style={{
             '--tw-prose-body': '#E2E8F0',
             '--tw-prose-headings': '#FFFFFF',

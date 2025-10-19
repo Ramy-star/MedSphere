@@ -675,8 +675,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz ? 'w-full h-full' : 'grid grid-rows-1 grid-cols-1')} style={{ background: '#13161C' }}>
-             <div className={cn("no-scrollbar", isQuiz ? 'w-full h-full overflow-y-auto' : '[grid-area:1/1] overflow-auto')}>
+        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')} style={{ background: '#13161C' }}>
+             <div className={cn("no-scrollbar overflow-auto", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')}>
               <FilePreview 
                   key={item.id}
                   ref={pdfViewerRef}
@@ -703,7 +703,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         transform: 'translateX(-50%)' 
                     }}
                 >
-                    <button
+                     <button
                         onClick={handleQuoteToChat}
                         className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
                         style={{ backgroundColor: '#212121' }}
