@@ -175,7 +175,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         const lectures: Lecture[] = Array.isArray(parsedData) ? parsedData : [parsedData];
         
         return (
-            <div ref={containerRef} className="selectable w-full h-full overflow-y-auto">
+             <div ref={containerRef} className="w-full h-full overflow-y-auto">
                 <div className="mx-auto w-full max-w-6xl">
                     <QuizContainer lectures={lectures} />
                 </div>

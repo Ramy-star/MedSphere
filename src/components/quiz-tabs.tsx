@@ -511,10 +511,10 @@ const MCQQuestion: React.FC<{ questionData: MCQ; lectureId: string; index: numbe
 
     return (
         <div className="question question-animate selectable">
-            <p className="font-semibold">{questionData.q}</p>
+            <p className="font-semibold selectable">{questionData.q}</p>
             <div className="mt-2 mb-2">
                 {questionData.o.map((option, i) => (
-                    <div key={i} className="mcq-option">
+                    <div key={i} className="mcq-option selectable">
                         {option}
                     </div>
                 ))}
@@ -537,7 +537,7 @@ const MCQQuestion: React.FC<{ questionData: MCQ; lectureId: string; index: numbe
                 aria-hidden={!isAnswerVisible}
             >
                 <div>
-                    <div className="explanation">
+                    <div className="explanation selectable">
                         <p><strong>Answer:</strong> {questionData.a}</p>
                     </div>
                 </div>
@@ -550,7 +550,7 @@ const MCQQuestion: React.FC<{ questionData: MCQ; lectureId: string; index: numbe
 const WrittenQuestion: React.FC<{ questionCase: WrittenCase; lectureId: string; caseIndex: number }> = ({ questionCase, lectureId, caseIndex }) => {
     return (
         <div className="question question-animate selectable">
-            <div className="case-description" dangerouslySetInnerHTML={{ __html: questionCase.case }} />
+            <div className="case-description selectable" dangerouslySetInnerHTML={{ __html: questionCase.case }} />
             {questionCase.subqs.map((subq, subqIndex) => {
                 const [isAnswerVisible, setAnswerVisible] = React.useState(false);
                 const answerId = `answer-written-${lectureId}-${caseIndex}-${subqIndex}`;
@@ -561,7 +561,7 @@ const WrittenQuestion: React.FC<{ questionCase: WrittenCase; lectureId: string; 
 
                 return (
                     <div key={subqIndex} className="written-question-container mt-4 pt-4 border-t border-gray-200 first:mt-0 first:pt-0 first:border-t-0">
-                        <p className="font-semibold">{subq.q}</p>
+                        <p className="font-semibold selectable">{subq.q}</p>
                         <button
                             type="button"
                             className="show-answer-btn"
@@ -579,7 +579,7 @@ const WrittenQuestion: React.FC<{ questionCase: WrittenCase; lectureId: string; 
                         >
                             <div>
                                 <p className="written-answer-label">Answer:</p>
-                                <div className="written-explanation">
+                                <div className="written-explanation selectable">
                                     <p dangerouslySetInnerHTML={{ __html: subq.a }} />
                                 </div>
                             </div>
