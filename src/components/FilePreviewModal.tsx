@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -518,7 +519,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   };
 
   const handleTextSelect = useCallback((text: string, position: { top: number; left: number }) => {
-    if (isMobile) return;
     const containerRect = previewContainerRef.current?.getBoundingClientRect();
     if (containerRect) {
       setSelection({
@@ -529,7 +529,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         },
       });
     }
-  }, [isMobile]);
+  }, []);
 
   const handleQuoteToChat = () => {
     if (selection) {
@@ -608,16 +608,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                           <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                         </Tooltip>
                       )}
-                      {openUrl && !isQuiz && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                               <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                  <ExternalLink className="w-5 h-5" />
-                              </Button>
-                             </TooltipTrigger>
-                            <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
-                        </Tooltip>
-                      )}
+                      
                     </TooltipProvider>
                 </div>
 
