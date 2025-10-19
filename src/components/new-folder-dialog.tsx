@@ -86,9 +86,9 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
                   </FormItem>
                 )}
               />
-              <DialogFooter className="pt-2 sm:justify-center">
-                <Button type="button" variant="outline" className="rounded-xl flex-1 sm:flex-none" onClick={() => onOpenChange(false)}>Cancel</Button>
-                <Button type="submit" className="rounded-xl flex-1 sm:flex-none">Create</Button>
+              <DialogFooter className="pt-2">
+                <Button type="button" variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
+                <Button type="submit" className="rounded-xl">Create</Button>
               </DialogFooter>
             </form>
           </Form>

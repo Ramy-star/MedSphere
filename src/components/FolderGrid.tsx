@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -398,9 +397,9 @@ export function FolderGrid({
                   This will permanently delete "{itemToDelete?.name}". This action cannot be undone.
                 </AlertDialogDescription>
               </AlertDialogHeader>
-              <AlertDialogFooter className="p-6 pt-4 sm:justify-center">
-                <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl flex-1 sm:flex-none">Cancel</Button></AlertDialogCancel>
-                <AlertDialogAction asChild><Button variant="destructive" className="flex-1 sm:flex-none" onClick={handleDelete}>Delete</Button></AlertDialogAction>
+              <AlertDialogFooter className="p-6 pt-4">
+                <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
+                <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDelete}>Delete</Button></AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

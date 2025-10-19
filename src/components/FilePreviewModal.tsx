@@ -73,7 +73,6 @@ type PdfControlsProps = {
     isMobile: boolean,
     numPages: number | undefined,
     pageNumber: number,
-    pdfScale: number,
     goToPage: (page: number) => void,
     zoomIn: () => void,
     zoomOut: () => void,
@@ -646,36 +645,36 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
               />
             </div>
             {selection && isQuoteAvailable && (
-              <div
-                className="absolute z-20 -translate-x-1/2"
-                style={{ top: selection.position.top, left: selection.position.left }}
-              >
-                {isMobile ? (
-                  <button
-                    onClick={handleQuoteToChat}
-                    className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
-                    style={{ backgroundColor: '#212121' }}
-                  >
-                    <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                    <span className="text-sm font-medium">Ask AI</span>
-                  </button>
-                ) : (
-                  <TooltipProvider>
-                    <Tooltip open={true}>
-                      <TooltipTrigger asChild>
+                <div
+                    className="absolute z-20 -translate-x-1/2"
+                    style={{ top: selection.position.top, left: selection.position.left }}
+                >
+                    {isMobile ? (
                         <button
-                          onClick={handleQuoteToChat}
-                          className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
-                          style={{ backgroundColor: '#212121' }}
+                            onClick={handleQuoteToChat}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                            style={{ backgroundColor: '#212121' }}
                         >
-                          <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                          <span className="text-sm font-medium">Ask AI</span>
+                            <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
+                            <span className="text-sm font-medium">Ask AI</span>
                         </button>
-                      </TooltipTrigger>
-                    </Tooltip>
-                  </TooltipProvider>
-                )}
-              </div>
+                    ) : (
+                        <TooltipProvider>
+                            <Tooltip open={true}>
+                                <TooltipTrigger asChild>
+                                    <button
+                                        onClick={handleQuoteToChat}
+                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                                        style={{ backgroundColor: '#212121' }}
+                                    >
+                                        <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
+                                        <span className="text-sm font-medium">Ask AI</span>
+                                    </button>
+                                </TooltipTrigger>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                </div>
             )}
         </main>
     </div>

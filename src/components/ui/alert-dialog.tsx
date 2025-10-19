@@ -1,3 +1,4 @@
+
 "use client"
 
 import * as React from "react"
@@ -65,7 +66,7 @@ const AlertDialogFooter = ({
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2",
+      "flex flex-row justify-center space-x-2",
       className
     )}
     {...props}
@@ -118,7 +119,7 @@ const AlertDialogCancel = React.forwardRef<
     ref={ref}
     className={cn(
       buttonVariants({ variant: "outline" }),
-      "mt-2 sm:mt-0 rounded-xl",
+      "mt-0 rounded-xl",
       className
     )}
     {...props}
