@@ -1,7 +1,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -22,7 +22,6 @@ import { Link2Icon } from './icons/Link2Icon';
 import { useUser } from '@/firebase/auth/use-user';
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 import { useRouter } from 'next/navigation';
-import { FileQuestion } from './icons/FileQuestion';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { UploadProgress, UploadingFile } from './UploadProgress';
 
@@ -47,7 +46,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
         case 'pdf':
             return { Icon: FileText, color: 'text-red-400' };
         case 'md':
-            return { Icon: FileQuestion, color: 'text-gray-400' };
+            return { Icon: HelpCircle, color: 'text-red-400' };
         case 'docx':
         case 'doc':
             return { Icon: FileText, color: 'text-blue-500' };

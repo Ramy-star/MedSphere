@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -34,7 +34,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
-import { FileQuestion } from './icons/FileQuestion';
 
 const ChatPanel = dynamic(() => import('./ChatPanel'), {
   ssr: false,
@@ -190,7 +189,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
         case 'pdf':
             return { Icon: FileText, color: 'text-red-400' };
         case 'md':
-            return { Icon: FileQuestion, color: 'text-gray-400' };
+            return { Icon: HelpCircle, color: 'text-red-400' };
         case 'docx':
         case 'doc':
             return { Icon: FileText, color: 'text-blue-500' };
@@ -591,7 +590,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         ref={previewContainerRef}
         className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden")}
     >
-        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] backdrop-blur-sm border-b border-slate-800 z-10">
+        <header className="flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 bg-[#2f3b47] z-10">
             <div className="flex items-center gap-1 overflow-hidden flex-1">
                 <div className="flex items-center gap-1 md:hidden">
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
@@ -630,8 +629,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 </div>
             </div>
 
-            <div className={cn("flex-1 items-center justify-center", (isPdf || isQuiz) && (isMobile ? 'flex' : 'hidden md:flex'))}>
-                 {isPdf ? (
+            <div className={cn("flex-1 items-center justify-center", isPdf && (isMobile ? 'flex' : 'hidden md:flex'))}>
+                 {isPdf && (
                     <PdfControls
                         isMobile={isMobile}
                         numPages={numPages}
@@ -653,21 +652,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         handleScaleInputBlur={handleScaleInputBlur}
                         pageInputRef={pageInputRef}
                     />
-                 ) : isQuiz ? (
-                    <div className="flex items-center gap-0 text-white">
-                        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => {}}>
-                            <Minus className="w-4 h-4" />
-                        </Button>
-                        <Input
-                            type="text"
-                            value="100%"
-                            className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
-                        />
-                        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={() => {}}>
-                            <Plus className="w-4 h-4" />
-                        </Button>
-                    </div>
-                 ) : null}
+                 )}
             </div>
 
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
@@ -684,41 +669,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                            <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                         </Tooltip>
                     </>
-                    )}
-                    {(openUrl && !isQuiz && !isMobile) && (
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                    <ExternalLink className="w-5 h-5" />
-                                </Button>
-                            </TooltipTrigger>
-                           <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Open in new tab</p></TooltipContent>
-                        </Tooltip>
-                    )}
-                    {(!isMobile && (isPdf || isQuiz)) && (
-                       <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => {
-                                if (fileContentRef.current) {
-                                fileContentRef.current.requestFullscreen();
-                                toast({
-                                    title: "Presentation Mode",
-                                    description: "To exit fullscreen, press the ESC key.",
-                                    duration: 3000,
-                                })
-                                }
-                            }} 
-                            disabled={!fileUrl && !isQuiz} 
-                            className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9" 
-                            >
-                                <Presentation className="w-5 h-5" />
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Present</p></TooltipContent>
-                       </Tooltip>
                     )}
                 </div>
                 </TooltipProvider>

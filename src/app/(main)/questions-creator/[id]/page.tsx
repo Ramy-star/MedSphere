@@ -3,7 +3,7 @@
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, TestTube } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
@@ -328,7 +328,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsSavingMd(true); setShowFolderSelector(true); }} disabled={isSavingMd}>
-                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <DownloadCloud className="h-4 w-4" />}
+                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <HelpCircle className="h-4 w-4 text-red-400" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Save as Markdown File</p></TooltipContent>
@@ -338,7 +338,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsCreatingQuiz(true); setShowFolderSelector(true); }} disabled={isCreatingQuiz}>
-                                        {isCreatingQuiz ? <Loader2 className="h-4 w-4 animate-spin"/> : <TestTube className="h-4 w-4 text-lime-400" />}
+                                        {isCreatingQuiz ? <Loader2 className="h-4 w-4 animate-spin"/> : <Lightbulb className="h-4 w-4 text-yellow-400" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create Interactive Quiz</p></TooltipContent>
@@ -556,7 +556,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 }
 
 
-export default function SavedQuestionSetPage({ params }: { params: Promise<{ id: string }> }) {
+export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:string }> }) {
   const { id } = use(params);
   const { user, loading } = useUser();
 
