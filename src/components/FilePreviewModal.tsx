@@ -11,7 +11,7 @@ import { Button } from './ui/button';
 import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
-import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
+import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
 import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
@@ -331,7 +331,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [goToPage, pageInput]);
 
   const handlePageInputBlur = (e: React.FocusEvent) => {
-      handlePageInputSubmit(e);
+      handlePageInputSubmit(e as unknown as FormEvent);
   };
   
   const handleScaleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -347,7 +347,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   }, [scaleInput]);
 
   const handleScaleInputBlur = (e: React.FocusEvent) => {
-      handleScaleInputSubmit(e);
+      handleScaleInputSubmit(e as unknown as FormEvent);
   };
 
   const onPageChange = useCallback((newPage: number) => {
@@ -546,7 +546,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <X className="w-5 h-5" />
                     </Button>
                     <TooltipProvider delayDuration={100}>
-                      {isMobile && !isQuiz && (
+                      {isMobile && !isQuiz && !isLink && (
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
@@ -582,7 +582,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         handlePageInputSubmit={handlePageInputSubmit}
                         handlePageInputBlur={handlePageInputBlur}
                         pageInputRef={pageInputRef}
-                        pdfScale={1} 
                         zoomIn={() => {}} 
                         zoomOut={() => {}} 
                     />
@@ -644,13 +643,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   quizData={item.metadata?.quizData}
               />
             </div>
-            {selection && isQuoteAvailable && (
+             {selection && isQuoteAvailable && (
                 <div
-                    className="absolute z-20 -translate-x-1/2"
-                    style={{ top: selection.position.top, left: selection.position.left }}
+                  className="absolute z-20 -translate-x-1/2"
+                  style={{ top: selection.position.top, left: selection.position.left }}
                 >
                     {isMobile ? (
-                        <button
+                       <button
                             onClick={handleQuoteToChat}
                             className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
                             style={{ backgroundColor: '#212121' }}
@@ -659,20 +658,14 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                             <span className="text-sm font-medium">Ask AI</span>
                         </button>
                     ) : (
-                        <TooltipProvider>
-                            <Tooltip open={true}>
-                                <TooltipTrigger asChild>
-                                    <button
-                                        onClick={handleQuoteToChat}
-                                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
-                                        style={{ backgroundColor: '#212121' }}
-                                    >
-                                        <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                                        <span className="text-sm font-medium">Ask AI</span>
-                                    </button>
-                                </TooltipTrigger>
-                            </Tooltip>
-                        </TooltipProvider>
+                         <button
+                            onClick={handleQuoteToChat}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700"
+                            style={{ backgroundColor: '#212121' }}
+                        >
+                            <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
+                            <span className="text-sm font-medium">Ask AI</span>
+                        </button>
                     )}
                 </div>
             )}
@@ -728,5 +721,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    
 
     
