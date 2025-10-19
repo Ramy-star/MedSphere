@@ -81,11 +81,6 @@ type PdfControlsProps = {
     setPageInput: (value: string) => void,
     handlePageInputSubmit: (e: React.FormEvent) => void,
     handlePageInputBlur: (e: React.FocusEvent) => void,
-    scaleInput: string,
-    handleScaleInputChange: (e: React.ChangeEvent<HTMLInputElement>) => void,
-    handleScaleInputSubmit: (e: React.FormEvent) => void,
-    handleScaleInputBlur: (e: React.FocusEvent) => void,
-    pageInputRef: React.RefObject<HTMLInputElement>,
 };
 
 
@@ -93,22 +88,13 @@ const PdfControls = ({
     isMobile,
     numPages,
     pageNumber,
-    pdfScale,
     goToPage,
-    zoomIn,
-    zoomOut,
     pageInput,
     setPageInput,
     handlePageInputSubmit,
     handlePageInputBlur,
-    scaleInput,
-    handleScaleInputChange,
-    handleScaleInputSubmit,
-    handleScaleInputBlur,
     pageInputRef,
 }: PdfControlsProps) => {
-    const MAX_ZOOM = 5;
-    const MIN_ZOOM = 0.1;
 
     useEffect(() => {
         setPageInput(String(pageNumber));
@@ -141,29 +127,6 @@ const PdfControls = ({
             />
             <span className="text-sm px-1 text-slate-400 font-ubuntu">/ {numPages ?? '--'}</span>
         </form>
-        
-        <div className="h-4 w-px bg-white/20 mx-1"></div>
-        
-        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomOut} disabled={pdfScale <= MIN_ZOOM}>
-            <Minus className="w-4 h-4" />
-            <span className="sr-only">Zoom Out</span>
-        </Button>
-        
-        <form onSubmit={handleScaleInputSubmit}>
-            <Input
-                type="text"
-                value={scaleInput}
-                onChange={handleScaleInputChange}
-                onBlur={handleScaleInputBlur}
-                className="w-16 h-7 text-center bg-transparent border-0 font-ubuntu focus-visible:ring-1 focus-visible:ring-blue-500"
-                onFocus={(e) => e.target.select()}
-            />
-        </form>
-        
-        <Button variant="ghost" size="icon" className="rounded-full w-7 h-7 text-slate-300 hover:bg-white/20 hover:text-white" onClick={zoomIn} disabled={pdfScale >= MAX_ZOOM}>
-            <Plus className="w-4 h-4" />
-            <span className="sr-only">Zoom In</span>
-        </Button>
     </div>
     );
 };
@@ -608,7 +571,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                           <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white"><p>Download</p></TooltipContent>
                         </Tooltip>
                       )}
-                      
                     </TooltipProvider>
                 </div>
 
@@ -626,10 +588,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         isMobile={isMobile}
                         numPages={numPages}
                         pageNumber={pageNumber}
-                        pdfScale={pdfScale}
                         goToPage={goToPage}
-                        zoomIn={zoomIn}
-                        zoomOut={zoomOut}
                         pageInput={pageInput}
                         setPageInput={(v) => {
                           manualPageInputInProgress.current = true;
@@ -637,11 +596,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         }}
                         handlePageInputSubmit={handlePageInputSubmit}
                         handlePageInputBlur={handlePageInputBlur}
-                        scaleInput={scaleInput}
-                        handleScaleInputChange={handleScaleInputChange}
-                        handleScaleInputSubmit={handleScaleInputSubmit}
-                        handleScaleInputBlur={handleScaleInputBlur}
                         pageInputRef={pageInputRef}
+                        pdfScale={1} 
+                        zoomIn={() => {}} 
+                        zoomOut={() => {}} 
                     />
                  )}
             </div>
@@ -703,17 +661,34 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
             {selection && isQuoteAvailable && (
                 <div
-                    className="absolute z-20"
-                    style={{ top: selection.position.top - 50, left: selection.position.left }}
+                  className="absolute z-20"
+                  style={{ top: selection.position.top, left: selection.position.left }}
                 >
-                     <button
-                        onClick={handleQuoteToChat}
-                        className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700 -translate-x-1/2"
-                        style={{ backgroundColor: '#212121' }}
+                  {isMobile ? (
+                    <button
+                      onClick={handleQuoteToChat}
+                      className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700 -translate-x-1/2"
+                      style={{ backgroundColor: '#212121' }}
                     >
-                        <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
-                        <span className="text-sm font-medium">Ask AI</span>
+                      <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
+                      <span className="text-sm font-medium">Ask AI</span>
                     </button>
+                  ) : (
+                    <TooltipProvider>
+                      <Tooltip open={true}>
+                        <TooltipTrigger asChild>
+                          <button
+                            onClick={handleQuoteToChat}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-white shadow-lg transition-transform active:scale-95 border border-slate-700 -translate-x-1/2"
+                            style={{ backgroundColor: '#212121' }}
+                          >
+                            <span className="text-lg font-bold leading-none select-none -mt-1">”</span>
+                            <span className="text-sm font-medium">Ask AI</span>
+                          </button>
+                        </TooltipTrigger>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                 </div>
             )}
         </main>
