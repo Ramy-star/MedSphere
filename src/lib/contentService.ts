@@ -16,7 +16,7 @@ import { cacheService } from './cacheService';
 export type Content = {
   id: string;
   name: string;
-  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK';
+  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK' | 'INTERACTIVE_QUIZ';
   parentId: string | null;
   metadata?: {
     size?: number;
@@ -29,6 +29,7 @@ export type Content = {
     iconCloudinaryPublicId?: string; 
     shortId?: string;
     sourceFileId?: string; // For generated files like quizzes
+    quizData?: string; // For INTERACTIVE_QUIZ type
   };
   createdAt?: string;
   updatedAt?: string;
@@ -266,6 +267,53 @@ export const contentService = {
       throw e;
     }
   },
+
+  async createInteractiveQuiz(parentId: string, name: string, quizData: string, sourceFileId: string): Promise<Content> {
+    if (!db) throw new Error("Firestore not initialized");
+
+    const newQuizId = uuidv4();
+    const newQuizRef = doc(db, 'content', newQuizId);
+    let newQuizData: Content | null = null;
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+            const childrenSnapshot = await getDocs(childrenQuery);
+            const order = childrenSnapshot.size;
+
+            newQuizData = {
+                id: newQuizId,
+                name: `${name} (Quiz)`,
+                type: 'INTERACTIVE_QUIZ',
+                parentId: parentId,
+                metadata: {
+                    quizData,
+                    sourceFileId,
+                },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                order: order,
+            };
+
+            transaction.set(newQuizRef, newQuizData);
+        });
+
+        if (!newQuizData) throw new Error("Quiz creation failed within transaction.");
+        return newQuizData;
+
+    } catch (e: any) {
+        if (e && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${newQuizId}`,
+                operation: 'create',
+                requestResourceData: { name, parentId, type: 'INTERACTIVE_QUIZ' },
+            }));
+        } else {
+            console.error("Transaction failed: ", e);
+        }
+        throw e;
+    }
+  },
   
   async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
@@ -464,8 +512,8 @@ export const contentService = {
       // Step 1: Delete the old file completely
       await this.delete(itemToUpdate.id);
       
-      // Step 2: Create the new file
-      return await this.createFile(parentId, newFile, callbacks);
+      // Step 2: Create the new file, preserving the original order
+      return await this.createFile(parentId, newFile, callbacks, { order: itemToUpdate.order });
 
     } catch (e: any) {
       console.error("Update (delete and replace) failed:", e);

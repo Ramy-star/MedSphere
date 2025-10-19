@@ -8,7 +8,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the content item." },
         "name": { "type": "string", "description": "Display name of the content item." },
-        "type": { "type": "string", "enum": ["LEVEL", "SEMESTER", "SUBJECT", "FOLDER", "FILE", "LINK"], "description": "The type of content." },
+        "type": { "type": "string", "enum": ["LEVEL", "SEMESTER", "SUBJECT", "FOLDER", "FILE", "LINK", "INTERACTIVE_QUIZ"], "description": "The type of content." },
         "parentId": { "type": "string", "description": "The ID of the parent item. Null for top-level items." },
         "order": { "type": "number", "description": "The order of the item within its parent." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the item was created." },
@@ -21,7 +21,8 @@
             "size": { "type": "number", "description": "File size in bytes." },
             "mime": { "type": "string", "description": "MIME type of the file." },
             "storagePath": { "type": "string", "description": "Path to the file in Firebase Cloud Storage." },
-            "sourceFileId": { "type": "string", "description": "The ID of the original source file for generated content." }
+            "sourceFileId": { "type": "string", "description": "The ID of the original source file for generated content." },
+            "quizData": { "type": "string", "description": "JSON string containing the data for an interactive quiz." }
           }
         }
       },

@@ -8,6 +8,8 @@ import { contentService } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { QuizContainer } from './quiz-tabs';
+import type { Lecture } from '@/lib/types';
 
 
 // Import react-pdf styles here to ensure they are loaded
@@ -15,8 +17,8 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
 type FilePreviewProps = {
-  url: string;
-  mime: string;
+  url?: string;
+  mime?: string;
   itemName: string;
   onPdfLoadSuccess?: (pdf: PDFDocumentProxy) => void;
   pdfScale: number;
@@ -25,12 +27,14 @@ type FilePreviewProps = {
   currentPage?: number;
   onTextSelect?: (text: string, position: { top: number, left: number }) => void;
   onSelectionChange?: () => void;
+  itemType: string;
+  quizData?: string;
 };
 
 // Define the type for the ref handle
 export type FilePreviewRef = PdfViewerRef;
 
-const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage, onTextSelect, onSelectionChange }, ref) => {
+const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage, onTextSelect, onSelectionChange, itemType, quizData }, ref) => {
   const [content, setContent] = useState<string | Blob | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [contentUrl, setContentUrl] = useState<string|null>(null);
@@ -40,7 +44,17 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     let objectUrl: string | null = null;
     let isCancelled = false;
 
+    if (itemType === 'INTERACTIVE_QUIZ') {
+        setIsLoading(false);
+        return;
+    }
+
     const loadContent = async () => {
+        if (!url) {
+            setIsLoading(false);
+            setContent(null);
+            return;
+        }
         setIsLoading(true);
         try {
             const blob = await contentService.getFileContent(url);
@@ -72,7 +86,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [url, mime]);
+  }, [url, mime, itemType]);
   
   const handleMouseUp = useCallback((event: globalThis.MouseEvent) => {
     if (!onTextSelect) return;
@@ -123,6 +137,29 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
       );
   }
   
+  if (itemType === 'INTERACTIVE_QUIZ') {
+    if (!quizData) {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                <p className="text-xl font-semibold mb-3">⚠️ Quiz Data Missing</p>
+                <p className="text-base mb-4 text-slate-400">Could not load the interactive quiz data.</p>
+            </div>
+        );
+    }
+    try {
+        const lectures: Lecture[] = JSON.parse(quizData);
+        return <QuizContainer lectures={lectures} />;
+    } catch (e) {
+        console.error("Failed to parse quiz data:", e);
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
+                <p className="text-xl font-semibold mb-3">⚠️ Invalid Quiz Format</p>
+                <p className="text-base mb-4 text-slate-400">The quiz data is corrupted or in an incorrect format.</p>
+            </div>
+        );
+    }
+  }
+
   if (!content) {
        return (
         <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
@@ -189,7 +226,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     );
   }
 
-  if (mime.startsWith('image/')) {
+  if (mime?.startsWith('image/')) {
     return (
         <div {...commonProps} className={cn(commonProps.className, "w-full h-full overflow-auto flex items-center justify-center p-4 md:p-8")}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -198,11 +235,11 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     );
   }
   
-  if (mime.startsWith('audio/')) {
+  if (mime?.startsWith('audio/')) {
     return <div {...commonProps} className={cn(commonProps.className, "w-full h-full flex items-center justify-center p-4")}><audio controls src={contentUrl} className="w-full max-w-lg" /></div>;
   }
   
-  if (mime.startsWith('video/')) {
+  if (mime?.startsWith('video/')) {
     return <div {...commonProps} className={cn(commonProps.className, "w-full h-full flex items-center justify-center bg-black")}><video controls src={contentUrl} className="max-w-full max-h-full" /></div>;
   }
 
@@ -210,12 +247,12 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     return <iframe src={contentUrl} className="w-full h-full border-2 border-slate-700 rounded-lg bg-white text-black shadow-lg" title={itemName} sandbox="allow-scripts allow-same-origin" />;
   }
 
-  if (mime.startsWith('text/')) {
+  if (mime?.startsWith('text/')) {
     return <iframe src={contentUrl} {...commonProps} className={cn(commonProps.className, "w-full h-full border-2 border-slate-700 rounded-lg bg-slate-800 text-white shadow-lg")} title={itemName} />
   }
 
   // Use Office viewer for docx, xlsx, pptx if it's a public URL (won't work for blob URLs from local storage)
-  if (!url.startsWith('blob:') && (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation')) {
+  if (url && !url.startsWith('blob:') && (mime === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || mime === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || mime === 'application/vnd.openxmlformats-officedocument.presentationml.presentation')) {
     return <iframe src={`https://view.officeapps.live.com/op/embed.aspx?src=${encodeURIComponent(url)}`} className="w-full h-full border-0 rounded-lg shadow-2xl" title={itemName} />
   }
   

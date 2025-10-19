@@ -1,10 +1,9 @@
-
 'use client';
 
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, TestTube } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
@@ -66,6 +65,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [editingTitle, setEditingTitle] = useState('');
   const [showFolderSelector, setShowFolderSelector] = useState(false);
   const [isSavingMd, setIsSavingMd] = useState(false);
+  const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
   const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false });
 
@@ -280,6 +280,25 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     }
 };
 
+  const handleCreateQuiz = async (parentId: string) => {
+    if (!questionSet) return;
+    setIsCreatingQuiz(true);
+    setShowFolderSelector(false);
+    try {
+        await contentService.createInteractiveQuiz(parentId, questionSet.fileName, questionSet.jsonQuestions, questionSet.sourceFileId);
+        toast({ title: 'Interactive Quiz Created', description: `Quiz for "${questionSet.fileName}" has been saved.` });
+    } catch (error: any) {
+        console.error("Failed to create interactive quiz:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Creation Failed',
+            description: error.message || 'Could not create the interactive quiz.'
+        });
+    } finally {
+        setIsCreatingQuiz(false);
+    }
+  }
+
 
   if (loading || !questionSet) {
     return (
@@ -313,6 +332,16 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Save as Markdown File</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                        {isAdmin && type === 'json' && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setShowFolderSelector(true)} disabled={isCreatingQuiz}>
+                                        {isCreatingQuiz ? <Loader2 className="h-4 w-4 animate-spin"/> : <TestTube className="h-4 w-4 text-lime-400" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Create Interactive Quiz</p></TooltipContent>
                             </Tooltip>
                         )}
                         <Tooltip>
@@ -506,7 +535,12 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         <FolderSelectorDialog 
             open={showFolderSelector} 
             onOpenChange={setShowFolderSelector} 
-            onSelectFolder={handleSaveToFile} 
+            onSelectFolder={(folderId) => {
+                if (isSavingMd || isCreatingQuiz) { // Logic to decide which action to take
+                    if (isSavingMd) handleSaveToFile(folderId);
+                    if (isCreatingQuiz) handleCreateQuiz(folderId);
+                }
+            }} 
         />
         {uploadingFile && (
             <div className="fixed bottom-4 right-4 w-80">
@@ -537,5 +571,3 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    

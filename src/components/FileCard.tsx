@@ -1,8 +1,7 @@
-
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, TestTube
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -30,6 +29,10 @@ import { UploadProgress, UploadingFile } from './UploadProgress';
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
     if (item.type === 'LINK') {
         return { Icon: Link2Icon, color: 'text-cyan-400' };
+    }
+    
+    if (item.type === 'INTERACTIVE_QUIZ') {
+        return { Icon: TestTube, color: 'text-lime-400' };
     }
 
     const fileName = item.name;
@@ -128,8 +131,8 @@ export const FileCard = React.memo(function FileCard({
     const updateFileInputRef = useRef<HTMLInputElement>(null);
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
-    const displaySize = item.type === 'LINK' 
-        ? 'Link'
+    const displaySize = item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ'
+        ? item.type.replace('_', ' ')
         : item.metadata?.size 
             ? sizeInKB < 1024 
                 ? `${sizeInKB.toFixed(1)} KB` 
@@ -261,11 +264,13 @@ export const FileCard = React.memo(function FileCard({
                             <Eye className="mr-2 h-4 w-4" />
                             <span>Open</span>
                         </DropdownMenuItem>
+                        {browserUrl && (
                         <DropdownMenuItem onSelect={() => window.open(browserUrl, '_blank')} disabled={!browserUrl}>
                             <ExternalLink className="mr-2 h-4 w-4" />
                             <span>Open in browser</span>
                         </DropdownMenuItem>
-                        {!isLink && (
+                        )}
+                        {!isLink && item.type !== 'INTERACTIVE_QUIZ' && (
                             <DropdownMenuItem 
                                 onSelect={() => storagePath && handleForceDownload(storagePath, item.name)} 
                                 disabled={!storagePath}
@@ -284,7 +289,7 @@ export const FileCard = React.memo(function FileCard({
                                         <span>Create Questions</span>
                                     </DropdownMenuItem>
                                 )}
-                                {!isLink && onUpdate && (
+                                {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && (
                                     <DropdownMenuItem onClick={handleUpdateClick}>
                                       <RefreshCw className="mr-2 h-4 w-4" />
                                       <span>Update</span>

@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -12,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, TestTube } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -174,6 +173,10 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     if (item.type === 'LINK') {
         return { Icon: Link2Icon, color: 'text-cyan-400' };
     }
+    
+    if (item.type === 'INTERACTIVE_QUIZ') {
+        return { Icon: TestTube, color: 'text-lime-400' };
+    }
 
     const fileName = item.name;
     const mimeType = item.metadata?.mime;
@@ -285,29 +288,35 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         let questionText: string | null = null;
     
         try {
-            // Check if the current item is a question file
+            const isQuizFile = currentItem.type === 'INTERACTIVE_QUIZ';
             const isQuestionFile = currentItem.metadata?.sourceFileId && currentItem.metadata?.mime === 'text/markdown';
-            
+
             let lectureFile: Content | null = null;
     
-            if (isQuestionFile) {
+            if (isQuizFile) {
+                questionText = JSON.stringify(JSON.parse(currentItem.metadata?.quizData || '{}'), null, 2);
+            } else if (isQuestionFile) {
                 // It's a question file, so its content is the questionText
                 const questionBlob = await contentService.getFileContent(currentItem.metadata!.storagePath!);
                 questionText = await questionBlob.text();
-    
-                // The lecture file is the source document
-                const sourceFile = await contentService.getById(currentItem.metadata!.sourceFileId!);
-                if (sourceFile) {
+            }
+
+            // Determine the source file for lecture text
+            const sourceFileId = currentItem.metadata?.sourceFileId;
+            if (sourceFileId) {
+                const sourceFile = await contentService.getById(sourceFileId);
+                 if (sourceFile) {
                     lectureFile = sourceFile;
-                    toast({
-                        title: "Context Loaded",
-                        description: `Answering based on "${sourceFile.name}".`,
-                    });
+                    if (isQuizFile || isQuestionFile) {
+                        toast({
+                            title: "Context Loaded",
+                            description: `Answering based on "${sourceFile.name}".`,
+                        });
+                    }
                 } else {
                      throw new Error("Could not find the original source document for context.");
                 }
             } else {
-                // It's a regular lecture file, its content is the lectureText
                 lectureFile = currentItem;
             }
     
@@ -323,10 +332,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 } else if (lectureFile.metadata.mime?.startsWith('text/')) {
                     lectureText = await lectureBlob.text();
                 } else {
-                    throw new Error("Cannot extract text from this file type for AI chat.");
+                    if(!isQuizFile) throw new Error("Cannot extract text from this file type for AI chat.");
                 }
             } else {
-                if (!isQuestionFile) { // only throw if it wasn't a question file without a lecture
+                if (!isQuestionFile && !isQuizFile) { // only throw if it wasn't a question file without a lecture
                     throw new Error("File has no content to analyze.");
                 }
             }
@@ -541,8 +550,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isPdf = item?.metadata?.mime === 'application/pdf';
   const isMarkdown = item?.metadata?.mime === 'text/markdown';
   const isTextFile = item?.metadata?.mime?.startsWith('text/');
-  const isChatAvailable = isPdf || isMarkdown || isTextFile;
-  const isQuoteAvailable = isPdf || isMarkdown;
+  const isQuiz = item?.type === 'INTERACTIVE_QUIZ';
+  const isChatAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
+  const isQuoteAvailable = isPdf || isMarkdown || isTextFile;
   
   const renderLoadingSkeleton = () => (
     <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
@@ -562,7 +572,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   );
   
   const renderFilePreview = () => {
-    if (!fileUrl) {
+    if (!fileUrl && !isQuiz) {
       if (error) {
         return (
           <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
@@ -574,7 +584,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       return renderLoadingSkeleton();
     }
     
-    const displayName = item.name.replace(/\.[^/.]+$/, "");
+    const displayName = item.name.replace(/\.(pdf|md)$/i, "").replace(/\(Quiz\)$/i, "");
 
     return (
     <div
@@ -645,7 +655,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
               <TooltipProvider delayDuration={100}>
                 <div className='hidden md:flex items-center gap-1 sm:gap-2'>
-                    {!isLink && (
+                    {!isLink && !isQuiz && (
                     <>
                         <Tooltip>
                            <TooltipTrigger asChild>
@@ -726,6 +736,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   currentPage={pageNumber}
                   onTextSelect={isQuoteAvailable ? handleTextSelect : undefined}
                   onSelectionChange={() => setSelection(null)}
+                  itemType={item.type}
+                  quizData={item.metadata?.quizData}
               />
             </div>
             {selection && isQuoteAvailable && (
