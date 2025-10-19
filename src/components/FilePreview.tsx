@@ -101,16 +101,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
 
     // Prevent context menu on touch devices
     if (event.type === 'touchend') {
-        const touchEvent = event as React.TouchEvent;
-        // Basic check to see if it's a long press
-        if (touchEvent.touches.length === 0) { // On touchend, touches array is empty
-            setTimeout(() => {
-                const selection = window.getSelection();
-                if (selection && !selection.isCollapsed) {
-                    event.preventDefault();
-                }
-            }, 10);
-        }
+        event.preventDefault();
     }
 
     selectionTimeoutRef.current = setTimeout(() => {
@@ -122,7 +113,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
             const rect = range.getBoundingClientRect();
             onTextSelect(selectedText, { top: rect.top, left: rect.left + rect.width / 2 });
         }
-    }, 300); // Increased delay for better stability on mobile
+    }, 300);
 
   }, [onTextSelect]);
 
@@ -175,10 +166,8 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         const lectures: Lecture[] = Array.isArray(parsedData) ? parsedData : [parsedData];
         
         return (
-             <div ref={containerRef} className="w-full h-full overflow-y-auto">
-                <div className="mx-auto w-full max-w-6xl">
-                    <QuizContainer lectures={lectures} />
-                </div>
+             <div ref={containerRef} className="w-full h-full overflow-y-auto no-scrollbar selectable">
+                <QuizContainer lectures={lectures} />
             </div>
         );
     } catch (e) {

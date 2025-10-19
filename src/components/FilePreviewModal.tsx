@@ -547,7 +547,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isQuiz = item?.type === 'INTERACTIVE_QUIZ';
   const isChatAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
   const isQuoteAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
-  const displayName = item.name.replace(/\.[^/.]+$/, "");
+  const displayName = item.name;
   
   const renderLoadingSkeleton = () => (
     <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
@@ -590,6 +590,28 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
                         <X className="w-5 h-5" />
                     </Button>
+                     {isMobile && !isQuiz && (
+                        <div className='flex items-center'>
+                            <TooltipProvider delayDuration={100}>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                            <Download className="w-5 h-5" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" sideOffset={8}><p>Download</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                            <ExternalLink className="w-5 h-5" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" sideOffset={8}><p>Open in browser</p></TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </div>
+                    )}
                 </div>
 
                 <div className="hidden md:flex items-center gap-3 overflow-hidden">
@@ -627,7 +649,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
               <TooltipProvider delayDuration={100}>
-                <div className={cn('flex items-center gap-1 sm:gap-2', isQuiz && 'opacity-0 pointer-events-none')}>
+                <div className={cn('hidden md:flex items-center gap-1 sm:gap-2', isQuiz && 'opacity-0 pointer-events-none')}>
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
@@ -644,7 +666,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         </TooltipTrigger>
                         <TooltipContent side="bottom" sideOffset={8}><p>Open in browser</p></TooltipContent>
                     </Tooltip>
-                    {isPdf && !isMobile && (
+                    {isPdf && (
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => { if(isFullscreen) { document.exitFullscreen(); } else { fileContentRef.current?.requestFullscreen(); } }} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
@@ -675,8 +697,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz && "flex items-center justify-center p-0 md:p-4")}>
-             <div className={cn("no-scrollbar overflow-auto", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')}>
+        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz && "w-full max-w-6xl mx-auto")}>
+             <div className={cn("no-scrollbar overflow-auto h-full", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')}>
               <FilePreview 
                   key={item.id}
                   ref={pdfViewerRef}

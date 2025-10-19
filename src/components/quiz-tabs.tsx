@@ -1,7 +1,9 @@
 
+
 'use client';
 import React from 'react';
 import type { Lecture, MCQ, WrittenCase } from '@/lib/types';
+import { cn } from '@/lib/utils';
 
 // --- STYLES ---
 const GlobalStyles = () => (
@@ -737,7 +739,7 @@ export function QuizContainer({ lectures: rawLectures }: { lectures: Lecture[] |
     const activeLecture = lectures.find(lec => lec.id === activeLectureId);
 
     return (
-        <div className="page-container">
+        <div className={cn("page-container", "bg-[#13161C]")}>
             <GlobalStyles />
             <div id="lecture-tabs-wrapper" ref={tabsWrapperRef}>
                 <div id="lecture-tabs" ref={tabsContainerRef} role="tablist" aria-label="Lectures">
