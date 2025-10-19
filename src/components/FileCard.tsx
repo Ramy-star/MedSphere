@@ -1,3 +1,4 @@
+
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
@@ -130,13 +131,17 @@ export const FileCard = React.memo(function FileCard({
     const updateFileInputRef = useRef<HTMLInputElement>(null);
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
-    const displaySize = item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ'
-        ? item.type.replace('_', ' ')
-        : item.metadata?.size 
-            ? sizeInKB < 1024 
-                ? `${sizeInKB.toFixed(1)} KB` 
-                : `${(sizeInKB / 1024).toFixed(1)} MB`
-            : '--';
+    const displaySize = (() => {
+        if (item.type === 'LINK') return 'Link';
+        if (item.type === 'INTERACTIVE_QUIZ') return 'Quiz';
+        if (item.metadata?.size) {
+            const sizeInKB = item.metadata.size / 1024;
+            return sizeInKB < 1024
+                ? `${sizeInKB.toFixed(1)} KB`
+                : `${(sizeInKB / 1024).toFixed(1)} MB`;
+        }
+        return '--';
+    })();
 
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const displayName = item.name.replace(/\.[^/.]+$/, "");
