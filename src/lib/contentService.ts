@@ -274,6 +274,7 @@ export const contentService = {
     const newQuizId = uuidv4();
     const newQuizRef = doc(db, 'content', newQuizId);
     let newQuizData: Content | null = null;
+    const originalFileName = name.replace(/\.[^/.]+$/, "");
 
     try {
         await runTransaction(db, async (transaction) => {
@@ -283,7 +284,7 @@ export const contentService = {
 
             newQuizData = {
                 id: newQuizId,
-                name: `${name} (Quiz)`,
+                name: `${originalFileName} - Quiz`,
                 type: 'INTERACTIVE_QUIZ',
                 parentId: parentId,
                 metadata: {
@@ -306,7 +307,7 @@ export const contentService = {
             errorEmitter.emit('permission-error', new FirestorePermissionError({
                 path: `/content/${newQuizId}`,
                 operation: 'create',
-                requestResourceData: { name, parentId, type: 'INTERACTIVE_QUIZ' },
+                requestResourceData: { name: `${originalFileName} - Quiz`, parentId, type: 'INTERACTIVE_QUIZ' },
             }));
         } else {
             console.error("Transaction failed: ", e);

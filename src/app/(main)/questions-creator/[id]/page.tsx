@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, use, useRef } from 'react';
@@ -239,7 +240,7 @@ a.click();
         const formattedContent = await reformatMarkdown({ rawText: questionSet.textQuestions });
 
         const originalFileName = questionSet.fileName.replace(/\.[^/.]+$/, ""); // Remove extension
-        const newFileName = `${originalFileName}-Questions.md`;
+        const newFileName = `${originalFileName} - Questions.md`;
         
         const file = new File([formattedContent], newFileName, { type: 'text/markdown' });
 
