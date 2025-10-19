@@ -226,8 +226,6 @@ export function FolderGrid({
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
     : "flex flex-col";
 
-  const newUploads = uploadingFiles.filter(f => !f.isUpdate);
-
   const itemsToRender = useMemo(() => {
     const updatingMap = new Map(uploadingFiles.filter(f => f.isUpdate).map(f => [f.originalId, f]));
     return sortedItems.map(item => {
@@ -237,6 +235,8 @@ export function FolderGrid({
       };
     });
   }, [sortedItems, uploadingFiles]);
+
+  const newUploads = uploadingFiles.filter(f => !f.isUpdate);
 
 
   return (
@@ -325,7 +325,7 @@ export function FolderGrid({
                                     onRename={() => setItemToRename(item)}
                                     onDelete={() => setItemToDelete(item)}
                                     onUpdate={(file) => onUpdateFile(item, file)}
-                                    onRetry={onRetry}
+                                    onRetryUpload={onRetry}
                                     onRemoveUpload={onRemove}
                                     showDragHandle={!isMobile}
                                 />
