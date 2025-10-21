@@ -1,10 +1,52 @@
 {
   "placeholderImages": [
     {
-      "id": "developer-avatar",
-      "description": "Avatar for the developer on the about page",
-      "imageUrl": "https://images.unsplash.com/photo-1580893472468-01373fe4c97e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwb3J0cmFpdCUyMHBlcnNvbnxlbnwwfHx8fDE3NjA5NjM3NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      "imageHint": "portrait person"
+      "id": "anatomy-1",
+      "description": "Anatomy study materials showing human skeleton.",
+      "imageUrl": "https://images.unsplash.com/photo-1654196054951-bc0a2c2f743b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxhbmF0b215JTIwc2tlbGV0b258ZW58MHx8fHwxNzYxMDE5Mjc2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "anatomy skeleton"
+    },
+    {
+      "id": "pharma-1",
+      "description": "Pharmacology presentation slide with molecular structures.",
+      "imageUrl": "https://images.unsplash.com/photo-1591460318631-1c5b154d038c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxwaGFybWFjb2xvZ3klMjBtb2xlY3VsZXN8ZW58MHx8fHwxNzYxMDE5Mjc1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pharmacology molecules"
+    },
+    {
+      "id": "pathology-1",
+      "description": "Pathology micrograph of tissue sample.",
+      "imageUrl": "https://images.unsplash.com/photo-1630959302878-a30de73cdbb5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cGF0aG9sb2d5JTIwbWljcm9zY29wZXxlbnwwfHx8fDE3NjEwMTkyNzZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "pathology microscope"
+    },
+    {
+      "id": "cardiology-1",
+      "description": "Cardiology notes with ECG diagram.",
+      "imageUrl": "https://images.unsplash.com/photo-1715111965882-bbdf35de510c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjYXJkaW9sb2d5JTIwZWNnfGVufDB8fHx8MTc2MTAxOTI3Nnww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cardiology ecg"
+    },
+    {
+      "id": "neurology-1",
+      "description": "Neurology textbook chapter on brain anatomy.",
+      "imageUrl": "https://images.unsplash.com/photo-1758691462353-36b215702253?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxuZXVyb2xvZ3klMjBicmFpbnxlbnwwfHx8fDE3NjEwMTkyNzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "neurology brain"
+    },
+    {
+      "id": "genetics-1",
+      "description": "Genetics research paper on DNA sequencing.",
+      "imageUrl": "https://images.unsplash.com/photo-1531956656798-56686eeef3d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxnZW5ldGljcyUyMGRuYXxlbnwwfHx8fDE3NjEwMTkyNzV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "genetics dna"
+    },
+    {
+      "id": "biochem-1",
+      "description": "Biochemistry diagram of metabolic pathways.",
+      "imageUrl": "https://images.unsplash.com/photo-1698892289193-eb8b082ecce3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxiaW9jaGVtaXN0cnklMjBwYXRod2F5fGVufDB8fHx8MTc2MDk3MjAwOXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "biochemistry pathway"
+    },
+    {
+      "id": "immunology-1",
+      "description": "Immunology lecture slides about antibodies.",
+      "imageUrl": "https://images.unsplash.com/photo-1706204077650-ed21418f97d4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxpbW11bm9sb2d5JTIwYW50aWJvZHl8ZW58MHx8fHwxNzYxMDE5Mjc2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "immunology antibody"
     }
   ]
 }

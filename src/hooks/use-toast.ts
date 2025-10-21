@@ -9,7 +9,7 @@ import type {
 } from "@/components/ui/toast"
 
 const TOAST_LIMIT = 1
-const TOAST_REMOVE_DELAY = 1000000
+const TOAST_REMOVE_DELAY = 1200
 
 type ToasterToast = ToastProps & {
   id: string
@@ -143,6 +143,15 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
+  // Toasts are disabled as per user request.
+  // Return a dummy object to avoid breaking call sites.
+  return {
+    id: genId(),
+    dismiss: () => {},
+    update: (props: ToasterToast) => {},
+  };
+
+  /*
   const id = genId()
 
   const update = (props: ToasterToast) =>
@@ -169,6 +178,7 @@ function toast({ ...props }: Toast) {
     dismiss,
     update,
   }
+  */
 }
 
 function useToast() {

@@ -1,18 +1,28 @@
-# **App Name**: React Starter
+# **App Name**: MedicalStudyHub
 
 ## Core Features:
 
-- Home Page: Basic home page with a welcome message.
-- Navigation Bar: Simple navigation bar with links to different sections (Home, About, Contact).
-- About Page: An about page providing more details of the app and information about the developer.
-- Contact Page: A contact page to include information or even a simple form to send messages.
+- Dashboard View: Display the years in a sidebar and semesters in tabs. Subject folders in a glass morphism grid.
+- Subject Page: Display the folder tree and files in a grid on the selected subject page.
+- File Card: Glass card component to display the file thumbnail, title, metadata, and preview/download buttons.
+- Preview Modal: Glass modal component to display the file preview, allow downloads, and trap keyboard focus.
+- Sidebar Years: Vertical sidebar component to display the years, highlighting the active year.
+- Mock Data: Uses mock in-memory data to populate components, so that components are functional without the need for the backend.
+- AI-Powered Tagging Suggestions: Suggests tags to use for medical studies using a LLM tool.
 
 ## Style Guidelines:
 
-- Primary color: Deep indigo (#3F51B5) for a calm, reliable feel.
-- Background color: Very light indigo (#E8EAF6) for a clean and modern aesthetic.
-- Accent color: Teal (#009688) for a contrasting highlight color, especially for interactive elements.
-- Body and headline font: 'PT Sans' (sans-serif) for a clean and modern look.
-- Clean, minimal layout with a focus on readability and usability.
-- Use simple, outline-style icons for navigation and key features.
-- Subtle transitions and animations for a polished user experience.
+- Background color: Dark canvas (#0B0F12).
+- Glass surface: Translucent overlay (rgba(255,255,255,0.04)).
+- Glass border: Subtle border (rgba(255,255,255,0.06)).
+- Primary color: Dark greenish-gray (#2F6B5B).
+- Accent color: Soft mint (#A7E3C0).
+- Highlight color: Near-white (#E6F7EE).
+- Primary text: Near-white for contrast (#E6F0EB).
+- Muted text: Semi-transparent near-white (rgba(230,240,235,0.6)).
+- Headings: 'Inter' sans-serif, fallback to system fonts.
+- Body: 'Roboto' sans-serif, fallback to system fonts.
+- Lucide-react icons with white/near-white strokes.
+- Glassmorphism cards with subtle drop shadows on the dark background.
+- Rounded buttons with gradients or neon outlines using primary and accent colors.
+- Framer Motion: subtle hover scale (1.02), modal fade+scale, folder expand slide.

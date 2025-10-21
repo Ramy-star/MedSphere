@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 
 export default {
@@ -10,11 +11,15 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        body: ['PT Sans', 'sans-serif'],
-        headline: ['PT Sans', 'sans-serif'],
+        sans: ['var(--font-nunito-sans)'],
+        ubuntu: ['var(--font-ubuntu)'],
+        inter: ['var(--font-inter)'],
         code: ['monospace'],
       },
       colors: {
+        'glass-surface': 'rgba(255, 255, 255, 0.04)',
+        'glass-border': 'rgba(255, 255, 255, 0.06)',
+        highlight: '#E6F7EE',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {
@@ -65,35 +70,50 @@ export default {
           border: 'hsl(var(--sidebar-border))',
           ring: 'hsl(var(--sidebar-ring))',
         },
+        slate: {
+          750: '#293548',
+        }
       },
       borderRadius: {
         lg: 'var(--radius)',
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)',
       },
-      keyframes: {
-        'accordion-down': {
-          from: {
-            height: '0',
-          },
-          to: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-        },
-        'accordion-up': {
-          from: {
-            height: 'var(--radix-accordion-content-height)',
-          },
-          to: {
-            height: '0',
-          },
-        },
+      boxShadow: {
+        'neon-accent': '0 0 10px hsl(var(--accent))',
+      },
+      transform: {
+        'none': 'none',
       },
       animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
+        'spin-slow': 'spin 1.6s linear infinite',
+        'dot-bounce': 'dot-bounce 1.4s infinite ease-in-out both',
+        'dot-bounce-more': 'dot-bounce-more 1.4s infinite ease-in-out both',
       },
+      keyframes: {
+        'dot-bounce': {
+          '0%, 80%, 100%': { transform: 'scale(0)' },
+          '40%': { transform: 'scale(1.0)' },
+        },
+        'dot-bounce-more': {
+            '0%, 100%': {
+                transform: 'translateY(-25%)',
+                'animation-timing-function': 'cubic-bezier(0.8, 0, 1, 1)',
+            },
+            '50%': {
+                transform: 'translateY(25%)',
+                'animation-timing-function': 'cubic-bezier(0, 0, 0.2, 1)',
+            },
+        },
+      }
     },
   },
-  plugins: [require('tailwindcss-animate')],
+  plugins: [
+    require('tailwindcss-animate'),
+    require('@tailwindcss/typography'),
+    function({ addVariant }: { addVariant: (name: string, definition: string) => void }) {
+      addVariant('fullscreen', '&:fullscreen');
+    }
+  ],
 } satisfies Config;
+
