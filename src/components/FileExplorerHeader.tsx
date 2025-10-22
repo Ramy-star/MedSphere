@@ -1,4 +1,5 @@
 
+
 'use client';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
@@ -94,7 +95,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
         </h1>
       </div>
       <div className="flex gap-2">
-        {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'SEMESTER' && (
+        {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
           <div>
             <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
           </div>
