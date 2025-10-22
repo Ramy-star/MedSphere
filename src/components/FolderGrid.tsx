@@ -21,7 +21,7 @@ import { Button } from './ui/button';
 import { Folder as FolderIcon, Plus, UploadCloud } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { UploadingFile, UploadProgress } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -79,10 +79,11 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   }
   
   const isFolder = (children as React.ReactElement)?.props?.item?.type === 'FOLDER';
+  const isSubject = (children as React.ReactElement)?.props?.subject?.type === 'SUBJECT';
 
   const childrenWithProps = React.cloneElement(children as React.ReactElement, {
     ...((children as React.ReactElement).props),
-    showDragHandle: !isFolder && isAdmin,
+    showDragHandle: !isFolder && !isSubject && isAdmin,
   });
 
   return (
@@ -222,7 +223,7 @@ export function FolderGrid({
   
   const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT' || (it.type === 'FOLDER' && it.metadata?.isClassContainer));
   
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
 
   const containerClasses = isSubjectView
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
@@ -295,7 +296,7 @@ export function FolderGrid({
       )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={sortedItems.map(i => i.id)} strategy={verticalListSortingStrategy} disabled={!isAdmin || isSubjectView}>
+        <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!isAdmin}>
           <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
             <AnimatePresence>
               {itemsToRender.map(({ item, uploadingFile }, index) => {
@@ -364,7 +365,7 @@ export function FolderGrid({
                     exit="exit"
                     className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
                   >
-                    {isAdmin && !isSubjectView ? (
+                    {isAdmin ? (
                       <SortableItemWrapper id={item.id}>{renderedContent()}</SortableItemWrapper>
                     ) : (
                       renderedContent()
