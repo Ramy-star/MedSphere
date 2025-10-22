@@ -1,4 +1,3 @@
-
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc, collectionGroup } from 'firebase/firestore';
@@ -29,6 +28,7 @@ export type Content = {
     shortId?: string;
     sourceFileId?: string; // For generated files like quizzes
     quizData?: string; // For INTERACTIVE_QUIZ type
+    isClassContainer?: boolean; // For the new "Class" type
   };
   createdAt?: string;
   updatedAt?: string;
@@ -171,7 +171,7 @@ export const contentService = {
     return children;
   },
 
-  async createFolder(parentId: string | null, name: string): Promise<Content> {
+  async createFolder(parentId: string | null, name: string, metadata: Content['metadata'] = {}): Promise<Content> {
     if (!db) throw new Error("Firestore not initialized");
 
     const newFolderId = uuidv4();
@@ -192,6 +192,7 @@ export const contentService = {
           name: name,
           type: 'FOLDER',
           parentId: parentId,
+          metadata: metadata,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           order: order,
@@ -208,7 +209,7 @@ export const contentService = {
         errorEmitter.emit('permission-error', new FirestorePermissionError({
             path: `/content/${newFolderId}`,
             operation: 'create',
-            requestResourceData: { name, parentId, type: 'FOLDER' },
+            requestResourceData: { name, parentId, type: 'FOLDER', metadata },
         }));
       } else {
         console.error("Transaction failed: ", e);
@@ -668,4 +669,3 @@ export const contentService = {
     }
   }
 };
-

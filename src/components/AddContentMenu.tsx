@@ -1,5 +1,3 @@
-
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -19,6 +17,7 @@ type AddContentMenuProps = {
 
 export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContentMenuProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const [showNewClassDialog, setShowNewClassDialog] = useState(false);
   const [showNewLinkDialog, setShowNewLinkDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -39,6 +38,22 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         });
     }
   };
+
+  const handleAddClass = async (className: string) => {
+    try {
+        await contentService.createFolder(parentId, className, { isClassContainer: true });
+        toast({ title: 'Class Created', description: `"${className}" has been created.` });
+        setShowNewClassDialog(false);
+        setPopoverOpen(false);
+    } catch(error: any) {
+        console.error("Failed to create class:", error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Error creating class', 
+            description: error.message || 'An unknown error occurred.' 
+        });
+    }
+  }
 
   const handleAddLink = async (name: string, url: string) => {
      try {
@@ -78,9 +93,9 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           action: () => setShowNewFolderDialog(true),
       },
       {
-          label: "New Patch",
+          label: "New Class",
           icon: Plus,
-          action: () => setShowNewFolderDialog(true),
+          action: () => setShowNewClassDialog(true),
       },
       {
           label: "Upload File",
@@ -104,7 +119,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       />
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
-          {trigger || <Button size="sm" className="rounded-2xl active:scale-95 transition-transform"><Plus className="mr-2 h-4 w-4" />Add Patch</Button>}
+          {trigger || <Button size="sm" className="rounded-2xl active:scale-95 transition-transform"><Plus className="mr-2 h-4 w-4" />Add Content</Button>}
         </PopoverTrigger>
         <PopoverContent 
           className="w-56 p-2 border-slate-700" 
@@ -126,6 +141,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         </PopoverContent>
       </Popover>
       <NewFolderDialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog} onAddFolder={handleAddFolder} />
+      <NewFolderDialog open={showNewClassDialog} onOpenChange={setShowNewClassDialog} onAddFolder={handleAddClass} title="Add new class" description="Create a new class container." />
       <NewLinkDialog open={showNewLinkDialog} onOpenChange={setShowNewLinkDialog} onAddLink={handleAddLink} />
     </>
   );

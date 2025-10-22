@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -7,6 +6,7 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -25,16 +25,18 @@ import { useEffect } from 'react';
 import { cn } from '@/lib/utils';
 
 const formSchema = z.object({
-  folderName: z.string().min(1, { message: 'Folder name is required.' }),
+  folderName: z.string().min(1, { message: 'Name is required.' }),
 });
 
 type NewFolderDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onAddFolder: (folderName: string) => void;
+  title?: string;
+  description?: string;
 };
 
-export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDialogProps) {
+export function NewFolderDialog({ open, onOpenChange, onAddFolder, title = "Add new folder", description }: NewFolderDialogProps) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,7 +66,8 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
       <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
         <div className="p-6">
           <DialogHeader>
-            <DialogTitle>Add new folder</DialogTitle>
+            <DialogTitle>{title}</DialogTitle>
+            {description && <DialogDescription>{description}</DialogDescription>}
           </DialogHeader>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 mt-4">
@@ -73,7 +76,7 @@ export function NewFolderDialog({ open, onOpenChange, onAddFolder }: NewFolderDi
                 name="folderName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Folder Name</FormLabel>
+                    <FormLabel>Name</FormLabel>
                     <FormControl>
                       <Input
                         id="folderNameInput" 

@@ -1,4 +1,3 @@
-
 'use client';
 import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder } from 'lucide-react';
 import type { Content } from '@/lib/contentService';

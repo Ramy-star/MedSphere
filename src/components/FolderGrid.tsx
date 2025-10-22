@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -221,7 +220,7 @@ export function FolderGrid({
     }
   };
   
-  const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT');
+  const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT' || (it.type === 'FOLDER' && it.metadata?.isClassContainer));
   
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -306,16 +305,23 @@ export function FolderGrid({
                 const renderedContent = () => {
                     switch (item.type) {
                         case 'SUBJECT':
-                            return <SubjectCard subject={item} />;
-                        case 'FOLDER':
                             return (
+                                <SubjectCard 
+                                    subject={item}
+                                    onRename={() => setItemToRename(item)}
+                                    onDelete={() => setItemToDelete(item)}
+                                    onIconChange={() => setItemForIconChange(item)}
+                                />
+                            );
+                        case 'FOLDER':
+                             return (
                                 <FolderCard
                                     item={item}
                                     onRename={() => setItemToRename(item)}
                                     onDelete={() => setItemToDelete(item)}
                                     onIconChange={() => setItemForIconChange(item)}
                                     onClick={handleFolderClick}
-                                    displayAs={isSubjectView ? 'grid' : 'list'}
+                                    displayAs={item.metadata?.isClassContainer || isSubjectView ? 'grid' : 'list'}
                                 />
                             );
                         case 'FILE':
