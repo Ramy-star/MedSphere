@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
 import { useRouter } from 'next/navigation';
@@ -40,6 +40,8 @@ export const FolderCard = React.memo(function FolderCard({
     const { user } = useUser();
     const router = useRouter();
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+    const [dropdownOpen, setDropdownOpen] = useState(false);
+
     
     const renderIcon = () => {
       if (item.metadata?.iconURL) {
@@ -65,16 +67,16 @@ export const FolderCard = React.memo(function FolderCard({
           align="end"
           onClick={(e) => { e.stopPropagation(); }}
       >
-          <DropdownMenuItem onClick={onRename}>
+          <DropdownMenuItem onSelect={() => { onRename(); setDropdownOpen(false); }}>
               <Edit className="mr-2 h-4 w-4" />
               <span>Rename</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onIconChange(item)}>
+          <DropdownMenuItem onSelect={() => { onIconChange(item); setDropdownOpen(false); }}>
               <ImageIcon className="mr-2 h-4 w-4" />
               <span>Change Icon</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+          <DropdownMenuItem onSelect={() => { onDelete(); setDropdownOpen(false); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
               <Trash2 className="mr-2 h-4 w-4" />
               <span>Delete</span>
           </DropdownMenuItem>
@@ -119,7 +121,7 @@ export const FolderCard = React.memo(function FolderCard({
                     </p>
                     
                     {isAdmin && (
-                        <DropdownMenu>
+                        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -157,7 +159,7 @@ export const FolderCard = React.memo(function FolderCard({
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
               {isAdmin && (
-                  <DropdownMenu>
+                  <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                        <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { allSubjectIcons } from '@/lib/file-data';
 import type { Content } from '@/lib/contentService';
 import { Folder } from 'lucide-react';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +34,7 @@ export const SubjectCard = React.memo(function SubjectCard({
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const handleCardClick = (e: React.MouseEvent) => {
     // Prevent navigation if the dropdown trigger was clicked
@@ -51,7 +52,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />
                     {isAdmin && (
-                        <DropdownMenu>
+                        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -76,16 +77,16 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 align="end"
                                 onClick={(e) => { e.stopPropagation(); }}
                             >
-                                <DropdownMenuItem onSelect={onRename}>
+                                <DropdownMenuItem onSelect={() => { onRename(); setDropdownOpen(false); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => onIconChange(subject)}>
+                                <DropdownMenuItem onSelect={() => { onIconChange(subject); setDropdownOpen(false); }}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={() => { onDelete(); setDropdownOpen(false); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>
