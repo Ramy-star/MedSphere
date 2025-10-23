@@ -123,8 +123,10 @@ function QuestionsCreatorContent() {
 
   const [generationPrompt, setGenerationPrompt] = useState('');
   const [jsonPrompt, setJsonPrompt] = useState('');
-  const [originalPrompts, setOriginalPrompts] = useState({ gen: '', json: '' });
-  const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false });
+  const [examGenerationPrompt, setExamGenerationPrompt] = useState('');
+  const [examJsonPrompt, setExamJsonPrompt] = useState('');
+  const [originalPrompts, setOriginalPrompts] = useState({ gen: '', json: '', examGen: '', examJson: '' });
+  const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false, examGen: false, examJson: false });
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
@@ -166,36 +168,54 @@ function QuestionsCreatorContent() {
 
   const { toast } = useToast();
 
-  const handleSaveGenPrompt = () => {
-    localStorage.setItem('questionGenPrompt', generationPrompt);
-    setOriginalPrompts(prev => ({ ...prev, gen: generationPrompt }));
-    toast({ title: 'Prompt Saved', description: 'Your question generation prompt has been saved.' });
-    setIsEditingPrompts(prev => ({...prev, gen: false}));
+  const handleSavePrompt = (type: 'gen' | 'json' | 'examGen' | 'examJson') => {
+    const keyMap = {
+        gen: 'questionGenPrompt',
+        json: 'questionJsonPrompt',
+        examGen: 'examGenPrompt',
+        examJson: 'examJsonPrompt'
+    };
+    const promptMap = {
+        gen: generationPrompt,
+        json: jsonPrompt,
+        examGen: examGenerationPrompt,
+        examJson: examJsonPrompt,
+    };
+    const titleMap = {
+        gen: 'Question Generation Prompt',
+        json: 'JSON Conversion Prompt',
+        examGen: 'Exam Generation Prompt',
+        examJson: 'Exam JSON Conversion Prompt',
+    }
+
+    localStorage.setItem(keyMap[type], promptMap[type]);
+    setOriginalPrompts(prev => ({ ...prev, [type]: promptMap[type] }));
+    toast({ title: 'Prompt Saved', description: `Your ${titleMap[type]} has been saved.` });
+    setIsEditingPrompts(prev => ({...prev, [type]: false}));
   }
 
-  const handleCancelGenPrompt = () => {
-    setGenerationPrompt(originalPrompts.gen);
-    setIsEditingPrompts(prev => ({...prev, gen: false}));
-  }
-
-  const handleSaveJsonPrompt = () => {
-    localStorage.setItem('questionJsonPrompt', jsonPrompt);
-    setOriginalPrompts(prev => ({ ...prev, json: jsonPrompt }));
-    toast({ title: 'Prompt Saved', description: 'Your JSON conversion prompt has been saved.' });
-    setIsEditingPrompts(prev => ({...prev, json: false}));
-  }
-
-  const handleCancelJsonPrompt = () => {
-    setJsonPrompt(originalPrompts.json);
-    setIsEditingPrompts(prev => ({...prev, json: false}));
+  const handleCancelPrompt = (type: 'gen' | 'json' | 'examGen' | 'examJson') => {
+    const promptSetterMap = {
+        gen: setGenerationPrompt,
+        json: setJsonPrompt,
+        examGen: setExamGenerationPrompt,
+        examJson: setExamJsonPrompt,
+    };
+    promptSetterMap[type](originalPrompts[type]);
+    setIsEditingPrompts(prev => ({...prev, [type]: false}));
   }
 
   useEffect(() => {
     const gen = localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.';
     const json = localStorage.getItem('questionJsonPrompt') || 'Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.';
+    const examGen = localStorage.getItem('examGenPrompt') || 'Generate 20 difficult exam-style multiple-choice questions based on the document.';
+    const examJson = localStorage.getItem('examJsonPrompt') || 'Convert the exam questions into a JSON array with structure: { "question": "...", "options": [...], "answer": "..." }.';
+
     setGenerationPrompt(gen);
     setJsonPrompt(json);
-    setOriginalPrompts({ gen, json });
+    setExamGenerationPrompt(examGen);
+    setExamJsonPrompt(examJson);
+    setOriginalPrompts({ gen, json, examGen, examJson });
   }, []);
 
   useEffect(() => {
@@ -379,6 +399,85 @@ function QuestionsCreatorContent() {
     );
 };
 
+  const renderPromptCard = (type: 'gen' | 'json' | 'examGen' | 'examJson') => {
+      const titleMap = {
+          gen: "Question Generation Prompt",
+          json: "Text-to-JSON Conversion Prompt",
+          examGen: "Exam Generation Prompt",
+          examJson: "Exam-to-JSON Conversion Prompt"
+      }
+      const iconMap = {
+          gen: <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
+          json: <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
+          examGen: <FileText className="w-8 h-8 text-orange-400 shrink-0" />,
+          examJson: <FileJson className="w-8 h-8 text-red-400 shrink-0" />
+      }
+      const promptMap = {
+          gen: generationPrompt,
+          json: jsonPrompt,
+          examGen: examGenerationPrompt,
+          examJson: examJsonPrompt,
+      }
+      const setPromptMap = {
+          gen: setGenerationPrompt,
+          json: setJsonPrompt,
+          examGen: setExamGenerationPrompt,
+          examJson: setExamJsonPrompt,
+      }
+    
+      return (
+        <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+                <div className="flex items-start gap-4">
+                    {iconMap[type]}
+                    <div>
+                        <h3 className="text-lg font-semibold text-white break-words">{titleMap[type]}</h3>
+                    </div>
+                </div>
+                <TooltipProvider>
+                    <div className="flex items-center gap-0">
+                        {isEditingPrompts[type] ? (
+                            <>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button onClick={() => handleSavePrompt(type)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                            <Check className="h-5 w-5 text-green-400" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Save</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button onClick={() => handleCancelPrompt(type)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                            <X className="h-5 w-5 text-red-400" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Cancel</p></TooltipContent>
+                                </Tooltip>
+                            </>
+                        ) : (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button onClick={() => setIsEditingPrompts(p => ({...p, [type]: true}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                        <Pencil className="h-5 w-5" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Edit</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
+                </TooltipProvider>
+            </div>
+            <textarea
+                value={promptMap[type]}
+                onChange={(e) => setPromptMap[type](e.target.value)}
+                readOnly={!isEditingPrompts[type]}
+                className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+            />
+        </div>
+      );
+  }
+
 
   const handleTabChange = (value: string) => {
     // Do not show warning when just switching tabs
@@ -501,110 +600,42 @@ function QuestionsCreatorContent() {
                        showJsonRetry
                    )}
                 </motion.div>
+
+                <motion.div 
+                  variants={cardVariants} 
+                  initial="hidden" 
+                  animate="visible" 
+                  transition={{ delay: 0.3 }} 
+                  className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"
+                >
+                   {renderOutputCard(
+                       "Text Exam",
+                       <FileText className="w-8 h-8 text-orange-400 shrink-0" />,
+                       null, // Replace with task?.textExam ?? null,
+                       false, // Replace with exam generation loading state
+                       'Generating exam...',
+                       false // Replace with exam retry state
+                   )}
+
+                   {renderOutputCard(
+                       "JSON Exam",
+                       <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
+                       null, // Replace with task?.jsonExam ?? null,
+                       false, // Replace with exam JSON conversion loading state
+                       'Converting exam to JSON...',
+                       false // Replace with exam JSON retry state
+                   )}
+                </motion.div>
             </div>
         </TabsContent>
         
         <TabsContent value="prompts" className="w-full max-w-7xl mx-auto mt-4">
              <motion.div variants={cardVariants} initial="hidden" animate="visible" className="max-w-7xl mx-auto">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
-                       <div className="flex items-center justify-between">
-                           <div className="flex items-start gap-4">
-                               <FileText className="w-8 h-8 text-blue-400 shrink-0" />
-                               <div>
-                                   <h3 className="text-lg font-semibold text-white break-words">Question Generation Prompt</h3>
-                               </div>
-                           </div>
-                           <TooltipProvider>
-                               <div className="flex items-center gap-0">
-                                   {isEditingPrompts.gen ? (
-                                     <>
-                                       <Tooltip>
-                                           <TooltipTrigger asChild>
-                                               <Button onClick={handleSaveGenPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                                   <Check className="h-5 w-5 text-green-400" />
-                                               </Button>
-                                           </TooltipTrigger>
-                                           <TooltipContent><p>Save</p></TooltipContent>
-                                       </Tooltip>
-                                       <Tooltip>
-                                           <TooltipTrigger asChild>
-                                               <Button onClick={handleCancelGenPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                                   <X className="h-5 w-5 text-red-400" />
-                                               </Button>
-                                           </TooltipTrigger>
-                                           <TooltipContent><p>Cancel</p></TooltipContent>
-                                       </Tooltip>
-                                     </>
-                                   ) : (
-                                        <Tooltip>
-                                           <TooltipTrigger asChild>
-                                               <Button onClick={() => setIsEditingPrompts(p => ({...p, gen: true}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                                   <Pencil className="h-5 w-5" />
-                                               </Button>
-                                           </TooltipTrigger>
-                                           <TooltipContent><p>Edit</p></TooltipContent>
-                                       </Tooltip>
-                                   )}
-                               </div>
-                           </TooltipProvider>
-                       </div>
-                        <textarea
-                           value={generationPrompt}
-                           onChange={(e) => setGenerationPrompt(e.target.value)}
-                           readOnly={!isEditingPrompts.gen}
-                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
-                       />
-                   </div>
-                    <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
-                       <div className="flex items-center justify-between">
-                           <div className="flex items-start gap-4">
-                               <FileJson className="w-8 h-8 text-green-400 shrink-0" />
-                               <div>
-                                   <h3 className="text-lg font-semibold text-white break-words">Text-to-JSON Conversion Prompt</h3>
-                               </div>
-                           </div>
-                           <TooltipProvider>
-                                <div className="flex items-center gap-0">
-                                   {isEditingPrompts.json ? (
-                                     <>
-                                       <Tooltip>
-                                           <TooltipTrigger asChild>
-                                                <Button onClick={handleSaveJsonPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                                   <Check className="h-5 w-5 text-green-400" />
-                                                </Button>
-                                           </TooltipTrigger>
-                                           <TooltipContent><p>Save</p></TooltipContent>
-                                       </Tooltip>
-                                       <Tooltip>
-                                           <TooltipTrigger asChild>
-                                                <Button onClick={handleCancelJsonPrompt} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                                   <X className="h-5 w-5 text-red-400" />
-                                                </Button>
-                                           </TooltipTrigger>
-                                           <TooltipContent><p>Cancel</p></TooltipContent>
-                                       </Tooltip>
-                                     </>
-                                   ) : (
-                                        <Tooltip>
-                                           <TooltipTrigger asChild>
-                                                <Button onClick={() => setIsEditingPrompts(p => ({...p, json: true}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                                   <Pencil className="h-5 w-5" />
-                                                </Button>
-                                           </TooltipTrigger>
-                                           <TooltipContent><p>Edit</p></TooltipContent>
-                                       </Tooltip>
-                                   )}
-                               </div>
-                           </TooltipProvider>
-                       </div>
-                       <textarea
-                           value={jsonPrompt}
-                           onChange={(e) => setJsonPrompt(e.target.value)}
-                           readOnly={!isEditingPrompts.json}
-                           className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
-                       />
-                   </div>
+                    {renderPromptCard('gen')}
+                    {renderPromptCard('json')}
+                    {renderPromptCard('examGen')}
+                    {renderPromptCard('examJson')}
                 </div>
             </motion.div>
         </TabsContent>
@@ -716,3 +747,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    

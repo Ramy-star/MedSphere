@@ -31,6 +31,8 @@ type SavedQuestionSet = {
   fileName: string;
   textQuestions: string;
   jsonQuestions: string;
+  textExam: string;
+  jsonExam: string;
   createdAt: string;
   userId: string;
   sourceFileId: string;
@@ -56,11 +58,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     disabled: !id || !user
   });
 
-  const [isEditing, setIsEditing] = useState({ text: false, json: false });
-  const [editingContent, setEditingContent] = useState({ text: '', json: '' });
+  const [isEditing, setIsEditing] = useState({ text: false, json: false, examText: false, examJson: false });
+  const [editingContent, setEditingContent] = useState({ text: '', json: '', examText: '', examJson: '' });
   const [isRepairing, setIsRepairing] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json'} | null>(null);
+  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json' | 'examText' | 'examJson'} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
@@ -68,7 +70,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [isSavingMd, setIsSavingMd] = useState(false);
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
-  const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false });
+  const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false, examText: false, examJson: false });
 
   const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -80,7 +82,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     if (!questionSet) {
         //notFound();
     } else {
-        setEditingContent({ text: questionSet.textQuestions, json: questionSet.jsonQuestions });
+        setEditingContent({ text: questionSet.textQuestions, json: questionSet.jsonQuestions, examText: questionSet.textExam || '', examJson: questionSet.jsonExam || '' });
         setEditingTitle(questionSet.fileName);
     }
   }, [id, questionSet, loading]);
@@ -104,29 +106,37 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     await updateDoc(docRef, updatedData);
   };
   
-  const handleToggleEdit = async (type: 'text' | 'json') => {
+  const handleToggleEdit = async (type: 'text' | 'json' | 'examText' | 'examJson') => {
     if (isEditing[type]) {
       // Save
       if (questionSet) {
-        const updatedData = {
-          [type === 'text' ? 'textQuestions' : 'jsonQuestions']: editingContent[type],
+        const keyMap = {
+            text: 'textQuestions',
+            json: 'jsonQuestions',
+            examText: 'textExam',
+            examJson: 'jsonExam'
         };
-        // Only save if content has changed
-        if (editingContent[type] !== questionSet[type === 'text' ? 'textQuestions' : 'jsonQuestions']) {
+        const dataKey = keyMap[type] as keyof SavedQuestionSet;
+        const updatedData = { [dataKey]: editingContent[type] };
+
+        if (editingContent[type] !== (questionSet as any)[dataKey]) {
             await updateQuestionSet(updatedData);
-            toast({ title: 'Saved', description: `${type === 'text' ? 'Text' : 'JSON'} questions have been updated.` });
+            toast({ title: 'Saved', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been updated.` });
         }
       }
     }
     setIsEditing(prev => ({ ...prev, [type]: !prev[type] }));
   };
 
-  const handleCancelEdit = (type: 'text' | 'json') => {
+  const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson') => {
     if (questionSet) {
-      setEditingContent(prev => ({
-        ...prev,
-        [type]: type === 'text' ? questionSet.textQuestions : questionSet.jsonQuestions
-      }));
+        const keyMap = {
+            text: questionSet.textQuestions,
+            json: questionSet.jsonQuestions,
+            examText: questionSet.textExam || '',
+            examJson: questionSet.jsonExam || ''
+        };
+      setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
     }
     setIsEditing(prev => ({ ...prev, [type]: false }));
   };
@@ -159,9 +169,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     }
   };
   
-  const handleCopy = (content: string, type: 'text' | 'json') => {
+  const handleCopy = (content: string, type: 'text' | 'json' | 'examText' | 'examJson') => {
     navigator.clipboard.writeText(content);
-    toast({ title: 'Copied to Clipboard', description: `${type === 'text' ? 'Text' : 'JSON'} questions have been copied.` });
+    toast({ title: 'Copied to Clipboard', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been copied.` });
     setCopiedStatus(prev => ({ ...prev, [type]: true }));
     setTimeout(() => {
         setCopiedStatus(prev => ({ ...prev, [type]: false }));
@@ -183,7 +193,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     a.href = url;
     a.download = `${questionSet?.fileName.replace(/\.[^/.]+$/, "") || 'questions'}.${fileExtension}`;
     document.body.appendChild(a);
-a.click();
+    a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
   };
@@ -192,13 +202,17 @@ a.click();
     if (!previewContent || !questionSet) return;
     const { type, content } = previewContent;
     
-    const updatedData = {
-        [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content,
+    const keyMap = {
+        text: 'textQuestions',
+        json: 'jsonQuestions',
+        examText: 'textExam',
+        examJson: 'jsonExam'
     };
+    const dataKey = keyMap[type] as keyof SavedQuestionSet;
+    const updatedData = { [dataKey]: content };
     await updateQuestionSet(updatedData);
     
-    if (type === 'text') setEditingContent(prev => ({...prev, text: content}));
-    if (type === 'json') setEditingContent(prev => ({...prev, json: content}));
+    setEditingContent(prev => ({...prev, [type]: content}));
     
     setIsPreviewEditing(false);
     toast({ title: 'Content Updated' });
@@ -310,9 +324,9 @@ a.click();
     );
   }
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string, type: 'text' | 'json') => {
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string, type: 'text' | 'json' | 'examText' | 'examJson') => {
     const isThisCardEditing = isEditing[type];
-    const isJsonCardWithError = type === 'json' && jsonError;
+    const isJsonCardWithError = type.includes('json') && jsonError;
     const isCopied = copiedStatus[type];
 
     return (
@@ -395,11 +409,11 @@ a.click();
 
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleDownload(content, type === 'text' ? 'md' : 'json')}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleDownload(content, type.includes('Json') ? 'json' : 'md')}>
                                     <Download className="h-4 w-4" />
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent><p>Download .{type === 'text' ? 'md' : 'json'}</p></TooltipContent>
+                            <TooltipContent><p>Download .{type.includes('Json') ? 'json' : 'md'}</p></TooltipContent>
                         </Tooltip>
                     </div>
                 </TooltipProvider>
@@ -494,9 +508,14 @@ a.click();
             </div>
         </TooltipProvider>
          
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-8">
             {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
             {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            {renderOutputCard("Text Exam", <FileText className="text-orange-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
+            {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examJson, 'examJson')}
         </div>
         
         <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
@@ -582,3 +601,4 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   return <SavedQuestionSetPageContent id={id} />;
 }
 
+    
