@@ -35,11 +35,20 @@ export const SubjectCard = React.memo(function SubjectCard({
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const handleCardClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (e.target instanceof Element && e.target.closest('[data-radix-dropdown-menu-trigger]')) {
-      e.preventDefault();
+      return;
     }
+  };
+  
+  const handleAction = (e: Event, action: () => void) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropdownOpen(false);
+    action();
   };
 
 
@@ -50,7 +59,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />
                     {isAdmin && (
-                        <DropdownMenu>
+                        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -73,16 +82,16 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 className="w-48 p-2"
                                 align="end"
                             >
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(onRename, 0); }}>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onIconChange(subject), 0); }}>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(subject))}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(onDelete, 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>

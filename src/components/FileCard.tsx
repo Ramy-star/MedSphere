@@ -129,7 +129,7 @@ export const FileCard = React.memo(function FileCard({
     const startGenerationFromUrl = useQuestionGenerationStore((state) => state.startGenerationFromUrl);
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const updateFileInputRef = useRef<HTMLInputElement>(null);
-
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
     const displaySize = (() => {
@@ -184,13 +184,16 @@ export const FileCard = React.memo(function FileCard({
     };
 
     const handleUpdateClick = (e: React.MouseEvent) => {
-        // Prevent the click from bubbling to the parent card click
+        e.stopPropagation();
+        e.preventDefault();
+        updateFileInputRef.current?.click();
+    };
+    
+    const handleAction = (e: Event, action: () => void) => {
         e.preventDefault();
         e.stopPropagation();
-        if (e.nativeEvent && typeof (e.nativeEvent as any).stopImmediatePropagation === 'function') {
-            (e.nativeEvent as any).stopImmediatePropagation();
-        }
-        updateFileInputRef.current?.click();
+        setDropdownOpen(false);
+        action();
     };
 
     if (uploadingFile) {
@@ -242,7 +245,7 @@ export const FileCard = React.memo(function FileCard({
                     {displaySize}
                 </p>
                 
-                <DropdownMenu>
+                <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -265,19 +268,19 @@ export const FileCard = React.memo(function FileCard({
                         className="w-48 p-2"
                         align="end"
                     >
-                         <DropdownMenuItem onSelect={() => onFileClick(item)}>
+                         <DropdownMenuItem onSelect={(e) => handleAction(e, () => onFileClick(item))}>
                             <Eye className="mr-2 h-4 w-4" />
                             <span>Open</span>
                         </DropdownMenuItem>
                         {browserUrl && (
-                        <DropdownMenuItem onSelect={() => window.open(browserUrl, '_blank')} disabled={!browserUrl}>
+                        <DropdownMenuItem onSelect={(e) => handleAction(e, () => window.open(browserUrl, '_blank'))} disabled={!browserUrl}>
                             <ExternalLink className="mr-2 h-4 w-4" />
                             <span>Open in browser</span>
                         </DropdownMenuItem>
                         )}
                         {!isLink && item.type !== 'INTERACTIVE_QUIZ' && (
                             <DropdownMenuItem 
-                                onSelect={() => storagePath && handleForceDownload(storagePath, item.name)}
+                                onSelect={(e) => handleAction(e, () => { if (storagePath) handleForceDownload(storagePath, item.name); })}
                                 disabled={!storagePath}
                             >
                                 <Download className="mr-2 h-4 w-4" />
@@ -289,7 +292,7 @@ export const FileCard = React.memo(function FileCard({
                             <>
                                 <DropdownMenuSeparator />
                                 {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf' || item.metadata?.mime === 'text/markdown') && (
-                                    <DropdownMenuItem onSelect={handleCreateQuestions}>
+                                    <DropdownMenuItem onSelect={(e) => handleAction(e, handleCreateQuestions)}>
                                         <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                         <span>Create Questions</span>
                                     </DropdownMenuItem>
@@ -300,11 +303,11 @@ export const FileCard = React.memo(function FileCard({
                                       <span>Update</span>
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(onRename, 0); }}>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(onDelete, 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>
