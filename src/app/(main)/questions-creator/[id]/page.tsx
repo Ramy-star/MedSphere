@@ -4,7 +4,7 @@
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileHeart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
@@ -69,6 +69,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [showFolderSelector, setShowFolderSelector] = useState(false);
   const [isSavingMd, setIsSavingMd] = useState(false);
   const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
+  const [isCreatingExam, setIsCreatingExam] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
   const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false, examText: false, examJson: false });
 
@@ -241,18 +242,19 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     setIsEditingTitle(false);
   };
 
-  const handleSaveToFile = async (parentId: string) => {
+  const handleSaveToFile = async (parentId: string, type: 'questions' | 'exam') => {
     if (!questionSet) return;
 
     setShowFolderSelector(false);
     setIsSavingMd(true);
-    toast({ title: "Formatting Markdown...", description: "AI is re-formatting the questions for perfect output." });
+    toast({ title: "Formatting Markdown...", description: "AI is re-formatting the content for perfect output." });
 
     try {
-        const formattedContent = await reformatMarkdown({ rawText: questionSet.textQuestions });
+        const contentToFormat = type === 'exam' ? questionSet.textExam : questionSet.textQuestions;
+        const formattedContent = await reformatMarkdown({ rawText: contentToFormat });
 
         const originalFileName = questionSet.fileName.replace(/\.[^/.]+$/, ""); // Remove extension
-        const newFileName = `${originalFileName} - Questions`;
+        const newFileName = `${originalFileName} - ${type === 'exam' ? 'Exam' : 'Questions'}`;
         const newFileNameWithExt = `${newFileName}.md`;
         
         const file = new File([formattedContent], newFileNameWithExt, { type: 'text/markdown' });
@@ -283,7 +285,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             }
         };
         
-        // Pass the sourceFileId to the createFile function
         const xhr = await contentService.createFile(parentId, file, callbacks, { sourceFileId: questionSet.sourceFileId });
         setUploadingFile(prev => prev ? { ...prev, xhr } : null);
     } catch(e: any) {
@@ -312,6 +313,25 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         });
     } finally {
         setIsCreatingQuiz(false);
+    }
+  }
+
+  const handleCreateExam = async (parentId: string) => {
+    if (!questionSet) return;
+    setIsCreatingExam(true);
+    setShowFolderSelector(false);
+    try {
+        await contentService.createInteractiveExam(parentId, questionSet.fileName, questionSet.jsonExam, questionSet.sourceFileId);
+        toast({ title: 'Interactive Exam Created', description: `Exam for "${questionSet.fileName}" has been created.` });
+    } catch (error: any) {
+        console.error("Failed to create interactive exam:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Creation Failed',
+            description: error.message || 'Could not create the interactive exam.'
+        });
+    } finally {
+        setIsCreatingExam(false);
     }
   }
 
@@ -347,7 +367,17 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                         {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <HelpCircle className="h-4 w-4 text-red-400" />}
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Save as File</p></TooltipContent>
+                                <TooltipContent><p>Save as Questions File</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                        {isAdmin && type === 'examText' && (
+                             <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsSavingMd(true); setShowFolderSelector(true); }} disabled={isSavingMd}>
+                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileHeart className="h-4 w-4 text-red-400" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Save as Exam File</p></TooltipContent>
                             </Tooltip>
                         )}
                         {isAdmin && type === 'json' && (
@@ -358,6 +388,16 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create Interactive Quiz</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                         {isAdmin && type === 'examJson' && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsCreatingExam(true); setShowFolderSelector(true); }} disabled={isCreatingExam}>
+                                        {isCreatingExam ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileHeart className="h-4 w-4 text-rose-400" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Create Interactive Exam</p></TooltipContent>
                             </Tooltip>
                         )}
                         <Tooltip>
@@ -557,17 +597,19 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             open={showFolderSelector} 
             onOpenChange={(isOpen) => {
                 if (!isOpen) {
-                    // This is the cancel/close action
                     setIsSavingMd(false);
                     setIsCreatingQuiz(false);
+                    setIsCreatingExam(false);
                 }
                 setShowFolderSelector(isOpen);
             }} 
             onSelectFolder={(folderId) => {
                 if (isSavingMd) {
-                    handleSaveToFile(folderId);
+                    handleSaveToFile(folderId, 'questions');
                 } else if (isCreatingQuiz) {
                     handleCreateQuiz(folderId);
+                } else if (isCreatingExam) {
+                    handleCreateExam(folderId);
                 }
             }} 
         />
@@ -600,5 +642,3 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    
