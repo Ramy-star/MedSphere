@@ -1,3 +1,4 @@
+
 'use client';
 
 import { LucideIcon, MoreVertical, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
@@ -77,16 +78,16 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 align="end"
                                 onClick={(e) => { e.stopPropagation(); }}
                             >
-                                <DropdownMenuItem onSelect={() => { onRename(); setDropdownOpen(false); }}>
+                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onRename(); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => { onIconChange(subject); setDropdownOpen(false); }}>
+                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onIconChange(subject); }}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={() => { onDelete(); setDropdownOpen(false); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>

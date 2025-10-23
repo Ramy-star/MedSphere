@@ -1,3 +1,4 @@
+
 'use client';
 import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -67,16 +68,16 @@ export const FolderCard = React.memo(function FolderCard({
           align="end"
           onClick={(e) => { e.stopPropagation(); }}
       >
-          <DropdownMenuItem onSelect={() => { onRename(); setDropdownOpen(false); }}>
+          <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onRename(); }}>
               <Edit className="mr-2 h-4 w-4" />
               <span>Rename</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => { onIconChange(item); setDropdownOpen(false); }}>
+          <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onIconChange(item); }}>
               <ImageIcon className="mr-2 h-4 w-4" />
               <span>Change Icon</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => { onDelete(); setDropdownOpen(false); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+          <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
               <Trash2 className="mr-2 h-4 w-4" />
               <span>Delete</span>
           </DropdownMenuItem>

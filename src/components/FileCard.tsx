@@ -1,3 +1,4 @@
+
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
@@ -265,19 +266,19 @@ export const FileCard = React.memo(function FileCard({
                         className="w-48 p-2"
                         align="end"
                     >
-                         <DropdownMenuItem onSelect={() => { onFileClick(item); setDropdownOpen(false); }}>
+                         <DropdownMenuItem onSelect={() => onFileClick(item)}>
                             <Eye className="mr-2 h-4 w-4" />
                             <span>Open</span>
                         </DropdownMenuItem>
                         {browserUrl && (
-                        <DropdownMenuItem onSelect={() => { window.open(browserUrl, '_blank'); setDropdownOpen(false); }} disabled={!browserUrl}>
+                        <DropdownMenuItem onSelect={() => window.open(browserUrl, '_blank')} disabled={!browserUrl}>
                             <ExternalLink className="mr-2 h-4 w-4" />
                             <span>Open in browser</span>
                         </DropdownMenuItem>
                         )}
                         {!isLink && item.type !== 'INTERACTIVE_QUIZ' && (
                             <DropdownMenuItem 
-                                onSelect={() => { storagePath && handleForceDownload(storagePath, item.name); setDropdownOpen(false); }} 
+                                onSelect={() => storagePath && handleForceDownload(storagePath, item.name)}
                                 disabled={!storagePath}
                             >
                                 <Download className="mr-2 h-4 w-4" />
@@ -289,22 +290,22 @@ export const FileCard = React.memo(function FileCard({
                             <>
                                 <DropdownMenuSeparator />
                                 {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf' || item.metadata?.mime === 'text/markdown') && (
-                                    <DropdownMenuItem onSelect={() => { handleCreateQuestions(); setDropdownOpen(false); }}>
+                                    <DropdownMenuItem onSelect={handleCreateQuestions}>
                                         <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                         <span>Create Questions</span>
                                     </DropdownMenuItem>
                                 )}
                                 {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && (
-                                    <DropdownMenuItem onClick={handleUpdateClick}>
+                                    <DropdownMenuItem onSelect={handleUpdateClick}>
                                       <RefreshCw className="mr-2 h-4 w-4" />
                                       <span>Update</span>
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem onSelect={() => { onRename(); setDropdownOpen(false); }}>
+                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onRename(); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => { onDelete(); setDropdownOpen(false); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>
@@ -316,3 +317,4 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
+
