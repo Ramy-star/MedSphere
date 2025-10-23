@@ -139,9 +139,9 @@ function FolderPageContent({ id }: { id: string }) {
   
   return (
     <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
+        initial={{ opacity: 0, y: -5 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, transition: { duration: 0.1 } }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="flex flex-col flex-1 overflow-hidden"
     >

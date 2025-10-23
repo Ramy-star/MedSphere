@@ -58,22 +58,21 @@ const listVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  hidden: { opacity: 0, y: -5 },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: {
       type: 'spring',
-      stiffness: 300,
-      damping: 30,
+      stiffness: 400,
+      damping: 40,
     },
   },
   exit: {
     opacity: 0,
-    scale: 0.95,
+    y: 5,
     transition: {
-      duration: 0.15,
+      duration: 0.1,
     },
   },
 };
