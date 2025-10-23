@@ -16,7 +16,7 @@ export default function ChatQuote({ text, onClose, className = "" }: Props) {
       role="status"
       aria-label="Quote notice"
       className={cn(
-        "relative text-white text-sm px-4 py-3 rounded-t-2xl rounded-b-lg m-2 mb-0", // Added margin
+        "relative text-white text-sm px-4 py-3 rounded-t-2xl rounded-b-lg mx-8 sm:mx-2 mb-0", // Adjusted margin
         className
       )}
       style={{ backgroundColor: '#424242' }}
