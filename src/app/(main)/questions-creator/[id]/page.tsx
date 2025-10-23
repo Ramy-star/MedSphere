@@ -67,11 +67,10 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
   const [showFolderSelector, setShowFolderSelector] = useState(false);
-  const [isSavingMd, setIsSavingMd] = useState(false);
-  const [isCreatingQuiz, setIsCreatingQuiz] = useState(false);
-  const [isCreatingExam, setIsCreatingExam] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
   const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false, examText: false, examJson: false });
+  const [currentAction, setCurrentAction] = useState<'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | null>(null);
+
 
   const titleRef = useRef<HTMLHeadingElement>(null);
 
@@ -246,7 +245,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     if (!questionSet) return;
 
     setShowFolderSelector(false);
-    setIsSavingMd(true);
+    setCurrentAction(null);
     toast({ title: "Formatting Markdown...", description: "AI is re-formatting the content for perfect output." });
 
     try {
@@ -271,7 +270,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 setUploadingFile(prev => prev ? { ...prev, status: 'success' } : null);
                 setTimeout(() => setUploadingFile(null), 3000);
                 toast({ title: "File Saved", description: `"${content.name}" has been saved successfully.` });
-                setIsSavingMd(false);
             },
             onError: (error: Error) => {
                 console.error("Save to file failed:", error);
@@ -281,7 +279,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     title: 'Save Failed',
                     description: error.message || `Could not save file. Please try again.`
                 })
-                setIsSavingMd(false);
             }
         };
         
@@ -293,14 +290,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             title: 'Formatting Failed',
             description: e.message || 'Could not re-format the markdown content.'
         });
-        setIsSavingMd(false);
     }
 };
 
   const handleCreateQuiz = async (parentId: string) => {
     if (!questionSet) return;
-    setIsCreatingQuiz(true);
     setShowFolderSelector(false);
+    setCurrentAction(null);
     try {
         await contentService.createInteractiveQuiz(parentId, questionSet.fileName, questionSet.jsonQuestions, questionSet.sourceFileId);
         toast({ title: 'Interactive Quiz Created', description: `Quiz for "${questionSet.fileName}" has been created.` });
@@ -311,15 +307,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             title: 'Creation Failed',
             description: error.message || 'Could not create the interactive quiz.'
         });
-    } finally {
-        setIsCreatingQuiz(false);
     }
   }
 
   const handleCreateExam = async (parentId: string) => {
     if (!questionSet) return;
-    setIsCreatingExam(true);
     setShowFolderSelector(false);
+    setCurrentAction(null);
     try {
         await contentService.createInteractiveExam(parentId, questionSet.fileName, questionSet.jsonExam, questionSet.sourceFileId);
         toast({ title: 'Interactive Exam Created', description: `Exam for "${questionSet.fileName}" has been created.` });
@@ -330,11 +324,25 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             title: 'Creation Failed',
             description: error.message || 'Could not create the interactive exam.'
         });
-    } finally {
-        setIsCreatingExam(false);
     }
   }
 
+  const handleFolderSelect = (folderId: string, action: 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam') => {
+      switch (action) {
+          case 'save_questions_md':
+              handleSaveToFile(folderId, 'questions');
+              break;
+          case 'save_exam_md':
+              handleSaveToFile(folderId, 'exam');
+              break;
+          case 'create_quiz':
+              handleCreateQuiz(folderId);
+              break;
+          case 'create_exam':
+              handleCreateExam(folderId);
+              break;
+      }
+  }
 
   if (loading || !questionSet) {
     return (
@@ -348,6 +356,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     const isThisCardEditing = isEditing[type];
     const isJsonCardWithError = type.includes('json') && jsonError;
     const isCopied = copiedStatus[type];
+
+    const isCreating = (type === 'json' && currentAction === 'create_quiz') || (type === 'examJson' && currentAction === 'create_exam');
+    const isSaving = (type === 'text' && currentAction === 'save_questions_md') || (type === 'examText' && currentAction === 'save_exam_md');
 
     return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
@@ -363,8 +374,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         {isAdmin && type === 'text' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsSavingMd(true); setShowFolderSelector(true); }} disabled={isSavingMd}>
-                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <HelpCircle className="h-4 w-4 text-red-400" />}
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('save_questions_md'); setShowFolderSelector(true); }} disabled={isSaving}>
+                                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileQuestion className="h-4 w-4 text-blue-400" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Save as Questions File</p></TooltipContent>
@@ -373,8 +384,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         {isAdmin && type === 'examText' && (
                              <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsSavingMd(true); setShowFolderSelector(true); }} disabled={isSavingMd}>
-                                        {isSavingMd ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileHeart className="h-4 w-4 text-red-400" />}
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('save_exam_md'); setShowFolderSelector(true); }} disabled={isSaving}>
+                                        {isSaving ? <Loader2 className="h-4 w-4 animate-spin"/> : <HelpCircle className="h-4 w-4 text-orange-400" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Save as Exam File</p></TooltipContent>
@@ -383,8 +394,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         {isAdmin && type === 'json' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsCreatingQuiz(true); setShowFolderSelector(true); }} disabled={isCreatingQuiz}>
-                                        {isCreatingQuiz ? <Loader2 className="h-4 w-4 animate-spin"/> : <Lightbulb className="h-4 w-4 text-yellow-400" />}
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_quiz'); setShowFolderSelector(true); }} disabled={isCreating}>
+                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Lightbulb className="h-4 w-4 text-yellow-400" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create Interactive Quiz</p></TooltipContent>
@@ -393,8 +404,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                          {isAdmin && type === 'examJson' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setIsCreatingExam(true); setShowFolderSelector(true); }} disabled={isCreatingExam}>
-                                        {isCreatingExam ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileHeart className="h-4 w-4 text-rose-400" />}
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_exam'); setShowFolderSelector(true); }} disabled={isCreating}>
+                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileHeart className="h-4 w-4 text-rose-400" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create Interactive Exam</p></TooltipContent>
@@ -594,24 +605,17 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </DialogContent>
         </Dialog>
         <FolderSelectorDialog 
-            open={showFolderSelector} 
+            open={showFolderSelector}
             onOpenChange={(isOpen) => {
                 if (!isOpen) {
-                    setIsSavingMd(false);
-                    setIsCreatingQuiz(false);
-                    setIsCreatingExam(false);
+                    setShowFolderSelector(false);
+                    setCurrentAction(null);
+                } else {
+                    setShowFolderSelector(true);
                 }
-                setShowFolderSelector(isOpen);
-            }} 
-            onSelectFolder={(folderId) => {
-                if (isSavingMd) {
-                    handleSaveToFile(folderId, 'questions');
-                } else if (isCreatingQuiz) {
-                    handleCreateQuiz(folderId);
-                } else if (isCreatingExam) {
-                    handleCreateExam(folderId);
-                }
-            }} 
+            }}
+            onSelectFolder={handleFolderSelect}
+            actionType={currentAction}
         />
         {uploadingFile && (
             <div className="fixed bottom-4 right-4 w-80">

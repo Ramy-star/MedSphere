@@ -17,10 +17,13 @@ import { ChevronRight, Folder as FolderIcon, Layers, Calendar, Loader2 } from 'l
 import { cn } from '@/lib/utils';
 import { ScrollArea } from './ui/scroll-area';
 
+type ActionType = 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam';
+
 type FolderSelectorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelectFolder: (folderId: string) => void;
+  onSelectFolder: (folderId: string, action: ActionType) => void;
+  actionType: ActionType | null;
 };
 
 type TreeNode = Content & { children?: TreeNode[] };
@@ -108,7 +111,7 @@ function FolderTree({ node, onSelect, selectedId, level = 0 }: { node: TreeNode,
     );
 }
 
-export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder }: FolderSelectorDialogProps) {
+export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder, actionType }: FolderSelectorDialogProps) {
   const { data: allItems, loading } = useCollection<Content>('content');
   const [selectedFolder, setSelectedFolder] = useState<{ id: string, type: string } | null>(null);
 
@@ -124,8 +127,8 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder }: Fol
   }, []);
 
   const handleConfirm = () => {
-    if (selectedFolder) {
-      onSelectFolder(selectedFolder.id);
+    if (selectedFolder && actionType) {
+      onSelectFolder(selectedFolder.id, actionType);
     }
   };
   
@@ -170,4 +173,3 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder }: Fol
     </Dialog>
   );
 }
-
