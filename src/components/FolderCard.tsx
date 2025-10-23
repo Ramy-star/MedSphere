@@ -64,8 +64,8 @@ export const FolderCard = React.memo(function FolderCard({
     const handleAction = (e: Event, action: () => void) => {
         e.preventDefault();
         e.stopPropagation();
-        setDropdownOpen(false);
         action();
+        setDropdownOpen(false);
     };
 
     const DropdownContent = () => (
@@ -73,16 +73,16 @@ export const FolderCard = React.memo(function FolderCard({
           className="w-48 p-2"
           align="end"
       >
-          <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
+          <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)} onClick={(e) => e.stopPropagation()}>
               <Edit className="mr-2 h-4 w-4" />
               <span>Rename</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(item))}>
+          <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(item))} onClick={(e) => e.stopPropagation()}>
               <ImageIcon className="mr-2 h-4 w-4" />
               <span>Change Icon</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+          <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10" onClick={(e) => e.stopPropagation()}>
               <Trash2 className="mr-2 h-4 w-4" />
               <span>Delete</span>
           </DropdownMenuItem>
@@ -90,10 +90,15 @@ export const FolderCard = React.memo(function FolderCard({
     );
     
     const handleCardClick = (e: React.MouseEvent) => {
+        // Prevent click from propagating to parent elements
         e.stopPropagation();
-        if (e.target instanceof Element && e.target.closest('[data-radix-dropdown-menu-trigger]')) {
+        
+        // Check if the click target is the trigger or inside the menu content
+        if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
             return;
         }
+        
+        // If not, proceed with the folder click action
         onClick(item);
     }
 

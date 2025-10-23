@@ -192,8 +192,8 @@ export const FileCard = React.memo(function FileCard({
     const handleAction = (e: Event, action: () => void) => {
         e.preventDefault();
         e.stopPropagation();
-        setDropdownOpen(false);
         action();
+        setDropdownOpen(false);
     };
 
     if (uploadingFile) {
