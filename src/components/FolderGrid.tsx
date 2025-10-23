@@ -47,21 +47,36 @@ function DropZone({ isVisible }: { isVisible: boolean }) {
   );
 }
 
-const listVariants = (isMobile: boolean) => ({
-  hidden: { opacity: 0 },
+const listVariants = {
   visible: {
-    opacity: 1,
     transition: {
-      staggerChildren: isMobile ? undefined : 0.02,
+      staggerChildren: 0.05,
+      delayChildren: 0.1,
     },
   },
-});
+  hidden: {},
+};
 
-const itemVariants = (isMobile: boolean) => ({
-  hidden: { opacity: 0, y: isMobile ? 0 : 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.15 } },
-  exit: { opacity: 0, y: isMobile ? 0 : -8, transition: { duration: 0.15 } }
-});
+const itemVariants = {
+  hidden: { opacity: 0, y: 20, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: 'spring',
+      stiffness: 300,
+      damping: 30,
+    },
+  },
+  exit: {
+    opacity: 0,
+    scale: 0.95,
+    transition: {
+      duration: 0.15,
+    },
+  },
+};
 
 const SortableItemWrapper = ({ id, children }: { id: string, children: React.ReactNode }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
@@ -258,7 +273,7 @@ export function FolderGrid({
          <div className="flex flex-col">
               <AnimatePresence>
                   {newUploads.map(file => (
-                      <motion.div key={file.id} variants={itemVariants(isMobile)} initial="hidden" animate="visible" exit="exit">
+                      <motion.div key={file.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit">
                           <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                       </motion.div>
                   ))}
@@ -297,7 +312,7 @@ export function FolderGrid({
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!isAdmin}>
-          <motion.div className={containerClasses} variants={listVariants(isMobile)} initial="hidden" animate="visible">
+          <motion.div className={containerClasses} variants={listVariants} initial="hidden" animate="visible">
             <AnimatePresence>
               {itemsToRender.map(({ item, uploadingFile }, index) => {
                 const isLastItem = index === itemsToRender.length - 1;
@@ -361,7 +376,7 @@ export function FolderGrid({
                 return (
                   <motion.div
                     key={itemKey}
-                    variants={itemVariants(isMobile)}
+                    variants={itemVariants}
                     exit="exit"
                     className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
                   >
