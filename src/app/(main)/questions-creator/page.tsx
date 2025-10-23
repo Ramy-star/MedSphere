@@ -37,13 +37,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
 
 type SavedQuestionSet = {
   id: string;
   fileName: string;
   textQuestions: string;
   jsonQuestions: string;
+  textExam?: string;
+  jsonExam?: string;
   createdAt: string;
   userId: string;
   sourceFileId: string;
@@ -138,8 +139,7 @@ function QuestionsCreatorContent() {
   const {
     task,
     isSaved,
-    startGenerationWithFile,
-    startGenerationFromUrl,
+    startGeneration,
     saveCurrentResults,
     clearTask,
     retryGeneration,
@@ -243,13 +243,20 @@ function QuestionsCreatorContent() {
   };
   
   const handleConfirmContinue = () => {
-    confirmContinue(generationPrompt, jsonPrompt);
+    confirmContinue({gen: generationPrompt, json: jsonPrompt, examGen: examGenerationPrompt, examJson: examJsonPrompt});
   };
+
+  const allPrompts = useMemo(() => ({
+    gen: generationPrompt,
+    json: jsonPrompt,
+    examGen: examGenerationPrompt,
+    examJson: examJsonPrompt
+  }), [generationPrompt, jsonPrompt, examGenerationPrompt, examJsonPrompt]);
   
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      startGenerationWithFile(e.target.files[0], generationPrompt, jsonPrompt);
+      startGeneration({file: e.target.files[0]}, allPrompts);
     }
   };
   
@@ -259,7 +266,7 @@ function QuestionsCreatorContent() {
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      startGenerationWithFile(e.dataTransfer.files[0], generationPrompt, jsonPrompt);
+      startGeneration({file: e.dataTransfer.files[0]}, allPrompts);
     }
   };
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation();};
@@ -341,18 +348,28 @@ function QuestionsCreatorContent() {
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
   };
 
-  const isGenerating = !!(task && ['extracting', 'generating_text', 'converting_json'].includes(task.status));
-  const showTextRetry = task?.status === 'error' && (task.failedStep === 'extracting' || task.failedStep === 'generating_text');
+  const isGenerating = task && task.status !== 'completed' && task.status !== 'error' && task.status !== 'idle' && task.status !== 'awaiting_confirmation';
+  
+  const showTextRetry = task?.status === 'error' && ['extracting', 'generating_text'].includes(task.failedStep!);
   const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
+  const showExamTextRetry = task?.status === 'error' && task.failedStep === 'generating_exam_text';
+  const showExamJsonRetry = task?.status === 'error' && task.failedStep === 'converting_exam_json';
 
 
   const handleRetry = useCallback(() => {
     if(!task) return;
-    retryGeneration(generationPrompt, jsonPrompt);
-  }, [task, retryGeneration, generationPrompt, jsonPrompt]);
+    retryGeneration(allPrompts);
+  }, [task, retryGeneration, allPrompts]);
 
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, isLoading: boolean, loadingText: string, showRetryButton: boolean) => {
+  const renderOutputCard = (
+    title: string, 
+    icon: React.ReactNode, 
+    content: string | null, 
+    isLoading: boolean, 
+    loadingText: string, 
+    showRetryButton: boolean
+  ) => {
     const hasContent = !!content || isLoading || showRetryButton;
     
     return (
@@ -586,7 +603,7 @@ function QuestionsCreatorContent() {
                        "Text Questions",
                        <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
                        task?.textQuestions ?? null,
-                       isGenerating && task?.status !== 'converting_json' && task?.status !== 'completed',
+                       isGenerating && ['extracting', 'generating_text'].includes(task.status),
                        task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...',
                        showTextRetry
                    )}
@@ -595,7 +612,7 @@ function QuestionsCreatorContent() {
                        "JSON Questions",
                        <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
                        task?.jsonQuestions ?? null,
-                       isGenerating && task?.status === 'converting_json',
+                       isGenerating && task.status === 'converting_json',
                        'Converting to JSON...',
                        showJsonRetry
                    )}
@@ -608,22 +625,22 @@ function QuestionsCreatorContent() {
                   transition={{ delay: 0.3 }} 
                   className="md:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6"
                 >
-                   {renderOutputCard(
+                    {renderOutputCard(
                        "Text Exam",
                        <FileText className="w-8 h-8 text-orange-400 shrink-0" />,
-                       null, // Replace with task?.textExam ?? null,
-                       false, // Replace with exam generation loading state
+                       task?.textExam ?? null,
+                       isGenerating && task.status === 'generating_exam_text',
                        'Generating exam...',
-                       false // Replace with exam retry state
+                       showExamTextRetry
                    )}
 
                    {renderOutputCard(
                        "JSON Exam",
                        <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
-                       null, // Replace with task?.jsonExam ?? null,
-                       false, // Replace with exam JSON conversion loading state
+                       task?.jsonExam ?? null,
+                       isGenerating && task.status === 'converting_exam_json',
                        'Converting exam to JSON...',
-                       false // Replace with exam JSON retry state
+                       showExamJsonRetry
                    )}
                 </motion.div>
             </div>
@@ -747,5 +764,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    

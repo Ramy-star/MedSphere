@@ -50,6 +50,8 @@
         "fileName": { "type": "string", "description": "The name of the source file for the questions." },
         "textQuestions": { "type": "string", "description": "The questions in plain text format." },
         "jsonQuestions": { "type": "string", "description": "The questions in JSON format." },
+        "textExam": { "type": "string", "description": "The exam questions in plain text format." },
+        "jsonExam": { "type": "string", "description": "The exam questions in JSON format." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the set was created." },
         "sourceFileId": { "type": "string", "description": "The ID of the original source file." },
         "order": { "type": "number", "description": "The display order of the question set." }
