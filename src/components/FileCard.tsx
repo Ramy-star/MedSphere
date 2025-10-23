@@ -300,11 +300,11 @@ export const FileCard = React.memo(function FileCard({
                                       <span>Update</span>
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onRename(), 0); }}>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(onRename, 0); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onDelete(), 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(onDelete, 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>

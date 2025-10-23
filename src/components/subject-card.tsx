@@ -73,7 +73,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 className="w-48 p-2"
                                 align="end"
                             >
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onRename(), 0); }}>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(onRename, 0); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
@@ -82,7 +82,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onDelete(), 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(onDelete, 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>
