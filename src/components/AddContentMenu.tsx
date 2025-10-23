@@ -88,14 +88,14 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
 
   const menuItems = [
       {
-          label: "New Folder",
-          icon: FolderPlus,
-          action: () => setShowNewFolderDialog(true),
-      },
-      {
           label: "New Class",
           icon: Plus,
           action: () => setShowNewClassDialog(true),
+      },
+      {
+          label: "New Folder",
+          icon: FolderPlus,
+          action: () => setShowNewFolderDialog(true),
       },
       {
           label: "Upload File",
