@@ -129,7 +129,6 @@ export const FileCard = React.memo(function FileCard({
     const startGenerationFromUrl = useQuestionGenerationStore((state) => state.startGenerationFromUrl);
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const updateFileInputRef = useRef<HTMLInputElement>(null);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
 
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
@@ -243,7 +242,7 @@ export const FileCard = React.memo(function FileCard({
                     {displaySize}
                 </p>
                 
-                <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                <DropdownMenu>
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -301,11 +300,11 @@ export const FileCard = React.memo(function FileCard({
                                       <span>Update</span>
                                     </DropdownMenuItem>
                                 )}
-                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onRename(); }}>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onRename(), 0); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onDelete(), 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>
@@ -317,4 +316,3 @@ export const FileCard = React.memo(function FileCard({
         </div>
     )
 });
-

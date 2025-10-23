@@ -35,14 +35,11 @@ export const SubjectCard = React.memo(function SubjectCard({
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
   const { user } = useUser();
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
-  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent navigation if the dropdown trigger was clicked
     if (e.target instanceof Element && e.target.closest('[data-radix-dropdown-menu-trigger]')) {
-      return;
+      e.preventDefault();
     }
-    // Manually navigate using router or Link's functionality is implicitly handled by the parent Link component
   };
 
 
@@ -53,7 +50,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />
                     {isAdmin && (
-                        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                        <DropdownMenu>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -62,7 +59,6 @@ export const SubjectCard = React.memo(function SubjectCard({
                                                 variant="ghost" 
                                                 size="icon" 
                                                 className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
-                                                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                                             >
                                                 <MoreVertical className="w-5 h-5" />
                                             </Button>
@@ -76,18 +72,17 @@ export const SubjectCard = React.memo(function SubjectCard({
                             <DropdownMenuContent 
                                 className="w-48 p-2"
                                 align="end"
-                                onClick={(e) => { e.stopPropagation(); }}
                             >
-                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onRename(); }}>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onRename(), 0); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onIconChange(subject); }}>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onIconChange(subject), 0); }}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onDelete(), 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>
                                 </DropdownMenuItem>

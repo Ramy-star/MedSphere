@@ -41,8 +41,6 @@ export const FolderCard = React.memo(function FolderCard({
     const { user } = useUser();
     const router = useRouter();
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-
     
     const renderIcon = () => {
       if (item.metadata?.iconURL) {
@@ -66,18 +64,17 @@ export const FolderCard = React.memo(function FolderCard({
       <DropdownMenuContent 
           className="w-48 p-2"
           align="end"
-          onClick={(e) => { e.stopPropagation(); }}
       >
-          <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onRename(); }}>
+          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onRename(), 0); }}>
               <Edit className="mr-2 h-4 w-4" />
               <span>Rename</span>
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onIconChange(item); }}>
+          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onIconChange(item), 0); }}>
               <ImageIcon className="mr-2 h-4 w-4" />
               <span>Change Icon</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem onSelect={() => { setDropdownOpen(false); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+          <DropdownMenuItem onSelect={(e) => { e.preventDefault(); setTimeout(() => onDelete(), 0); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
               <Trash2 className="mr-2 h-4 w-4" />
               <span>Delete</span>
           </DropdownMenuItem>
@@ -85,7 +82,6 @@ export const FolderCard = React.memo(function FolderCard({
     );
     
     const handleCardClick = (e: React.MouseEvent) => {
-        // This is the important part. If the click came from inside a dropdown trigger, ignore it.
         if (e.target instanceof Element && e.target.closest('[data-radix-dropdown-menu-trigger]')) {
             return;
         }
@@ -122,7 +118,7 @@ export const FolderCard = React.memo(function FolderCard({
                     </p>
                     
                     {isAdmin && (
-                        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                        <DropdownMenu>
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -131,7 +127,6 @@ export const FolderCard = React.memo(function FolderCard({
                                                 variant="ghost" 
                                                 size="icon" 
                                                 className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                                onClick={(e) => { e.stopPropagation(); }}
                                             >
                                                 <MoreVertical className="w-5 h-5" />
                                             </Button>
@@ -160,7 +155,7 @@ export const FolderCard = React.memo(function FolderCard({
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
               {isAdmin && (
-                  <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                  <DropdownMenu>
                        <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
@@ -169,7 +164,6 @@ export const FolderCard = React.memo(function FolderCard({
                                             variant="ghost" 
                                             size="icon" 
                                             className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
-                                            onClick={(e) => { e.stopPropagation(); }}
                                         >
                                             <MoreVertical className="w-5 h-5" />
                                         </Button>
