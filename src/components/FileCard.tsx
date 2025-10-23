@@ -129,7 +129,7 @@ export const FileCard = React.memo(function FileCard({
     const isMobile = useIsMobile();
     const router = useRouter();
     const { user } = useUser();
-    const startGenerationFromUrl = useQuestionGenerationStore((state) => state.startGenerationFromUrl);
+    const startGeneration = useQuestionGenerationStore((state) => state.startGeneration);
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const updateFileInputRef = useRef<HTMLInputElement>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -171,7 +171,14 @@ export const FileCard = React.memo(function FileCard({
         if (item.metadata?.storagePath) {
             const genPrompt = localStorage.getItem('questionGenPrompt') || '';
             const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
-            startGenerationFromUrl(item.id, item.name, item.metadata.storagePath, genPrompt, jsonPrompt);
+            const examGenPrompt = localStorage.getItem('examGenPrompt') || '';
+            const examJsonPrompt = localStorage.getItem('examJsonPrompt') || '';
+            
+            startGeneration(
+              { id: item.id, fileName: item.name, fileUrl: item.metadata.storagePath },
+              { gen: genPrompt, json: jsonPrompt, examGen: examGenPrompt, examJson: examJsonPrompt }
+            );
+
             router.push('/questions-creator?tab=generate');
         }
     };
