@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -342,6 +343,7 @@ export function FolderGrid({
                         case 'FILE':
                         case 'LINK':
                         case 'INTERACTIVE_QUIZ':
+                        case 'INTERACTIVE_EXAM':
                             return (
                                 <FileCard
                                     item={item}

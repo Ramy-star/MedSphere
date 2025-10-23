@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileHeart
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -25,6 +25,7 @@ import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 import { useRouter } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { UploadProgress, UploadingFile } from './UploadProgress';
+import { FileHeart } from './icons/FileHeart';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
     if (item.type === 'LINK') {
