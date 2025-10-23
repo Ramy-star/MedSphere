@@ -14,7 +14,7 @@ import { cacheService } from './cacheService';
 export type Content = {
   id: string;
   name: string;
-  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK' | 'INTERACTIVE_QUIZ';
+  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK' | 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM';
   parentId: string | null;
   metadata?: {
     size?: number;
@@ -27,7 +27,7 @@ export type Content = {
     iconCloudinaryPublicId?: string; 
     shortId?: string;
     sourceFileId?: string; // For generated files like quizzes
-    quizData?: string; // For INTERACTIVE_QUIZ type
+    quizData?: string; // For INTERACTIVE_QUIZ or INTERACTIVE_EXAM type
     isClassContainer?: boolean; // For the new "Class" type
   };
   createdAt?: string;
@@ -308,6 +308,54 @@ export const contentService = {
                 path: `/content/${newQuizId}`,
                 operation: 'create',
                 requestResourceData: { name: `${originalFileName} - Quiz`, parentId, type: 'INTERACTIVE_QUIZ' },
+            }));
+        } else {
+            console.error("Transaction failed: ", e);
+        }
+        throw e;
+    }
+  },
+
+  async createInteractiveExam(parentId: string, name: string, examData: string, sourceFileId: string): Promise<Content> {
+    if (!db) throw new Error("Firestore not initialized");
+
+    const newExamId = uuidv4();
+    const newExamRef = doc(db, 'content', newExamId);
+    let newExamData: Content | null = null;
+    const originalFileName = name.replace(/\.[^/.]+$/, "");
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+            const childrenSnapshot = await getDocs(childrenQuery);
+            const order = childrenSnapshot.size;
+
+            newExamData = {
+                id: newExamId,
+                name: `${originalFileName} - Exam`,
+                type: 'INTERACTIVE_EXAM',
+                parentId: parentId,
+                metadata: {
+                    quizData: examData,
+                    sourceFileId,
+                },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                order: order,
+            };
+
+            transaction.set(newExamRef, newExamData);
+        });
+
+        if (!newExamData) throw new Error("Exam creation failed within transaction.");
+        return newExamData;
+
+    } catch (e: any) {
+        if (e && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${newExamId}`,
+                operation: 'create',
+                requestResourceData: { name: `${originalFileName} - Exam`, parentId, type: 'INTERACTIVE_EXAM' },
             }));
         } else {
             console.error("Transaction failed: ", e);

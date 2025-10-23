@@ -1,8 +1,7 @@
-
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileHeart
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -33,6 +32,10 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     
     if (item.type === 'INTERACTIVE_QUIZ') {
         return { Icon: Lightbulb, color: 'text-yellow-400' };
+    }
+
+    if (item.type === 'INTERACTIVE_EXAM') {
+        return { Icon: FileHeart, color: 'text-rose-400' };
     }
 
     const fileName = item.name;
@@ -135,6 +138,7 @@ export const FileCard = React.memo(function FileCard({
     const displaySize = (() => {
         if (item.type === 'LINK') return 'Link';
         if (item.type === 'INTERACTIVE_QUIZ') return 'Quiz';
+        if (item.type === 'INTERACTIVE_EXAM') return 'Exam';
         if (item.metadata?.size) {
             const sizeInKB = item.metadata.size / 1024;
             return sizeInKB < 1024
@@ -278,7 +282,7 @@ export const FileCard = React.memo(function FileCard({
                             <span>Open in browser</span>
                         </DropdownMenuItem>
                         )}
-                        {!isLink && item.type !== 'INTERACTIVE_QUIZ' && (
+                        {!isLink && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && (
                             <DropdownMenuItem 
                                 onSelect={(e) => handleAction(e, () => { if (storagePath) handleForceDownload(storagePath, item.name); })}
                                 disabled={!storagePath}
@@ -297,7 +301,7 @@ export const FileCard = React.memo(function FileCard({
                                         <span>Create Questions</span>
                                     </DropdownMenuItem>
                                 )}
-                                {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && (
+                                {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && (
                                     <DropdownMenuItem onSelect={handleUpdateClick}>
                                       <RefreshCw className="mr-2 h-4 w-4" />
                                       <span>Update</span>

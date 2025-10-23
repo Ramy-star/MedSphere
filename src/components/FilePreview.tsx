@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useState, forwardRef, MouseEvent, useCallback, useRef } from 'react';
@@ -12,6 +10,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { QuizContainer } from './quiz-tabs';
 import type { Lecture } from '@/lib/types';
+import { ExamContainer } from './ExamContainer';
 
 
 // Import react-pdf styles here to ensure they are loaded
@@ -48,7 +47,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     let objectUrl: string | null = null;
     let isCancelled = false;
 
-    if (itemType === 'INTERACTIVE_QUIZ') {
+    if (itemType === 'INTERACTIVE_QUIZ' || itemType === 'INTERACTIVE_EXAM') {
         setIsLoading(false);
         return;
     }
@@ -152,12 +151,12 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
       );
   }
   
-  if (itemType === 'INTERACTIVE_QUIZ') {
+  if (itemType === 'INTERACTIVE_QUIZ' || itemType === 'INTERACTIVE_EXAM') {
     if (!quizData) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                <p className="text-xl font-semibold mb-3">⚠️ Quiz Data Missing</p>
-                <p className="text-base mb-4 text-slate-400">Could not load the interactive quiz data.</p>
+                <p className="text-xl font-semibold mb-3">⚠️ Data Missing</p>
+                <p className="text-base mb-4 text-slate-400">Could not load the interactive content data.</p>
             </div>
         );
     }
@@ -168,15 +167,15 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         
         return (
              <div ref={containerRef} className="w-full h-full overflow-y-auto no-scrollbar selectable">
-                <QuizContainer lectures={lectures} />
+                {itemType === 'INTERACTIVE_QUIZ' ? <QuizContainer lectures={lectures} /> : <ExamContainer lectures={lectures} />}
             </div>
         );
     } catch (e) {
-        console.error("Failed to parse quiz data:", e);
+        console.error("Failed to parse quiz/exam data:", e);
         return (
             <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
-                <p className="text-xl font-semibold mb-3">⚠️ Invalid Quiz Format</p>
-                <p className="text-base mb-4 text-slate-400">The quiz data is corrupted or in an incorrect format.</p>
+                <p className="text-xl font-semibold mb-3">⚠️ Invalid Content Format</p>
+                <p className="text-base mb-4 text-slate-400">The data is corrupted or in an incorrect format.</p>
             </div>
         );
     }
