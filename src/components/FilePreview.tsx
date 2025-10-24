@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, forwardRef, MouseEvent, useCallback, useRef } from 'react';
@@ -10,7 +11,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { QuizContainer } from './quiz-tabs';
 import type { Lecture } from '@/lib/types';
-import { ExamContainer } from './ExamContainer';
+import ExamContainer from './ExamContainer';
 
 
 // Import react-pdf styles here to ensure they are loaded
