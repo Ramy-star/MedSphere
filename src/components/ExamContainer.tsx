@@ -6,12 +6,13 @@ import { PieChart, Pie, Cell, ResponsiveContainer, LabelProps, BarChart, Bar, XA
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "@/lib/utils";
-import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase/firestore/use-collection';
+import { useFirestore, useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { cva } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import type { Lecture, ExamResult, MCQ } from '@/lib/types';
+import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
 
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
@@ -815,8 +816,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     );
 };
 
-
-export function GitGrindExam({ lectures }: { lectures: Lecture[] }) {
+const ExamContainer = ({ lectures }: { lectures: Lecture[] }) => {
     const [activeLectureId, setActiveLectureId] = useState('');
     const isInitialRender = useRef(true);
 
@@ -867,7 +867,7 @@ export function GitGrindExam({ lectures }: { lectures: Lecture[] }) {
     }
 
     return (
-        <main className="exam-page-container light bg-background text-foreground">
+        <main className="exam-page-container bg-background text-foreground">
             <div id="questions-container">
                  <ExamMode 
                     lecture={activeLecture} 
@@ -880,3 +880,4 @@ export function GitGrindExam({ lectures }: { lectures: Lecture[] }) {
     );
 }
 
+export default ExamContainer;
