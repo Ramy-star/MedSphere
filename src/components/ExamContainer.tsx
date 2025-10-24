@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown } from 'lucide-react';
@@ -6,7 +5,6 @@ import { PieChart, Pie, Cell, ResponsiveContainer, LabelProps, BarChart, Bar, XA
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "@/lib/utils";
-import { useFirebase } from '@/firebase/provider';
 import { useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -14,6 +12,7 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import type { Lecture, ExamResult, MCQ } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
+import { useFirebase } from '@/firebase/provider';
 
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
@@ -586,7 +585,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Your current progress will be saved. You can resume next time.
+                            Your current progress will not be saved.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="justify-center sm:justify-center">
@@ -756,7 +755,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
                                     <Clock size={20} />
                                     <span>{formatTime(timeLeft)}</span>
                                 </div>
-                                <button className="quick-exit-btn" onClick={handleExitClick} aria-label="Exit Exam">
+                                <button className="quick-exit-btn" onClick={handleQuickExit} aria-label="Exit Exam">
                                     <X size={20} />
                                 </button>
                             </div>
@@ -867,8 +866,35 @@ export default function ExamContainer({ lectures }: { lectures: Lecture[] }) {
         return <div className="flex items-center justify-center h-screen"><p>Loading lecture...</p></div>;
     }
 
+    const ExamStyles = () => (
+      <style>{`
+        .exam-theme {
+          --background: 220 24% 95%;
+          --foreground: 222.2 84% 4.9%;
+          --card: 210 40% 98%;
+          --card-foreground: 222.2 84% 4.9%;
+          --popover: 210 40% 98%;
+          --popover-foreground: 222.2 84% 4.9%;
+          --primary: 220 14.3% 95.9%;
+          --primary-foreground: 222.2 47.4% 11.2%;
+          --secondary: 210 40% 96.1%;
+          --secondary-foreground: 222.2 47.4% 11.2%;
+          --muted: 210 40% 96.1%;
+          --muted-foreground: 215.4 16.3% 46.9%;
+          --accent: 210 40% 96.1%;
+          --accent-foreground: 222.2 47.4% 11.2%;
+          --destructive: 0 84.2% 60.2%;
+          --destructive-foreground: 210 40% 98%;
+          --border: 214.3 31.8% 91.4%;
+          --input: 214.3 31.8% 91.4%;
+          --ring: 222.2 84% 4.9%;
+        }
+      `}</style>
+    )
+
     return (
-        <main className="exam-page-container bg-background text-foreground light">
+        <main className="exam-page-container bg-background text-foreground light exam-theme">
+            <ExamStyles />
             <div id="questions-container">
                  <ExamMode 
                     lecture={activeLecture} 
@@ -880,5 +906,3 @@ export default function ExamContainer({ lectures }: { lectures: Lecture[] }) {
         </main>
     );
 }
-
-    
