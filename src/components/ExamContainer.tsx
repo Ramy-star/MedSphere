@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown } from 'lucide-react';
@@ -559,17 +560,12 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     };
     
     const handleExitClick = () => {
-        if (examState === 'in-progress') {
-            setIsExitAlertOpen(true);
-        } else {
-            triggerAnimation('not-started');
-            onExit();
-        }
+        triggerAnimation('not-started');
+        onExit();
     };
 
     const handleQuickExit = () => {
-        triggerAnimation('not-started');
-        onExit();
+        setIsExitAlertOpen(true);
     };
 
     const containerClasses = `exam-container ${isAnimating ? 'animating-out' : 'animating-in'}`;
@@ -585,12 +581,12 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Your current progress will not be saved.
+                           Your progress will be saved. You can resume next time.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter className="justify-center sm:justify-center">
-                        <AlertDialogCancel className="rounded-2xl border-border bg-background hover:bg-transparent text-foreground hover:text-foreground focus:ring-0 focus-visible:ring-0 focus:ring-offset-0">Cancel</AlertDialogCancel>
-                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90 rounded-2xl" onClick={handleQuickExit}>Exit</AlertDialogAction>
+                        <AlertDialogCancel className="rounded-2xl border-border bg-background hover:bg-gray-100 text-foreground hover:text-foreground focus:ring-0 focus-visible:ring-0 focus:ring-offset-0">Cancel</AlertDialogCancel>
+                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90 rounded-2xl" onClick={handleExitClick}>Exit</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -869,31 +865,31 @@ export default function ExamContainer({ lectures }: { lectures: Lecture[] }) {
     const ExamStyles = () => (
       <style>{`
         .exam-theme {
-          --background: 220 24% 95%;
-          --foreground: 222.2 84% 4.9%;
-          --card: 210 40% 98%;
-          --card-foreground: 222.2 84% 4.9%;
-          --popover: 210 40% 98%;
-          --popover-foreground: 222.2 84% 4.9%;
-          --primary: 220 14.3% 95.9%;
-          --primary-foreground: 222.2 47.4% 11.2%;
-          --secondary: 210 40% 96.1%;
-          --secondary-foreground: 222.2 47.4% 11.2%;
-          --muted: 210 40% 96.1%;
-          --muted-foreground: 215.4 16.3% 46.9%;
-          --accent: 210 40% 96.1%;
-          --accent-foreground: 222.2 47.4% 11.2%;
-          --destructive: 0 84.2% 60.2%;
-          --destructive-foreground: 210 40% 98%;
-          --border: 214.3 31.8% 91.4%;
-          --input: 214.3 31.8% 91.4%;
-          --ring: 222.2 84% 4.9%;
+            --background: 220 24% 95%;
+            --foreground: 222.2 84% 4.9%;
+            --card: 210 40% 98%;
+            --card-foreground: 222.2 84% 4.9%;
+            --popover: 210 40% 98%;
+            --popover-foreground: 222.2 84% 4.9%;
+            --primary: 224 76% 48%;
+            --primary-foreground: 210 40% 98%;
+            --secondary: 210 40% 96.1%;
+            --secondary-foreground: 217 91% 20%;
+            --muted: 210 40% 96.1%;
+            --muted-foreground: 215.4 16.3% 46.9%;
+            --accent: 243 77% 59%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 214.3 31.8% 91.4%;
+            --input: 214.3 31.8% 91.4%;
+            --ring: 224 76% 48%;
         }
       `}</style>
     )
 
     return (
-        <main className="exam-page-container bg-background text-foreground light exam-theme">
+        <main className="exam-page-container light exam-theme">
             <ExamStyles />
             <div id="questions-container">
                  <ExamMode 
@@ -906,3 +902,137 @@ export default function ExamContainer({ lectures }: { lectures: Lecture[] }) {
         </main>
     );
 }
+
+// Ensure you have these styles in your global CSS file.
+/*
+Add to your globals.css:
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 220 24% 95%; 
+    --foreground: 222.2 84% 4.9%;
+    --card: 210 40% 98%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 210 40% 98%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 224 76% 48%; 
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 217 91% 20%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 243 77% 59%; 
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 224 76% 48%;
+    --radius: 1rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 224 76% 58%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 243 77% 69%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224 76% 58%;
+  }
+}
+
+@layer base {
+  * { @apply border-border; }
+  body { @apply bg-background text-foreground; }
+}
+
+button, a, input, select, textarea { @apply transition-colors duration-200 ease-in-out; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes fadeOut { from { opacity: 1; transform: translateY(0); } to { opacity: 0; transform: translateY(-10px); } }
+@keyframes progress-bar { from { width: 0%; } to { width: var(--progress-width); } }
+
+.exam-page-container { max-width: 900px; margin: 20px auto; padding: 30px; border-radius: 1rem; position: relative; }
+.exam-container { @apply relative bg-card rounded-2xl p-8; }
+.exam-container.start-mode { @apply flex flex-col justify-center items-center min-h-[70vh]; }
+.animating-out { animation: fadeOut 0.3s ease-out forwards; }
+.animating-in { animation: fadeIn 0.5s ease-out forwards; }
+#lecture-tabs { display: flex; flex-wrap: nowrap; justify-content: flex-start; gap: 12px; padding: 5px 2px; overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-behavior: smooth; width: 100%; margin-bottom: 1.5rem; }
+#lecture-tabs::-webkit-scrollbar { display: none; }
+button.lecture-tab-btn { @apply flex-shrink-0 px-4 py-2 rounded-full border bg-card text-muted-foreground text-sm font-medium cursor-pointer transition-all; }
+button.lecture-tab-btn:hover { @apply bg-muted border-primary; }
+button.lecture-tab-btn.active { @apply bg-primary border-ring text-primary-foreground font-semibold shadow-none; transform: scale(1); }
+.exam-start-screen { @apply text-center p-8 w-full; }
+.exam-start-screen h2 { @apply text-4xl font-bold mb-2 text-foreground; }
+.exam-start-screen p { @apply text-lg text-muted-foreground mb-10; }
+.start-exam-btn { @apply bg-primary text-primary-foreground px-10 py-3 text-lg font-semibold rounded-full border-none cursor-pointer transition-transform; }
+.start-exam-btn:hover { transform: translateY(-3px); @apply bg-primary/90; }
+.quick-exit-btn { @apply bg-transparent border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer text-muted-foreground transition-all duration-200; }
+.quick-exit-btn:hover { background-color: hsl(var(--destructive) / 0.1); @apply text-destructive scale-110; }
+.exam-progress-header { @apply mb-6; }
+.progress-bar-container { @apply w-full bg-muted rounded-full h-2 overflow-hidden; }
+.progress-bar { @apply h-full bg-primary rounded-full transition-all duration-500 ease-in-out; }
+.question-area { min-height: 320px; @apply transition-opacity duration-300 ease-in-out; }
+.question-area.question-fade-out { opacity: 0; transform: translateY(-10px); }
+.question-area.question-fade-in { opacity: 1; transform: translateY(0px); }
+.question-title { @apply text-base font-medium text-muted-foreground mb-4; }
+.question-text { @apply text-xl font-semibold mb-8 leading-relaxed; }
+.options-grid { @apply grid grid-cols-1 gap-4; }
+.option-btn { @apply flex items-center text-left w-full px-5 py-4 border-2 border-border rounded-2xl bg-card text-base cursor-pointer transition-all duration-200; }
+.option-btn:hover { @apply border-primary; transform: translateX(5px); }
+.option-btn.selected { background-color: hsl(var(--primary) / 0.1); @apply border-primary font-semibold; }
+.option-letter { @apply font-bold mr-4 py-1 px-2.5 border border-border rounded-md min-w-[32px] text-center transition-all duration-200; }
+.option-btn.selected .option-letter { @apply bg-primary text-primary-foreground border-primary; }
+.exam-navigation { @apply flex justify-between items-center mt-8 border-t border-border pt-6; }
+.nav-btn { @apply bg-card text-muted-foreground px-6 py-2.5 text-base font-medium rounded-xl border border-border cursor-pointer flex items-center gap-2; }
+.nav-btn:hover:not(:disabled) { @apply bg-muted; }
+.nav-btn:active:not(:disabled) { transform: scale(0.97); }
+.nav-btn:disabled { @apply opacity-50 cursor-not-allowed; }
+.nav-btn.finish { background-color: #10b981; color: white; border-color: #10b981; @apply font-semibold; }
+.nav-btn.finish:hover { background-color: #059669; border-color: #059669; }
+.exam-results-screen { @apply text-center; }
+.results-summary { @apply bg-muted border border-border rounded-2xl px-8 py-10 mb-10 flex flex-wrap items-center justify-center gap-8; }
+.results-summary h2 { @apply text-3xl font-bold text-foreground mb-3 w-full text-center; }
+.score-container { @apply text-center; flex-basis: 40%; }
+.score-container .score { @apply text-7xl font-extrabold leading-tight text-primary m-0; }
+.score-container .score-text { @apply text-xl text-muted-foreground mt-2; }
+.chart-container { flex-basis: 50%; min-width: 220px; height: 200px; }
+.review-answers-title { @apply text-3xl font-bold mb-6 text-left border-b border-border pb-4; }
+.review-question { @apply bg-card border border-border rounded-2xl p-6 mb-5 text-left transition-shadow; }
+.review-question:hover { box-shadow: 0 4px 15px rgba(0,0,0,0.07); }
+.review-question-header { @apply flex items-center gap-3 mb-5; }
+.review-question-text { @apply font-semibold text-lg leading-relaxed; }
+.review-option { @apply px-4 py-3 rounded-xl mb-3 flex gap-4 items-center border text-base; }
+.review-option.correct { background-color: #dcfce7; color: #166534; border-color: #86efac; @apply font-semibold; }
+.review-option.incorrect { background-color: #fee2e2; color: #991b1b; border-color: #fca5a5; }
+.review-option.unanswered { background-color: #fffbeb; color: #b45309; border-color: #fcd34d; }
+.review-option > svg { flex-shrink: 0; }
+.exit-btn { @apply bg-transparent border-2 border-destructive text-destructive font-semibold rounded-full cursor-pointer inline-flex items-center justify-center gap-2 overflow-hidden transition-all duration-300 ease-in-out; width: 44px; height: 44px; padding: 0; }
+.exit-btn .exit-text { @apply whitespace-nowrap opacity-0 max-w-0 transition-all duration-200 ease-in-out; }
+.exit-btn:hover { @apply bg-destructive text-primary-foreground; width: 120px; padding: 0 16px; }
+.exit-btn:hover .exit-text { @apply opacity-100 max-w-[100px] ml-2; }
+@media (max-width: 768px) {
+    .exam-page-container { @apply p-4 m-2; }
+    .exam-container { @apply p-4; }
+    .exam-start-screen h2 { @apply text-3xl; }
+    .results-summary .score-container .score { @apply text-6xl; }
+    .results-summary { @apply flex-col-reverse p-6; }
+}
+*/
