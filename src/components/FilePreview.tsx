@@ -32,12 +32,13 @@ type FilePreviewProps = {
   onSelectionChange?: () => void;
   itemType: string;
   quizData?: string;
+  onExamStateChange?: (inProgress: boolean) => void;
 };
 
 // Define the type for the ref handle
 export type FilePreviewRef = PdfViewerRef;
 
-const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage, onTextSelect, onSelectionChange, itemType, quizData }, ref) => {
+const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage, onTextSelect, onSelectionChange, itemType, quizData, onExamStateChange }, ref) => {
   const [content, setContent] = useState<string | Blob | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [contentUrl, setContentUrl] = useState<string|null>(null);
@@ -169,7 +170,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         
         return (
              <div ref={containerRef} className="w-full h-full overflow-y-auto no-scrollbar selectable">
-                {itemType === 'INTERACTIVE_QUIZ' ? <QuizContainer lectures={lectures} /> : <ExamContainer lectures={lectures} />}
+                {itemType === 'INTERACTIVE_QUIZ' ? <QuizContainer lectures={lectures} /> : <ExamContainer lectures={lectures} onStateChange={onExamStateChange} />}
             </div>
         );
     } catch (e) {

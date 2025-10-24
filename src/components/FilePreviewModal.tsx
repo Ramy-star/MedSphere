@@ -28,7 +28,7 @@ import {
   AlertDialogHeader as AlertDialogHeader2,
   AlertDialogTitle as AlertDialogTitle2,
 } from "@/components/ui/alert-dialog"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Link2Icon } from './icons/Link2Icon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
@@ -237,6 +237,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [pdfScale, setPdfScale] = useState(1);
   const [pageInput, setPageInput] = useState('1');
   const [scaleInput, setScaleInput] = useState('100%');
+  const [isExamInProgress, setIsExamInProgress] = useState(false);
   const isMobile = useIsMobile();
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
@@ -263,6 +264,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     setInitialQuotedText(null);
     setError(null);
     setSelection(null);
+    setIsExamInProgress(false);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -548,8 +550,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isMarkdown = item?.metadata?.mime === 'text/markdown';
   const isTextFile = item?.metadata?.mime?.startsWith('text/');
   const isQuiz = item?.type === 'INTERACTIVE_QUIZ' || item?.type === 'INTERACTIVE_EXAM';
-  const isChatAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
-  const isQuoteAvailable = isPdf || isMarkdown || isTextFile || isQuiz;
+  const isChatAvailable = (isPdf || isMarkdown || isTextFile || isQuiz) && !isExamInProgress;
+  const isQuoteAvailable = (isPdf || isMarkdown || isTextFile || isQuiz) && !isExamInProgress;
   const displayName = item.name;
   
   const renderLoadingSkeleton = () => (
@@ -681,22 +683,24 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     )}
                 </div>
                 </TooltipProvider>
-                {isChatAvailable && (
-                    <Button
-                        onClick={() => setShowChat(!showChat)}
-                        className={cn(
-                            "rounded-full px-3 sm:px-4 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
-                            "active:scale-95",
-                             !showChat && "bg-gradient-to-r from-[#2968b5] to-[#C42929]",
-                             showChat && "bg-gradient-to-r from-[#1263FF] to-[#D11111]"
-                        )}
-                    >
-                        <div className="flex items-center relative z-10">
-                            <Sparkles className="h-4 w-4 mr-2" />
-                            <span className={cn("sm:inline")}>Ask AI</span>
-                        </div>
-                    </Button>
-                )}
+                
+                <Button
+                    onClick={() => setShowChat(!showChat)}
+                    disabled={!isChatAvailable}
+                    className={cn(
+                        "rounded-full px-3 sm:px-4 h-9 text-white transition-all duration-300 relative overflow-hidden font-bold",
+                        "active:scale-95",
+                        !isChatAvailable && "opacity-50 cursor-not-allowed",
+                         showChat && "bg-gradient-to-r from-[#1263FF] to-[#D11111]",
+                         !showChat && "bg-gradient-to-r from-[#2968b5] to-[#C42929]"
+                    )}
+                >
+                    <div className="flex items-center relative z-10">
+                        <Sparkles className="h-4 w-4 mr-2" />
+                        <span className={cn("sm:inline")}>Ask AI</span>
+                    </div>
+                </Button>
+                
             </div>
         </header>
 
@@ -717,6 +721,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   onSelectionChange={() => setSelection(null)}
                   itemType={item.type}
                   quizData={item.metadata?.quizData}
+                  onExamStateChange={setIsExamInProgress}
               />
             </div>
             {selection && isQuoteAvailable && (
@@ -772,7 +777,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             isMobile && (showChat ? 'translate-x-0' : 'translate-x-full'),
             !isMobile && (showChat ? 'w-[512px]' : 'w-0')
         )}>
-          {isChatAvailable && (
+          {(isChatAvailable || showChat) && (
              <ChatPanel
                   showChat={showChat}
                   isMobile={isMobile}

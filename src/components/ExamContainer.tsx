@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown } from 'lucide-react';
@@ -325,7 +326,7 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
 
 // --- MAIN EXAM COMPONENT LOGIC ---
 
-const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: Lecture, onExit: () => void, onSwitchLecture: (lectureId: string) => void, allLectures: Lecture[] }) => {
+const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange }: { lecture: Lecture, onExit: () => void, onSwitchLecture: (lectureId: string) => void, allLectures: Lecture[], onStateChange?: (inProgress: boolean) => void }) => {
     const [examState, setExamState] = useState<'not-started' | 'in-progress' | 'finished'>('not-started');
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswers, setUserAnswers] = useState<(string | null)[]>([]);
@@ -346,6 +347,12 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     const questions = useMemo(() => {
         return [...(lecture.mcqs_level_1 || []), ...(lecture.mcqs_level_2 || [])];
     }, [lecture]);
+
+    useEffect(() => {
+        if (onStateChange) {
+            onStateChange(examState === 'in-progress');
+        }
+    }, [examState, onStateChange]);
 
     const { score, incorrect, unanswered, percentage } = useMemo(() => {
         let score = 0;
@@ -811,7 +818,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     );
 };
 
-export default function ExamContainer({ lectures }: { lectures: Lecture[] }) {
+export default function ExamContainer({ lectures, onStateChange }: { lectures: Lecture[], onStateChange?: (inProgress: boolean) => void }) {
     const [activeLectureId, setActiveLectureId] = useState('');
     const isInitialRender = useRef(true);
 
@@ -896,8 +903,10 @@ export default function ExamContainer({ lectures }: { lectures: Lecture[] }) {
                     onExit={handleExit} 
                     onSwitchLecture={handleSwitchLecture}
                     allLectures={lectures}
+                    onStateChange={onStateChange}
                 />
             </div>
         </main>
     );
 }
+
