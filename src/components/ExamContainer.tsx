@@ -1,37 +1,21 @@
+
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, LabelProps } from 'recharts';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, LabelProps, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList, ReferenceLine } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
-import { cva } from "class-variance-authority";
 import { cn } from "@/lib/utils";
-import type { Lecture, MCQ } from '@/lib/types';
+import { useFirestore, useCollection, useMemoFirebase, addDocumentNonBlocking } from '@/firebase/firestore/use-collection';
+import { useUser } from '@/firebase/auth/use-user';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { cva } from "class-variance-authority";
+import { Slot } from "@radix-ui/react-slot";
+import type { Lecture, ExamResult, MCQ } from '@/lib/types';
 
 
-// --- INLINED UI COMPONENTS (Previously in src/components/ui/) ---
+// --- HELPER COMPONENTS (from ShadCN UI) ---
 
-// Tooltip
-const TooltipProvider = TooltipPrimitive.Provider;
-const Tooltip = TooltipPrimitive.Root;
-const TooltipTrigger = TooltipPrimitive.Trigger;
-const TooltipContent = React.forwardRef<
-  React.ElementRef<typeof TooltipPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
-  <TooltipPrimitive.Content
-    ref={ref}
-    sideOffset={sideOffset}
-    className={cn(
-      "z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
-      className
-    )}
-    {...props}
-  />
-));
-TooltipContent.displayName = TooltipPrimitive.Content.displayName;
-
-// AlertDialog
 const buttonVariants = cva(
   "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
   {
@@ -57,9 +41,24 @@ const buttonVariants = cva(
     },
   }
 );
+
+const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: any, size?: any, asChild?: boolean }>(({ className, variant, size, asChild = false, ...props }, ref) => {
+  const Comp = asChild ? Slot : "button";
+  return (
+    <Comp
+      className={cn(buttonVariants({ variant, size, className }))}
+      ref={ref}
+      {...props}
+    />
+  );
+});
+Button.displayName = "Button";
+
+
 const AlertDialog = AlertDialogPrimitive.Root;
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
 const AlertDialogPortal = AlertDialogPrimitive.Portal;
+
 const AlertDialogOverlay = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Overlay>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Overlay>
@@ -74,6 +73,7 @@ const AlertDialogOverlay = React.forwardRef<
   />
 ));
 AlertDialogOverlay.displayName = AlertDialogPrimitive.Overlay.displayName;
+
 const AlertDialogContent = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Content>
@@ -91,26 +91,23 @@ const AlertDialogContent = React.forwardRef<
   </AlertDialogPortal>
 ));
 AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
-const AlertDialogHeader = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+
+const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn("flex flex-col space-y-2 text-center sm:text-left", className)}
     {...props}
   />
 );
 AlertDialogHeader.displayName = "AlertDialogHeader";
-const AlertDialogFooter = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
+
+const AlertDialogFooter = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn("flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2", className)}
     {...props}
   />
 );
 AlertDialogFooter.displayName = "AlertDialogFooter";
+
 const AlertDialogTitle = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Title>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Title>
@@ -122,6 +119,7 @@ const AlertDialogTitle = React.forwardRef<
   />
 ));
 AlertDialogTitle.displayName = AlertDialogPrimitive.Title.displayName;
+
 const AlertDialogDescription = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Description>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Description>
@@ -133,6 +131,7 @@ const AlertDialogDescription = React.forwardRef<
   />
 ));
 AlertDialogDescription.displayName = AlertDialogPrimitive.Description.displayName;
+
 const AlertDialogAction = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Action>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Action>
@@ -144,512 +143,45 @@ const AlertDialogAction = React.forwardRef<
   />
 ));
 AlertDialogAction.displayName = AlertDialogPrimitive.Action.displayName;
+
 const AlertDialogCancel = React.forwardRef<
   React.ElementRef<typeof AlertDialogPrimitive.Cancel>,
   React.ComponentPropsWithoutRef<typeof AlertDialogPrimitive.Cancel>
 >(({ className, ...props }, ref) => (
   <AlertDialogPrimitive.Cancel
     ref={ref}
-    className={cn(buttonVariants({ variant: "outline" }), "mt-2 sm:mt-0", className)}
+    className={cn(
+      buttonVariants({ variant: "outline" }),
+      "mt-2 sm:mt-0",
+      className
+    )}
     {...props}
   />
 ));
 AlertDialogCancel.displayName = AlertDialogPrimitive.Cancel.displayName;
 
 
-// --- STYLES (Previously in globals.css and component styles) ---
-const GlobalStyles = () => (
-    <style>{`
-        /* --- Base Styles from globals.css --- */
-        :root {
-            --background: 220 24% 95%; /* light gray */
-            --foreground: 222.2 84% 4.9%;
-            --card: 210 40% 98%;
-            --card-foreground: 222.2 84% 4.9%;
-            --popover: 210 40% 98%;
-            --popover-foreground: 222.2 84% 4.9%;
-            --primary: 217 83% 53%; /* dark blue */
-            --primary-foreground: 210 40% 98%;
-            --secondary: 210 40% 96.1%;
-            --secondary-foreground: 217 91% 20%;
-            --muted: 210 40% 96.1%;
-            --muted-foreground: 215.4 16.3% 46.9%;
-            --accent: 248 77% 59%; /* purple */
-            --accent-foreground: 217 91% 25%;
-            --destructive: 0 84.2% 60.2%;
-            --destructive-foreground: 210 40% 98%;
-            --border: 214.3 31.8% 91.4%;
-            --input: 214.3 31.8% 91.4%;
-            --ring: 217 91% 60%;
-            --radius: 1rem;
-        }
+const TooltipProvider = TooltipPrimitive.Provider;
+const Tooltip = TooltipPrimitive.Root;
+const TooltipTrigger = TooltipPrimitive.Trigger;
 
-        .dark {
-            --background: 222.2 84% 4.9%;
-            --foreground: 210 40% 98%;
-            --card: 222.2 84% 4.9%;
-            --card-foreground: 210 40% 98%;
-            --popover: 222.2 84% 4.9%;
-            --popover-foreground: 210 40% 98%;
-            --primary: 217 91% 60%;
-            --primary-foreground: 210 40% 98%;
-            --secondary: 217.2 32.6% 17.5%;
-            --secondary-foreground: 210 40% 98%;
-            --muted: 217.2 32.6% 17.5%;
-            --muted-foreground: 215 20.2% 65.1%;
-            --accent: 217.2 32.6% 17.5%;
-            --accent-foreground: 210 40% 98%;
-            --destructive: 0 62.8% 30.6%;
-            --destructive-foreground: 210 40% 98%;
-            --border: 217.2 32.6% 17.5%;
-            --input: 217.2 32.6% 17.5%;
-            --ring: 217 91% 60%;
-        }
+const TooltipContent = React.forwardRef<
+  React.ElementRef<typeof TooltipPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
+>(({ className, sideOffset = 4, ...props }, ref) => (
+  <TooltipPrimitive.Content
+    ref={ref}
+    sideOffset={sideOffset}
+    className={cn(
+      "z-50 overflow-hidden rounded-md border bg-popover px-3 py-1.5 text-sm text-popover-foreground shadow-md animate-in fade-in-0 zoom-in-95 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:zoom-out-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
+      className
+    )}
+    {...props}
+  />
+));
+TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
-        * {
-            border-color: hsl(var(--border));
-        }
-        body {
-            background-color: hsl(var(--background));
-            color: hsl(var(--foreground));
-        }
-        button, a, input, select, textarea {
-            transition-colors: 0.2s ease-in-out;
-        }
-
-
-        /* --- Keyframes for Animations --- */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeOut {
-            from { opacity: 1; transform: translateY(0); }
-            to { opacity: 0; transform: translateY(-10px); }
-        }
-        @keyframes progress-bar {
-            from { width: 0%; }
-            to { width: var(--progress-width); }
-        }
-
-        /* --- Component-Specific Styles --- */
-        .page-container {
-            max-width: 900px;
-            margin: 20px auto;
-            background-color: var(--container-bg);
-            box-shadow: var(--container-shadow);
-            padding: 30px;
-            overflow-x: hidden;
-            border-radius: 1rem;
-            position: relative; /* Needed for absolute positioning of children */
-        }
-
-        /* --- Exam Container --- */
-        .exam-container {
-            position: relative;
-            background-color: #ffffff;
-            border-radius: 1rem;
-            padding: 2rem;
-        }
-        .exam-container.start-mode {
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            min-height: 70vh;
-        }
-
-        .animating-out {
-            animation: fadeOut 0.3s ease-out forwards;
-        }
-        .animating-in {
-             animation: fadeIn 0.5s ease-out forwards;
-        }
-
-
-        /* --- Lecture Tabs --- */
-        #lecture-tabs {
-            display: flex;
-            flex-wrap: nowrap;
-            justify-content: flex-start;
-            gap: 12px;
-            padding: 5px 2px;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch; 
-            scrollbar-width: none; 
-            scroll-behavior: smooth;
-            width: 100%;
-            margin-bottom: 1.5rem;
-        }
-
-        #lecture-tabs::-webkit-scrollbar {
-            display: none;
-        }
-        
-        button.lecture-tab-btn {
-            flex-shrink: 0;
-            padding: 0.5rem 1rem;
-            border-radius: 9999px;
-            border: 1px solid hsl(var(--border));
-            background-color: #fff;
-            color: hsl(var(--muted-foreground));
-            font-size: 0.9rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-        }
-
-        button.lecture-tab-btn:hover {
-            background-color: hsl(var(--muted));
-            border-color: hsl(var(--primary));
-        }
-
-        button.lecture-tab-btn.active {
-            background-color: hsl(var(--primary));
-            border-color: hsl(var(--ring));
-            color: hsl(var(--primary-foreground));
-            font-weight: 600;
-            box-shadow: none;
-            transform: scale(1);
-        }
-
-        /* --- Start Screen --- */
-        .exam-start-screen {
-            text-align: center;
-            padding: 2rem;
-            width: 100%;
-        }
-        .exam-start-screen h2 {
-            font-size: 2.2rem;
-            font-weight: 700;
-            margin-bottom: 0.5rem;
-            color: hsl(var(--foreground));
-        }
-        .exam-start-screen p {
-            font-size: 1.1rem;
-            color: hsl(var(--muted-foreground));
-            margin-bottom: 2.5rem;
-        }
-        .start-exam-btn {
-            background: hsl(var(--primary));
-            color: hsl(var(--primary-foreground));
-            padding: 0.8rem 2.5rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 50px;
-            border: none;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-        .start-exam-btn:hover {
-            transform: translateY(-3px);
-            background: hsl(var(--primary) / 0.9);
-        }
-
-        /* --- In-Progress Screen --- */
-        .quick-exit-btn {
-            position: absolute;
-            top: 1.75rem;
-            right: 1.75rem;
-            background: transparent;
-            border: none;
-            border-radius: 50%;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: hsl(var(--muted-foreground));
-            transition: all 0.2s ease;
-            z-index: 50;
-        }
-        .quick-exit-btn:hover {
-            background: hsl(var(--destructive) / 0.1);
-            color: hsl(var(--destructive));
-            transform: scale(1.1);
-        }
-
-        .exam-progress-header {
-            margin-bottom: 1.5rem;
-        }
-        .exam-progress-header h3 {
-            font-size: 1.5rem;
-            font-weight: 600;
-            margin-bottom: 0.75rem;
-        }
-        .progress-bar-container {
-            width: 100%;
-            background-color: hsl(var(--muted));
-            border-radius: 10px;
-            height: 8px;
-            overflow: hidden;
-        }
-        .progress-bar {
-            height: 100%;
-            background: hsl(var(--primary));
-            border-radius: 10px;
-            transition: width 0.4s ease-in-out;
-        }
-        .question-area {
-          min-height: 320px;
-          transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
-        }
-        .question-area.question-fade-out {
-          opacity: 0;
-          transform: translateY(-10px);
-        }
-        .question-area.question-fade-in {
-          opacity: 1;
-          transform: translateY(0px);
-        }
-        .question-title {
-            font-size: 1rem;
-            font-weight: 500;
-            color: hsl(var(--muted-foreground));
-            margin-bottom: 1rem;
-        }
-        .question-text {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 2rem;
-            line-height: 1.6;
-        }
-        .options-grid {
-            display: grid;
-            grid-template-columns: 1fr;
-            gap: 1rem;
-        }
-        .option-btn {
-            display: flex;
-            align-items: center;
-            text-align: left;
-            width: 100%;
-            padding: 1rem 1.25rem;
-            border: 2px solid hsl(var(--border));
-            border-radius: 1rem;
-            background-color: #fff;
-            font-size: 1rem;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-        }
-        .option-btn:hover {
-            border-color: hsl(var(--primary));
-            transform: translateX(5px);
-        }
-        .option-btn.selected {
-            background-color: hsl(var(--primary) / 0.1);
-            border-color: hsl(var(--primary));
-            font-weight: 600;
-        }
-        .option-letter {
-            font-weight: 700;
-            margin-right: 1rem;
-            padding: 0.25rem 0.6rem;
-            border: 1px solid hsl(var(--border));
-            border-radius: 6px;
-            min-width: 32px;
-            text-align: center;
-            transition: all 0.2s ease-in-out;
-        }
-        .option-btn.selected .option-letter {
-          background-color: hsl(var(--primary));
-          color: hsl(var(--primary-foreground));
-          border-color: hsl(var(--primary));
-        }
-
-        .exam-navigation {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 2rem;
-            border-top: 1px solid hsl(var(--border));
-            padding-top: 1.5rem;
-        }
-        .nav-btn {
-            background-color: #fff;
-            color: hsl(var(--muted-foreground));
-            padding: 0.6rem 1.5rem;
-            font-size: 1rem;
-            font-weight: 500;
-            border-radius: calc(1rem - 2px);
-            border: 1px solid hsl(var(--border));
-            cursor: pointer;
-            transition: background-color 0.2s, color 0.2s, transform 0.1s;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .nav-btn:hover:not(:disabled) {
-            background-color: hsl(var(--muted));
-        }
-        .nav-btn:active:not(:disabled) {
-            transform: scale(0.97);
-        }
-        .nav-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-        .nav-btn.finish {
-            background-color: #10b981;
-            color: white;
-            border-color: #10b981;
-            font-weight: 600;
-        }
-        .nav-btn.finish:hover {
-            background-color: #059669;
-            border-color: #059669;
-        }
-
-        /* --- Results Screen --- */
-        .exam-results-screen {
-            text-align: center;
-        }
-        .results-summary {
-            background: hsl(var(--muted));
-            border: 1px solid hsl(var(--border));
-            border-radius: 1rem;
-            padding: 2.5rem 2rem;
-            margin-bottom: 2.5rem;
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            justify-content: center;
-            gap: 2rem;
-        }
-        .results-summary h2 {
-            font-size: 2rem;
-            font-weight: 700;
-            color: hsl(var(--foreground));
-            margin-bottom: 0.75rem;
-            width: 100%;
-            text-align: center;
-        }
-        .score-container {
-            flex-basis: 40%;
-            text-align: center;
-        }
-        .score-container .score {
-            font-size: 5rem;
-            font-weight: 800;
-            line-height: 1.1;
-            color: hsl(var(--primary));
-            margin: 0;
-        }
-        .score-container .score-text {
-            font-size: 1.25rem;
-            color: hsl(var(--muted-foreground));
-            margin-top: 0.5rem;
-        }
-        .chart-container {
-            flex-basis: 50%;
-            min-width: 220px;
-            height: 200px;
-        }
-        .review-answers-title {
-            font-size: 1.8rem;
-            font-weight: 600;
-            margin-bottom: 1.5rem;
-            text-align: left;
-            border-bottom: 1px solid hsl(var(--border));
-            padding-bottom: 1rem;
-        }
-        .review-question {
-            background-color: #fff;
-            border: 1px solid hsl(var(--border));
-            border-radius: 1rem;
-            padding: 1.5rem;
-            margin-bottom: 1.25rem;
-            text-align: left;
-            transition: box-shadow 0.2s;
-        }
-        .review-question:hover {
-            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
-        }
-        .review-question-header {
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.25rem;
-        }
-        .review-question-text {
-          font-weight: 600;
-          font-size: 1.1rem;
-          line-height: 1.6;
-        }
-        .review-option {
-            padding: 0.8rem 1rem;
-            border-radius: calc(1rem - 2px);
-            margin-bottom: 0.75rem;
-            display: flex;
-            gap: 1rem;
-            align-items: center;
-            border: 1px solid transparent;
-            font-size: 0.95rem;
-        }
-        .review-option.correct {
-            background-color: #dcfce7;
-            color: #166534;
-            border-color: #86efac;
-            font-weight: 600;
-        }
-        .review-option.incorrect {
-            background-color: #fee2e2;
-            color: #991b1b;
-            border-color: #fca5a5;
-        }
-        .review-option.unanswered {
-            background-color: #fffbeb;
-            color: #b45309;
-            border-color: #fcd34d;
-        }
-        .review-option > svg {
-          flex-shrink: 0;
-        }
-
-        .exit-btn {
-            background: none;
-            border: 2px solid hsl(var(--destructive));
-            color: hsl(var(--destructive));
-            padding: 0.75rem 2rem;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 50px;
-            cursor: pointer;
-            transition: background-color 0.2s, color 0.2s, transform 0.2s;
-            margin-top: 2rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .exit-btn:hover {
-            background-color: hsl(var(--destructive));
-            color: hsl(var(--primary-foreground));
-            transform: translateY(-2px);
-        }
-        
-        /* Mobile Styles */
-        @media (max-width: 768px) {
-            .page-container {
-                padding: 15px;
-                margin: 10px;
-            }
-            .exam-container {
-                padding: 1rem;
-            }
-            .exam-start-screen h2 {
-                font-size: 1.8rem;
-            }
-            .results-summary .score-container .score {
-                font-size: 4rem;
-            }
-            .results-summary {
-                flex-direction: column-reverse;
-                padding: 1.5rem 1rem;
-            }
-        }
-    `}</style>
-);
+// --- CHART COMPONENTS ---
 
 const PerformanceChart = ({ correct, incorrect, unanswered }: { correct: number, incorrect: number, unanswered: number }) => {
     const data = [
@@ -659,8 +191,8 @@ const PerformanceChart = ({ correct, incorrect, unanswered }: { correct: number,
     ].filter(item => item.value > 0);
 
     const RADIAN = Math.PI / 180;
-    const renderCustomizedLabel = (props: LabelProps & { name: string, percent: number }) => {
-        const { cx, cy, midAngle, outerRadius, percent, name } = props as any;
+    const renderCustomizedLabel = (props: any) => {
+        const { cx, cy, midAngle, outerRadius, percent, name } = props;
         const radius = outerRadius * 1.35; 
         const x = cx + radius * Math.cos(-midAngle * RADIAN);
         const y = cy + radius * Math.sin(-midAngle * RADIAN);
@@ -670,7 +202,7 @@ const PerformanceChart = ({ correct, incorrect, unanswered }: { correct: number,
         if (percent === 0) return null;
 
         return (
-            <text x={labelX} y={y} fill="hsl(var(--foreground))" textAnchor={textAnchor} dominantBaseline="central" className="text-xs font-medium">
+            <text x={labelX} y={y} textAnchor={textAnchor} dominantBaseline="central" className="text-xs font-medium fill-foreground">
                 {`${name} (${(percent * 100).toFixed(0)}%)`}
             </text>
         );
@@ -700,6 +232,97 @@ const PerformanceChart = ({ correct, incorrect, unanswered }: { correct: number,
     );
 };
 
+const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+        return (
+            <div className="bg-background border border-border p-2 rounded-lg shadow-lg text-sm">
+                <p className="font-bold">{`Score Range: ${label}`}</p>
+                <p className="text-muted-foreground">{`Students: ${payload[0].value}`}</p>
+            </div>
+        );
+    }
+    return null;
+};
+
+const YouIndicator = (props: any) => {
+    const { x, y, width, value } = props;
+    if (value !== true) return null;
+    
+    const indicatorX = x + width / 2;
+    const indicatorY = y - 10;
+
+    return (
+        <g transform={`translate(${indicatorX},${indicatorY})`}>
+            <ArrowDown y={-10} size={16} className="text-primary" />
+            <text y={-25} textAnchor="middle" className="fill-primary font-bold text-sm">
+                You
+            </text>
+        </g>
+    );
+};
+
+const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage }: { results: ExamResult[], userFirstResult: ExamResult | null, currentPercentage: number }) => {
+    
+    const { data, userBinIndex } = useMemo(() => {
+        const bins = Array.from({ length: 20 }, (_, i) => ({
+            name: `${i * 5}-${i * 5 + 4}%`,
+            count: 0,
+            isCurrentUser: false,
+        }));
+        bins.push({ name: '100%', count: 0, isCurrentUser: false });
+
+        results.forEach(result => {
+            const percentage = result.percentage;
+            if (percentage === 100) {
+                bins[20].count++;
+            } else if (percentage >= 0) {
+                const binIndex = Math.floor(percentage / 5);
+                if(bins[binIndex]) bins[binIndex].count++;
+            }
+        });
+        
+        let localUserBinIndex = -1;
+        const percentageToMark = userFirstResult ? userFirstResult.percentage : currentPercentage;
+
+        if (percentageToMark !== null && percentageToMark !== undefined) {
+             if (percentageToMark === 100) {
+                localUserBinIndex = 20;
+            } else if (percentageToMark >= 0) {
+                localUserBinIndex = Math.floor(percentageToMark / 5);
+            }
+        }
+
+        if (localUserBinIndex !== -1 && bins[localUserBinIndex]) {
+            bins[localUserBinIndex].isCurrentUser = true;
+        }
+        
+        return { data: bins, userBinIndex: localUserBinIndex };
+    }, [results, userFirstResult, currentPercentage]);
+    
+    if (results.length === 0 && currentPercentage === null) {
+        return <p className="text-center text-muted-foreground">Be the first to set the benchmark!</p>
+    }
+    
+    return (
+        <ResponsiveContainer width="100%" height={300}>
+            <BarChart data={data} margin={{ top: 40, right: 30, left: 0, bottom: 5 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" angle={-45} textAnchor="end" height={60} interval={1} tick={{fontSize: 10}} />
+                <YAxis allowDecimals={false} label={{ value: 'Students', angle: -90, position: 'insideLeft' }} />
+                <RechartsTooltip content={<CustomTooltip />} cursor={{ fill: 'hsl(var(--primary) / 0.1)' }} />
+                                
+                <Bar dataKey="count" name="Number of Students">
+                    {data.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={index === userBinIndex ? "hsl(var(--primary))" : "hsl(var(--primary) / 0.3)"} />
+                    ))}
+                    <LabelList dataKey="isCurrentUser" content={<YouIndicator />} />
+                </Bar>
+            </BarChart>
+        </ResponsiveContainer>
+    );
+}
+
+// --- MAIN EXAM COMPONENT LOGIC ---
 
 const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: Lecture, onExit: () => void, onSwitchLecture: (lectureId: string) => void, allLectures: Lecture[] }) => {
     const [examState, setExamState] = useState<'not-started' | 'in-progress' | 'finished'>('not-started');
@@ -710,18 +333,82 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     const [timeLeft, setTimeLeft] = useState(0);
     const [showResumeAlert, setShowResumeAlert] = useState(false);
     const [questionAnimation, setQuestionAnimation] = useState('');
-    const isInitialMount = useRef(true);
+    const isInitialRender = useRef(true);
+
+    const { user } = useUser();
+    const firestore = useFirestore();
+    
+    const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
+    const examResultsQuery = useMemoFirebase(() => resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : null, [resultsCollectionRef, lecture.id]);
+    const { data: allResults } = useCollection<ExamResult>(examResultsQuery);
 
     const questions = useMemo(() => {
         return [...(lecture.mcqs_level_1 || []), ...(lecture.mcqs_level_2 || [])];
     }, [lecture]);
 
-    const storageKey = `exam_progress_${lecture.id}`;
+    const { score, incorrect, unanswered, percentage } = useMemo(() => {
+        let score = 0;
+        let incorrect = 0;
+        let unanswered = 0;
 
-    // Load progress when switching lectures
+        for (let i = 0; i < questions.length; i++) {
+            if (userAnswers[i] === null || userAnswers[i] === undefined) {
+                unanswered++;
+            } else if (questions[i] && userAnswers[i] === questions[i].a) {
+                score++;
+            } else {
+                incorrect++;
+            }
+        }
+        const percentage = questions.length > 0 ? (score / questions.length) * 100 : 0;
+        return { score, incorrect, unanswered, percentage };
+    }, [questions, userAnswers]);
+
+    const userFirstResult = useMemo(() => {
+        if (!user || !allResults) return null;
+        const userResults = allResults.filter(r => r.userId === user.uid);
+        if (userResults.length === 0) return null;
+        userResults.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        return userResults[0];
+    }, [allResults, user]);
+
+    const storageKey = useMemo(() => user ? `exam_progress_${lecture.id}_${user.uid}` : null, [lecture.id, user]);
+
+    const handleSubmit = useCallback(async () => {
+        if (user && resultsCollectionRef) {
+            const userPreviousResultsQuery = query(resultsCollectionRef, where("lectureId", "==", lecture.id), where("userId", "==", user.uid));
+            try {
+                const userPreviousResultsSnapshot = await getDocs(userPreviousResultsQuery);
+
+                if (userPreviousResultsSnapshot.empty) {
+                     const result: ExamResult = {
+                        lectureId: lecture.id,
+                        score,
+                        totalQuestions: questions.length,
+                        percentage,
+                        userId: user.uid,
+                        timestamp: new Date(),
+                    };
+                    addDocumentNonBlocking(resultsCollectionRef, result);
+                }
+            } catch (e) {
+                console.error("Error checking or submitting exam results:", e)
+            }
+        }
+        
+        if (storageKey) {
+            try {
+                localStorage.removeItem(storageKey);
+            } catch (error) {
+                console.error("Could not clear localStorage:", error);
+            }
+        }
+        triggerAnimation('finished');
+    }, [storageKey, lecture.id, questions.length, user, resultsCollectionRef, score, percentage]);
+
     useEffect(() => {
-        if (isInitialMount.current) {
-            isInitialMount.current = false;
+        if (isInitialRender.current || !storageKey) {
+            isInitialRender.current = false;
             return;
         }
         
@@ -729,15 +416,19 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
             const savedProgress = localStorage.getItem(storageKey);
             if (savedProgress) {
                 setShowResumeAlert(true);
+            } else {
+                setExamState('not-started');
+                setCurrentQuestionIndex(0);
+                setUserAnswers(Array(questions.length).fill(null));
+                setTimeLeft(0);
             }
         } catch (error) {
             console.error("Could not access localStorage:", error);
         }
-    }, [storageKey]);
+    }, [storageKey, questions.length, lecture.id]);
 
-    // Save progress
     useEffect(() => {
-        if (examState === 'in-progress') {
+        if (examState === 'in-progress' && storageKey) {
             try {
                 const progress = {
                     currentQuestionIndex,
@@ -750,7 +441,6 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
             }
         }
     }, [currentQuestionIndex, userAnswers, timeLeft, examState, storageKey]);
-
 
     const startTimer = useCallback(() => {
         const totalTime = questions.length * 30; // 30 seconds per question
@@ -766,12 +456,10 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
             });
         }, 1000);
         return () => clearInterval(timer);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [questions.length]);
-
+    }, [questions.length, handleSubmit]);
 
     useEffect(() => {
-        let timerCleanup: () => void = () => {};
+        let timerCleanup = () => {};
         if (examState === 'in-progress') {
             if (timeLeft > 0) { // Resume timer
                 const timer = setInterval(() => {
@@ -790,9 +478,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
             }
         }
         return timerCleanup;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [examState]);
-
+    }, [examState, timeLeft, startTimer, handleSubmit]);
 
     const formatTime = (seconds: number) => {
         const minutes = Math.floor(seconds / 60);
@@ -812,7 +498,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
 
     const handleStartExam = (resume = false) => {
         setShowResumeAlert(false);
-        if (resume) {
+        if (resume && storageKey) {
             try {
                 const savedProgress = localStorage.getItem(storageKey);
                 if (savedProgress) {
@@ -832,10 +518,12 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     };
     
     const startNewExam = () => {
-        try {
-            localStorage.removeItem(storageKey);
-        } catch (error) {
-            console.error("Could not clear localStorage:", error);
+        if (storageKey) {
+            try {
+                localStorage.removeItem(storageKey);
+            } catch (error) {
+                console.error("Could not clear localStorage:", error);
+            }
         }
         setCurrentQuestionIndex(0);
         setUserAnswers(Array(questions.length).fill(null));
@@ -868,40 +556,19 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
             triggerQuestionAnimation(() => setCurrentQuestionIndex(prev => prev - 1));
         }
     };
-
-    const handleSubmit = () => {
-        try {
-            localStorage.removeItem(storageKey);
-        } catch (error) {
-            console.error("Could not clear localStorage on submit:", error);
-        }
-        triggerAnimation('finished');
-    };
     
     const handleExitClick = () => {
-        setIsExitAlertOpen(true);
+        if (examState === 'in-progress') {
+            setIsExitAlertOpen(true);
+        } else {
+            triggerAnimation('not-started');
+            onExit();
+        }
     };
 
     const handleQuickExit = () => {
         triggerAnimation('not-started');
         onExit();
-    };
-    
-    const calculateScore = () => {
-        let score = 0;
-        let incorrect = 0;
-        let unanswered = 0;
-
-        for (let i = 0; i < questions.length; i++) {
-            if (userAnswers[i] === null) {
-                unanswered++;
-            } else if (questions[i] && userAnswers[i] === questions[i].a) {
-                score++;
-            } else {
-                incorrect++;
-            }
-        }
-        return { score, incorrect, unanswered };
     };
 
     const containerClasses = `exam-container ${isAnimating ? 'animating-out' : 'animating-in'}`;
@@ -913,56 +580,60 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     return (
         <>
             <AlertDialog open={isExitAlertOpen} onOpenChange={setIsExitAlertOpen}>
-                <AlertDialogContent className="rounded-2xl bg-white">
+                <AlertDialogContent className="rounded-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Are you sure you want to exit?</AlertDialogTitle>
                         <AlertDialogDescription>
                             Your current progress will be saved. You can resume next time.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="flex justify-center sm:justify-center">
-                        <AlertDialogCancel className="rounded-xl">Cancel</AlertDialogCancel>
-                        <AlertDialogAction className="bg-red-500 hover:bg-red-600 rounded-xl" onClick={handleQuickExit}>Exit</AlertDialogAction>
+                    <AlertDialogFooter className="justify-center sm:justify-center">
+                        <AlertDialogCancel className="rounded-2xl border-border bg-background hover:bg-transparent text-foreground hover:text-foreground focus:ring-0 focus-visible:ring-0 focus:ring-offset-0">Cancel</AlertDialogCancel>
+                        <AlertDialogAction className="bg-destructive hover:bg-destructive/90 rounded-2xl" onClick={handleQuickExit}>Exit</AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
             <AlertDialog open={showResumeAlert} onOpenChange={setShowResumeAlert}>
-                <AlertDialogContent className="rounded-2xl bg-white">
+                <AlertDialogContent className="rounded-2xl">
                     <AlertDialogHeader>
                         <AlertDialogTitle>Welcome Back!</AlertDialogTitle>
                         <AlertDialogDescription>
                             We found an incomplete exam. Would you like to resume where you left off or start a new exam?
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="flex justify-center sm:justify-center">
-                        <AlertDialogCancel className="rounded-xl" onClick={() => handleStartExam(false)}>Start New</AlertDialogCancel>
-                        <AlertDialogAction className="rounded-xl bg-black text-white hover:bg-gray-800" onClick={() => handleStartExam(true)}>Resume Exam</AlertDialogAction>
+                    <AlertDialogFooter className="justify-center sm:justify-center">
+                         <AlertDialogCancel 
+                            className="rounded-2xl border-border bg-background hover:bg-gray-100 text-foreground hover:text-foreground focus:ring-0 focus-visible:ring-0 focus:ring-offset-0" 
+                            onClick={() => handleStartExam(false)}>
+                            Start New
+                        </AlertDialogCancel>
+                        <AlertDialogAction 
+                            className="rounded-2xl bg-primary text-primary-foreground hover:bg-primary/90 focus:ring-0 focus-visible:ring-0 focus:ring-offset-0" 
+                            onClick={() => handleStartExam(true)}>
+                            Resume Exam
+                        </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
 
-            {examState === 'in-progress' && (
-                <button className="quick-exit-btn" onClick={handleExitClick} aria-label="Exit Exam">
-                    <X size={20} />
-                </button>
-            )}
-
             {examState === 'not-started' && (
-                <div className={`${containerClasses} start-mode`}>
+                <div className={cn(containerClasses, "start-mode")}>
                     <div className="exam-start-screen">
                         <div id="lecture-tabs">
                             {allLectures.map(l => (
                                 <button 
                                     key={l.id}
-                                    className={`lecture-tab-btn ${lecture.id === l.id ? 'active' : ''}`}
-                                    onClick={() => onSwitchLecture(l.id)}
+                                    className={cn('lecture-tab-btn', {'active': lecture.id === l.id})}
+                                    onClick={() => {
+                                        if (lecture.id !== l.id) onSwitchLecture(l.id);
+                                    }}
                                 >
                                     {l.name}
                                 </button>
                             ))}
                         </div>
-                        <hr className="w-full border-t border-gray-200 mb-8" />
+                        <hr className="w-full border-t border-border mb-8" />
                         <h2 style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name} Exam</h2>
                         <p>{`Ready to test your knowledge? You have ${questions.length} questions.`}</p>
                         <button onClick={() => handleStartExam(false)} className="start-exam-btn">
@@ -972,11 +643,14 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
                 </div>
             )}
 
-            {examState === 'finished' && (() => {
-                const { score, incorrect, unanswered } = calculateScore();
-                return (
-                    <div className={`${containerClasses} exam-results-screen`}>
-                        <TooltipProvider>
+            {examState === 'finished' && (
+                <div className={cn(containerClasses, "exam-results-screen")}>
+                    <TooltipProvider>
+                        <div className="relative">
+                            <button onClick={handleExitClick} className="exit-btn absolute top-0 right-0">
+                                <LogOut size={20} />
+                                <span className="exit-text">Exit</span>
+                            </button>
                             <div className="results-summary">
                                 <h2 style={{ fontFamily: "'Calistoga', cursive" }}>Exam Completed!</h2>
                                 <div className="score-container">
@@ -989,67 +663,82 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
                                     <PerformanceChart correct={score} incorrect={incorrect} unanswered={unanswered} />
                                 </div>
                             </div>
-                            
-                            <h3 className="review-answers-title" style={{ fontFamily: "'Calistoga', cursive" }}>Review Your Answers</h3>
-                            <div className="review-questions-list">
-                                {questions.map((q, index) => {
-                                    const userAnswer = userAnswers[index];
-                                    const correctAnswer = q.a;
-                                    const isCorrect = userAnswer === correctAnswer;
-                                    const isUnanswered = userAnswer === null;
-                                    const questionText = q.q.substring(q.q.indexOf('.') + 1).trim();
+                        </div>
 
-                                    return (
-                                        <div key={index} className="review-question">
-                                            <div className="review-question-header">
-                                                {isUnanswered && (
-                                                    <Tooltip>
-                                                        <TooltipTrigger>
-                                                            <AlertCircle size={20} className="text-yellow-500" />
-                                                        </TooltipTrigger>
-                                                        <TooltipContent>
-                                                            <p>You did not answer this question</p>
-                                                        </TooltipContent>
-                                                    </Tooltip>
-                                                )}
-                                                <p className="review-question-text">{index + 1}. {questionText}</p>
-                                            </div>
-                                            <div className="options">
-                                                {q.o.map((option, optIndex) => {
-                                                    const isUserAnswer = option === userAnswer;
-                                                    const isCorrectAnswer = option === correctAnswer;
-                                                    let optionClass = 'review-option';
-
-                                                    if (isCorrectAnswer) {
-                                                        optionClass += ' correct';
-                                                    } else if (isUserAnswer && !isCorrect) {
-                                                        optionClass += ' incorrect';
-                                                    } else if (isUnanswered && isCorrectAnswer) {
-                                                        optionClass += ' unanswered';
-                                                    }
-
-                                                    return (
-                                                        <div key={optIndex} className={optionClass}>
-                                                            {isCorrectAnswer && <CheckCircle size={22} />}
-                                                            {isUserAnswer && !isCorrect && <XCircle size={22} />}
-                                                            {!isCorrectAnswer && !isUserAnswer && <div style={{width: 24, height: 24}} />}
-                                                            <span>{String.fromCharCode(97 + optIndex)}) {option.substring(option.indexOf(')') + 1).trim()}</span>
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
-                                        </div>
-                                    );
-                                })}
+                        <div className="results-summary mt-6">
+                            <h2 style={{ fontFamily: "'Calistoga', cursive" }}>How You Compare</h2>
+                            <div className="w-full h-[300px]">
+                                {allResults ? (
+                                    <ResultsDistributionChart 
+                                        results={allResults} 
+                                        userFirstResult={userFirstResult}
+                                        currentPercentage={percentage}
+                                    />
+                                ) : (
+                                    <p className='text-center pt-10'>Loading comparison data...</p>
+                                )}
                             </div>
-                            <button onClick={() => { triggerAnimation('not-started'); onExit(); }} className="exit-btn">
-                                <LogOut size={20} />
-                                Exit
-                            </button>
-                        </TooltipProvider>
-                    </div>
-                );
-            })()}
+                        </div>
+                        
+                        <h3 className="review-answers-title" style={{ fontFamily: "'Calistoga', cursive" }}>Review Your Answers</h3>
+                        <div className="review-questions-list">
+                            {questions.map((q, index) => {
+                                const userAnswer = userAnswers[index];
+                                const correctAnswer = q.a;
+                                const isCorrect = userAnswer === correctAnswer;
+                                const isUnanswered = userAnswer === null || userAnswer === undefined;
+                                const questionText = q.q.substring(q.q.indexOf('.') + 1).trim();
+
+                                return (
+                                    <div key={index} className="review-question">
+                                        <div className="review-question-header">
+                                            {isUnanswered ? (
+                                                <Tooltip>
+                                                    <TooltipTrigger asChild>
+                                                      <AlertCircle size={20} className="text-yellow-500 shrink-0" />
+                                                    </TooltipTrigger>
+                                                    <TooltipContent>
+                                                        <p>You did not answer this question</p>
+                                                    </TooltipContent>
+                                                </Tooltip>
+                                            ) : isCorrect ? (
+                                                <CheckCircle size={20} className="text-green-600 shrink-0"/>
+                                            ) : (
+                                                <XCircle size={20} className="text-red-600 shrink-0"/>
+                                            )}
+                                            <p className="review-question-text">{index + 1}. {questionText}</p>
+                                        </div>
+                                        <div className="options">
+                                            {q.o.map((option, optIndex) => {
+                                                const isUserAnswer = option === userAnswer;
+                                                const isCorrectAnswer = option === correctAnswer;
+                                                let optionClass = 'review-option ';
+
+                                                if (isCorrectAnswer) {
+                                                    optionClass += 'correct';
+                                                } else if (isUserAnswer && !isCorrect) {
+                                                    optionClass += 'incorrect';
+                                                } else if (isUnanswered && isCorrectAnswer) {
+                                                    optionClass += 'unanswered';
+                                                }
+
+                                                return (
+                                                    <div key={optIndex} className={optionClass}>
+                                                        {isCorrectAnswer ? <CheckCircle size={22} className="shrink-0" /> :
+                                                         isUserAnswer && !isCorrect ? <XCircle size={22} className="shrink-0" /> :
+                                                         <div style={{width: 22, height: 22}} className="shrink-0" />}
+                                                        <span className='pl-2'>{String.fromCharCode(97 + optIndex)}) {option.substring(option.indexOf(')') + 1).trim()}</span>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </TooltipProvider>
+                </div>
+            )}
 
             {examState === 'in-progress' && (() => {
                 const currentQuestion = questions[currentQuestionIndex];
@@ -1058,20 +747,23 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
 
                 return (
                     <div className={containerClasses}>
-                        <div className="exam-progress-header">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-lg font-bold" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
-                                <div className="flex items-center gap-2 font-semibold text-lg text-gray-700">
+                         <div className="exam-progress-header">
+                            <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
+                             <div className="flex justify-between items-center mb-2">
+                                <div className="flex items-center gap-2 font-semibold text-lg text-muted-foreground">
                                     <Clock size={20} />
                                     <span>{formatTime(timeLeft)}</span>
                                 </div>
+                                <button className="quick-exit-btn" onClick={handleExitClick} aria-label="Exit Exam">
+                                    <X size={20} />
+                                </button>
                             </div>
                             <div className="progress-bar-container">
                                 <div className="progress-bar" style={{ width: `${progress}%` }}></div>
                             </div>
                         </div>
 
-                        <div className={`question-area ${questionAnimation}`}>
+                        <div className={cn("question-area", questionAnimation)}>
                             {currentQuestion && (
                                 <>
                                     <p className="question-title">{`Question ${currentQuestionIndex + 1} of ${questions.length}`}</p>
@@ -1080,7 +772,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
                                         {currentQuestion.o.map((option, index) => (
                                             <button
                                                 key={index}
-                                                className={`option-btn ${userAnswers[currentQuestionIndex] === option ? 'selected' : ''}`}
+                                                className={cn('option-btn', {'selected': userAnswers[currentQuestionIndex] === option})}
                                                 onClick={() => handleSelectOption(option)}
                                             >
                                                 <span className="option-letter">{String.fromCharCode(97 + index).toUpperCase()}</span>
@@ -1124,8 +816,9 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
 };
 
 
-export function ExamContainer({ lectures }: { lectures: Lecture[] }) {
-    const [activeLectureId, setActiveLectureId] = useState(lectures[0]?.id || '');
+export function GitGrindExam({ lectures }: { lectures: Lecture[] }) {
+    const [activeLectureId, setActiveLectureId] = useState('');
+    const isInitialRender = useRef(true);
 
     useEffect(() => {
         const fontLinks = [
@@ -1141,7 +834,7 @@ export function ExamContainer({ lectures }: { lectures: Lecture[] }) {
                 link.rel = linkInfo.rel;
                 link.href = linkInfo.href;
                 if (linkInfo.crossOrigin) {
-                    (link as HTMLLinkElement).crossOrigin = linkInfo.crossOrigin as string;
+                    (link as HTMLLinkElement).crossOrigin = "true";
                 }
                 document.head.appendChild(link);
             }
@@ -1155,16 +848,26 @@ export function ExamContainer({ lectures }: { lectures: Lecture[] }) {
     const handleExit = () => {
         // No specific action needed on exit from the container perspective
     };
+    
+    useEffect(() => {
+        if (isInitialRender.current && lectures.length > 0) {
+            setActiveLectureId(lectures[0].id);
+            isInitialRender.current = false;
+        }
+    }, [lectures]);
 
     if (!lectures || lectures.length === 0) {
         return <p className="p-4 text-center">No lectures available.</p>;
     }
 
-    const activeLecture = lectures.find(l => l.id === activeLectureId) || lectures[0];
+    const activeLecture = lectures.find(l => l.id === activeLectureId);
+
+    if (!activeLecture) {
+        return <div className="flex items-center justify-center h-screen"><p>Loading lecture...</p></div>;
+    }
 
     return (
-        <div className="page-container">
-            <GlobalStyles />
+        <main className="exam-page-container light bg-background text-foreground">
             <div id="questions-container">
                  <ExamMode 
                     lecture={activeLecture} 
@@ -1173,6 +876,7 @@ export function ExamContainer({ lectures }: { lectures: Lecture[] }) {
                     allLectures={lectures}
                 />
             </div>
-        </div>
+        </main>
     );
 }
+

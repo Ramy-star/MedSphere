@@ -1,3 +1,4 @@
+
 export interface MCQ {
   q: string;
   o: string[];
@@ -20,4 +21,13 @@ export interface Lecture {
   mcqs_level_1: MCQ[];
   mcqs_level_2: MCQ[];
   written: WrittenCase[];
+}
+
+export interface ExamResult {
+    lectureId: string;
+    score: number;
+    totalQuestions: number;
+    percentage: number;
+    timestamp: Date;
+    userId: string;
 }
