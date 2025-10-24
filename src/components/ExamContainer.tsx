@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown } from 'lucide-react';
@@ -6,7 +7,7 @@ import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "@/lib/utils";
 import { useFirebase } from '@/firebase/provider';
-import { useCollection } from '@/firebase/firestore/use-collection';
+import { useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { cva, type VariantProps } from "class-variance-authority";
@@ -339,8 +340,8 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     const { user } = useUser();
     const { db: firestore } = useFirebase();
     
-    const resultsCollectionRef = useMemo(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
-    const examResultsQuery = useMemo(() => resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : null, [resultsCollectionRef, lecture.id]);
+    const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
+    const examResultsQuery = useMemoFirebase(() => resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : null, [resultsCollectionRef, lecture.id]);
     const { data: allResults } = useCollection<ExamResult>(examResultsQuery);
 
     const questions = useMemo(() => {
@@ -879,3 +880,5 @@ export default function ExamContainer({ lectures }: { lectures: Lecture[] }) {
         </main>
     );
 }
+
+    
