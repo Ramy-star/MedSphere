@@ -15,6 +15,9 @@ import { getStorage, connectStorageEmulator } from 'firebase/storage';
 
 // Re-export provider hooks
 export { useFirebase } from './provider';
+export { useUser } from './auth/use-user';
+export { useCollection } from './firestore/use-collection';
+export { useDoc } from './firestore/use-doc';
 
 // Initialize db as a variable that can be exported.
 export let db: Firestore;
@@ -63,3 +66,4 @@ export async function initializeFirebase(config: FirebaseOptions) {
 
   return { app, auth, db, storage };
 }
+
