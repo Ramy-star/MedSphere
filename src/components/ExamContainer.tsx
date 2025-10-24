@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown } from 'lucide-react';
@@ -6,10 +5,11 @@ import { PieChart, Pie, Cell, ResponsiveContainer, LabelProps, BarChart, Bar, XA
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import { cn } from "@/lib/utils";
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
+import { useFirebase } from '@/firebase/provider';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import { useUser } from '@/firebase/auth/use-user';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { cva } from "class-variance-authority";
+import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import type { Lecture, ExamResult, MCQ } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
@@ -43,7 +43,7 @@ const buttonVariants = cva(
   }
 );
 
-const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: any, size?: any, asChild?: boolean }>(({ className, variant, size, asChild = false, ...props }, ref) => {
+const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants> & { asChild?: boolean }>(({ className, variant, size, asChild = false, ...props }, ref) => {
   const Comp = asChild ? Slot : "button";
   return (
     <Comp
@@ -337,10 +337,10 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     const isInitialRender = useRef(true);
 
     const { user } = useUser();
-    const firestore = useFirestore();
+    const { db: firestore } = useFirebase();
     
-    const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
-    const examResultsQuery = useMemoFirebase(() => resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : null, [resultsCollectionRef, lecture.id]);
+    const resultsCollectionRef = useMemo(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
+    const examResultsQuery = useMemo(() => resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : null, [resultsCollectionRef, lecture.id]);
     const { data: allResults } = useCollection<ExamResult>(examResultsQuery);
 
     const questions = useMemo(() => {
@@ -816,14 +816,14 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures }: { lecture: 
     );
 };
 
-const ExamContainer = ({ lectures }: { lectures: Lecture[] }) => {
+export default function ExamContainer({ lectures }: { lectures: Lecture[] }) {
     const [activeLectureId, setActiveLectureId] = useState('');
     const isInitialRender = useRef(true);
 
     useEffect(() => {
         const fontLinks = [
             { id: 'google-fonts-preconnect-1', href: 'https://fonts.googleapis.com', rel: 'preconnect' },
-            { id: 'google-fonts-preconnect-2', href: 'https://fonts.gstatic.com', rel: 'preconnect', crossOrigin: 'anonymous' },
+            { id: 'google-fonts-preconnect-2', href: 'https://fonts.gstatic.com', rel: 'preconnect', crossOrigin: 'anonymous' as const },
             { id: 'google-fonts-main', href: 'https://fonts.googleapis.com/css2?family=Coiny&family=Calistoga&display=swap', rel: 'stylesheet' }
         ];
 
@@ -834,7 +834,7 @@ const ExamContainer = ({ lectures }: { lectures: Lecture[] }) => {
                 link.rel = linkInfo.rel;
                 link.href = linkInfo.href;
                 if (linkInfo.crossOrigin) {
-                    (link as HTMLLinkElement).crossOrigin = "true";
+                    link.crossOrigin = linkInfo.crossOrigin;
                 }
                 document.head.appendChild(link);
             }
@@ -867,7 +867,7 @@ const ExamContainer = ({ lectures }: { lectures: Lecture[] }) => {
     }
 
     return (
-        <main className="exam-page-container bg-background text-foreground">
+        <main className="exam-page-container bg-background text-foreground light">
             <div id="questions-container">
                  <ExamMode 
                     lecture={activeLecture} 
@@ -879,5 +879,3 @@ const ExamContainer = ({ lectures }: { lectures: Lecture[] }) => {
         </main>
     );
 }
-
-export default ExamContainer;
