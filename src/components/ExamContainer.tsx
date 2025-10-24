@@ -350,7 +350,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
 
     useEffect(() => {
         if (onStateChange) {
-            onStateChange(examState === 'in-progress');
+            onStateChange(examState === 'in-progress' || examState === 'not-started');
         }
     }, [examState, onStateChange]);
 
@@ -909,4 +909,3 @@ export default function ExamContainer({ lectures, onStateChange }: { lectures: L
         </main>
     );
 }
-
