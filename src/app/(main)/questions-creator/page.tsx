@@ -22,7 +22,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useQuestionGenerationStore } from '@/stores/question-gen-store';
+import { useQuestionGenerationStore, type GenerationOptions } from '@/stores/question-gen-store';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -37,7 +37,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 type SavedQuestionSet = {
   id: string;
@@ -64,6 +65,60 @@ function getPreText(element: HTMLElement) {
     text = text.replace(/&lt;/g, '<').replace(/&gt;/, '>').replace(/&amp;/g, '&');
     return text;
 }
+
+
+const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boolean, onOpenChange: (open: boolean) => void, onGenerate: (options: GenerationOptions) => void }) => {
+    const [options, setOptions] = useState<GenerationOptions>({
+        generateQuestions: true,
+        generateExam: false,
+        generateFlashcards: false
+    });
+
+    const handleSubmit = () => {
+        if (!options.generateQuestions && !options.generateExam && !options.generateFlashcards) {
+            // Optionally, show a toast or message
+            return;
+        }
+        onGenerate(options);
+        onOpenChange(false);
+    };
+
+    const handleCheckedChange = (key: keyof GenerationOptions, checked: boolean) => {
+        setOptions(prev => ({...prev, [key]: checked}));
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="sm:max-w-[425px] glass-card">
+                <DialogHeader>
+                    <DialogTitle>Generation Options</DialogTitle>
+                    <DialogDescription>
+                        Select the types of content you want to generate.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="flex items-center space-x-3">
+                        <Checkbox id="gen_questions" checked={options.generateQuestions} onCheckedChange={(c) => handleCheckedChange('generateQuestions', !!c)} />
+                        <Label htmlFor="gen_questions" className="text-base text-white">Questions & Answers</Label>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <Checkbox id="gen_exam" checked={options.generateExam} onCheckedChange={(c) => handleCheckedChange('generateExam', !!c)} />
+                        <Label htmlFor="gen_exam" className="text-base text-white">MCQ Exam</Label>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                        <Checkbox id="gen_flashcards" checked={options.generateFlashcards} onCheckedChange={(c) => handleCheckedChange('generateFlashcards', !!c)} />
+                        <Label htmlFor="gen_flashcards" className="text-base text-white">Flashcards</Label>
+                    </div>
+                </div>
+                 <div className="flex justify-end gap-2">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className='rounded-xl'>Cancel</Button>
+                    <Button onClick={handleSubmit} className='rounded-xl'>Generate</Button>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 
 const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQuestionSet, isAdmin: boolean, onDeleteClick: (set: SavedQuestionSet) => void }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: set.id });
@@ -133,29 +188,28 @@ function QuestionsCreatorContent() {
   const [flashcardJsonPrompt, setFlashcardJsonPrompt] = useState('');
   const [originalPrompts, setOriginalPrompts] = useState({ gen: '', json: '', examGen: '', examJson: '', flashcardGen: '', flashcardJson: '' });
   const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false, examGen: false, examJson: false, flashcardGen: false, flashcardJson: false });
-  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json', setId?: string} | null>(null);
-  const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
-  const [activeDragId, setActiveDragId] = useState<string | null>(null);
   const [sectionsVisibility, setSectionsVisibility] = useState({
     questions: true,
     exam: true,
     flashcards: true,
   });
 
-
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const {
+    flowStep,
+    pendingSource,
     task,
     isSaved,
+    initiateGeneration,
     startGeneration,
     saveCurrentResults,
-    clearTask,
+    resetFlow,
     retryGeneration,
     confirmContinue,
     cancelConfirmation,
-    abortGeneration,
+    closeOptionsDialog,
   } = useQuestionGenerationStore();
 
   const { user } = useUser();
@@ -241,18 +295,18 @@ function QuestionsCreatorContent() {
   }, []);
 
   useEffect(() => {
-    if (task?.status === 'error' && !task.error?.includes('Aborted')) { // Don't toast for user-aborted actions
+    if (flowStep === 'error' && task?.error && !task.error?.includes('Aborted')) { // Don't toast for user-aborted actions
       toast({
         variant: 'destructive',
         title: 'Generation Failed',
         description: task.error || 'An unexpected error occurred.',
       });
     }
-  }, [task?.status, task?.error, toast]);
+  }, [flowStep, task?.error, toast]);
 
 
   const handleSaveCurrentQuestions = async () => {
-    if (!task?.textQuestions || !task?.jsonQuestions || !task?.fileName || !user) {
+    if (!task || !user) {
       toast({
         variant: 'destructive',
         title: 'Cannot Save',
@@ -264,10 +318,6 @@ function QuestionsCreatorContent() {
     toast({ title: 'Questions Saved', description: 'Your generated questions have been saved to your library.' });
   };
   
-  const handleConfirmContinue = () => {
-    confirmContinue({gen: generationPrompt, json: jsonPrompt, examGen: examGenerationPrompt, examJson: examJsonPrompt, flashcardGen: flashcardGenerationPrompt, flashcardJson: flashcardJsonPrompt });
-  };
-
   const allPrompts = useMemo(() => ({
     gen: generationPrompt,
     json: jsonPrompt,
@@ -280,7 +330,11 @@ function QuestionsCreatorContent() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
-      startGeneration({file: e.target.files[0]}, allPrompts);
+      initiateGeneration({
+        id: '', // Will be generated on save
+        fileName: e.target.files[0].name,
+        file: e.target.files[0],
+      });
     }
   };
   
@@ -290,7 +344,11 @@ function QuestionsCreatorContent() {
     e.stopPropagation();
     setIsDragging(false);
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      startGeneration({file: e.dataTransfer.files[0]}, allPrompts);
+      initiateGeneration({
+        id: '',
+        fileName: e.dataTransfer.files[0].name,
+        file: e.dataTransfer.files[0],
+      });
     }
   };
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation();};
@@ -313,19 +371,6 @@ function QuestionsCreatorContent() {
     setItemToDelete(null);
   };
   
-  const handlePreviewSave = async () => {
-    if (!previewContent) return;
-    const { type, content, setId } = previewContent;
-    
-    if (setId && user) {
-        const docRef = doc(db, `users/${user.uid}/questionSets`, setId);
-        await updateDoc(docRef, { [type === 'text' ? 'textQuestions' : 'jsonQuestions']: content });
-    }
-    
-    setIsPreviewEditing(false);
-    toast({ title: 'Content Updated' });
-  };
-  
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -335,7 +380,6 @@ function QuestionsCreatorContent() {
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
-    setActiveDragId(null);
     const { active, over } = event;
     if (over && active.id !== over.id) {
         setSavedQuestions((currentItems) => {
@@ -362,17 +406,12 @@ function QuestionsCreatorContent() {
     }
   };
 
-  const handleDragStart = (event: DragEndEvent) => {
-    setActiveDragId(event.active.id as string);
-  };
-
-
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
   };
 
-  const isGenerating = task && task.status !== 'completed' && task.status !== 'error' && task.status !== 'idle' && task.status !== 'awaiting_confirmation';
+  const isGenerating = flowStep === 'processing';
   
   const showTextRetry = task?.status === 'error' && ['extracting', 'generating_text'].includes(task.failedStep!);
   const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
@@ -383,9 +422,8 @@ function QuestionsCreatorContent() {
 
 
   const handleRetry = useCallback(() => {
-    if(!task) return;
     retryGeneration(allPrompts);
-  }, [task, retryGeneration, allPrompts]);
+  }, [retryGeneration, allPrompts]);
 
 
   const renderOutputCard = (
@@ -545,96 +583,33 @@ function QuestionsCreatorContent() {
   );
 
 
-  return (
-    <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar pt-8">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
-          Questions Creator
-        </h1>
-      </div>
-
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-6 flex flex-col items-center">
-        <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
-            <TabsTrigger value="generate">Generate</TabsTrigger>
-            <TabsTrigger value="prompts">Prompts</TabsTrigger>
-            <TabsTrigger value="saved">Saved Questions</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="generate" className="w-full max-w-7xl mx-auto mt-4">
+  const renderGenerateTabContent = () => {
+    if (flowStep !== 'idle' && (pendingSource || task)) {
+        return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <motion.div
-                    variants={cardVariants}
-                    initial="hidden"
-                    animate="visible"
-                    className={cn(
-                        "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between",
-                        isDragging && "border-blue-500 bg-blue-900/20",
-                        isGenerating && "pointer-events-none opacity-60"
-                    )}
-                    onDrop={handleDrop}
-                    onDragOver={handleDragOver}
-                    onDragEnter={handleDragEnter}
-                    onDragLeave={handleDragLeave}
-                    onClick={() => fileInputRef.current?.click()}
-                >
-                     <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="application/pdf"
-                        onChange={handleFileChange}
-                        className="hidden"
-                    />
-                    <div className="flex items-start gap-4">
-                        <FileUp className="w-10 h-10 text-yellow-400 shrink-0" />
-                        <div>
-                            <h3 className="text-lg font-semibold text-white break-words">1. Upload Lecture</h3>
-                            <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
-                        </div>
-                    </div>
-                     {task?.fileName && (
-                        <div className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg">
-                            <FileText className="h-5 w-5" />
-                            <p className="text-sm truncate flex-1">{task.fileName}</p>
-                            <button
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    abortGeneration();
-                                }}
-                                className="p-1 rounded-full hover:bg-white/10 text-slate-300"
-                                aria-label="Cancel generation"
+                <div className="md:col-span-2">
+                     <AnimatePresence>
+                        {(task || pendingSource) && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg"
                             >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </div>
-                    )}
-                </motion.div>
-
-                <motion.div
-                    variants={cardVariants}
-                    initial="hidden"
-                    animate="visible"
-                    transition={{ delay: 0.1 }}
-                    className={cn(
-                        "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col justify-between",
-                        (task?.status !== 'completed') && "opacity-50 pointer-events-none"
-                    )}
-                     onClick={handleSaveCurrentQuestions}
-                >
-                    <div className="flex items-start gap-4">
-                        <Save className="w-10 h-10 text-yellow-400 shrink-0" />
-                        <div>
-                            <h3 className="text-lg font-semibold text-white break-words">2. Save Results</h3>
-                            <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
-                        </div>
-                    </div>
-                     {isSaved && (
-                        <div className="mt-4 flex items-center gap-2 text-green-400 bg-green-900/50 p-3 rounded-lg">
-                            <Check className="h-5 w-5" />
-                            <p className="text-sm">Questions have been saved!</p>
-                        </div>
-                    )}
-                </motion.div>
-                
+                                <FileText className="h-5 w-5" />
+                                <p className="text-sm truncate flex-1">{pendingSource?.fileName || task?.fileName}</p>
+                                <button
+                                    onClick={resetFlow}
+                                    className="p-1 rounded-full hover:bg-white/10 text-slate-300"
+                                    aria-label="Cancel generation"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </div>
+                 
                 <div className="md:col-span-2">
                     <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
                     <AnimatePresence initial={false}>
@@ -736,7 +711,70 @@ function QuestionsCreatorContent() {
                     )}
                     </AnimatePresence>
                 </div>
+                 <div className="md:col-span-2 flex justify-center">
+                    <Button
+                        onClick={handleSaveCurrentQuestions}
+                        disabled={flowStep !== 'completed'}
+                        className="rounded-xl mt-4"
+                    >
+                         {isSaved ? <><Check className="mr-2 h-4 w-4" /> Saved!</> : <><Save className="mr-2 h-4 w-4" /> Save Results</>}
+                    </Button>
+                </div>
             </div>
+        );
+    }
+
+    return (
+        <motion.div
+            variants={cardVariants}
+            initial="hidden"
+            animate="visible"
+            className={cn(
+                "relative group glass-card p-6 rounded-3xl transition-colors flex flex-col justify-center items-center min-h-[300px]",
+                isDragging && "border-blue-500 bg-blue-900/20"
+            )}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+        >
+            <input
+                ref={fileInputRef}
+                type="file"
+                accept="application/pdf"
+                onChange={handleFileChange}
+                className="hidden"
+            />
+            <div className="text-center">
+                <FileUp className="w-12 h-12 text-yellow-400 shrink-0 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-white break-words">Start Generating</h3>
+                <p className="text-sm text-slate-400 mt-1 mb-4">Drag & drop a PDF file here or use the buttons below.</p>
+                <div className="flex gap-4 justify-center">
+                    <Button onClick={() => fileInputRef.current?.click()} className="rounded-xl">Upload File</Button>
+                    {/* Add "Choose from Library" button here later if needed */}
+                </div>
+            </div>
+        </motion.div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar pt-8">
+      <div className="text-center">
+        <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-teal-300 text-transparent bg-clip-text">
+          Questions Creator
+        </h1>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full mt-6 flex flex-col items-center">
+        <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
+            <TabsTrigger value="generate">Generate</TabsTrigger>
+            <TabsTrigger value="prompts">Prompts</TabsTrigger>
+            <TabsTrigger value="saved">Saved Questions</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="generate" className="w-full max-w-7xl mx-auto mt-4">
+           {renderGenerateTabContent()}
         </TabsContent>
         
         <TabsContent value="prompts" className="w-full max-w-7xl mx-auto mt-4">
@@ -802,7 +840,7 @@ function QuestionsCreatorContent() {
                 {loadingSavedQuestions ? (
                     <div className="text-center py-16"><Loader2 className="mx-auto h-12 w-12 text-slate-500 animate-spin" /></div>
                 ) : savedQuestions && savedQuestions.length > 0 ? (
-                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+                    <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
                         <SortableContext items={savedQuestions.map(s => s.id)} strategy={rectSortingStrategy}>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {savedQuestions.map(set => (
@@ -827,7 +865,15 @@ function QuestionsCreatorContent() {
         </TabsContent>
       </Tabs>
 
-      <AlertDialog open={task?.status === 'awaiting_confirmation'} onOpenChange={(open) => {if(!open) cancelConfirmation()}}>
+      <GenerationOptionsDialog 
+        open={flowStep === 'awaiting_options'}
+        onOpenChange={(isOpen) => {
+            if (!isOpen) closeOptionsDialog();
+        }}
+        onGenerate={(options) => startGeneration(options, allPrompts)}
+      />
+
+      <AlertDialog open={flowStep === 'awaiting_confirmation'} onOpenChange={(open) => {if(!open) cancelConfirmation()}}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Unsaved Changes</AlertDialogTitle>
@@ -840,7 +886,7 @@ function QuestionsCreatorContent() {
                 <Button variant="outline" className="rounded-xl" onClick={cancelConfirmation}>Cancel</Button>
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-                <Button onClick={handleConfirmContinue} className="rounded-xl bg-blue-600 hover:bg-blue-700">Continue</Button>
+                <Button onClick={confirmContinue} className="rounded-xl bg-blue-600 hover:bg-blue-700">Continue</Button>
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -862,37 +908,6 @@ function QuestionsCreatorContent() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
-        <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar" hideCloseButton={true}>
-          <DialogHeader className='p-6 pb-2 flex-row flex-none justify-between items-center'>
-            <DialogTitle className="flex items-center gap-3">
-            </DialogTitle>
-             <div className="flex items-center gap-1">
-                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
-                    {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
-                </Button>
-                <DialogClose asChild>
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95">
-                        <X className="h-4 w-4" />
-                    </Button>
-                </DialogClose>
-            </div>
-          </DialogHeader>
-          <div className="flex-1 overflow-auto p-6 pt-0 no-scrollbar">
-            {isPreviewEditing ? (
-                <textarea
-                    value={previewContent?.content || ''}
-                    onChange={(e) => setPreviewContent(prev => prev ? {...prev, content: e.target.value} : null)}
-                    className="text-sm text-slate-300 bg-transparent p-0 whitespace-pre-wrap font-code w-full h-full overflow-auto no-scrollbar outline-none resize-none"
-                />
-            ) : (
-                <pre className="text-sm text-slate-300 whitespace-pre-wrap font-code w-full min-h-full break-words">
-                    {previewContent?.content}
-                </pre>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

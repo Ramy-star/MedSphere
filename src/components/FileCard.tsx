@@ -141,7 +141,7 @@ export const FileCard = React.memo(function FileCard({
     const isMobile = useIsMobile();
     const router = useRouter();
     const { user } = useUser();
-    const startGeneration = useQuestionGenerationStore((state) => state.startGeneration);
+    const initiateGeneration = useQuestionGenerationStore((state) => state.initiateGeneration);
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const updateFileInputRef = useRef<HTMLInputElement>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -182,19 +182,12 @@ export const FileCard = React.memo(function FileCard({
 
     const handleCreateQuestions = () => {
         if (item.metadata?.storagePath) {
-            const genPrompt = localStorage.getItem('questionGenPrompt') || '';
-            const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
-            const examGenPrompt = localStorage.getItem('examGenPrompt') || '';
-            const examJsonPrompt = localStorage.getItem('examJsonPrompt') || '';
-            const flashcardGenPrompt = localStorage.getItem('flashcardGenPrompt') || '';
-            const flashcardJsonPrompt = localStorage.getItem('flashcardJsonPrompt') || '';
-            
-            startGeneration(
-              { id: item.id, fileName: item.name, fileUrl: item.metadata.storagePath },
-              { gen: genPrompt, json: jsonPrompt, examGen: examGenPrompt, examJson: examJsonPrompt, flashcardGen: flashcardGenPrompt, flashcardJson: flashcardJsonPrompt }
-            );
-
-            router.push('/questions-creator?tab=generate');
+            initiateGeneration({
+                id: item.id,
+                fileName: item.name,
+                fileUrl: item.metadata.storagePath,
+            });
+            router.push('/questions-creator');
         }
     };
     
@@ -317,7 +310,7 @@ export const FileCard = React.memo(function FileCard({
                         {isAdmin && (
                             <>
                                 <DropdownMenuSeparator />
-                                {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf' || item.metadata?.mime === 'text/markdown') && (
+                                {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf') && (
                                     <DropdownMenuItem onSelect={(e) => handleAction(e, handleCreateQuestions)}>
                                         <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                         <span>Create Questions</span>
