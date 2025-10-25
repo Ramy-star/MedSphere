@@ -41,6 +41,7 @@ const generateQuestionsPrompt = ai.definePrompt({
         You are an expert at creating educational material from documents.
         Follow the user's instructions precisely to generate questions from the provided document content, which includes text and images.
         Base your questions on both the text and the visual information in the images.
+        Use clear separators like '---' between different sections (e.g., between Level 1 MCQs and Level 2 MCQs).
 
         USER'S PROMPT:
         {{{prompt}}}
@@ -88,6 +89,71 @@ export async function generateQuestions(input: GenerateQuestionsInput): Promise<
     });
 }
 
+// Programmatic reordering to guarantee final structure
+function reorderAndStringify(obj: any): string {
+    const orderedKeys = ['id', 'name', 'mcqs_level_1', 'mcqs_level_2', 'written', 'flashcards'];
+    const orderedObject: { [key: string]: any } = {};
+
+    // Add known keys in the desired order
+    for (const key of orderedKeys) {
+        if (obj.hasOwnProperty(key)) {
+            orderedObject[key] = obj[key];
+        }
+    }
+
+    // Add any other keys that might exist (to prevent data loss)
+    for (const key in obj) {
+        if (!orderedObject.hasOwnProperty(key)) {
+            orderedObject[key] = obj[key];
+        }
+    }
+    
+    // Ensure the key order within each MCQ object is correct
+    const reorderMcqKeys = (mcqs: any[]) => {
+      if (!Array.isArray(mcqs)) return mcqs;
+      return mcqs.map(mcq => {
+        if (typeof mcq !== 'object' || mcq === null) return mcq;
+        const orderedMcq: {[key: string]: any} = {};
+        if (mcq.hasOwnProperty('q')) orderedMcq.q = mcq.q;
+        if (mcq.hasOwnProperty('o')) orderedMcq.o = mcq.o;
+        if (mcq.hasOwnProperty('a')) orderedMcq.a = mcq.a;
+        // Add any other keys to be safe
+        Object.keys(mcq).forEach(key => {
+          if (!orderedMcq.hasOwnProperty(key)) {
+            orderedMcq[key] = mcq[key];
+          }
+        });
+        return orderedMcq;
+      });
+    };
+
+    if (orderedObject.mcqs_level_1) {
+      orderedObject.mcqs_level_1 = reorderMcqKeys(orderedObject.mcqs_level_1);
+    }
+    if (orderedObject.mcqs_level_2) {
+      orderedObject.mcqs_level_2 = reorderMcqKeys(orderedObject.mcqs_level_2);
+    }
+    if (orderedObject.flashcards) {
+        if(Array.isArray(orderedObject.flashcards)) {
+            orderedObject.flashcards = orderedObject.flashcards.map(fc => {
+                if (typeof fc !== 'object' || fc === null) return fc;
+                const orderedFc: {[key: string]: any} = {};
+                if (fc.hasOwnProperty('front')) orderedFc.front = fc.front;
+                if (fc.hasOwnProperty('back')) orderedFc.back = fc.back;
+                Object.keys(fc).forEach(key => {
+                    if (!orderedFc.hasOwnProperty(key)) {
+                        orderedFc[key] = fc[key];
+                    }
+                });
+                return orderedFc;
+            });
+        }
+    }
+
+
+    return JSON.stringify(orderedObject, null, 2);
+}
+
 
 const convertToJsonPrompt = ai.definePrompt({
     name: 'convertToJsonPrompt',
@@ -97,6 +163,8 @@ const convertToJsonPrompt = ai.definePrompt({
         You are a text-to-JSON conversion specialist.
         Follow the user's prompt to convert the given text into a structured JSON format.
         Your output MUST be only the JSON itself, without any surrounding text or markdown.
+        It is absolutely critical that you process the ENTIRE input text and include ALL questions in the final JSON. Do not truncate or partially convert the content.
+        The order of keys inside each question object must be 'q', then 'o', then 'a'.
 
         USER'S PROMPT:
         {{{prompt}}}
@@ -112,23 +180,47 @@ export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise
             const { output } = await convertToJsonPrompt(input);
 
             if (typeof output === 'object' && output !== null) {
-                // Return the stringified JSON with formatting to preserve newlines.
-                return JSON.stringify(output, null, 2);
+                // Return the stringified JSON with guaranteed key order
+                return reorderAndStringify(output);
             }
-            // If the output is already a string, assume it's a correctly formatted JSON string.
+            
+            // If the output is already a string, it might be malformed or correct.
             if (typeof output === 'string') {
-                // Basic validation to ensure it's likely JSON without re-parsing.
-                const trimmedOutput = output.trim();
-                if ((trimmedOutput.startsWith('{') && trimmedOutput.endsWith('}')) || (trimmedOutput.startsWith('[') && trimmedOutput.endsWith(']'))) {
-                    return output;
+                try {
+                    const parsed = JSON.parse(output);
+                    return reorderAndStringify(parsed);
+                } catch(e) {
+                     // If parsing fails, try to repair it.
+                    console.warn("Initial JSON conversion produced a string that failed to parse. Attempting repair.");
+                    const repairedJsonString = await repairJson({
+                        malformedJson: output,
+                        desiredSchema: "A JSON object with keys like 'id', 'name', 'mcqs_level_1', etc."
+                    });
+                    const parsedRepaired = JSON.parse(repairedJsonString);
+                    return reorderAndStringify(parsedRepaired);
                 }
             }
             
-            const errorMsg = `The AI returned a response that could not be converted to a valid JSON structure. Raw output: ${output}`;
+            const errorMsg = `The AI returned a response that could not be converted to a valid JSON structure. Raw output: ${JSON.stringify(output)}`;
             throw new Error(errorMsg);
 
         } catch (err: any) {
             console.error("Error in convertQuestionsToJson flow:", err.message);
+            // Attempt to repair if there's a JSON string in the error
+            if (input.questionsText) {
+                try {
+                     console.log("Attempting to repair JSON from original text due to error.");
+                     const repairedJsonString = await repairJson({
+                        malformedJson: input.questionsText, // Use original text as it might contain the broken JSON
+                        desiredSchema: "A JSON object with keys like 'id', 'name', 'mcqs_level_1', etc."
+                     });
+                     const parsedRepaired = JSON.parse(repairedJsonString);
+                     return reorderAndStringify(parsedRepaired);
+                } catch (repairErr: any) {
+                    console.error("JSON repair failed:", repairErr.message);
+                    throw new Error("Failed to convert and repair the JSON content.");
+                }
+            }
             throw new Error(err.message || "An unexpected error occurred during JSON conversion.");
         }
     });
@@ -169,3 +261,4 @@ export async function repairJson(input: RepairJsonInput): Promise<string> {
         throw new Error('The repair process resulted in invalid or unexpected data type.');
     });
 }
+
