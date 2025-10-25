@@ -24,6 +24,7 @@ import { db } from '@/firebase';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { UploadProgress, type UploadingFile } from '@/components/UploadProgress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { contentService } from '@/lib/contentService';
 
 type SavedQuestionSet = {
   id: string;
