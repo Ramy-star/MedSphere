@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, PlusCircle, Trash2, Edit, X } from 'lucide-react';
@@ -126,311 +125,6 @@ const SelectItem = React.forwardRef<React.ElementRef<typeof SelectPrimitive.Item
 SelectItem.displayName = SelectPrimitive.Item.displayName;
 
 
-// --- STYLES ---
-const FlashcardComponentStyles = () => (
-    <style>{`
-        .flashcard-theme-wrapper {
-            /* These are the original light-theme colors for isolation */
-            --background: #f5f7fa;
-            --foreground: #333;
-            --card: white;
-            --card-foreground: #333;
-            --popover: white;
-            --popover-foreground: #333;
-            --primary: #2563eb;
-            --primary-foreground: #f8fafc;
-            --secondary: #f1f5f9;
-            --secondary-foreground: #0f172a;
-            --muted: #f1f5f9;
-            --muted-foreground: #64748b;
-            --accent: #f8fafc;
-            --accent-foreground: #0f172a;
-            --destructive: #dc2626;
-            --destructive-foreground: #f8fafc;
-            --border: #e2e8f0;
-            --input: #e2e8f0;
-            --ring: #3b82f6;
-
-            /* Fonts */
-            --header-font: 'Coiny', cursive;
-            --base-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --card-font: 'Calistoga', serif;
-        }
-
-        /* --- Keyframes for Animations --- */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.98); }
-            to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(-30px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(30px); }
-            to { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes slideDownFadeIn {
-            from { opacity: 0; transform: translateY(-20px) scale(0.98); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        
-        .flashcard-theme-wrapper {
-            font-family: var(--base-font);
-            background-color: hsl(var(--background));
-            color: hsl(var(--foreground));
-            font-size: 17px;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        .page-container {
-            max-width: 900px;
-            margin: 40px auto;
-            background-color: var(--container-bg);
-            box-shadow: var(--container-shadow);
-            padding: 40px;
-            overflow: hidden;
-            border-radius: 24px;
-            background: hsl(var(--card));
-        }
-        
-        /* --- Styles for Lecture Tabs --- */
-         #header-container {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 1.5rem;
-            gap: 1.5rem;
-        }
-        #lecture-tabs-container {
-            flex-grow: 1;
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch; 
-            scrollbar-width: none; 
-        }
-        #lecture-tabs-container::-webkit-scrollbar {
-            display: none;
-        }
-        
-        #lecture-tabs {
-            display: flex;
-            flex-wrap: nowrap;
-            justify-content: flex-start;
-            gap: 8px;
-            padding: 5px 2px;
-            scroll-behavior: smooth;
-        }
-        
-        .lecture-tab-wrapper {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-
-        button.lecture-tab-btn {
-            border-radius: 9999px;
-            border: 1px solid hsl(var(--border));
-            text-align: center;
-            font-weight: 600;
-            font-size: 0.9rem;
-            padding: 0.7rem 1.6rem;
-            transition: all 0.3s ease;
-            background-color: hsl(var(--background));
-            color: hsl(var(--muted-foreground));
-            cursor: pointer;
-            white-space: nowrap;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.04);
-        }
-        button.lecture-tab-btn:hover {
-            background-color: hsl(var(--accent));
-            transform: translateY(-2px);
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-        }
-        button.lecture-tab-btn.active {
-            background-image: linear-gradient(to right, #3b82f6, #4f46e5);
-            border-color: transparent;
-            color: white;
-            font-weight: 600;
-            box-shadow: none;
-            transform: scale(1);
-        }
-
-        /* --- Flashcard Area --- */
-        .flashcard-area {
-            perspective: 1500px;
-            min-height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            position: relative;
-        }
-        .flashcard-container {
-            width: 100%;
-            max-width: 620px;
-            height: 400px;
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.7s cubic-bezier(0.25, 1, 0.5, 1);
-            cursor: pointer;
-        }
-        .flashcard-container.is-flipped {
-            transform: rotateY(180deg);
-        }
-        .flashcard-container.slide-in-right { animation: slideInRight 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        .flashcard-container.slide-in-left { animation: slideInLeft 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        .flashcard-container.slideDownFadeIn { animation: slideDownFadeIn 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards; }
-        
-        .flashcard-face {
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            backface-visibility: hidden;
-            -webkit-backface-visibility: hidden;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            padding: 40px;
-            text-align: center;
-            border-radius: 24px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            border: 1px solid hsl(var(--border));
-            background: hsl(var(--card));
-            font-family: var(--card-font);
-            font-size: 1.6rem;
-            line-height: 1.5;
-            transition: background-color 0.3s, color 0.3s;
-        }
-        .flashcard-front {
-             color: var(--card-text-color, hsl(var(--card-foreground)));
-        }
-        .flashcard-back {
-            color: var(--card-text-color, hsl(var(--card-foreground)));
-            transform: rotateY(180deg);
-            font-family: var(--base-font);
-            font-size: 1.15rem;
-            line-height: 1.6;
-        }
-        .flashcard-image-container {
-            margin-bottom: 20px;
-            width: 100%;
-            max-height: 200px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .flashcard-image {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            border-radius: 12px;
-        }
-        .flashcard-front-text {
-             font-size: 1.4rem;
-        }
-        .flashcard-actions {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            display: flex;
-            gap: 10px;
-            z-index: 10;
-        }
-        .flashcard-actions button {
-            background: rgba(255, 255, 255, 0.7);
-            border: 1px solid hsl(var(--border));
-            border-radius: 50%;
-            width: 36px;
-            height: 36px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }
-         .flashcard-actions button:hover {
-            background: white;
-         }
-
-        /* --- Navigation --- */
-        .flashcard-nav {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            margin-top: 40px;
-            gap: 25px;
-        }
-        .nav-button {
-            width: 55px;
-            height: 55px;
-            border-radius: 50%;
-            background: hsl(var(--card));
-            border: 1px solid hsl(var(--border));
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.2s ease-out;
-            color: hsl(var(--muted-foreground));
-        }
-        .nav-button:hover {
-            background: hsl(var(--accent));
-            color: hsl(var(--primary));
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0,0,0,0.1);
-        }
-        .nav-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-            background: hsl(var(--muted));
-            color: #94a3b8;
-        }
-        .progress-text {
-            font-size: 1.25rem;
-            font-weight: 600;
-            color: hsl(var(--muted-foreground));
-            min-width: 90px;
-            text-align: center;
-        }
-        
-        /* Mobile Styles */
-        @media (max-width: 768px) {
-             .page-container {
-                padding: 20px;
-                margin: 10px;
-            }
-             #header-container {
-                 flex-direction: column;
-                 align-items: stretch;
-                 gap: 1rem;
-             }
-             #lecture-tabs-container {
-                 margin-left: -20px;
-                 margin-right: -20px;
-                 padding-left: 20px;
-                 padding-right: 20px;
-             }
-            .flashcard-area {
-                min-height: 350px;
-            }
-            .flashcard-container {
-                height: 380px;
-            }
-            .flashcard-face {
-                font-size: 1.3rem;
-                padding: 30px;
-            }
-            .flashcard-back {
-                font-size: 1rem;
-            }
-            .flashcard-front-text {
-                font-size: 1.1rem;
-            }
-        }
-    `}</style>
-);
-
 const getTextColorForBackground = (hexColor: string): '#FFFFFF' | '#000000' => {
     if (!hexColor || hexColor.length < 7) return '#000000';
     try {
@@ -449,14 +143,24 @@ const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, animationClass
     const cardStyle = card.color && card.color !== '#FFFFFF' ? { 
         backgroundColor: card.color,
         color: getTextColorForBackground(card.color)
-    } : {};
+    } : {
+        backgroundColor: '#FFFFFF',
+        color: '#333'
+    };
     
     return (
-        <div className={`flashcard-container ${isFlipped ? 'is-flipped' : ''} ${animationClass}`} >
-            <div className="flashcard-actions" onClick={(e) => e.stopPropagation()}>
+        <div 
+            className={cn(
+                'relative w-full max-w-[620px] h-[400px] cursor-pointer',
+                'transition-transform duration-700 [transform-style:preserve-3d]',
+                isFlipped ? '[transform:rotateY(180deg)]' : '',
+                animationClass
+            )}
+        >
+             <div className="absolute top-5 right-5 flex gap-2.5 z-10" onClick={(e) => e.stopPropagation()}>
                 <AlertDialog>
                     <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="icon" className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600"><Trash2 size={18} /></Button>
+                        <Button variant="outline" size="icon" className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 rounded-full w-9 h-9"><Trash2 size={18} /></Button>
                     </AlertDialogTrigger>
                     <AlertDialogContent>
                         <AlertDialogHeader>
@@ -469,18 +173,26 @@ const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, animationClass
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-                <Button variant="outline" size="icon" onClick={(e) => { e.stopPropagation(); onEdit(); }}><Edit size={18} /></Button>
+                <Button variant="outline" size="icon" className="rounded-full w-9 h-9" onClick={(e) => { e.stopPropagation(); onEdit(); }}><Edit size={18} /></Button>
             </div>
-            <div className="flashcard-face flashcard-front" onClick={onFlip} style={cardStyle}>
+            <div 
+              className="absolute h-full w-full flex flex-col items-center justify-center p-10 text-center rounded-3xl shadow-lg border border-gray-200 [backface-visibility:hidden] [-webkit-backface-visibility:hidden]" 
+              onClick={onFlip} 
+              style={cardStyle}
+            >
                 {card.imageUrl && (
-                    <div className="flashcard-image-container">
-                        <Image src={card.imageUrl} alt={card.front} width={250} height={150} className="flashcard-image" />
+                    <div className="mb-5 w-full max-h-[200px] flex justify-center items-center">
+                        <Image src={card.imageUrl} alt={card.front} width={250} height={150} className="max-w-full max-h-full object-contain rounded-xl" />
                     </div>
                 )}
-                <p className={card.imageUrl ? 'flashcard-front-text' : ''}>{card.front}</p>
+                <p className={cn("font-['Calistoga',_serif] text-[1.6rem] leading-snug", card.imageUrl ? "text-[1.4rem]" : "")}>{card.front}</p>
             </div>
-            <div className="flashcard-face flashcard-back" onClick={onFlip} style={cardStyle}>
-                <p dangerouslySetInnerHTML={{ __html: card.back }}></p>
+            <div 
+              className="absolute h-full w-full flex flex-col items-center justify-center p-10 text-center rounded-3xl shadow-lg border border-gray-200 [backface-visibility:hidden] [-webkit-backface-visibility:hidden] [transform:rotateY(180deg)]" 
+              onClick={onFlip} 
+              style={cardStyle}
+            >
+                <p className="font-['Segoe_UI',_sans-serif] text-[1.15rem] leading-relaxed" dangerouslySetInnerHTML={{ __html: card.back }}></p>
             </div>
         </div>
     );
@@ -492,7 +204,6 @@ const CARD_COLORS = ['#FFFFFF', '#FFCDD2', '#D1C4E9', '#BBDEFB', '#C8E6C9', '#FF
 // --- Upsert Flashcard Form Component ---
 const UpsertFlashcardForm = ({ lectures, activeLectureId, onUpsertCard, closeDialog, cardToEdit }: { lectures: Lecture[], activeLectureId?: string, onUpsertCard: (lectureId: string, newLectureName: string, card: Omit<Flashcard, 'id'>, cardId?: string) => void, closeDialog: () => void, cardToEdit?: Flashcard | null }) => {
     
-    // Determine the mode and set a unique key to force re-mounting
     const formMode = cardToEdit ? 'edit' : 'create';
     const formKey = cardToEdit ? cardToEdit.id : 'create-new';
 
@@ -502,7 +213,7 @@ const UpsertFlashcardForm = ({ lectures, activeLectureId, onUpsertCard, closeDia
                 <DialogTitle>{formMode === 'edit' ? 'Edit Flashcard' : 'Create a New Flashcard'}</DialogTitle>
             </DialogHeader>
             <UpsertFlashcardFormContent
-                key={formKey} // This is crucial for re-mounting the component
+                key={formKey}
                 lectures={lectures}
                 activeLectureId={activeLectureId}
                 onUpsertCard={onUpsertCard}
@@ -704,18 +415,19 @@ const EditLectureDialog = ({ lecture, onSave, onOpenChange }: { lecture: Lecture
 
 
 // --- Main View ---
-export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Lecture[] }) {
-    const [lectures, setLectures] = useState<Lecture[]>(rawLecturesData);
+export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Lecture[] | Lecture }) {
+    const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
+    const [lecturesState, setLecturesState] = useState<Lecture[]>(lectures);
     const [activeLectureId, setActiveLectureId] = useState(lectures[0]?.id);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
-    const [animation, setAnimation] = useState({ class: 'fadeIn', direction: '' });
+    const [animation, setAnimation] = useState({ class: 'animate-[fadeIn_0.5s_ease-out_forwards]', direction: '' });
     const isAnimating = useRef(false);
     const [isUpsertDialogOpen, setIsUpsertDialogOpen] = useState(false);
     const [cardToEdit, setCardToEdit] = useState<Flashcard | null>(null);
     const [isEditLectureOpen, setIsEditLectureOpen] = useState(false);
 
-    const activeLecture = lectures.find(lec => lec.id === activeLectureId);
+    const activeLecture = lecturesState.find(lec => lec.id === activeLectureId);
     const flashcards = activeLecture?.flashcards || [];
     const currentCard = flashcards[currentCardIndex];
 
@@ -733,7 +445,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
             const timer = setTimeout(() => {
                 setAnimation({ class: '', direction: '' });
                 isAnimating.current = false;
-            }, 600); // Animation duration
+            }, 600);
             return () => clearTimeout(timer);
         }
     }, [animation.class]);
@@ -743,7 +455,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
         if (activeLecture && currentCardIndex >= activeLecture.flashcards.length) {
             setCurrentCardIndex(Math.max(0, activeLecture.flashcards.length - 1));
         }
-    }, [lectures, activeLectureId, currentCardIndex, activeLecture]);
+    }, [lecturesState, activeLectureId, currentCardIndex, activeLecture]);
 
     const handleFlip = () => {
         if (isAnimating.current) return;
@@ -763,7 +475,10 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
             return;
         }
 
-        setAnimation({ class: direction === 'next' ? 'slide-in-left' : 'slide-in-right', direction });
+        const animationClass = direction === 'next' 
+            ? 'animate-[slideInLeft_0.6s_cubic-bezier(0.25,1,0.5,1)_forwards]' 
+            : 'animate-[slideInRight_0.6s_cubic-bezier(0.25,1,0.5,1)_forwards]';
+        setAnimation({ class: animationClass, direction });
         
         if (isFlipped) {
            setTimeout(() => {
@@ -779,19 +494,18 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
         if (isAnimating.current || activeLectureId === lectureId) return;
         isAnimating.current = true;
         
-        setAnimation({ class: 'slideDownFadeIn', direction: '' });
+        setAnimation({ class: 'animate-[slideDownFadeIn_0.6s_cubic-bezier(0.25,1,0.5,1)_forwards]', direction: '' });
         setActiveLectureId(lectureId);
         setCurrentCardIndex(0);
         setIsFlipped(false);
     };
     
     const handleUpsertCard = (lectureId: string, newLectureName: string, cardData: Omit<Flashcard, 'id'>, cardIdToEdit?: string) => {
-        setLectures(prevLectures => {
+        setLecturesState(prevLectures => {
             let updatedLectures = [...prevLectures];
             let targetLectureId = lectureId;
             let newLectureCreated = false;
 
-            // Create new lecture if requested
             if (lectureId === 'new') {
                 if (!newLectureName.trim()) return prevLectures;
                 const newLec: Lecture = {
@@ -811,39 +525,34 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
             }
 
             if(previousLectureId && previousLectureId !== targetLectureId){
-                // Remove card from old lecture
                 const oldLectureIndex = updatedLectures.findIndex(lec => lec.id === previousLectureId);
                 if(oldLectureIndex > -1){
                     updatedLectures[oldLectureIndex].flashcards = updatedLectures[oldLectureIndex].flashcards.filter(c => c.id !== cardIdToEdit);
                 }
             }
 
-
-            // Find the index of the lecture to add/update the card in
             const lectureIndex = updatedLectures.findIndex(lec => lec.id === targetLectureId);
             if (lectureIndex === -1) return prevLectures;
             
             const lectureToUpdate = { ...updatedLectures[lectureIndex] };
             let newFlashcards = [...lectureToUpdate.flashcards];
 
-            if (cardIdToEdit && (!previousLectureId || previousLectureId === targetLectureId)) { // Editing existing card in the same lecture
+            if (cardIdToEdit && (!previousLectureId || previousLectureId === targetLectureId)) { 
                 const cardIndex = newFlashcards.findIndex(c => c.id === cardIdToEdit);
                 if (cardIndex > -1) {
                     newFlashcards[cardIndex] = { ...newFlashcards[cardIndex], ...cardData };
                 }
-            } else { // Adding new card or moving card to a new lecture
+            } else {
                 const newCard: Flashcard = {
                      id: cardIdToEdit || `f${Date.now()}`,
                     ...cardData
                 };
-                // if we are moving, we need to add it to the new lecture, the old one is already removed
                 newFlashcards.push(newCard);
             }
             lectureToUpdate.flashcards = newFlashcards;
             updatedLectures[lectureIndex] = lectureToUpdate;
             
             if (newLectureCreated) {
-                // Use a timeout to ensure state update propagates before switching tab
                 setTimeout(() => {
                     setActiveLectureId(targetLectureId);
                     setCurrentCardIndex(lectureToUpdate.flashcards.length - 1);
@@ -856,7 +565,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
 
     const handleDeleteCard = () => {
          if(!currentCard) return;
-         setLectures(prevLectures => {
+         setLecturesState(prevLectures => {
             const updatedLectures = prevLectures.map(lecture => {
                 if (lecture.id === activeLectureId) {
                     const newFlashcards = lecture.flashcards.filter(card => card.id !== currentCard.id);
@@ -887,12 +596,12 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
 
     const handleEditLecture = (newName: string) => {
         if (!activeLectureId) return;
-        setLectures(prev => prev.map(l => l.id === activeLectureId ? { ...l, name: newName } : l));
+        setLecturesState(prev => prev.map(l => l.id === activeLectureId ? { ...l, name: newName } : l));
     }
 
     const handleDeleteLecture = () => {
         if (!activeLectureId) return;
-        setLectures(prev => {
+        setLecturesState(prev => {
             const remaining = prev.filter(l => l.id !== activeLectureId);
             if (activeLectureId) {
                 const currentIdx = prev.findIndex(l => l.id === activeLectureId);
@@ -905,124 +614,130 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
     }
 
     return (
-        <div className='flashcard-theme-wrapper'>
-            <FlashcardComponentStyles />
-            <div id="header-container">
-                 <div className="w-full flex justify-between items-center mb-4">
-                    <div>
-                        {activeLecture && (
-                            <div className="flex items-center gap-2">
-                                <AlertDialog open={isEditLectureOpen} onOpenChange={setIsEditLectureOpen}>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8"><Edit size={14}/></Button>
-                                    </AlertDialogTrigger>
-                                    {activeLecture && <EditLectureDialog 
-                                        lecture={activeLecture} 
-                                        onSave={handleEditLecture} 
-                                        onOpenChange={setIsEditLectureOpen} 
-                                    />}
-                                </AlertDialog>
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600"><Trash2 size={14}/></Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This will permanently delete the "{activeLecture.name}" lecture and all its flashcards.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={handleDeleteLecture} className="bg-red-500 hover:bg-red-600">Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                        )}
-                    </div>
-                    <Dialog open={isUpsertDialogOpen} onOpenChange={setIsUpsertDialogOpen}>
-                        <DialogTrigger asChild>
-                            <Button className="flex items-center gap-2 bg-black text-white hover:bg-gray-800" onClick={openCreateCardDialog}>
-                                <PlusCircle size={18} />
-                                Create Flashcard
-                            </Button>
-                        </DialogTrigger>
-                        {isUpsertDialogOpen && (
-                            <UpsertFlashcardForm 
-                                lectures={lectures}
-                                activeLectureId={activeLectureId}
-                                onUpsertCard={handleUpsertCard}
-                                closeDialog={() => setIsUpsertDialogOpen(false)}
-                                cardToEdit={cardToEdit}
-                            />
-                        )}
-                    </Dialog>
-                </div>
-
-                <div className="w-full flex items-center">
-                    <div id="lecture-tabs-container">
-                        <div id="lecture-tabs" role="tablist" aria-label="Lectures">
-                            {lectures.map(lecture => (
-                                <div key={lecture.id} className="lecture-tab-wrapper">
-                                    <button
-                                        type="button"
-                                        className={`lecture-tab-btn ${activeLectureId === lecture.id ? 'active' : ''}`}
-                                        onClick={() => switchTab(lecture.id)}
-                                        role="tab"
-                                        aria-selected={activeLectureId === lecture.id}
-                                    >
-                                        {lecture.name}
-                                    </button>
+        <div className='text-black bg-[#f5f7fa] font-["Segoe_UI"] text-[17px]'>
+            <div className="max-w-[900px] my-10 mx-auto bg-white shadow-lg p-10 overflow-hidden rounded-3xl">
+                <div className="flex flex-col mb-6 gap-6">
+                    <div className="w-full flex justify-between items-center mb-4">
+                        <div>
+                            {activeLecture && (
+                                <div className="flex items-center gap-2">
+                                    <AlertDialog open={isEditLectureOpen} onOpenChange={setIsEditLectureOpen}>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600"><Edit size={14}/></Button>
+                                        </AlertDialogTrigger>
+                                        {activeLecture && <EditLectureDialog 
+                                            lecture={activeLecture} 
+                                            onSave={handleEditLecture} 
+                                            onOpenChange={setIsEditLectureOpen} 
+                                        />}
+                                    </AlertDialog>
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600"><Trash2 size={14}/></Button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will permanently delete the "{activeLecture.name}" lecture and all its flashcards.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleDeleteLecture} className="bg-red-500 hover:bg-red-600">Delete</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
                                 </div>
-                            ))}
+                            )}
+                        </div>
+                        <Dialog open={isUpsertDialogOpen} onOpenChange={setIsUpsertDialogOpen}>
+                            <DialogTrigger asChild>
+                                <Button className="flex items-center gap-2 bg-black text-white hover:bg-gray-800" onClick={openCreateCardDialog}>
+                                    <PlusCircle size={18} />
+                                    Create Flashcard
+                                </Button>
+                            </DialogTrigger>
+                            {isUpsertDialogOpen && (
+                                <UpsertFlashcardForm 
+                                    lectures={lecturesState}
+                                    activeLectureId={activeLectureId}
+                                    onUpsertCard={handleUpsertCard}
+                                    closeDialog={() => setIsUpsertDialogOpen(false)}
+                                    cardToEdit={cardToEdit}
+                                />
+                            )}
+                        </Dialog>
+                    </div>
+
+                    <div className="w-full flex items-center">
+                        <div className="flex-grow overflow-x-auto">
+                            <div className="flex flex-nowrap justify-start gap-2 p-1.5" role="tablist" aria-label="Lectures">
+                                {lecturesState.map(lecture => (
+                                    <div key={lecture.id} className="relative flex items-center">
+                                        <button
+                                            type="button"
+                                            className={cn(
+                                                "shrink-0 whitespace-nowrap rounded-full border text-center font-semibold text-sm py-2.5 px-6 transition-all duration-300 shadow-sm",
+                                                activeLectureId === lecture.id 
+                                                    ? 'bg-gradient-to-r from-blue-500 to-blue-600 border-transparent text-white shadow-none'
+                                                    : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50 hover:-translate-y-0.5 hover:shadow-md'
+                                            )}
+                                            onClick={() => switchTab(lecture.id)}
+                                            role="tab"
+                                            aria-selected={activeLectureId === lecture.id}
+                                        >
+                                            {lecture.name}
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
                         </div>
                     </div>
                 </div>
-            </div>
 
 
-            <div className="flashcard-area">
-                {currentCard ? (
-                    <FlashcardComponent 
-                        card={currentCard}
-                        isFlipped={isFlipped}
-                        onFlip={handleFlip}
-                        animationClass={animation.class}
-                        onDelete={handleDeleteCard}
-                        onEdit={openEditCardDialog}
-                    />
-                ) : (
-                     <div className="text-center text-gray-500 py-10">
-                        <p className="text-lg font-medium">
-                            {lectures.length > 0 ? "No flashcards in this lecture." : "No lectures available."}
-                        </p>
-                        <p className="mt-2 text-sm">Create a new lecture and card to get started!</p>
-                    </div>
-                )}
-            </div>
-
-            <div className="flashcard-nav">
-                <button 
-                    className="nav-button" 
-                    onClick={() => handleNavigation('prev')}
-                    disabled={currentCardIndex === 0 || isAnimating.current || flashcards.length === 0}
-                    aria-label="Previous card"
-                >
-                    <ChevronLeft size={28} />
-                </button>
-                <div className="progress-text">
-                    {flashcards.length > 0 ? `${currentCardIndex + 1} / ${flashcards.length}` : '0 / 0'}
+                <div className="[perspective:1500px] min-h-[400px] flex items-center justify-center relative">
+                    {currentCard ? (
+                        <FlashcardComponent 
+                            card={currentCard}
+                            isFlipped={isFlipped}
+                            onFlip={handleFlip}
+                            animationClass={animation.class}
+                            onDelete={handleDeleteCard}
+                            onEdit={openEditCardDialog}
+                        />
+                    ) : (
+                        <div className="text-center text-gray-500 py-10">
+                            <p className="text-lg font-medium">
+                                {lectures.length > 0 ? "No flashcards in this lecture." : "No lectures available."}
+                            </p>
+                            <p className="mt-2 text-sm">Create a new lecture and card to get started!</p>
+                        </div>
+                    )}
                 </div>
-                <button 
-                    className="nav-button" 
-                    onClick={() => handleNavigation('next')}
-                    disabled={currentCardIndex >= flashcards.length - 1 || isAnimating.current || flashcards.length === 0}
-                    aria-label="Next card"
-                >
-                    <ChevronRight size={28} />
-                </button>
+
+                <div className="flex justify-center items-center mt-10 gap-6">
+                    <button 
+                        className="w-[55px] h-[55px] rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-500 hover:bg-gray-100 hover:text-blue-500 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-md disabled:bg-gray-200 disabled:text-gray-400" 
+                        onClick={() => handleNavigation('prev')}
+                        disabled={currentCardIndex === 0 || isAnimating.current || flashcards.length === 0}
+                        aria-label="Previous card"
+                    >
+                        <ChevronLeft size={28} />
+                    </button>
+                    <div className="text-xl font-semibold text-gray-500 min-w-[90px] text-center">
+                        {flashcards.length > 0 ? `${currentCardIndex + 1} / ${flashcards.length}` : '0 / 0'}
+                    </div>
+                    <button 
+                        className="w-[55px] h-[55px] rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-500 hover:bg-gray-100 hover:text-blue-500 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-md disabled:bg-gray-200 disabled:text-gray-400"
+                        onClick={() => handleNavigation('next')}
+                        disabled={currentCardIndex >= flashcards.length - 1 || isAnimating.current || flashcards.length === 0}
+                        aria-label="Next card"
+                    >
+                        <ChevronRight size={28} />
+                    </button>
+                </div>
             </div>
         </div>
     );
