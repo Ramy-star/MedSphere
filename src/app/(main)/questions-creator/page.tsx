@@ -451,8 +451,8 @@ function QuestionsCreatorContent() {
           json: <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
           examGen: <FileText className="w-8 h-8 text-orange-400 shrink-0" />,
           examJson: <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
-          flashcardGen: <Layers className="w-8 h-8 text-indigo-400 shrink-0" />,
-          flashcardJson: <FileJson className="w-8 h-8 text-purple-400 shrink-0" />,
+          flashcardGen: <FileText className="w-8 h-8 text-green-400 shrink-0" />,
+          flashcardJson: <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
       }
       const promptMap = {
           gen: generationPrompt,
@@ -639,7 +639,7 @@ function QuestionsCreatorContent() {
 
                    {renderOutputCard(
                        "JSON Questions",
-                       <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
+                       <FileJson className="w-8 h-8 text-blue-400 shrink-0" />,
                        task?.jsonQuestions ?? null,
                        isGenerating && task.status === 'converting_json',
                        'Converting to JSON...',
@@ -656,7 +656,7 @@ function QuestionsCreatorContent() {
                 >
                     {renderOutputCard(
                        "Text Exam",
-                       <FileText className="w-8 h-8 text-orange-400 shrink-0" />,
+                       <FileText className="w-8 h-8 text-red-400 shrink-0" />,
                        task?.textExam ?? null,
                        isGenerating && task.status === 'generating_exam_text',
                        'Generating exam...',
@@ -682,7 +682,7 @@ function QuestionsCreatorContent() {
                 >
                     {renderOutputCard(
                        "Text Flashcard",
-                       <Layers className="w-8 h-8 text-indigo-400 shrink-0" />,
+                       <FileText className="w-8 h-8 text-green-400 shrink-0" />,
                        task?.textFlashcard ?? null,
                        isGenerating && task.status === 'generating_flashcard_text',
                        'Generating flashcards...',
@@ -691,7 +691,7 @@ function QuestionsCreatorContent() {
 
                    {renderOutputCard(
                        "JSON Flashcard",
-                       <FileJson className="w-8 h-8 text-purple-400 shrink-0" />,
+                       <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
                        task?.jsonFlashcard ?? null,
                        isGenerating && task.status === 'converting_flashcard_json',
                        'Converting flashcards to JSON...',

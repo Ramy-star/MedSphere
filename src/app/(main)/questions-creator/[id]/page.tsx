@@ -4,7 +4,7 @@
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileHeart, Layers } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileHeart, Layers, FileCheck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
@@ -22,7 +22,6 @@ import { useUser } from '@/firebase/auth/use-user';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
-import { contentService } from '@/lib/contentService';
 import { UploadProgress, type UploadingFile } from '@/components/UploadProgress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -88,7 +87,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             text: questionSet.textQuestions, 
             json: questionSet.jsonQuestions, 
             examText: questionSet.textExam || '', 
-            examJson: questionSet.jsonExam || '',
+            jsonExam: questionSet.jsonExam || '',
             flashcardText: questionSet.textFlashcard || '',
             flashcardJson: questionSet.jsonFlashcard || ''
         });
@@ -147,7 +146,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             examText: questionSet.textExam || '',
             examJson: questionSet.jsonExam || '',
             flashcardText: questionSet.textFlashcard || '',
-            flashcardJson: questionSet.jsonFlashcard || ''
+            jsonFlashcard: questionSet.jsonFlashcard || ''
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
     }
@@ -442,7 +441,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_exam'); setShowFolderSelector(true); }} disabled={isCreating}>
-                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileHeart className="h-4 w-4 text-rose-400" />}
+                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileCheck className="h-4 w-4 text-rose-400" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create Interactive Exam</p></TooltipContent>
@@ -608,17 +607,17 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
          
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-8">
             {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
-            {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
+            {renderOutputCard("JSON Questions", <FileJson className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-8">
-            {renderOutputCard("Text Exam", <FileText className="text-orange-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
+            {renderOutputCard("Text Exam", <FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
             {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examJson, 'examJson')}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            {renderOutputCard("Text Flashcard", <Layers className="text-indigo-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardText, 'flashcardText')}
-            {renderOutputCard("JSON Flashcard", <FileJson className="text-purple-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardJson, 'flashcardJson')}
+            {renderOutputCard("Text Flashcard", <FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardText, 'flashcardText')}
+            {renderOutputCard("JSON Flashcard", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardJson, 'flashcardJson')}
         </div>
         
         <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
