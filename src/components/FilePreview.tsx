@@ -166,8 +166,12 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     }
     try {
         const parsedData = JSON.parse(quizData);
-        // Ensure lectures is always an array
-        const lectures: Lecture[] = Array.isArray(parsedData) ? parsedData : (parsedData.flashcards ? [parsedData] : []);
+        // Ensure lectures is always an array of Lecture objects
+        const lectures: Lecture[] = Array.isArray(parsedData) 
+            ? parsedData 
+            : (parsedData && (parsedData.mcqs_level_1 || parsedData.mcqs_level_2 || parsedData.written || parsedData.flashcards)) 
+                ? [parsedData] 
+                : [];
         
         return (
              <div ref={containerRef} className="w-full h-full overflow-y-auto no-scrollbar selectable">
