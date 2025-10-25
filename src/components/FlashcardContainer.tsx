@@ -140,7 +140,7 @@ const getTextColorForBackground = (hexColor: string): '#FFFFFF' | '#000000' => {
 
 // --- Flashcard Component ---
 const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, animationClass, onEdit, onDelete }: { card: Flashcard, isFlipped: boolean, onFlip: () => void, animationClass: string, onEdit: () => void, onDelete: () => void }) => {
-    const cardStyle = card.color && card.color !== '#FFFFFF' ? { 
+    const cardStyle: React.CSSProperties = card.color && card.color !== '#FFFFFF' ? { 
         backgroundColor: card.color,
         color: getTextColorForBackground(card.color)
     } : {
@@ -614,8 +614,51 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
     }
 
     return (
-        <div className='text-black bg-[#f5f7fa] font-["Segoe_UI"] text-[17px]'>
-            <div className="max-w-[900px] my-10 mx-auto bg-white shadow-lg p-10 overflow-hidden rounded-3xl">
+        <div className='text-black bg-[#f5f7fa] font-["Segoe_UI"] text-[17px] w-full h-full flashcard-theme-wrapper'>
+            <style>{`
+                .flashcard-theme-wrapper {
+                    --background: #ffffff;
+                    --foreground: #333333;
+                    --card: #ffffff;
+                    --popover: #ffffff;
+                    --primary: #3b82f6;
+                    --primary-foreground: #ffffff;
+                    --secondary: #f3f4f6;
+                    --secondary-foreground: #111827;
+                    --muted: #f3f4f6;
+                    --muted-foreground: #6b7280;
+                    --accent: #f9fafb;
+                    --accent-foreground: #111827;
+                    --destructive: #ef4444;
+                    --destructive-foreground: #ffffff;
+                    --border: #e5e7eb;
+                    --input: #e5e7eb;
+                    --ring: #3b82f6;
+                }
+                .flashcard-theme-wrapper .dialog-content-light,
+                .flashcard-theme-wrapper .alert-dialog-content-light {
+                    background-color: var(--background);
+                    color: var(--foreground);
+                    border-color: var(--border);
+                }
+                .flashcard-theme-wrapper .button-light {
+                    background-color: #000000;
+                    color: #ffffff;
+                }
+                .flashcard-theme-wrapper .button-light.outline {
+                    background-color: transparent;
+                    color: #000000;
+                    border: 1px solid #e5e7eb;
+                }
+                .flashcard-theme-wrapper .button-light:hover {
+                    background-color: #333333;
+                }
+                 .flashcard-theme-wrapper .button-light.destructive {
+                    background-color: var(--destructive);
+                    color: var(--destructive-foreground);
+                }
+            `}</style>
+            <div className="w-full h-full bg-white shadow-lg p-10 overflow-hidden flex flex-col">
                 <div className="flex flex-col mb-6 gap-6">
                     <div className="w-full flex justify-between items-center mb-4">
                         <div>
@@ -635,7 +678,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                                         <AlertDialogTrigger asChild>
                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600"><Trash2 size={14}/></Button>
                                         </AlertDialogTrigger>
-                                        <AlertDialogContent>
+                                        <AlertDialogContent className="alert-dialog-content-light">
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                                 <AlertDialogDescription>
@@ -643,8 +686,8 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
-                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={handleDeleteLecture} className="bg-red-500 hover:bg-red-600">Delete</AlertDialogAction>
+                                                <AlertDialogCancel className="button-light outline">Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={handleDeleteLecture} className="button-light destructive">Delete</AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>
@@ -653,7 +696,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                         </div>
                         <Dialog open={isUpsertDialogOpen} onOpenChange={setIsUpsertDialogOpen}>
                             <DialogTrigger asChild>
-                                <Button className="flex items-center gap-2 bg-black text-white hover:bg-gray-800" onClick={openCreateCardDialog}>
+                                <Button className="flex items-center gap-2 bg-black text-white hover:bg-gray-800 button-light" onClick={openCreateCardDialog}>
                                     <PlusCircle size={18} />
                                     Create Flashcard
                                 </Button>
@@ -697,7 +740,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                 </div>
 
 
-                <div className="[perspective:1500px] min-h-[400px] flex items-center justify-center relative">
+                <div className="[perspective:1500px] min-h-[400px] flex-1 flex items-center justify-center relative">
                     {currentCard ? (
                         <FlashcardComponent 
                             card={currentCard}
