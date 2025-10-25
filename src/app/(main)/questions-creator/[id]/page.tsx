@@ -146,7 +146,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
   const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     if (questionSet) {
-        const keyMap = {
+        const keyMap: Record<typeof type, string> = {
             text: questionSet.textQuestions,
             json: questionSet.jsonQuestions,
             examText: questionSet.textExam || '',
@@ -621,59 +621,31 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         </TooltipProvider>
          
         <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-        <AnimatePresence mode="wait">
-            {sectionsVisibility.questions && (
-                <motion.div
-                    key="questions"
-                    initial="collapsed" animate="open" exit="collapsed"
-                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                >
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
-                        {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
-                        {renderOutputCard("JSON Questions", <FileJson className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
-
+        <div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8"
+            style={{ display: sectionsVisibility.questions ? 'grid' : 'none' }}
+        >
+            {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
+            {renderOutputCard("JSON Questions", <FileJson className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
+        </div>
 
         <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-        <AnimatePresence mode="wait">
-            {sectionsVisibility.exam && (
-                 <motion.div
-                    key="exam"
-                    initial="collapsed" animate="open" exit="collapsed"
-                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                >
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
-                        {renderOutputCard("Text Exam", <FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
-                        {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examJson, 'examJson')}
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+        <div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8"
+            style={{ display: sectionsVisibility.exam ? 'grid' : 'none' }}
+        >
+            {renderOutputCard("Text Exam", <FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
+            {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examJson, 'examJson')}
+        </div>
 
         <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-        <AnimatePresence mode="wait">
-            {sectionsVisibility.flashcards && (
-                <motion.div
-                    key="flashcards"
-                    initial="collapsed" animate="open" exit="collapsed"
-                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                    transition={{ duration: 0.3 }}
-                    className="overflow-hidden"
-                >
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
-                        {renderOutputCard("Text Flashcard", <FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardText, 'flashcardText')}
-                        {renderOutputCard("JSON Flashcard", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.jsonFlashcard, 'flashcardJson')}
-                    </div>
-                </motion.div>
-            )}
-        </AnimatePresence>
+        <div
+            className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8"
+            style={{ display: sectionsVisibility.flashcards ? 'grid' : 'none' }}
+        >
+            {renderOutputCard("Text Flashcard", <FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardText, 'flashcardText')}
+            {renderOutputCard("JSON Flashcard", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.jsonFlashcard, 'flashcardJson')}
+        </div>
         
         <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
             <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar" hideCloseButton={true}>
