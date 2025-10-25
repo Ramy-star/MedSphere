@@ -1,3 +1,4 @@
+
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc, collectionGroup } from 'firebase/firestore';
@@ -14,7 +15,7 @@ import { cacheService } from './cacheService';
 export type Content = {
   id: string;
   name: string;
-  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK' | 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM';
+  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK' | 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD';
   parentId: string | null;
   metadata?: {
     size?: number;
@@ -356,6 +357,54 @@ export const contentService = {
                 path: `/content/${newExamId}`,
                 operation: 'create',
                 requestResourceData: { name: `${originalFileName} - Exam`, parentId, type: 'INTERACTIVE_EXAM' },
+            }));
+        } else {
+            console.error("Transaction failed: ", e);
+        }
+        throw e;
+    }
+  },
+
+  async createInteractiveFlashcard(parentId: string, name: string, flashcardData: string, sourceFileId: string): Promise<Content> {
+    if (!db) throw new Error("Firestore not initialized");
+
+    const newFlashcardId = uuidv4();
+    const newFlashcardRef = doc(db, 'content', newFlashcardId);
+    let newFlashcardData: Content | null = null;
+    const originalFileName = name.replace(/\.[^/.]+$/, "");
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+            const childrenSnapshot = await getDocs(childrenQuery);
+            const order = childrenSnapshot.size;
+
+            newFlashcardData = {
+                id: newFlashcardId,
+                name: `${originalFileName} - Flashcards`,
+                type: 'INTERACTIVE_FLASHCARD',
+                parentId: parentId,
+                metadata: {
+                    quizData: flashcardData,
+                    sourceFileId,
+                },
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+                order: order,
+            };
+
+            transaction.set(newFlashcardRef, newFlashcardData);
+        });
+
+        if (!newFlashcardData) throw new Error("Flashcard creation failed within transaction.");
+        return newFlashcardData;
+
+    } catch (e: any) {
+        if (e && e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${newFlashcardId}`,
+                operation: 'create',
+                requestResourceData: { name: `${originalFileName} - Flashcards`, parentId, type: 'INTERACTIVE_FLASHCARD' },
             }));
         } else {
             console.error("Transaction failed: ", e);
@@ -717,3 +766,5 @@ export const contentService = {
     }
   }
 };
+
+    
