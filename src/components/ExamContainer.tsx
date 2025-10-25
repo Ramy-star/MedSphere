@@ -818,8 +818,8 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
     );
 };
 
-export default function ExamContainer({ lectures: rawLectures, onStateChange }: { lectures: Lecture[] | Lecture, onStateChange?: (inProgress: boolean) => void }) {
-    const lectures = Array.isArray(rawLectures) ? rawLectures : (rawLectures ? [rawLectures] : []);
+export default function ExamContainer({ lectures: rawLecturesData, onStateChange }: { lectures: Lecture[] | Lecture, onStateChange?: (inProgress: boolean) => void }) {
+    const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
     const [activeLectureId, setActiveLectureId] = useState('');
     const isInitialRender = useRef(true);
 
