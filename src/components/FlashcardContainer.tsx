@@ -11,6 +11,8 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
+import { motion, AnimatePresence } from 'framer-motion';
+
 
 // --- UTILS (from src/lib/utils.ts) ---
 function cn(...inputs: ClassValue[]) {
@@ -154,7 +156,6 @@ const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, animationClass
                 'relative w-full max-w-[620px] h-[400px] cursor-pointer',
                 'transition-transform duration-700 [transform-style:preserve-3d]',
                 isFlipped ? '[transform:rotateY(180deg)]' : '',
-                animationClass
             )}
         >
              <div className="absolute top-5 right-5 flex gap-2.5 z-10" onClick={(e) => e.stopPropagation()}>
@@ -421,8 +422,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
     const [activeLectureId, setActiveLectureId] = useState(lectures[0]?.id);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
-    const [animation, setAnimation] = useState({ class: 'animate-[fadeIn_0.5s_ease-out_forwards]', direction: '' });
-    const isAnimating = useRef(false);
+    const [direction, setDirection] = useState(0);
     const [isUpsertDialogOpen, setIsUpsertDialogOpen] = useState(false);
     const [cardToEdit, setCardToEdit] = useState<Flashcard | null>(null);
     const [isEditLectureOpen, setIsEditLectureOpen] = useState(false);
@@ -439,17 +439,6 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
         document.head.appendChild(fontLink);
     }, []);
     
-    // --- Animation Handling ---
-    useEffect(() => {
-        if (animation.class) {
-            const timer = setTimeout(() => {
-                setAnimation({ class: '', direction: '' });
-                isAnimating.current = false;
-            }, 600);
-            return () => clearTimeout(timer);
-        }
-    }, [animation.class]);
-
     // --- Reset index if lecture changes or cards are deleted ---
     useEffect(() => {
         if (activeLecture && currentCardIndex >= activeLecture.flashcards.length) {
@@ -458,43 +447,30 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
     }, [lecturesState, activeLectureId, currentCardIndex, activeLecture]);
 
     const handleFlip = () => {
-        if (isAnimating.current) return;
         setIsFlipped(prev => !prev);
     };
 
-    const handleNavigation = (direction: 'next' | 'prev') => {
-        if (isAnimating.current) return;
-        isAnimating.current = true;
-
-        const newIndex = direction === 'next'
+    const handleNavigation = (navDirection: 'next' | 'prev') => {
+        setDirection(navDirection === 'next' ? 1 : -1);
+        const newIndex = navDirection === 'next'
             ? Math.min(currentCardIndex + 1, flashcards.length - 1)
             : Math.max(currentCardIndex - 1, 0);
 
-        if (newIndex === currentCardIndex) {
-            isAnimating.current = false;
-            return;
-        }
-
-        const animationClass = direction === 'next' 
-            ? 'animate-[slideInLeft_0.6s_cubic-bezier(0.25,1,0.5,1)_forwards]' 
-            : 'animate-[slideInRight_0.6s_cubic-bezier(0.25,1,0.5,1)_forwards]';
-        setAnimation({ class: animationClass, direction });
-        
-        if (isFlipped) {
-           setTimeout(() => {
-                setIsFlipped(false);
+        if (newIndex !== currentCardIndex) {
+            if (isFlipped) {
+                setTimeout(() => {
+                    setIsFlipped(false);
+                    setCurrentCardIndex(newIndex);
+                }, 150);
+            } else {
                 setCurrentCardIndex(newIndex);
-           }, 150);
-        } else {
-            setCurrentCardIndex(newIndex);
+            }
         }
     };
 
     const switchTab = (lectureId: string) => {
-        if (isAnimating.current || activeLectureId === lectureId) return;
-        isAnimating.current = true;
-        
-        setAnimation({ class: 'animate-[slideDownFadeIn_0.6s_cubic-bezier(0.25,1,0.5,1)_forwards]', direction: '' });
+        if (activeLectureId === lectureId) return;
+        setDirection(0); // Reset direction for fade-in
         setActiveLectureId(lectureId);
         setCurrentCardIndex(0);
         setIsFlipped(false);
@@ -612,6 +588,28 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
             return remaining;
         });
     }
+
+    const variants = {
+        enter: (direction: number) => {
+            return {
+                x: direction > 0 ? 50 : -50,
+                opacity: 0
+            };
+        },
+        center: {
+            zIndex: 1,
+            x: 0,
+            opacity: 1
+        },
+        exit: (direction: number) => {
+            return {
+                zIndex: 0,
+                x: direction < 0 ? 50 : -50,
+                opacity: 0
+            };
+        }
+    };
+
 
     return (
         <div className='text-black bg-[#f5f7fa] font-["Segoe_UI"] text-[17px] w-full h-full flashcard-theme-wrapper'>
@@ -740,31 +738,47 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                 </div>
 
 
-                <div className="[perspective:1500px] min-h-[400px] flex-1 flex items-center justify-center relative">
-                    {currentCard ? (
-                        <FlashcardComponent 
-                            card={currentCard}
-                            isFlipped={isFlipped}
-                            onFlip={handleFlip}
-                            animationClass={animation.class}
-                            onDelete={handleDeleteCard}
-                            onEdit={openEditCardDialog}
-                        />
-                    ) : (
-                        <div className="text-center text-gray-500 py-10">
-                            <p className="text-lg font-medium">
-                                {lectures.length > 0 ? "No flashcards in this lecture." : "No lectures available."}
-                            </p>
-                            <p className="mt-2 text-sm">Create a new lecture and card to get started!</p>
-                        </div>
-                    )}
+                <div className="[perspective:1500px] min-h-[400px] flex-1 flex items-center justify-center relative overflow-hidden">
+                    <AnimatePresence initial={false} custom={direction}>
+                        {currentCard ? (
+                            <motion.div
+                                key={currentCard.id}
+                                custom={direction}
+                                variants={variants}
+                                initial="enter"
+                                animate="center"
+                                exit="exit"
+                                transition={{
+                                    x: { type: "spring", stiffness: 300, damping: 30 },
+                                    opacity: { duration: 0.2 }
+                                }}
+                                className="absolute w-full h-full flex items-center justify-center"
+                            >
+                                <FlashcardComponent 
+                                    card={currentCard}
+                                    isFlipped={isFlipped}
+                                    onFlip={handleFlip}
+                                    animationClass=""
+                                    onDelete={handleDeleteCard}
+                                    onEdit={openEditCardDialog}
+                                />
+                            </motion.div>
+                        ) : (
+                            <div className="text-center text-gray-500 py-10">
+                                <p className="text-lg font-medium">
+                                    {lectures.length > 0 ? "No flashcards in this lecture." : "No lectures available."}
+                                </p>
+                                <p className="mt-2 text-sm">Create a new lecture and card to get started!</p>
+                            </div>
+                        )}
+                    </AnimatePresence>
                 </div>
 
                 <div className="flex justify-center items-center mt-10 gap-6">
                     <button 
                         className="w-[55px] h-[55px] rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-500 hover:bg-gray-100 hover:text-blue-500 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-md disabled:bg-gray-200 disabled:text-gray-400" 
                         onClick={() => handleNavigation('prev')}
-                        disabled={currentCardIndex === 0 || isAnimating.current || flashcards.length === 0}
+                        disabled={currentCardIndex === 0 || flashcards.length === 0}
                         aria-label="Previous card"
                     >
                         <ChevronLeft size={28} />
@@ -775,7 +789,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                     <button 
                         className="w-[55px] h-[55px] rounded-full bg-white border border-gray-200 shadow-md flex items-center justify-center cursor-pointer transition-all duration-200 text-gray-500 hover:bg-gray-100 hover:text-blue-500 hover:-translate-y-0.5 hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-md disabled:bg-gray-200 disabled:text-gray-400"
                         onClick={() => handleNavigation('next')}
-                        disabled={currentCardIndex >= flashcards.length - 1 || isAnimating.current || flashcards.length === 0}
+                        disabled={currentCardIndex >= flashcards.length - 1 || flashcards.length === 0}
                         aria-label="Next card"
                     >
                         <ChevronRight size={28} />
