@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, EyeOff } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { useUser } from '@/firebase/auth/use-user';
 import Image from 'next/image';
 import React, { useState } from 'react';
@@ -26,13 +26,19 @@ export const FolderCard = React.memo(function FolderCard({
     onRename, 
     onDelete, 
     onIconChange, 
+    onMove,
+    onCopy,
+    onToggleVisibility,
     onClick,
     displayAs = 'grid' 
 }: { 
     item: Content, 
     onRename: () => void, 
     onDelete: () => void, 
-    onIconChange: (item: Content) => void, 
+    onIconChange: (item: Content) => void,
+    onMove: () => void;
+    onCopy: () => void;
+    onToggleVisibility: () => void;
     onClick: (item: Content) => void,
     displayAs?: 'grid' | 'list' 
 }) {
@@ -81,6 +87,18 @@ export const FolderCard = React.memo(function FolderCard({
               <ImageIcon className="mr-2 h-4 w-4" />
               <span>Change Icon</span>
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={(e) => handleAction(e, onMove)}>
+            <Move className="mr-2 h-4 w-4" />
+            <span>Move</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={(e) => handleAction(e, onCopy)}>
+            <Copy className="mr-2 h-4 w-4" />
+            <span>Copy</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
+            <EyeOff className="mr-2 h-4 w-4" />
+            <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10" onClick={(e) => e.stopPropagation()}>
               <Trash2 className="mr-2 h-4 w-4" />
@@ -106,7 +124,7 @@ export const FolderCard = React.memo(function FolderCard({
         return (
              <div 
                 onClick={handleCardClick}
-                className="relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5"
+                className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
                 {!isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
@@ -164,7 +182,7 @@ export const FolderCard = React.memo(function FolderCard({
       <div 
         onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
         onClick={handleCardClick}
-        className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors cursor-pointer"
+        className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors cursor-pointer", item.metadata?.isHidden && "opacity-60 bg-white/5")}
       >
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}

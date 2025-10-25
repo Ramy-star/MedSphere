@@ -22,7 +22,8 @@
             "mime": { "type": "string", "description": "MIME type of the file." },
             "storagePath": { "type": "string", "description": "Path to the file in Firebase Cloud Storage." },
             "sourceFileId": { "type": "string", "description": "The ID of the original source file for generated content." },
-            "quizData": { "type": "string", "description": "JSON string containing the data for an interactive quiz." }
+            "quizData": { "type": "string", "description": "JSON string containing the data for an interactive quiz." },
+            "isHidden": { "type": "boolean", "description": "Whether the content is hidden from non-admins." }
           }
         }
       },

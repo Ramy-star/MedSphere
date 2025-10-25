@@ -1,7 +1,8 @@
+
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileCheck, Layers
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileCheck, Layers, Copy, Move, EyeOff
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -16,7 +17,7 @@ import { Button } from './ui/button';
 import { format } from 'date-fns';
 import React, { useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { cn } from '@/lib/utils';
 import { Link2Icon } from './icons/Link2Icon';
 import { useUser } from '@/firebase/auth/use-user';
@@ -116,6 +117,9 @@ export const FileCard = React.memo(function FileCard({
     onRename, 
     onDelete, 
     onUpdate,
+    onMove,
+    onCopy,
+    onToggleVisibility,
     showDragHandle = true,
     uploadingFile,
     onRemoveUpload,
@@ -126,6 +130,9 @@ export const FileCard = React.memo(function FileCard({
     onRename: () => void, 
     onDelete: () => void,
     onUpdate?: (file: File) => void,
+    onMove: () => void;
+    onCopy: () => void;
+    onToggleVisibility: () => void;
     showDragHandle?: boolean,
     uploadingFile?: UploadingFile,
     onRemoveUpload?: (id: string) => void,
@@ -229,7 +236,7 @@ export const FileCard = React.memo(function FileCard({
 
     return (
         <div 
-            className="relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5"
+            className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
             onClick={handleClick}
         >
              <input
@@ -326,6 +333,19 @@ export const FileCard = React.memo(function FileCard({
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onMove)}>
+                                    <Move className="mr-2 h-4 w-4" />
+                                    <span>Move</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onCopy)}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    <span>Copy</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
+                                    <EyeOff className="mr-2 h-4 w-4" />
+                                    <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                     <Trash2 className="mr-2 h-4 w-4" />
                                     <span>Delete</span>

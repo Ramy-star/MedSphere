@@ -17,13 +17,14 @@ import { ChevronRight, Folder as FolderIcon, Layers, Calendar, Loader2 } from 'l
 import { cn } from '@/lib/utils';
 import { ScrollArea } from './ui/scroll-area';
 
-type ActionType = 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard';
+type ActionType = 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | 'move' | 'copy';
 
 type FolderSelectorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelectFolder: (folderId: string, action: ActionType) => void;
   actionType: ActionType | null;
+  currentItemId?: string; // ID of the item being moved/copied
 };
 
 type TreeNode = Content & { children?: TreeNode[] };
@@ -69,9 +70,11 @@ const getIconForType = (type: Content['type']) => {
     }
 };
 
-function FolderTree({ node, onSelect, selectedId, level = 0 }: { node: TreeNode, onSelect: (id: string, type: string) => void, selectedId: string | null, level?: number }) {
+function FolderTree({ node, onSelect, selectedId, level = 0, currentItemId }: { node: TreeNode, onSelect: (id: string, type: string) => void, selectedId: string | null, level?: number, currentItemId?: string }) {
     const [isOpen, setIsOpen] = useState(false);
-    const isSelectable = node.type === 'FOLDER' || node.type === 'SUBJECT' || node.type === 'SEMESTER';
+    // A folder is selectable if it's not the item itself or a child of the item being moved.
+    const isSelectable = node.type !== 'FILE' && node.type !== 'LINK' && node.id !== currentItemId;
+
 
     const handleNodeClick = () => {
         if (isSelectable) {
@@ -87,8 +90,9 @@ function FolderTree({ node, onSelect, selectedId, level = 0 }: { node: TreeNode,
             <div
                 onClick={handleNodeClick}
                 className={cn(
-                    "flex items-center justify-between p-2 rounded-lg cursor-pointer",
-                    selectedId === node.id ? "bg-blue-500/30 text-white" : "hover:bg-white/10 text-slate-300",
+                    "flex items-center justify-between p-2 rounded-lg",
+                    isSelectable ? "cursor-pointer" : "cursor-not-allowed opacity-50",
+                    selectedId === node.id ? "bg-blue-500/30 text-white" : isSelectable ? "hover:bg-white/10 text-slate-300" : "text-slate-500",
                 )}
                 style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
             >
@@ -103,7 +107,7 @@ function FolderTree({ node, onSelect, selectedId, level = 0 }: { node: TreeNode,
             {isOpen && node.children && (
                 <div className="mt-1">
                     {node.children.map(child => (
-                        <FolderTree key={child.id} node={child} onSelect={onSelect} selectedId={selectedId} level={level + 1} />
+                        <FolderTree key={child.id} node={child} onSelect={onSelect} selectedId={selectedId} level={level + 1} currentItemId={currentItemId} />
                     ))}
                 </div>
             )}
@@ -111,7 +115,7 @@ function FolderTree({ node, onSelect, selectedId, level = 0 }: { node: TreeNode,
     );
 }
 
-export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder, actionType }: FolderSelectorDialogProps) {
+export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder, actionType, currentItemId }: FolderSelectorDialogProps) {
   const { data: allItems, loading } = useCollection<Content>('content');
   const [selectedFolder, setSelectedFolder] = useState<{ id: string, type: string } | null>(null);
 
@@ -139,13 +143,19 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder, actio
     }, 300);
   }
 
+  const getDialogTitle = () => {
+      if(actionType === 'move') return 'Move to...';
+      if(actionType === 'copy') return 'Copy to...';
+      return 'Select Destination';
+  }
+
   return (
     <Dialog open={open} onOpenChange={handleClose}>
       <DialogContent className="w-[90vw] max-w-lg p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white flex flex-col">
         <DialogHeader className="p-6 pb-4">
-          <DialogTitle>Select Destination</DialogTitle>
+          <DialogTitle>{getDialogTitle()}</DialogTitle>
           <DialogDescription>
-            Choose a folder to save the new file in.
+            Choose a destination folder.
           </DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-hidden px-6">
@@ -157,7 +167,7 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder, actio
                 ) : (
                     <div className="space-y-1">
                        {tree.map(node => (
-                           <FolderTree key={node.id} node={node} onSelect={handleSelect} selectedId={selectedFolder?.id || null} />
+                           <FolderTree key={node.id} node={node} onSelect={handleSelect} selectedId={selectedFolder?.id || null} currentItemId={currentItemId} />
                        ))}
                     </div>
                 )}
@@ -165,8 +175,8 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelectFolder, actio
         </div>
         <DialogFooter className="p-6 pt-4 border-t border-slate-800">
           <Button type="button" variant="outline" className="rounded-xl" onClick={handleClose}>Cancel</Button>
-          <Button type="button" className="rounded-xl" onClick={handleConfirm} disabled={!selectedFolder}>
-            Save Here
+          <Button type="button" className="rounded-xl" onClick={handleConfirm} disabled={!selectedFolder || selectedFolder.id === currentItemId}>
+            {actionType === 'move' ? 'Move Here' : 'Copy Here'}
           </Button>
         </DialogFooter>
       </DialogContent>
