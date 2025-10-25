@@ -12,6 +12,7 @@ import { Slot } from "@radix-ui/react-slot";
 import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { motion, AnimatePresence } from 'framer-motion';
+import { useUser } from '@/firebase/auth/use-user';
 
 
 // --- UTILS (from src/lib/utils.ts) ---
@@ -141,7 +142,7 @@ const getTextColorForBackground = (hexColor: string): '#FFFFFF' | '#000000' => {
 };
 
 // --- Flashcard Component ---
-const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, animationClass, onEdit, onDelete }: { card: Flashcard, isFlipped: boolean, onFlip: () => void, animationClass: string, onEdit: () => void, onDelete: () => void }) => {
+const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, onEdit, onDelete, isAdmin }: { card: Flashcard, isFlipped: boolean, onFlip: () => void, onEdit: () => void, onDelete: () => void, isAdmin: boolean }) => {
     const cardStyle: React.CSSProperties = card.color && card.color !== '#FFFFFF' ? { 
         backgroundColor: card.color,
         color: getTextColorForBackground(card.color)
@@ -158,24 +159,26 @@ const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, animationClass
                 isFlipped ? '[transform:rotateY(180deg)]' : '',
             )}
         >
-             <div className="absolute top-5 right-5 flex gap-2.5 z-10" onClick={(e) => e.stopPropagation()}>
-                <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                        <Button variant="outline" size="icon" className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 rounded-full w-9 h-9"><Trash2 size={18} /></Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                            <AlertDialogDescription>This action will permanently delete this flashcard. You cannot undo this.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction onClick={onDelete} className="bg-red-500 hover:bg-red-600">Delete</AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-                <Button variant="outline" size="icon" className="rounded-full w-9 h-9" onClick={(e) => { e.stopPropagation(); onEdit(); }}><Edit size={18} /></Button>
-            </div>
+             {isAdmin && (
+                <div className="absolute top-5 right-5 flex gap-2.5 z-10" onClick={(e) => e.stopPropagation()}>
+                    <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" size="icon" className="text-red-500 border-red-200 hover:bg-red-50 hover:text-red-600 rounded-full w-9 h-9"><Trash2 size={18} /></Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                <AlertDialogDescription>This action will permanently delete this flashcard. You cannot undo this.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={onDelete} className="bg-red-500 hover:bg-red-600">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
+                    <Button variant="outline" size="icon" className="rounded-full w-9 h-9" onClick={(e) => { e.stopPropagation(); onEdit(); }}><Edit size={18} /></Button>
+                </div>
+             )}
             <div 
               className="absolute h-full w-full flex flex-col items-center justify-center p-10 text-center rounded-3xl shadow-lg border border-gray-200 [backface-visibility:hidden] [-webkit-backface-visibility:hidden]" 
               onClick={onFlip} 
@@ -417,6 +420,8 @@ const EditLectureDialog = ({ lecture, onSave, onOpenChange }: { lecture: Lecture
 
 // --- Main View ---
 export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Lecture[] | Lecture }) {
+    const { user } = useUser();
+    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
     const [lecturesState, setLecturesState] = useState<Lecture[]>(lectures);
     const [activeLectureId, setActiveLectureId] = useState(lectures[0]?.id);
@@ -660,7 +665,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                 <div className="flex flex-col mb-6 gap-6">
                     <div className="w-full flex justify-between items-center mb-4">
                         <div>
-                            {activeLecture && (
+                            {isAdmin && activeLecture && (
                                 <div className="flex items-center gap-2">
                                     <AlertDialog open={isEditLectureOpen} onOpenChange={setIsEditLectureOpen}>
                                         <AlertDialogTrigger asChild>
@@ -692,23 +697,25 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                                 </div>
                             )}
                         </div>
-                        <Dialog open={isUpsertDialogOpen} onOpenChange={setIsUpsertDialogOpen}>
-                            <DialogTrigger asChild>
-                                <Button className="flex items-center gap-2 bg-black text-white hover:bg-gray-800 button-light" onClick={openCreateCardDialog}>
-                                    <PlusCircle size={18} />
-                                    Create Flashcard
-                                </Button>
-                            </DialogTrigger>
-                            {isUpsertDialogOpen && (
-                                <UpsertFlashcardForm 
-                                    lectures={lecturesState}
-                                    activeLectureId={activeLectureId}
-                                    onUpsertCard={handleUpsertCard}
-                                    closeDialog={() => setIsUpsertDialogOpen(false)}
-                                    cardToEdit={cardToEdit}
-                                />
-                            )}
-                        </Dialog>
+                        {isAdmin && (
+                            <Dialog open={isUpsertDialogOpen} onOpenChange={setIsUpsertDialogOpen}>
+                                <DialogTrigger asChild>
+                                    <Button className="flex items-center gap-2 bg-black text-white hover:bg-gray-800 button-light" onClick={openCreateCardDialog}>
+                                        <PlusCircle size={18} />
+                                        Create Flashcard
+                                    </Button>
+                                </DialogTrigger>
+                                {isUpsertDialogOpen && (
+                                    <UpsertFlashcardForm 
+                                        lectures={lecturesState}
+                                        activeLectureId={activeLectureId}
+                                        onUpsertCard={handleUpsertCard}
+                                        closeDialog={() => setIsUpsertDialogOpen(false)}
+                                        cardToEdit={cardToEdit}
+                                    />
+                                )}
+                            </Dialog>
+                        )}
                     </div>
 
                     <div className="w-full flex items-center">
@@ -758,9 +765,9 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                                     card={currentCard}
                                     isFlipped={isFlipped}
                                     onFlip={handleFlip}
-                                    animationClass=""
                                     onDelete={handleDeleteCard}
                                     onEdit={openEditCardDialog}
+                                    isAdmin={isAdmin}
                                 />
                             </motion.div>
                         ) : (
@@ -768,7 +775,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                                 <p className="text-lg font-medium">
                                     {lectures.length > 0 ? "No flashcards in this lecture." : "No lectures available."}
                                 </p>
-                                <p className="mt-2 text-sm">Create a new lecture and card to get started!</p>
+                                {isAdmin && <p className="mt-2 text-sm">Create a new lecture and card to get started!</p>}
                             </div>
                         )}
                     </AnimatePresence>
