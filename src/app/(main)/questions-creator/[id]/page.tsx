@@ -90,8 +90,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         //notFound();
     } else {
         setEditingContent({ 
-            text: questionSet.textQuestions, 
-            json: questionSet.jsonQuestions, 
+            text: questionSet.textQuestions || '', 
+            json: questionSet.jsonQuestions || '', 
             examText: questionSet.textExam || '', 
             jsonExam: questionSet.jsonExam || '',
             textFlashcard: questionSet.textFlashcard || '',
@@ -147,8 +147,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     if (questionSet) {
         const keyMap: Record<typeof type, string> = {
-            text: questionSet.textQuestions,
-            json: questionSet.jsonQuestions,
+            text: questionSet.textQuestions || '',
+            json: questionSet.jsonQuestions || '',
             examText: questionSet.textExam || '',
             examJson: questionSet.jsonExam || '',
             textFlashcard: questionSet.textFlashcard || '',
@@ -392,7 +392,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     );
   }
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     const isThisCardEditing = isEditing[type];
     const isJsonCardWithError = type.includes('json') && jsonError;
     const isCopied = copiedStatus[type];
@@ -401,6 +401,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                        (type === 'examJson' && currentAction === 'create_exam') ||
                        (type === 'flashcardJson' && currentAction === 'create_flashcard');
     const isSaving = (type === 'text' && currentAction === 'save_questions_md') || (type === 'examText' && currentAction === 'save_exam_md');
+    
+    // Ensure content is a string
+    const displayContent = content ?? '';
 
     return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
@@ -465,13 +468,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         )}
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setPreviewContent({title, content: displayContent, type})}><Eye className="h-4 w-4" /></Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Preview</p></TooltipContent>
                         </Tooltip>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCopy(content, type)}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCopy(displayContent, type)}>
                                   {isCopied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                                 </Button>
                             </TooltipTrigger>
@@ -512,7 +515,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleDownload(content, type.includes('Json') ? 'json' : 'md')}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleDownload(displayContent, type.includes('Json') ? 'json' : 'md')}>
                                     <Download className="h-4 w-4" />
                                 </Button>
                             </TooltipTrigger>
@@ -522,7 +525,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 </TooltipProvider>
             </div>
              <textarea
-                value={isThisCardEditing ? editingContent[type] : content}
+                value={isThisCardEditing ? editingContent[type] : displayContent}
                 readOnly={!isThisCardEditing || !isAdmin}
                 className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                 onChange={(e) => {
@@ -637,7 +640,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         {sectionsVisibility.exam && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
                 {renderOutputCard("Text Exam", <FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
-                {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examJson, 'examJson')}
+                {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.jsonExam, 'examJson')}
             </div>
         )}
 

@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
 import { generateQuestions, convertQuestionsToJson } from '@/ai/flows/question-gen-flow';
@@ -33,6 +32,7 @@ interface GenerationTask {
   error: string | null;
   progress: number;
   abortController: AbortController;
+  generationOptions: GenerationOptions;
 }
 
 interface PendingSource {
@@ -68,13 +68,12 @@ const updateTask = (state: QuestionGenerationState, partialTask: Partial<Omit<Ge
 
 async function runGenerationProcess(
     initialTask: GenerationTask,
-    options: GenerationOptions,
     prompts: {gen: string, json: string, examGen: string, examJson: string, flashcardGen: string, flashcardJson: string},
     set: (updater: (state: QuestionGenerationState) => QuestionGenerationState) => void,
     get: () => QuestionGenerationState
 ) {
     let { documentText, textQuestions, jsonQuestions, textExam, jsonExam, textFlashcard, jsonFlashcard } = initialTask;
-    const { failedStep } = initialTask;
+    const { failedStep, generationOptions: options } = initialTask;
     const { signal } = initialTask.abortController;
 
     const steps: GenerationStatus[] = [];
@@ -225,10 +224,11 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             error: null,
             progress: 0,
             abortController: new AbortController(),
+            generationOptions: options,
         };
 
         set({ task: newTask, flowStep: 'processing', isSaved: false });
-        runGenerationProcess(newTask, options, prompts, set, get);
+        runGenerationProcess(newTask, prompts, set, get);
     },
 
     saveCurrentResults: async (userId: string, currentItemCount: number) => {
@@ -278,13 +278,11 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     },
 
     retryGeneration: async (prompts) => {
-        const { task, task: { options } } = get();
+        const { task } = get();
         if(!task || task.status !== 'error') return;
         const newTask = { ...task, abortController: new AbortController() };
         set({ task: newTask, flowStep: 'processing' });
-        // Assume options were stored on the task or are available
-        const generationOptions = get().task?.generationOptions || { generateQuestions: true, generateExam: true, generateFlashcards: true };
-        runGenerationProcess(newTask, generationOptions, prompts, set, get);
+        runGenerationProcess(newTask, prompts, set, get);
     },
 
     confirmContinue: () => {
@@ -310,8 +308,3 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     }
   })
 );
-
-// Add generationOptions to the GenerationTask interface
-export interface GenerationTask {
-    generationOptions?: GenerationOptions;
-}

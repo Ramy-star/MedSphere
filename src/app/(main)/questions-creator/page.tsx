@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -89,30 +88,62 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
         setOptions(prev => ({...prev, [key]: checked}));
     };
 
+    const OptionCheckbox = ({ id, label, description, checked, onCheckedChange, icon: Icon, color }: { id: keyof GenerationOptions, label: string, description: string, checked: boolean, onCheckedChange: (checked: boolean) => void, icon: React.ElementType, color: string }) => (
+      <div className="flex items-start space-x-4 rounded-xl p-4 hover:bg-slate-800/60 transition-colors">
+          <Checkbox id={id} checked={checked} onCheckedChange={onCheckedChange} className="mt-1" />
+          <div className="grid gap-1.5 leading-none">
+              <div className="flex items-center gap-2">
+                <Icon className={cn("w-5 h-5", color)} />
+                <Label htmlFor={id} className="text-base font-medium text-white">
+                  {label}
+                </Label>
+              </div>
+              <p className="text-sm text-slate-400 pl-7">
+                  {description}
+              </p>
+          </div>
+      </div>
+    );
+
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px] glass-card">
-                <DialogHeader>
-                    <DialogTitle>Generation Options</DialogTitle>
+            <DialogContent className="sm:max-w-md glass-card p-0">
+                <DialogHeader className="p-6 pb-4">
+                    <DialogTitle className="text-xl">Generation Options</DialogTitle>
                     <DialogDescription>
-                        Select the types of content you want to generate.
+                        Select the types of educational content you want to generate from your document.
                     </DialogDescription>
                 </DialogHeader>
-                <div className="grid gap-4 py-4">
-                    <div className="flex items-center space-x-3">
-                        <Checkbox id="gen_questions" checked={options.generateQuestions} onCheckedChange={(c) => handleCheckedChange('generateQuestions', !!c)} />
-                        <Label htmlFor="gen_questions" className="text-base text-white">Questions & Answers</Label>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <Checkbox id="gen_exam" checked={options.generateExam} onCheckedChange={(c) => handleCheckedChange('generateExam', !!c)} />
-                        <Label htmlFor="gen_exam" className="text-base text-white">MCQ Exam</Label>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                        <Checkbox id="gen_flashcards" checked={options.generateFlashcards} onCheckedChange={(c) => handleCheckedChange('generateFlashcards', !!c)} />
-                        <Label htmlFor="gen_flashcards" className="text-base text-white">Flashcards</Label>
-                    </div>
+                <div className="grid gap-2 px-6 py-4 border-t border-b border-slate-800">
+                    <OptionCheckbox
+                        id="generateQuestions"
+                        label="Questions & Answers"
+                        description="Generate standard text questions with answers."
+                        checked={options.generateQuestions}
+                        onCheckedChange={(c) => handleCheckedChange('generateQuestions', !!c)}
+                        icon={FileQuestion}
+                        color="text-blue-400"
+                    />
+                     <OptionCheckbox
+                        id="generateExam"
+                        label="MCQ Exam"
+                        description="Create a multiple-choice exam based on the content."
+                        checked={options.generateExam}
+                        onCheckedChange={(c) => handleCheckedChange('generateExam', !!c)}
+                        icon={FileCheck}
+                        color="text-rose-400"
+                    />
+                     <OptionCheckbox
+                        id="generateFlashcards"
+                        label="Flashcards"
+                        description="Produce flashcards for key concepts and terms."
+                        checked={options.generateFlashcards}
+                        onCheckedChange={(c) => handleCheckedChange('generateFlashcards', !!c)}
+                        icon={Layers}
+                        color="text-indigo-400"
+                    />
                 </div>
-                 <div className="flex justify-end gap-2">
+                 <div className="flex justify-end gap-2 p-6">
                     <Button variant="outline" onClick={() => onOpenChange(false)} className='rounded-xl'>Cancel</Button>
                     <Button onClick={handleSubmit} className='rounded-xl'>Generate</Button>
                 </div>
@@ -325,6 +356,11 @@ function QuestionsCreatorContent() {
     }
     await saveCurrentResults(user.uid, savedQuestions.length);
     toast({ title: 'Questions Saved', description: 'Your generated questions have been saved to your library.' });
+    
+    // Reset flow after a short delay
+    setTimeout(() => {
+        resetFlow();
+    }, 3000);
   };
   
   const allPrompts = useMemo(() => ({
@@ -594,6 +630,7 @@ function QuestionsCreatorContent() {
 
   const renderGenerateTabContent = () => {
     if (flowStep !== 'idle' && (pendingSource || task)) {
+        const generationOptions = task?.generationOptions || { generateQuestions: true, generateExam: false, generateFlashcards: false };
         return (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="md:col-span-2">
@@ -619,107 +656,113 @@ function QuestionsCreatorContent() {
                     </AnimatePresence>
                 </div>
                  
-                <div className="md:col-span-2">
-                    <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                    <AnimatePresence initial={false}>
-                    {sectionsVisibility.questions && (
-                        <motion.div
-                            key="questions"
-                            initial="collapsed" animate="open" exit="collapsed"
-                            variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                {renderOutputCard(
-                                    "Text Questions",
-                                    <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
-                                    task?.textQuestions ?? null,
-                                    isGenerating && ['extracting', 'generating_text'].includes(task.status),
-                                    task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...',
-                                    showTextRetry
-                                )}
-                                {renderOutputCard(
-                                    "JSON Questions",
-                                    <FileJson className="w-8 h-8 text-blue-400 shrink-0" />,
-                                    task?.jsonQuestions ?? null,
-                                    isGenerating && task.status === 'converting_json',
-                                    'Converting to JSON...',
-                                    showJsonRetry
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
-                </div>
+                {generationOptions.generateQuestions && (
+                    <div className="md:col-span-2">
+                        <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+                        <AnimatePresence initial={false}>
+                        {sectionsVisibility.questions && (
+                            <motion.div
+                                key="questions"
+                                initial="collapsed" animate="open" exit="collapsed"
+                                variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                                transition={{ duration: 0.3 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                    {renderOutputCard(
+                                        "Text Questions",
+                                        <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
+                                        task?.textQuestions ?? null,
+                                        isGenerating && ['extracting', 'generating_text'].includes(task.status),
+                                        task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...',
+                                        showTextRetry
+                                    )}
+                                    {renderOutputCard(
+                                        "JSON Questions",
+                                        <FileJson className="w-8 h-8 text-blue-400 shrink-0" />,
+                                        task?.jsonQuestions ?? null,
+                                        isGenerating && task.status === 'converting_json',
+                                        'Converting to JSON...',
+                                        showJsonRetry
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+                    </div>
+                )}
                 
-                <div className="md:col-span-2">
-                    <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                    <AnimatePresence initial={false}>
-                    {sectionsVisibility.exam && (
-                        <motion.div
-                            key="exam"
-                            initial="collapsed" animate="open" exit="collapsed"
-                            variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                {renderOutputCard(
-                                "Text Exam",
-                                <FileText className="w-8 h-8 text-red-400 shrink-0" />,
-                                task?.textExam ?? null,
-                                isGenerating && task.status === 'generating_exam_text',
-                                'Generating exam...',
-                                showExamTextRetry
-                                )}
-                                {renderOutputCard(
-                                "JSON Exam",
-                                <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
-                                task?.jsonExam ?? null,
-                                isGenerating && task.status === 'converting_exam_json',
-                                'Converting exam to JSON...',
-                                showExamJsonRetry
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
-                </div>
+                {generationOptions.generateExam && (
+                    <div className="md:col-span-2">
+                        <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+                        <AnimatePresence initial={false}>
+                        {sectionsVisibility.exam && (
+                            <motion.div
+                                key="exam"
+                                initial="collapsed" animate="open" exit="collapsed"
+                                variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                                transition={{ duration: 0.3 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                    {renderOutputCard(
+                                    "Text Exam",
+                                    <FileText className="w-8 h-8 text-red-400 shrink-0" />,
+                                    task?.textExam ?? null,
+                                    isGenerating && task.status === 'generating_exam_text',
+                                    'Generating exam...',
+                                    showExamTextRetry
+                                    )}
+                                    {renderOutputCard(
+                                    "JSON Exam",
+                                    <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
+                                    task?.jsonExam ?? null,
+                                    isGenerating && task.status === 'converting_exam_json',
+                                    'Converting exam to JSON...',
+                                    showExamJsonRetry
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+                    </div>
+                )}
 
-                <div className="md:col-span-2">
-                    <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                    <AnimatePresence initial={false}>
-                    {sectionsVisibility.flashcards && (
-                        <motion.div
-                            key="flashcards"
-                            initial="collapsed" animate="open" exit="collapsed"
-                            variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                {renderOutputCard(
-                                "Text Flashcard",
-                                <FileText className="w-8 h-8 text-green-400 shrink-0" />,
-                                task?.textFlashcard ?? null,
-                                isGenerating && task.status === 'generating_flashcard_text',
-                                'Generating flashcards...',
-                                showFlashcardTextRetry
-                                )}
-                                {renderOutputCard(
-                                "JSON Flashcard",
-                                <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
-                                task?.jsonFlashcard ?? null,
-                                isGenerating && task.status === 'converting_flashcard_json',
-                                'Converting flashcards to JSON...',
-                                showFlashcardJsonRetry
-                                )}
-                            </div>
-                        </motion.div>
-                    )}
-                    </AnimatePresence>
-                </div>
+                {generationOptions.generateFlashcards && (
+                    <div className="md:col-span-2">
+                        <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+                        <AnimatePresence initial={false}>
+                        {sectionsVisibility.flashcards && (
+                            <motion.div
+                                key="flashcards"
+                                initial="collapsed" animate="open" exit="collapsed"
+                                variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                                transition={{ duration: 0.3 }}
+                                className="overflow-hidden"
+                            >
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                    {renderOutputCard(
+                                    "Text Flashcard",
+                                    <FileText className="w-8 h-8 text-green-400 shrink-0" />,
+                                    task?.textFlashcard ?? null,
+                                    isGenerating && task.status === 'generating_flashcard_text',
+                                    'Generating flashcards...',
+                                    showFlashcardTextRetry
+                                    )}
+                                    {renderOutputCard(
+                                    "JSON Flashcard",
+                                    <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
+                                    task?.jsonFlashcard ?? null,
+                                    isGenerating && task.status === 'converting_flashcard_json',
+                                    'Converting flashcards to JSON...',
+                                    showFlashcardJsonRetry
+                                    )}
+                                </div>
+                            </motion.div>
+                        )}
+                        </AnimatePresence>
+                    </div>
+                )}
                  <div className="md:col-span-2 flex justify-center">
                     <Button
                         onClick={handleSaveCurrentQuestions}
