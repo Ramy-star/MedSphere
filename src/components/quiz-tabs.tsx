@@ -651,7 +651,10 @@ const LectureContent: React.FC<{ lecture: Lecture }> = ({ lecture }) => {
 };
 
 
-export function QuizContainer({ lectures }: { lectures: Lecture[] }) {
+export function QuizContainer({ lectures: rawLecturesData }: { lectures: Lecture[] | Lecture }) {
+    
+    // This is the critical fix. Ensure `lectures` is always an array.
+    const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
     
     const [activeLectureId, setActiveLectureId] = React.useState(lectures[0]?.id);
     

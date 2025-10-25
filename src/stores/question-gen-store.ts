@@ -5,6 +5,8 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { router } from 'next/router'; // Although we can't use it here, it's a reminder of navigation
+import type { Lecture } from '@/lib/types';
+
 
 type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | 'completed' | 'error';
 type FailedStep = 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | null;
@@ -237,16 +239,25 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         if (!task || task.status !== 'completed') {
             throw new Error("No completed task to save.");
         }
+        
+        const dataToSave: Partial<Lecture> = {
+            id: task.sourceFileId,
+            name: task.fileName.replace(/\.[^/.]+$/, ""),
+            mcqs_level_1: task.jsonQuestions || [],
+            mcqs_level_2: task.jsonExam || [],
+            written: [], // Not implemented yet
+            flashcards: task.jsonFlashcard || [],
+        };
 
         const collectionRef = collection(db, `users/${userId}/questionSets`);
         await addDoc(collectionRef, {
             fileName: task.fileName,
             textQuestions: task.textQuestions || '',
-            jsonQuestions: task.jsonQuestions || [],
+            jsonQuestions: dataToSave.mcqs_level_1,
             textExam: task.textExam || '',
-            jsonExam: task.jsonExam || [],
+            jsonExam: dataToSave.mcqs_level_2,
             textFlashcard: task.textFlashcard || '',
-            jsonFlashcard: task.jsonFlashcard || [],
+            jsonFlashcard: dataToSave.flashcards,
             createdAt: new Date().toISOString(),
             userId: userId,
             sourceFileId: task.sourceFileId,

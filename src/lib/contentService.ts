@@ -272,32 +272,37 @@ export const contentService = {
   },
 
   async createOrUpdateInteractiveContent(
-      destination: Content,
-      name: string,
-      newData: any,
-      sourceFileId: string,
-      type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
+    destination: Content,
+    name: string,
+    newData: Partial<Lecture>,
+    sourceFileId: string,
+    type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
   ): Promise<Content> {
       if (!db) throw new Error("Firestore not initialized");
   
       const originalFileName = name.replace(/\.[^/.]+$/, "");
       let contentName: string;
-      let lectureKey: 'mcqs_level_1' | 'mcqs_level_2' | 'written' | 'flashcards';
   
       switch (type) {
           case 'INTERACTIVE_QUIZ':
               contentName = `${originalFileName} - Quiz`;
-              lectureKey = 'mcqs_level_1';
               break;
           case 'INTERACTIVE_EXAM':
               contentName = `${originalFileName} - Exam`;
-              lectureKey = 'mcqs_level_2';
               break;
           case 'INTERACTIVE_FLASHCARD':
               contentName = `${originalFileName} - Flashcards`;
-              lectureKey = 'flashcards';
               break;
       }
+      
+      const newLectureData: Lecture = {
+          id: newData.id || sourceFileId || uuidv4(),
+          name: newData.name || originalFileName,
+          mcqs_level_1: newData.mcqs_level_1 || [],
+          mcqs_level_2: newData.mcqs_level_2 || [],
+          written: newData.written || [],
+          flashcards: newData.flashcards || [],
+      };
   
       // If destination is a folder, create a new file
       if (destination.type === 'FOLDER') {
@@ -309,12 +314,6 @@ export const contentService = {
               const childrenSnapshot = await getDocs(childrenQuery);
               const order = childrenSnapshot.size;
               
-              const newLectureData: Partial<Lecture> = {
-                  id: sourceFileId || uuidv4(),
-                  name: originalFileName,
-                  [lectureKey]: newData || [],
-              };
-  
               const newContentData: Content = {
                   id: newId,
                   name: contentName,
@@ -342,35 +341,30 @@ export const contentService = {
               if (!docSnap.exists()) throw new Error("Destination file does not exist.");
   
               const existingQuizData = docSnap.data().metadata?.quizData;
-              let existingLectures: Partial<Lecture>[] = [];
+              let existingLectures: Lecture[] = [];
               if (existingQuizData) {
                   try {
                       existingLectures = JSON.parse(existingQuizData);
                       if (!Array.isArray(existingLectures)) {
-                          console.warn("Existing quizData is not an array, resetting.");
                           existingLectures = [];
                       }
                   } catch (e) {
-                      console.error("Failed to parse existing quizData, will overwrite.", e);
                       existingLectures = [];
                   }
               }
               
-              const sourceIdToUpdate = sourceFileId || uuidv4();
-              const existingLectureIndex = existingLectures.findIndex(lec => lec.id === sourceIdToUpdate);
-
+              const existingLectureIndex = existingLectures.findIndex(lec => lec.id === newLectureData.id);
+  
               if (existingLectureIndex > -1) {
-                  // Update existing lecture
-                  const lectureToUpdate = existingLectures[existingLectureIndex];
-                  lectureToUpdate[lectureKey] = newData || [];
+                  // Merge content into existing lecture
+                  const lectureToUpdate = { ...existingLectures[existingLectureIndex] };
+                  if (newLectureData.mcqs_level_1 && newLectureData.mcqs_level_1.length > 0) lectureToUpdate.mcqs_level_1 = newLectureData.mcqs_level_1;
+                  if (newLectureData.mcqs_level_2 && newLectureData.mcqs_level_2.length > 0) lectureToUpdate.mcqs_level_2 = newLectureData.mcqs_level_2;
+                  if (newLectureData.written && newLectureData.written.length > 0) lectureToUpdate.written = newLectureData.written;
+                  if (newLectureData.flashcards && newLectureData.flashcards.length > 0) lectureToUpdate.flashcards = newLectureData.flashcards;
                   existingLectures[existingLectureIndex] = lectureToUpdate;
               } else {
                   // Add new lecture
-                  const newLectureData: Partial<Lecture> = {
-                      id: sourceIdToUpdate,
-                      name: originalFileName,
-                      [lectureKey]: newData || [],
-                  };
                   existingLectures.push(newLectureData);
               }
   
