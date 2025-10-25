@@ -6,8 +6,8 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
 
-type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'completed' | 'error' | 'awaiting_confirmation';
-type FailedStep = 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | null;
+type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | 'completed' | 'error' | 'awaiting_confirmation';
+type FailedStep = 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | null;
 
 interface GenerationTask {
   id: string;
@@ -22,6 +22,8 @@ interface GenerationTask {
   jsonQuestions: string | null;
   textExam: string | null;
   jsonExam: string | null;
+  textFlashcard: string | null;
+  jsonFlashcard: string | null;
   error: string | null;
   progress: number;
   nextFile?: File; // To hold the file for the next generation
@@ -32,11 +34,11 @@ interface GenerationTask {
 interface QuestionGenerationState {
   task: GenerationTask | null;
   isSaved: boolean;
-  startGeneration: (source: {file: File} | {id: string, fileName: string, fileUrl: string}, prompts: {gen: string, json: string, examGen: string, examJson: string}) => void;
+  startGeneration: (source: {file: File} | {id: string, fileName: string, fileUrl: string}, prompts: {gen: string, json: string, examGen: string, examJson: string, flashcardGen: string, flashcardJson: string}) => void;
   saveCurrentResults: (userId: string, currentItemCount: number) => Promise<void>;
   clearTask: () => void;
-  retryGeneration: (prompts: {gen: string, json: string, examGen: string, examJson: string}) => Promise<void>;
-  confirmContinue: (prompts: {gen: string, json: string, examGen: string, examJson: string}) => void;
+  retryGeneration: (prompts: {gen: string, json: string, examGen: string, examJson: string, flashcardGen: string, flashcardJson: string}) => Promise<void>;
+  confirmContinue: (prompts: {gen: string, json: string, examGen: string, examJson: string, flashcardGen: string, flashcardJson: string}) => void;
   cancelConfirmation: () => void;
   abortGeneration: () => void;
 }
@@ -48,22 +50,26 @@ const updateTask = (state: QuestionGenerationState, partialTask: Partial<Omit<Ge
 
 async function runGenerationProcess(
     initialTask: GenerationTask,
-    prompts: {gen: string, json: string, examGen: string, examJson: string},
+    prompts: {gen: string, json: string, examGen: string, examJson: string, flashcardGen: string, flashcardJson: string},
     set: (updater: (state: QuestionGenerationState) => QuestionGenerationState) => void,
     get: () => QuestionGenerationState
 ) {
-    let { documentText, textQuestions, jsonQuestions, textExam, jsonExam } = initialTask;
+    let { documentText, textQuestions, jsonQuestions, textExam, jsonExam, textFlashcard, jsonFlashcard } = initialTask;
     const { failedStep } = initialTask;
     const { signal } = initialTask.abortController;
 
-    const steps: GenerationStatus[] = ['extracting', 'generating_text', 'converting_json', 'generating_exam_text', 'converting_exam_json', 'completed'];
+    const steps: GenerationStatus[] = ['extracting', 'generating_text', 'converting_json', 'generating_exam_text', 'converting_exam_json', 'generating_flashcard_text', 'converting_flashcard_json', 'completed'];
     let currentStepIndex = 0;
 
     // Determine starting step
     if (failedStep) {
         currentStepIndex = steps.indexOf(failedStep as GenerationStatus);
-    } else if (jsonExam) {
+    } else if (jsonFlashcard) {
         currentStepIndex = steps.indexOf('completed');
+    } else if (textFlashcard) {
+        currentStepIndex = steps.indexOf('converting_flashcard_json');
+    } else if (jsonExam) {
+        currentStepIndex = steps.indexOf('generating_flashcard_text');
     } else if (textExam) {
         currentStepIndex = steps.indexOf('converting_exam_json');
     } else if (jsonQuestions) {
@@ -123,6 +129,20 @@ async function runGenerationProcess(
                     }
                     break;
 
+                case 'generating_flashcard_text':
+                    if (!textFlashcard) {
+                        textFlashcard = await generateQuestions({ prompt: prompts.flashcardGen, documentContent: documentText!, images: [] });
+                        set(state => updateTask(state, { textFlashcard }));
+                    }
+                    break;
+
+                case 'converting_flashcard_json':
+                    if (!jsonFlashcard) {
+                        jsonFlashcard = await convertQuestionsToJson({ prompt: prompts.flashcardJson, questionsText: textFlashcard! });
+                        set(state => updateTask(state, { jsonFlashcard }));
+                    }
+                    break;
+
                 case 'completed':
                     set(state => ({
                         ...updateTask(state, { status: 'completed', progress: 100 }),
@@ -178,6 +198,8 @@ const useQuestionGenerationStore = create<QuestionGenerationState>()(
             jsonQuestions: null,
             textExam: null,
             jsonExam: null,
+            textFlashcard: null,
+            jsonFlashcard: null,
             error: null,
             progress: 0,
             abortController: new AbortController(),
@@ -199,6 +221,8 @@ const useQuestionGenerationStore = create<QuestionGenerationState>()(
             jsonQuestions: task.jsonQuestions,
             textExam: task.textExam,
             jsonExam: task.jsonExam,
+            textFlashcard: task.textFlashcard,
+            jsonFlashcard: task.jsonFlashcard,
             createdAt: new Date().toISOString(),
             userId: userId,
             sourceFileId: task.sourceFileId,
@@ -254,4 +278,3 @@ const useQuestionGenerationStore = create<QuestionGenerationState>()(
 const useLegacyQuestionGenerationStore = useQuestionGenerationStore;
 
 export { useLegacyQuestionGenerationStore as useQuestionGenerationStore };
-

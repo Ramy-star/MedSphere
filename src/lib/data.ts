@@ -22,6 +22,10 @@ export const lecturesData: Lecture[] = [
           { "q": "Which anatomical structures are located in this quadrant?", "a": "The liver, gallbladder, duodenum, head of the pancreas, and right kidney." }
         ]
       }
+    ],
+    "flashcards": [
+        { "id": "f1", "front": "What is the capital of France?", "back": "Paris" },
+        { "id": "f2", "front": "What is 2 + 2?", "back": "4" }
     ]
   },
   {
@@ -32,7 +36,11 @@ export const lecturesData: Lecture[] = [
       { "q": "2. What is an agonist?", "o": ["a) A drug that blocks a receptor", "b) A drug that activates a receptor", "c) A drug that has no effect", "d) A type of antibiotic"], "a": "b) A drug that activates a receptor" }
     ],
     "mcqs_level_2": [],
-    "written": []
+    "written": [],
+    "flashcards": [
+        { "id": "f3", "front": "What is the chemical symbol for water?", "back": "H2O" },
+        { "id": "f4", "front": "Who wrote 'Hamlet'?", "back": "William Shakespeare", "color": "#BBDEFB" }
+    ]
   }
 ];
 

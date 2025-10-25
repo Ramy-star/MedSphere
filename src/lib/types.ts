@@ -15,12 +15,21 @@ export interface WrittenCase {
     subqs: WrittenSubQuestion[];
 }
 
+export interface Flashcard {
+  id: string;
+  front: string;
+  back: string;
+  imageUrl?: string;
+  color?: string;
+}
+
 export interface Lecture {
   id: string;
   name: string;
-  mcqs_level_1: MCQ[];
-  mcqs_level_2: MCQ[];
-  written: WrittenCase[];
+  mcqs_level_1?: MCQ[];
+  mcqs_level_2?: MCQ[];
+  written?: WrittenCase[];
+  flashcards?: Flashcard[];
 }
 
 export interface ExamResult {

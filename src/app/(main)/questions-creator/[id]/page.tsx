@@ -4,7 +4,7 @@
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileHeart } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileHeart, Layers } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
@@ -33,6 +33,8 @@ type SavedQuestionSet = {
   jsonQuestions: string;
   textExam: string;
   jsonExam: string;
+  textFlashcard: string;
+  jsonFlashcard: string;
   createdAt: string;
   userId: string;
   sourceFileId: string;
@@ -58,18 +60,18 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     disabled: !id || !user
   });
 
-  const [isEditing, setIsEditing] = useState({ text: false, json: false, examText: false, examJson: false });
-  const [editingContent, setEditingContent] = useState({ text: '', json: '', examText: '', examJson: '' });
+  const [isEditing, setIsEditing] = useState({ text: false, json: false, examText: false, examJson: false, flashcardText: false, flashcardJson: false });
+  const [editingContent, setEditingContent] = useState({ text: '', json: '', examText: '', examJson: '', flashcardText: '', flashcardJson: '' });
   const [isRepairing, setIsRepairing] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json' | 'examText' | 'examJson'} | null>(null);
+  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson'} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
   const [showFolderSelector, setShowFolderSelector] = useState(false);
   const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
-  const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false, examText: false, examJson: false });
-  const [currentAction, setCurrentAction] = useState<'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | null>(null);
+  const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false, examText: false, examJson: false, flashcardText: false, flashcardJson: false });
+  const [currentAction, setCurrentAction] = useState<'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | null>(null);
 
 
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -82,7 +84,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     if (!questionSet) {
         //notFound();
     } else {
-        setEditingContent({ text: questionSet.textQuestions, json: questionSet.jsonQuestions, examText: questionSet.textExam || '', examJson: questionSet.jsonExam || '' });
+        setEditingContent({ 
+            text: questionSet.textQuestions, 
+            json: questionSet.jsonQuestions, 
+            examText: questionSet.textExam || '', 
+            examJson: questionSet.jsonExam || '',
+            flashcardText: questionSet.textFlashcard || '',
+            flashcardJson: questionSet.jsonFlashcard || ''
+        });
         setEditingTitle(questionSet.fileName);
     }
   }, [id, questionSet, loading]);
@@ -106,7 +115,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     await updateDoc(docRef, updatedData);
   };
   
-  const handleToggleEdit = async (type: 'text' | 'json' | 'examText' | 'examJson') => {
+  const handleToggleEdit = async (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     if (isEditing[type]) {
       // Save
       if (questionSet) {
@@ -114,27 +123,31 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             text: 'textQuestions',
             json: 'jsonQuestions',
             examText: 'textExam',
-            examJson: 'jsonExam'
+            examJson: 'jsonExam',
+            flashcardText: 'textFlashcard',
+            flashcardJson: 'jsonFlashcard'
         };
         const dataKey = keyMap[type] as keyof SavedQuestionSet;
         const updatedData = { [dataKey]: editingContent[type] };
 
         if (editingContent[type] !== (questionSet as any)[dataKey]) {
             await updateQuestionSet(updatedData);
-            toast({ title: 'Saved', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been updated.` });
+            toast({ title: 'Saved', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Flashcard') ? 'Flashcard ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been updated.` });
         }
       }
     }
     setIsEditing(prev => ({ ...prev, [type]: !prev[type] }));
   };
 
-  const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson') => {
+  const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     if (questionSet) {
         const keyMap = {
             text: questionSet.textQuestions,
             json: questionSet.jsonQuestions,
             examText: questionSet.textExam || '',
-            examJson: questionSet.jsonExam || ''
+            examJson: questionSet.jsonExam || '',
+            flashcardText: questionSet.textFlashcard || '',
+            flashcardJson: questionSet.jsonFlashcard || ''
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
     }
@@ -169,9 +182,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     }
   };
   
-  const handleCopy = (content: string, type: 'text' | 'json' | 'examText' | 'examJson') => {
+  const handleCopy = (content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     navigator.clipboard.writeText(content);
-    toast({ title: 'Copied to Clipboard', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been copied.` });
+    toast({ title: 'Copied to Clipboard', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Flashcard') ? 'Flashcard ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been copied.` });
     setCopiedStatus(prev => ({ ...prev, [type]: true }));
     setTimeout(() => {
         setCopiedStatus(prev => ({ ...prev, [type]: false }));
@@ -206,7 +219,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         text: 'textQuestions',
         json: 'jsonQuestions',
         examText: 'textExam',
-        examJson: 'jsonExam'
+        examJson: 'jsonExam',
+        flashcardText: 'textFlashcard',
+        flashcardJson: 'jsonFlashcard'
     };
     const dataKey = keyMap[type] as keyof SavedQuestionSet;
     const updatedData = { [dataKey]: content };
@@ -326,8 +341,25 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         });
     }
   }
+  
+  const handleCreateFlashcard = async (parentId: string) => {
+    if (!questionSet) return;
+    setShowFolderSelector(false);
+    setCurrentAction(null);
+    try {
+        await contentService.createInteractiveFlashcard(parentId, questionSet.fileName, questionSet.jsonFlashcard, questionSet.sourceFileId);
+        toast({ title: 'Interactive Flashcards Created', description: `Flashcards for "${questionSet.fileName}" has been created.` });
+    } catch (error: any) {
+        console.error("Failed to create interactive flashcards:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Creation Failed',
+            description: error.message || 'Could not create the interactive flashcards.'
+        });
+    }
+  }
 
-  const handleFolderSelect = (folderId: string, action: 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam') => {
+  const handleFolderSelect = (folderId: string, action: 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard') => {
       switch (action) {
           case 'save_questions_md':
               handleSaveToFile(folderId, 'questions');
@@ -341,6 +373,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
           case 'create_exam':
               handleCreateExam(folderId);
               break;
+          case 'create_flashcard':
+              handleCreateFlashcard(folderId);
+              break;
       }
   }
 
@@ -352,12 +387,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     );
   }
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string, type: 'text' | 'json' | 'examText' | 'examJson') => {
+  const renderOutputCard = (title: string, icon: React.ReactNode, content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     const isThisCardEditing = isEditing[type];
     const isJsonCardWithError = type.includes('json') && jsonError;
     const isCopied = copiedStatus[type];
 
-    const isCreating = (type === 'json' && currentAction === 'create_quiz') || (type === 'examJson' && currentAction === 'create_exam');
+    const isCreating = (type === 'json' && currentAction === 'create_quiz') || 
+                       (type === 'examJson' && currentAction === 'create_exam') ||
+                       (type === 'flashcardJson' && currentAction === 'create_flashcard');
     const isSaving = (type === 'text' && currentAction === 'save_questions_md') || (type === 'examText' && currentAction === 'save_exam_md');
 
     return (
@@ -409,6 +446,16 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create Interactive Exam</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                        {isAdmin && type === 'flashcardJson' && (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_flashcard'); setShowFolderSelector(true); }} disabled={isCreating}>
+                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Layers className="h-4 w-4 text-indigo-400" />}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Create Interactive Flashcards</p></TooltipContent>
                             </Tooltip>
                         )}
                         <Tooltip>
@@ -564,9 +611,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             {renderOutputCard("JSON Questions", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-8">
             {renderOutputCard("Text Exam", <FileText className="text-orange-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
             {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examJson, 'examJson')}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+            {renderOutputCard("Text Flashcard", <Layers className="text-indigo-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardText, 'flashcardText')}
+            {renderOutputCard("JSON Flashcard", <FileJson className="text-purple-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardJson, 'flashcardJson')}
         </div>
         
         <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>

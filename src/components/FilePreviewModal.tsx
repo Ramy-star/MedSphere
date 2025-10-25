@@ -13,7 +13,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck, Layers } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -189,6 +189,9 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     if (item.type === 'INTERACTIVE_EXAM') {
         return { Icon: FileCheck, color: 'text-rose-400' };
     }
+    if (item.type === 'INTERACTIVE_FLASHCARD') {
+        return { Icon: Layers, color: 'text-indigo-400' };
+    }
     const mimeType = item.metadata?.mime;
 
     if(mimeType === 'text/markdown') return { Icon: HelpCircle, color: 'text-red-400' };
@@ -287,7 +290,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         let questionText: string | null = null;
     
         try {
-            const isQuizFile = currentItem.type === 'INTERACTIVE_QUIZ' || currentItem.type === 'INTERACTIVE_EXAM';
+            const isQuizFile = currentItem.type === 'INTERACTIVE_QUIZ' || currentItem.type === 'INTERACTIVE_EXAM' || currentItem.type === 'INTERACTIVE_FLASHCARD';
             const isQuestionFile = currentItem.metadata?.sourceFileId && currentItem.metadata?.mime === 'text/markdown';
 
             let lectureFile: Content | null = null;
@@ -549,7 +552,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isPdf = item?.metadata?.mime === 'application/pdf';
   const isMarkdown = item?.metadata?.mime === 'text/markdown';
   const isTextFile = item?.metadata?.mime?.startsWith('text/');
-  const isQuiz = item?.type === 'INTERACTIVE_QUIZ' || item?.type === 'INTERACTIVE_EXAM';
+  const isQuiz = item?.type === 'INTERACTIVE_QUIZ' || item?.type === 'INTERACTIVE_EXAM' || item?.type === 'INTERACTIVE_FLASHCARD';
   const isChatAvailable = (isPdf || isMarkdown || isTextFile || isQuiz) && !isExamInProgress;
   const isQuoteAvailable = (isPdf || isMarkdown || isTextFile || isQuiz) && !isExamInProgress;
   const displayName = item.name;

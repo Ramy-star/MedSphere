@@ -13,6 +13,7 @@ import remarkGfm from 'remark-gfm';
 import { QuizContainer } from './quiz-tabs';
 import type { Lecture } from '@/lib/types';
 import ExamContainer from './ExamContainer';
+import { FlashcardContainer } from './FlashcardContainer';
 
 
 // Import react-pdf styles here to ensure they are loaded
@@ -50,7 +51,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     let objectUrl: string | null = null;
     let isCancelled = false;
 
-    if (itemType === 'INTERACTIVE_QUIZ' || itemType === 'INTERACTIVE_EXAM') {
+    if (itemType === 'INTERACTIVE_QUIZ' || itemType === 'INTERACTIVE_EXAM' || itemType === 'INTERACTIVE_FLASHCARD') {
         setIsLoading(false);
         return;
     }
@@ -154,7 +155,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
       );
   }
   
-  if (itemType === 'INTERACTIVE_QUIZ' || itemType === 'INTERACTIVE_EXAM') {
+  if (itemType === 'INTERACTIVE_QUIZ' || itemType === 'INTERACTIVE_EXAM' || itemType === 'INTERACTIVE_FLASHCARD') {
     if (!quizData) {
         return (
             <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
@@ -170,7 +171,9 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         
         return (
              <div ref={containerRef} className="w-full h-full overflow-y-auto no-scrollbar selectable">
-                {itemType === 'INTERACTIVE_QUIZ' ? <QuizContainer lectures={lectures} /> : <ExamContainer lectures={lectures} onStateChange={onExamStateChange} />}
+                {itemType === 'INTERACTIVE_QUIZ' && <QuizContainer lectures={lectures} />}
+                {itemType === 'INTERACTIVE_EXAM' && <ExamContainer lectures={lectures} onStateChange={onExamStateChange} />}
+                {itemType === 'INTERACTIVE_FLASHCARD' && <FlashcardContainer lectures={lectures} />}
             </div>
         );
     } catch (e) {

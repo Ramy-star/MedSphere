@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileCheck
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileCheck, Layers
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -38,6 +38,10 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
 
     if (item.type === 'INTERACTIVE_EXAM') {
         return { Icon: FileCheck, color: 'text-rose-400' };
+    }
+
+    if (item.type === 'INTERACTIVE_FLASHCARD') {
+        return { Icon: Layers, color: 'text-indigo-400' };
     }
 
     const fileName = item.name;
@@ -141,6 +145,7 @@ export const FileCard = React.memo(function FileCard({
         if (item.type === 'LINK') return 'Link';
         if (item.type === 'INTERACTIVE_QUIZ') return 'Quiz';
         if (item.type === 'INTERACTIVE_EXAM') return 'Exam';
+        if (item.type === 'INTERACTIVE_FLASHCARD') return 'Flashcard';
         if (item.metadata?.size) {
             const sizeInKB = item.metadata.size / 1024;
             return sizeInKB < 1024
@@ -175,10 +180,12 @@ export const FileCard = React.memo(function FileCard({
             const jsonPrompt = localStorage.getItem('questionJsonPrompt') || '';
             const examGenPrompt = localStorage.getItem('examGenPrompt') || '';
             const examJsonPrompt = localStorage.getItem('examJsonPrompt') || '';
+            const flashcardGenPrompt = localStorage.getItem('flashcardGenPrompt') || '';
+            const flashcardJsonPrompt = localStorage.getItem('flashcardJsonPrompt') || '';
             
             startGeneration(
               { id: item.id, fileName: item.name, fileUrl: item.metadata.storagePath },
-              { gen: genPrompt, json: jsonPrompt, examGen: examGenPrompt, examJson: examJsonPrompt }
+              { gen: genPrompt, json: jsonPrompt, examGen: examGenPrompt, examJson: examJsonPrompt, flashcardGen: flashcardGenPrompt, flashcardJson: flashcardJsonPrompt }
             );
 
             router.push('/questions-creator?tab=generate');
@@ -291,7 +298,7 @@ export const FileCard = React.memo(function FileCard({
                             <span>Open in browser</span>
                         </DropdownMenuItem>
                         )}
-                        {!isLink && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && (
+                        {!isLink && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' &&(
                             <DropdownMenuItem 
                                 onSelect={(e) => handleAction(e, () => { if (storagePath) handleForceDownload(storagePath, item.name); })}
                                 disabled={!storagePath}
@@ -310,7 +317,7 @@ export const FileCard = React.memo(function FileCard({
                                         <span>Create Questions</span>
                                     </DropdownMenuItem>
                                 )}
-                                {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && (
+                                {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && (
                                     <DropdownMenuItem onSelect={handleUpdateClick}>
                                       <RefreshCw className="mr-2 h-4 w-4" />
                                       <span>Update</span>

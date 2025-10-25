@@ -8,7 +8,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the content item." },
         "name": { "type": "string", "description": "Display name of the content item." },
-        "type": { "type": "string", "enum": ["LEVEL", "SEMESTER", "SUBJECT", "FOLDER", "FILE", "LINK", "INTERACTIVE_QUIZ", "INTERACTIVE_EXAM"], "description": "The type of content." },
+        "type": { "type": "string", "enum": ["LEVEL", "SEMESTER", "SUBJECT", "FOLDER", "FILE", "LINK", "INTERACTIVE_QUIZ", "INTERACTIVE_EXAM", "INTERACTIVE_FLASHCARD"], "description": "The type of content." },
         "parentId": { "type": "string", "description": "The ID of the parent item. Null for top-level items." },
         "order": { "type": "number", "description": "The order of the item within its parent." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the item was created." },
@@ -52,6 +52,8 @@
         "jsonQuestions": { "type": "string", "description": "The questions in JSON format." },
         "textExam": { "type": "string", "description": "The exam questions in plain text format." },
         "jsonExam": { "type": "string", "description": "The exam questions in JSON format." },
+        "textFlashcard": { "type": "string", "description": "The flashcard questions in plain text format." },
+        "jsonFlashcard": { "type": "string", "description": "The flashcard questions in JSON format." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the set was created." },
         "sourceFileId": { "type": "string", "description": "The ID of the original source file." },
         "order": { "type": "number", "description": "The display order of the question set." }
