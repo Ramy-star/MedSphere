@@ -344,6 +344,7 @@ export function FolderGrid({
                         case 'LINK':
                         case 'INTERACTIVE_QUIZ':
                         case 'INTERACTIVE_EXAM':
+                        case 'INTERACTIVE_FLASHCARD':
                             return (
                                 <FileCard
                                     item={item}
