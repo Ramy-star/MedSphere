@@ -17,7 +17,7 @@ import { ChevronRight, Folder as FolderIcon, Layers, Calendar, Loader2 } from 'l
 import { cn } from '@/lib/utils';
 import { ScrollArea } from './ui/scroll-area';
 
-type ActionType = 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam';
+type ActionType = 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard';
 
 type FolderSelectorDialogProps = {
   open: boolean;
