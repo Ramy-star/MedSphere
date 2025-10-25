@@ -448,8 +448,8 @@ function QuestionsCreatorContent() {
       }
       const iconMap = {
           gen: <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
-          json: <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
-          examGen: <FileText className="w-8 h-8 text-orange-400 shrink-0" />,
+          json: <FileJson className="w-8 h-8 text-blue-400 shrink-0" />,
+          examGen: <FileText className="w-8 h-8 text-red-400 shrink-0" />,
           examJson: <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
           flashcardGen: <FileText className="w-8 h-8 text-green-400 shrink-0" />,
           flashcardJson: <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
@@ -571,7 +571,7 @@ function QuestionsCreatorContent() {
                         className="hidden"
                     />
                     <div className="flex items-start gap-4">
-                        <FileUp className="w-10 h-10 text-blue-400 shrink-0" />
+                        <FileUp className="w-10 h-10 text-yellow-400 shrink-0" />
                         <div>
                             <h3 className="text-lg font-semibold text-white break-words">1. Upload Lecture</h3>
                             <p className="text-sm text-slate-400 mt-1">Drag & drop or click to upload a PDF file.</p>
@@ -607,7 +607,7 @@ function QuestionsCreatorContent() {
                      onClick={handleSaveCurrentQuestions}
                 >
                     <div className="flex items-start gap-4">
-                        <Save className="w-10 h-10 text-green-400 shrink-0" />
+                        <Save className="w-10 h-10 text-yellow-400 shrink-0" />
                         <div>
                             <h3 className="text-lg font-semibold text-white break-words">2. Save Results</h3>
                             <p className="text-sm text-slate-400 mt-1">Click here to save the generated questions to your library.</p>
