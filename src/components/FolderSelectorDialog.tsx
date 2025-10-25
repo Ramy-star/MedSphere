@@ -26,9 +26,10 @@ type ActionType = 'select_source' | 'save_questions_md' | 'save_exam_md' | 'crea
 type FolderSelectorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect: (item: Content) => void;
+  onSelect?: (item: Content) => void;
+  onSelectFolder?: (folderId: string, action: any) => void;
   actionType: ActionType | null;
-  currentItemId?: string; 
+  currentItemId?: string;
 };
 
 type TreeNode = Content & { children?: TreeNode[] };
@@ -99,7 +100,7 @@ const getIconForItem = (item: Content): { Icon: React.ElementType, color: string
 };
 
 function FolderTree({ node, onSelect, selectedId, level = 0, actionType, currentItemId }: { node: TreeNode, onSelect: (item: Content) => void, selectedId: string | null, level?: number, actionType: ActionType | null, currentItemId?: string }) {
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(level < 1); // Auto-open first few levels
 
     const isSelectable = useMemo(() => {
         if (!actionType) return false;
@@ -147,7 +148,8 @@ function FolderTree({ node, onSelect, selectedId, level = 0, actionType, current
                 onClick={handleNodeClick}
                 className={cn(
                     "flex items-center justify-between p-2 rounded-lg group",
-                    isSelectable ? "cursor-pointer" : "cursor-not-allowed opacity-50",
+                    isSelectable ? "cursor-pointer" : "cursor-default", // Change cursor based on selectability
+                    !isSelectable && "opacity-50", // Dim non-selectable items
                     selectedId === node.id ? "bg-blue-500/30 text-white" : isSelectable ? "hover:bg-white/10 text-slate-300" : "text-slate-500",
                 )}
                 style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
@@ -178,7 +180,7 @@ function FolderTree({ node, onSelect, selectedId, level = 0, actionType, current
     );
 }
 
-export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType, currentItemId }: FolderSelectorDialogProps) {
+export function FolderSelectorDialog({ open, onOpenChange, onSelect, onSelectFolder, actionType, currentItemId }: FolderSelectorDialogProps) {
   const { data: allItems, loading } = useCollection<Content>('content');
   const [selectedItem, setSelectedItem] = useState<Content | null>(null);
 
@@ -199,7 +201,11 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType,
 
   const handleConfirm = () => {
     if (selectedItem && actionType) {
-      onSelect(selectedItem);
+      if (onSelect) {
+        onSelect(selectedItem);
+      } else if (onSelectFolder) {
+        onSelectFolder(selectedItem.id, actionType);
+      }
     }
   };
   

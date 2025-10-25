@@ -173,14 +173,14 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
     };
 
     return (
-        <div 
-            ref={setNodeRef} 
-            style={style} 
-            {...attributes} 
-            {...listeners} 
+        <div
+            ref={setNodeRef}
+            style={style}
+            {...attributes}
+            {...listeners}
             onClick={handleClick}
             className={cn(
-                "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col", 
+                "relative group glass-card p-6 rounded-3xl hover:bg-white/10 transition-colors cursor-pointer flex flex-col",
                 isDragging && 'shadow-2xl shadow-blue-500/50'
             )}
         >
@@ -188,9 +188,9 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
                 <FileCheck className="w-8 h-8 text-rose-400 shrink-0" />
                 {isAdmin && (
                     <div className="flex gap-1 absolute top-2 right-2">
-                        <Button 
-                            variant="ghost" 
-                            size="icon" 
+                        <Button
+                            variant="ghost"
+                            size="icon"
                             className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95 z-10"
                             onMouseDown={(e) => e.stopPropagation()} // Prevent drag from starting on button click
                             onClick={(e) => {
@@ -254,14 +254,14 @@ function QuestionsCreatorContent() {
   const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
   const { data: fetchedSavedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
     user ? `users/${user.uid}/questionSets` : '',
-    { 
+    {
       orderBy: ['order', 'asc'],
       disabled: !user,
     }
   );
 
   const [savedQuestions, setSavedQuestions] = useState<SavedQuestionSet[]>([]);
-  
+
   const handleSourceSelected = (source: Content) => {
     initiateGeneration({
       id: source.id,
@@ -363,13 +363,13 @@ function QuestionsCreatorContent() {
     }
     await saveCurrentResults(user.uid, savedQuestions.length);
     toast({ title: 'Questions Saved', description: 'Your generated questions have been saved to your library.' });
-    
+
     // Reset flow after a short delay
     setTimeout(() => {
         resetFlow();
     }, 3000);
   };
-  
+
   const allPrompts = useMemo(() => ({
     gen: generationPrompt,
     json: jsonPrompt,
@@ -378,7 +378,7 @@ function QuestionsCreatorContent() {
     flashcardGen: flashcardGenerationPrompt,
     flashcardJson: flashcardJsonPrompt,
   }), [generationPrompt, jsonPrompt, examGenerationPrompt, examJsonPrompt, flashcardGenerationPrompt, flashcardJsonPrompt]);
-  
+
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -389,7 +389,7 @@ function QuestionsCreatorContent() {
       });
     }
   };
-  
+
   const [isDragging, setIsDragging] = useState(false);
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -414,7 +414,7 @@ function QuestionsCreatorContent() {
     }
     setIsDragging(false);
   };
-  
+
   const handleDeleteSet = async () => {
     if (!itemToDelete || !user) return;
     const docRef = doc(db, `users/${user.uid}/questionSets`, itemToDelete.id);
@@ -422,7 +422,7 @@ function QuestionsCreatorContent() {
     toast({ title: 'Set Deleted', description: 'The question set has been removed.' });
     setItemToDelete(null);
   };
-  
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -438,7 +438,7 @@ function QuestionsCreatorContent() {
             const oldIndex = currentItems.findIndex((item) => item.id === active.id);
             const newIndex = currentItems.findIndex((item) => item.id === over.id);
             const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
-            
+
             // Persist the new order to Firestore
             if (user) {
                 const batch = writeBatch(db);
@@ -464,7 +464,7 @@ function QuestionsCreatorContent() {
   };
 
   const isGenerating = flowStep === 'processing';
-  
+
   const showTextRetry = task?.status === 'error' && ['extracting', 'generating_text'].includes(task.failedStep!);
   const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
   const showExamTextRetry = task?.status === 'error' && task.failedStep === 'generating_exam_text';
@@ -479,15 +479,15 @@ function QuestionsCreatorContent() {
 
 
   const renderOutputCard = (
-    title: string, 
-    icon: React.ReactNode, 
-    content: string | null, 
-    isLoading: boolean, 
-    loadingText: string, 
+    title: string,
+    icon: React.ReactNode,
+    content: string | null,
+    isLoading: boolean,
+    loadingText: string,
     showRetryButton: boolean
   ) => {
     const hasContent = !!content || isLoading || showRetryButton;
-    
+
     return (
         <div className={cn(
             "relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out",
@@ -565,7 +565,7 @@ function QuestionsCreatorContent() {
           flashcardGen: setFlashcardGenerationPrompt,
           flashcardJson: setFlashcardJsonPrompt,
       }
-    
+
       return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -662,7 +662,7 @@ function QuestionsCreatorContent() {
                         )}
                     </AnimatePresence>
                 </div>
-                 
+
                 {generationOptions.generateQuestions && (
                     <div className="md:col-span-2">
                         <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
@@ -698,7 +698,7 @@ function QuestionsCreatorContent() {
                         </AnimatePresence>
                     </div>
                 )}
-                
+
                 {generationOptions.generateExam && (
                     <div className="md:col-span-2">
                         <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
@@ -849,7 +849,7 @@ function QuestionsCreatorContent() {
         <TabsContent value="generate" className="w-full max-w-7xl mx-auto mt-4">
            {renderGenerateTabContent()}
         </TabsContent>
-        
+
         <TabsContent value="prompts" className="w-full max-w-7xl mx-auto mt-4">
              <div className="max-w-7xl mx-auto">
                 <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
@@ -917,7 +917,7 @@ function QuestionsCreatorContent() {
                         <SortableContext items={savedQuestions.map(s => s.id)} strategy={rectSortingStrategy}>
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                 {savedQuestions.map(set => (
-                                    <SortableQuestionSetCard 
+                                    <SortableQuestionSetCard
                                         key={set.id}
                                         set={set}
                                         isAdmin={isAdmin}
@@ -938,7 +938,7 @@ function QuestionsCreatorContent() {
         </TabsContent>
       </Tabs>
 
-      <GenerationOptionsDialog 
+      <GenerationOptionsDialog
         open={flowStep === 'awaiting_options'}
         onOpenChange={(isOpen) => {
             if (!isOpen) closeOptionsDialog();
