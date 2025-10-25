@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, PlusCircle, Trash2, Edit, X } from 'lucide-react';
@@ -1007,5 +1008,3 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
         </>
     );
 }
-
-export default StandaloneFlashcardApp;
