@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useState, forwardRef, MouseEvent, useCallback, useRef } from 'react';
@@ -167,7 +165,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
     try {
         const parsedData = JSON.parse(quizData);
         // Ensure lectures is always an array
-        const lectures: Lecture[] = Array.isArray(parsedData) ? parsedData : [parsedData];
+        const lectures: Lecture[] = Array.isArray(parsedData) ? parsedData : (parsedData.flashcards ? [parsedData] : []);
         
         return (
              <div ref={containerRef} className="w-full h-full overflow-y-auto no-scrollbar selectable">

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, use, useRef } from 'react';
@@ -95,7 +94,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             json: questionSet.jsonQuestions, 
             examText: questionSet.textExam || '', 
             jsonExam: questionSet.jsonExam || '',
-            flashcardText: questionSet.textFlashcard || '',
+            textFlashcard: questionSet.textFlashcard || '',
             jsonFlashcard: questionSet.jsonFlashcard || ''
         });
         setEditingTitle(questionSet.fileName);
@@ -152,7 +151,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             json: questionSet.jsonQuestions,
             examText: questionSet.textExam || '',
             examJson: questionSet.jsonExam || '',
-            flashcardText: questionSet.textFlashcard || '',
+            textFlashcard: questionSet.textFlashcard || '',
             jsonFlashcard: questionSet.jsonFlashcard || '',
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
@@ -622,7 +621,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         </TooltipProvider>
          
         <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-        <AnimatePresence initial={false}>
+        <AnimatePresence mode="wait">
             {sectionsVisibility.questions && (
                 <motion.div
                     key="questions"
@@ -641,7 +640,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
 
         <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-        <AnimatePresence initial={false}>
+        <AnimatePresence mode="wait">
             {sectionsVisibility.exam && (
                  <motion.div
                     key="exam"
@@ -659,7 +658,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         </AnimatePresence>
 
         <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-        <AnimatePresence initial={false}>
+        <AnimatePresence mode="wait">
             {sectionsVisibility.flashcards && (
                 <motion.div
                     key="flashcards"
@@ -670,7 +669,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 >
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
                         {renderOutputCard("Text Flashcard", <FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardText, 'flashcardText')}
-                        {renderOutputCard("JSON Flashcard", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardJson, 'flashcardJson')}
+                        {renderOutputCard("JSON Flashcard", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.jsonFlashcard, 'flashcardJson')}
                     </div>
                 </motion.div>
             )}
