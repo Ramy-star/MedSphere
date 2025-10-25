@@ -295,15 +295,16 @@ export const contentService = {
               break;
       }
       
-      const newLectureData: Lecture = {
-          id: newData.id || sourceFileId || uuidv4(),
-          name: newData.name || originalFileName,
-          mcqs_level_1: newData.mcqs_level_1 || [],
-          mcqs_level_2: newData.mcqs_level_2 || [],
-          written: newData.written || [],
-          flashcards: newData.flashcards || [],
+      const lectureKey = type === 'INTERACTIVE_QUIZ' ? 'mcqs_level_1'
+                       : type === 'INTERACTIVE_EXAM' ? 'mcqs_level_2'
+                       : 'flashcards';
+
+      const newLectureData: Partial<Lecture> = {
+          id: sourceFileId || uuidv4(),
+          name: originalFileName,
+          [lectureKey]: newData[lectureKey] || [],
       };
-  
+
       // If destination is a folder, create a new file
       if (destination.type === 'FOLDER') {
           const newId = uuidv4();
@@ -356,16 +357,18 @@ export const contentService = {
               const existingLectureIndex = existingLectures.findIndex(lec => lec.id === newLectureData.id);
   
               if (existingLectureIndex > -1) {
-                  // Merge content into existing lecture
+                  // Merge content into existing lecture object
                   const lectureToUpdate = { ...existingLectures[existingLectureIndex] };
-                  if (newLectureData.mcqs_level_1 && newLectureData.mcqs_level_1.length > 0) lectureToUpdate.mcqs_level_1 = newLectureData.mcqs_level_1;
-                  if (newLectureData.mcqs_level_2 && newLectureData.mcqs_level_2.length > 0) lectureToUpdate.mcqs_level_2 = newLectureData.mcqs_level_2;
-                  if (newLectureData.written && newLectureData.written.length > 0) lectureToUpdate.written = newLectureData.written;
-                  if (newLectureData.flashcards && newLectureData.flashcards.length > 0) lectureToUpdate.flashcards = newLectureData.flashcards;
+                  
+                  // This is the key fix: only update the relevant key
+                  if (newLectureData[lectureKey]) {
+                      lectureToUpdate[lectureKey] = newLectureData[lectureKey];
+                  }
+
                   existingLectures[existingLectureIndex] = lectureToUpdate;
               } else {
-                  // Add new lecture
-                  existingLectures.push(newLectureData);
+                  // Add as a new lecture object to the array
+                  existingLectures.push(newLectureData as Lecture);
               }
   
               const updatedData = {
@@ -844,3 +847,5 @@ export const contentService = {
     }
   }
 };
+
+    
