@@ -4,8 +4,8 @@
 import { useState, useEffect, use, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileHeart, Layers, FileCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, Layers, ChevronDown } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { repairJson } from '@/ai/flows/question-gen-flow';
 import { reformatMarkdown } from '@/ai/flows/reformat-markdown-flow';
@@ -25,6 +25,7 @@ import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { UploadProgress, type UploadingFile } from '@/components/UploadProgress';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { contentService } from '@/lib/contentService';
+import { cn } from '@/lib/utils';
 
 type SavedQuestionSet = {
   id: string;
@@ -47,7 +48,7 @@ function getPreText(element: HTMLElement) {
     text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
     text = text.replace(/<\/div>/gi, '');       // Remove </div>
     // Basic un-escaping for display
-    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    text = text.replace(/&lt;/g, '<').replace(/&gt;/, '>').replace(/&amp;/g, '&');
     return text;
 }
 
@@ -72,6 +73,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [uploadingFile, setUploadingFile] = useState<UploadingFile | null>(null);
   const [copiedStatus, setCopiedStatus] = useState({ text: false, json: false, examText: false, examJson: false, flashcardText: false, flashcardJson: false });
   const [currentAction, setCurrentAction] = useState<'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | null>(null);
+  const [sectionsVisibility, setSectionsVisibility] = useState({
+    questions: true,
+    exam: true,
+    flashcards: true,
+  });
 
 
   const titleRef = useRef<HTMLHeadingElement>(null);
@@ -90,7 +96,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             examText: questionSet.textExam || '', 
             jsonExam: questionSet.jsonExam || '',
             flashcardText: questionSet.textFlashcard || '',
-            flashcardJson: questionSet.jsonFlashcard || ''
+            jsonFlashcard: questionSet.jsonFlashcard || ''
         });
         setEditingTitle(questionSet.fileName);
     }
@@ -147,7 +153,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             examText: questionSet.textExam || '',
             examJson: questionSet.jsonExam || '',
             flashcardText: questionSet.textFlashcard || '',
-            jsonFlashcard: questionSet.jsonFlashcard || ''
+            jsonFlashcard: questionSet.jsonFlashcard || '',
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
     }
@@ -538,6 +544,15 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     );
   };
   
+  const SectionHeader = ({ title, section, isVisible, onToggle }: { title: string, section: keyof typeof sectionsVisibility, isVisible: boolean, onToggle: (section: keyof typeof sectionsVisibility) => void }) => (
+    <div className="flex items-center gap-2 mt-8">
+      <Button variant="ghost" size="icon" onClick={() => onToggle(section)} className="h-6 w-6 rounded-full">
+        <ChevronDown className={cn("h-5 w-5 transition-transform", isVisible ? "" : "-rotate-90")} />
+      </Button>
+      <div className="flex-grow border-t border-white/10"></div>
+    </div>
+  );
+
   return (
     <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -606,20 +621,60 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </div>
         </TooltipProvider>
          
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-8">
-            {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
-            {renderOutputCard("JSON Questions", <FileJson className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
-        </div>
+        <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+        <AnimatePresence initial={false}>
+            {sectionsVisibility.questions && (
+                <motion.div
+                    key="questions"
+                    initial="collapsed" animate="open" exit="collapsed"
+                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
+                        {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
+                        {renderOutputCard("JSON Questions", <FileJson className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mb-8">
-            {renderOutputCard("Text Exam", <FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
-            {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examJson, 'examJson')}
-        </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-            {renderOutputCard("Text Flashcard", <FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardText, 'flashcardText')}
-            {renderOutputCard("JSON Flashcard", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardJson, 'flashcardJson')}
-        </div>
+        <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+        <AnimatePresence initial={false}>
+            {sectionsVisibility.exam && (
+                 <motion.div
+                    key="exam"
+                    initial="collapsed" animate="open" exit="collapsed"
+                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
+                        {renderOutputCard("Text Exam", <FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
+                        {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examJson, 'examJson')}
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+        <AnimatePresence initial={false}>
+            {sectionsVisibility.flashcards && (
+                <motion.div
+                    key="flashcards"
+                    initial="collapsed" animate="open" exit="collapsed"
+                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                    transition={{ duration: 0.3 }}
+                    className="overflow-hidden"
+                >
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
+                        {renderOutputCard("Text Flashcard", <FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardText, 'flashcardText')}
+                        {renderOutputCard("JSON Flashcard", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.flashcardJson, 'flashcardJson')}
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
         
         <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
             <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar" hideCloseButton={true}>
