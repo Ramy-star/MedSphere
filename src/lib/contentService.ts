@@ -272,24 +272,42 @@ export const contentService = {
 
   async createOrUpdateInteractiveContent(
     destination: Content,
-    name: string,
-    newData: string,
+    name: string, // This is the name of the source lecture/file
+    newData: string, // This is a JSON string of the questions/exam/flashcards
     sourceFileId: string,
     type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
   ): Promise<Content> {
     if (!db) throw new Error("Firestore not initialized");
 
+    const originalFileName = name.replace(/\.[^/.]+$/, "");
+    let contentName: string;
+    let lectureKey: 'mcqs_level_1' | 'mcqs_level_2' | 'written' | 'flashcards';
+
+    switch(type) {
+        case 'INTERACTIVE_QUIZ': 
+            contentName = `${originalFileName} - Quiz`;
+            // Assuming quizzes can contain all types, we'll need a better way to distinguish this.
+            // For now, let's assume they are MCQ level 1. A more robust solution might pass the type.
+            lectureKey = 'mcqs_level_1';
+            break;
+        case 'INTERACTIVE_EXAM': 
+            contentName = `${originalFileName} - Exam`;
+            lectureKey = 'mcqs_level_2'; // Or whatever is appropriate for exams
+            break;
+        case 'INTERACTIVE_FLASHCARD': 
+            contentName = `${originalFileName} - Flashcards`;
+            lectureKey = 'flashcards';
+            break;
+    }
+
+    const newLectureObject = {
+        id: sourceFileId || uuidv4(),
+        name: originalFileName,
+        [lectureKey]: JSON.parse(newData)
+    };
+
     // If destination is a folder, create a new file
     if (destination.type === 'FOLDER') {
-        const originalFileName = name.replace(/\.[^/.]+$/, "");
-        let newName: string;
-        switch(type) {
-            case 'INTERACTIVE_QUIZ': newName = `${originalFileName} - Quiz`; break;
-            case 'INTERACTIVE_EXAM': newName = `${originalFileName} - Exam`; break;
-            case 'INTERACTIVE_FLASHCARD': newName = `${originalFileName} - Flashcards`; break;
-            default: newName = originalFileName;
-        }
-
         const newId = uuidv4();
         const newRef = doc(db, 'content', newId);
 
@@ -300,10 +318,13 @@ export const contentService = {
             
             const newContentData: Content = {
                 id: newId,
-                name: newName,
+                name: contentName,
                 type: type,
                 parentId: destination.id,
-                metadata: { quizData: newData, sourceFileId },
+                metadata: { 
+                    quizData: JSON.stringify([newLectureObject]), // Start with an array containing the new lecture
+                    sourceFileId 
+                },
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 order: order,
@@ -321,19 +342,34 @@ export const contentService = {
             const docSnap = await transaction.get(docRef);
             if (!docSnap.exists()) throw new Error("Destination file does not exist.");
 
-            const existingData = docSnap.data().metadata?.quizData;
-            const existingParsed = existingData ? JSON.parse(existingData) : [];
-            const newParsed = JSON.parse(newData);
+            const existingQuizData = docSnap.data().metadata?.quizData;
+            let existingLectures: any[] = [];
+            if (existingQuizData) {
+                try {
+                    existingLectures = JSON.parse(existingQuizData);
+                    if (!Array.isArray(existingLectures)) {
+                        console.warn("Existing quizData is not an array, resetting.");
+                        existingLectures = [];
+                    }
+                } catch (e) {
+                    console.error("Failed to parse existing quizData, will overwrite.", e);
+                    existingLectures = [];
+                }
+            }
 
-            // Ensure both are arrays before concatenating
-            const mergedData = (Array.isArray(existingParsed) ? existingParsed : []).concat(Array.isArray(newParsed) ? newParsed : []);
+            const mergedLectures = [...existingLectures, newLectureObject];
             
             const updatedData = {
-                'metadata.quizData': JSON.stringify(mergedData),
+                'metadata.quizData': JSON.stringify(mergedLectures),
                 'updatedAt': new Date().toISOString(),
             };
             transaction.update(docRef, updatedData);
-            return { ...destination, metadata: { ...destination.metadata, quizData: JSON.stringify(mergedData) } };
+            
+            // Return a representation of the updated item for the UI
+            const updatedDestination = { ...destination };
+            if (!updatedDestination.metadata) updatedDestination.metadata = {};
+            updatedDestination.metadata.quizData = JSON.stringify(mergedLectures);
+            return updatedDestination;
         });
     }
     
@@ -818,3 +854,5 @@ export const contentService = {
     }
   }
 };
+
+    
