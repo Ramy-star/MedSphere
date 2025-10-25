@@ -865,7 +865,9 @@ export default function ExamContainer({ lectures, onStateChange }: { lectures: L
     const activeLecture = lectures.find(l => l.id === activeLectureId);
 
     if (!activeLecture) {
-        return <div className="flex items-center justify-center h-screen"><p>Loading lecture...</p></div>;
+        // This can happen briefly while `activeLectureId` is being updated.
+        // It can also happen if `lectures` is an empty array initially.
+        return <div className="flex items-center justify-center h-full"><p>Loading lecture...</p></div>;
     }
 
     const ExamStyles = () => (

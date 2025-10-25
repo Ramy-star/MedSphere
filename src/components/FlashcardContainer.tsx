@@ -127,8 +127,36 @@ SelectItem.displayName = SelectPrimitive.Item.displayName;
 
 
 // --- STYLES ---
-const GlobalStyles = () => (
+const FlashcardComponentStyles = () => (
     <style>{`
+        .flashcard-theme-wrapper {
+            /* These are the original light-theme colors for isolation */
+            --background: #f5f7fa;
+            --foreground: #333;
+            --card: white;
+            --card-foreground: #333;
+            --popover: white;
+            --popover-foreground: #333;
+            --primary: #2563eb;
+            --primary-foreground: #f8fafc;
+            --secondary: #f1f5f9;
+            --secondary-foreground: #0f172a;
+            --muted: #f1f5f9;
+            --muted-foreground: #64748b;
+            --accent: #f8fafc;
+            --accent-foreground: #0f172a;
+            --destructive: #dc2626;
+            --destructive-foreground: #f8fafc;
+            --border: #e2e8f0;
+            --input: #e2e8f0;
+            --ring: #3b82f6;
+
+            /* Fonts */
+            --header-font: 'Coiny', cursive;
+            --base-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            --card-font: 'Calistoga', serif;
+        }
+
         /* --- Keyframes for Animations --- */
         @keyframes fadeIn {
             from { opacity: 0; transform: scale(0.98); }
@@ -146,17 +174,8 @@ const GlobalStyles = () => (
             from { opacity: 0; transform: translateY(-20px) scale(0.98); }
             to { opacity: 1; transform: translateY(0) scale(1); }
         }
-
-        /* --- CSS Variables --- */
-        :root {
-            /* Fonts */
-            --header-font: 'Coiny', cursive;
-            --base-font: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            --card-font: 'Calistoga', serif;
-        }
-
-        /* --- Base screen styles --- */
-        body {
+        
+        .flashcard-theme-wrapper {
             font-family: var(--base-font);
             background-color: hsl(var(--background));
             color: hsl(var(--foreground));
@@ -310,8 +329,8 @@ const GlobalStyles = () => (
         }
         .flashcard-actions {
             position: absolute;
-            top: 15px;
-            right: 15px;
+            top: 20px;
+            right: 20px;
             display: flex;
             gap: 10px;
             z-index: 10;
@@ -886,8 +905,8 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
     }
 
     return (
-        <>
-            <GlobalStyles />
+        <div className='flashcard-theme-wrapper'>
+            <FlashcardComponentStyles />
             <div id="header-container">
                  <div className="w-full flex justify-between items-center mb-4">
                     <div>
@@ -1005,6 +1024,6 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                     <ChevronRight size={28} />
                 </button>
             </div>
-        </>
+        </div>
     );
 }
