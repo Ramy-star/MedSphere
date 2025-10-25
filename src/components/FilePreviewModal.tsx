@@ -590,9 +590,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     return (
     <div
         ref={previewContainerRef}
-        className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden")}
+        className={cn("relative flex-1 flex flex-col bg-[#13161C] overflow-hidden", isFullscreen && "fixed inset-0 z-[100] bg-black")}
     >
-        <header className={cn("flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 z-10")} style={{ backgroundColor: '#2f3b47' }}>
+        <header className={cn("flex h-14 shrink-0 items-center justify-between px-2 sm:px-4 z-10", isFullscreen ? 'bg-black/50' : 'bg-[#2f3b47]')}>
             <div className="flex items-center gap-1 overflow-hidden flex-1">
                 <div className="flex items-center gap-1">
                     <Button variant="ghost" size="icon" onClick={handleClose} className="text-slate-300 hover:text-white hover:bg-white/10 rounded-full h-9 w-9 flex-shrink-0 focus-visible:ring-0 focus-visible:ring-offset-0" aria-label="Close file preview">
@@ -678,10 +678,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button variant="ghost" size="icon" onClick={() => { if(isFullscreen) { document.exitFullscreen(); } else { fileContentRef.current?.requestFullscreen(); } }} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                    <Presentation className="w-5 h-5" />
+                                    {isFullscreen ? <Shrink className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom" sideOffset={8}><p>Present</p></TooltipContent>
+                            <TooltipContent side="bottom" sideOffset={8}><p>{isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}</p></TooltipContent>
                         </Tooltip>
                     )}
                 </div>
@@ -707,7 +707,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz && "w-full max-w-6xl mx-auto")}>
+        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz && "w-full max-w-6xl mx-auto", isFullscreen && "w-full h-full")}>
              <div className={cn("no-scrollbar overflow-auto h-full", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')}>
               <FilePreview 
                   key={item.id}
@@ -759,6 +759,12 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         )}
         hideCloseButton={true}
       >
+        <style>{`
+            .fullscreen-pdf-container > div {
+                width: 100% !important;
+                height: 100% !important;
+            }
+        `}</style>
         <DialogHeader className="sr-only">
           <DialogTitle>File Preview: {displayName}</DialogTitle>
           <DialogDescription>

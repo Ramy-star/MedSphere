@@ -30,6 +30,7 @@ export type Content = {
     sourceFileId?: string; // For generated files like quizzes
     quizData?: string; // For INTERACTIVE_QUIZ or INTERACTIVE_EXAM type
     isClassContainer?: boolean; // For the new "Class" type
+    isHidden?: boolean; // For hiding content from non-admins
   };
   createdAt?: string;
   updatedAt?: string;
@@ -365,7 +366,7 @@ export const contentService = {
     }
   },
 
-  async createInteractiveFlashcard(parentId: string, name: string, flashcardData: string, sourceFileId: string): Promise<Content> {
+  async createInteractiveFlashcard(parentId: string | null, name: string, flashcardData: string, sourceFileId: string): Promise<Content> {
     if (!db) throw new Error("Firestore not initialized");
 
     const newFlashcardId = uuidv4();
@@ -375,13 +376,13 @@ export const contentService = {
 
     try {
         await runTransaction(db, async (transaction) => {
-            const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+            const childrenQuery = parentId ? query(collection(db, 'content'), where('parentId', '==', parentId)) : query(collection(db, 'content'), where('parentId', '==', null));
             const childrenSnapshot = await getDocs(childrenQuery);
             const order = childrenSnapshot.size;
 
             newFlashcardData = {
                 id: newFlashcardId,
-                name: `${originalFileName} - Flashcards`,
+                name: name === "New Flashcards" ? name : `${originalFileName} - Flashcards`,
                 type: 'INTERACTIVE_FLASHCARD',
                 parentId: parentId,
                 metadata: {
@@ -649,6 +650,129 @@ export const contentService = {
         throw e;
     });
   },
+  
+  async move(itemId: string, newParentId: string): Promise<void> {
+    if (!db) throw new Error("Firestore not initialized");
+    if (itemId === newParentId) throw new Error("Cannot move an item into itself.");
+
+    const itemRef = doc(db, 'content', itemId);
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const itemDoc = await transaction.get(itemRef);
+            if (!itemDoc.exists()) {
+                throw new Error("Item to move does not exist.");
+            }
+
+            // Check for cyclical move
+            let parentCheckId: string | null = newParentId;
+            while (parentCheckId) {
+                if (parentCheckId === itemId) {
+                    throw new Error("Cannot move a folder into one of its own subfolders.");
+                }
+                const parentDoc = await transaction.get(doc(db, 'content', parentCheckId));
+                parentCheckId = parentDoc.data()?.parentId ?? null;
+            }
+
+            const childrenInNewParentQuery = query(collection(db, 'content'), where('parentId', '==', newParentId));
+            const childrenSnapshot = await getDocs(childrenInNewParentQuery);
+            const newOrder = childrenSnapshot.size;
+
+            transaction.update(itemRef, { parentId: newParentId, order: newOrder, updatedAt: new Date().toISOString() });
+        });
+    } catch (e: any) {
+        if (e.code === 'permission-denied') {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${itemId}`,
+                operation: 'update',
+                requestResourceData: { parentId: newParentId },
+            }));
+        } else {
+             console.error("Move transaction failed:", e);
+        }
+        throw e;
+    }
+  },
+
+  async copy(itemToCopy: Content, newParentId: string): Promise<void> {
+    if (!db) throw new Error("Firestore not initialized");
+
+    const batch = writeBatch(db);
+
+    // This function will be called recursively for folders
+    const performCopy = async (originalItem: Content, targetParentId: string | null) => {
+        const newId = uuidv4();
+        
+        const childrenInNewParentQuery = query(collection(db, 'content'), where('parentId', '==', targetParentId));
+        const childrenSnapshot = await getDocs(childrenInNewParentQuery);
+        const newOrder = childrenSnapshot.size;
+
+        const newItemData: Content = {
+            ...originalItem,
+            id: newId,
+            parentId: targetParentId,
+            name: `${originalItem.name} (Copy)`,
+            order: newOrder,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        
+        // We don't copy Cloudinary IDs, as we are not duplicating the actual file in the cloud.
+        // The new item will point to the same cloud resource.
+        const newDocRef = doc(db, 'content', newId);
+        batch.set(newDocRef, newItemData);
+
+        if (originalItem.type === 'FOLDER' || originalItem.type === 'SUBJECT' || originalItem.type === 'SEMESTER' || originalItem.type === 'LEVEL') {
+            const childrenQuery = query(collection(db, 'content'), where('parentId', '==', originalItem.id), orderBy('order'));
+            const childrenSnapshot = await getDocs(childrenQuery);
+            for (const childDoc of childrenSnapshot.docs) {
+                await performCopy(childDoc.data() as Content, newId);
+            }
+        }
+    };
+    
+    try {
+        await performCopy(itemToCopy, newParentId);
+        await batch.commit();
+    } catch(e: any) {
+         if (e.code === 'permission-denied') {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${newParentId}`,
+                operation: 'create',
+                requestResourceData: { note: "Copy operation" },
+            }));
+        } else {
+             console.error("Copy operation failed:", e);
+        }
+        throw e;
+    }
+  },
+  
+  async toggleVisibility(id: string): Promise<void> {
+    if (!db) throw new Error("Firestore not initialized");
+    const docRef = doc(db, 'content', id);
+    try {
+        await runTransaction(db, async (transaction) => {
+            const docSnap = await transaction.get(docRef);
+            if (!docSnap.exists()) {
+                throw "Document does not exist!";
+            }
+            const currentHiddenState = docSnap.data().metadata?.isHidden ?? false;
+            transaction.update(docRef, { "metadata.isHidden": !currentHiddenState });
+        });
+    } catch (e: any) {
+        if (e.code === 'permission-denied') {
+             errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/content/${id}`,
+                operation: 'update',
+                requestResourceData: { 'metadata.isHidden': '...' },
+            }));
+        }
+        console.error("Toggle visibility failed: ", e);
+        throw e;
+    }
+  },
+
 
   async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
@@ -766,5 +890,3 @@ export const contentService = {
     }
   }
 };
-
-    

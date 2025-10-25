@@ -1,7 +1,7 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { FolderPlus, Plus, Upload } from 'lucide-react';
+import { FolderPlus, Layers, Plus, Upload } from 'lucide-react';
 import React, { useRef, useState } from 'react';
 import { contentService } from '@/lib/contentService';
 import { NewFolderDialog } from './new-folder-dialog';
@@ -70,6 +70,21 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         });
     }
   }
+  
+  const handleAddFlashcard = async () => {
+    try {
+        await contentService.createInteractiveFlashcard(parentId, 'New Flashcards', '[]', '');
+        toast({ title: 'Flashcards Created', description: `A new flashcard set has been created.` });
+        setPopoverOpen(false);
+    } catch(error: any) {
+        console.error("Failed to create flashcards:", error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Error creating flashcards', 
+            description: error.message || 'An unknown error occurred.' 
+        });
+    }
+  }
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -106,7 +121,12 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           label: "Add Link",
           icon: Link2Icon,
           action: () => setShowNewLinkDialog(true),
-      }
+      },
+      {
+          label: "Create Flashcard",
+          icon: Layers,
+          action: handleAddFlashcard,
+      },
   ]
 
   return (
