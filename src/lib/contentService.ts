@@ -272,8 +272,8 @@ export const contentService = {
 
   async createOrUpdateInteractiveContent(
     destination: Content,
-    name: string, // This is the name of the source lecture/file
-    newData: string, // This is a JSON string of the questions/exam/flashcards
+    name: string,
+    newData: string,
     sourceFileId: string,
     type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
   ): Promise<Content> {
@@ -286,24 +286,23 @@ export const contentService = {
     switch(type) {
         case 'INTERACTIVE_QUIZ': 
             contentName = `${originalFileName} - Quiz`;
-            // Assuming quizzes can contain all types, we'll need a better way to distinguish this.
-            // For now, let's assume they are MCQ level 1. A more robust solution might pass the type.
             lectureKey = 'mcqs_level_1';
             break;
         case 'INTERACTIVE_EXAM': 
             contentName = `${originalFileName} - Exam`;
-            lectureKey = 'mcqs_level_2'; // Or whatever is appropriate for exams
+            lectureKey = 'mcqs_level_2';
             break;
         case 'INTERACTIVE_FLASHCARD': 
             contentName = `${originalFileName} - Flashcards`;
             lectureKey = 'flashcards';
             break;
     }
-
-    const newLectureObject = {
-        id: sourceFileId || uuidv4(),
-        name: originalFileName,
-        [lectureKey]: JSON.parse(newData)
+    
+    // The data for a new lecture.
+    const newLectureData = {
+      id: sourceFileId || uuidv4(),
+      name: originalFileName,
+      [lectureKey]: JSON.parse(newData)
     };
 
     // If destination is a folder, create a new file
@@ -322,7 +321,7 @@ export const contentService = {
                 type: type,
                 parentId: destination.id,
                 metadata: { 
-                    quizData: JSON.stringify([newLectureObject]), // Start with an array containing the new lecture
+                    quizData: JSON.stringify([newLectureData]), // Always create an array of lectures
                     sourceFileId 
                 },
                 createdAt: new Date().toISOString(),
@@ -356,8 +355,9 @@ export const contentService = {
                     existingLectures = [];
                 }
             }
-
-            const mergedLectures = [...existingLectures, newLectureObject];
+            
+            // This is the corrected logic: add the new lecture object to the array
+            const mergedLectures = [...existingLectures, newLectureData];
             
             const updatedData = {
                 'metadata.quizData': JSON.stringify(mergedLectures),
@@ -365,7 +365,6 @@ export const contentService = {
             };
             transaction.update(docRef, updatedData);
             
-            // Return a representation of the updated item for the UI
             const updatedDestination = { ...destination };
             if (!updatedDestination.metadata) updatedDestination.metadata = {};
             updatedDestination.metadata.quizData = JSON.stringify(mergedLectures);
@@ -373,10 +372,8 @@ export const contentService = {
         });
     }
     
-    // If destination type does not match, throw an error
     throw new Error(`Cannot save ${type} to a file of type ${destination.type}.`);
   },
-
   
   async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
@@ -385,7 +382,6 @@ export const contentService = {
         const folder = 'content';
         const timestamp = Math.floor(Date.now() / 1000);
         
-        // Only timestamp and folder are needed for a basic signed upload from browser
         const paramsToSign = {
             timestamp: timestamp,
             folder: folder
@@ -452,7 +448,7 @@ export const contentService = {
                         storagePath: finalFileUrl,
                         cloudinaryPublicId: data.public_id,
                         cloudinaryResourceType: 'raw',
-                        ...extraMetadata // Add extra metadata here
+                        ...extraMetadata
                     },
                     createdAt: new Date(data.created_at).toISOString(),
                     updatedAt: new Date(data.created_at).toISOString(),
@@ -494,14 +490,13 @@ export const contentService = {
         const existingItem = itemSnap.data() as Content;
         const oldPublicId = existingItem.metadata?.iconCloudinaryPublicId;
 
-        // If there's an old icon, delete it from Cloudinary first
         if (oldPublicId) {
             console.log(`Deleting old icon: ${oldPublicId}`);
             await fetch('/api/delete-cloudinary', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ publicId: oldPublicId, resourceType: 'image' }),
-            }).catch(err => console.error("Failed to delete old icon, proceeding with upload anyway:", err)); // Don't block upload if deletion fails
+            }).catch(err => console.error("Failed to delete old icon, proceeding with upload anyway:", err));
         }
 
         const hash = await sha256file(iconFile);
@@ -574,10 +569,8 @@ export const contentService = {
     try {
       const parentId = itemToUpdate.parentId;
       
-      // Step 1: Delete the old file completely
       await this.delete(itemToUpdate.id);
       
-      // Step 2: Create the new file, preserving the original order
       return await this.createFile(parentId, newFile, callbacks, { order: itemToUpdate.order });
 
     } catch (e: any) {
@@ -628,7 +621,6 @@ export const contentService = {
                 throw new Error("Item to move does not exist.");
             }
 
-            // Check for cyclical move
             let parentCheckId: string | null = newParentId;
             while (parentCheckId) {
                 if (parentCheckId === itemId) {
@@ -663,7 +655,6 @@ export const contentService = {
 
     const batch = writeBatch(db);
 
-    // This function will be called recursively for folders
     const performCopy = async (originalItem: Content, targetParentId: string | null) => {
         const newId = uuidv4();
         
@@ -681,8 +672,6 @@ export const contentService = {
             updatedAt: new Date().toISOString(),
         };
         
-        // We don't copy Cloudinary IDs, as we are not duplicating the actual file in the cloud.
-        // The new item will point to the same cloud resource.
         const newDocRef = doc(db, 'content', newId);
         batch.set(newDocRef, newItemData);
 
@@ -748,7 +737,6 @@ export const contentService = {
     const batch = writeBatch(db);
 
     try {
-        // Step 1: Recursively find all children and collect their IDs
         let head = 0;
         while(head < deleteQueue.length) {
             const currentId = deleteQueue[head++];
@@ -762,13 +750,11 @@ export const contentService = {
             });
         }
         
-        // Step 2: For all items to be deleted, collect Cloudinary public IDs, cache keys, and add to delete batch
         const allDocsToDeleteQuery = query(collection(db, "content"), where("id", "in", Array.from(visited)));
         const allDocsSnapshot = await getDocs(allDocsToDeleteQuery);
         
         allDocsSnapshot.forEach(docSnap => {
             const item = docSnap.data() as Content;
-            // Collect Cloudinary public IDs for files
             if (item.type === 'FILE' && item.metadata?.cloudinaryPublicId) {
                 filesToDeleteFromCloudinary.push({
                     publicId: item.metadata.cloudinaryPublicId,
@@ -778,7 +764,6 @@ export const contentService = {
                     filesToDeleteFromCache.push(item.metadata.storagePath);
                 }
             }
-            // Collect Cloudinary public IDs for folder icons
             if ((item.type === 'FOLDER' || item.type === 'SUBJECT') && item.metadata?.iconCloudinaryPublicId) {
                 filesToDeleteFromCloudinary.push({
                     publicId: item.metadata.iconCloudinaryPublicId,
@@ -788,11 +773,9 @@ export const contentService = {
                     filesToDeleteFromCache.push(item.metadata.iconURL);
                 }
             }
-            // Add the document to the Firestore delete batch
             batch.delete(docSnap.ref);
         });
 
-        // Step 3: Delete files from Cloudinary via our API route
         if (filesToDeleteFromCloudinary.length > 0) {
             for (const file of filesToDeleteFromCloudinary) {
                 const res = await fetch('/api/delete-cloudinary', {
@@ -806,14 +789,12 @@ export const contentService = {
             }
         }
         
-        // Step 4: Delete files from IndexedDB cache
         if (filesToDeleteFromCache.length > 0) {
             for (const url of filesToDeleteFromCache) {
                 await cacheService.deleteFile(url);
             }
         }
 
-        // Step 5: Commit the Firestore batch deletion
         await batch.commit();
 
     } catch (e: any) {
@@ -854,5 +835,3 @@ export const contentService = {
     }
   }
 };
-
-    

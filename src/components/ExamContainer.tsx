@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown } from 'lucide-react';
@@ -344,7 +345,9 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
     const { data: allResults } = useCollection<ExamResult>(examResultsQuery);
 
     const questions = useMemo(() => {
-        return [...(lecture.mcqs_level_1 || []), ...(lecture.mcqs_level_2 || [])];
+        const l1 = Array.isArray(lecture.mcqs_level_1) ? lecture.mcqs_level_1 : [];
+        const l2 = Array.isArray(lecture.mcqs_level_2) ? lecture.mcqs_level_2 : [];
+        return [...l1, ...l2];
     }, [lecture]);
 
     useEffect(() => {
