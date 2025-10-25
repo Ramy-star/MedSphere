@@ -605,38 +605,43 @@ const LectureContent: React.FC<{ lecture: Lecture }> = ({ lecture }) => {
     }, [lecture]);
 
     if (!lecture) return null;
+    
+    // Defensive check to ensure properties are arrays
+    const mcqsLevel1 = Array.isArray(lecture.mcqs_level_1) ? lecture.mcqs_level_1 : [];
+    const mcqsLevel2 = Array.isArray(lecture.mcqs_level_2) ? lecture.mcqs_level_2 : [];
+    const writtenCases = Array.isArray(lecture.written) ? lecture.written : [];
 
     return (
         <div ref={containerRef} className="lecture-content">
-            {lecture.mcqs_level_1 && lecture.mcqs_level_1.length > 0 && (
+            {mcqsLevel1.length > 0 && (
                 <>
                     <div className="section-title">
                         <i className="fas fa-list-check"></i>
                         <h2>Level 1 - MCQs:</h2>
                     </div>
-                    {lecture.mcqs_level_1.map((mcq, index) => (
+                    {mcqsLevel1.map((mcq, index) => (
                         <MCQQuestion key={`mcq-l1-${index}`} questionData={mcq} lectureId={lecture.id} index={index} level={1}/>
                     ))}
                 </>
             )}
-            {lecture.mcqs_level_2 && lecture.mcqs_level_2.length > 0 && (
+            {mcqsLevel2.length > 0 && (
                 <>
                     <div className="section-title mt-10">
                         <i className="fas fa-list-check"></i>
                         <h2>Level 2 - MCQs:</h2>
                     </div>
-                    {lecture.mcqs_level_2.map((mcq, index) => (
+                    {mcqsLevel2.map((mcq, index) => (
                         <MCQQuestion key={`mcq-l2-${index}`} questionData={mcq} lectureId={lecture.id} index={index} level={2}/>
                     ))}
                 </>
             )}
-            {lecture.written && lecture.written.length > 0 && (
+            {writtenCases.length > 0 && (
                 <>
                     <div className="section-title mt-10">
                         <i className="fas fa-pencil"></i>
                         <h2>Written Questions:</h2>
                     </div>
-                    {lecture.written.map((wq, index) => (
+                    {writtenCases.map((wq, index) => (
                         <WrittenQuestion key={`written-${index}`} questionCase={wq} lectureId={lecture.id} caseIndex={index} />
                     ))}
                 </>

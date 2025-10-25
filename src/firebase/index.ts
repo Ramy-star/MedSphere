@@ -29,12 +29,10 @@ export async function initializeFirebase(config: FirebaseOptions) {
   if (!db) { // Check if db is already initialized
     if (typeof window !== 'undefined') {
       try {
-        db = initializeFirestore(app, {
-          localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
-        });
-        console.log("Firestore offline persistence enabled with multi-tab support.");
+        db = getFirestore(app);
+        console.log("Firestore initialized.");
       } catch (err: any) {
-        console.error("Firestore persistence initialization failed.", err);
+        console.error("Firestore initialization failed.", err);
         // Fallback to in-memory persistence if multi-tab fails
         db = getFirestore(app);
       }

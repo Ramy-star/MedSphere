@@ -272,106 +272,122 @@ export const contentService = {
   },
 
   async createOrUpdateInteractiveContent(
-    destination: Content,
-    name: string,
-    newData: any,
-    sourceFileId: string,
-    type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
+      destination: Content,
+      name: string,
+      newData: any,
+      sourceFileId: string,
+      type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
   ): Promise<Content> {
-    if (!db) throw new Error("Firestore not initialized");
+      if (!db) throw new Error("Firestore not initialized");
   
-    const originalFileName = name.replace(/\.[^/.]+$/, "");
-    let contentName: string;
-    let lectureKey: 'mcqs_level_1' | 'mcqs_level_2' | 'written' | 'flashcards';
+      const originalFileName = name.replace(/\.[^/.]+$/, "");
+      let contentName: string;
+      let lectureKey: 'mcqs_level_1' | 'mcqs_level_2' | 'written' | 'flashcards';
   
-    switch (type) {
-      case 'INTERACTIVE_QUIZ':
-        contentName = `${originalFileName} - Quiz`;
-        lectureKey = 'mcqs_level_1';
-        break;
-      case 'INTERACTIVE_EXAM':
-        contentName = `${originalFileName} - Exam`;
-        lectureKey = 'mcqs_level_2';
-        break;
-      case 'INTERACTIVE_FLASHCARD':
-        contentName = `${originalFileName} - Flashcards`;
-        lectureKey = 'flashcards';
-        break;
-    }
+      switch (type) {
+          case 'INTERACTIVE_QUIZ':
+              contentName = `${originalFileName} - Quiz`;
+              lectureKey = 'mcqs_level_1';
+              break;
+          case 'INTERACTIVE_EXAM':
+              contentName = `${originalFileName} - Exam`;
+              lectureKey = 'mcqs_level_2';
+              break;
+          case 'INTERACTIVE_FLASHCARD':
+              contentName = `${originalFileName} - Flashcards`;
+              lectureKey = 'flashcards';
+              break;
+      }
   
-    const newLectureData: Partial<Lecture> = {
-      id: sourceFileId || uuidv4(),
-      name: originalFileName,
-      [lectureKey]: newData ?? [], // Ensure newData is at least an empty array
-    };
+      // If destination is a folder, create a new file
+      if (destination.type === 'FOLDER') {
+          const newId = uuidv4();
+          const newRef = doc(db, 'content', newId);
   
-    // If destination is a folder, create a new file
-    if (destination.type === 'FOLDER') {
-      const newId = uuidv4();
-      const newRef = doc(db, 'content', newId);
+          return runTransaction(db, async (transaction) => {
+              const childrenQuery = query(collection(db, 'content'), where('parentId', '==', destination.id));
+              const childrenSnapshot = await getDocs(childrenQuery);
+              const order = childrenSnapshot.size;
+              
+              const newLectureData: Partial<Lecture> = {
+                  id: sourceFileId || uuidv4(),
+                  name: originalFileName,
+                  [lectureKey]: newData || [],
+              };
   
-      return runTransaction(db, async (transaction) => {
-        const childrenQuery = query(collection(db, 'content'), where('parentId', '==', destination.id));
-        const childrenSnapshot = await getDocs(childrenQuery);
-        const order = childrenSnapshot.size;
+              const newContentData: Content = {
+                  id: newId,
+                  name: contentName,
+                  type: type,
+                  parentId: destination.id,
+                  metadata: {
+                      quizData: JSON.stringify([newLectureData], null, 2),
+                      sourceFileId,
+                  },
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                  order: order,
+              };
+              transaction.set(newRef, newContentData);
+              return newContentData;
+          });
+      }
   
-        const newContentData: Content = {
-          id: newId,
-          name: contentName,
-          type: type,
-          parentId: destination.id,
-          metadata: {
-            quizData: JSON.stringify([newLectureData]),
-            sourceFileId,
-          },
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-          order: order,
-        };
-        transaction.set(newRef, newContentData);
-        return newContentData;
-      });
-    }
+      // If destination is an existing file of the same type, merge content
+      if (destination.type === type) {
+          const docRef = doc(db, 'content', destination.id);
   
-    // If destination is an existing file of the same type, merge content
-    if (destination.type === type) {
-      const docRef = doc(db, 'content', destination.id);
+          return runTransaction(db, async (transaction) => {
+              const docSnap = await transaction.get(docRef);
+              if (!docSnap.exists()) throw new Error("Destination file does not exist.");
   
-      return runTransaction(db, async (transaction) => {
-        const docSnap = await transaction.get(docRef);
-        if (!docSnap.exists()) throw new Error("Destination file does not exist.");
+              const existingQuizData = docSnap.data().metadata?.quizData;
+              let existingLectures: Partial<Lecture>[] = [];
+              if (existingQuizData) {
+                  try {
+                      existingLectures = JSON.parse(existingQuizData);
+                      if (!Array.isArray(existingLectures)) {
+                          console.warn("Existing quizData is not an array, resetting.");
+                          existingLectures = [];
+                      }
+                  } catch (e) {
+                      console.error("Failed to parse existing quizData, will overwrite.", e);
+                      existingLectures = [];
+                  }
+              }
+              
+              const sourceIdToUpdate = sourceFileId || uuidv4();
+              const existingLectureIndex = existingLectures.findIndex(lec => lec.id === sourceIdToUpdate);
+
+              if (existingLectureIndex > -1) {
+                  // Update existing lecture
+                  const lectureToUpdate = existingLectures[existingLectureIndex];
+                  lectureToUpdate[lectureKey] = newData || [];
+                  existingLectures[existingLectureIndex] = lectureToUpdate;
+              } else {
+                  // Add new lecture
+                  const newLectureData: Partial<Lecture> = {
+                      id: sourceIdToUpdate,
+                      name: originalFileName,
+                      [lectureKey]: newData || [],
+                  };
+                  existingLectures.push(newLectureData);
+              }
   
-        const existingQuizData = docSnap.data().metadata?.quizData;
-        let existingLectures: Partial<Lecture>[] = [];
-        if (existingQuizData) {
-          try {
-            existingLectures = JSON.parse(existingQuizData);
-            if (!Array.isArray(existingLectures)) {
-              console.warn("Existing quizData is not an array, resetting.");
-              existingLectures = [];
-            }
-          } catch (e) {
-            console.error("Failed to parse existing quizData, will overwrite.", e);
-            existingLectures = [];
-          }
-        }
+              const updatedData = {
+                  'metadata.quizData': JSON.stringify(existingLectures, null, 2),
+                  'updatedAt': new Date().toISOString(),
+              };
+              transaction.update(docRef, updatedData);
   
-        const mergedLectures = [...existingLectures, newLectureData];
+              const updatedDestination = { ...destination };
+              if (!updatedDestination.metadata) updatedDestination.metadata = {};
+              updatedDestination.metadata.quizData = JSON.stringify(existingLectures, null, 2);
+              return updatedDestination;
+          });
+      }
   
-        const updatedData = {
-          'metadata.quizData': JSON.stringify(mergedLectures, null, 2),
-          'updatedAt': new Date().toISOString(),
-        };
-        transaction.update(docRef, updatedData);
-  
-        const updatedDestination = { ...destination };
-        if (!updatedDestination.metadata) updatedDestination.metadata = {};
-        updatedDestination.metadata.quizData = JSON.stringify(mergedLectures, null, 2);
-        return updatedDestination;
-      });
-    }
-  
-    throw new Error(`Cannot save ${type} to a file of type ${destination.type}.`);
+      throw new Error(`Cannot save ${type} to a file of type ${destination.type}.`);
   },
   
   async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}): Promise<XMLHttpRequest> {
