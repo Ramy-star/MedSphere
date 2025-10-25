@@ -141,7 +141,7 @@ export const FileCard = React.memo(function FileCard({
     const isMobile = useIsMobile();
     const router = useRouter();
     const { user } = useUser();
-    const initiateGeneration = useQuestionGenerationStore((state) => state.initiateGeneration);
+    const { initiateGeneration } = useQuestionGenerationStore();
     const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const updateFileInputRef = useRef<HTMLInputElement>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);

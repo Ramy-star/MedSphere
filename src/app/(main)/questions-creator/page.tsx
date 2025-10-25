@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -40,6 +41,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { CSS } from '@dnd-kit/utilities';
+import { contentService, type Content } from '@/lib/contentService';
 
 type SavedQuestionSet = {
   id: string;
@@ -70,14 +72,14 @@ function getPreText(element: HTMLElement) {
 
 const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boolean, onOpenChange: (open: boolean) => void, onGenerate: (options: GenerationOptions) => void }) => {
     const [options, setOptions] = useState<GenerationOptions>({
-        generateQuestions: true,
+        generateQuestions: false,
         generateExam: false,
         generateFlashcards: false
     });
 
     const handleSubmit = () => {
         if (!options.generateQuestions && !options.generateExam && !options.generateFlashcards) {
-            // Optionally, show a toast or message
+            // Optionally, show a toast or message to select at least one
             return;
         }
         onGenerate(options);
@@ -143,7 +145,7 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         color="text-indigo-400"
                     />
                 </div>
-                 <div className="flex justify-end gap-2 p-6">
+                 <div className="flex justify-center gap-2 p-6">
                     <Button variant="outline" onClick={() => onOpenChange(false)} className='rounded-xl'>Cancel</Button>
                     <Button onClick={handleSubmit} className='rounded-xl'>Generate</Button>
                 </div>
@@ -158,7 +160,7 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
     const router = useRouter();
 
     const style: React.CSSProperties = {
-        transform: CSS.Transform.toString(transform),
+        transform: transform ? CSS.Transform.toString(transform) : undefined,
         transition,
         zIndex: isDragging ? 1 : 'auto',
     };
@@ -244,6 +246,7 @@ function QuestionsCreatorContent() {
     retryGeneration,
     confirmContinue,
     cancelConfirmation,
+    abortGeneration,
     closeOptionsDialog,
   } = useQuestionGenerationStore();
 
@@ -259,8 +262,12 @@ function QuestionsCreatorContent() {
 
   const [savedQuestions, setSavedQuestions] = useState<SavedQuestionSet[]>([]);
   
-  const handleSourceSelected = (source: PendingSource) => {
-    initiateGeneration(source);
+  const handleSourceSelected = (source: Content) => {
+    initiateGeneration({
+      id: source.id,
+      fileName: source.name,
+      fileUrl: source.metadata?.storagePath,
+    });
     setShowFolderSelector(false);
   };
 
@@ -645,7 +652,7 @@ function QuestionsCreatorContent() {
                                 <FileText className="h-5 w-5" />
                                 <p className="text-sm truncate flex-1">{pendingSource?.fileName || task?.fileName}</p>
                                 <button
-                                    onClick={resetFlow}
+                                    onClick={abortGeneration}
                                     className="p-1 rounded-full hover:bg-white/10 text-slate-300"
                                     aria-label="Cancel generation"
                                 >
@@ -817,7 +824,7 @@ function QuestionsCreatorContent() {
         <FolderSelectorDialog
             open={showFolderSelector}
             onOpenChange={setShowFolderSelector}
-            onSelectFile={handleSourceSelected}
+            onSelect={handleSourceSelected}
             actionType="select_source"
         />
       </>
