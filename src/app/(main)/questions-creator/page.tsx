@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion, FileCheck, Layers, ChevronDown } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion, FileCheck, Layers, ChevronDown, FolderSearch } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -22,7 +22,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useQuestionGenerationStore, type GenerationOptions } from '@/stores/question-gen-store';
+import { useQuestionGenerationStore, type GenerationOptions, type PendingSource } from '@/stores/question-gen-store';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,6 +39,8 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEn
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { FolderSelectorDialog } from '../FolderSelectorDialog';
+import { CSS } from '@dnd-kit/utilities';
 
 type SavedQuestionSet = {
   id: string;
@@ -62,7 +64,7 @@ function getPreText(element: HTMLElement) {
     text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
     text = text.replace(/<\/div>/gi, '');       // Remove </div>
     // Basic un-escaping for display
-    text = text.replace(/&lt;/g, '<').replace(/&gt;/, '>').replace(/&amp;/g, '&');
+    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
     return text;
 }
 
@@ -124,8 +126,8 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: set.id });
     const router = useRouter();
 
-    const style = {
-        transform: CSS.Transform.toString(transform),
+    const style: React.CSSProperties = {
+        transform: transform ? CSS.Transform.toString(transform) : undefined,
         transition,
         zIndex: isDragging ? 1 : 'auto',
     };
@@ -194,6 +196,8 @@ function QuestionsCreatorContent() {
     exam: true,
     flashcards: true,
   });
+  const [showFolderSelector, setShowFolderSelector] = useState(false);
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -223,6 +227,11 @@ function QuestionsCreatorContent() {
   );
 
   const [savedQuestions, setSavedQuestions] = useState<SavedQuestionSet[]>([]);
+  
+  const handleSourceSelected = (source: PendingSource) => {
+    initiateGeneration(source);
+    setShowFolderSelector(false);
+  };
 
   useEffect(() => {
     if (fetchedSavedQuestions) {
@@ -725,6 +734,7 @@ function QuestionsCreatorContent() {
     }
 
     return (
+      <>
         <motion.div
             variants={cardVariants}
             initial="hidden"
@@ -746,15 +756,28 @@ function QuestionsCreatorContent() {
                 className="hidden"
             />
             <div className="text-center">
-                <FileUp className="w-12 h-12 text-yellow-400 shrink-0 mx-auto mb-4" />
+                <Wand2 className="w-12 h-12 text-yellow-400 shrink-0 mx-auto mb-4" />
                 <h3 className="text-lg font-semibold text-white break-words">Start Generating</h3>
-                <p className="text-sm text-slate-400 mt-1 mb-4">Drag & drop a PDF file here or use the buttons below.</p>
+                <p className="text-sm text-slate-400 mt-1 mb-4">Choose a file from your library, or drag & drop a new one.</p>
                 <div className="flex gap-4 justify-center">
-                    <Button onClick={() => fileInputRef.current?.click()} className="rounded-xl">Upload File</Button>
-                    {/* Add "Choose from Library" button here later if needed */}
+                    <Button onClick={() => setShowFolderSelector(true)} className="rounded-xl">
+                      <FolderSearch className="mr-2 h-4 w-4"/>
+                      Choose from Library
+                    </Button>
+                    <Button onClick={() => fileInputRef.current?.click()} className="rounded-xl" variant="secondary">
+                       <FileUp className="mr-2 h-4 w-4" />
+                       Upload File
+                    </Button>
                 </div>
             </div>
         </motion.div>
+        <FolderSelectorDialog
+            open={showFolderSelector}
+            onOpenChange={setShowFolderSelector}
+            onSelectFile={handleSourceSelected}
+            actionType="select_source"
+        />
+      </>
     );
   }
 
@@ -919,3 +942,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
