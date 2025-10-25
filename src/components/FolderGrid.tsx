@@ -33,6 +33,7 @@ import React from 'react';
 import { useUser } from '@/firebase/auth/use-user';
 import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
+import { FolderSelectorDialog } from './FolderSelectorDialog';
 
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
@@ -124,6 +125,9 @@ export function FolderGrid({
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
 }) {
+  const { user } = useUser();
+  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
       orderBy: ['order', 'asc']
@@ -131,23 +135,32 @@ export function FolderGrid({
 
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
+  const [itemToMove, setItemToMove] = useState<Content | null>(null);
+  const [itemToCopy, setItemToCopy] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
   const [itemForIconChange, setItemForIconChange] = useState<Content | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [showFolderSelector, setShowFolderSelector] = useState(false);
+  const [currentAction, setCurrentAction] = useState<'move' | 'copy' | null>(null);
+
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  const { user } = useUser();
+  
   const router = useRouter();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
 
   const [sortedItems, setSortedItems] = useState<Content[]>([]);
 
   useEffect(() => {
     if (fetchedItems) {
-      setSortedItems(fetchedItems);
+      if (isAdmin) {
+        setSortedItems(fetchedItems);
+      } else {
+        // Filter out hidden items for non-admins
+        setSortedItems(fetchedItems.filter(item => !item.metadata?.isHidden));
+      }
     }
-  }, [fetchedItems]);
+  }, [fetchedItems, isAdmin]);
 
   const handleFolderClick = (folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -234,6 +247,42 @@ export function FolderGrid({
             return newOrderedItems;
         });
     }
+  };
+
+  const handleFolderSelect = async (folderId: string, action: 'move' | 'copy') => {
+    const itemToProcess = action === 'move' ? itemToMove : itemToCopy;
+    if (!itemToProcess) return;
+
+    try {
+        if (action === 'move') {
+            await contentService.move(itemToProcess.id, folderId);
+            toast({ title: "Item Moved", description: `Moved "${itemToProcess.name}" successfully.` });
+        } else { // copy
+            await contentService.copy(itemToProcess, folderId);
+            toast({ title: "Item Copied", description: `Copied "${itemToProcess.name}" successfully.` });
+        }
+    } catch (error: any) {
+        console.error(`Failed to ${action} item:`, error);
+        toast({
+            variant: 'destructive',
+            title: `Error ${action === 'move' ? 'Moving' : 'Copying'} Item`,
+            description: error.message || 'An unknown error occurred.',
+        });
+    } finally {
+        setShowFolderSelector(false);
+        setItemToMove(null);
+        setItemToCopy(null);
+        setCurrentAction(null);
+    }
+  };
+
+  const handleToggleVisibility = async (item: Content) => {
+      await contentService.toggleVisibility(item.id);
+      const isHidden = !item.metadata?.isHidden;
+      toast({
+          title: `Item ${isHidden ? 'Hidden' : 'Visible'}`,
+          description: `"${item.name}" is now ${isHidden ? 'hidden from public view' : 'visible to everyone'}.`
+      });
   };
   
   const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT' || (it.type === 'FOLDER' && it.metadata?.isClassContainer));
@@ -336,6 +385,9 @@ export function FolderGrid({
                                     onRename={() => setItemToRename(item)}
                                     onDelete={() => setItemToDelete(item)}
                                     onIconChange={() => setItemForIconChange(item)}
+                                    onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
+                                    onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
+                                    onToggleVisibility={() => handleToggleVisibility(item)}
                                     onClick={handleFolderClick}
                                     displayAs={item.metadata?.isClassContainer || isSubjectView ? 'grid' : 'list'}
                                 />
@@ -353,6 +405,9 @@ export function FolderGrid({
                                     onRename={() => setItemToRename(item)}
                                     onDelete={() => setItemToDelete(item)}
                                     onUpdate={(file) => onUpdateFile(item, file)}
+                                    onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
+                                    onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
+                                    onToggleVisibility={() => handleToggleVisibility(item)}
                                     onRetryUpload={onRetry}
                                     onRemoveUpload={onRemove}
                                     showDragHandle={!isMobile}
@@ -398,6 +453,14 @@ export function FolderGrid({
       <FilePreviewModal
         item={previewFile}
         onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+      />
+      
+      <FolderSelectorDialog
+            open={showFolderSelector}
+            onOpenChange={setShowFolderSelector}
+            onSelectFolder={handleFolderSelect}
+            actionType={currentAction}
+            currentItemId={itemToMove?.id || itemToCopy?.id}
       />
 
       {isAdmin && (

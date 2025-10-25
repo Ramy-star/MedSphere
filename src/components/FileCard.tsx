@@ -17,7 +17,7 @@ import { Button } from './ui/button';
 import { format } from 'date-fns';
 import React, { useRef, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Link2Icon } from './icons/Link2Icon';
 import { useUser } from '@/firebase/auth/use-user';
