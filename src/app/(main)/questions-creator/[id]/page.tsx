@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, use, useRef } from 'react';
@@ -89,13 +90,22 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     if (!questionSet) {
         //notFound();
     } else {
+        const safeStringify = (data: any) => {
+            if (typeof data === 'string') return data;
+            try {
+                return JSON.stringify(data, null, 2);
+            } catch (e) {
+                return '';
+            }
+        };
+
         setEditingContent({ 
             text: questionSet.textQuestions || '', 
-            json: questionSet.jsonQuestions || '', 
+            json: safeStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
-            jsonExam: questionSet.jsonExam || '',
+            examJson: safeStringify(questionSet.jsonExam),
             textFlashcard: questionSet.textFlashcard || '',
-            jsonFlashcard: questionSet.jsonFlashcard || ''
+            jsonFlashcard: safeStringify(questionSet.jsonFlashcard)
         });
         setEditingTitle(questionSet.fileName);
     }
@@ -133,9 +143,21 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             flashcardJson: 'jsonFlashcard'
         };
         const dataKey = keyMap[type] as keyof SavedQuestionSet;
-        const updatedData = { [dataKey]: editingContent[type] };
+        const currentContent = editingContent[type];
+        
+        let contentToSave: any = currentContent;
+        if(type.includes('json')) {
+            try {
+                contentToSave = JSON.parse(currentContent);
+            } catch (e) {
+                toast({ variant: 'destructive', title: 'Invalid JSON', description: 'The JSON is not valid and could not be saved.'});
+                return;
+            }
+        }
 
-        if (editingContent[type] !== (questionSet as any)[dataKey]) {
+        const updatedData = { [dataKey]: contentToSave };
+
+        if (currentContent !== (questionSet as any)[dataKey]) {
             await updateQuestionSet(updatedData);
             toast({ title: 'Saved', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Flashcard') ? 'Flashcard ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been updated.` });
         }
@@ -146,13 +168,22 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
   const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     if (questionSet) {
+        const safeStringify = (data: any) => {
+            if (typeof data === 'string') return data;
+            try {
+                return JSON.stringify(data, null, 2);
+            } catch (e) {
+                return '';
+            }
+        };
+
         const keyMap: Record<typeof type, string> = {
             text: questionSet.textQuestions || '',
-            json: questionSet.jsonQuestions || '',
+            json: safeStringify(questionSet.jsonQuestions),
             examText: questionSet.textExam || '',
-            examJson: questionSet.jsonExam || '',
+            examJson: safeStringify(questionSet.jsonExam),
             textFlashcard: questionSet.textFlashcard || '',
-            jsonFlashcard: questionSet.jsonFlashcard || '',
+            jsonFlashcard: safeStringify(questionSet.jsonFlashcard),
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
     }
