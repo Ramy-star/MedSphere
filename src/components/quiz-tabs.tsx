@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import type { Lecture, MCQ, WrittenCase } from '@/lib/types';
@@ -83,15 +84,15 @@ const GlobalStyles = () => (
         }
         .page-container {
             width: 100%;
+            height: 100%;
             background-color: var(--container-bg);
             overflow-x: hidden;
             transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            padding: 30px;
         }
-        @media (min-width: 768px) {
+        @media (max-width: 768px) {
             .page-container {
-                box-shadow: var(--container-shadow);
-                padding: 30px;
-                border-radius: 12px;
+                padding: 15px;
             }
         }
         .header {
@@ -417,11 +418,6 @@ const GlobalStyles = () => (
             body.quiz-active {
                 font-size: 15px;
             }
-            .page-container {
-                padding: 0 15px;
-                margin: 10px auto;
-                border-radius: 8px;
-            }
             .header {
                 padding: 15px 0;
                 gap: 10px;
@@ -650,9 +646,7 @@ const LectureContent: React.FC<{ lecture: Lecture }> = ({ lecture }) => {
 };
 
 
-export function QuizContainer({ lectures: rawLectures }: { lectures: Lecture[] | Lecture }) {
-    // Ensure lectures is always an array
-    const lectures = Array.isArray(rawLectures) ? rawLectures : (rawLectures ? [rawLectures] : []);
+export function QuizContainer({ lectures }: { lectures: Lecture[] }) {
     
     const [activeLectureId, setActiveLectureId] = React.useState(lectures[0]?.id);
     
@@ -737,7 +731,7 @@ export function QuizContainer({ lectures: rawLectures }: { lectures: Lecture[] |
     const activeLecture = lectures.find(lec => lec.id === activeLectureId);
 
     return (
-        <div className={cn("page-container", "bg-[#13161C]")}>
+        <div className={cn("page-container", "bg-transparent p-0")}>
             <GlobalStyles />
             <div id="lecture-tabs-wrapper" ref={tabsWrapperRef}>
                 <div id="lecture-tabs" ref={tabsContainerRef} role="tablist" aria-label="Lectures">
