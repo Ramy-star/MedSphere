@@ -229,13 +229,13 @@ button.lecture-tab-btn.active {
     @apply text-base font-medium text-muted-foreground mb-4;
 }
 .question-text {
-    @apply text-xl font-semibold mb-8 leading-relaxed;
+    @apply text-lg font-semibold mb-8 leading-relaxed;
 }
 .options-grid {
     @apply grid grid-cols-1 gap-4;
 }
 .option-btn {
-    @apply flex items-center text-left w-full px-5 py-4 border-2 border-border rounded-2xl bg-card text-base cursor-pointer transition-all duration-200;
+    @apply flex items-center text-left w-full px-5 py-3 border-2 border-border rounded-2xl bg-card text-sm cursor-pointer transition-all duration-200;
 }
 .option-btn:hover {
     @apply border-primary;
