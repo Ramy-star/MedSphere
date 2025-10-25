@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion, FileCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -93,7 +93,7 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
             )}
         >
             <div className="flex justify-between items-start">
-                <Folder className="w-8 h-8 text-yellow-400 shrink-0" />
+                <FileCheck className="w-8 h-8 text-rose-400 shrink-0" />
                 {isAdmin && (
                     <div className="flex gap-1 absolute top-2 right-2">
                         <Button 

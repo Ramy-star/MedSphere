@@ -37,7 +37,7 @@ function buildTree(items: Content[], itemMap: Map<string, TreeNode>): TreeNode[]
     
     // First pass: add all items to the map
     items.forEach(item => {
-        if (item.type !== 'FILE' && item.type !== 'LINK' && item.type !== 'INTERACTIVE_QUIZ') {
+        if (item.type !== 'FILE' && item.type !== 'LINK' && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM') {
             if (!itemMap.has(item.id)) {
                 itemMap.set(item.id, { ...item, children: [] });
             }
@@ -215,7 +215,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     if (!allItems) return [];
     // Clear and rebuild map to ensure it's fresh
     itemMap.clear();
-    const folderItems = allItems.filter(item => item.type !== 'FILE' && item.type !== 'LINK' && item.type !== 'INTERACTIVE_QUIZ');
+    const folderItems = allItems.filter(item => item.type !== 'FILE' && item.type !== 'LINK' && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM');
     return buildTree(folderItems, itemMap);
   }, [allItems, itemMap]);
 
