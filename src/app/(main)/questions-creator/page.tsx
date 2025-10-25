@@ -39,7 +39,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEn
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { FolderSelectorDialog } from '../FolderSelectorDialog';
+import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { CSS } from '@dnd-kit/utilities';
 
 type SavedQuestionSet = {
@@ -64,7 +64,7 @@ function getPreText(element: HTMLElement) {
     text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
     text = text.replace(/<\/div>/gi, '');       // Remove </div>
     // Basic un-escaping for display
-    text = text.replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
+    text = text.replace(/&lt;/g, '<').replace(/&gt;/, '>').replace(/&amp;/g, '&');
     return text;
 }
 
@@ -127,7 +127,7 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
     const router = useRouter();
 
     const style: React.CSSProperties = {
-        transform: transform ? CSS.Transform.toString(transform) : undefined,
+        transform: CSS.Transform.toString(transform),
         transition,
         zIndex: isDragging ? 1 : 'auto',
     };
@@ -942,5 +942,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
