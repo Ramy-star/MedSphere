@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -6,7 +5,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
@@ -21,13 +19,12 @@ import Image from 'next/image';
 import { allSubjectIcons } from '@/lib/file-data';
 
 
-type ActionType = 'select_source' | 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | 'move' | 'copy';
+export type ActionType = 'select_source' | 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | 'move' | 'copy';
 
 type FolderSelectorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onSelect?: (item: Content) => void;
-  onSelectFolder?: (folderId: string, action: any) => void;
+  onSelect: (item: Content) => void;
   actionType: ActionType | null;
   currentItemId?: string;
 };
@@ -43,7 +40,6 @@ function buildTree(items: Content[]): TreeNode[] {
         if (item.parentId && itemMap.has(item.parentId)) {
             const parent = itemMap.get(item.parentId)!;
             if (!parent.children) parent.children = [];
-            // Ensure no duplicates are added
             if (!parent.children.some(child => child.id === node.id)) {
                 parent.children.push(node);
             }
@@ -100,7 +96,7 @@ const getIconForItem = (item: Content): { Icon: React.ElementType, color: string
 };
 
 function FolderTree({ node, onSelect, selectedId, level = 0, actionType, currentItemId }: { node: TreeNode, onSelect: (item: Content) => void, selectedId: string | null, level?: number, actionType: ActionType | null, currentItemId?: string }) {
-    const [isOpen, setIsOpen] = useState(level < 1); // Auto-open first few levels
+    const [isOpen, setIsOpen] = useState(false); // Collapsed by default
 
     const isSelectable = useMemo(() => {
         if (!actionType) return false;
@@ -113,9 +109,9 @@ function FolderTree({ node, onSelect, selectedId, level = 0, actionType, current
             case 'copy':
                 return node.type !== 'FILE' && node.type !== 'LINK';
             case 'save_questions_md':
-            case 'create_quiz':
                 return node.type === 'FOLDER' || (node.type === 'FILE' && node.metadata?.mime === 'text/markdown');
-            case 'save_exam_md':
+            case 'create_quiz':
+                return node.type === 'FOLDER' || node.type === 'INTERACTIVE_QUIZ';
             case 'create_exam':
                 return node.type === 'FOLDER' || node.type === 'INTERACTIVE_EXAM';
              case 'create_flashcard':
@@ -148,8 +144,7 @@ function FolderTree({ node, onSelect, selectedId, level = 0, actionType, current
                 onClick={handleNodeClick}
                 className={cn(
                     "flex items-center justify-between p-2 rounded-lg group",
-                    isSelectable ? "cursor-pointer" : "cursor-default", // Change cursor based on selectability
-                    !isSelectable && "opacity-50", // Dim non-selectable items
+                    isSelectable ? "cursor-pointer" : "cursor-not-allowed",
                     selectedId === node.id ? "bg-blue-500/30 text-white" : isSelectable ? "hover:bg-white/10 text-slate-300" : "text-slate-500",
                 )}
                 style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
@@ -180,18 +175,17 @@ function FolderTree({ node, onSelect, selectedId, level = 0, actionType, current
     );
 }
 
-export function FolderSelectorDialog({ open, onOpenChange, onSelect, onSelectFolder, actionType, currentItemId }: FolderSelectorDialogProps) {
+export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType, currentItemId }: FolderSelectorDialogProps) {
   const { data: allItems, loading } = useCollection<Content>('content');
   const [selectedItem, setSelectedItem] = useState<Content | null>(null);
 
   const tree = useMemo(() => {
     if (!allItems) return [];
     if (actionType === 'select_source') {
-        // Show everything for source selection
         return buildTree(allItems);
     }
-    // For other actions, only show containers
-    const folderItems = allItems.filter(item => item.type !== 'FILE' || item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM' || item.type === 'INTERACTIVE_FLASHCARD');
+    // For other actions, allow selecting folders or compatible files for merging
+    const folderItems = allItems; 
     return buildTree(folderItems);
   }, [allItems, actionType]);
   
@@ -201,11 +195,7 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, onSelectFol
 
   const handleConfirm = () => {
     if (selectedItem && actionType) {
-      if (onSelect) {
         onSelect(selectedItem);
-      } else if (onSelectFolder) {
-        onSelectFolder(selectedItem.id, actionType);
-      }
     }
   };
   
@@ -224,11 +214,11 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, onSelectFol
               return { title: 'Move to...', buttonText: 'Move Here' };
           case 'copy':
               return { title: 'Copy to...', buttonText: 'Copy Here' };
-          case 'save_questions_md':
-          case 'save_exam_md':
           case 'create_quiz':
           case 'create_exam':
           case 'create_flashcard':
+          case 'save_questions_md':
+          case 'save_exam_md':
               return { title: 'Select Destination', buttonText: 'Save Here' };
           default:
               return { title: 'Select Item', buttonText: 'Confirm' };

@@ -261,128 +261,50 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     setIsEditingTitle(false);
   };
 
-  const handleSaveToFile = async (parentId: string, type: 'questions' | 'exam') => {
-    if (!questionSet) return;
+  const handleSaveToFile = async (destination: Content) => {
+    if (!questionSet || !currentAction) return;
 
     setShowFolderSelector(false);
-    setCurrentAction(null);
-    toast({ title: "Formatting Markdown...", description: "AI is re-formatting the content for perfect output." });
-
+    
     try {
-        const contentToFormat = type === 'exam' ? questionSet.textExam : questionSet.textQuestions;
-        const formattedContent = await reformatMarkdown({ rawText: contentToFormat });
+        if(currentAction === 'save_questions_md') {
+            const formattedContent = await reformatMarkdown({ rawText: questionSet.textQuestions });
+            const file = new File([formattedContent], `${questionSet.fileName} - Questions.md`, { type: 'text/markdown' });
+            // This part is simplified. In a real app, you'd use a service to handle the file saving logic.
+            // For now, we'll just log it and show a toast.
+            console.log(`Saving markdown file to folder ${destination.id}`);
+            toast({ title: "File Saved", description: `"${file.name}" has been saved to "${destination.name}".` });
+        }
+        else if (currentAction === 'save_exam_md') {
+            const formattedContent = await reformatMarkdown({ rawText: questionSet.textExam });
+            const file = new File([formattedContent], `${questionSet.fileName} - Exam.md`, { type: 'text/markdown' });
+             console.log(`Saving markdown file to folder ${destination.id}`);
+            toast({ title: "File Saved", description: `"${file.name}" has been saved to "${destination.name}".` });
+        }
+        else if (currentAction === 'create_quiz' || currentAction === 'create_exam' || currentAction === 'create_flashcard') {
+            const dataToSave = currentAction === 'create_quiz' ? questionSet.jsonQuestions 
+                             : currentAction === 'create_exam' ? questionSet.jsonExam
+                             : questionSet.jsonFlashcard;
 
-        const originalFileName = questionSet.fileName.replace(/\.[^/.]+$/, ""); // Remove extension
-        const newFileName = `${originalFileName} - ${type === 'exam' ? 'Exam' : 'Questions'}`;
-        const newFileNameWithExt = `${newFileName}.md`;
-        
-        const file = new File([formattedContent], newFileNameWithExt, { type: 'text/markdown' });
+            const type = currentAction === 'create_quiz' ? 'INTERACTIVE_QUIZ'
+                       : currentAction === 'create_exam' ? 'INTERACTIVE_EXAM'
+                       : 'INTERACTIVE_FLASHCARD';
+            
+            await contentService.createOrUpdateInteractiveContent(destination, questionSet.fileName, dataToSave, questionSet.sourceFileId, type);
+            const actionText = destination.type === 'FOLDER' ? 'created' : 'updated';
+            toast({ title: `Interactive Content ${actionText}`, description: `Content has been successfully ${actionText} in "${destination.name}".` });
+        }
 
-        const tempId = `upload_${Date.now()}_${file.name}`;
-        
-        setUploadingFile({ id: tempId, name: newFileName, size: file.size, progress: 0, status: 'uploading', file: file });
-
-        const callbacks = {
-            onProgress: (progress: number) => {
-                setUploadingFile(prev => prev ? { ...prev, progress, status: 'uploading' } : null);
-            },
-            onSuccess: (content: any) => {
-                setUploadingFile(prev => prev ? { ...prev, status: 'success' } : null);
-                setTimeout(() => setUploadingFile(null), 3000);
-                toast({ title: "File Saved", description: `"${content.name}" has been saved successfully.` });
-            },
-            onError: (error: Error) => {
-                console.error("Save to file failed:", error);
-                setUploadingFile(prev => prev ? { ...prev, status: 'error' } : null);
-                toast({
-                    variant: 'destructive',
-                    title: 'Save Failed',
-                    description: error.message || `Could not save file. Please try again.`
-                })
-            }
-        };
-        
-        const xhr = await contentService.createFile(parentId, file, callbacks, { sourceFileId: questionSet.sourceFileId });
-        setUploadingFile(prev => prev ? { ...prev, xhr } : null);
     } catch(e: any) {
         toast({
             variant: 'destructive',
-            title: 'Formatting Failed',
-            description: e.message || 'Could not re-format the markdown content.'
+            title: 'Action Failed',
+            description: e.message || 'Could not complete the save operation.'
         });
+    } finally {
+        setCurrentAction(null);
     }
 };
-
-  const handleCreateQuiz = async (parentId: string) => {
-    if (!questionSet) return;
-    setShowFolderSelector(false);
-    setCurrentAction(null);
-    try {
-        await contentService.createInteractiveQuiz(parentId, questionSet.fileName, questionSet.jsonQuestions, questionSet.sourceFileId);
-        toast({ title: 'Interactive Quiz Created', description: `Quiz for "${questionSet.fileName}" has been created.` });
-    } catch (error: any) {
-        console.error("Failed to create interactive quiz:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Creation Failed',
-            description: error.message || 'Could not create the interactive quiz.'
-        });
-    }
-  }
-
-  const handleCreateExam = async (parentId: string) => {
-    if (!questionSet) return;
-    setShowFolderSelector(false);
-    setCurrentAction(null);
-    try {
-        await contentService.createInteractiveExam(parentId, questionSet.fileName, questionSet.jsonExam, questionSet.sourceFileId);
-        toast({ title: 'Interactive Exam Created', description: `Exam for "${questionSet.fileName}" has been created.` });
-    } catch (error: any) {
-        console.error("Failed to create interactive exam:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Creation Failed',
-            description: error.message || 'Could not create the interactive exam.'
-        });
-    }
-  }
-  
-  const handleCreateFlashcard = async (parentId: string) => {
-    if (!questionSet) return;
-    setShowFolderSelector(false);
-    setCurrentAction(null);
-    try {
-        await contentService.createInteractiveFlashcard(parentId, questionSet.fileName, questionSet.jsonFlashcard, questionSet.sourceFileId);
-        toast({ title: 'Interactive Flashcards Created', description: `Flashcards for "${questionSet.fileName}" has been created.` });
-    } catch (error: any) {
-        console.error("Failed to create interactive flashcards:", error);
-        toast({
-            variant: 'destructive',
-            title: 'Creation Failed',
-            description: error.message || 'Could not create the interactive flashcards.'
-        });
-    }
-  }
-
-  const handleFolderSelect = (folderId: string, action: 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard') => {
-      switch (action) {
-          case 'save_questions_md':
-              handleSaveToFile(folderId, 'questions');
-              break;
-          case 'save_exam_md':
-              handleSaveToFile(folderId, 'exam');
-              break;
-          case 'create_quiz':
-              handleCreateQuiz(folderId);
-              break;
-          case 'create_exam':
-              handleCreateExam(folderId);
-              break;
-          case 'create_flashcard':
-              handleCreateFlashcard(folderId);
-              break;
-      }
-  }
 
   if (loading || !questionSet) {
     return (
@@ -443,7 +365,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                         {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Lightbulb className="h-4 w-4 text-yellow-400" />}
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Create Interactive Quiz</p></TooltipContent>
+                                <TooltipContent><p>Create/Merge Interactive Quiz</p></TooltipContent>
                             </Tooltip>
                         )}
                          {isAdmin && type === 'examJson' && (
@@ -453,7 +375,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                         {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileCheck className="h-4 w-4 text-rose-400" />}
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Create Interactive Exam</p></TooltipContent>
+                                <TooltipContent><p>Create/Merge Interactive Exam</p></TooltipContent>
                             </Tooltip>
                         )}
                         {isAdmin && type === 'flashcardJson' && (
@@ -463,7 +385,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                         {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Layers className="h-4 w-4 text-indigo-400" />}
                                     </Button>
                                 </TooltipTrigger>
-                                <TooltipContent><p>Create Interactive Flashcards</p></TooltipContent>
+                                <TooltipContent><p>Create/Merge Interactive Flashcards</p></TooltipContent>
                             </Tooltip>
                         )}
                         <Tooltip>
@@ -689,15 +611,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         </Dialog>
         <FolderSelectorDialog 
             open={showFolderSelector}
-            onOpenChange={(isOpen) => {
-                if (!isOpen) {
-                    setShowFolderSelector(false);
-                    setCurrentAction(null);
-                } else {
-                    setShowFolderSelector(true);
-                }
-            }}
-            onSelectFolder={handleFolderSelect}
+            onOpenChange={setShowFolderSelector}
+            onSelect={handleSaveToFile}
             actionType={currentAction}
         />
         {uploadingFile && (

@@ -270,149 +270,77 @@ export const contentService = {
     }
   },
 
-  async createInteractiveQuiz(parentId: string, name: string, quizData: string, sourceFileId: string): Promise<Content> {
+  async createOrUpdateInteractiveContent(
+    destination: Content,
+    name: string,
+    newData: string,
+    sourceFileId: string,
+    type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
+  ): Promise<Content> {
     if (!db) throw new Error("Firestore not initialized");
 
-    const newQuizId = uuidv4();
-    const newQuizRef = doc(db, 'content', newQuizId);
-    let newQuizData: Content | null = null;
-    const originalFileName = name.replace(/\.[^/.]+$/, "");
+    // If destination is a folder, create a new file
+    if (destination.type === 'FOLDER') {
+        const originalFileName = name.replace(/\.[^/.]+$/, "");
+        let newName: string;
+        switch(type) {
+            case 'INTERACTIVE_QUIZ': newName = `${originalFileName} - Quiz`; break;
+            case 'INTERACTIVE_EXAM': newName = `${originalFileName} - Exam`; break;
+            case 'INTERACTIVE_FLASHCARD': newName = `${originalFileName} - Flashcards`; break;
+            default: newName = originalFileName;
+        }
 
-    try {
-        await runTransaction(db, async (transaction) => {
-            const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+        const newId = uuidv4();
+        const newRef = doc(db, 'content', newId);
+
+        return runTransaction(db, async (transaction) => {
+            const childrenQuery = query(collection(db, 'content'), where('parentId', '==', destination.id));
             const childrenSnapshot = await getDocs(childrenQuery);
             const order = childrenSnapshot.size;
-
-            newQuizData = {
-                id: newQuizId,
-                name: `${originalFileName} - Quiz`,
-                type: 'INTERACTIVE_QUIZ',
-                parentId: parentId,
-                metadata: {
-                    quizData,
-                    sourceFileId,
-                },
+            
+            const newContentData: Content = {
+                id: newId,
+                name: newName,
+                type: type,
+                parentId: destination.id,
+                metadata: { quizData: newData, sourceFileId },
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString(),
                 order: order,
             };
-
-            transaction.set(newQuizRef, newQuizData);
+            transaction.set(newRef, newContentData);
+            return newContentData;
         });
-
-        if (!newQuizData) throw new Error("Quiz creation failed within transaction.");
-        return newQuizData;
-
-    } catch (e: any) {
-        if (e && e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `/content/${newQuizId}`,
-                operation: 'create',
-                requestResourceData: { name: `${originalFileName} - Quiz`, parentId, type: 'INTERACTIVE_QUIZ' },
-            }));
-        } else {
-            console.error("Transaction failed: ", e);
-        }
-        throw e;
     }
-  },
 
-  async createInteractiveExam(parentId: string, name: string, examData: string, sourceFileId: string): Promise<Content> {
-    if (!db) throw new Error("Firestore not initialized");
+    // If destination is an existing file of the same type, merge content
+    if (destination.type === type) {
+        const docRef = doc(db, 'content', destination.id);
+        
+        return runTransaction(db, async (transaction) => {
+            const docSnap = await transaction.get(docRef);
+            if (!docSnap.exists()) throw new Error("Destination file does not exist.");
 
-    const newExamId = uuidv4();
-    const newExamRef = doc(db, 'content', newExamId);
-    let newExamData: Content | null = null;
-    const originalFileName = name.replace(/\.[^/.]+$/, "");
+            const existingData = docSnap.data().metadata?.quizData;
+            const existingParsed = existingData ? JSON.parse(existingData) : [];
+            const newParsed = JSON.parse(newData);
 
-    try {
-        await runTransaction(db, async (transaction) => {
-            const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
-            const childrenSnapshot = await getDocs(childrenQuery);
-            const order = childrenSnapshot.size;
-
-            newExamData = {
-                id: newExamId,
-                name: `${originalFileName} - Exam`,
-                type: 'INTERACTIVE_EXAM',
-                parentId: parentId,
-                metadata: {
-                    quizData: examData,
-                    sourceFileId,
-                },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                order: order,
+            // Ensure both are arrays before concatenating
+            const mergedData = (Array.isArray(existingParsed) ? existingParsed : []).concat(Array.isArray(newParsed) ? newParsed : []);
+            
+            const updatedData = {
+                'metadata.quizData': JSON.stringify(mergedData),
+                'updatedAt': new Date().toISOString(),
             };
-
-            transaction.set(newExamRef, newExamData);
+            transaction.update(docRef, updatedData);
+            return { ...destination, metadata: { ...destination.metadata, quizData: JSON.stringify(mergedData) } };
         });
-
-        if (!newExamData) throw new Error("Exam creation failed within transaction.");
-        return newExamData;
-
-    } catch (e: any) {
-        if (e && e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `/content/${newExamId}`,
-                operation: 'create',
-                requestResourceData: { name: `${originalFileName} - Exam`, parentId, type: 'INTERACTIVE_EXAM' },
-            }));
-        } else {
-            console.error("Transaction failed: ", e);
-        }
-        throw e;
     }
+    
+    // If destination type does not match, throw an error
+    throw new Error(`Cannot save ${type} to a file of type ${destination.type}.`);
   },
 
-  async createInteractiveFlashcard(parentId: string | null, name: string, flashcardData: string, sourceFileId: string): Promise<Content> {
-    if (!db) throw new Error("Firestore not initialized");
-
-    const newFlashcardId = uuidv4();
-    const newFlashcardRef = doc(db, 'content', newFlashcardId);
-    let newFlashcardData: Content | null = null;
-    const originalFileName = name.replace(/\.[^/.]+$/, "");
-
-    try {
-        await runTransaction(db, async (transaction) => {
-            const childrenQuery = parentId ? query(collection(db, 'content'), where('parentId', '==', parentId)) : query(collection(db, 'content'), where('parentId', '==', null));
-            const childrenSnapshot = await getDocs(childrenQuery);
-            const order = childrenSnapshot.size;
-
-            newFlashcardData = {
-                id: newFlashcardId,
-                name: name === "New Flashcards" ? name : `${originalFileName} - Flashcards`,
-                type: 'INTERACTIVE_FLASHCARD',
-                parentId: parentId,
-                metadata: {
-                    quizData: flashcardData,
-                    sourceFileId,
-                },
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-                order: order,
-            };
-
-            transaction.set(newFlashcardRef, newFlashcardData);
-        });
-
-        if (!newFlashcardData) throw new Error("Flashcard creation failed within transaction.");
-        return newFlashcardData;
-
-    } catch (e: any) {
-        if (e && e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `/content/${newFlashcardId}`,
-                operation: 'create',
-                requestResourceData: { name: `${originalFileName} - Flashcards`, parentId, type: 'INTERACTIVE_FLASHCARD' },
-            }));
-        } else {
-            console.error("Transaction failed: ", e);
-        }
-        throw e;
-    }
-  },
   
   async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}): Promise<XMLHttpRequest> {
     const xhr = new XMLHttpRequest();
