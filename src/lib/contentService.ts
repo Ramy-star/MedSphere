@@ -273,7 +273,7 @@ export const contentService = {
   async createOrUpdateInteractiveContent(
     destination: Content,
     name: string,
-    newData: string,
+    newData: any, // Expecting object, not string
     sourceFileId: string,
     type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
   ): Promise<Content> {
@@ -298,11 +298,10 @@ export const contentService = {
             break;
     }
     
-    // The data for a new lecture.
     const newLectureData = {
       id: sourceFileId || uuidv4(),
       name: originalFileName,
-      [lectureKey]: JSON.parse(newData)
+      [lectureKey]: newData,
     };
 
     // If destination is a folder, create a new file
@@ -321,7 +320,7 @@ export const contentService = {
                 type: type,
                 parentId: destination.id,
                 metadata: { 
-                    quizData: JSON.stringify([newLectureData]), // Always create an array of lectures
+                    quizData: JSON.stringify([newLectureData]),
                     sourceFileId 
                 },
                 createdAt: new Date().toISOString(),
@@ -356,7 +355,6 @@ export const contentService = {
                 }
             }
             
-            // This is the corrected logic: add the new lecture object to the array
             const mergedLectures = [...existingLectures, newLectureData];
             
             const updatedData = {

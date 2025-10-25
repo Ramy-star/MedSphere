@@ -24,11 +24,11 @@ interface GenerationTask {
   failedStep: FailedStep;
   documentText: string | null;
   textQuestions: string | null;
-  jsonQuestions: string | null;
+  jsonQuestions: any | null; // Changed to any to hold object before stringifying
   textExam: string | null;
-  jsonExam: string | null;
+  jsonExam: any | null; // Changed to any
   textFlashcard: string | null;
-  jsonFlashcard: string | null;
+  jsonFlashcard: any | null; // Changed to any
   error: string | null;
   progress: number;
   abortController: AbortController;
@@ -128,7 +128,7 @@ async function runGenerationProcess(
                     break;
 
                 case 'converting_json':
-                    jsonQuestions = await convertQuestionsToJson({ prompt: prompts.json, questionsText: textQuestions! });
+                    jsonQuestions = JSON.parse(await convertQuestionsToJson({ prompt: prompts.json, questionsText: textQuestions! }));
                     set(state => updateTask(state, { jsonQuestions }));
                     break;
                 
@@ -138,7 +138,7 @@ async function runGenerationProcess(
                     break;
                 
                 case 'converting_exam_json':
-                    jsonExam = await convertQuestionsToJson({ prompt: prompts.examJson, questionsText: textExam! });
+                    jsonExam = JSON.parse(await convertQuestionsToJson({ prompt: prompts.examJson, questionsText: textExam! }));
                     set(state => updateTask(state, { jsonExam }));
                     break;
 
@@ -148,7 +148,7 @@ async function runGenerationProcess(
                     break;
 
                 case 'converting_flashcard_json':
-                    jsonFlashcard = await convertQuestionsToJson({ prompt: prompts.flashcardJson, questionsText: textFlashcard! });
+                    jsonFlashcard = JSON.parse(await convertQuestionsToJson({ prompt: prompts.flashcardJson, questionsText: textFlashcard! }));
                     set(state => updateTask(state, { jsonFlashcard }));
                     break;
 
@@ -242,11 +242,11 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         await addDoc(collectionRef, {
             fileName: task.fileName,
             textQuestions: task.textQuestions,
-            jsonQuestions: task.jsonQuestions,
+            jsonQuestions: JSON.stringify(task.jsonQuestions, null, 2),
             textExam: task.textExam,
-            jsonExam: task.jsonExam,
+            jsonExam: JSON.stringify(task.jsonExam, null, 2),
             textFlashcard: task.textFlashcard,
-            jsonFlashcard: task.jsonFlashcard,
+            jsonFlashcard: JSON.stringify(task.jsonFlashcard, null, 2),
             createdAt: new Date().toISOString(),
             userId: userId,
             sourceFileId: task.sourceFileId,
