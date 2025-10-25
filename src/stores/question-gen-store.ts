@@ -241,12 +241,12 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         const collectionRef = collection(db, `users/${userId}/questionSets`);
         await addDoc(collectionRef, {
             fileName: task.fileName,
-            textQuestions: task.textQuestions,
-            jsonQuestions: JSON.stringify(task.jsonQuestions, null, 2),
-            textExam: task.textExam,
-            jsonExam: JSON.stringify(task.jsonExam, null, 2),
-            textFlashcard: task.textFlashcard,
-            jsonFlashcard: JSON.stringify(task.jsonFlashcard, null, 2),
+            textQuestions: task.textQuestions ?? '',
+            jsonQuestions: task.jsonQuestions ? JSON.stringify(task.jsonQuestions, null, 2) : '[]',
+            textExam: task.textExam ?? '',
+            jsonExam: task.jsonExam ? JSON.stringify(task.jsonExam, null, 2) : '[]',
+            textFlashcard: task.textFlashcard ?? '',
+            jsonFlashcard: task.jsonFlashcard ? JSON.stringify(task.jsonFlashcard, null, 2) : '[]',
             createdAt: new Date().toISOString(),
             userId: userId,
             sourceFileId: task.sourceFileId,
