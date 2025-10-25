@@ -2,7 +2,7 @@
 'use client';
 import React from 'react';
 import { lecturesData } from '@/lib/data';
-import { GitGrindExam } from '@/components/GitGrindExam';
+import ExamContainer from '@/components/ExamContainer';
 import { useUser } from '@/firebase/auth/use-user';
 import { Loader2 } from 'lucide-react';
 
@@ -20,6 +20,6 @@ export default function ExamPage() {
     }
 
     return (
-        <GitGrindExam lectures={lecturesData} />
+        <ExamContainer lectures={lecturesData} />
     );
 }
