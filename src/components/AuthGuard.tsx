@@ -11,7 +11,7 @@ import { Button } from './ui/button';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { db } from '@/firebase';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
-import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup, signInWithRedirect } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { cn } from '@/lib/utils';
@@ -54,39 +54,54 @@ function ProfileSetupForm() {
             const claimingUser = await getClaimedStudentIdUser(studentId);
             
             await setPersistence(auth, browserLocalPersistence);
+            
+            // Store username temporarily before redirect
+            localStorage.setItem('pendingUsername', username.trim());
+
             const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
-            const user = result.user;
 
-            // If the ID is claimed, it must be by the current user signing in.
-            if (claimingUser && claimingUser.userId !== user.uid) {
-                throw new Error("This Student ID is already registered with a different Google account.");
+            try {
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+
+                // If the ID is claimed, it must be by the current user signing in.
+                if (claimingUser && claimingUser !== user.uid) {
+                     throw new Error("This Student ID is already registered with a different Google account.");
+                }
+
+                // Create user profile and claim student ID in a transaction
+                const userRef = doc(db, 'users', user.uid);
+                const studentIdRef = doc(db, 'claimedStudentIds', studentId);
+                const batch = writeBatch(db);
+                
+                batch.set(userRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: user.displayName,
+                    photoURL: user.photoURL,
+                    username: username.trim(),
+                    studentId: studentId,
+                    createdAt: new Date().toISOString(),
+                });
+
+                batch.set(studentIdRef, {
+                    userId: user.uid,
+                    claimedAt: new Date().toISOString(),
+                });
+
+                await batch.commit();
+                
+                localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+                localStorage.removeItem('pendingUsername');
+
+            } catch (popupError: any) {
+                if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/operation-not-allowed'].includes(popupError.code)) {
+                    // Fallback to redirect if popup fails
+                    await signInWithRedirect(auth, provider);
+                } else {
+                    throw popupError;
+                }
             }
-
-            // Create user profile and claim student ID in a transaction
-            const userRef = doc(db, 'users', user.uid);
-            const studentIdRef = doc(db, 'claimedStudentIds', studentId);
-            const batch = writeBatch(db);
-            
-            batch.set(userRef, {
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName,
-                photoURL: user.photoURL,
-                username: username.trim(),
-                studentId: studentId,
-                createdAt: new Date().toISOString(),
-            });
-
-            batch.set(studentIdRef, {
-                userId: user.uid,
-                claimedAt: new Date().toISOString(),
-            });
-
-            await batch.commit();
-            
-            localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
-
         } catch (err: any) {
             console.error('Login error', err);
             toast({
@@ -95,6 +110,7 @@ function ProfileSetupForm() {
                 description: err?.message || 'An unknown error occurred.',
             });
             setIsSubmitting(false);
+            localStorage.removeItem('pendingUsername');
         }
     };
 
@@ -195,8 +211,51 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         setUserProfile(userSnap.data() as UserProfile);
         setProfileState('complete');
       } else {
-        setUserProfile(null);
-        setProfileState('needs-setup');
+        // This case handles users who logged in but didn't finish profile setup (e.g. redirect flow)
+        const pendingUsername = localStorage.getItem('pendingUsername');
+        const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
+        
+        if (pendingUsername && studentId) {
+             const claimingUser = await getClaimedStudentIdUser(studentId);
+             if (claimingUser && claimingUser !== user.uid) {
+                // This ID is claimed by someone else. This is a problem.
+                // For now, we sign the user out and let them start again.
+                // A better UX would show an error message.
+                signOut(getAuth());
+                localStorage.removeItem('pendingUsername');
+                localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+                return;
+             }
+
+             const userRef = doc(db, 'users', user.uid);
+             const studentIdRef = doc(db, 'claimedStudentIds', studentId);
+             const batch = writeBatch(db);
+             
+             batch.set(userRef, {
+                 uid: user.uid,
+                 email: user.email,
+                 displayName: user.displayName,
+                 photoURL: user.photoURL,
+                 username: pendingUsername,
+                 studentId: studentId,
+                 createdAt: new Date().toISOString(),
+             });
+
+             batch.set(studentIdRef, {
+                 userId: user.uid,
+                 claimedAt: new Date().toISOString(),
+             });
+
+             await batch.commit();
+
+             localStorage.removeItem('pendingUsername');
+             localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+             setUserProfile({ username: pendingUsername });
+             setProfileState('complete');
+        } else {
+            setUserProfile(null);
+            setProfileState('needs-setup');
+        }
       }
     };
 

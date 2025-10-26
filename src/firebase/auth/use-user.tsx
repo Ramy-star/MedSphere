@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import type { User } from 'firebase/auth';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { onAuthStateChanged, signOut, getAuth, getRedirectResult } from 'firebase/auth';
 import { useFirebase } from '../provider';
 
 export function useUser() {
@@ -13,26 +13,41 @@ export function useUser() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(
-      auth,
-      (user) => {
-        if (user?.isAnonymous) {
-          // If we find an anonymous user, sign them out.
-          // This prevents the UI from showing a "logged in" state for anonymous users.
-          signOut(auth);
-          setUser(null);
-        } else {
-          setUser(user);
+    const authInstance = getAuth();
+    
+    // First, try to get the redirect result. This should only run once on page load.
+    getRedirectResult(authInstance)
+      .then((result) => {
+        // The user object will be handled by onAuthStateChanged
+      })
+      .catch((error) => {
+        // Handle Errors here.
+        if (error.code !== 'auth/no-auth-event') {
+          console.error("Error from getRedirectResult:", error);
+          setError(error);
         }
-        setLoading(false);
-      },
-      (error) => {
-        setError(error);
-        setLoading(false);
-      }
-    );
+      })
+      .finally(() => {
+        // Now, set up the real-time listener.
+        const unsubscribe = onAuthStateChanged(
+          auth,
+          (user) => {
+            if (user?.isAnonymous) {
+              signOut(auth);
+              setUser(null);
+            } else {
+              setUser(user);
+            }
+            setLoading(false);
+          },
+          (error) => {
+            setError(error);
+            setLoading(false);
+          }
+        );
+        return () => unsubscribe();
+      });
 
-    return () => unsubscribe();
   }, [auth]);
 
   return { user, loading, error };
