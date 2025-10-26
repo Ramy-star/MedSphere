@@ -50,15 +50,7 @@ function ProfileSetupForm() {
         
         setIsSubmitting(true);
         try {
-            // Check if student ID is already claimed before showing Google popup
-            const claimingUser = await getClaimedStudentIdUser(studentId);
-            if (claimingUser) {
-                // This is a simplified check. In a real app, you'd want to be more specific
-                // if the claimingUser is the current user re-authenticating, but for now,
-                // if it's claimed at all by anyone, we show an error before popup.
-                // A more advanced flow would let the user sign in to see if THEY are the owner.
-                throw new Error("This Student ID is already registered with a different Google account.");
-            }
+            // We no longer check for claimed ID here. We will do it AFTER Google sign-in.
             
             await setPersistence(auth, browserLocalPersistence);
             
@@ -67,43 +59,9 @@ function ProfileSetupForm() {
 
             const provider = new GoogleAuthProvider();
 
-            try {
-                const result = await signInWithPopup(auth, provider);
-                const user = result.user;
+            // The redirect flow is now the primary method to avoid popup issues.
+            await signInWithRedirect(auth, provider);
 
-                // Create user profile and claim student ID in a transaction
-                const userRef = doc(db, 'users', user.uid);
-                const studentIdRef = doc(db, 'claimedStudentIds', studentId);
-                const batch = writeBatch(db);
-                
-                batch.set(userRef, {
-                    uid: user.uid,
-                    email: user.email,
-                    displayName: user.displayName,
-                    photoURL: user.photoURL,
-                    username: username.trim(),
-                    studentId: studentId,
-                    createdAt: new Date().toISOString(),
-                });
-
-                batch.set(studentIdRef, {
-                    userId: user.uid,
-                    claimedAt: new Date().toISOString(),
-                });
-
-                await batch.commit();
-                
-                localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
-                localStorage.removeItem('pendingUsername');
-
-            } catch (popupError: any) {
-                if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/operation-not-allowed'].includes(popupError.code)) {
-                    // Fallback to redirect if popup fails
-                    await signInWithRedirect(auth, provider);
-                } else {
-                    throw popupError;
-                }
-            }
         } catch (err: any) {
             console.error('Login error', err);
             toast({
@@ -191,6 +149,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading: userLoading } = useUser();
   const [profileState, setProfileState] = useState<'loading' | 'needs-setup' | 'complete'>('loading');
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const { toast } = useToast();
 
   useEffect(() => {
     const checkUserProfile = async () => {
@@ -222,46 +181,53 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         
         if (pendingUsername && studentId) {
-             // We have the pending data. Let's create the profile.
-             const claimingUser = await getClaimedStudentIdUser(studentId);
-             if (claimingUser && claimingUser !== user.uid) {
+            // We have the pending data. Let's create the profile.
+            
+            // Check if the student ID is already claimed.
+            const claimingUserId = await getClaimedStudentIdUser(studentId);
+
+            if (claimingUserId && claimingUserId !== user.uid) {
                 // This ID is claimed by someone else. This is a problem.
                 // Sign the user out and let them start again.
+                toast({
+                    variant: 'destructive',
+                    title: 'Registration Error',
+                    description: 'This Student ID is already registered with a different Google account.',
+                });
                 signOut(getAuth());
                 localStorage.removeItem('pendingUsername');
                 localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
                 setProfileState('needs-setup');
                 return;
-             }
+            }
 
-             // Create the profile in a transaction
-             const userRef = doc(db, 'users', user.uid);
-             const studentIdRef = doc(db, 'claimedStudentIds', studentId);
-             const batch = writeBatch(db);
-             
-             const newProfileData = {
-                 uid: user.uid,
-                 email: user.email,
-                 displayName: user.displayName,
-                 photoURL: user.photoURL,
-                 username: pendingUsername,
-                 studentId: studentId,
-                 createdAt: new Date().toISOString(),
-             };
+            // Create the profile in a transaction
+            const studentIdRef = doc(db, 'claimedStudentIds', studentId);
+            const batch = writeBatch(db);
+            
+            const newProfileData = {
+                uid: user.uid,
+                email: user.email,
+                displayName: user.displayName,
+                photoURL: user.photoURL,
+                username: pendingUsername,
+                studentId: studentId,
+                createdAt: new Date().toISOString(),
+            };
 
-             batch.set(userRef, newProfileData);
-             batch.set(studentIdRef, {
-                 userId: user.uid,
-                 claimedAt: new Date().toISOString(),
-             });
+            batch.set(userRef, newProfileData);
+            batch.set(studentIdRef, {
+                userId: user.uid,
+                claimedAt: new Date().toISOString(),
+            });
 
-             await batch.commit();
+            await batch.commit();
 
-             // Cleanup localStorage and IMPORTANTLY, update the state
-             localStorage.removeItem('pendingUsername');
-             localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
-             setUserProfile({ username: newProfileData.username });
-             setProfileState('complete');
+            // Cleanup localStorage and IMPORTANTLY, update the state
+            localStorage.removeItem('pendingUsername');
+            localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+            setUserProfile({ username: newProfileData.username });
+            setProfileState('complete');
         } else {
             // User is logged in, but no profile and no pending data.
             // This means they need to go through the setup process.
@@ -272,7 +238,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     };
 
     checkUserProfile();
-  }, [user, userLoading]);
+  }, [user, userLoading, toast]);
 
   if (profileState === 'loading') {
     return (
