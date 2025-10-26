@@ -18,29 +18,23 @@ export default function AuthCallbackPage() {
     useEffect(() => {
         const handleAuthRedirect = async () => {
             try {
+                // This is the core of the callback page. It processes the redirect result.
                 const result = await getRedirectResult(auth);
                 const pendingUsername = localStorage.getItem('pendingUsername');
                 const pendingStudentId = localStorage.getItem('pendingStudentId');
 
                 if (!result || !result.user) {
-                    // This can happen if the page is reloaded or visited directly.
-                    // Or if a user is already logged in and navigates here.
-                    // Let's check if the user is already logged in and has a profile.
+                    // This can happen if the page is reloaded or visited directly without a login attempt.
                     const currentUser = auth.currentUser;
                     if(currentUser){
-                        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-                        if(userDoc.exists()){
-                            // Already logged in and profile exists, just go home.
-                            router.replace('/');
-                            return;
-                        }
+                        // User is already logged in, just go home.
+                        router.replace('/');
+                        return;
                     }
-                    // Otherwise, not a valid callback state.
                     setError("Authentication session not found. Please try logging in again.");
                     return;
                 }
 
-                // We have a user from the redirect
                 const user = result.user;
                 setMessage('Verifying your details...');
 
@@ -48,15 +42,12 @@ export default function AuthCallbackPage() {
                 const userDocRef = doc(db, 'users', user.uid);
                 const userDoc = await getDoc(userDocRef);
                 if (userDoc.exists()) {
-                    // Profile exists, login is successful.
                     setMessage('Welcome back! Redirecting...');
-                    localStorage.removeItem('pendingUsername');
-                    localStorage.removeItem('pendingStudentId');
                     router.replace('/');
                     return;
                 }
                 
-                // If profile doesn't exist, this must be a new user registration flow.
+                // If profile doesn't exist, this must be a new user registration.
                 if (!pendingUsername || !pendingStudentId) {
                     await signOut(auth);
                     setError('Registration details are missing. Please start the process again.');
@@ -72,7 +63,7 @@ export default function AuthCallbackPage() {
                     return;
                 }
 
-                // Create profile
+                // Create profile and claim student ID in a single transaction (batch)
                 const studentIdRef = doc(db, 'claimedStudentIds', pendingStudentId);
                 const batch = writeBatch(db);
 
@@ -95,22 +86,26 @@ export default function AuthCallbackPage() {
                 await batch.commit();
 
                 setMessage('Profile created! Welcome to MedSphere.');
-                localStorage.removeItem('pendingUsername');
-                localStorage.removeItem('pendingStudentId');
                 
+                // Redirect to home page after successful profile creation
                 router.replace('/');
 
             } catch (err: any) {
                 console.error("Auth callback error:", err);
                 setError(`An error occurred: ${err.message}. Please try again.`);
-                await signOut(auth).catch(e => console.error("Sign out after error failed:", e));
+                if (auth.currentUser) {
+                  await signOut(auth).catch(e => console.error("Sign out after error failed:", e));
+                }
             } finally {
+                // Clean up localStorage regardless of outcome
                 localStorage.removeItem('pendingUsername');
                 localStorage.removeItem('pendingStudentId');
             }
         };
         
-        handleAuthRedirect();
+        if (auth) {
+            handleAuthRedirect();
+        }
 
     }, [auth, router]);
 

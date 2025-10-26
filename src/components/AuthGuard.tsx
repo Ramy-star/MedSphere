@@ -8,14 +8,11 @@ import { motion } from 'framer-motion';
 import { useState, useCallback } from 'react';
 import { Input } from './ui/input';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect, getAuth, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
-import { GoogleIcon } from './icons/GoogleIcon';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
-import { getClaimedStudentIdUser } from '@/lib/verificationService';
-import { db } from '@/firebase';
-import { doc, getDoc, writeBatch } from 'firebase/firestore';
+import { usePathname } from 'next/navigation';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
@@ -52,6 +49,9 @@ function ProfileSetupForm() {
 
             await setPersistence(auth, browserLocalPersistence);
             const provider = new GoogleAuthProvider();
+            // This will redirect to Google, and Google will redirect back to a page in our app.
+            // The Firebase console settings determine the authorized domains.
+            // Our callback page will handle the result.
             await signInWithRedirect(auth, provider);
 
         } catch (err: any) {
@@ -136,6 +136,17 @@ function ProfileSetupForm() {
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading: userLoading, profileExists } = useUser();
+  const pathname = usePathname();
+
+  // If we are on the auth callback page, just show a loading screen and do nothing.
+  // This gives the callback page time to process the login.
+  if (pathname === '/auth/callback') {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+            {/* This content will be replaced by the callback page layout */}
+        </div>
+      );
+  }
 
   if (userLoading) {
     return (
