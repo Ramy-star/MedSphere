@@ -30,15 +30,24 @@
     },
     "UserProfile": {
       "title": "User Profile",
-      "description": "Represents a user's profile information.",
+      "description": "Represents a user's profile information, including their role.",
       "type": "object",
       "properties": {
         "uid": { "type": "string" },
+        "username": { "type": "string", "description": "Unique, user-chosen username." },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
-        "photoURL": { "type": "string", "format": "uri" }
+        "photoURL": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time"},
+        "roles": {
+          "type": "object",
+          "properties": {
+            "admin": { "type": "boolean" },
+            "subAdminForLevel": { "type": "string", "description": "ID of the level this user is a sub-admin for." }
+          }
+        }
       },
-      "required": ["uid"]
+      "required": ["uid", "username"]
     },
     "QuestionSet": {
       "title": "Question Set",
@@ -75,3 +84,5 @@
     }
   }
 }
+
+    
