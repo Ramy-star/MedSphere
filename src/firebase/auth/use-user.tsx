@@ -55,3 +55,5 @@ export function useUser() {
 
   return { user, loading, error, profileExists };
 }
+
+    

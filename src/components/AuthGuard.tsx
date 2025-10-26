@@ -5,7 +5,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { Logo } from './logo';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { Input } from './ui/input';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect } from 'firebase/auth';
@@ -50,9 +50,6 @@ function ProfileSetupForm() {
 
             await setPersistence(auth, browserLocalPersistence);
             const provider = new GoogleAuthProvider();
-            // This will redirect to Google, and Google will redirect back to a page in our app.
-            // The Firebase console settings determine the authorized domains.
-            // Our callback page will handle the result.
             await signInWithRedirect(auth, provider);
 
         } catch (err: any) {
@@ -179,3 +176,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     </motion.div>
   );
 }
+
+    
