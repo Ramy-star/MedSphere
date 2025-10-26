@@ -14,8 +14,9 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn, LogOut, User, Chrome } from 'lucide-react';
+import { LogIn, LogOut, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { GoogleIcon } from './icons/GoogleIcon';
 
 
 export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
@@ -59,7 +60,7 @@ export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
   if (forceLogin) {
     return (
         <Button onClick={handleLogin} disabled={busy} size="lg" className={cn("rounded-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-transform active:scale-95")}>
-            <Chrome className="mr-2 h-5 w-5" />
+            <GoogleIcon className="mr-2 h-5 w-5" />
             Sign in with Google
         </Button>
     )
