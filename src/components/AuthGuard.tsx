@@ -13,6 +13,7 @@ import { useFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
 import { usePathname } from 'next/navigation';
+import { GoogleIcon } from './icons/GoogleIcon';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
