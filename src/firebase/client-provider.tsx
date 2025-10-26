@@ -5,7 +5,6 @@ import { useEffect, useState } from 'react';
 import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
 import { FirebaseProvider } from './provider';
-import { getAuth, onAuthStateChanged, getRedirectResult } from 'firebase/auth';
 import { Logo } from '@/components/logo';
 
 export function FirebaseClientProvider({
@@ -29,15 +28,10 @@ export function FirebaseClientProvider({
             const instances = await initializeFirebase(config);
             setFirebase(instances);
             
-            // Handle redirect result immediately after initialization
-            const auth = getAuth(instances.app);
-            await getRedirectResult(auth).catch(err => {
-              if (err.code !== 'auth/no-auth-event') {
-                console.error("Firebase getRedirectResult error:", err);
-              }
-            });
+            // The logic for getRedirectResult is moved to useUser hook
+            // to centralize auth state management.
             
-            setLoading(false); // Set loading to false once initialized and redirect is handled
+            setLoading(false);
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
             setError(e);

@@ -3,27 +3,19 @@
 
 import { useUser } from '@/firebase/auth/use-user';
 import { Logo } from './logo';
-import { AuthButton } from './auth-button';
-import { motion } from 'framer-motion';
-import { useState, useEffect, useCallback } from 'react';
-import { Input } from './ui/input';
 import { Button } from './ui/button';
+import { motion } from 'framer-motion';
+import { useState, useCallback } from 'react';
+import { Input } from './ui/input';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { db } from '@/firebase';
-import { doc, getDoc, writeBatch, getDocs, collection, query, where } from 'firebase/firestore';
-import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup, signInWithRedirect, getAuth, signOut } from 'firebase/auth';
+import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect, getAuth, signOut } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { GoogleIcon } from './icons/GoogleIcon';
-import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
-import { getClaimedStudentIdUser } from '@/lib/verificationService';
-
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
-
-// --- Profile Setup Form ---
 function ProfileSetupForm() {
     const { auth } = useFirebase();
     const [username, setUsername] = useState('');
@@ -50,16 +42,9 @@ function ProfileSetupForm() {
         
         setIsSubmitting(true);
         try {
-            // We no longer check for claimed ID here. We will do it AFTER Google sign-in.
-            
             await setPersistence(auth, browserLocalPersistence);
-            
-            // Store username temporarily before redirect
             localStorage.setItem('pendingUsername', username.trim());
-
             const provider = new GoogleAuthProvider();
-
-            // The redirect flow is now the primary method to avoid popup issues.
             await signInWithRedirect(auth, provider);
 
         } catch (err: any) {
@@ -139,108 +124,11 @@ function ProfileSetupForm() {
     )
 }
 
-// A simplified version of user profile for this component's state
-type UserProfile = {
-    username: string;
-};
-
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading: userLoading } = useUser();
-  const [profileState, setProfileState] = useState<'loading' | 'needs-setup' | 'complete'>('loading');
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const { toast } = useToast();
+  const { user, loading: userLoading, profileExists } = useUser();
 
-  useEffect(() => {
-    const checkUserProfile = async () => {
-      // 1. If Firebase auth is still loading, wait.
-      if (userLoading) {
-        setProfileState('loading');
-        return;
-      }
-
-      // 2. If no user is logged in, they need to sign up.
-      if (!user) {
-        setProfileState('needs-setup');
-        setUserProfile(null);
-        return;
-      }
-      
-      // 3. User is logged in. Check for their profile document in Firestore.
-      const userRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists() && userSnap.data().username) {
-        // 3a. Profile exists and is complete.
-        const profile = userSnap.data() as UserProfile;
-        setUserProfile(profile);
-        setProfileState('complete');
-      } else {
-        // 3b. Profile does not exist or is incomplete. This can happen after a redirect.
-        const pendingUsername = localStorage.getItem('pendingUsername');
-        const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
-        
-        if (pendingUsername && studentId) {
-            // We have the pending data. Let's create the profile.
-            
-            // Check if the student ID is already claimed.
-            const claimingUserId = await getClaimedStudentIdUser(studentId);
-
-            if (claimingUserId && claimingUserId !== user.uid) {
-                // This ID is claimed by someone else. This is a problem.
-                // Sign the user out and let them start again.
-                toast({
-                    variant: 'destructive',
-                    title: 'Registration Error',
-                    description: 'This Student ID is already registered with a different Google account.',
-                });
-                signOut(getAuth());
-                localStorage.removeItem('pendingUsername');
-                localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
-                setProfileState('needs-setup');
-                return;
-            }
-
-            // Create the profile in a transaction
-            const studentIdRef = doc(db, 'claimedStudentIds', studentId);
-            const batch = writeBatch(db);
-            
-            const newProfileData = {
-                uid: user.uid,
-                email: user.email,
-                displayName: user.displayName,
-                photoURL: user.photoURL,
-                username: pendingUsername,
-                studentId: studentId,
-                createdAt: new Date().toISOString(),
-            };
-
-            batch.set(userRef, newProfileData);
-            batch.set(studentIdRef, {
-                userId: user.uid,
-                claimedAt: new Date().toISOString(),
-            });
-
-            await batch.commit();
-
-            // Cleanup localStorage and IMPORTANTLY, update the state
-            localStorage.removeItem('pendingUsername');
-            localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
-            setUserProfile({ username: newProfileData.username });
-            setProfileState('complete');
-        } else {
-            // User is logged in, but no profile and no pending data.
-            // This means they need to go through the setup process.
-            setUserProfile(null);
-            setProfileState('needs-setup');
-        }
-      }
-    };
-
-    checkUserProfile();
-  }, [user, userLoading, toast]);
-
-  if (profileState === 'loading') {
+  if (userLoading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -251,8 +139,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If user is not logged in OR is logged in but hasn't set a username yet
-  if (profileState === 'needs-setup') {
+  if (!user || !profileExists) {
     return (
       <motion.div
         initial={{ opacity: 0 }}
