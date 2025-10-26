@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, type UserProfile } from '@/firebase/auth/use-user';
+import { useUser, type UserProfile as BaseUserProfile } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -15,6 +15,8 @@ import { cn } from '@/lib/utils';
 import { doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+
+type UserProfile = BaseUserProfile & { id: string };
 
 function UserManagementPage() {
     const { user, loading: userLoading, isSuperAdmin } = useUser();
@@ -187,5 +189,3 @@ function UserManagementPage() {
 }
 
 export default UserManagementPage;
-
-    
