@@ -165,8 +165,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             json: reorderAndStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
             examJson: reorderAndStringify(questionSet.jsonExam),
-            textFlashcard: questionSet.textFlashcard || '',
-            jsonFlashcard: reorderAndStringify(questionSet.jsonFlashcard)
+            flashcardText: questionSet.textFlashcard || '',
+            flashcardJson: reorderAndStringify(questionSet.jsonFlashcard)
         });
         setEditingTitle(questionSet.fileName.replace(/\.[^/.]+$/, ""));
     }
@@ -646,7 +646,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     isEditing={isEditing.json}
                     onToggleEdit={() => handleToggleEdit('json')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, json: value}))}
-                    onCancel={() => handleCancelEdit('json')}
+                    onCancel={() to handleCancelEdit('json')}
                     onRepair={handleRepairJson}
                     isRepairing={isRepairing}
                     jsonError={jsonError}
@@ -672,7 +672,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     icon={<FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.examJson}
                     type="examJson"
-                    isEditing={isEditing.examJson}
+                    isEditing={isEditing.json}
                     onToggleEdit={() => handleToggleEdit('examJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
                     onCancel={() => handleCancelEdit('examJson')}
@@ -778,3 +778,4 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   return <SavedQuestionSetPageContent id={id} />;
 }
 
+    
