@@ -359,6 +359,24 @@ button.lecture-tab-btn.active {
     @apply opacity-100 max-w-[100px] ml-2;
 }
 
+.report-btn {
+    @apply bg-transparent border-2 border-primary text-primary font-semibold rounded-full cursor-pointer inline-flex items-center justify-center gap-2 overflow-hidden transition-all duration-300 ease-in-out;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+}
+.report-btn .report-text {
+    @apply whitespace-nowrap opacity-0 max-w-0 transition-all duration-200 ease-in-out;
+}
+.report-btn:hover {
+    @apply bg-primary text-primary-foreground;
+    width: 120px; /* Expanded width */
+    padding: 0 16px;
+}
+.report-btn:hover .report-text {
+    @apply opacity-100 max-w-[100px] ml-2;
+}
+
 @media (max-width: 768px) {
     .exam-page-container {
         @apply p-0 m-0;

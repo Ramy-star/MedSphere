@@ -1,10 +1,11 @@
 
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, LabelProps, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList, ReferenceLine } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
+import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
 import { useUser } from '@/firebase/auth/use-user';
@@ -183,6 +184,59 @@ const TooltipContent = React.forwardRef<
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 
+// --- Dialog Components ---
+const Dialog = DialogPrimitive.Root
+const DialogTrigger = DialogPrimitive.Trigger
+const DialogPortal = DialogPrimitive.Portal
+const DialogOverlay = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Overlay>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Overlay
+    ref={ref}
+    className={cn(
+      "fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+      className
+    )}
+    {...props}
+  />
+));
+DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
+const DialogContent = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <DialogPortal>
+    <DialogOverlay />
+    <DialogPrimitive.Content
+      ref={ref}
+      className={cn(
+        "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        className
+      )}
+      {...props}
+    >
+      {children}
+      <DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground">
+        <X className="h-4 w-4" />
+        <span className="sr-only">Close</span>
+      </DialogPrimitive.Close>
+    </DialogPrimitive.Content>
+  </DialogPortal>
+));
+DialogContent.displayName = DialogPrimitive.Content.displayName;
+const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
+    <div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />
+);
+DialogHeader.displayName = "DialogHeader";
+const DialogTitle = React.forwardRef<
+  React.ElementRef<typeof DialogPrimitive.Title>,
+  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Title>
+>(({ className, ...props }, ref) => (
+  <DialogPrimitive.Title ref={ref} className={cn("text-lg font-semibold leading-none tracking-tight", className)} {...props} />
+));
+DialogTitle.displayName = DialogPrimitive.Title.displayName;
+
 // --- CHART COMPONENTS ---
 
 const PerformanceChart = ({ correct, incorrect, unanswered }: { correct: number, incorrect: number, unanswered: number }) => {
@@ -335,9 +389,11 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
     const [timeLeft, setTimeLeft] = useState(0);
     const [showResumeAlert, setShowResumeAlert] = useState(false);
     const [questionAnimation, setQuestionAnimation] = useState('');
+    const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const isInitialRender = useRef(true);
 
     const { user } = useUser();
+    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const { db: firestore } = useFirebase();
     
     const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
@@ -385,8 +441,8 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
 
     const storageKey = useMemo(() => user ? `exam_progress_${lecture.id}_${user.uid}` : null, [lecture.id, user]);
 
-    const handleSubmit = useCallback(async () => {
-        if (user && resultsCollectionRef) {
+    const handleSubmit = useCallback(async (isSkip = false) => {
+        if (user && resultsCollectionRef && !isSkip) {
             const userPreviousResultsQuery = query(resultsCollectionRef, where("lectureId", "==", lecture.id), where("userId", "==", user.uid));
             try {
                 const userPreviousResultsSnapshot = await getDocs(userPreviousResultsQuery);
@@ -460,7 +516,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
             setTimeLeft(prevTime => {
                 if (prevTime <= 1) {
                     clearInterval(timer);
-                    handleSubmit();
+                    handleSubmit(false);
                     return 0;
                 }
                 return prevTime - 1;
@@ -477,7 +533,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                     setTimeLeft(prevTime => {
                         if (prevTime <= 1) {
                             clearInterval(timer);
-                            handleSubmit();
+                            handleSubmit(false);
                             return 0;
                         }
                         return prevTime - 1;
@@ -623,6 +679,12 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                 </AlertDialogContent>
             </AlertDialog>
 
+            <AdminReportModal
+                isOpen={isReportModalOpen}
+                onClose={() => setIsReportModalOpen(false)}
+                lectureId={lecture.id}
+            />
+
             {examState === 'not-started' && (
                 <div className={cn(containerClasses, "start-mode")}>
                     <div className="exam-start-screen">
@@ -653,6 +715,12 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                 <div className={cn(containerClasses, "exam-results-screen")}>
                     <TooltipProvider>
                         <div className="relative">
+                             {isAdmin && (
+                                <button onClick={() => setIsReportModalOpen(true)} className="report-btn absolute top-0 left-0">
+                                    <FileText size={20} />
+                                    <span className="report-text">Report</span>
+                                </button>
+                            )}
                             <button onClick={handleExitClick} className="exit-btn absolute top-0 right-0">
                                 <LogOut size={20} />
                                 <span className="exit-text">Exit</span>
@@ -756,10 +824,17 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                          <div className="exam-progress-header">
                             <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
                              <div className="flex justify-between items-center mb-2">
-                                <div className="flex items-center gap-2 font-semibold text-lg text-muted-foreground">
-                                    <Clock size={20} />
-                                    <span>{formatTime(timeLeft)}</span>
-                                </div>
+                                {isAdmin ? (
+                                     <Button variant="ghost" className="text-muted-foreground" onClick={() => handleSubmit(true)}>
+                                         <SkipForward size={16} className="mr-2" />
+                                         Skip to Results
+                                     </Button>
+                                ) : (
+                                    <div className="flex items-center gap-2 font-semibold text-lg text-muted-foreground">
+                                        <Clock size={20} />
+                                        <span>{formatTime(timeLeft)}</span>
+                                    </div>
+                                )}
                                 <button className="quick-exit-btn" onClick={handleQuickExit} aria-label="Exit Exam">
                                     <X size={20} />
                                 </button>
@@ -801,7 +876,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                             </button>
 
                             {currentQuestionIndex === questions.length - 1 ? (
-                                <button onClick={handleSubmit} className="nav-btn finish">
+                                <button onClick={() => handleSubmit(false)} className="nav-btn finish">
                                     Finish & Submit
                                 </button>
                             ) : (
@@ -818,6 +893,99 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                 );
             })()}
         </>
+    );
+};
+
+interface AdminReportModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    lectureId: string;
+}
+
+const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps) => {
+    const { db } = useFirebase();
+    const [reportData, setReportData] = useState<{ userName: string; score: number; total: number; percentage: number }[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (isOpen && db) {
+            const fetchReportData = async () => {
+                setLoading(true);
+                
+                const resultsQuery = query(collection(db, "examResults"), where("lectureId", "==", lectureId));
+                const resultsSnapshot = await getDocs(resultsQuery);
+                const resultsByUser: { [userId: string]: ExamResult } = {};
+
+                // Get the first result for each user
+                resultsSnapshot.forEach(doc => {
+                    const result = doc.data() as ExamResult;
+                    if (!resultsByUser[result.userId] || new Date(result.timestamp) < new Date(resultsByUser[result.userId].timestamp)) {
+                        resultsByUser[result.userId] = result;
+                    }
+                });
+
+                const userIds = Object.keys(resultsByUser);
+                if (userIds.length === 0) {
+                    setReportData([]);
+                    setLoading(false);
+                    return;
+                }
+                
+                const usersQuery = query(collection(db, "users"), where("uid", "in", userIds));
+                const usersSnapshot = await getDocs(usersQuery);
+                const usersMap = new Map<string, any>();
+                usersSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
+                
+                const finalData = Object.values(resultsByUser).map(result => ({
+                    userName: usersMap.get(result.userId)?.displayName || 'Unknown User',
+                    score: result.score,
+                    total: result.totalQuestions,
+                    percentage: result.percentage,
+                })).sort((a, b) => b.percentage - a.percentage);
+
+                setReportData(finalData);
+                setLoading(false);
+            };
+
+            fetchReportData();
+        }
+    }, [isOpen, db, lectureId]);
+
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                    <DialogTitle>Exam Report</DialogTitle>
+                </DialogHeader>
+                <div className="max-h-[60vh] overflow-y-auto">
+                    {loading ? (
+                        <p>Loading report...</p>
+                    ) : reportData.length > 0 ? (
+                        <table className="w-full text-sm text-left">
+                            <thead className="text-xs text-gray-400 uppercase bg-gray-700">
+                                <tr>
+                                    <th scope="col" className="px-6 py-3">Student</th>
+                                    <th scope="col" className="px-6 py-3">Score</th>
+                                    <th scope="col" className="px-6 py-3">Percentage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {reportData.map((data, index) => (
+                                    <tr key={index} className="border-b bg-gray-800 border-gray-700">
+                                        <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-white">{data.userName}</th>
+                                        <td className="px-6 py-4">{`${data.score} / ${data.total}`}</td>
+                                        <td className="px-6 py-4">{data.percentage.toFixed(2)}%</td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    ) : (
+                        <p>No results found for this exam yet.</p>
+                    )}
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -895,6 +1063,40 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
             --input: 214.3 31.8% 91.4%;
             --ring: 224 76% 48%;
         }
+        .report-btn {
+            background-color: transparent;
+            border: 2px solid #3b82f6;
+            color: #3b82f6;
+            font-weight: 600;
+            border-radius: 9999px;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            overflow: hidden;
+            transition: all 0.3s ease-in-out;
+            width: 44px;
+            height: 44px;
+            padding: 0;
+        }
+        .report-btn .report-text {
+            white-space: nowrap;
+            opacity: 0;
+            max-width: 0;
+            transition: all 0.2s ease-in-out;
+        }
+        .report-btn:hover {
+            background-color: #3b82f6;
+            color: white;
+            width: 120px;
+            padding: 0 16px;
+        }
+        .report-btn:hover .report-text {
+            opacity: 1;
+            max-width: 100px;
+            margin-left: 0.5rem;
+        }
       `}</style>
     )
 
@@ -913,3 +1115,4 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
+
