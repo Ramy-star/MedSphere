@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useState, createContext, useContext, useMemo } from 'react';
+import {
+  useEffect,
+  useState,
+  createContext,
+  useContext,
+  useMemo,
+  useCallback,
+} from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useFirebase } from '../provider';
@@ -18,24 +25,26 @@ export type Roles = {
 };
 
 export type UserProfile = {
-    uid: string;
-    username: string;
-    email: string;
-    displayName: string;
-    photoURL: string;
-    studentId: string;
-    createdAt: string;
-    roles?: Roles;
+  uid: string;
+  username: string;
+  email: string;
+  displayName: string;
+  photoURL: string;
+  studentId: string;
+  createdAt: string;
+  roles?: Roles;
 };
 
 export interface User extends FirebaseUser {
-    profile: UserProfile | null;
-};
+  profile: UserProfile | null;
+}
 
 interface UserContextType {
   user: User | null;
   loading: boolean;
   profileExists: boolean | undefined;
+  isProcessingRedirect: boolean;
+  setIsProcessingRedirect: (isProcessing: boolean) => void;
   isSuperAdmin: boolean;
   isSubAdmin: boolean;
 }
@@ -46,74 +55,95 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const { auth } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileExists, setProfileExists] = useState<boolean | undefined>(undefined);
+  const [profileExists, setProfileExists] = useState<boolean | undefined>(
+    undefined
+  );
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   useEffect(() => {
     if (!auth) {
-        setLoading(false);
-        return;
-    };
-    
+      setLoading(false);
+      setIsProcessingRedirect(false);
+      return;
+    }
+
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => {
         if (firebaseUser) {
-            if (firebaseUser.isAnonymous) {
-              signOut(auth);
-              return;
-            }
-            
-            const userDocRef = doc(db, 'users', firebaseUser.uid);
-            
-            const unsubProfile = onSnapshot(userDocRef, 
-              (docSnap) => {
-                setLoading(true);
-                if (docSnap.exists()) {
-                    const profileData = docSnap.data() as UserProfile;
-                    if (profileData.roles?.isBlocked) {
-                       signOut(auth);
-                    } else {
-                      setUser({ ...firebaseUser, profile: profileData });
-                      setProfileExists(true);
-                    }
+          if (firebaseUser.isAnonymous) {
+            signOut(auth);
+            return;
+          }
+
+          const userDocRef = doc(db, 'users', firebaseUser.uid);
+
+          const unsubProfile = onSnapshot(
+            userDocRef,
+            (docSnap) => {
+              if (docSnap.exists()) {
+                const profileData = docSnap.data() as UserProfile;
+                if (profileData.roles?.isBlocked) {
+                  signOut(auth);
                 } else {
-                    setUser({ ...firebaseUser, profile: null });
-                    setProfileExists(false);
+                  setUser({ ...firebaseUser, profile: profileData });
+                  setProfileExists(true);
                 }
-                setLoading(false);
-              },
-              (profileError) => {
-                console.error("Error listening to user profile:", profileError);
+              } else {
                 setUser({ ...firebaseUser, profile: null });
                 setProfileExists(false);
-                setLoading(false);
               }
-            );
-            return () => unsubProfile();
+              setLoading(false);
+            },
+            (profileError) => {
+              console.error('Error listening to user profile:', profileError);
+              setUser({ ...firebaseUser, profile: null });
+              setProfileExists(false);
+              setLoading(false);
+            }
+          );
+          return () => unsubProfile();
         } else {
           setUser(null);
           setProfileExists(undefined);
           setLoading(false);
+          setIsProcessingRedirect(false); // No user, no processing
         }
       },
       (authError) => {
         console.error('onAuthStateChanged error:', authError);
         setLoading(false);
+        setIsProcessingRedirect(false);
       }
     );
-    
+
     return () => unsubscribe();
   }, [auth]);
+
+  const isSuperAdmin = useMemo(
+    () => user?.profile?.roles?.isSuperAdmin === true,
+    [user]
+  );
+  const isSubAdmin = useMemo(
+    () =>
+      !!user?.profile?.roles?.permissions &&
+      user.profile.roles.permissions.length > 0 &&
+      !isSuperAdmin,
+    [user, isSuperAdmin]
+  );
   
-   const isSuperAdmin = useMemo(() => user?.profile?.roles?.isSuperAdmin === true, [user]);
-   const isSubAdmin = useMemo(() => !!user?.profile?.roles?.permissions && user.profile.roles.permissions.length > 0 && !isSuperAdmin, [user, isSuperAdmin]);
+  const handleSetIsProcessingRedirect = useCallback((isProcessing: boolean) => {
+      setIsProcessingRedirect(isProcessing);
+  }, []);
 
   const value = {
-      user,
-      loading,
-      profileExists,
-      isSuperAdmin,
-      isSubAdmin
+    user,
+    loading,
+    profileExists,
+    isProcessingRedirect,
+    setIsProcessingRedirect: handleSetIsProcessingRedirect,
+    isSuperAdmin,
+    isSubAdmin,
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

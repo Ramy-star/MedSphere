@@ -4,10 +4,16 @@ import { useUser, type UserProfile } from '@/firebase/auth/use-user';
 import { Logo } from './logo';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Input } from './ui/input';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup } from 'firebase/auth';
+import {
+  GoogleAuthProvider,
+  setPersistence,
+  browserLocalPersistence,
+  signInWithPopup,
+  signInWithRedirect,
+} from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
@@ -15,153 +21,215 @@ import { GoogleIcon } from './icons/GoogleIcon';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { getClaimedStudentIdUser } from '@/lib/verificationService';
 
-
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
 function ProfileSetupForm() {
-    const { auth, db } = useFirebase();
-    const [username, setUsername] = useState('');
-    const [isSubmitting, setIsSubmitting] = useState(false);
-    const { toast } = useToast();
-    const { isAvailable, isLoading: isCheckingUsername, debouncedUsername } = useUsernameAvailability(username);
+  const { auth, db } = useFirebase();
+  const [username, setUsername] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
+  const {
+    isAvailable,
+    isLoading: isCheckingUsername,
+    debouncedUsername,
+  } = useUsernameAvailability(username);
 
-    const isUsernameValid = username.trim().length >= 3 && /^[a-zA-Z0-9_ ]+$/.test(username);
-    const canSubmit = isUsernameValid && isAvailable === true && !isCheckingUsername;
+  const isUsernameValid =
+    username.trim().length >= 3 && /^[a-zA-Z0-9_ ]+$/.test(username);
+  const canSubmit = isUsernameValid && isAvailable === true && !isCheckingUsername;
 
-    const handleGoogleSignIn = async () => {
-        if (!canSubmit) return;
-        
-        const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
-        if (!studentId) {
-            toast({
-                variant: 'destructive',
-                title: 'Verification Error',
-                description: 'Could not find your verified Student ID. Please start over.',
-            });
-            window.location.href = '/'; 
-            return;
-        }
-        
-        setIsSubmitting(true);
-        try {
-            await setPersistence(auth, browserLocalPersistence);
-            const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
-            
-            const firebaseUser = result.user;
-            const userDocRef = doc(db, 'users', firebaseUser.uid);
-            const userDoc = await getDoc(userDocRef);
+  const handleGoogleSignIn = async () => {
+    if (!canSubmit) return;
 
-            if (!userDoc.exists()) {
-                const existingUserId = await getClaimedStudentIdUser(studentId);
-                if (existingUserId) {
-                    throw new Error('This Student ID is already linked to another account.');
-                }
-
-                const batch = writeBatch(db);
-                const studentIdRef = doc(db, 'claimedStudentIds', studentId);
-                const newProfileData: Omit<UserProfile, 'roles'> = {
-                  uid: firebaseUser.uid,
-                  email: firebaseUser.email!,
-                  displayName: firebaseUser.displayName!,
-                  photoURL: firebaseUser.photoURL!,
-                  username: username.trim(),
-                  studentId: studentId,
-                  createdAt: new Date().toISOString(),
-                };
-                batch.set(userDocRef, { ...newProfileData, roles: {} });
-                batch.set(studentIdRef, { userId: firebaseUser.uid, claimedAt: new Date().toISOString() });
-                await batch.commit();
-            }
-            // After successful sign-in and profile creation, onAuthStateChanged will handle the rest.
-        } catch (err: any) {
-             if (err.code === 'auth/popup-closed-by-user') {
-                console.log('Sign-in popup closed by user.');
-            } else {
-                console.error('Login or profile creation error', err);
-                toast({
-                    variant: 'destructive',
-                    title: 'Login Failed',
-                    description: err?.message || 'An unknown error occurred while trying to sign in.',
-                });
-            }
-        } finally {
-            setIsSubmitting(false);
-        }
-    };
-
-
-    const getUsernameHint = () => {
-        if (username.length > 0 && !isUsernameValid) {
-            return <p className="text-xs text-red-400 mt-1.5">Use only letters, numbers, spaces, and underscores (_).</p>;
-        }
-        if (debouncedUsername.length >= 3 && isCheckingUsername) {
-            return <p className="text-xs text-slate-400 mt-1.5">Checking availability...</p>;
-        }
-        if (debouncedUsername.length >= 3 && !isCheckingUsername) {
-            if (isAvailable) {
-                return <p className="text-xs text-green-400 mt-1.5 flex items-center gap-1"><CheckCircle2 size={14}/> Available!</p>;
-            } else if (isAvailable === false) {
-                 return <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1"><XCircle size={14} /> Not available.</p>;
-            }
-        }
-        return <p className="text-xs text-slate-500 mt-1.5">Must be at least 3 characters in English only.</p>;
+    const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
+    if (!studentId) {
+      toast({
+        variant: 'destructive',
+        title: 'Verification Error',
+        description:
+          'Could not find your verified Student ID. Please start over.',
+      });
+      window.location.href = '/';
+      return;
     }
 
+    setIsSubmitting(true);
+    try {
+      await setPersistence(auth, browserLocalPersistence);
+      const provider = new GoogleAuthProvider();
 
+      // We store these in local storage to retrieve them after a redirect.
+      localStorage.setItem('pendingUsername', username.trim());
+
+      const userCredential = await signInWithPopup(auth, provider).catch(
+        async (error) => {
+          if (
+            error.code === 'auth/popup-blocked' ||
+            error.code === 'auth/popup-closed-by-user'
+          ) {
+            await signInWithRedirect(auth, provider);
+            return null; // signInWithRedirect will not resolve here
+          }
+          throw error; // Rethrow other errors
+        }
+      );
+
+      // This part only runs if signInWithPopup was successful
+      if (userCredential) {
+        const firebaseUser = userCredential.user;
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (!userDoc.exists()) {
+          const existingUserId = await getClaimedStudentIdUser(studentId);
+          if (existingUserId) {
+            throw new Error('This Student ID is already linked to another account.');
+          }
+          const batch = writeBatch(db);
+          const studentIdRef = doc(db, 'claimedStudentIds', studentId);
+          const newProfileData: Omit<UserProfile, 'roles'> = {
+            uid: firebaseUser.uid,
+            email: firebaseUser.email!,
+            displayName: firebaseUser.displayName!,
+            photoURL: firebaseUser.photoURL!,
+            username: username.trim(),
+            studentId: studentId,
+            createdAt: new Date().toISOString(),
+          };
+          batch.set(userDocRef, { ...newProfileData, roles: {} });
+          batch.set(studentIdRef, {
+            userId: firebaseUser.uid,
+            claimedAt: new Date().toISOString(),
+          });
+          await batch.commit();
+        }
+        // After successful sign-in, onAuthStateChanged in useUser will handle the rest.
+        localStorage.removeItem('pendingUsername');
+      }
+    } catch (err: any) {
+      localStorage.removeItem('pendingUsername');
+      console.error('Login or profile creation error', err);
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: err?.message || 'An unknown error occurred.',
+      });
+    } finally {
+      // Don't set isSubmitting to false if a redirect is in progress
+      // The page will navigate away anyway.
+    }
+  };
+
+  const getUsernameHint = () => {
+    if (username.length > 0 && !isUsernameValid) {
+      return (
+        <p className="text-xs text-red-400 mt-1.5">
+          Use only letters, numbers, spaces, and underscores (_).
+        </p>
+      );
+    }
+    if (debouncedUsername.length >= 3 && isCheckingUsername) {
+      return (
+        <p className="text-xs text-slate-400 mt-1.5">Checking availability...</p>
+      );
+    }
+    if (debouncedUsername.length >= 3 && !isCheckingUsername) {
+      if (isAvailable) {
+        return (
+          <p className="text-xs text-green-400 mt-1.5 flex items-center gap-1">
+            <CheckCircle2 size={14} /> Available!
+          </p>
+        );
+      } else if (isAvailable === false) {
+        return (
+          <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1">
+            <XCircle size={14} /> Not available.
+          </p>
+        );
+      }
+    }
     return (
-        <motion.div
-            initial={{ scale: 0.9, y: 20, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-            className="relative z-10 flex flex-col items-center text-center glass-card p-8 md:p-12 rounded-[1.75rem] max-w-md w-full"
-        >
-            <motion.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.5 }}>
-                <Logo className="h-20 w-20 md:h-24 md:w-24 mb-6" />
-            </motion.div>
-            <motion.h1 className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-white to-slate-300 text-transparent bg-clip-text" initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 0.7 }}>
-                Create Your Profile
-            </motion.h1>
-            <motion.p className="text-slate-300 text-sm md:text-base max-w-sm mb-8" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.9 }}>
-                Choose a unique username, then sign in with Google to create your account.
-            </motion.p>
-            <motion.div className="w-full max-w-sm flex flex-col gap-4" initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.5, delay: 1.1 }}>
-                <div className="relative w-full text-left">
-                    <Input
-                        type="text"
-                        placeholder="Choose a username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        className="bg-slate-800/60 border-slate-700 text-white h-12 text-base rounded-2xl pl-4 pr-10"
-                        disabled={isSubmitting}
-                    />
-                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        {isCheckingUsername ? <Loader2 className="h-5 w-5 animate-spin text-slate-400" /> : null}
-                    </div>
-                     <div className="px-2 h-5">
-                        {getUsernameHint()}
-                     </div>
-                </div>
+      <p className="text-xs text-slate-500 mt-1.5">
+        Must be at least 3 characters in English only.
+      </p>
+    );
+  };
 
-                <Button onClick={handleGoogleSignIn} disabled={!canSubmit || isSubmitting} size="lg" className="rounded-2xl h-12 text-base font-semibold transition-transform active:scale-95 bg-slate-700/50 hover:bg-slate-700/80 text-white">
-                    {isSubmitting ? (
-                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                    ) : (
-                        <GoogleIcon className="mr-2 h-5 w-5" />
-                    )}
-                    Sign in with Google
-                </Button>
-            </motion.div>
-        </motion.div>
-    )
+  return (
+    <motion.div
+      initial={{ scale: 0.9, y: 20, opacity: 0 }}
+      animate={{ scale: 1, y: 0, opacity: 1 }}
+      transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
+      className="relative z-10 flex flex-col items-center text-center glass-card p-8 md:p-12 rounded-[1.75rem] max-w-md w-full"
+    >
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+      >
+        <Logo className="h-20 w-20 md:h-24 md:w-24 mb-6" />
+      </motion.div>
+      <motion.h1
+        className="text-2xl md:text-3xl font-bold mb-2 bg-gradient-to-r from-white to-slate-300 text-transparent bg-clip-text"
+        initial={{ y: -10, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.7 }}
+      >
+        Create Your Profile
+      </motion.h1>
+      <motion.p
+        className="text-slate-300 text-sm md:text-base max-w-sm mb-8"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.9 }}
+      >
+        Choose a unique username, then sign in with Google to create your account.
+      </motion.p>
+      <motion.div
+        className="w-full max-w-sm flex flex-col gap-4"
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 1.1 }}
+      >
+        <div className="relative w-full text-left">
+          <Input
+            type="text"
+            placeholder="Choose a username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            className="bg-slate-800/60 border-slate-700 text-white h-12 text-base rounded-2xl pl-4 pr-10"
+            disabled={isSubmitting}
+          />
+          <div className="absolute right-3 top-1/2 -translate-y-1/2">
+            {isCheckingUsername ? (
+              <Loader2 className="h-5 w-5 animate-spin text-slate-400" />
+            ) : null}
+          </div>
+          <div className="px-2 h-5">{getUsernameHint()}</div>
+        </div>
+
+        <Button
+          onClick={handleGoogleSignIn}
+          disabled={!canSubmit || isSubmitting}
+          size="lg"
+          className="rounded-2xl h-12 text-base font-semibold transition-transform active:scale-95 bg-slate-700/50 hover:bg-slate-700/80 text-white"
+        >
+          {isSubmitting ? (
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+          ) : (
+            <GoogleIcon className="mr-2 h-5 w-5" />
+          )}
+          Sign in with Google
+        </Button>
+      </motion.div>
+    </motion.div>
+  );
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading, profileExists } = useUser();
+  const { user, loading, profileExists, isProcessingRedirect } = useUser();
   
-  // While Firebase is initializing or checking the auth state, show a loading screen.
-  // The `profileExists === undefined` check is crucial to wait for the initial profile check.
-  if (loading || profileExists === undefined) {
+  if (loading || isProcessingRedirect) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -175,18 +243,20 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   // If a user is authenticated and their profile exists, they are fully logged in.
   if (user && profileExists) {
     if (user.profile?.roles?.isBlocked) {
-        return (
-            <div className="flex h-full w-full items-center justify-center bg-background p-4">
-                <div className="text-center">
-                    <h1 className="text-2xl font-bold text-red-500">Account Blocked</h1>
-                    <p className="text-slate-400 mt-2">Your account has been blocked. Please contact an administrator.</p>
-                </div>
-            </div>
-        );
+      return (
+        <div className="flex h-full w-full items-center justify-center bg-background p-4">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-red-500">Account Blocked</h1>
+            <p className="text-slate-400 mt-2">
+              Your account has been blocked. Please contact an administrator.
+            </p>
+          </div>
+        </div>
+      );
     }
     return <>{children}</>;
   }
-  
+
   // If there's no user, or if a user exists but their profile document doesn't,
   // show the profile setup and sign-in form.
   return (
