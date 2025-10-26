@@ -142,7 +142,8 @@ export const FileCard = React.memo(function FileCard({
     const router = useRouter();
     const { user } = useUser();
     const { initiateGeneration } = useQuestionGenerationStore();
-    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+    const isSuperAdmin = user?.profile?.roles?.isSuperAdmin;
+    const canManage = isSuperAdmin; // TODO: Implement sub-admin logic
     const updateFileInputRef = useRef<HTMLInputElement>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -239,7 +240,7 @@ export const FileCard = React.memo(function FileCard({
                 onChange={handleFileUpdate}
             />
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
-                {showDragHandle && !isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+                {showDragHandle && !isMobile && canManage && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
             </div>
 
             <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -307,7 +308,7 @@ export const FileCard = React.memo(function FileCard({
                             </DropdownMenuItem>
                         )}
                         
-                        {isAdmin && (
+                        {canManage && (
                             <>
                                 <DropdownMenuSeparator />
                                 {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf') && (

@@ -1,19 +1,10 @@
 
 'use client';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useEffect, useState } from 'react';
+import type { UserProfile } from '@/firebase/auth/use-user';
 
-// A simplified version of user profile for this hook
-type UserProfile = {
-    uid: string;
-    username: string;
-    email: string;
-    displayName: string;
-    photoURL: string;
-    studentId: string;
-    createdAt: string;
-};
 
 export function useUserProfile(uid: string | undefined) {
     const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -26,20 +17,24 @@ export function useUserProfile(uid: string | undefined) {
             return;
         }
 
-        const fetchProfile = async () => {
-            setLoading(true);
-            const userDocRef = doc(db, 'users', uid);
-            const docSnap = await getDoc(userDocRef);
-
+        setLoading(true);
+        const userDocRef = doc(db, 'users', uid);
+        const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
             if (docSnap.exists()) {
                 setUserProfile(docSnap.data() as UserProfile);
             } else {
                 setUserProfile(null);
             }
             setLoading(false);
-        };
+        }, (error) => {
+            console.error("Error fetching user profile:", error);
+            setUserProfile(null);
+            setLoading(false);
+        });
 
-        fetchProfile();
+        // Cleanup subscription on unmount
+        return () => unsubscribe();
+        
     }, [uid]);
 
     return { userProfile, loading };

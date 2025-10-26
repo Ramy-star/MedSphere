@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, X, Menu, Wand2 } from 'lucide-react';
+import { Search, X, Menu, Wand2, UsersCog } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -22,7 +22,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [debouncedQuery] = useDebounce(query, 1000);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const isSuperAdmin = user?.profile?.roles?.isSuperAdmin;
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -83,20 +83,30 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               </Button>
           )}
         </div>
-        {isAdmin && (
-            <TooltipProvider>
-                <Tooltip>
+        <TooltipProvider>
+            {isSuperAdmin && (
+                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
-                            <Wand2 className="h-5 w-5" />
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-cyan-300" onClick={() => router.push('/admin/users')}>
+                            <UsersCog className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Questions Creator</p>
+                        <p>Manage Users</p>
                     </TooltipContent>
                 </Tooltip>
-            </TooltipProvider>
-        )}
+            )}
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
+                        <Wand2 className="h-5 w-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                    <p>Questions Creator</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
         <AuthButton />
       </div>
     </header>

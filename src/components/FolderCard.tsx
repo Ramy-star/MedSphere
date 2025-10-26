@@ -46,7 +46,7 @@ export const FolderCard = React.memo(function FolderCard({
     const isMobile = useIsMobile();
     const { user } = useUser();
     const router = useRouter();
-    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+    const isAdmin = user?.profile?.roles?.isSuperAdmin;
     const [dropdownOpen, setDropdownOpen] = useState(false);
     
     const renderIcon = () => {

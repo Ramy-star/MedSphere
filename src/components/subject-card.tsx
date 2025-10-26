@@ -34,7 +34,7 @@ export const SubjectCard = React.memo(function SubjectCard({
   const subjectPath = `/folder/${id}`;
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
   const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const isAdmin = user?.profile?.roles?.isSuperAdmin;
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const handleCardClick = (e: React.MouseEvent) => {

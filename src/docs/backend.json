@@ -44,8 +44,23 @@
         "roles": {
           "type": "object",
           "properties": {
-            "admin": { "type": "boolean" },
-            "subAdminForLevel": { "type": "string", "description": "ID of the level this user is a sub-admin for." }
+            "isSuperAdmin": { "type": "boolean" },
+            "isBlocked": { "type": "boolean" },
+            "permissions": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "scope": { "type": "string", "enum": ["level", "semester", "subject", "folder"] },
+                  "scopeId": { "type": "string" },
+                  "jobs": {
+                    "type": "array",
+                    "items": { "type": "string" }
+                  }
+                },
+                "required": ["scope", "scopeId", "jobs"]
+              }
+            }
           }
         }
       },
