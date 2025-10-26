@@ -72,7 +72,6 @@ export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
 
   if (user && !user.isAnonymous) {
     return (
-      <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -107,17 +106,16 @@ export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
             <LogOut className="mr-2 h-4 w-4" />
             <span>Log out</span>
           </DropdownMenuItem>
+          {userProfile && (
+            <RenameUsernameDialog
+                open={showRenameDialog}
+                onOpenChange={setShowRenameDialog}
+                currentUsername={userProfile.username}
+                userId={user.uid}
+            />
+          )}
         </DropdownMenuContent>
       </DropdownMenu>
-      {userProfile && (
-        <RenameUsernameDialog
-            open={showRenameDialog}
-            onOpenChange={setShowRenameDialog}
-            currentUsername={userProfile.username}
-            userId={user.uid}
-        />
-      )}
-      </>
     );
   }
 
