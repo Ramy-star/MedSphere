@@ -17,7 +17,6 @@ import { GoogleIcon } from './icons/GoogleIcon';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
-import { useUserProfile } from '@/hooks/use-user-profile';
 import { getClaimedStudentIdUser } from '@/lib/verificationService';
 
 
@@ -52,7 +51,7 @@ function ProfileSetupForm() {
         setIsSubmitting(true);
         try {
             // Check if student ID is already claimed before showing Google popup
-            const claimingUserId = await getClaimedStudentIdUser(studentId);
+            const claimingUser = await getClaimedStudentIdUser(studentId);
             
             await setPersistence(auth, browserLocalPersistence);
             const provider = new GoogleAuthProvider();
@@ -60,7 +59,7 @@ function ProfileSetupForm() {
             const user = result.user;
 
             // If the ID is claimed, it must be by the current user signing in.
-            if (claimingUserId && claimingUserId !== user.uid) {
+            if (claimingUser && claimingUser.userId !== user.uid) {
                 throw new Error("This Student ID is already registered with a different Google account.");
             }
 
@@ -166,11 +165,35 @@ function ProfileSetupForm() {
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading: userLoading } = useUser();
-  const { userProfile, loading: loadingProfile } = useUserProfile(user?.uid);
+  const [profileState, setProfileState] = useState<'loading' | 'needs-setup' | 'complete'>('loading');
 
-  const loading = userLoading || loadingProfile;
+  useEffect(() => {
+    if (userLoading) {
+      setProfileState('loading');
+      return;
+    }
 
-  if (loading) {
+    if (!user) {
+      setProfileState('needs-setup'); // User is not logged in, so they need to set up a profile.
+      return;
+    }
+
+    // User is logged in, check if their profile is complete.
+    const checkUserProfile = async () => {
+      const userRef = doc(db, 'users', user.uid);
+      const userSnap = await getDoc(userRef);
+
+      if (userSnap.exists() && userSnap.data().username) {
+        setProfileState('complete');
+      } else {
+        setProfileState('needs-setup');
+      }
+    };
+
+    checkUserProfile();
+  }, [user, userLoading]);
+
+  if (profileState === 'loading') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -182,7 +205,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   }
 
   // If user is not logged in OR is logged in but hasn't set a username yet
-  if (!user || !userProfile) {
+  if (profileState === 'needs-setup') {
     return (
       <motion.div
         initial={{ opacity: 0 }}
