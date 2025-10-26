@@ -40,32 +40,33 @@ function AuthRedirectProcessor({
             const pendingStudentId = localStorage.getItem('pendingStudentId');
 
             if (!pendingUsername || !pendingStudentId) {
-              throw new Error('Registration details are missing after redirect.');
+              // This is not an error, it might just be a normal login for an existing user.
+              // We just don't need to create a profile.
+            } else {
+                const existingUserId = await getClaimedStudentIdUser(pendingStudentId);
+                if (existingUserId && existingUserId !== firebaseUser.uid) {
+                  throw new Error('This Student ID is already linked to a different Google account.');
+                }
+
+                const batch = writeBatch(db);
+                const studentIdRef = doc(db, 'claimedStudentIds', pendingStudentId);
+                const newProfileData = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email!,
+                  displayName: firebaseUser.displayName!,
+                  photoURL: firebaseUser.photoURL!,
+                  username: pendingUsername,
+                  studentId: pendingStudentId,
+                  createdAt: new Date().toISOString(),
+                  roles: {},
+                };
+                batch.set(userDocRef, newProfileData);
+                batch.set(studentIdRef, { userId: firebaseUser.uid, claimedAt: new Date().toISOString() });
+                await batch.commit();
+
+                localStorage.removeItem('pendingUsername');
+                localStorage.removeItem('pendingStudentId');
             }
-
-            const existingUserId = await getClaimedStudentIdUser(pendingStudentId);
-            if (existingUserId && existingUserId !== firebaseUser.uid) {
-              throw new Error('This Student ID is already linked to a different Google account.');
-            }
-
-            const batch = writeBatch(db);
-            const studentIdRef = doc(db, 'claimedStudentIds', pendingStudentId);
-            const newProfileData = {
-              uid: firebaseUser.uid,
-              email: firebaseUser.email!,
-              displayName: firebaseUser.displayName!,
-              photoURL: firebaseUser.photoURL!,
-              username: pendingUsername,
-              studentId: pendingStudentId,
-              createdAt: new Date().toISOString(),
-              roles: {},
-            };
-            batch.set(userDocRef, newProfileData);
-            batch.set(studentIdRef, { userId: firebaseUser.uid, claimedAt: new Date().toISOString() });
-            await batch.commit();
-
-            localStorage.removeItem('pendingUsername');
-            localStorage.removeItem('pendingStudentId');
           }
         }
       } catch (err: any) {

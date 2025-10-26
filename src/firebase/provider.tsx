@@ -4,7 +4,7 @@
 import type { FirebaseApp } from 'firebase/app';
 import type { Auth } from 'firebase/auth';
 import type { Firestore } from 'firebase/firestore';
-import { createContext, useContext } from 'react';
+import { createContext, useContext, useMemo } from 'react';
 import { FirebaseErrorListener } from './FirebaseErrorListener';
 
 export type FirebaseContextType = {
@@ -23,8 +23,9 @@ export function FirebaseProvider({
 } & FirebaseContextType) {
   // useMemo is not strictly necessary here because the value object is
   // created once in FirebaseClientProvider and doesn't change.
+  const memoizedValue = useMemo(() => value, [value]);
   return (
-    <FirebaseContext.Provider value={value}>
+    <FirebaseContext.Provider value={memoizedValue}>
       <FirebaseErrorListener />
       {children}
     </FirebaseContext.Provider>

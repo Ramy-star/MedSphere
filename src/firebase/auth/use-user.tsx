@@ -73,6 +73,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               setUser(null);
               setProfileExists(false);
               setLoading(false);
+              setIsProcessingRedirect(false);
               return;
             }
             const userDocRef = doc(db, 'users', firebaseUser.uid);
