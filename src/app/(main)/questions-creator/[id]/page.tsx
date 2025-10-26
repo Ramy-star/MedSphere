@@ -691,7 +691,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     content={editingContent.jsonFlashcard}
                     type="flashcardJson"
                     isEditing={isEditing.jsonFlashcard}
-                    onToggleEdit={() => handleToggleEdit('jsonFlashcard')}
+                    onToggleEdit={() => handleToggleEdit('flashcardJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, jsonFlashcard: value}))}
                     onCancel={() => handleCancelEdit('jsonFlashcard')}
                 />
@@ -769,5 +769,3 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    
