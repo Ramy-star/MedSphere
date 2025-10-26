@@ -14,15 +14,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn, LogOut, User } from 'lucide-react';
+import { LogIn, LogOut, User, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { GoogleIcon } from './icons/GoogleIcon';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { RenameUsernameDialog } from './RenameUsernameDialog';
 
 
 export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
   const { auth } = useFirebase();
   const { user, loading } = useUser();
+  const { userProfile, loading: loadingProfile } = useUserProfile(user?.uid);
   const [busy, setBusy] = useState(false);
+  const [showRenameDialog, setShowRenameDialog] = useState(false);
 
   const handleLogin = async () => {
     setBusy(true);
@@ -53,7 +57,7 @@ export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
     await signOut(auth);
   };
 
-  if (loading || busy) {
+  if (loading || busy || loadingProfile) {
     return <div className="h-9 w-9 rounded-full bg-slate-800 animate-pulse" />;
   }
 
@@ -68,6 +72,7 @@ export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
 
   if (user && !user.isAnonymous) {
     return (
+      <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-9 w-9 rounded-full">
@@ -79,15 +84,22 @@ export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent className="w-56 p-2 border-slate-700" align="end" forceMount>
+        <DropdownMenuContent className="w-64 p-2 border-slate-700" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
-            <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">
-                {user.displayName}
-              </p>
-              <p className="text-xs leading-none text-muted-foreground">
-                {user.email}
-              </p>
+            <div className="flex flex-col space-y-2">
+               <div className="flex items-start justify-between">
+                  <div>
+                    <p className="text-sm font-semibold leading-none">
+                      {userProfile?.username || user.displayName}
+                    </p>
+                    <p className="text-xs leading-none text-muted-foreground mt-1">
+                      {user.email}
+                    </p>
+                  </div>
+                   <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full" onClick={() => setShowRenameDialog(true)}>
+                      <Pencil className="h-4 w-4" />
+                   </Button>
+               </div>
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
@@ -97,6 +109,15 @@ export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      {userProfile && (
+        <RenameUsernameDialog
+            open={showRenameDialog}
+            onOpenChange={setShowRenameDialog}
+            currentUsername={userProfile.username}
+            userId={user.uid}
+        />
+      )}
+      </>
     );
   }
 

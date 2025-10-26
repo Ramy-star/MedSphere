@@ -9,50 +9,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { useDebounce } from 'use-debounce';
 import { db } from '@/firebase';
-import { collection, doc, getDoc, getDocs, query, setDoc, where, writeBatch } from 'firebase/firestore';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
+import { useUsernameAvailability } from '@/hooks/use-username-availability';
+import { useUserProfile } from '@/hooks/use-user-profile';
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
-
-// --- Username Availability Hook ---
-function useUsernameAvailability(username: string) {
-    const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-    const [debouncedUsername] = useDebounce(username, 500);
-
-    useEffect(() => {
-        if (!debouncedUsername || debouncedUsername.length < 3) {
-            setIsAvailable(null);
-            setIsLoading(false);
-            return;
-        }
-
-        setIsLoading(true);
-        const checkUsername = async () => {
-            try {
-                const usersRef = collection(db, 'users');
-                const q = query(usersRef, where('username', '==', debouncedUsername));
-                const querySnapshot = await getDocs(q);
-                setIsAvailable(querySnapshot.empty);
-            } catch (error) {
-                console.error("Error checking username:", error);
-                setIsAvailable(false); // Assume not available on error
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        checkUsername();
-    }, [debouncedUsername]);
-
-    return { isAvailable, isLoading, debouncedUsername };
-}
 
 
 // --- Profile Setup Form ---
@@ -195,31 +162,7 @@ function ProfileSetupForm() {
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading: userLoading } = useUser();
-  const [userProfile, setUserProfile] = useState<any>(null);
-  const [loadingProfile, setLoadingProfile] = useState(true);
-
-  useEffect(() => {
-    if (userLoading) return;
-    if (!user) {
-        setLoadingProfile(false);
-        return;
-    }
-
-    const checkUserProfile = async () => {
-      const userRef = doc(db, 'users', user.uid);
-      const userSnap = await getDoc(userRef);
-
-      if (userSnap.exists() && userSnap.data().username) {
-        setUserProfile(userSnap.data());
-      } else {
-        setUserProfile(null);
-      }
-      setLoadingProfile(false);
-    };
-
-    checkUserProfile();
-  }, [user, userLoading]);
-
+  const { userProfile, loading: loadingProfile } = useUserProfile(user?.uid);
 
   const loading = userLoading || loadingProfile;
 
