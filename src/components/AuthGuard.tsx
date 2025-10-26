@@ -12,7 +12,6 @@ import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWith
 import { useFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
-import { usePathname } from 'next/navigation';
 import { GoogleIcon } from './icons/GoogleIcon';
 
 
@@ -44,7 +43,7 @@ function ProfileSetupForm() {
         
         setIsSubmitting(true);
         try {
-            // Save info to localStorage. The callback page will read it.
+            // Save info to localStorage. The `useUser` hook will read it on redirect.
             localStorage.setItem('pendingUsername', username.trim());
             localStorage.setItem('pendingStudentId', studentId);
 
@@ -133,20 +132,9 @@ function ProfileSetupForm() {
 
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading: userLoading, profileExists } = useUser();
-  const pathname = usePathname();
-
-  // If we are on the auth callback page, just show a loading screen and do nothing.
-  // This gives the callback page time to process the login.
-  if (pathname === '/auth/callback') {
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
-            {/* This content will be replaced by the callback page layout */}
-        </div>
-      );
-  }
-
-  if (userLoading) {
+  const { user, loading, profileExists } = useUser();
+  
+  if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -162,7 +150,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
   
-  // If user is logged in but doesn't have a profile, or not logged in at all, show the setup form.
+  // If no user or user is logged in but doesn't have a profile, show the setup form.
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -176,5 +164,3 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     </motion.div>
   );
 }
-
-    
