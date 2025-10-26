@@ -13,6 +13,10 @@ import { useFirebase } from '@/firebase/provider';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
+import { getClaimedStudentIdUser } from '@/lib/verificationService';
+import { db } from '@/firebase';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
+
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
@@ -42,22 +46,27 @@ function ProfileSetupForm() {
         
         setIsSubmitting(true);
         try {
-            await setPersistence(auth, browserLocalPersistence);
+            // Save info to localStorage. The callback page will read it.
             localStorage.setItem('pendingUsername', username.trim());
+            localStorage.setItem('pendingStudentId', studentId);
+
+            await setPersistence(auth, browserLocalPersistence);
             const provider = new GoogleAuthProvider();
             await signInWithRedirect(auth, provider);
 
         } catch (err: any) {
-            console.error('Login error', err);
+            console.error('Login initiation error', err);
             toast({
                 variant: 'destructive',
                 title: 'Login Failed',
-                description: err?.message || 'An unknown error occurred.',
+                description: err?.message || 'An unknown error occurred while trying to sign in.',
             });
             setIsSubmitting(false);
             localStorage.removeItem('pendingUsername');
+            localStorage.removeItem('pendingStudentId');
         }
     };
+
 
     const getUsernameHint = () => {
         if (username.length > 0 && !isUsernameValid) {
@@ -139,22 +148,22 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || !profileExists) {
-    return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.5 }}
-        className="flex h-screen w-screen items-center justify-center bg-background p-4"
-      >
-        <div className="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl opacity-50"></div>
-        <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-96 h-96 bg-green-500/20 rounded-full blur-3xl opacity-50"></div>
-
-        <ProfileSetupForm />
-        
-      </motion.div>
-    );
+  // If user is logged in and has a profile, show the app.
+  if (user && profileExists) {
+    return <>{children}</>;
   }
-
-  return <>{children}</>;
+  
+  // If user is logged in but doesn't have a profile, or not logged in at all, show the setup form.
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      transition={{ duration: 0.5 }}
+      className="flex h-screen w-screen items-center justify-center bg-background p-4"
+    >
+      <div className="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl opacity-50"></div>
+      <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-96 h-96 bg-green-500/20 rounded-full blur-3xl opacity-50"></div>
+      <ProfileSetupForm />
+    </motion.div>
+  );
 }
