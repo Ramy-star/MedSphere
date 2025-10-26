@@ -132,9 +132,9 @@ function ProfileSetupForm() {
 
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading, profileExists } = useUser();
+  const { user, loading, profileExists, isProcessingRedirect } = useUser();
   
-  if (loading) {
+  if (loading || isProcessingRedirect) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">

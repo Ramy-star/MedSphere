@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, createContext, useContext } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useFirebase } from '../provider';
@@ -33,28 +33,42 @@ export type User = FirebaseUser & {
     profile: UserProfile | null;
 };
 
+interface UserContextType {
+  user: User | null;
+  loading: boolean;
+  profileExists: boolean;
+  isProcessingRedirect: boolean;
+  setIsProcessingRedirect: (isProcessing: boolean) => void;
+  error: Error | null;
+  isSuperAdmin: boolean;
+  isSubAdmin: boolean;
+}
 
-export function useUser() {
+const UserContext = createContext<UserContextType | undefined>(undefined);
+
+export function UserProvider({ children }: { children: React.ReactNode }) {
   const { auth } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileExists, setProfileExists] = useState(false);
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true); // Start as true
   const [error, setError] = useState<Error | null>(null);
 
   const isSuperAdmin = user?.profile?.roles?.isSuperAdmin === true;
   const isSubAdmin = !!user?.profile?.roles?.permissions && user.profile.roles.permissions.length > 0 && !isSuperAdmin;
 
   useEffect(() => {
-    if (!auth) return;
+    if (!auth) {
+        setIsProcessingRedirect(false);
+        setLoading(false);
+        return;
+    };
     
-    // onAuthStateChanged is the single source of truth for the user's auth state.
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => {
         if (firebaseUser) {
-            // User is signed in. Now, we listen for their profile document.
             if (firebaseUser.isAnonymous) {
-              // Anonymous users should be signed out.
               signOut(auth);
               setUser(null);
               setProfileExists(false);
@@ -67,52 +81,67 @@ export function useUser() {
                 if (docSnap.exists()) {
                     const profileData = docSnap.data() as UserProfile;
                     if (profileData.roles?.isBlocked) {
-                       // If user is blocked, sign them out and clear state.
                        signOut(auth);
                        setUser(null);
                        setProfileExists(false);
                     } else {
-                      // User has a profile and is not blocked.
                       setUser({ ...firebaseUser, profile: profileData });
                       setProfileExists(true);
                     }
                 } else {
-                    // This can happen briefly during profile creation after redirect.
-                    // AuthGuard will show the setup form in this case.
                     setUser({ ...firebaseUser, profile: null });
                     setProfileExists(false);
                 }
                 setLoading(false);
+                // The redirect processing might still be happening, so we don't set it to false here.
+                // It will be set to false by the FirebaseClientProvider.
               },
               (profileError) => {
-                // Error listening to the profile document.
                 console.error("Error listening to user profile:", profileError);
                 setError(profileError);
                 setUser({ ...firebaseUser, profile: null });
                 setProfileExists(false);
                 setLoading(false);
+                setIsProcessingRedirect(false);
               }
             );
-            // Return the profile listener unsubscribe function.
             return () => unsubProfile();
         } else {
-          // User is signed out.
           setUser(null);
           setProfileExists(false);
           setLoading(false);
+          setIsProcessingRedirect(false);
         }
       },
       (authError) => {
-        // An error occurred in the auth listener itself.
         console.error('onAuthStateChanged error:', authError);
         setError(authError);
         setLoading(false);
+        setIsProcessingRedirect(false);
       }
     );
     
-    // Return the auth listener unsubscribe function.
     return () => unsubscribe();
   }, [auth]);
+  
+  const value = {
+      user,
+      loading,
+      profileExists,
+      isProcessingRedirect,
+      setIsProcessingRedirect,
+      error,
+      isSuperAdmin,
+      isSubAdmin
+  };
 
-  return { user, loading, error, profileExists, isSuperAdmin, isSubAdmin };
+  return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
+}
+
+export function useUser(): UserContextType {
+  const context = useContext(UserContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a UserProvider');
+  }
+  return context;
 }
