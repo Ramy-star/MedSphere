@@ -11,7 +11,7 @@ import { Button } from './ui/button';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { db } from '@/firebase';
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, where, writeBatch } from 'firebase/firestore';
 import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { GoogleIcon } from './icons/GoogleIcon';
@@ -63,7 +63,7 @@ function ProfileSetupForm() {
     const { toast } = useToast();
     const { isAvailable, isLoading: isCheckingUsername, debouncedUsername } = useUsernameAvailability(username);
 
-    const isUsernameValid = username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
+    const isUsernameValid = username.trim().length >= 3 && /^[a-zA-Z0-9_ ]+$/.test(username);
     const canSubmit = isUsernameValid && isAvailable === true && !isCheckingUsername;
 
     const handleGoogleSignIn = async () => {
@@ -100,7 +100,7 @@ function ProfileSetupForm() {
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
-                username: username,
+                username: username.trim(),
                 studentId: studentId,
                 createdAt: new Date().toISOString(),
             });
@@ -130,7 +130,7 @@ function ProfileSetupForm() {
 
     const getUsernameHint = () => {
         if (username.length > 0 && !isUsernameValid) {
-            return <p className="text-xs text-red-400 mt-1.5">Use only letters, numbers, and underscores (_).</p>;
+            return <p className="text-xs text-red-400 mt-1.5">Use only letters, numbers, spaces, and underscores (_).</p>;
         }
         if (debouncedUsername.length >= 3 && isCheckingUsername) {
             return <p className="text-xs text-slate-400 mt-1.5">Checking availability...</p>;
@@ -168,7 +168,7 @@ function ProfileSetupForm() {
                         type="text"
                         placeholder="Choose a username"
                         value={username}
-                        onChange={(e) => setUsername(e.target.value.toLowerCase())}
+                        onChange={(e) => setUsername(e.target.value)}
                         className="bg-slate-800/60 border-slate-700 text-white h-12 text-base rounded-2xl pl-4 pr-10"
                         disabled={isSubmitting}
                     />
@@ -180,7 +180,7 @@ function ProfileSetupForm() {
                      </div>
                 </div>
 
-                <Button onClick={handleGoogleSignIn} disabled={!canSubmit || isSubmitting} size="lg" className={cn("rounded-2xl h-12 text-base font-semibold transition-transform active:scale-95", "bg-slate-700/50 hover:bg-slate-700/80 text-white")}>
+                <Button onClick={handleGoogleSignIn} disabled={!canSubmit || isSubmitting} size="lg" className="rounded-2xl h-12 text-base font-semibold transition-transform active:scale-95 bg-slate-700/50 hover:bg-slate-700/80 text-white">
                     {isSubmitting ? (
                         <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                     ) : (
