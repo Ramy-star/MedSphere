@@ -274,7 +274,7 @@ export const contentService = {
   async createOrUpdateInteractiveContent(
     destination: Content,
     name: string,
-    newData: Partial<Lecture>,
+    lectureData: Partial<Lecture>,
     sourceFileId: string,
     type: 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD'
   ): Promise<Content> {
@@ -282,7 +282,7 @@ export const contentService = {
   
       const originalFileName = name.replace(/\.[^/.]+$/, "");
       let contentName: string;
-  
+      
       switch (type) {
           case 'INTERACTIVE_QUIZ':
               contentName = `${originalFileName} - Quiz`;
@@ -295,17 +295,16 @@ export const contentService = {
               break;
       }
       
-      const lectureKey = type === 'INTERACTIVE_QUIZ' ? 'mcqs_level_1'
-                       : type === 'INTERACTIVE_EXAM' ? 'mcqs_level_2'
-                       : 'flashcards';
-
-      const newLectureData: Partial<Lecture> = {
-          id: sourceFileId || uuidv4(),
-          name: originalFileName,
-          [lectureKey]: newData[lectureKey] || [],
+      const newLectureData: Lecture = {
+          id: lectureData.id || sourceFileId || uuidv4(),
+          name: lectureData.name || originalFileName,
+          mcqs_level_1: lectureData.mcqs_level_1 || [],
+          mcqs_level_2: lectureData.mcqs_level_2 || [],
+          written: lectureData.written || [],
+          flashcards: lectureData.flashcards || [],
       };
 
-      // If destination is a folder, create a new file
+      // If destination is a folder, create a new interactive file
       if (destination.type === 'FOLDER') {
           const newId = uuidv4();
           const newRef = doc(db, 'content', newId);
@@ -333,7 +332,7 @@ export const contentService = {
           });
       }
   
-      // If destination is an existing file of the same type, merge content
+      // If destination is an existing file of the same type, merge the content
       if (destination.type === type) {
           const docRef = doc(db, 'content', destination.id);
   
@@ -346,9 +345,7 @@ export const contentService = {
               if (existingQuizData) {
                   try {
                       existingLectures = JSON.parse(existingQuizData);
-                      if (!Array.isArray(existingLectures)) {
-                          existingLectures = [];
-                      }
+                      if (!Array.isArray(existingLectures)) existingLectures = [];
                   } catch (e) {
                       existingLectures = [];
                   }
@@ -359,27 +356,28 @@ export const contentService = {
               if (existingLectureIndex > -1) {
                   // Merge content into existing lecture object
                   const lectureToUpdate = { ...existingLectures[existingLectureIndex] };
-                  
-                  // This is the key fix: only update the relevant key
-                  if (newLectureData[lectureKey]) {
-                      lectureToUpdate[lectureKey] = newLectureData[lectureKey];
-                  }
 
+                  // Smartly merge based on which content type is being updated
+                  if(newLectureData.mcqs_level_1 && newLectureData.mcqs_level_1.length > 0) lectureToUpdate.mcqs_level_1 = newLectureData.mcqs_level_1;
+                  if(newLectureData.mcqs_level_2 && newLectureData.mcqs_level_2.length > 0) lectureToUpdate.mcqs_level_2 = newLectureData.mcqs_level_2;
+                  if(newLectureData.written && newLectureData.written.length > 0) lectureToUpdate.written = newLectureData.written;
+                  if(newLectureData.flashcards && newLectureData.flashcards.length > 0) lectureToUpdate.flashcards = newLectureData.flashcards;
+                  
                   existingLectures[existingLectureIndex] = lectureToUpdate;
               } else {
                   // Add as a new lecture object to the array
-                  existingLectures.push(newLectureData as Lecture);
+                  existingLectures.push(newLectureData);
               }
   
-              const updatedData = {
-                  'metadata.quizData': JSON.stringify(existingLectures, null, 2),
+              const updatedQuizData = JSON.stringify(existingLectures, null, 2);
+              transaction.update(docRef, {
+                  'metadata.quizData': updatedQuizData,
                   'updatedAt': new Date().toISOString(),
-              };
-              transaction.update(docRef, updatedData);
+              });
   
               const updatedDestination = { ...destination };
               if (!updatedDestination.metadata) updatedDestination.metadata = {};
-              updatedDestination.metadata.quizData = JSON.stringify(existingLectures, null, 2);
+              updatedDestination.metadata.quizData = updatedQuizData;
               return updatedDestination;
           });
       }

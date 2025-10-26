@@ -130,7 +130,8 @@ async function runGenerationProcess(
                     break;
 
                 case 'converting_json':
-                    jsonQuestions = JSON.parse(await convertQuestionsToJson({ prompt: prompts.json, questionsText: textQuestions! }));
+                    const lectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
+                    jsonQuestions = JSON.parse(await convertQuestionsToJson({ lectureName: lectureName, questionsText: textQuestions! }));
                     set(state => updateTask(state, { jsonQuestions }));
                     break;
                 
@@ -140,7 +141,8 @@ async function runGenerationProcess(
                     break;
                 
                 case 'converting_exam_json':
-                    jsonExam = JSON.parse(await convertQuestionsToJson({ prompt: prompts.examJson, questionsText: textExam! }));
+                    const examLectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
+                    jsonExam = JSON.parse(await convertQuestionsToJson({ lectureName: examLectureName, questionsText: textExam! }));
                     set(state => updateTask(state, { jsonExam }));
                     break;
 
@@ -150,7 +152,8 @@ async function runGenerationProcess(
                     break;
 
                 case 'converting_flashcard_json':
-                    jsonFlashcard = JSON.parse(await convertQuestionsToJson({ prompt: prompts.flashcardJson, questionsText: textFlashcard! }));
+                    const flashcardLectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
+                    jsonFlashcard = JSON.parse(await convertQuestionsToJson({ lectureName: flashcardLectureName, questionsText: textFlashcard! }));
                     set(state => updateTask(state, { jsonFlashcard }));
                     break;
 
@@ -240,7 +243,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             throw new Error("No completed task to save.");
         }
         
-        const dataToSave: Partial<Lecture> = {
+        const lectureData: Partial<Lecture> = {
             id: task.sourceFileId,
             name: task.fileName.replace(/\.[^/.]+$/, ""),
             mcqs_level_1: task.jsonQuestions || [],
@@ -248,16 +251,16 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             written: [], // Not implemented yet
             flashcards: task.jsonFlashcard || [],
         };
-
+        
         const collectionRef = collection(db, `users/${userId}/questionSets`);
         await addDoc(collectionRef, {
             fileName: task.fileName,
             textQuestions: task.textQuestions || '',
-            jsonQuestions: dataToSave.mcqs_level_1,
+            jsonQuestions: lectureData.mcqs_level_1,
             textExam: task.textExam || '',
-            jsonExam: dataToSave.mcqs_level_2,
+            jsonExam: lectureData.mcqs_level_2,
             textFlashcard: task.textFlashcard || '',
-            jsonFlashcard: dataToSave.flashcards,
+            jsonFlashcard: lectureData.flashcards,
             createdAt: new Date().toISOString(),
             userId: userId,
             sourceFileId: task.sourceFileId,
@@ -319,3 +322,5 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     }
   })
 );
+
+    
