@@ -904,7 +904,7 @@ interface AdminReportModalProps {
 
 const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps) => {
     const { db } = useFirebase();
-    const [reportData, setReportData] = useState<{ userName: string; score: number; total: number; percentage: number }[]>([]);
+    const [reportData, setReportData] = useState<{ userName: string; studentId: string; score: number; total: number; percentage: number }[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
@@ -938,6 +938,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                 
                 const finalData = Object.values(resultsByUser).map(result => ({
                     userName: usersMap.get(result.userId)?.displayName || 'Unknown User',
+                    studentId: usersMap.get(result.userId)?.studentId || 'N/A',
                     score: result.score,
                     total: result.totalQuestions,
                     percentage: result.percentage,
@@ -954,7 +955,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-3xl">
                 <DialogHeader>
                     <DialogTitle>Exam Report</DialogTitle>
                 </DialogHeader>
@@ -965,7 +966,8 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                         <table className="w-full text-sm text-left">
                             <thead className="text-xs text-gray-400 uppercase bg-gray-700">
                                 <tr>
-                                    <th scope="col" className="px-6 py-3">Student</th>
+                                    <th scope="col" className="px-6 py-3">Student Name</th>
+                                    <th scope="col" className="px-6 py-3">Student ID</th>
                                     <th scope="col" className="px-6 py-3">Score</th>
                                     <th scope="col" className="px-6 py-3">Percentage</th>
                                 </tr>
@@ -974,6 +976,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                 {reportData.map((data, index) => (
                                     <tr key={index} className="border-b bg-gray-800 border-gray-700">
                                         <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-white">{data.userName}</th>
+                                        <td className="px-6 py-4">{data.studentId}</td>
                                         <td className="px-6 py-4">{`${data.score} / ${data.total}`}</td>
                                         <td className="px-6 py-4">{data.percentage.toFixed(2)}%</td>
                                     </tr>
