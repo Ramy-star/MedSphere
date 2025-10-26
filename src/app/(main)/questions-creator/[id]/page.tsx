@@ -114,6 +114,14 @@ function reorderAndStringify(obj: any): string {
     return JSON.stringify(orderedObject, null, 2);
 }
 
+type EditingContentState = {
+    text: string;
+    json: string;
+    examText: string;
+    examJson: string;
+    flashcardText: string;
+    flashcardJson: string;
+};
 
 function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
@@ -124,7 +132,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   });
 
   const [isEditing, setIsEditing] = useState({ text: false, json: false, examText: false, examJson: false, flashcardText: false, flashcardJson: false });
-  const [editingContent, setEditingContent] = useState({ text: '', json: '', examText: '', examJson: '', flashcardText: '', flashcardJson: '' });
+  const [editingContent, setEditingContent] = useState<EditingContentState>({ text: '', json: '', examText: '', examJson: '', flashcardText: '', flashcardJson: '' });
   const [isRepairing, setIsRepairing] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
   const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson'} | null>(null);
@@ -183,7 +191,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     await updateDoc(docRef, updatedData);
   };
   
-  const handleToggleEdit = async (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
+  const handleToggleEdit = async (type: keyof EditingContentState) => {
     if (isEditing[type]) {
       // Save
       if (questionSet) {
@@ -219,14 +227,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     setIsEditing(prev => ({ ...prev, [type]: !prev[type] }));
   };
 
-  const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
+  const handleCancelEdit = (type: keyof EditingContentState) => {
     if (questionSet) {
-        const keyMap: Record<typeof type, string> = {
+        const keyMap: Record<keyof EditingContentState, string> = {
             text: questionSet.textQuestions || '',
             json: reorderAndStringify(questionSet.jsonQuestions),
             examText: questionSet.textExam || '',
             examJson: reorderAndStringify(questionSet.jsonExam),
-            textFlashcard: questionSet.textFlashcard || '',
+            flashcardText: questionSet.textFlashcard || '',
             jsonFlashcard: reorderAndStringify(questionSet.jsonFlashcard),
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
@@ -244,7 +252,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     });
   };
   
-  const handleCopy = (content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
+  const handleCopy = (content: string, type: keyof EditingContentState) => {
     navigator.clipboard.writeText(content);
     toast({ title: 'Copied to Clipboard', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Flashcard') ? 'Flashcard ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been copied.` });
     setCopiedStatus(prev => ({ ...prev, [type]: true }));
@@ -384,7 +392,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     );
   }
 
-  const OutputCard = ({ title, icon, content, type, onToggleEdit, isEditing, onContentChange, onCancel, onRepair, isRepairing, jsonError }: { title: string, icon: React.ReactNode, content: any, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson', onToggleEdit: () => void, isEditing: boolean, onContentChange: (value: string) => void, onCancel: () => void, onRepair?: () => void, isRepairing?: boolean, jsonError?: string | null }) => {
+  const OutputCard = ({ title, icon, content, type, onToggleEdit, isEditing, onContentChange, onCancel, onRepair, isRepairing, jsonError }: { title: string, icon: React.ReactNode, content: any, type: keyof EditingContentState, onToggleEdit: () => void, isEditing: boolean, onContentChange: (value: string) => void, onCancel: () => void, onRepair?: () => void, isRepairing?: boolean, jsonError?: string | null }) => {
     const isThisCardEditing = isEditing;
     const isJsonCardWithError = type.includes('json') && jsonError;
     const isCopied = copiedStatus[type];
@@ -397,7 +405,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
             <div className="flex items-center justify-between">
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                     {icon}
                     <div>
                         <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
@@ -693,7 +701,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     isEditing={isEditing.jsonFlashcard}
                     onToggleEdit={() => handleToggleEdit('flashcardJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, jsonFlashcard: value}))}
-                    onCancel={() => handleCancelEdit('jsonFlashcard')}
+                    onCancel={() => handleCancelEdit('flashcardJson')}
                 />
             </div>
         )}
@@ -769,3 +777,4 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
