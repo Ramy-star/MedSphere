@@ -42,31 +42,92 @@ import { Label } from '@/components/ui/label';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { CSS } from '@dnd-kit/utilities';
 import { contentService, type Content } from '@/lib/contentService';
+import type { Lecture } from '@/lib/types';
+
 
 type SavedQuestionSet = {
   id: string;
   fileName: string;
   textQuestions: string;
-  jsonQuestions: string;
+  jsonQuestions: any;
   textExam?: string;
-  jsonExam?: string;
+  jsonExam?: any;
   textFlashcard?: string;
-  jsonFlashcard?: string;
+  jsonFlashcard?: any;
   createdAt: string;
   userId: string;
   sourceFileId: string;
   order: number;
 };
 
-// Helper to get text content while preserving line breaks
-function getPreText(element: HTMLElement) {
-    let text = element.innerHTML;
-    text = text.replace(/<br\s*\/?>/gi, '\n'); // Convert <br> to newline
-    text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
-    text = text.replace(/<\/div>/gi, '');       // Remove </div>
-    // Basic un-escaping for display
-    text = text.replace(/&lt;/g, '<').replace(/&gt;/, '>').replace(/&amp;/g, '&');
-    return text;
+// Programmatic reordering to guarantee final structure
+function reorderAndStringify(obj: any): string {
+    if (typeof obj === 'string') {
+        try {
+            obj = JSON.parse(obj);
+        } catch (e) {
+            return obj; // Return original string if it's not valid JSON
+        }
+    }
+    if (typeof obj !== 'object' || obj === null) return '';
+
+    const orderedKeys: (keyof Lecture)[] = ['id', 'name', 'mcqs_level_1', 'mcqs_level_2', 'written', 'flashcards'];
+    const orderedObject: { [key: string]: any } = {};
+
+    for (const key of orderedKeys) {
+        if (obj.hasOwnProperty(key)) {
+            orderedObject[key] = obj[key];
+        }
+    }
+
+    for (const key in obj) {
+        if (!orderedObject.hasOwnProperty(key)) {
+            orderedObject[key] = obj[key];
+        }
+    }
+    
+    const reorderMcqKeys = (mcqs: any[]) => {
+      if (!Array.isArray(mcqs)) return mcqs;
+      return mcqs.map(mcq => {
+        if (typeof mcq !== 'object' || mcq === null) return mcq;
+        const orderedMcq: {[key: string]: any} = {};
+        if (mcq.hasOwnProperty('q')) orderedMcq.q = mcq.q;
+        if (mcq.hasOwnProperty('o')) orderedMcq.o = mcq.o;
+        if (mcq.hasOwnProperty('a')) orderedMcq.a = mcq.a;
+        Object.keys(mcq).forEach(key => {
+          if (!orderedMcq.hasOwnProperty(key)) {
+            orderedMcq[key] = mcq[key];
+          }
+        });
+        return orderedMcq;
+      });
+    };
+
+    if (orderedObject.mcqs_level_1) {
+      orderedObject.mcqs_level_1 = reorderMcqKeys(orderedObject.mcqs_level_1);
+    }
+    if (orderedObject.mcqs_level_2) {
+      orderedObject.mcqs_level_2 = reorderMcqKeys(orderedObject.mcqs_level_2);
+    }
+    if (orderedObject.flashcards) {
+        if(Array.isArray(orderedObject.flashcards)) {
+            orderedObject.flashcards = orderedObject.flashcards.map(fc => {
+                if (typeof fc !== 'object' || fc === null) return fc;
+                const orderedFc: {[key: string]: any} = {};
+                if (fc.hasOwnProperty('front')) orderedFc.front = fc.front;
+                if (fc.hasOwnProperty('back')) orderedFc.back = fc.back;
+                Object.keys(fc).forEach(key => {
+                    if (!orderedFc.hasOwnProperty(key)) {
+                        orderedFc[key] = fc[key];
+                    }
+                });
+                return orderedFc;
+            });
+        }
+    }
+
+
+    return JSON.stringify(orderedObject, null, 2);
 }
 
 
@@ -204,7 +265,7 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
                     </div>
                 )}
             </div>
-            <h3 className="text-lg font-semibold text-white break-words mt-4">{set.fileName}</h3>
+            <h3 className="text-lg font-semibold text-white break-words mt-4">{set.fileName.replace(/\.[^/.]+$/, "")}</h3>
         </div>
     );
 };
@@ -478,15 +539,32 @@ function QuestionsCreatorContent() {
   }, [retryGeneration, allPrompts]);
 
 
-  const renderOutputCard = (
-    title: string,
-    icon: React.ReactNode,
-    content: string | null,
-    isLoading: boolean,
-    loadingText: string,
-    showRetryButton: boolean
-  ) => {
+  const OutputCard = ({
+    title,
+    icon,
+    content,
+    isLoading,
+    loadingText,
+    showRetryButton
+  }: {
+    title: string;
+    icon: React.ReactNode;
+    content: any; // Can be string or object
+    isLoading: boolean;
+    loadingText: string;
+    showRetryButton: boolean;
+  }) => {
     const hasContent = !!content || isLoading || showRetryButton;
+  
+    const displayContent = useMemo(() => {
+      if (typeof content === 'string') {
+        return content;
+      }
+      if (content !== null && typeof content === 'object') {
+        return reorderAndStringify(content);
+      }
+      return '';
+    }, [content]);
 
     return (
         <div className={cn(
@@ -519,7 +597,7 @@ function QuestionsCreatorContent() {
                         </div>
                     ) : (
                        <textarea
-                           value={content ?? ''}
+                           value={displayContent}
                            readOnly
                            placeholder="Generated content will appear here..."
                            className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
@@ -676,22 +754,22 @@ function QuestionsCreatorContent() {
                                 className="overflow-hidden"
                             >
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                    {renderOutputCard(
-                                        "Text Questions",
-                                        <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
-                                        task?.textQuestions ?? null,
-                                        isGenerating && ['extracting', 'generating_text'].includes(task.status),
-                                        task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...',
-                                        showTextRetry
-                                    )}
-                                    {renderOutputCard(
-                                        "JSON Questions",
-                                        <FileJson className="w-8 h-8 text-blue-400 shrink-0" />,
-                                        task?.jsonQuestions ?? null,
-                                        isGenerating && task.status === 'converting_json',
-                                        'Converting to JSON...',
-                                        showJsonRetry
-                                    )}
+                                    <OutputCard
+                                        title="Text Questions"
+                                        icon={<FileText className="w-8 h-8 text-blue-400 shrink-0" />}
+                                        content={task?.textQuestions ?? null}
+                                        isLoading={isGenerating && ['extracting', 'generating_text'].includes(task.status)}
+                                        loadingText={task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...'}
+                                        showRetryButton={showTextRetry}
+                                    />
+                                    <OutputCard
+                                        title="JSON Questions"
+                                        icon={<FileJson className="w-8 h-8 text-blue-400 shrink-0" />}
+                                        content={task?.jsonQuestions ?? null}
+                                        isLoading={isGenerating && task.status === 'converting_json'}
+                                        loadingText='Converting to JSON...'
+                                        showRetryButton={showJsonRetry}
+                                    />
                                 </div>
                             </motion.div>
                         )}
@@ -712,22 +790,22 @@ function QuestionsCreatorContent() {
                                 className="overflow-hidden"
                             >
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                    {renderOutputCard(
-                                    "Text Exam",
-                                    <FileText className="w-8 h-8 text-red-400 shrink-0" />,
-                                    task?.textExam ?? null,
-                                    isGenerating && task.status === 'generating_exam_text',
-                                    'Generating exam...',
-                                    showExamTextRetry
-                                    )}
-                                    {renderOutputCard(
-                                    "JSON Exam",
-                                    <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
-                                    task?.jsonExam ?? null,
-                                    isGenerating && task.status === 'converting_exam_json',
-                                    'Converting exam to JSON...',
-                                    showExamJsonRetry
-                                    )}
+                                    <OutputCard
+                                        title="Text Exam"
+                                        icon={<FileText className="w-8 h-8 text-red-400 shrink-0" />}
+                                        content={task?.textExam ?? null}
+                                        isLoading={isGenerating && task.status === 'generating_exam_text'}
+                                        loadingText='Generating exam...'
+                                        showRetryButton={showExamTextRetry}
+                                    />
+                                    <OutputCard
+                                        title="JSON Exam"
+                                        icon={<FileJson className="w-8 h-8 text-red-400 shrink-0" />}
+                                        content={task?.jsonExam ?? null}
+                                        isLoading={isGenerating && task.status === 'converting_exam_json'}
+                                        loadingText='Converting exam to JSON...'
+                                        showRetryButton={showExamJsonRetry}
+                                    />
                                 </div>
                             </motion.div>
                         )}
@@ -748,22 +826,22 @@ function QuestionsCreatorContent() {
                                 className="overflow-hidden"
                             >
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                    {renderOutputCard(
-                                    "Text Flashcard",
-                                    <FileText className="w-8 h-8 text-green-400 shrink-0" />,
-                                    task?.textFlashcard ?? null,
-                                    isGenerating && task.status === 'generating_flashcard_text',
-                                    'Generating flashcards...',
-                                    showFlashcardTextRetry
-                                    )}
-                                    {renderOutputCard(
-                                    "JSON Flashcard",
-                                    <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
-                                    task?.jsonFlashcard ?? null,
-                                    isGenerating && task.status === 'converting_flashcard_json',
-                                    'Converting flashcards to JSON...',
-                                    showFlashcardJsonRetry
-                                    )}
+                                    <OutputCard
+                                        title="Text Flashcard"
+                                        icon={<FileText className="w-8 h-8 text-green-400 shrink-0" />}
+                                        content={task?.textFlashcard ?? null}
+                                        isLoading={isGenerating && task.status === 'generating_flashcard_text'}
+                                        loadingText='Generating flashcards...'
+                                        showRetryButton={showFlashcardTextRetry}
+                                    />
+                                    <OutputCard
+                                        title="JSON Flashcard"
+                                        icon={<FileJson className="w-8 h-8 text-green-400 shrink-0" />}
+                                        content={task?.jsonFlashcard ?? null}
+                                        isLoading={isGenerating && task.status === 'converting_flashcard_json'}
+                                        loadingText='Converting flashcards to JSON...'
+                                        showRetryButton={showFlashcardJsonRetry}
+                                    />
                                 </div>
                             </motion.div>
                         )}

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, use, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, Layers, ChevronDown } from 'lucide-react';
@@ -26,30 +26,93 @@ import { UploadProgress, type UploadingFile } from '@/components/UploadProgress'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { contentService, type Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
+import type { Lecture } from '@/lib/types';
+
 
 type SavedQuestionSet = {
   id: string;
   fileName: string;
   textQuestions: string;
-  jsonQuestions: string;
-  textExam: string;
-  jsonExam: string;
-  textFlashcard: string;
-  jsonFlashcard: string;
+  jsonQuestions: any; // Can be object or string
+  textExam?: string;
+  jsonExam?: any;
+  textFlashcard?: string;
+  jsonFlashcard?: any;
   createdAt: string;
   userId: string;
   sourceFileId: string;
 };
 
-// Helper to get text content while preserving line breaks
-function getPreText(element: HTMLElement) {
-    let text = element.innerHTML;
-    text = text.replace(/<br\s*\/?>/gi, '\n'); // Convert <br> to newline
-    text = text.replace(/<div>/gi, '\n');      // Convert <div> to newline
-    text = text.replace(/<\/div>/gi, '');       // Remove </div>
-    // Basic un-escaping for display
-    text = text.replace(/&lt;/g, '<').replace(/&gt;/, '>').replace(/&amp;/g, '&');
-    return text;
+// Programmatic reordering to guarantee final structure
+function reorderAndStringify(obj: any): string {
+    if (typeof obj === 'string') {
+        try {
+            obj = JSON.parse(obj);
+        } catch (e) {
+            return obj; // Return original string if it's not valid JSON
+        }
+    }
+    if (typeof obj !== 'object' || obj === null) return '';
+
+    const orderedKeys: (keyof Lecture)[] = ['id', 'name', 'mcqs_level_1', 'mcqs_level_2', 'written', 'flashcards'];
+    const orderedObject: { [key: string]: any } = {};
+
+    // Add known keys in the desired order
+    for (const key of orderedKeys) {
+        if (obj.hasOwnProperty(key)) {
+            orderedObject[key] = obj[key];
+        }
+    }
+
+    // Add any other keys that might exist (to prevent data loss)
+    for (const key in obj) {
+        if (!orderedObject.hasOwnProperty(key)) {
+            orderedObject[key] = obj[key];
+        }
+    }
+    
+    const reorderMcqKeys = (mcqs: any[]) => {
+      if (!Array.isArray(mcqs)) return mcqs;
+      return mcqs.map(mcq => {
+        if (typeof mcq !== 'object' || mcq === null) return mcq;
+        const orderedMcq: {[key: string]: any} = {};
+        if (mcq.hasOwnProperty('q')) orderedMcq.q = mcq.q;
+        if (mcq.hasOwnProperty('o')) orderedMcq.o = mcq.o;
+        if (mcq.hasOwnProperty('a')) orderedMcq.a = mcq.a;
+        // Add any other keys to be safe
+        Object.keys(mcq).forEach(key => {
+          if (!orderedMcq.hasOwnProperty(key)) {
+            orderedMcq[key] = mcq[key];
+          }
+        });
+        return orderedMcq;
+      });
+    };
+
+    if (orderedObject.mcqs_level_1) {
+      orderedObject.mcqs_level_1 = reorderMcqKeys(orderedObject.mcqs_level_1);
+    }
+    if (orderedObject.mcqs_level_2) {
+      orderedObject.mcqs_level_2 = reorderMcqKeys(orderedObject.mcqs_level_2);
+    }
+    if (orderedObject.flashcards) {
+        if(Array.isArray(orderedObject.flashcards)) {
+            orderedObject.flashcards = orderedObject.flashcards.map(fc => {
+                if (typeof fc !== 'object' || fc === null) return fc;
+                const orderedFc: {[key: string]: any} = {};
+                if (fc.hasOwnProperty('front')) orderedFc.front = fc.front;
+                if (fc.hasOwnProperty('back')) orderedFc.back = fc.back;
+                Object.keys(fc).forEach(key => {
+                    if (!orderedFc.hasOwnProperty(key)) {
+                        orderedFc[key] = fc[key];
+                    }
+                });
+                return orderedFc;
+            });
+        }
+    }
+
+    return JSON.stringify(orderedObject, null, 2);
 }
 
 
@@ -90,24 +153,15 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     if (!questionSet) {
         //notFound();
     } else {
-        const safeStringify = (data: any) => {
-            if (typeof data === 'string') return data;
-            try {
-                return JSON.stringify(data, null, 2);
-            } catch (e) {
-                return '';
-            }
-        };
-
         setEditingContent({ 
             text: questionSet.textQuestions || '', 
-            json: safeStringify(questionSet.jsonQuestions), 
+            json: reorderAndStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
-            examJson: safeStringify(questionSet.jsonExam),
+            examJson: reorderAndStringify(questionSet.jsonExam),
             textFlashcard: questionSet.textFlashcard || '',
-            jsonFlashcard: safeStringify(questionSet.jsonFlashcard)
+            jsonFlashcard: reorderAndStringify(questionSet.jsonFlashcard)
         });
-        setEditingTitle(questionSet.fileName);
+        setEditingTitle(questionSet.fileName.replace(/\.[^/.]+$/, ""));
     }
   }, [id, questionSet, loading]);
 
@@ -168,22 +222,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
   const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
     if (questionSet) {
-        const safeStringify = (data: any) => {
-            if (typeof data === 'string') return data;
-            try {
-                return JSON.stringify(data, null, 2);
-            } catch (e) {
-                return '';
-            }
-        };
-
         const keyMap: Record<typeof type, string> = {
             text: questionSet.textQuestions || '',
-            json: safeStringify(questionSet.jsonQuestions),
+            json: reorderAndStringify(questionSet.jsonQuestions),
             examText: questionSet.textExam || '',
-            examJson: safeStringify(questionSet.jsonExam),
+            examJson: reorderAndStringify(questionSet.jsonExam),
             textFlashcard: questionSet.textFlashcard || '',
-            jsonFlashcard: safeStringify(questionSet.jsonFlashcard),
+            jsonFlashcard: reorderAndStringify(questionSet.jsonFlashcard),
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
     }
@@ -260,7 +305,17 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         flashcardJson: 'jsonFlashcard'
     };
     const dataKey = keyMap[type] as keyof SavedQuestionSet;
-    const updatedData = { [dataKey]: content };
+    let contentToSave: string | object = content;
+     if (type.includes('json')) {
+        try {
+            contentToSave = JSON.parse(content);
+        } catch (e) {
+            toast({ variant: 'destructive', title: 'Invalid JSON', description: 'The JSON in the preview is not valid and could not be saved.'});
+            return;
+        }
+    }
+
+    const updatedData = { [dataKey]: contentToSave };
     await updateQuestionSet(updatedData);
     
     setEditingContent(prev => ({...prev, [type]: content}));
@@ -277,8 +332,11 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
           return;
       }
       if (questionSet && newTitle !== questionSet.fileName) {
-          await updateQuestionSet({ fileName: newTitle });
-          setEditingTitle(newTitle);
+          // Keep the original extension if it exists
+          const originalExt = questionSet.fileName.includes('.') ? questionSet.fileName.substring(questionSet.fileName.lastIndexOf('.')) : '';
+          const finalTitle = `${newTitle}${originalExt}`;
+          await updateQuestionSet({ fileName: finalTitle });
+          setEditingTitle(newTitle); // Display name without extension
           toast({ title: 'Title Updated' });
       }
       setIsEditingTitle(false);
@@ -286,8 +344,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
   const handleTitleCancel = () => {
     if (titleRef.current && questionSet) {
-      titleRef.current.textContent = questionSet.fileName;
-      setEditingTitle(questionSet.fileName);
+      titleRef.current.textContent = questionSet.fileName.replace(/\.[^/.]+$/, "");
+      setEditingTitle(questionSet.fileName.replace(/\.[^/.]+$/, ""));
     }
     setIsEditingTitle(false);
   };
@@ -300,15 +358,15 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     try {
         if(currentAction === 'save_questions_md') {
             const formattedContent = await reformatMarkdown({ rawText: questionSet.textQuestions });
-            const file = new File([formattedContent], `${questionSet.fileName} - Questions.md`, { type: 'text/markdown' });
+            const file = new File([formattedContent], `${questionSet.fileName.replace(/\.[^/.]+$/, "")} - Questions.md`, { type: 'text/markdown' });
             // This part is simplified. In a real app, you'd use a service to handle the file saving logic.
             // For now, we'll just log it and show a toast.
             console.log(`Saving markdown file to folder ${destination.id}`);
             toast({ title: "File Saved", description: `"${file.name}" has been saved to "${destination.name}".` });
         }
         else if (currentAction === 'save_exam_md') {
-            const formattedContent = await reformatMarkdown({ rawText: questionSet.textExam });
-            const file = new File([formattedContent], `${questionSet.fileName} - Exam.md`, { type: 'text/markdown' });
+            const formattedContent = await reformatMarkdown({ rawText: questionSet.textExam || '' });
+            const file = new File([formattedContent], `${questionSet.fileName.replace(/\.[^/.]+$/, "")} - Exam.md`, { type: 'text/markdown' });
              console.log(`Saving markdown file to folder ${destination.id}`);
             toast({ title: "File Saved", description: `"${file.name}" has been saved to "${destination.name}".` });
         }
@@ -345,8 +403,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     );
   }
 
-  const renderOutputCard = (title: string, icon: React.ReactNode, content: string | null, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
-    const isThisCardEditing = isEditing[type];
+  const OutputCard = ({ title, icon, content, type, onToggleEdit, isEditing, onContentChange, onCancel, onRepair, isRepairing, jsonError }: { title: string, icon: React.ReactNode, content: any, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson', onToggleEdit: () => void, isEditing: boolean, onContentChange: (value: string) => void, onCancel: () => void, onRepair: () => void, isRepairing: boolean, jsonError: string | null }) => {
+    const isThisCardEditing = isEditing;
     const isJsonCardWithError = type.includes('json') && jsonError;
     const isCopied = copiedStatus[type];
 
@@ -355,9 +413,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                        (type === 'flashcardJson' && currentAction === 'create_flashcard');
     const isSaving = (type === 'text' && currentAction === 'save_questions_md') || (type === 'examText' && currentAction === 'save_exam_md');
     
-    // Ensure content is a string
-    const displayContent = content ?? '';
-
     return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
             <div className="flex items-center justify-between">
@@ -421,13 +476,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                         )}
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setPreviewContent({title, content: displayContent, type})}><Eye className="h-4 w-4" /></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => setPreviewContent({title, content, type})}><Eye className="h-4 w-4" /></Button>
                             </TooltipTrigger>
                             <TooltipContent><p>Preview</p></TooltipContent>
                         </Tooltip>
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCopy(displayContent, type)}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCopy(content, type)}>
                                   {isCopied ? <Check className="h-4 w-4 text-green-400" /> : <Copy className="h-4 w-4" />}
                                 </Button>
                             </TooltipTrigger>
@@ -439,7 +494,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                               <div className="flex items-center">
                                   <Tooltip>
                                       <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleToggleEdit(type)}>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={onToggleEdit}>
                                               <Check className="h-4 w-4 text-green-400" />
                                           </Button>
                                       </TooltipTrigger>
@@ -447,7 +502,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                   </Tooltip>
                                   <Tooltip>
                                       <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCancelEdit(type)}>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={onCancel}>
                                               <X className="h-4 w-4 text-red-400" />
                                           </Button>
                                       </TooltipTrigger>
@@ -457,7 +512,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                           ) : (
                               <Tooltip>
                                   <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleToggleEdit(type)}>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={onToggleEdit}>
                                           <Pencil className="h-4 w-4" />
                                       </Button>
                                   </TooltipTrigger>
@@ -468,7 +523,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleDownload(displayContent, type.includes('Json') ? 'json' : 'md')}>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleDownload(content, type.includes('Json') ? 'json' : 'md')}>
                                     <Download className="h-4 w-4" />
                                 </Button>
                             </TooltipTrigger>
@@ -478,18 +533,18 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 </TooltipProvider>
             </div>
              <textarea
-                value={isThisCardEditing ? editingContent[type] : displayContent}
+                value={content}
                 readOnly={!isThisCardEditing || !isAdmin}
                 className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                 onChange={(e) => {
                     if (isThisCardEditing) {
-                        setEditingContent(prev => ({...prev, [type]: e.target.value}))
+                        onContentChange(e.target.value);
                     }
                 }}
             />
             {isJsonCardWithError && !isThisCardEditing && (
                 <div className="mt-2">
-                    <Button onClick={handleRepairJson} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white active:scale-95'>
+                    <Button onClick={onRepair} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white active:scale-95'>
                         {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
                         {isRepairing ? 'Repairing...' : 'Attempt to Repair JSON'}
                     </Button>
@@ -584,42 +639,115 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
         {sectionsVisibility.questions && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
-                {renderOutputCard("Text Questions", <FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.text, 'text')}
-                {renderOutputCard("JSON Questions", <FileJson className="text-blue-400 h-8 w-8 mb-4 shrink-0" />, editingContent.json, 'json')}
+                <OutputCard
+                    title="Text Questions"
+                    icon={<FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />}
+                    content={editingContent.text}
+                    type="text"
+                    isEditing={isEditing.text}
+                    onToggleEdit={() => handleToggleEdit('text')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, text: value}))}
+                    onCancel={() => handleCancelEdit('text')}
+                    onRepair={() => {}}
+                    isRepairing={false}
+                    jsonError={null}
+                />
+                <OutputCard
+                    title="JSON Questions"
+                    icon={<FileJson className="text-blue-400 h-8 w-8 mb-4 shrink-0" />}
+                    content={editingContent.json}
+                    type="json"
+                    isEditing={isEditing.json}
+                    onToggleEdit={() => handleToggleEdit('json')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, json: value}))}
+                    onCancel={() => handleCancelEdit('json')}
+                    onRepair={handleRepairJson}
+                    isRepairing={isRepairing}
+                    jsonError={jsonError}
+                />
             </div>
         )}
 
         <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
         {sectionsVisibility.exam && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
-                {renderOutputCard("Text Exam", <FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.examText, 'examText')}
-                {renderOutputCard("JSON Exam", <FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />, editingContent.jsonExam, 'examJson')}
+                <OutputCard
+                    title="Text Exam"
+                    icon={<FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
+                    content={editingContent.examText}
+                    type="examText"
+                    isEditing={isEditing.examText}
+                    onToggleEdit={() => handleToggleEdit('examText')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, examText: value}))}
+                    onCancel={() => handleCancelEdit('examText')}
+                    onRepair={() => {}}
+                    isRepairing={false}
+                    jsonError={null}
+                />
+                <OutputCard
+                    title="JSON Exam"
+                    icon={<FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
+                    content={editingContent.examJson}
+                    type="examJson"
+                    isEditing={isEditing.examJson}
+                    onToggleEdit={() => handleToggleEdit('examJson')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
+                    onCancel={() => handleCancelEdit('examJson')}
+                    onRepair={() => {}} // Placeholder
+                    isRepairing={false}
+                    jsonError={null} // Placeholder
+                />
             </div>
         )}
 
         <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
         {sectionsVisibility.flashcards && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
-                {renderOutputCard("Text Flashcard", <FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.textFlashcard, 'flashcardText')}
-                {renderOutputCard("JSON Flashcard", <FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />, editingContent.jsonFlashcard, 'flashcardJson')}
+                 <OutputCard
+                    title="Text Flashcard"
+                    icon={<FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
+                    content={editingContent.textFlashcard}
+                    type="flashcardText"
+                    isEditing={isEditing.flashcardText}
+                    onToggleEdit={() => handleToggleEdit('flashcardText')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardText: value}))}
+                    onCancel={() => handleCancelEdit('flashcardText')}
+                    onRepair={() => {}}
+                    isRepairing={false}
+                    jsonError={null}
+                />
+                <OutputCard
+                    title="JSON Flashcard"
+                    icon={<FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
+                    content={editingContent.jsonFlashcard}
+                    type="flashcardJson"
+                    isEditing={isEditing.flashcardJson}
+                    onToggleEdit={() => handleToggleEdit('flashcardJson')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardJson: value}))}
+                    onCancel={() => handleCancelEdit('flashcardJson')}
+                    onRepair={() => {}} // Placeholder
+                    isRepairing={false}
+                    jsonError={null} // Placeholder
+                />
             </div>
         )}
         
         <Dialog open={!!previewContent} onOpenChange={(isOpen) => {if (!isOpen) {setPreviewContent(null); setIsPreviewEditing(false);}}}>
             <DialogContent className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card rounded-3xl p-0 no-scrollbar" hideCloseButton={true}>
             <DialogHeader className='p-6 pb-2 flex-row flex-none justify-between items-center'>
-                <DialogTitle className="flex items-center gap-3">
-                    {previewContent?.type === 'text' && <FileText className="text-blue-400 h-5 w-5" />}
-                    {previewContent?.type === 'json' && <FileJson className="text-green-400 h-5 w-5" />}
+                <DialogTitle className="flex items-center gap-3 text-white">
+                    {previewContent?.type.includes('Text') && <FileText className="text-blue-400 h-5 w-5" />}
+                    {previewContent?.type.includes('Json') && <FileJson className="text-green-400 h-5 w-5" />}
+                     {previewContent?.title}
                 </DialogTitle>
                 <div className="flex items-center gap-1">
                     {isAdmin && (
-                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95 text-white" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
                         {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
                     </Button>
                     )}
                     <DialogClose asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95">
+                        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95 text-white">
                             <X className="h-4 w-4" />
                         </Button>
                     </DialogClose>
