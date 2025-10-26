@@ -96,7 +96,7 @@ export function VerificationScreen({ onVerified }: VerificationScreenProps) {
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleVerification()}
-              className="bg-slate-800/60 border-slate-700 text-white h-12 text-center text-lg tracking-wider rounded-xl"
+              className="bg-slate-800/60 border-slate-700 text-white h-12 text-center text-lg tracking-wider rounded-2xl"
               disabled={isLoading}
             />
             {error && <p className="text-red-400 text-sm">{error}</p>}
@@ -104,7 +104,7 @@ export function VerificationScreen({ onVerified }: VerificationScreenProps) {
               size="lg" 
               onClick={handleVerification} 
               disabled={isLoading}
-              className="rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg h-12 transition-transform active:scale-95"
+              className="rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg h-12 transition-transform active:scale-95"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
