@@ -9,6 +9,8 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { verifyStudentId } from '@/lib/verificationService';
 
+const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
+
 type VerificationScreenProps = {
   onVerified: () => void;
 };
@@ -28,9 +30,11 @@ export function VerificationScreen({ onVerified }: VerificationScreenProps) {
     try {
       const isValid = await verifyStudentId(studentId);
       if (isValid) {
+        // Store the verified ID in localStorage to be picked up by the AuthGuard
+        localStorage.setItem(VERIFIED_STUDENT_ID_KEY, studentId.trim());
         onVerified();
       } else {
-        setError('Invalid Student ID. Please check and try again.');
+        setError('Invalid Student ID or ID already claimed. Please check and try again.');
       }
     } catch (e) {
       console.error('Verification failed:', e);
@@ -104,7 +108,7 @@ export function VerificationScreen({ onVerified }: VerificationScreenProps) {
               size="lg" 
               onClick={handleVerification} 
               disabled={isLoading}
-              className="rounded-2xl bg-primary hover:bg-primary/90 text-primary-foreground font-bold text-lg h-12 transition-transform active:scale-95"
+              className="rounded-2xl bg-slate-700/50 hover:bg-slate-700/80 text-primary-foreground font-bold text-lg h-12 transition-transform active:scale-95"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

@@ -18,6 +18,8 @@ import { GoogleIcon } from './icons/GoogleIcon';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 
+const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
+
 // --- Username Availability Hook ---
 function useUsernameAvailability(username: string) {
     const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
@@ -66,6 +68,19 @@ function ProfileSetupForm() {
 
     const handleGoogleSignIn = async () => {
         if (!canSubmit) return;
+        
+        const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
+        if (!studentId) {
+            toast({
+                variant: 'destructive',
+                title: 'Verification Error',
+                description: 'Could not find your verified Student ID. Please start over.',
+            });
+            // Potentially force a page reload or redirect to verification
+            window.location.href = '/'; 
+            return;
+        }
+
 
         setIsSubmitting(true);
         try {
@@ -74,16 +89,32 @@ function ProfileSetupForm() {
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
-            // Create user profile in Firestore with the chosen username
+            // Create user profile and claim student ID in a transaction
             const userRef = doc(db, 'users', user.uid);
-            await setDoc(userRef, {
+            const studentIdRef = doc(db, 'claimedStudentIds', studentId);
+
+            const batch = writeBatch(db);
+            
+            batch.set(userRef, {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName,
                 photoURL: user.photoURL,
                 username: username,
+                studentId: studentId,
                 createdAt: new Date().toISOString(),
             });
+
+            batch.set(studentIdRef, {
+                userId: user.uid,
+                claimedAt: new Date().toISOString(),
+            });
+
+            await batch.commit();
+            
+            // Clean up the student ID from local storage after successful claim
+            localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+
 
         } catch (err: any) {
             console.error('Login error', err);
