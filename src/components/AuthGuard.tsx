@@ -109,7 +109,7 @@ function ProfileSetupForm() {
                  return <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1"><XCircle size={14} /> Not available.</p>;
             }
         }
-        return <p className="text-xs text-slate-500 mt-1.5">Must be at least 3 characters.</p>;
+        return <p className="text-xs text-slate-500 mt-1.5">Must be at least 3 characters in English only.</p>;
     }
 
 
