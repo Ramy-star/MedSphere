@@ -36,8 +36,6 @@ interface UserContextType {
   user: User | null;
   loading: boolean;
   profileExists: boolean;
-  isProcessingRedirect: boolean;
-  setIsProcessingRedirect: (isProcessing: boolean) => void;
   error: Error | null;
   isSuperAdmin: boolean;
   isSubAdmin: boolean;
@@ -50,7 +48,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [profileExists, setProfileExists] = useState(false);
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true); // Start as true
   const [error, setError] = useState<Error | null>(null);
 
   const isSuperAdmin = user?.profile?.roles?.isSuperAdmin === true;
@@ -58,7 +55,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!auth) {
-        setIsProcessingRedirect(false);
         setLoading(false);
         return;
     };
@@ -72,7 +68,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               setUser(null);
               setProfileExists(false);
               setLoading(false);
-              setIsProcessingRedirect(false);
               return;
             }
             const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -93,8 +88,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                     setProfileExists(false);
                 }
                 setLoading(false);
-                // The redirect processing might still be happening, so we don't set it to false here.
-                // It will be set to false by the FirebaseClientProvider.
               },
               (profileError) => {
                 console.error("Error listening to user profile:", profileError);
@@ -102,7 +95,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
                 setUser({ ...firebaseUser, profile: null });
                 setProfileExists(false);
                 setLoading(false);
-                setIsProcessingRedirect(false);
               }
             );
             return () => unsubProfile();
@@ -110,14 +102,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
           setUser(null);
           setProfileExists(false);
           setLoading(false);
-          setIsProcessingRedirect(false);
         }
       },
       (authError) => {
         console.error('onAuthStateChanged error:', authError);
         setError(authError);
         setLoading(false);
-        setIsProcessingRedirect(false);
       }
     );
     
@@ -128,8 +118,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
       user,
       loading,
       profileExists,
-      isProcessingRedirect,
-      setIsProcessingRedirect,
       error,
       isSuperAdmin,
       isSubAdmin

@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import type { Metadata } from "next";
@@ -56,7 +54,7 @@ export default function RootLayout({
     if (hasVisited) {
       setShowWelcome(false);
     }
-    if (isStudentVerified === 'true') {
+    if (isStudentVerified) {
       setIsVerified(true);
     }
   }, []);
@@ -77,8 +75,10 @@ export default function RootLayout({
   };
 
   const handleVerified = () => {
-    localStorage.setItem(VERIFIED_STUDENT_ID_KEY, 'true');
-    setIsVerified(true);
+    const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
+    if (studentId) {
+        setIsVerified(true);
+    }
   };
 
   if (!isClient) {
@@ -101,7 +101,7 @@ export default function RootLayout({
                 <meta name="theme-color" content="#0B0F12" />
                 <link rel="apple-touch-icon" href="/logo.svg" />
             </head>
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full overflow-hidden`}>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
                  <WelcomeScreen onGetStarted={handleGetStarted} />
             </body>
         </html>
@@ -116,7 +116,7 @@ export default function RootLayout({
                 <meta name="description" content="Student ID Verification" />
                 <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
             </head>
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full overflow-hidden`}>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
                  <VerificationScreen onVerified={handleVerified} />
             </body>
         </html>
@@ -135,7 +135,7 @@ export default function RootLayout({
           <link rel="apple-touch-icon" href="/logo.svg" />
           <link rel="preconnect" href="https://res.cloudinary.com" />
       </head>
-      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full overflow-hidden`}>
+      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
         <FirebaseClientProvider config={firebaseConfig}>
           <AuthGuard>
             <div className="flex flex-col h-full w-full">

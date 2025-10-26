@@ -7,17 +7,19 @@ import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
 import { Input } from './ui/input';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
-import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect } from 'firebase/auth';
+import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
 import { GoogleIcon } from './icons/GoogleIcon';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
+import { getClaimedStudentIdUser } from '@/lib/verificationService';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
 function ProfileSetupForm() {
-    const { auth } = useFirebase();
+    const { auth, db } = useFirebase();
     const [username, setUsername] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
@@ -42,24 +44,47 @@ function ProfileSetupForm() {
         
         setIsSubmitting(true);
         try {
-            // Save info to localStorage. The `useUser` hook will read it on redirect.
-            localStorage.setItem('pendingUsername', username.trim());
-            localStorage.setItem('pendingStudentId', studentId);
-
             await setPersistence(auth, browserLocalPersistence);
             const provider = new GoogleAuthProvider();
-            await signInWithRedirect(auth, provider);
+            const result = await signInWithPopup(auth, provider);
+            
+            const firebaseUser = result.user;
+            const userDocRef = doc(db, 'users', firebaseUser.uid);
+            const userDoc = await getDoc(userDocRef);
 
+            if (!userDoc.exists()) {
+                const existingUserId = await getClaimedStudentIdUser(studentId);
+                if (existingUserId) {
+                    throw new Error('This Student ID is already linked to another account.');
+                }
+
+                const batch = writeBatch(db);
+                const studentIdRef = doc(db, 'claimedStudentIds', studentId);
+                const newProfileData = {
+                  uid: firebaseUser.uid,
+                  email: firebaseUser.email!,
+                  displayName: firebaseUser.displayName!,
+                  photoURL: firebaseUser.photoURL!,
+                  username: username.trim(),
+                  studentId: studentId,
+                  createdAt: new Date().toISOString(),
+                  roles: {},
+                };
+                batch.set(userDocRef, newProfileData);
+                batch.set(studentIdRef, { userId: firebaseUser.uid, claimedAt: new Date().toISOString() });
+                await batch.commit();
+            }
+            // The onAuthStateChanged listener in useUser will handle the redirect
+            // after the profile is created/verified.
         } catch (err: any) {
-            console.error('Login initiation error', err);
+            console.error('Login or profile creation error', err);
             toast({
                 variant: 'destructive',
                 title: 'Login Failed',
                 description: err?.message || 'An unknown error occurred while trying to sign in.',
             });
+        } finally {
             setIsSubmitting(false);
-            localStorage.removeItem('pendingUsername');
-            localStorage.removeItem('pendingStudentId');
         }
     };
 
@@ -130,11 +155,9 @@ function ProfileSetupForm() {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading, profileExists, isProcessingRedirect } = useUser();
+  const { user, loading, profileExists } = useUser();
   
-  // Show a loading screen while the initial auth state is being determined OR
-  // while the redirect result is being processed.
-  if (loading || isProcessingRedirect) {
+  if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -168,7 +191,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="flex h-screen w-screen items-center justify-center bg-background p-4 overflow-hidden"
+      className="flex h-full w-full items-center justify-center bg-background p-4"
     >
       <div className="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl opacity-50"></div>
       <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-96 h-96 bg-green-500/20 rounded-full blur-3xl opacity-50"></div>
