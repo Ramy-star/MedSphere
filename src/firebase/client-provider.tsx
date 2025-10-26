@@ -25,6 +25,9 @@ function AuthRedirectProcessor({
     let isMounted = true;
     
     const processRedirect = async () => {
+      // Immediately set processing to true.
+      if(isMounted) setIsProcessingRedirect(true);
+
       try {
         const result = await getRedirectResult(auth);
         if (result && result.user) {
@@ -69,6 +72,7 @@ function AuthRedirectProcessor({
         console.error("Error processing auth redirect:", err);
         if(isMounted) setGlobalError(err);
       } finally {
+        // Set processing to false only after everything is done.
         if(isMounted) setIsProcessingRedirect(false);
       }
     };

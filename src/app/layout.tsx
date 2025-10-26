@@ -84,7 +84,7 @@ export default function RootLayout({
   if (!isClient) {
     return (
         <html lang="en" className="dark h-full">
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background`}></body>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}></body>
         </html>
     );
   }
@@ -101,7 +101,7 @@ export default function RootLayout({
                 <meta name="theme-color" content="#0B0F12" />
                 <link rel="apple-touch-icon" href="/logo.svg" />
             </head>
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full overflow-hidden`}>
                  <WelcomeScreen onGetStarted={handleGetStarted} />
             </body>
         </html>
@@ -116,7 +116,7 @@ export default function RootLayout({
                 <meta name="description" content="Student ID Verification" />
                 <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
             </head>
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full overflow-hidden`}>
                  <VerificationScreen onVerified={handleVerified} />
             </body>
         </html>
@@ -135,7 +135,7 @@ export default function RootLayout({
           <link rel="apple-touch-icon" href="/logo.svg" />
           <link rel="preconnect" href="https://res.cloudinary.com" />
       </head>
-      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
+      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full overflow-hidden`}>
         <FirebaseClientProvider config={firebaseConfig}>
           <AuthGuard>
             <div className="flex flex-col h-full w-full">

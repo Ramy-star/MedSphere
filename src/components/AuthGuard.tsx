@@ -147,6 +147,18 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   // If user is logged in and has a profile, show the app.
   if (user && profileExists) {
+    if (user.profile?.roles?.isBlocked) {
+        // This case should be handled by useUser hook which signs out the user,
+        // but as a fallback, we show a blocked message.
+         return (
+            <div className="flex h-screen w-screen items-center justify-center bg-background p-4">
+                <div className="text-center">
+                    <h1 className="text-2xl font-bold text-red-500">Account Blocked</h1>
+                    <p className="text-slate-400 mt-2">Your account has been blocked. Please contact an administrator.</p>
+                </div>
+            </div>
+        );
+    }
     return <>{children}</>;
   }
   
