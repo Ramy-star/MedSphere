@@ -49,7 +49,7 @@ function useUsernameAvailability(username: string) {
         checkUsername();
     }, [debouncedUsername]);
 
-    return { isAvailable, isLoading };
+    return { isAvailable, isLoading, debouncedUsername };
 }
 
 
@@ -59,7 +59,7 @@ function ProfileSetupForm() {
     const [username, setUsername] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { toast } = useToast();
-    const { isAvailable, isLoading: isCheckingUsername } = useUsernameAvailability(username);
+    const { isAvailable, isLoading: isCheckingUsername, debouncedUsername } = useUsernameAvailability(username);
 
     const isUsernameValid = username.length >= 3 && /^[a-zA-Z0-9_]+$/.test(username);
     const canSubmit = isUsernameValid && isAvailable === true && !isCheckingUsername;
@@ -107,7 +107,7 @@ function ProfileSetupForm() {
         if (debouncedUsername.length >= 3 && !isCheckingUsername) {
             if (isAvailable) {
                 return <p className="text-xs text-green-400 mt-1.5 flex items-center gap-1"><CheckCircle2 size={14}/> Available!</p>;
-            } else {
+            } else if (isAvailable === false) {
                  return <p className="text-xs text-red-400 mt-1.5 flex items-center gap-1"><XCircle size={14} /> Not available.</p>;
             }
         }
