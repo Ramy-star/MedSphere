@@ -59,7 +59,7 @@ export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
 
   if (forceLogin) {
     return (
-        <Button onClick={handleLogin} disabled={busy} size="lg" className={cn("rounded-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-transform active:scale-95")}>
+        <Button onClick={handleLogin} disabled={busy} size="lg" className={cn("rounded-full px-6 py-3 bg-slate-700/50 hover:bg-slate-700/80 text-white font-semibold transition-transform active:scale-95")}>
             <GoogleIcon className="mr-2 h-5 w-5" />
             Sign in with Google
         </Button>
