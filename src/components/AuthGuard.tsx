@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser } from '@/firebase/auth/use-user';
+import { useUser, type UserProfile } from '@/firebase/auth/use-user';
 import { Logo } from './logo';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
@@ -74,15 +74,17 @@ function ProfileSetupForm() {
                 batch.set(studentIdRef, { userId: firebaseUser.uid, claimedAt: new Date().toISOString() });
                 await batch.commit();
             }
-            // The onAuthStateChanged listener in useUser will handle the redirect
-            // after the profile is created/verified.
         } catch (err: any) {
-            console.error('Login or profile creation error', err);
-            toast({
-                variant: 'destructive',
-                title: 'Login Failed',
-                description: err?.message || 'An unknown error occurred while trying to sign in.',
-            });
+            if (err.code === 'auth/popup-closed-by-user') {
+                console.log('Sign-in popup closed by user.');
+            } else {
+                console.error('Login or profile creation error', err);
+                toast({
+                    variant: 'destructive',
+                    title: 'Login Failed',
+                    description: err?.message || 'An unknown error occurred while trying to sign in.',
+                });
+            }
         } finally {
             setIsSubmitting(false);
         }
@@ -174,7 +176,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
         // This case should be handled by useUser hook which signs out the user,
         // but as a fallback, we show a blocked message.
          return (
-            <div className="flex h-screen w-screen items-center justify-center bg-background p-4">
+            <div className="flex h-full w-full items-center justify-center bg-background p-4">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-red-500">Account Blocked</h1>
                     <p className="text-slate-400 mt-2">Your account has been blocked. Please contact an administrator.</p>
