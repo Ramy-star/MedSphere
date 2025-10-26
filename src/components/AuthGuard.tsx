@@ -163,9 +163,16 @@ function ProfileSetupForm() {
     )
 }
 
+// A simplified version of user profile for this component's state
+type UserProfile = {
+    username: string;
+};
+
+
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading: userLoading } = useUser();
   const [profileState, setProfileState] = useState<'loading' | 'needs-setup' | 'complete'>('loading');
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     if (userLoading) {
@@ -175,6 +182,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
     if (!user) {
       setProfileState('needs-setup'); // User is not logged in, so they need to set up a profile.
+      setUserProfile(null);
       return;
     }
 
@@ -184,8 +192,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists() && userSnap.data().username) {
+        setUserProfile(userSnap.data() as UserProfile);
         setProfileState('complete');
       } else {
+        setUserProfile(null);
         setProfileState('needs-setup');
       }
     };
