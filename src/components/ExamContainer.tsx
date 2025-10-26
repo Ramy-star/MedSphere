@@ -825,10 +825,10 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                             <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
                              <div className="flex justify-between items-center mb-2">
                                 {isAdmin ? (
-                                     <Button variant="ghost" className="text-muted-foreground" onClick={() => handleSubmit(true)}>
-                                         <SkipForward size={16} className="mr-2" />
-                                         Skip to Results
-                                     </Button>
+                                     <button onClick={() => handleSubmit(true)} className="skip-btn">
+                                        <SkipForward size={16} />
+                                        <span className="skip-text">Skip</span>
+                                    </button>
                                 ) : (
                                     <div className="flex items-center gap-2 font-semibold text-lg text-muted-foreground">
                                         <Clock size={20} />
@@ -1066,7 +1066,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
             --input: 214.3 31.8% 91.4%;
             --ring: 224 76% 48%;
         }
-        .report-btn {
+        .report-btn, .skip-btn {
             background-color: transparent;
             border: 2px solid #3b82f6;
             color: #3b82f6;
@@ -1083,22 +1083,30 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
             height: 44px;
             padding: 0;
         }
-        .report-btn .report-text {
+        .report-btn .report-text, .skip-btn .skip-text {
             white-space: nowrap;
             opacity: 0;
             max-width: 0;
             transition: all 0.2s ease-in-out;
         }
-        .report-btn:hover {
+        .report-btn:hover, .skip-btn:hover {
             background-color: #3b82f6;
             color: white;
             width: 120px;
             padding: 0 16px;
         }
-        .report-btn:hover .report-text {
+        .report-btn:hover .report-text, .skip-btn:hover .skip-text {
             opacity: 1;
             max-width: 100px;
             margin-left: 0.5rem;
+        }
+        .skip-btn {
+          border-color: #6b7280;
+          color: #6b7280;
+        }
+        .skip-btn:hover {
+          background-color: #6b7280;
+          color: white;
         }
       `}</style>
     )
