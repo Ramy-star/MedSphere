@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import type { Metadata } from "next";
@@ -10,6 +11,7 @@ import { useState, useEffect } from "react";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { getFirebaseConfig } from "@/firebase/config";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
+import { VerificationScreen } from "@/components/VerificationScreen";
 import { useMobileViewStore } from "@/hooks/use-mobile-view-store";
 import { cn } from "@/lib/utils";
 
@@ -33,6 +35,7 @@ const inter = Inter({
 });
 
 const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
+const VERIFIED_STUDENT_KEY = 'medsphere-is-verified';
 
 export default function RootLayout({
   children,
@@ -41,12 +44,19 @@ export default function RootLayout({
 }>) {
   const firebaseConfig = getFirebaseConfig();
   const [showWelcome, setShowWelcome] = useState(true);
+  const [isVerified, setIsVerified] = useState(false);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    // Check localStorage only on the client side
+    setIsClient(true);
     const hasVisited = localStorage.getItem(WELCOME_SCREEN_KEY);
+    const isStudentVerified = localStorage.getItem(VERIFIED_STUDENT_KEY);
+
     if (hasVisited) {
       setShowWelcome(false);
+    }
+    if (isStudentVerified === 'true') {
+      setIsVerified(true);
     }
   }, []);
 
@@ -65,6 +75,19 @@ export default function RootLayout({
     setShowWelcome(false);
   };
 
+  const handleVerified = () => {
+    localStorage.setItem(VERIFIED_STUDENT_KEY, 'true');
+    setIsVerified(true);
+  };
+
+  if (!isClient) {
+    return (
+        <html lang="en" className="dark h-full">
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background`}></body>
+        </html>
+    );
+  }
+
   if (showWelcome) {
     return (
         <html lang="en" className="dark h-full">
@@ -79,6 +102,21 @@ export default function RootLayout({
             </head>
             <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
                  <WelcomeScreen onGetStarted={handleGetStarted} />
+            </body>
+        </html>
+    );
+  }
+
+  if (!isVerified) {
+     return (
+        <html lang="en" className="dark h-full">
+            <head>
+                <title>Verification - MedSphere</title>
+                <meta name="description" content="Student ID Verification" />
+                <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
+            </head>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
+                 <VerificationScreen onVerified={handleVerified} />
             </body>
         </html>
     );
