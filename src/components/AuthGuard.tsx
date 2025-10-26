@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { useUsernameAvailability } from '@/hooks/use-username-availability';
 import { useUserProfile } from '@/hooks/use-user-profile';
+import { getClaimedStudentIdUser } from '@/lib/verificationService';
+
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
@@ -43,23 +45,28 @@ function ProfileSetupForm() {
                 title: 'Verification Error',
                 description: 'Could not find your verified Student ID. Please start over.',
             });
-            // Potentially force a page reload or redirect to verification
             window.location.href = '/'; 
             return;
         }
-
-
+        
         setIsSubmitting(true);
         try {
+            // Check if student ID is already claimed before showing Google popup
+            const claimingUserId = await getClaimedStudentIdUser(studentId);
+            
             await setPersistence(auth, browserLocalPersistence);
             const provider = new GoogleAuthProvider();
             const result = await signInWithPopup(auth, provider);
             const user = result.user;
 
+            // If the ID is claimed, it must be by the current user signing in.
+            if (claimingUserId && claimingUserId !== user.uid) {
+                throw new Error("This Student ID is already registered with a different Google account.");
+            }
+
             // Create user profile and claim student ID in a transaction
             const userRef = doc(db, 'users', user.uid);
             const studentIdRef = doc(db, 'claimedStudentIds', studentId);
-
             const batch = writeBatch(db);
             
             batch.set(userRef, {
@@ -79,9 +86,7 @@ function ProfileSetupForm() {
 
             await batch.commit();
             
-            // Clean up the student ID from local storage after successful claim
             localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
-
 
         } catch (err: any) {
             console.error('Login error', err);
@@ -92,7 +97,6 @@ function ProfileSetupForm() {
             });
             setIsSubmitting(false);
         }
-        // No need to set isSubmitting to false on success, as the component will unmount
     };
 
     const getUsernameHint = () => {

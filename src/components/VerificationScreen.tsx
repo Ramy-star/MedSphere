@@ -7,7 +7,7 @@ import { Input } from './ui/input';
 import { Logo } from './logo';
 import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
-import { verifyStudentId } from '@/lib/verificationService';
+import { isStudentIdValid } from '@/lib/verificationService';
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
@@ -28,13 +28,13 @@ export function VerificationScreen({ onVerified }: VerificationScreenProps) {
     setIsLoading(true);
     setError(null);
     try {
-      const isValid = await verifyStudentId(studentId);
+      const isValid = await isStudentIdValid(studentId);
       if (isValid) {
         // Store the verified ID in localStorage to be picked up by the AuthGuard
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, studentId.trim());
         onVerified();
       } else {
-        setError('Invalid Student ID or ID already claimed. Please check and try again.');
+        setError('Invalid Student ID. Please check and try again.');
       }
     } catch (e) {
       console.error('Verification failed:', e);
