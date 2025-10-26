@@ -10,26 +10,26 @@ import { getRedirectResult } from 'firebase/auth';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { getClaimedStudentIdUser } from '@/lib/verificationService';
 import { UserProvider, useUser } from './auth/use-user';
+import { useToast } from '@/hooks/use-toast';
 
 function AuthRedirectProcessor({
   children,
-  setGlobalError
 }: {
   children: React.ReactNode;
-  setGlobalError: (error: Error) => void;
 }) {
   const { auth, db } = useFirebase();
   const { setIsProcessingRedirect } = useUser();
+  const { toast } = useToast();
 
   useEffect(() => {
     let isMounted = true;
     
     const processRedirect = async () => {
-      // Immediately set processing to true.
-      if(isMounted) setIsProcessingRedirect(true);
+      if (!auth || !db) return;
 
       try {
         const result = await getRedirectResult(auth);
+
         if (result && result.user) {
           const firebaseUser = result.user;
           const userDocRef = doc(db, 'users', firebaseUser.uid);
@@ -39,10 +39,7 @@ function AuthRedirectProcessor({
             const pendingUsername = localStorage.getItem('pendingUsername');
             const pendingStudentId = localStorage.getItem('pendingStudentId');
 
-            if (!pendingUsername || !pendingStudentId) {
-              // This is not an error, it might just be a normal login for an existing user.
-              // We just don't need to create a profile.
-            } else {
+            if (pendingUsername && pendingStudentId) {
                 const existingUserId = await getClaimedStudentIdUser(pendingStudentId);
                 if (existingUserId && existingUserId !== firebaseUser.uid) {
                   throw new Error('This Student ID is already linked to a different Google account.');
@@ -63,7 +60,7 @@ function AuthRedirectProcessor({
                 batch.set(userDocRef, newProfileData);
                 batch.set(studentIdRef, { userId: firebaseUser.uid, claimedAt: new Date().toISOString() });
                 await batch.commit();
-
+                
                 localStorage.removeItem('pendingUsername');
                 localStorage.removeItem('pendingStudentId');
             }
@@ -71,9 +68,12 @@ function AuthRedirectProcessor({
         }
       } catch (err: any) {
         console.error("Error processing auth redirect:", err);
-        if(isMounted) setGlobalError(err);
+        toast({
+          variant: 'destructive',
+          title: "Sign-in Error",
+          description: err.message || "An unexpected error occurred during sign-in."
+        });
       } finally {
-        // Set processing to false only after everything is done.
         if(isMounted) setIsProcessingRedirect(false);
       }
     };
@@ -83,7 +83,7 @@ function AuthRedirectProcessor({
     return () => {
       isMounted = false;
     }
-  }, [auth, db, setIsProcessingRedirect, setGlobalError]);
+  }, [auth, db, setIsProcessingRedirect, toast]);
 
   return <>{children}</>;
 }
@@ -148,7 +148,7 @@ export function FirebaseClientProvider({
   return (
     <FirebaseProvider {...firebase}>
       <UserProvider>
-        <AuthRedirectProcessor setGlobalError={setError}>
+        <AuthRedirectProcessor>
           {children}
         </AuthRedirectProcessor>
       </UserProvider>

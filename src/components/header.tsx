@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, X, Menu, Wand2, UsersCog } from 'lucide-react';
+import { Search, X, Menu, Wand2, Users } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -88,7 +88,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                  <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-cyan-300" onClick={() => router.push('/admin/users')}>
-                            <UsersCog className="h-5 w-5" />
+                            <Users className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">

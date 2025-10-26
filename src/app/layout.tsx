@@ -36,7 +36,7 @@ const inter = Inter({
 });
 
 const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
-const VERIFIED_STUDENT_KEY = 'medsphere-is-verified';
+const VERIFIED_STUDENT_ID_KEY = 'medsphere-is-verified';
 
 export default function RootLayout({
   children,
@@ -51,7 +51,7 @@ export default function RootLayout({
   useEffect(() => {
     setIsClient(true);
     const hasVisited = localStorage.getItem(WELCOME_SCREEN_KEY);
-    const isStudentVerified = localStorage.getItem(VERIFIED_STUDENT_KEY);
+    const isStudentVerified = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
 
     if (hasVisited) {
       setShowWelcome(false);
@@ -77,7 +77,7 @@ export default function RootLayout({
   };
 
   const handleVerified = () => {
-    localStorage.setItem(VERIFIED_STUDENT_KEY, 'true');
+    localStorage.setItem(VERIFIED_STUDENT_ID_KEY, 'true');
     setIsVerified(true);
   };
 

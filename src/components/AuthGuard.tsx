@@ -5,7 +5,7 @@ import { useUser } from '@/firebase/auth/use-user';
 import { Logo } from './logo';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Input } from './ui/input';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithRedirect } from 'firebase/auth';
@@ -130,10 +130,11 @@ function ProfileSetupForm() {
     )
 }
 
-
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading, profileExists, isProcessingRedirect } = useUser();
   
+  // Show a loading screen while the initial auth state is being determined OR
+  // while the redirect result is being processed.
   if (loading || isProcessingRedirect) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
@@ -162,7 +163,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
   
-  // If no user or user is logged in but doesn't have a profile, show the setup form.
+  // If no user OR user is logged in but doesn't have a profile, show the setup form.
   return (
     <motion.div
       initial={{ opacity: 0 }}
