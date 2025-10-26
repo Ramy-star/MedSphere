@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
-import { FirebaseProvider } from './provider';
+import { FirebaseProvider, useFirebase } from './provider';
 import { Logo } from '@/components/logo';
 import { getRedirectResult } from 'firebase/auth';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
