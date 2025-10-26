@@ -11,7 +11,7 @@ import { Button } from './ui/button';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { useDebounce } from 'use-debounce';
 import { db } from '@/firebase';
-import { collection, doc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
 import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { GoogleIcon } from './icons/GoogleIcon';
@@ -223,5 +223,3 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
-
-    
