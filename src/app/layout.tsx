@@ -137,7 +137,7 @@ export default function RootLayout({
       </head>
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
-          {/* <AuthGuard> */}
+          <AuthGuard>
             <div className="flex flex-col h-full w-full">
               <header className="z-50 w-full">
                 <Header />
@@ -147,7 +147,7 @@ export default function RootLayout({
               </main>
             </div>
             <Toaster />
-          {/* </AuthGuard> */}
+          </AuthGuard>
         </FirebaseClientProvider>
       </body>
     </html>
