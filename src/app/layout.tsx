@@ -14,6 +14,7 @@ import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { VerificationScreen } from "@/components/VerificationScreen";
 import { useMobileViewStore } from "@/hooks/use-mobile-view-store";
 import { cn } from "@/lib/utils";
+import { AuthGuard } from "@/components/AuthGuard";
 
 
 const nunitoSans = Nunito_Sans({ 
@@ -136,15 +137,17 @@ export default function RootLayout({
       </head>
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
         <FirebaseClientProvider config={firebaseConfig}>
-          <div className="flex flex-col h-full w-full">
-            <header className="z-50 w-full">
-              <Header />
-            </header>
-            <main className="flex flex-1 w-full overflow-hidden">
-              {children}
-            </main>
-          </div>
-          <Toaster />
+          <AuthGuard>
+            <div className="flex flex-col h-full w-full">
+              <header className="z-50 w-full">
+                <Header />
+              </header>
+              <main className="flex flex-1 w-full overflow-hidden">
+                {children}
+              </main>
+            </div>
+            <Toaster />
+          </AuthGuard>
         </FirebaseClientProvider>
       </body>
     </html>
