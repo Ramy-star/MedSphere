@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, Layers, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { repairJson } from '@/ai/flows/question-gen-flow';
 import { reformatMarkdown } from '@/ai/flows/reformat-markdown-flow';
 import {
   Dialog,
@@ -236,31 +235,13 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   };
 
   const handleRepairJson = async () => {
-    if (!questionSet) return;
-    setIsRepairing(true);
-    try {
-        const repaired = await repairJson({
-            malformedJson: editingContent.json,
-            desiredSchema: localStorage.getItem('questionJsonPrompt') || '',
-        });
-        
-        await updateQuestionSet({ jsonQuestions: repaired });
-        setEditingContent(prev => ({...prev, json: repaired}));
-        setJsonError(null);
-        toast({
-            title: 'JSON Repaired',
-            description: 'The JSON structure has been successfully repaired.',
-        });
-    } catch (err: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Repair Failed',
-            description: err.message || 'Could not repair the JSON.',
-        });
-        setJsonError(err.message || 'Could not repair the JSON.');
-    } finally {
-        setIsRepairing(false);
-    }
+    // This function is no longer available in the flow, so we remove the logic.
+    // We can show a toast to inform the user.
+    toast({
+        variant: 'destructive',
+        title: 'Feature Removed',
+        description: 'JSON repair is not currently available.',
+    });
   };
   
   const handleCopy = (content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
@@ -403,7 +384,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     );
   }
 
-  const OutputCard = ({ title, icon, content, type, onToggleEdit, isEditing, onContentChange, onCancel, onRepair, isRepairing, jsonError }: { title: string, icon: React.ReactNode, content: any, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson', onToggleEdit: () => void, isEditing: boolean, onContentChange: (value: string) => void, onCancel: () => void, onRepair: () => void, isRepairing: boolean, jsonError: string | null }) => {
+  const OutputCard = ({ title, icon, content, type, onToggleEdit, isEditing, onContentChange, onCancel, onRepair, isRepairing, jsonError }: { title: string, icon: React.ReactNode, content: any, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson', onToggleEdit: () => void, isEditing: boolean, onContentChange: (value: string) => void, onCancel: () => void, onRepair?: () => void, isRepairing?: boolean, jsonError?: string | null }) => {
     const isThisCardEditing = isEditing;
     const isJsonCardWithError = type.includes('json') && jsonError;
     const isCopied = copiedStatus[type];
@@ -542,7 +523,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     }
                 }}
             />
-            {isJsonCardWithError && !isThisCardEditing && (
+            {isJsonCardWithError && !isThisCardEditing && onRepair && (
                 <div className="mt-2">
                     <Button onClick={onRepair} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white active:scale-95'>
                         {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
@@ -648,9 +629,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     onToggleEdit={() => handleToggleEdit('text')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, text: value}))}
                     onCancel={() => handleCancelEdit('text')}
-                    onRepair={() => {}}
-                    isRepairing={false}
-                    jsonError={null}
                 />
                 <OutputCard
                     title="JSON Questions"
@@ -680,9 +658,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     onToggleEdit={() => handleToggleEdit('examText')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examText: value}))}
                     onCancel={() => handleCancelEdit('examText')}
-                    onRepair={() => {}}
-                    isRepairing={false}
-                    jsonError={null}
                 />
                 <OutputCard
                     title="JSON Exam"
@@ -693,9 +668,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     onToggleEdit={() => handleToggleEdit('examJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
                     onCancel={() => handleCancelEdit('examJson')}
-                    onRepair={() => {}} // Placeholder
-                    isRepairing={false}
-                    jsonError={null} // Placeholder
                 />
             </div>
         )}
@@ -712,22 +684,16 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     onToggleEdit={() => handleToggleEdit('flashcardText')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardText: value}))}
                     onCancel={() => handleCancelEdit('flashcardText')}
-                    onRepair={() => {}}
-                    isRepairing={false}
-                    jsonError={null}
                 />
                 <OutputCard
                     title="JSON Flashcard"
                     icon={<FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.jsonFlashcard}
                     type="flashcardJson"
-                    isEditing={isEditing.flashcardJson}
-                    onToggleEdit={() => handleToggleEdit('flashcardJson')}
-                    onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardJson: value}))}
-                    onCancel={() => handleCancelEdit('flashcardJson')}
-                    onRepair={() => {}} // Placeholder
-                    isRepairing={false}
-                    jsonError={null} // Placeholder
+                    isEditing={isEditing.jsonFlashcard}
+                    onToggleEdit={() => handleToggleEdit('jsonFlashcard')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, jsonFlashcard: value}))}
+                    onCancel={() => handleCancelEdit('jsonFlashcard')}
                 />
             </div>
         )}
@@ -803,3 +769,5 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    

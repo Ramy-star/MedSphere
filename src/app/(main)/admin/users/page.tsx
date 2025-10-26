@@ -6,7 +6,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User as UserIcon, ShieldCheck, Search, UsersCog, Loader2, Ban, Shield, Settings, Trash2 } from 'lucide-react';
+import { User as UserIcon, ShieldCheck, Search, UserCog, Loader2, Ban, Shield, Settings, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { useDebounce } from 'use-debounce';
 import { motion } from 'framer-motion';
@@ -78,7 +78,7 @@ function UserManagementPage() {
         <div className="flex flex-col h-full overflow-hidden">
             <div className="p-6">
                 <div className="flex items-center gap-4 mb-6">
-                    <UsersCog className="w-8 h-8 text-cyan-400" />
+                    <UserCog className="w-8 h-8 text-cyan-400" />
                     <h1 className="text-3xl font-bold text-white">User Management</h1>
                 </div>
                 <div className="relative max-w-sm">
@@ -187,3 +187,5 @@ function UserManagementPage() {
 }
 
 export default UserManagementPage;
+
+    
