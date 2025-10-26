@@ -135,7 +135,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [editingContent, setEditingContent] = useState<EditingContentState>({ text: '', json: '', examText: '', examJson: '', flashcardText: '', flashcardJson: '' });
   const [isRepairing, setIsRepairing] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson'} | null>(null);
+  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: keyof EditingContentState} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
@@ -164,7 +164,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             text: questionSet.textQuestions || '', 
             json: reorderAndStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
-            json: reorderAndStringify(questionSet.jsonExam),
+            examJson: reorderAndStringify(questionSet.jsonExam),
             flashcardText: questionSet.textFlashcard || '',
             flashcardJson: reorderAndStringify(questionSet.jsonFlashcard)
         });
@@ -672,7 +672,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     icon={<FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.examJson}
                     type="examJson"
-                    isEditing={isEditing.json}
+                    isEditing={isEditing.examJson}
                     onToggleEdit={() => handleToggleEdit('examJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
                     onCancel={() => handleCancelEdit('examJson')}
