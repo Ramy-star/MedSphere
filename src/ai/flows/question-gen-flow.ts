@@ -10,6 +10,7 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import type { Lecture } from '@/lib/types';
 
 // Schema for generating questions
 const GenerateQuestionsInputSchema = z.object({
@@ -92,7 +93,16 @@ export async function generateQuestions(input: GenerateQuestionsInput): Promise<
 
 // Programmatic reordering to guarantee final structure
 function reorderAndStringify(obj: any): string {
-    const orderedKeys = ['id', 'name', 'mcqs_level_1', 'mcqs_level_2', 'written', 'flashcards'];
+    if (typeof obj === 'string') {
+        try {
+            obj = JSON.parse(obj);
+        } catch (e) {
+            return obj; // Return original string if it's not valid JSON
+        }
+    }
+    if (typeof obj !== 'object' || obj === null) return '';
+
+    const orderedKeys: (keyof Lecture)[] = ['id', 'name', 'mcqs_level_1', 'mcqs_level_2', 'written', 'flashcards'];
     const orderedObject: { [key: string]: any } = {};
 
     // Add known keys in the desired order
@@ -109,7 +119,6 @@ function reorderAndStringify(obj: any): string {
         }
     }
     
-    // Ensure the key order within each MCQ object is correct
     const reorderMcqKeys = (mcqs: any[]) => {
       if (!Array.isArray(mcqs)) return mcqs;
       return mcqs.map(mcq => {
@@ -134,6 +143,34 @@ function reorderAndStringify(obj: any): string {
     if (orderedObject.mcqs_level_2) {
       orderedObject.mcqs_level_2 = reorderMcqKeys(orderedObject.mcqs_level_2);
     }
+
+    if (orderedObject.written) {
+        if (Array.isArray(orderedObject.written)) {
+            orderedObject.written = orderedObject.written.map(w => {
+                if (typeof w !== 'object' || w === null) return w;
+                const orderedCase: {[key: string]: any} = {};
+                if (w.hasOwnProperty('case')) orderedCase.case = w.case;
+                if (w.hasOwnProperty('subqs')) {
+                     orderedCase.subqs = Array.isArray(w.subqs) ? w.subqs.map((sq: any) => {
+                        if (typeof sq !== 'object' || sq === null) return sq;
+                        const orderedSubq: {[key: string]: any} = {};
+                        if (sq.hasOwnProperty('q')) orderedSubq.q = sq.q;
+                        if (sq.hasOwnProperty('a')) orderedSubq.a = sq.a;
+                        Object.keys(sq).forEach(key => {
+                            if(!orderedSubq.hasOwnProperty(key)) orderedSubq[key] = sq[key];
+                        });
+                        return orderedSubq;
+                     }) : w.subqs;
+                }
+                Object.keys(w).forEach(key => {
+                    if (!orderedCase.hasOwnProperty(key)) orderedCase[key] = w[key];
+                });
+                return orderedCase;
+            });
+        }
+    }
+
+
     if (orderedObject.flashcards) {
         if(Array.isArray(orderedObject.flashcards)) {
             orderedObject.flashcards = orderedObject.flashcards.map(fc => {
@@ -163,6 +200,7 @@ const convertToJsonPrompt = ai.definePrompt({
     prompt: `
         You are a highly skilled text-to-JSON conversion engine. Your task is to convert the provided text of questions into a structured JSON object.
         The output MUST be a single, valid JSON object and nothing else.
+        You MUST process the entire input text and include all questions provided.
 
         Follow this exact JSON structure:
         {
@@ -195,6 +233,8 @@ const convertToJsonPrompt = ai.definePrompt({
         - Split the MCQs into 'mcqs_level_1' and 'mcqs_level_2' based on the headings in the text.
         - For 'written' questions, group all sub-questions under their respective case.
         - Ensure all text, including questions, options, and answers, is captured exactly as it appears.
+        - For each MCQ, the keys must be 'q', 'o', and 'a'.
+        - For each written sub-question, the keys must be 'q' and 'a'.
 
         Lecture Name:
         {{{lectureName}}}
@@ -225,7 +265,7 @@ export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise
                     console.warn("Initial JSON conversion produced a string that failed to parse. Attempting repair.");
                     const repairedJsonString = await repairJson({
                         malformedJson: output,
-                        desiredSchema: "A JSON object with keys like 'id', 'name', 'mcqs_level_1', etc."
+                        desiredSchema: "A JSON object with keys like 'id', 'name', 'mcqs_level_1', etc. containing ALL questions from the source."
                     });
                     const parsedRepaired = JSON.parse(repairedJsonString);
                     return reorderAndStringify(parsedRepaired);
@@ -237,13 +277,15 @@ export async function convertQuestionsToJson(input: ConvertToJsonInput): Promise
 
         } catch (err: any) {
             console.error("Error in convertQuestionsToJson flow:", err.message);
-            // Attempt to repair if there's a JSON string in the error
-            if (input.questionsText) {
+            // Attempt to repair if there's a JSON string in the error by re-processing the malformed output
+            // This is the CRITICAL change: we repair the *output* of the model, not the original text.
+             if (err.message.includes('JSON')) {
                 try {
-                     console.log("Attempting to repair JSON from original text due to error.");
+                     console.log("Attempting to repair JSON from the malformed model output.");
+                     const malformedJson = err.message.substring(err.message.indexOf('{'), err.message.lastIndexOf('}') + 1) || input.questionsText;
                      const repairedJsonString = await repairJson({
-                        malformedJson: input.questionsText, // Use original text as it might contain the broken JSON
-                        desiredSchema: "A JSON object with keys like 'id', 'name', 'mcqs_level_1', etc."
+                        malformedJson: malformedJson,
+                        desiredSchema: "A JSON object with keys like 'id', 'name', 'mcqs_level_1', etc. containing ALL questions from the source."
                      });
                      const parsedRepaired = JSON.parse(repairedJsonString);
                      return reorderAndStringify(parsedRepaired);
@@ -266,6 +308,7 @@ const repairJsonPrompt = ai.definePrompt({
         You are a JSON repair expert. The following string is a malformed JSON.
         Fix it so that it perfectly matches the desired schema.
         The desired schema is: {{{desiredSchema}}}
+        It is CRITICAL that you include ALL content from the original text. Do not truncate or omit any questions.
 
         Malformed JSON:
         {{{malformedJson}}}
@@ -279,17 +322,22 @@ export async function repairJson(input: RepairJsonInput): Promise<string> {
         const { output } = await repairJsonPrompt(input);
         
         if (typeof output === 'object' && output !== null) {
-            return JSON.stringify(output, null, 2);
+            // The reorderAndStringify will be called by the parent function, 
+            // but we can do it here too for direct calls.
+            return reorderAndStringify(output);
         }
         
         if (typeof output === 'string') {
-            const trimmedOutput = output.trim();
-            if ((trimmedOutput.startsWith('{') && trimmedOutput.endsWith('}')) || (trimmedOutput.startsWith('[') && trimmedOutput.endsWith(']'))) {
-                return output;
+            try {
+                const parsed = JSON.parse(output);
+                return reorderAndStringify(parsed);
+            } catch(e) {
+                console.error("Repair process resulted in another invalid JSON string.");
+                throw new Error('The repair process resulted in invalid JSON data.');
             }
         }
         
-        throw new Error('The repair process resulted in invalid or unexpected data type.');
+        throw new Error('The repair process resulted in an unexpected data type.');
     });
 }
 
