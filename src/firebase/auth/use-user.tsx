@@ -41,6 +41,10 @@ export function useUser() {
   const [profileExists, setProfileExists] = useState(false);
   const [error, setError] = useState<Error | null>(null);
 
+  const isSuperAdmin = user?.profile?.roles?.isSuperAdmin === true;
+  const isSubAdmin = !!user?.profile?.roles?.permissions && user.profile.roles.permissions.length > 0 && !isSuperAdmin;
+
+
   useEffect(() => {
     if (!auth) {
       setLoading(false);
@@ -109,5 +113,5 @@ export function useUser() {
     return () => unsubscribe();
   }, [auth]);
 
-  return { user, loading, error, profileExists };
+  return { user, loading, error, profileExists, isSuperAdmin, isSubAdmin };
 }
