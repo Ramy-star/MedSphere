@@ -60,7 +60,7 @@ function ProfileSetupForm() {
 
                 const batch = writeBatch(db);
                 const studentIdRef = doc(db, 'claimedStudentIds', studentId);
-                const newProfileData = {
+                const newProfileData: Omit<UserProfile, 'roles'> = {
                   uid: firebaseUser.uid,
                   email: firebaseUser.email!,
                   displayName: firebaseUser.displayName!,
@@ -68,14 +68,14 @@ function ProfileSetupForm() {
                   username: username.trim(),
                   studentId: studentId,
                   createdAt: new Date().toISOString(),
-                  roles: {},
                 };
-                batch.set(userDocRef, newProfileData);
+                batch.set(userDocRef, { ...newProfileData, roles: {} });
                 batch.set(studentIdRef, { userId: firebaseUser.uid, claimedAt: new Date().toISOString() });
                 await batch.commit();
             }
+            // After successful sign-in and profile creation, onAuthStateChanged will handle the rest.
         } catch (err: any) {
-            if (err.code === 'auth/popup-closed-by-user') {
+             if (err.code === 'auth/popup-closed-by-user') {
                 console.log('Sign-in popup closed by user.');
             } else {
                 console.error('Login or profile creation error', err);
@@ -159,7 +159,9 @@ function ProfileSetupForm() {
 export function AuthGuard({ children }: { children: React.ReactNode }) {
   const { user, loading, profileExists } = useUser();
   
-  if (loading) {
+  // While Firebase is initializing or checking the auth state, show a loading screen.
+  // The `profileExists === undefined` check is crucial to wait for the initial profile check.
+  if (loading || profileExists === undefined) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -170,12 +172,10 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If user is logged in and has a profile, show the app.
+  // If a user is authenticated and their profile exists, they are fully logged in.
   if (user && profileExists) {
     if (user.profile?.roles?.isBlocked) {
-        // This case should be handled by useUser hook which signs out the user,
-        // but as a fallback, we show a blocked message.
-         return (
+        return (
             <div className="flex h-full w-full items-center justify-center bg-background p-4">
                 <div className="text-center">
                     <h1 className="text-2xl font-bold text-red-500">Account Blocked</h1>
@@ -187,7 +187,8 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
   
-  // If no user OR user is logged in but doesn't have a profile, show the setup form.
+  // If there's no user, or if a user exists but their profile document doesn't,
+  // show the profile setup and sign-in form.
   return (
     <motion.div
       initial={{ opacity: 0 }}

@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, ReactNode, Suspense } from 'react';
 import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
 import { FirebaseProvider } from './provider';
@@ -13,7 +13,7 @@ export function FirebaseClientProvider({
   children,
   config,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   config: any;
 }) {
   const [firebase, setFirebase] = useState<FirebaseContextType | null>(null);
@@ -73,3 +73,4 @@ export function FirebaseClientProvider({
     </FirebaseProvider>
   );
 }
+

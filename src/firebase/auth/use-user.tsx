@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, createContext, useContext } from 'react';
+import { useEffect, useState, createContext, useContext, useMemo } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { useFirebase } from '../provider';
@@ -28,15 +28,14 @@ export type UserProfile = {
     roles?: Roles;
 };
 
-export type User = FirebaseUser & {
+export interface User extends FirebaseUser {
     profile: UserProfile | null;
 };
 
 interface UserContextType {
   user: User | null;
   loading: boolean;
-  profileExists: boolean;
-  error: Error | null;
+  profileExists: boolean | undefined;
   isSuperAdmin: boolean;
   isSubAdmin: boolean;
 }
@@ -47,11 +46,7 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const { auth } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileExists, setProfileExists] = useState(false);
-  const [error, setError] = useState<Error | null>(null);
-
-  const isSuperAdmin = user?.profile?.roles?.isSuperAdmin === true;
-  const isSubAdmin = !!user?.profile?.roles?.permissions && user.profile.roles.permissions.length > 0 && !isSuperAdmin;
+  const [profileExists, setProfileExists] = useState<boolean | undefined>(undefined);
 
   useEffect(() => {
     if (!auth) {
@@ -65,20 +60,18 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
         if (firebaseUser) {
             if (firebaseUser.isAnonymous) {
               signOut(auth);
-              setUser(null);
-              setProfileExists(false);
-              setLoading(false);
               return;
             }
+            
             const userDocRef = doc(db, 'users', firebaseUser.uid);
+            
             const unsubProfile = onSnapshot(userDocRef, 
               (docSnap) => {
+                setLoading(true);
                 if (docSnap.exists()) {
                     const profileData = docSnap.data() as UserProfile;
                     if (profileData.roles?.isBlocked) {
                        signOut(auth);
-                       setUser(null);
-                       setProfileExists(false);
                     } else {
                       setUser({ ...firebaseUser, profile: profileData });
                       setProfileExists(true);
@@ -91,7 +84,6 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
               },
               (profileError) => {
                 console.error("Error listening to user profile:", profileError);
-                setError(profileError);
                 setUser({ ...firebaseUser, profile: null });
                 setProfileExists(false);
                 setLoading(false);
@@ -100,13 +92,12 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
             return () => unsubProfile();
         } else {
           setUser(null);
-          setProfileExists(false);
+          setProfileExists(undefined);
           setLoading(false);
         }
       },
       (authError) => {
         console.error('onAuthStateChanged error:', authError);
-        setError(authError);
         setLoading(false);
       }
     );
@@ -114,11 +105,13 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
     return () => unsubscribe();
   }, [auth]);
   
+   const isSuperAdmin = useMemo(() => user?.profile?.roles?.isSuperAdmin === true, [user]);
+   const isSubAdmin = useMemo(() => !!user?.profile?.roles?.permissions && user.profile.roles.permissions.length > 0 && !isSuperAdmin, [user, isSuperAdmin]);
+
   const value = {
       user,
       loading,
       profileExists,
-      error,
       isSuperAdmin,
       isSubAdmin
   };
