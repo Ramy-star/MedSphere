@@ -164,7 +164,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             text: questionSet.textQuestions || '', 
             json: reorderAndStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
-            examJson: reorderAndStringify(questionSet.jsonExam),
+            json: reorderAndStringify(questionSet.jsonExam),
             flashcardText: questionSet.textFlashcard || '',
             flashcardJson: reorderAndStringify(questionSet.jsonFlashcard)
         });
@@ -235,7 +235,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             examText: questionSet.textExam || '',
             examJson: reorderAndStringify(questionSet.jsonExam),
             flashcardText: questionSet.textFlashcard || '',
-            jsonFlashcard: reorderAndStringify(questionSet.jsonFlashcard),
+            flashcardJson: reorderAndStringify(questionSet.jsonFlashcard),
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
     }
@@ -646,7 +646,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     isEditing={isEditing.json}
                     onToggleEdit={() => handleToggleEdit('json')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, json: value}))}
-                    onCancel={() to handleCancelEdit('json')}
+                    onCancel={() => handleCancelEdit('json')}
                     onRepair={handleRepairJson}
                     isRepairing={isRepairing}
                     jsonError={jsonError}
@@ -686,7 +686,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                  <OutputCard
                     title="Text Flashcard"
                     icon={<FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
-                    content={editingContent.textFlashcard}
+                    content={editingContent.flashcardText}
                     type="flashcardText"
                     isEditing={isEditing.flashcardText}
                     onToggleEdit={() => handleToggleEdit('flashcardText')}
@@ -696,7 +696,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 <OutputCard
                     title="JSON Flashcard"
                     icon={<FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
-                    content={editingContent.jsonFlashcard}
+                    content={editingContent.flashcardJson}
                     type="flashcardJson"
                     isEditing={isEditing.jsonFlashcard}
                     onToggleEdit={() => handleToggleEdit('flashcardJson')}
