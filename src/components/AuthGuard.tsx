@@ -52,6 +52,13 @@ function ProfileSetupForm() {
         try {
             // Check if student ID is already claimed before showing Google popup
             const claimingUser = await getClaimedStudentIdUser(studentId);
+            if (claimingUser) {
+                // This is a simplified check. In a real app, you'd want to be more specific
+                // if the claimingUser is the current user re-authenticating, but for now,
+                // if it's claimed at all by anyone, we show an error before popup.
+                // A more advanced flow would let the user sign in to see if THEY are the owner.
+                throw new Error("This Student ID is already registered with a different Google account.");
+            }
             
             await setPersistence(auth, browserLocalPersistence);
             
@@ -63,11 +70,6 @@ function ProfileSetupForm() {
             try {
                 const result = await signInWithPopup(auth, provider);
                 const user = result.user;
-
-                // If the ID is claimed, it must be by the current user signing in.
-                if (claimingUser && claimingUser !== user.uid) {
-                     throw new Error("This Student ID is already registered with a different Google account.");
-                }
 
                 // Create user profile and claim student ID in a transaction
                 const userRef = doc(db, 'users', user.uid);
@@ -192,45 +194,52 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     const checkUserProfile = async () => {
+      // 1. If Firebase auth is still loading, wait.
       if (userLoading) {
         setProfileState('loading');
         return;
       }
 
+      // 2. If no user is logged in, they need to sign up.
       if (!user) {
         setProfileState('needs-setup');
         setUserProfile(null);
         return;
       }
-
-      // User is logged in, check if their profile is complete.
+      
+      // 3. User is logged in. Check for their profile document in Firestore.
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
 
       if (userSnap.exists() && userSnap.data().username) {
-        setUserProfile(userSnap.data() as UserProfile);
+        // 3a. Profile exists and is complete.
+        const profile = userSnap.data() as UserProfile;
+        setUserProfile(profile);
         setProfileState('complete');
       } else {
-        // This case handles users who logged in but didn't finish profile setup (e.g. redirect flow)
+        // 3b. Profile does not exist or is incomplete. This can happen after a redirect.
         const pendingUsername = localStorage.getItem('pendingUsername');
         const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         
         if (pendingUsername && studentId) {
+             // We have the pending data. Let's create the profile.
              const claimingUser = await getClaimedStudentIdUser(studentId);
              if (claimingUser && claimingUser !== user.uid) {
                 // This ID is claimed by someone else. This is a problem.
-                // For now, we sign the user out and let them start again.
+                // Sign the user out and let them start again.
                 signOut(getAuth());
                 localStorage.removeItem('pendingUsername');
                 localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+                setProfileState('needs-setup');
                 return;
              }
 
+             // Create the profile in a transaction
              const userRef = doc(db, 'users', user.uid);
              const studentIdRef = doc(db, 'claimedStudentIds', studentId);
              const batch = writeBatch(db);
              
-             batch.set(userRef, {
+             const newProfileData = {
                  uid: user.uid,
                  email: user.email,
                  displayName: user.displayName,
@@ -238,8 +247,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
                  username: pendingUsername,
                  studentId: studentId,
                  createdAt: new Date().toISOString(),
-             });
+             };
 
+             batch.set(userRef, newProfileData);
              batch.set(studentIdRef, {
                  userId: user.uid,
                  claimedAt: new Date().toISOString(),
@@ -247,11 +257,14 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
 
              await batch.commit();
 
+             // Cleanup localStorage and IMPORTANTLY, update the state
              localStorage.removeItem('pendingUsername');
              localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
-             setUserProfile({ username: pendingUsername });
+             setUserProfile({ username: newProfileData.username });
              setProfileState('complete');
         } else {
+            // User is logged in, but no profile and no pending data.
+            // This means they need to go through the setup process.
             setUserProfile(null);
             setProfileState('needs-setup');
         }
