@@ -28,7 +28,16 @@ export function FirebaseClientProvider({
 
             const instances = await initializeFirebase(config);
             setFirebase(instances);
-            setLoading(false); // Set loading to false once initialized
+            
+            // Handle redirect result immediately after initialization
+            const auth = getAuth(instances.app);
+            await getRedirectResult(auth).catch(err => {
+              if (err.code !== 'auth/no-auth-event') {
+                console.error("Firebase getRedirectResult error:", err);
+              }
+            });
+            
+            setLoading(false); // Set loading to false once initialized and redirect is handled
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
             setError(e);
@@ -39,29 +48,7 @@ export function FirebaseClientProvider({
     if (!firebase) {
       init();
     }
-  }, [config, firebase]); // Keep dependencies to re-init if config changes
-
-   useEffect(() => {
-    if (!firebase) return;
-
-    const auth = getAuth(firebase.app);
-
-    // Handle redirect result first
-    getRedirectResult(auth).catch(err => {
-      if (err.code !== 'auth/no-auth-event') {
-        console.error("Firebase getRedirectResult error:", err);
-      }
-    });
-
-    // Then, set up the state listener
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      // The useUser hook will handle the user state
-    }, (error) => {
-      console.error("Firebase onAuthStateChanged error:", error);
-    });
-
-    return () => unsubscribe();
-  }, [firebase]);
+  }, [config, firebase]);
 
 
   if (loading) {

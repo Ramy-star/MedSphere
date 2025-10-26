@@ -10,8 +10,8 @@ import { Input } from './ui/input';
 import { Button } from './ui/button';
 import { CheckCircle2, Loader2, XCircle } from 'lucide-react';
 import { db } from '@/firebase';
-import { doc, getDoc, writeBatch } from 'firebase/firestore';
-import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup, signInWithRedirect } from 'firebase/auth';
+import { doc, getDoc, writeBatch, getDocs, collection, query, where } from 'firebase/firestore';
+import { GoogleAuthProvider, setPersistence, browserLocalPersistence, signInWithPopup, signInWithRedirect, getAuth, signOut } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { cn } from '@/lib/utils';
@@ -191,19 +191,19 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
-    if (userLoading) {
-      setProfileState('loading');
-      return;
-    }
-
-    if (!user) {
-      setProfileState('needs-setup'); // User is not logged in, so they need to set up a profile.
-      setUserProfile(null);
-      return;
-    }
-
-    // User is logged in, check if their profile is complete.
     const checkUserProfile = async () => {
+      if (userLoading) {
+        setProfileState('loading');
+        return;
+      }
+
+      if (!user) {
+        setProfileState('needs-setup');
+        setUserProfile(null);
+        return;
+      }
+
+      // User is logged in, check if their profile is complete.
       const userRef = doc(db, 'users', user.uid);
       const userSnap = await getDoc(userRef);
 
@@ -220,7 +220,6 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
              if (claimingUser && claimingUser !== user.uid) {
                 // This ID is claimed by someone else. This is a problem.
                 // For now, we sign the user out and let them start again.
-                // A better UX would show an error message.
                 signOut(getAuth());
                 localStorage.removeItem('pendingUsername');
                 localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
