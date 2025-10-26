@@ -1,6 +1,6 @@
 
 'use client';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { GoogleAuthProvider, signInWithPopup, signInWithRedirect, signOut, setPersistence, browserLocalPersistence, getRedirectResult } from 'firebase/auth';
 import { useFirebase } from '@/firebase/provider';
 import { useUser } from '@/firebase/auth/use-user';
@@ -14,10 +14,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn, LogOut, User } from 'lucide-react';
+import { LogIn, LogOut, User, Chrome } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 
-export function AuthButton() {
+export function AuthButton({ forceLogin = false }: { forceLogin?: boolean }) {
   const { auth } = useFirebase();
   const { user, loading } = useUser();
   const [busy, setBusy] = useState(false);
@@ -42,7 +43,7 @@ export function AuthButton() {
       console.error('Login error', err);
       alert('Login failed: ' + (err?.message || 'An unknown error occurred.'));
     } finally {
-      // Don't set busy to false here for redirect flow
+      // Don't set busy to false for redirect flow
       // as the page will navigate away.
     }
   };
@@ -53,6 +54,15 @@ export function AuthButton() {
 
   if (loading || busy) {
     return <div className="h-9 w-9 rounded-full bg-slate-800 animate-pulse" />;
+  }
+
+  if (forceLogin) {
+    return (
+        <Button onClick={handleLogin} disabled={busy} size="lg" className={cn("rounded-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-transform active:scale-95")}>
+            <Chrome className="mr-2 h-5 w-5" />
+            Sign in with Google
+        </Button>
+    )
   }
 
   if (user && !user.isAnonymous) {

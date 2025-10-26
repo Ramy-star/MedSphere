@@ -65,10 +65,7 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
             animate={{ y: 0, opacity: 1 }}
             transition={{ duration: 0.5, delay: 1.1 }}
           >
-            <div className="flex items-center justify-center p-2 rounded-full bg-white/10">
-              <AuthButton />
-              <span className='text-white ml-2 pr-2'>Sign in with Google</span>
-            </div>
+             <AuthButton forceLogin={true} />
           </motion.div>
         </motion.div>
       </motion.div>
