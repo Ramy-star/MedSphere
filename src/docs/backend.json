@@ -1,4 +1,5 @@
 
+
 {
   "entities": {
     "Content": {
@@ -62,6 +63,7 @@
                     "canAddFolder",
                     "canUploadFile",
                     "canAddLink",
+                    "canCreateFlashcard",
                     "canRename",
                     "canDelete",
                     "canMove",

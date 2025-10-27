@@ -79,7 +79,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   }
   
   const handleAddFlashcard = async () => {
-    if (!parentId || !can('canAdministerFlashcards', parentId)) return;
+    if (!parentId) return;
     try {
         await contentService.createInteractiveFlashcard(parentId);
         toast({ title: 'Flashcards Created', description: `A new flashcard set has been created.` });
@@ -138,7 +138,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           label: "Create Flashcard",
           icon: FlashcardIcon,
           action: handleAddFlashcard,
-          permission: 'canAdministerFlashcards'
+          permission: 'canCreateFlashcard'
       },
   ]
 

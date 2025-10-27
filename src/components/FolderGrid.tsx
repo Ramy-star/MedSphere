@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -124,7 +125,7 @@ export function FolderGrid({
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
 }) {
-  const { isSuperAdmin, can } = useAuthStore();
+  const { can } = useAuthStore();
 
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
@@ -151,14 +152,9 @@ export function FolderGrid({
 
   useEffect(() => {
     if (fetchedItems) {
-      if (isSuperAdmin) {
         setSortedItems(fetchedItems);
-      } else {
-        // Filter out hidden items for non-admins
-        setSortedItems(fetchedItems.filter(item => !item.metadata?.isHidden));
-      }
     }
-  }, [fetchedItems, isSuperAdmin]);
+  }, [fetchedItems]);
 
   const handleFolderClick = (folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -293,13 +289,15 @@ export function FolderGrid({
 
   const itemsToRender = useMemo(() => {
     const updatingMap = new Map(uploadingFiles.filter(f => f.isUpdate).map(f => [f.originalId, f]));
-    return sortedItems.map(item => {
+    const visibleItems = sortedItems.filter(item => !item.metadata?.isHidden || can('canToggleVisibility', item.id));
+
+    return visibleItems.map(item => {
       return {
         item: item,
         uploadingFile: updatingMap.get(item.id),
       };
     });
-  }, [sortedItems, uploadingFiles]);
+  }, [sortedItems, uploadingFiles, can]);
 
   const newUploads = uploadingFiles.filter(f => !f.isUpdate);
 
@@ -340,9 +338,9 @@ export function FolderGrid({
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
               <p className="mt-2 text-sm text-slate-400">
-                {isSuperAdmin ? "Drag and drop files here, or use the button to add content." : "No content has been added to this folder yet."}
+                Drag and drop files here, or use the button to add content.
               </p>
-              {isSuperAdmin && (
+              {can('canAddFolder', parentId) && (
                 <AddContentMenu
                   parentId={parentId}
                   onFileSelected={onFileSelected}
@@ -435,7 +433,7 @@ export function FolderGrid({
                     exit="exit"
                     className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
                   >
-                    {isSuperAdmin ? (
+                    {can('canReorder', parentId) ? (
                       <SortableItemWrapper id={item.id}>{renderedContent()}</SortableItemWrapper>
                     ) : (
                       renderedContent()
@@ -491,5 +489,3 @@ export function FolderGrid({
     </div>
   );
 }
-
-    

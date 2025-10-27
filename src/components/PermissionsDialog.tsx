@@ -13,7 +13,7 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { ScrollArea } from './ui/scroll-area';
 import { useState, useMemo, useEffect } from 'react';
-import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield, Move, ListPlus, Settings, BookUser, SlidersHorizontal } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield, Move, ListPlus, Settings, BookUser, SlidersHorizontal, Shuffle } from 'lucide-react';
 import { Content } from '@/lib/contentService';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
@@ -21,6 +21,7 @@ import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
+import { FlashcardIcon } from './icons/FlashcardIcon';
 
 
 type UserRole = {
@@ -44,6 +45,7 @@ const permissionGroups = {
         { id: 'canAddFolder', label: 'Add Folder' },
         { id: 'canUploadFile', label: 'Upload File' },
         { id: 'canAddLink', label: 'Add Link' },
+        { id: 'canCreateFlashcard', label: 'Create Flashcard' },
     ],
     'Item Options Menu': [
         { id: 'canRename', label: 'Rename' },
