@@ -1,10 +1,11 @@
+
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect } from 'react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX, Settings, Ban, X } from 'lucide-react';
+import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX, Settings, Ban, X, GraduationCap } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -34,6 +35,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+
+import level1Ids from '@/lib/student-ids/level-1.json';
+import level2Ids from '@/lib/student-ids/level-2.json';
+import level3Ids from '@/lib/student-ids/level-3.json';
+import level4Ids from '@/lib/student-ids/level-4.json';
+import level5Ids from '@/lib/student-ids/level-5.json';
 
 
 const SUPER_ADMIN_ID = "221100154";
@@ -75,6 +82,16 @@ function AdminPageContent() {
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
     const { studentId: currentStudentId } = useAuthStore();
     const { toast } = useToast();
+
+    const studentIdToLevelMap = useMemo(() => {
+        const map = new Map<string, string>();
+        level1Ids.forEach(id => map.set(id, 'Level 1'));
+        level2Ids.forEach(id => map.set(id, 'Level 2'));
+        level3Ids.forEach(id => map.set(id, 'Level 3'));
+        level4Ids.forEach(id => map.set(id, 'Level 4'));
+        level5Ids.forEach(id => map.set(id, 'Level 5'));
+        return map;
+    }, []);
 
     const handleTabChange = (value: string) => {
         router.push(`/admin?tab=${value}`, { scroll: false });
@@ -186,6 +203,7 @@ function AdminPageContent() {
         const userIsSuperAdmin = isSuperAdmin(user);
         const userIsSubAdmin = isSubAdmin(user);
         const isCurrentUser = user.studentId === currentStudentId;
+        const userLevel = studentIdToLevelMap.get(user.studentId);
 
         const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" /> 
                        : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
@@ -219,6 +237,12 @@ function AdminPageContent() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
+                    {userLevel && (
+                        <div className="hidden sm:flex items-center gap-2 text-sm bg-slate-700/50 px-2 py-1 rounded-md">
+                            <GraduationCap className="w-4 h-4 text-slate-300"/>
+                            <span className="text-slate-200 font-medium">{userLevel}</span>
+                        </div>
+                    )}
                     <div className="hidden sm:flex items-center gap-2 text-sm">
                         {roleIcon}
                         <RoleText />
@@ -393,3 +417,5 @@ export default function AdminPage() {
         </Suspense>
     )
 }
+
+    
