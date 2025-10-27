@@ -13,6 +13,8 @@ import { VerificationScreen } from "@/components/VerificationScreen";
 import { useMobileViewStore } from "@/hooks/use-mobile-view-store";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from '@/stores/auth-store';
+import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { getFirebaseConfig } from "@/firebase/config";
 
 
 const nunitoSans = Nunito_Sans({ 
@@ -43,6 +45,7 @@ export default function RootLayout({
   const [showWelcome, setShowWelcome] = useState(true);
   const [isClient, setIsClient] = useState(false);
   const { isAuthenticated, checkAuth, loading } = useAuthStore();
+  const firebaseConfig = getFirebaseConfig();
 
   useEffect(() => {
     setIsClient(true);
@@ -133,6 +136,7 @@ export default function RootLayout({
           <link rel="preconnect" href="https://res.cloudinary.com" />
       </head>
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
+          <FirebaseClientProvider config={firebaseConfig}>
             <div className="flex flex-col h-full w-full">
               <header className="z-50 w-full">
                 <Header />
@@ -142,6 +146,7 @@ export default function RootLayout({
               </main>
             </div>
             <Toaster />
+          </FirebaseClientProvider>
       </body>
     </html>
   );
