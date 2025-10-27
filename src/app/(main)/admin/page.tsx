@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useMemo, useState } from 'react';
@@ -20,7 +21,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth-store';
 import { AddUserDialog } from '@/components/AddUserDialog';
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { PermissionsDialog } from '@/components/PermissionsDialog';
@@ -113,8 +114,9 @@ function AdminPageContent() {
     
     const admins = useMemo(() => {
         if (!filteredUsers) return [];
+        // Only show sub-admins, not the super admin.
         return filteredUsers.filter(user => isSubAdmin(user) && !isSuperAdmin(user));
-    }, [filteredUsers, currentStudentId, isCurrentUserSuperAdmin]);
+    }, [filteredUsers, isCurrentUserSuperAdmin, currentStudentId]);
     
     const handleToggleSubAdmin = async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
@@ -216,22 +218,14 @@ function AdminPageContent() {
                         {roleIcon}
                         <span>{roleText}</span>
                     </div>
-                     <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 rounded-full text-red-400 hover:bg-red-500/20"
-                        onClick={() => setUserToDelete(user)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-
+                   
                     {!isManagementView && !isUserSuperAdmin && (
                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
                             {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                         </Button>
                     )}
 
-                     {isManagementView && !isUserSuperAdmin && (
+                     {isManagementView && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
@@ -239,14 +233,22 @@ function AdminPageContent() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
-                                    <Shield className="mr-2 h-4 w-4" />
-                                    {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
+                                {!isUserSuperAdmin && (
+                                    <>
+                                        <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
+                                            <Shield className="mr-2 h-4 w-4" />
+                                            {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                    </>
+                                )}
                                 <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
                                     <Ban className="mr-2 h-4 w-4" />
                                     {user.isBlocked ? 'Unblock User' : 'Block User'}
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setUserToDelete(user)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Delete</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
@@ -375,3 +377,5 @@ export default function AdminPage() {
         </Suspense>
     )
 }
+
+    
