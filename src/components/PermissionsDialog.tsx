@@ -13,7 +13,7 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { ScrollArea } from './ui/scroll-area';
 import { useState, useMemo, useEffect } from 'react';
-import { Loader2, PlusCircle, Trash2, Layers, Pencil } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield } from 'lucide-react';
 import { Content } from '@/lib/contentService';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -162,9 +162,7 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
         if (isGlobal) {
             onChange({ scope: 'global', scopeId: undefined, scopeName: undefined });
         } else {
-            // If they uncheck global, we don't automatically set a scope.
-            // They have to click "Select Scope". We can clear the old one if needed,
-            // but for now, we'll just let the UI guide them.
+            // Keep the current scope if unchecked, user must select a new one
         }
     };
     
@@ -179,7 +177,10 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
     return (
         <div className="bg-black/20 border border-white/10 p-4 rounded-xl space-y-4">
             <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-white capitalize">Admin Role</h4>
+                <div className="flex items-center gap-2 text-slate-400">
+                    <Shield size={16} />
+                    <h4 className="font-semibold capitalize">Admin Role</h4>
+                </div>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:bg-red-500/20" onClick={onRemove}>
                     <Trash2 size={16} />
                 </Button>
@@ -188,12 +189,12 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
                 <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/5 transition-colors">
                     <Checkbox
-                        id={`global-scope-${role.scopeId}`}
+                        id={`global-scope-${role.scopeId || 'global'}`}
                         checked={role.scope === 'global'}
                         onCheckedChange={handleGlobalToggle}
                     />
                     <label
-                        htmlFor={`global-scope-${role.scopeId}`}
+                        htmlFor={`global-scope-${role.scopeId || 'global'}`}
                         className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                     >
                         Global Scope
@@ -206,13 +207,14 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
                         role.scope !== 'global' ? "border-blue-500 text-white" : ""
                     )} 
                     onClick={() => setShowFolderSelector(true)}
+                    disabled={role.scope === 'global'}
                 >
                     <Pencil className="mr-2 h-4 w-4"/>
                     {role.scope !== 'global' && role.scopeName ? role.scopeName : 'Select Specific Scope...'}
                 </Button>
             </div>
             
-            <div className="space-y-4 pt-2">
+            <div className="space-y-6 pt-2">
                 {Object.entries(permissionGroups).map(([groupName, permissions]) => (
                     <div key={groupName}>
                         <h5 className="font-medium text-sm text-slate-400 mb-3 border-b border-white/10 pb-2 flex items-center gap-2">
@@ -228,7 +230,7 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
                                         onCheckedChange={(checked) => handlePermissionChange(p.id, !!checked)}
                                     />
                                      <label htmlFor={`${role.scopeId || 'global'}-${p.id}`} className="text-sm font-medium leading-none cursor-pointer text-slate-200">
-                                        {p.label}
+                                        {p.label === 'Admin Panel Page' ? 'Admin Panel' : p.label === 'Questions Creator Page' ? 'Questions Creator' : p.label}
                                     </label>
                                 </div>
                             ))}
@@ -248,4 +250,3 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
         </div>
     );
 }
-
