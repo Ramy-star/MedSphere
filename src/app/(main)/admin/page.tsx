@@ -68,6 +68,7 @@ function AdminPageContent() {
     const [showAddUserDialog, setShowAddUserDialog] = useState(false);
     const [userForPermissions, setUserForPermissions] = useState<UserProfile | null>(null);
     const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+    const [userToDemote, setUserToDemote] = useState<UserProfile | null>(null);
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
@@ -100,33 +101,48 @@ function AdminPageContent() {
     const isSubAdmin = (user: UserProfile) => Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
 
     const admins = useMemo(() => {
-        return filteredUsers.filter(user => Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin' || r.role === 'superAdmin'));
+        if (!filteredUsers) return [];
+        return filteredUsers.filter(user => isSubAdmin(user) || isSuperAdmin(user));
     }, [filteredUsers]);
     
     const handleToggleSubAdmin = async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
         const hasSubAdminRole = isSubAdmin(user);
 
+        if (hasSubAdminRole) {
+            // If demoting, set user to demote and show dialog. The actual logic is in handleDemoteConfirm.
+            setUserToDemote(user);
+            return;
+        }
+
+        // If promoting, do it directly.
         try {
-            if (hasSubAdminRole) {
-                // To remove, we filter out all subAdmin roles.
-                const newRoles = Array.isArray(user.roles) ? user.roles.filter(r => r.role !== 'subAdmin') : [];
-                await updateDoc(userRef, { roles: newRoles });
-                toast({ title: "Permissions Updated", description: `${user.displayName} is no longer an admin.` });
-            } else {
-                // To add, we push a new basic subAdmin role.
-                const newSubAdminRole: UserRole = { role: 'subAdmin', scope: 'global', permissions: [] };
-                const currentRoles = Array.isArray(user.roles) ? user.roles : [];
-                await updateDoc(userRef, {
-                    roles: [...currentRoles, newSubAdminRole]
-                });
-                toast({ title: "Permissions Updated", description: `${user.displayName} is now an admin.` });
-            }
+            const newSubAdminRole: UserRole = { role: 'subAdmin', scope: 'global', permissions: [] };
+            const currentRoles = Array.isArray(user.roles) ? user.roles : [];
+            await updateDoc(userRef, {
+                roles: [...currentRoles, newSubAdminRole]
+            });
+            toast({ title: "Permissions Updated", description: `${user.displayName} is now an admin.` });
         } catch (error: any) {
             console.error("Error updating user role:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not update user permissions." });
         }
     };
+
+    const handleDemoteConfirm = async () => {
+        if (!userToDemote) return;
+        const userRef = doc(db, 'users', userToDemote.uid);
+        try {
+            const newRoles = Array.isArray(userToDemote.roles) ? userToDemote.roles.filter(r => r.role !== 'subAdmin') : [];
+            await updateDoc(userRef, { roles: newRoles });
+            toast({ title: "Permissions Updated", description: `${userToDemote.displayName} is no longer an admin.` });
+        } catch(error: any) {
+            console.error("Error demoting user:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not update user permissions." });
+        } finally {
+            setUserToDemote(null);
+        }
+    }
     
     const handleToggleBlock = async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
@@ -190,7 +206,7 @@ function AdminPageContent() {
                         <span>{roleText}</span>
                     </div>
 
-                    {!isManagementView && !isUserSuperAdmin && (
+                    {!isManagementView && !isUserSuperAdmin && !isCurrentUser && (
                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
                             {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                         </Button>
@@ -238,12 +254,12 @@ function AdminPageContent() {
 
     const renderUserList = (userList: UserProfile[], isManagementView = false) => {
         if (loadingUsers) return null;
-        if (userList.length === 0 && debouncedQuery) {
+        if (userList.length === 0) {
             return (
                 <div className="text-center text-slate-400 py-16 flex flex-col items-center">
                     <SearchX className="w-12 h-12 text-slate-500 mb-4"/>
                     <p className="font-semibold text-lg text-white">No Users Found</p>
-                    <p>Your search for "{debouncedQuery}" did not return any results.</p>
+                    <p>{debouncedQuery ? `Your search for "${debouncedQuery}" did not return any results.` : "There are no users in this category."}</p>
                 </div>
             )
         }
@@ -310,7 +326,7 @@ function AdminPageContent() {
                 open={!!userForPermissions} 
                 onOpenChange={(isOpen) => {if(!isOpen) setUserForPermissions(null)}}
             />
-             <AlertDialog open={!!userToDelete} onOpenChange={setUserToDelete}>
+             <AlertDialog open={!!userToDelete} onOpenChange={(open) => {if(!open) setUserToDelete(null)}}>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
@@ -321,6 +337,20 @@ function AdminPageContent() {
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
+            <AlertDialog open={!!userToDemote} onOpenChange={(open) => {if(!open) setUserToDemote(null)}}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Confirm Demotion</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to remove admin privileges for "{userToDemote?.displayName}"?
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDemoteConfirm} className="bg-red-600 hover:bg-red-700">Remove Admin</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -335,3 +365,5 @@ export default function AdminPage() {
         </Suspense>
     )
 }
+
+    
