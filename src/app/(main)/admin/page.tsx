@@ -239,7 +239,7 @@ function AdminPageContent() {
                                     <MoreVertical size={18} />
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuContent align="end" className="w-48 p-2">
                                 <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
                                     <Shield className="mr-2 h-4 w-4" />
                                     {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
