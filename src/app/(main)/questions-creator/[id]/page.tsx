@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo, use } from 'react';
@@ -26,7 +27,8 @@ import { contentService, type Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 import type { Lecture } from '@/lib/types';
 import { useAuthStore } from '@/stores/auth-store';
-import Image from 'next/image';
+import { FlashcardIcon } from '@/components/icons/FlashcardIcon';
+import { InteractiveExamIcon } from '@/components/icons/InteractiveExamIcon';
 
 
 type SavedQuestionSet = {
@@ -433,7 +435,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_exam'); setShowFolderSelector(true); }} disabled={isCreating}>
-                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <FileCheck className="h-4 w-4 text-rose-400" />}
+                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <InteractiveExamIcon className="h-5 w-5" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create/Merge Interactive Exam</p></TooltipContent>
@@ -443,7 +445,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_flashcard'); setShowFolderSelector(true); }} disabled={isCreating}>
-                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Image src="/flashcard-icon.png" alt="Create Flashcard" width={20} height={20} />}
+                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <FlashcardIcon className="w-5 h-5" />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create/Merge Interactive Flashcards</p></TooltipContent>
@@ -664,7 +666,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     icon={<FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.examJson}
                     type="examJson"
-                    isEditing={isEditing.examJson}
+                    isEditing={isEditing.jsonExam}
                     onToggleEdit={() => handleToggleEdit('examJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
                     onCancel={() => handleCancelEdit('examJson')}

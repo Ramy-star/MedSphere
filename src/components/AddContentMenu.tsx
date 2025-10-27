@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -9,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { NewLinkDialog } from './NewLinkDialog';
 import { Link2Icon } from './icons/Link2Icon';
 import { useAuthStore } from '@/stores/auth-store';
+import { FlashcardIcon } from './icons/FlashcardIcon';
 
 type AddContentMenuProps = {
   parentId: string | null;
@@ -126,7 +128,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       },
       {
           label: "Create Flashcard",
-          icon: Layers,
+          icon: FlashcardIcon,
           action: handleAddFlashcard,
       },
   ]

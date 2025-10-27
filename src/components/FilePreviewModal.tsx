@@ -35,7 +35,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
-import Image from 'next/image';
+import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
+import { FlashcardIcon } from './icons/FlashcardIcon';
 
 const ChatPanel = dynamic(() => import('./ChatPanel'), {
   ssr: false,
@@ -187,10 +188,10 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, 
         return { Icon: Lightbulb, color: 'text-yellow-400' };
     }
     if (item.type === 'INTERACTIVE_EXAM') {
-        return { Icon: FileCheck, color: 'text-rose-400' };
+        return { Icon: InteractiveExamIcon, color: '' };
     }
     if (item.type === 'INTERACTIVE_FLASHCARD') {
-        return { Icon: () => <Image src="/flashcard-icon.png" alt="Flashcard Icon" width={20} height={20} />, color: '' };
+        return { Icon: FlashcardIcon, color: '' };
     }
     const mimeType = item.metadata?.mime;
 

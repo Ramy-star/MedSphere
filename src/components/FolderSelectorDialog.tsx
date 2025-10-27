@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -17,6 +18,8 @@ import { ScrollArea } from './ui/scroll-area';
 import { Link2Icon } from './icons/Link2Icon';
 import Image from 'next/image';
 import { allSubjectIcons } from '@/lib/file-data';
+import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
+import { FlashcardIcon } from './icons/FlashcardIcon';
 
 
 export type ActionType = 'select_source' | 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | 'move' | 'copy';
@@ -68,8 +71,8 @@ const getIconForItem = (item: Content): { Icon: React.ElementType, color: string
 
     if (item.type === 'LINK') return { Icon: Link2Icon, color: 'text-cyan-400' };
     if (item.type === 'INTERACTIVE_QUIZ') return { Icon: Lightbulb, color: 'text-yellow-400' };
-    if (item.type === 'INTERACTIVE_EXAM') return { Icon: FileCheck, color: 'text-rose-400' };
-    if (item.type === 'INTERACTIVE_FLASHCARD') return { Icon: LayersIcon, color: 'text-indigo-400' };
+    if (item.type === 'INTERACTIVE_EXAM') return { Icon: InteractiveExamIcon, color: '' };
+    if (item.type === 'INTERACTIVE_FLASHCARD') return { Icon: FlashcardIcon, color: '' };
     if (item.type === 'LEVEL') return { Icon: Layers, color: 'text-blue-400' };
     if (item.type === 'SEMESTER') return { Icon: Calendar, color: 'text-green-400' };
     if (item.type === 'SUBJECT') {

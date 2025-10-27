@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -43,6 +44,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { contentService, type Content } from '@/lib/contentService';
 import type { Lecture } from '@/lib/types';
 import { useAuthStore } from '@/stores/auth-store';
+import { SavedQuestionsIcon } from '@/components/icons/SavedQuestionsIcon';
 
 
 type SavedQuestionSet = {
@@ -246,7 +248,7 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
             )}
         >
             <div className="flex justify-between items-start">
-                <FileCheck className="w-8 h-8 text-rose-400 shrink-0" />
+                <SavedQuestionsIcon className="w-8 h-8 shrink-0" />
                 {isAdmin && (
                     <div className="flex gap-1 absolute top-2 right-2">
                         <Button

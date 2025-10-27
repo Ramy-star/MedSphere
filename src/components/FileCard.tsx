@@ -26,7 +26,8 @@ import { useRouter } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { UploadProgress, UploadingFile } from './UploadProgress';
 import { FileQuestion } from './icons/FileQuestion';
-import Image from 'next/image';
+import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
+import { FlashcardIcon } from './icons/FlashcardIcon';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, color: string, isImage?: boolean } => {
     if (item.type === 'LINK') {
@@ -38,11 +39,11 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, 
     }
 
     if (item.type === 'INTERACTIVE_EXAM') {
-        return { Icon: FileCheck, color: 'text-rose-400' };
+        return { Icon: InteractiveExamIcon, color: '' };
     }
 
     if (item.type === 'INTERACTIVE_FLASHCARD') {
-        return { Icon: () => <Image src="/flashcard-icon.png" alt="Flashcard Icon" width={24} height={24} />, color: '', isImage: true };
+        return { Icon: FlashcardIcon, color: '', isImage: true };
     }
 
     const fileName = item.name;
