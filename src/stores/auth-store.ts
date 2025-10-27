@@ -1,7 +1,6 @@
 
 import { create } from 'zustand';
 import { verifyAndCreateUser, getUserProfile, isSuperAdmin } from '@/lib/authService';
-import { db } from '@/firebase';
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
@@ -23,29 +22,9 @@ type AuthState = {
   studentId: string | null;
   user: UserProfile | null;
   loading: boolean;
-  checkAuth: () => void;
+  checkAuth: () => Promise<void>;
   login: (studentId: string) => Promise<boolean>;
   logout: () => void;
-};
-
-// Function to wait for db to be initialized
-const waitForDB = (timeout = 5000) => {
-    return new Promise((resolve) => {
-        if (db) {
-            resolve(true);
-            return;
-        }
-        const startTime = Date.now();
-        const interval = setInterval(() => {
-            if (db) {
-                clearInterval(interval);
-                resolve(true);
-            } else if (Date.now() - startTime > timeout) {
-                clearInterval(interval);
-                resolve(false);
-            }
-        }, 100);
-    });
 };
 
 const useAuthStore = create<AuthState>((set, get) => ({
@@ -53,19 +32,12 @@ const useAuthStore = create<AuthState>((set, get) => ({
   isSuperAdmin: false,
   studentId: null,
   user: null,
-  loading: true,
+  loading: true, // Start in loading state until first check is complete
+  
   checkAuth: async () => {
     set({ loading: true });
     
-    if (typeof window !== 'undefined') {
-      try {
-        const dbReady = await waitForDB();
-        if (!dbReady) {
-            console.error("Firestore (db) could not be initialized in time.");
-            set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
-            return;
-        }
-
+    try {
         const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         if (storedId) {
             const userProfile = await getUserProfile(storedId);
@@ -78,20 +50,19 @@ const useAuthStore = create<AuthState>((set, get) => ({
                     user: userProfile as UserProfile,
                     loading: false,
                 });
-            } else {
-              get().logout();
+                return;
             }
-        } else {
-            set({ isAuthenticated: false, studentId: null, isSuperAdmin: false, user: null, loading: false });
         }
-      } catch (e) {
-        console.error("Auth check failed:", e);
-        set({ isAuthenticated: false, studentId: null, isSuperAdmin: false, user: null, loading: false });
-      }
-    } else {
-      set({ loading: false }); // On server, just finish loading
+        // If no stored ID or profile lookup fails, ensure logged out state
+        get().logout();
+    } catch (e) {
+      console.error("Auth check failed:", e);
+      get().logout(); // Ensure clean state on error
+    } finally {
+        set({ loading: false });
     }
   },
+
   login: async (studentId: string): Promise<boolean> => {
     set({ loading: true });
     try {
@@ -118,6 +89,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
       return false;
     }
   },
+
   logout: () => {
     try {
       localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
@@ -131,6 +103,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       loading: false,
     });
+    // This check is important because logout might be called from a non-browser environment in some edge cases.
     if (typeof window !== 'undefined') {
        window.location.href = '/';
     }

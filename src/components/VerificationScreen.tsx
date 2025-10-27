@@ -27,7 +27,7 @@ function VerificationContent({ onVerified }: { onVerified: () => void }) {
     setIsLoading(true);
     setError(null);
     
-    // Client-side quick check first
+    // Client-side quick check first to fail fast
     const isValid = await isStudentIdValid(trimmedId);
     if (!isValid) {
       setError('Invalid Student ID. Please check and try again.');
@@ -35,11 +35,11 @@ function VerificationContent({ onVerified }: { onVerified: () => void }) {
       return;
     }
     
-    // If valid, proceed with the full login/creation logic
+    // If valid locally, proceed with the full login/creation logic
     const success = await login(trimmedId);
     
     if (success) {
-      onVerified();
+      // onVerified is now implicitly handled by the auth store state change
     } else {
       // This case might happen if there's a DB error during user creation
       setError('Could not complete verification. Please try again later.');
@@ -110,7 +110,7 @@ function VerificationContent({ onVerified }: { onVerified: () => void }) {
             <Button 
               size="lg" 
               onClick={handleVerification} 
-              disabled={isLoading}
+              disabled={isLoading || !studentId.trim()}
               className="rounded-2xl bg-slate-700/50 hover:bg-slate-700/80 text-primary-foreground font-bold text-lg h-12 transition-transform active:scale-95"
             >
               {isLoading ? (

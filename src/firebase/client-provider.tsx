@@ -16,11 +16,12 @@ export function FirebaseClientProvider({
   config: any;
 }) {
   const [firebase, setFirebase] = useState<FirebaseContextType | null>(null);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
-  const { checkAuth } = useAuthStore();
+  const checkAuth = useAuthStore((state) => state.checkAuth);
+  const isLoadingAuth = useAuthStore((state) => state.loading);
 
   useEffect(() => {
+    let isMounted = true;
     const init = async () => {
         try {
             if (process.env.NODE_ENV === 'production' && (!config || !config.apiKey)) {
@@ -28,26 +29,28 @@ export function FirebaseClientProvider({
             }
 
             const instances = await initializeFirebase(config);
-            setFirebase(instances);
-            // Once firebase is initialized, trigger the auth check.
-            checkAuth(); 
-            setLoading(false);
+            if (isMounted) {
+              setFirebase(instances);
+              // Once Firebase is initialized, check authentication.
+              await checkAuth();
+            }
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
-            setError(e);
-            setLoading(false);
+            if(isMounted) setError(e);
         }
     }
     
-    if (!firebase) {
-      init();
+    init();
+
+    return () => {
+      isMounted = false;
     }
   // We only want this to run once on mount.
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
 
-  if (loading) {
+  if (!firebase || isLoadingAuth) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -70,10 +73,6 @@ export function FirebaseClientProvider({
         </div>
       </div>
     );
-  }
-  
-  if (!firebase) {
-      return <div>Something went wrong. Firebase is not available.</div>;
   }
 
   return <FirebaseProvider {...firebase}>{children}</FirebaseProvider>;
