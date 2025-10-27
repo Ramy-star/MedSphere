@@ -232,7 +232,7 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                           <p className="text-sm font-semibold text-white truncate">{user.displayName || user.username} {(isManagementView || activeTab === 'users') && isCurrentUser && '(You)'}</p>
+                           <p className="text-sm font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
                            {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
                         </div>
                         {/* Mobile view */}
