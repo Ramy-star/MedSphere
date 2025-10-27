@@ -121,7 +121,7 @@ function AdminPageContent() {
     
     const admins = useMemo(() => {
         if (!filteredUsers) return [];
-        return filteredUsers.filter(user => isSubAdmin(user) && !isSuperAdmin(user));
+        return filteredUsers.filter(user => isSuperAdmin(user) || isSubAdmin(user));
     }, [filteredUsers, isSubAdmin, isSuperAdmin]);
     
     const handleToggleSubAdmin = useCallback(async (user: UserProfile) => {
@@ -201,9 +201,7 @@ function AdminPageContent() {
                        : 'User';
         
         return (
-            <motion.div 
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
+            <div 
                 className={cn("glass-card p-4 rounded-2xl flex items-center justify-between", user.isBlocked && "opacity-50 bg-red-900/20")}
             >
                 <div className="flex items-center gap-4 overflow-hidden">
@@ -266,7 +264,7 @@ function AdminPageContent() {
                         </Button>
                     )}
                 </div>
-            </motion.div>
+            </div>
         )
     });
     UserCard.displayName = 'UserCard';
@@ -283,7 +281,7 @@ function AdminPageContent() {
             )
         }
         return userList.map(user => <UserCard key={user.uid} user={user} isManagementView={isManagementView} />);
-    }, [loadingUsers, debouncedQuery, UserCard]);
+    }, [loadingUsers, debouncedQuery, UserCard, handleToggleSubAdmin, handleToggleBlock]);
 
     return (
         <div className="flex flex-col h-full">
