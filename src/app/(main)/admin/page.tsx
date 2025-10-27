@@ -240,7 +240,7 @@ function AdminPageContent() {
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
                     {userLevel && (
-                        <div className="hidden sm:flex items-center gap-2 text-sm bg-slate-700/50 px-2 py-1 rounded-md">
+                        <div className="hidden sm:flex items-center gap-2 text-sm">
                             <GraduationCap className="w-4 h-4 text-slate-300"/>
                             <span className="text-slate-200 font-medium">{userLevel}</span>
                         </div>
