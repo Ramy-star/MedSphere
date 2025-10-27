@@ -63,6 +63,7 @@ type UserProfile = {
     photoURL?: string;
     roles?: UserRole[];
     isBlocked?: boolean;
+    level?: string;
 };
 
 
@@ -204,7 +205,7 @@ function AdminPageContent() {
         const userIsSuperAdmin = isSuperAdmin(user);
         const userIsSubAdmin = isSubAdmin(user);
         const isCurrentUser = user.studentId === currentStudentId;
-        const userLevel = studentIdToLevelMap.get(user.studentId);
+        const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
 
         const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" /> 
                        : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />

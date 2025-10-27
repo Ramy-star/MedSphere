@@ -84,7 +84,7 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
     setIsSubmitting(true);
     try {
         const usersRef = collection(db, 'users');
-        const newUserDocRef = doc(usersRef);
+        const newUserDocRef = doc(usersRef); // Automatically generate a new ID
 
         await runTransaction(db, async (transaction) => {
             transaction.set(newUserDocRef, {
@@ -92,13 +92,11 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
                 displayName: values.displayName,
                 studentId: values.studentId,
                 email: values.email,
+                level: values.level, // Save the level here
                 createdAt: new Date().toISOString(),
                 roles: {}
             });
         });
-        
-        // This is a placeholder for where you'd update the level-specific student ID files
-        console.log(`User added. ID: ${values.studentId} assigned to Level: ${values.level}`);
         
         toast({ title: "User Added", description: `${values.displayName} has been added.` });
         onOpenChange(false);

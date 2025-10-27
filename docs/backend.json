@@ -42,6 +42,7 @@
         "photoURL": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time"},
         "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
+        "level": { "type": "string", "description": "The academic level of the user." },
         "roles": {
           "type": "array",
           "description": "An array of roles and permissions assigned to the user.",
