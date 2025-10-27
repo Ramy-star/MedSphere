@@ -162,7 +162,7 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
         if (isGlobal) {
             onChange({ scope: 'global', scopeId: undefined, scopeName: undefined });
         } else {
-            // Keep the current scope if unchecked, user must select a new one
+            setShowFolderSelector(true);
         }
     };
     
@@ -175,7 +175,7 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
     };
 
     return (
-        <div className="bg-black/20 border border-white/10 p-4 rounded-xl space-y-4">
+        <div className="bg-black/20 border border-white/10 p-4 rounded-xl space-y-4 mt-6">
             <div className="flex justify-between items-center">
                 <div className="flex items-center gap-2 text-slate-400">
                     <Shield size={16} />
@@ -204,10 +204,9 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
                     variant="outline" 
                     className={cn(
                         "rounded-xl justify-start truncate",
-                        role.scope !== 'global' ? "border-blue-500 text-white" : ""
+                        role.scope !== 'global' && "border-blue-500 text-white"
                     )} 
                     onClick={() => setShowFolderSelector(true)}
-                    disabled={role.scope === 'global'}
                 >
                     <Pencil className="mr-2 h-4 w-4"/>
                     {role.scope !== 'global' && role.scopeName ? role.scopeName : 'Select Specific Scope...'}
@@ -230,7 +229,7 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
                                         onCheckedChange={(checked) => handlePermissionChange(p.id, !!checked)}
                                     />
                                      <label htmlFor={`${role.scopeId || 'global'}-${p.id}`} className="text-sm font-medium leading-none cursor-pointer text-slate-200">
-                                        {p.label === 'Admin Panel Page' ? 'Admin Panel' : p.label === 'Questions Creator Page' ? 'Questions Creator' : p.label}
+                                        {p.label}
                                     </label>
                                 </div>
                             ))}
@@ -239,14 +238,12 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
                 ))}
             </div>
 
-            {showFolderSelector && (
-                 <FolderSelectorDialog 
-                    open={showFolderSelector}
-                    onOpenChange={setShowFolderSelector}
-                    onSelect={handleScopeSelect}
-                    actionType={null} 
-                 />
-            )}
+            <FolderSelectorDialog 
+                open={showFolderSelector}
+                onOpenChange={setShowFolderSelector}
+                onSelect={handleScopeSelect}
+                actionType={null} 
+            />
         </div>
     );
 }
