@@ -4,7 +4,7 @@
 import { Suspense, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User } from 'lucide-react';
+import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -19,6 +19,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth-store';
+import { AddUserDialog } from '@/components/AddUserDialog';
 
 type UserProfile = {
     uid: string;
@@ -40,6 +41,8 @@ function AdminPageContent() {
 
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery] = useDebounce(searchQuery, 300);
+    const [isSearchFocused, setIsSearchFocused] = useState(false);
+    const [showAddUserDialog, setShowAddUserDialog] = useState(false);
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
     const { studentId: currentStudentId } = useAuthStore();
@@ -48,19 +51,25 @@ function AdminPageContent() {
         router.push(`/admin?tab=${value}`, { scroll: false });
     };
 
-    const filteredUsers = useMemo(() => {
+    const sortedUsers = useMemo(() => {
         if (!users) return [];
-        if (!debouncedQuery) return users;
+        return [...users].sort((a, b) => (a.displayName || a.username || '').localeCompare(b.displayName || b.username || ''));
+    }, [users]);
+
+
+    const filteredUsers = useMemo(() => {
+        if (!sortedUsers) return [];
+        if (!debouncedQuery) return sortedUsers;
         const lowercasedQuery = debouncedQuery.toLowerCase();
-        return users.filter(user => 
+        return sortedUsers.filter(user => 
             user.displayName?.toLowerCase().includes(lowercasedQuery) ||
             user.username?.toLowerCase().includes(lowercasedQuery) ||
             user.email?.toLowerCase().includes(lowercasedQuery) ||
             user.studentId?.includes(lowercasedQuery)
         );
-    }, [users, debouncedQuery]);
+    }, [sortedUsers, debouncedQuery]);
 
-    const subAdmins = useMemo(() => {
+    const admins = useMemo(() => {
         return filteredUsers.filter(user => user.roles?.isSubAdmin || user.roles?.isSuperAdmin);
     }, [filteredUsers]);
 
@@ -75,7 +84,7 @@ function AdminPageContent() {
                        : <User className="w-5 h-5 text-slate-400" />;
 
         const roleText = isSuperAdmin ? 'Super Admin'
-                       : isSubAdmin ? 'Sub-Admin'
+                       : isSubAdmin ? 'Admin'
                        : 'User';
         
         return (
@@ -91,7 +100,7 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
-                        <p className="text-sm text-slate-400 truncate">{user.email}</p>
+                        <p className="text-sm text-slate-400 truncate">{user.email} &bull; ID: {user.studentId}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
@@ -99,26 +108,43 @@ function AdminPageContent() {
                         {roleIcon}
                         <span>{roleText}</span>
                     </div>
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400">
-                                <MoreVertical size={18} />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem>
-                                {isSubAdmin ? 'Edit Permissions' : 'Promote to sub-admin'}
-                            </DropdownMenuItem>
-                             {isSubAdmin && !isSuperAdmin && (
-                                <DropdownMenuItem className="text-red-400">
-                                    Remove sub-admin
+                    {/* Only show dropdown if it's not the current super admin's card */}
+                    {(!isCurrentUser || !isSuperAdmin) && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400">
+                                    <MoreVertical size={18} />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                                <DropdownMenuItem>
+                                    {isSubAdmin ? 'Edit Permissions' : 'Promote to sub-admin'}
                                 </DropdownMenuItem>
-                            )}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                                {isSubAdmin && !isSuperAdmin && (
+                                    <DropdownMenuItem className="text-red-400">
+                                        Remove sub-admin
+                                    </DropdownMenuItem>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
                 </div>
             </motion.div>
         )
+    };
+
+    const renderUserList = (userList: UserProfile[]) => {
+        if (loadingUsers) return null;
+        if (userList.length === 0) {
+            return (
+                <div className="text-center text-slate-400 py-16 flex flex-col items-center">
+                    <SearchX className="w-12 h-12 text-slate-500 mb-4"/>
+                    <p className="font-semibold text-lg text-white">No Users Found</p>
+                    <p>Your search for "{debouncedQuery}" did not return any results.</p>
+                </div>
+            )
+        }
+        return userList.map(user => <UserCard key={user.uid} user={user} />);
     };
 
     return (
@@ -132,24 +158,26 @@ function AdminPageContent() {
 
                 <div className="flex justify-between items-center mb-6 gap-4">
                      <div className="relative w-full max-w-sm">
-                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+                        <Search className={cn(
+                            "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300",
+                            (isSearchFocused || searchQuery) ? 'text-white' : 'text-slate-400',
+                            isSearchFocused && "transform scale-110"
+                        )} />
                         <Input 
                             placeholder="Search by name, email, or ID..."
-                            className="pl-10 bg-black/20 border-white/10 rounded-full h-10"
+                            className="pl-10 bg-black/20 border-white/10 rounded-2xl h-10"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
+                            onFocus={() => setIsSearchFocused(true)}
+                            onBlur={() => setIsSearchFocused(false)}
                         />
                     </div>
-                    <Button className="rounded-full h-10">
-                        <UserPlus className="mr-2 h-4 w-4"/>
-                        Add User
-                    </Button>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
                         <TabsTrigger value="users">All Users</TabsTrigger>
-                        <TabsTrigger value="sub-admins">Sub-Admins</TabsTrigger>
+                        <TabsTrigger value="admins">Admins</TabsTrigger>
                         <TabsTrigger value="account-management">Management</TabsTrigger>
                     </TabsList>
                 </Tabs>
@@ -158,18 +186,24 @@ function AdminPageContent() {
             <div className="flex-1 overflow-y-auto mt-6 no-scrollbar pr-2 -mr-2">
                 <Tabs value={activeTab}>
                     <TabsContent value="users" className="space-y-4">
-                        {filteredUsers.map(user => <UserCard key={user.uid} user={user} />)}
+                        {renderUserList(filteredUsers)}
                     </TabsContent>
-                    <TabsContent value="sub-admins" className="space-y-4">
-                        {subAdmins.map(user => <UserCard key={user.uid} user={user} />)}
+                    <TabsContent value="admins" className="space-y-4">
+                        {renderUserList(admins)}
                     </TabsContent>
                     <TabsContent value="account-management">
-                        <div className="text-center text-slate-400 py-16">
-                            <p>Account management features will be available here.</p>
+                        <div className="glass-card p-6 rounded-2xl">
+                           <h3 className="font-semibold text-lg text-white">Add New User</h3>
+                           <p className="text-slate-400 text-sm mt-1 mb-4">Manually create a new user account and assign them to an academic level.</p>
+                           <Button onClick={() => setShowAddUserDialog(true)}>
+                               <UserPlus className="mr-2 h-4 w-4"/>
+                               Add User
+                           </Button>
                         </div>
                     </TabsContent>
                 </Tabs>
             </div>
+            <AddUserDialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog} />
         </div>
     );
 }
