@@ -99,8 +99,8 @@ const getIconForItem = (item: Content): { Icon: React.ElementType, color: string
     }
 };
 
-function FolderTree({ node, onSelect, selectedId, level = 0, actionType, currentItemId, initialOpen = false }: { node: TreeNode, onSelect: (item: Content) => void, selectedId: string | null, level?: number, actionType: ActionType | null, currentItemId?: string, initialOpen?: boolean }) {
-    const [isOpen, setIsOpen] = useState(initialOpen);
+function FolderTree({ node, onSelect, selectedId, level = 0, actionType, currentItemId }: { node: TreeNode, onSelect: (item: Content) => void, selectedId: string | null, level?: number, actionType: ActionType | null, currentItemId?: string }) {
+    const [isOpen, setIsOpen] = useState(false);
 
     const isSelectable = useMemo(() => {
         if (node.id === currentItemId) return false;
@@ -174,7 +174,7 @@ function FolderTree({ node, onSelect, selectedId, level = 0, actionType, current
             {isOpen && hasVisibleChildren && (
                 <div className="mt-1">
                     {node.children!.map(child => (
-                        <FolderTree key={child.id} node={child} onSelect={onSelect} selectedId={selectedId} level={level + 1} actionType={actionType} currentItemId={currentItemId} initialOpen={false} />
+                        <FolderTree key={child.id} node={child} onSelect={onSelect} selectedId={selectedId} level={level + 1} actionType={actionType} currentItemId={currentItemId} />
                     ))}
                 </div>
             )}
@@ -251,7 +251,7 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType,
                 ) : (
                     <div className="space-y-1">
                        {tree.map(node => (
-                           <FolderTree key={node.id} node={node} onSelect={handleSelect} selectedId={selectedItem?.id || null} actionType={actionType} currentItemId={currentItemId} initialOpen={true}/>
+                           <FolderTree key={node.id} node={node} onSelect={handleSelect} selectedId={selectedItem?.id || null} actionType={actionType} currentItemId={currentItemId} />
                        ))}
                     </div>
                 )}

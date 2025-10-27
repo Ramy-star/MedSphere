@@ -13,17 +13,9 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { ScrollArea } from './ui/scroll-area';
 import { useState, useMemo, useEffect } from 'react';
-import { Loader2, PlusCircle, Trash2, Layers } from 'lucide-react';
-import { useCollection } from '@/firebase/firestore/use-collection';
+import { Loader2, PlusCircle, Trash2, Layers, Pencil } from 'lucide-react';
 import { Content } from '@/lib/contentService';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
@@ -63,11 +55,10 @@ const permissionGroups = {
         { id: 'canCreateQuestions', label: 'Create Questions (AI)' },
     ],
     'Page Access': [
-        { id: 'canAccessQuestionCreator', label: 'Questions Creator' },
         { id: 'canAccessAdminPanel', label: 'Admin Panel' },
+        { id: 'canAccessQuestionCreator', label: 'Questions Creator' },
     ]
 };
-
 
 
 export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProfile | null, open: boolean, onOpenChange: (open: boolean) => void }) {
@@ -159,8 +150,22 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
     const [showFolderSelector, setShowFolderSelector] = useState(false);
 
     const handleScopeSelect = (scopeItem: Content) => {
-        onChange({ scopeId: scopeItem.id, scopeName: scopeItem.name });
+        onChange({ 
+            scope: scopeItem.type.toLowerCase() as UserRole['scope'], 
+            scopeId: scopeItem.id, 
+            scopeName: scopeItem.name 
+        });
         setShowFolderSelector(false);
+    };
+
+    const handleGlobalToggle = (isGlobal: boolean) => {
+        if (isGlobal) {
+            onChange({ scope: 'global', scopeId: undefined, scopeName: undefined });
+        } else {
+            // If they uncheck global, we don't automatically set a scope.
+            // They have to click "Select Scope". We can clear the old one if needed,
+            // but for now, we'll just let the UI guide them.
+        }
     };
     
     const handlePermissionChange = (permissionId: string, checked: boolean) => {
@@ -174,31 +179,37 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
     return (
         <div className="bg-black/20 border border-white/10 p-4 rounded-xl space-y-4">
             <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-white capitalize">{role.scope} Admin Role</h4>
+                <h4 className="font-semibold text-white capitalize">Admin Role</h4>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:bg-red-500/20" onClick={onRemove}>
                     <Trash2 size={16} />
                 </Button>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                 <Select value={role.scope} onValueChange={(value) => onChange({ scope: value as UserRole['scope'], scopeId: undefined, scopeName: undefined })}>
-                    <SelectTrigger className="bg-slate-800/60 border-slate-700 rounded-xl">
-                        <SelectValue placeholder="Select scope..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="global">Global</SelectItem>
-                        <SelectItem value="level">Level</SelectItem>
-                        <SelectItem value="semester">Semester</SelectItem>
-                        <SelectItem value="subject">Subject</SelectItem>
-                        <SelectItem value="folder">Folder</SelectItem>
-                    </SelectContent>
-                </Select>
-
-                {role.scope !== 'global' && (
-                     <Button variant="outline" className="rounded-xl justify-start truncate" onClick={() => setShowFolderSelector(true)}>
-                        {role.scopeId ? role.scopeName || role.scopeId : `Select ${role.scope}...`}
-                    </Button>
-                )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <Checkbox
+                        id={`global-scope-${role.scopeId}`}
+                        checked={role.scope === 'global'}
+                        onCheckedChange={handleGlobalToggle}
+                    />
+                    <label
+                        htmlFor={`global-scope-${role.scopeId}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                        Global Scope
+                    </label>
+                </div>
+                 <Button 
+                    variant="outline" 
+                    className={cn(
+                        "rounded-xl justify-start truncate",
+                        role.scope !== 'global' ? "border-blue-500 text-white" : ""
+                    )} 
+                    onClick={() => setShowFolderSelector(true)}
+                >
+                    <Pencil className="mr-2 h-4 w-4"/>
+                    {role.scope !== 'global' && role.scopeName ? role.scopeName : 'Select Specific Scope...'}
+                </Button>
             </div>
             
             <div className="space-y-4 pt-2">
@@ -237,3 +248,4 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
         </div>
     );
 }
+
