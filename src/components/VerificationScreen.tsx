@@ -8,6 +8,7 @@ import { Logo } from './logo';
 import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
+import { isStudentIdValid } from '@/lib/authService';
 
 
 export function VerificationScreen({ onVerified }: { onVerified: () => void }) {
@@ -17,19 +18,30 @@ export function VerificationScreen({ onVerified }: { onVerified: () => void }) {
   const login = useAuthStore((state) => state.login);
 
   const handleVerification = async () => {
-    if (!studentId.trim()) {
+    const trimmedId = studentId.trim();
+    if (!trimmedId) {
       setError('Please enter your Student ID.');
       return;
     }
     setIsLoading(true);
     setError(null);
     
-    const success = await login(studentId.trim());
+    // Client-side quick check first
+    const isValid = await isStudentIdValid(trimmedId);
+    if (!isValid) {
+      setError('Invalid Student ID. Please check and try again.');
+      setIsLoading(false);
+      return;
+    }
+    
+    // If valid, proceed with the full login/creation logic
+    const success = await login(trimmedId);
     
     if (success) {
       onVerified();
     } else {
-      setError('Invalid Student ID. Please check and try again.');
+      // This case might happen if there's a DB error during user creation
+      setError('Could not complete verification. Please try again later.');
     }
     setIsLoading(false);
   };

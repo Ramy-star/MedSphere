@@ -42,18 +42,15 @@ const idToLevelMap = new Map([
   ...level5Ids.map(id => [id.toString(), 'Level 5']),
 ]);
 
-
-export const authService = {
-  
-  isSuperAdmin(studentId: string | null): boolean {
+export async function isSuperAdmin(studentId: string | null): Promise<boolean> {
     return !!studentId && studentId === SUPER_ADMIN_ID;
-  },
-  
-  isStudentIdValid(id: string): boolean {
+}
+
+export async function isStudentIdValid(id: string): Promise<boolean> {
     return allStudentIds.has(id.trim());
-  },
-  
-  async getUserProfile(studentId: string): Promise<any | null> {
+}
+
+export async function getUserProfile(studentId: string): Promise<any | null> {
     if (!db) {
         console.error("Firestore not initialized in authService.getUserProfile");
         return null;
@@ -67,12 +64,12 @@ export const authService = {
         return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
     }
     return null;
-  },
+}
 
-  async verifyAndCreateUser(studentId: string): Promise<any | null> {
+export async function verifyAndCreateUser(studentId: string): Promise<any | null> {
     const trimmedId = studentId.trim();
 
-    if (!this.isStudentIdValid(trimmedId)) {
+    if (!(await isStudentIdValid(trimmedId))) {
         console.log(`Verification failed: Student ID "${trimmedId}" not found in valid lists.`);
         return null;
     }
@@ -83,7 +80,7 @@ export const authService = {
     }
     
     try {
-        let userProfile = await this.getUserProfile(trimmedId);
+        let userProfile = await getUserProfile(trimmedId);
 
         if (userProfile) {
             console.log(`User found in Firestore for ID: ${trimmedId}`);
@@ -96,9 +93,15 @@ export const authService = {
         
         // Use the studentId as the document ID for simplicity and uniqueness
         const newUserDocRef = doc(db, 'users', trimmedId);
+        
+        const existingDoc = await getDoc(newUserDocRef);
+        if (existingDoc.exists()) {
+            console.log(`User profile already exists for ID ${trimmedId}, returning existing profile.`);
+            return { id: existingDoc.id, ...existingDoc.data() };
+        }
 
         const newUserProfile = {
-            uid: trimmedId,
+            uid: trimmedId, // uid and studentId are the same for simplicity
             studentId: trimmedId,
             displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
             username: `student_${trimmedId}`,
@@ -117,5 +120,4 @@ export const authService = {
         console.error("Error during user verification and creation:", error);
         return null;
     }
-  },
-};
+}
