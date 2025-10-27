@@ -13,7 +13,7 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { ScrollArea } from './ui/scroll-area';
 import { useState, useMemo, useEffect } from 'react';
-import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Layers } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Content } from '@/lib/contentService';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
@@ -63,8 +63,8 @@ const permissionGroups = {
         { id: 'canCreateQuestions', label: 'Create Questions (AI)' },
     ],
     'Page Access': [
-        { id: 'canAccessQuestionCreator', label: 'Questions Creator Page' },
-        { id: 'canAccessAdminPanel', label: 'Admin Panel (Full Access)' },
+        { id: 'canAccessQuestionCreator', label: 'Questions Creator' },
+        { id: 'canAccessAdminPanel', label: 'Admin Panel' },
     ]
 };
 
@@ -204,7 +204,10 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
             <div className="space-y-4 pt-2">
                 {Object.entries(permissionGroups).map(([groupName, permissions]) => (
                     <div key={groupName}>
-                        <h5 className="font-medium text-sm text-slate-300 mb-3 border-b border-white/10 pb-2">{groupName}</h5>
+                        <h5 className="font-medium text-sm text-slate-400 mb-3 border-b border-white/10 pb-2 flex items-center gap-2">
+                            <Layers size={16} />
+                            {groupName}
+                        </h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
                            {permissions.map(p => (
                                 <div key={p.id} className="flex items-center space-x-2 p-1 rounded-md">
