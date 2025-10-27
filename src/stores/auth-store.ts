@@ -54,5 +54,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isSuperAdmin: false,
         loading: false,
      });
+     // Force a reload to clear all application state and ensure a clean start
+     window.location.href = '/';
   }
 }));

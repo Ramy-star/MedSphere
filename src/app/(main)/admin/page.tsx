@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useMemo, useState } from 'react';
@@ -21,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth-store';
 import { AddUserDialog } from '@/components/AddUserDialog';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, writeBatch, collection, getDocs } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { PermissionsDialog } from '@/components/PermissionsDialog';
@@ -74,7 +75,7 @@ function AdminPageContent() {
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
-    const { studentId: currentStudentId } = useAuthStore();
+    const { studentId: currentStudentId, isSuperAdmin: isCurrentUserSuperAdmin } = useAuthStore();
     const { toast } = useToast();
 
     const handleTabChange = (value: string) => {
@@ -91,7 +92,9 @@ function AdminPageContent() {
 
     const sortedUsers = useMemo(() => {
         if (!users) return [];
-        return [...users].sort((a, b) => {
+        const uniqueUsers = Array.from(new Map(users.map(user => [user.uid, user])).values());
+        
+        return uniqueUsers.sort((a, b) => {
             const aIsSuper = isSuperAdmin(a);
             const bIsSuper = isSuperAdmin(b);
             if (aIsSuper && !bIsSuper) return -1;
@@ -116,7 +119,6 @@ function AdminPageContent() {
     
     const admins = useMemo(() => {
         if (!filteredUsers) return [];
-        // Only show sub-admins, not the super admin.
         return filteredUsers.filter(user => isSubAdmin(user) && !isSuperAdmin(user));
     }, [filteredUsers]);
     
@@ -125,12 +127,10 @@ function AdminPageContent() {
         const hasSubAdminRole = isSubAdmin(user);
 
         if (hasSubAdminRole) {
-            // If demoting, set user to demote and show dialog. The actual logic is in handleDemoteConfirm.
             setUserToDemote(user);
             return;
         }
 
-        // If promoting, do it directly.
         try {
             const newSubAdminRole: UserRole = { role: 'subAdmin', scope: 'global', permissions: [] };
             const currentRoles = Array.isArray(user.roles) ? user.roles : [];
@@ -176,24 +176,50 @@ function AdminPageContent() {
 
     const handleDeleteUser = async () => {
         if (!userToDelete) return;
-        // Placeholder for actual deletion logic
-        console.log("Deleting user:", userToDelete.uid);
+        const batch = writeBatch(db);
+        const userRef = doc(db, 'users', userToDelete.uid);
+        batch.delete(userRef);
+        await batch.commit();
         toast({ title: "User Deleted", description: `${userToDelete.displayName} has been deleted.` });
         setUserToDelete(null);
+    }
+    
+    const deleteAllUsers = async () => {
+        if (!isCurrentUserSuperAdmin) {
+            toast({ variant: "destructive", title: "Unauthorized", description: "You do not have permission to perform this action." });
+            return;
+        }
+        
+        try {
+            const usersSnapshot = await getDocs(collection(db, "users"));
+            if (usersSnapshot.empty) {
+                toast({ title: "No Users", description: "There are no users to delete." });
+                return;
+            }
+            const batch = writeBatch(db);
+            usersSnapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+            toast({ title: "All Users Deleted", description: "All user data has been cleared from the database." });
+        } catch (error) {
+            console.error("Error deleting all users:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not delete all users." });
+        }
     }
 
 
     const UserCard = ({ user, isManagementView = false }: { user: UserProfile, isManagementView?: boolean }) => {
-        const isUserSuperAdmin = isSuperAdmin(user);
-        const isUserSubAdmin = isSubAdmin(user);
+        const userIsSuperAdmin = isSuperAdmin(user);
+        const userIsSubAdmin = isSubAdmin(user);
         const isCurrentUser = user.studentId === currentStudentId;
 
-        const roleIcon = isUserSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" /> 
-                       : isUserSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
+        const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" /> 
+                       : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
                        : <User className="w-5 h-5 text-slate-400" />;
 
-        const roleText = isUserSuperAdmin ? 'Super Admin'
-                       : isUserSubAdmin ? 'Admin'
+        const roleText = userIsSuperAdmin ? 'Super Admin'
+                       : userIsSubAdmin ? 'Admin'
                        : 'User';
         
         return (
@@ -221,9 +247,9 @@ function AdminPageContent() {
                         <span>{roleText}</span>
                     </div>
                    
-                    {!isUserSuperAdmin && (activeTab === 'users' || activeTab === 'management') && (
+                    {!userIsSuperAdmin && (activeTab === 'users' || activeTab === 'management') && (
                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
-                            {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
+                            {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                         </Button>
                     )}
 
@@ -235,11 +261,11 @@ function AdminPageContent() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                {!isUserSuperAdmin && (
+                                {!userIsSuperAdmin && (
                                     <>
                                         <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
                                             <Shield className="mr-2 h-4 w-4" />
-                                            {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
+                                            {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                                         </DropdownMenuItem>
                                         <DropdownMenuSeparator />
                                     </>
@@ -255,7 +281,7 @@ function AdminPageContent() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
-                    {activeTab === 'admins' && isUserSubAdmin && !isUserSuperAdmin && (
+                    {activeTab === 'admins' && userIsSubAdmin && !userIsSuperAdmin && (
                          <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => setUserForPermissions(user)}>
                             <Settings className="mr-2 h-4 w-4" />
                             Permissions
@@ -310,6 +336,16 @@ function AdminPageContent() {
                        Add User
                    </Button>
                 </div>
+                
+                {isCurrentUserSuperAdmin && (
+                    <div className="my-4 p-4 border border-red-500/30 bg-red-900/20 rounded-xl flex items-center justify-between">
+                        <p className="text-red-300 text-sm">This will delete all users. Use with caution.</p>
+                        <Button variant="destructive" onClick={deleteAllUsers} className="rounded-xl">
+                            <Trash2 className="mr-2 h-4 w-4"/>
+                            Delete All Users
+                        </Button>
+                    </div>
+                )}
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
