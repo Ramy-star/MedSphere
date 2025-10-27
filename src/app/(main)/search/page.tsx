@@ -26,7 +26,7 @@ import React from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useUser } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 import { ChangeIconDialog } from '@/components/ChangeIconDialog';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -40,8 +40,7 @@ function SearchResults() {
     const [results, setResults] = useState<Content[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const isMobile = useIsMobile();
-    const { user } = useUser();
-    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+    const { studentId, isSuperAdmin } = useAuthStore();
     
     const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
 
@@ -179,7 +178,7 @@ function SearchResults() {
                 onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
               />
               
-              {isAdmin && (
+              {isSuperAdmin && (
                 <>
                   <RenameDialog 
                     item={itemToRename} 
