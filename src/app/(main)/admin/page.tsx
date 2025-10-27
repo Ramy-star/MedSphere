@@ -1,8 +1,6 @@
-
-
 'use client';
 
-import { Suspense, useMemo, useState, useCallback, useEffect } from 'react';
+import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -354,7 +352,7 @@ function AdminPageContent() {
                                 )}
                                 {activeTab === 'management' && (
                                      <>
-                                        <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
+                                        <DropdownMenuItem onClick={()={() => handleToggleSubAdmin(user)}>
                                             <Shield className="mr-2 h-4 w-4" />
                                             {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                                         </DropdownMenuItem>
@@ -417,7 +415,7 @@ function AdminPageContent() {
                             className="pl-10 pr-10 bg-black/20 border-white/10 rounded-2xl h-10"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={() => setIsSearchFocused(true)}
+                            onFocus={()={() => setIsSearchFocused(true)}
                             onBlur={() => setIsSearchFocused(false)}
                         />
                          {searchQuery && (
@@ -535,6 +533,9 @@ function AdminPageContent() {
     );
 }
 
+// Lazy load the main component to prevent chunk load errors.
+// const AdminPageContent = lazy(() => import('./AdminPageContent'));
+
 export default function AdminPage() {
     return (
         <Suspense fallback={<div className="text-center">Loading...</div>}>
@@ -542,3 +543,5 @@ export default function AdminPage() {
         </Suspense>
     )
 }
+
+    
