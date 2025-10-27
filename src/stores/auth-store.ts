@@ -2,7 +2,7 @@
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, where, orderBy } from 'firebase/firestore';
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
@@ -47,15 +47,23 @@ let userListenerUnsubscribe: () => void = () => {};
 
 const hasPermission = (user: UserProfile | null | undefined, permission: string, itemId: string | null, hierarchy: ItemHierarchy): boolean => {
     if (!user) return false;
+
+    // Super Admins can do anything.
     if (user.roles?.some(r => r.role === 'superAdmin')) return true;
+
+    // Page-level permissions are not tied to a specific item.
+    const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator'];
+    if (pagePermissions.includes(permission)) {
+        return user.roles?.some(r => r.permissions?.includes(permission)) || false;
+    }
 
     const relevantRoles = user.roles?.filter(r => r.role === 'subAdmin' && r.permissions?.includes(permission)) || [];
     if (relevantRoles.length === 0) return false;
 
     // Check global scope first
     if (relevantRoles.some(r => r.scope === 'global')) return true;
-
-    // If checking a top-level action (no specific item)
+    
+    // If checking a top-level action (no specific item), it's not allowed unless global
     if (itemId === null) return false;
 
     // Get the full ancestry path for the item
@@ -85,7 +93,10 @@ const listenToUserProfile = (studentId: string) => {
             }
             
             const isAdmin = await checkSuperAdmin(userProfile.studentId);
-            if(isAdmin && (!userProfile.roles || !userProfile.roles.some(r => r.role === 'superAdmin'))) {
+            
+            const hasSuperAdminRole = userProfile.roles?.some(r => r.role === 'superAdmin');
+
+            if(isAdmin && !hasSuperAdminRole) {
                 userProfile.roles = [...(userProfile.roles || []), { role: 'superAdmin', scope: 'global' }];
             }
 
@@ -115,7 +126,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
   buildHierarchy: async () => {
     if (!db) return;
     const hierarchy: ItemHierarchy = {};
-    const contentSnapshot = await getDocs(collection(db, 'content'));
+    const q = query(collection(db, 'content'), orderBy('order'));
+    const contentSnapshot = await getDocs(q);
     const items = new Map(contentSnapshot.docs.map(d => [d.id, d.data()]));
 
     for (const [id, item] of items.entries()) {
@@ -200,3 +212,5 @@ const useAuthStore = create<AuthState>((set, get) => ({
 }));
 
 export { useAuthStore };
+
+    

@@ -87,7 +87,7 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
     zIndex: isDragging ? 1 : 0,
     position: 'relative' as const,
   };
-  const { isSuperAdmin } = useAuthStore();
+  const { can } = useAuthStore();
   
   if (!children) {
     return null;
@@ -98,11 +98,11 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
 
   const childrenWithProps = React.cloneElement(children as React.ReactElement, {
     ...((children as React.ReactElement).props),
-    showDragHandle: !isFolder && !isSubject && isSuperAdmin,
+    showDragHandle: !isFolder && !isSubject && can('canReorder', id),
   });
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...(isSuperAdmin ? listeners : {})}>
+    <div ref={setNodeRef} style={style} {...attributes} {...(can('canReorder', id) ? listeners : {})}>
       {childrenWithProps}
     </div>
   );
@@ -124,7 +124,7 @@ export function FolderGrid({
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
 }) {
-  const { isSuperAdmin } = useAuthStore();
+  const { isSuperAdmin, can } = useAuthStore();
 
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
@@ -189,7 +189,7 @@ export function FolderGrid({
   };
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isSuperAdmin) return;
+    if (!can('canUploadFile', parentId)) return;
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
@@ -198,7 +198,7 @@ export function FolderGrid({
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isSuperAdmin) return;
+    if (!can('canUploadFile', parentId)) return;
     e.preventDefault();
     e.stopPropagation();
     const dropZoneNode = dropZoneRef.current;
@@ -208,14 +208,14 @@ export function FolderGrid({
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isSuperAdmin) return;
+    if (!can('canUploadFile', parentId)) return;
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isSuperAdmin) return;
+    if (!can('canUploadFile', parentId)) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(false);
@@ -229,7 +229,7 @@ export function FolderGrid({
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    if (!isSuperAdmin) return;
+    if (!can('canReorder', parentId)) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
         setSortedItems(currentItems => {
@@ -357,8 +357,8 @@ export function FolderGrid({
           </div>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!isSuperAdmin}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} disabled={!can('canReorder', parentId)}>
+        <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!can('canReorder', parentId)}>
           <motion.div className={containerClasses} variants={listVariants} initial="hidden" animate="visible">
             <AnimatePresence>
               {itemsToRender.map(({ item, uploadingFile }, index) => {
@@ -461,35 +461,35 @@ export function FolderGrid({
             currentItemId={itemToMove?.id || itemToCopy?.id}
       />
 
-      {isSuperAdmin && (
-        <>
-          <RenameDialog
-            item={itemToRename}
-            onOpenChange={(isOpen) => !isOpen && setItemToRename(null)}
-            onRename={handleRename}
-          />
+      
+      <RenameDialog
+        item={itemToRename}
+        onOpenChange={(isOpen) => !isOpen && setItemToRename(null)}
+        onRename={handleRename}
+      />
 
-          <ChangeIconDialog 
-            item={itemForIconChange}
-            onOpenChange={(isOpen) => !isOpen && setItemForIconChange(null)}
-          />
+      <ChangeIconDialog 
+        item={itemForIconChange}
+        onOpenChange={(isOpen) => !isOpen && setItemForIconChange(null)}
+      />
 
-          <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
-            <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
-              <AlertDialogHeader className="p-6 pb-0">
-                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete "{itemToDelete?.name}". This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter className="p-6 pt-4">
-                <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
-                <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDelete}>Delete</Button></AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        </>
-      )}
+      <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
+        <AlertDialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
+          <AlertDialogHeader className="p-6 pb-0">
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete "{itemToDelete?.name}". This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="p-6 pt-4">
+            <AlertDialogCancel asChild><Button variant="outline" className="rounded-xl">Cancel</Button></AlertDialogCancel>
+            <AlertDialogAction asChild><Button variant="destructive" className="rounded-xl" onClick={handleDelete}>Delete</Button></AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+        
     </div>
   );
 }
+
+    

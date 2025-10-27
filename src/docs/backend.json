@@ -70,6 +70,7 @@
                     "canChangeIcon",
                     "canToggleVisibility",
                     "canUpdateFile",
+                    "canReorder",
                     "canCreateQuestions",
                     "canAccessQuestionCreator",
                     "canAccessAdminPanel"
@@ -163,3 +164,5 @@
     }
   }
 }
+
+    

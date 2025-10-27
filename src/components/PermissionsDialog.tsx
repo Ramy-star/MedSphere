@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -13,7 +12,7 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { ScrollArea } from './ui/scroll-area';
 import { useState, useMemo, useEffect } from 'react';
-import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield, Move } from 'lucide-react';
 import { Content } from '@/lib/contentService';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
@@ -39,14 +38,12 @@ type UserProfile = {
 };
 
 const permissionGroups = {
-    'Add Content Menu': [
+    'Content Management': [
         { id: 'canAddClass', label: 'Add Class' },
         { id: 'canAddFolder', label: 'Add Folder' },
         { id: 'canUploadFile', label: 'Upload File' },
         { id: 'canAddLink', label: 'Add Link' },
         { id: 'canCreateFlashcard', label: 'Create Flashcard' },
-    ],
-    'Item Options Menu': [
         { id: 'canRename', label: 'Rename' },
         { id: 'canDelete', label: 'Delete' },
         { id: 'canMove', label: 'Move' },
@@ -54,11 +51,12 @@ const permissionGroups = {
         { id: 'canChangeIcon', label: 'Change Icon' },
         { id: 'canToggleVisibility', label: 'Toggle Visibility' },
         { id: 'canUpdateFile', label: 'Update File' },
-        { id: 'canCreateQuestions', label: 'Create Questions (AI)' },
+        { id: 'canReorder', label: 'Reorder (Drag & Drop)'},
     ],
-    'Page Access': [
-        { id: 'canAccessAdminPanel', label: 'Admin Panel' },
-        { id: 'canAccessQuestionCreator', label: 'Questions Creator' },
+    'AI & Page Access': [
+        { id: 'canCreateQuestions', label: 'Create Questions (AI)' },
+        { id: 'canAccessQuestionCreator', label: 'Access Questions Creator' },
+        { id: 'canAccessAdminPanel', label: 'Access Admin Panel' },
     ]
 };
 
@@ -245,7 +243,7 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
                 {Object.entries(permissionGroups).map(([groupName, permissions]) => (
                     <div key={groupName}>
                         <h5 className="font-medium text-sm text-slate-400 mb-3 border-b border-white/10 pb-2 flex items-center gap-2">
-                            <Layers size={16} />
+                            {groupName === 'Content Management' ? <Move size={16}/> : <Layers size={16} />}
                             {groupName}
                         </h5>
                         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
@@ -275,3 +273,5 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
         </div>
     );
 }
+
+    

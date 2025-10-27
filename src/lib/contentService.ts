@@ -271,6 +271,35 @@ export const contentService = {
     }
   },
 
+  async createInteractiveFlashcard(parentId: string | null, name: string, data: string, sourceFileId: string): Promise<Content> {
+    if (!db) throw new Error("Firestore not initialized");
+
+    const newId = uuidv4();
+    const newRef = doc(db, 'content', newId);
+
+    return runTransaction(db, async (transaction) => {
+      const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
+      const childrenSnapshot = await getDocs(childrenQuery);
+      const order = childrenSnapshot.size;
+
+      const newContentData: Content = {
+        id: newId,
+        name: name,
+        type: 'INTERACTIVE_FLASHCARD',
+        parentId: parentId,
+        metadata: {
+          quizData: data,
+          sourceFileId: sourceFileId,
+        },
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        order: order,
+      };
+      transaction.set(newRef, newContentData);
+      return newContentData;
+    });
+  },
+
   async createOrUpdateInteractiveContent(
     destination: Content,
     name: string,
