@@ -214,7 +214,7 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && !isManagementView && '(You)'}</p>
+                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
                           {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
                         </div>
                         <p className="text-sm text-slate-400 truncate">{user.email} • ID: {user.studentId}</p>
@@ -391,5 +391,3 @@ export default function AdminPage() {
         </Suspense>
     )
 }
-
-    
