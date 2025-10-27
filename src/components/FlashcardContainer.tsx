@@ -1,4 +1,5 @@
 
+
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, PlusCircle, Trash2, Edit, X } from 'lucide-react';
@@ -143,7 +144,7 @@ const getTextColorForBackground = (hexColor: string): '#FFFFFF' | '#000000' => {
 };
 
 // --- Flashcard Component ---
-const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, onEdit, onDelete, isAdmin }: { card: Flashcard, isFlipped: boolean, onFlip: () => void, onEdit: () => void, onDelete: () => void, isAdmin: boolean }) => {
+const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, onEdit, onDelete, canAdminister }: { card: Flashcard, isFlipped: boolean, onFlip: () => void, onEdit: () => void, onDelete: () => void, canAdminister: boolean }) => {
     const cardStyle: React.CSSProperties = card.color && card.color !== '#FFFFFF' ? { 
         backgroundColor: card.color,
         color: getTextColorForBackground(card.color)
@@ -160,7 +161,7 @@ const FlashcardComponent = React.memo(({ card, isFlipped, onFlip, onEdit, onDele
                 isFlipped ? '[transform:rotateY(180deg)]' : '',
             )}
         >
-             {isAdmin && (
+             {canAdminister && (
                 <div className="absolute top-5 right-5 flex gap-2.5 z-10" onClick={(e) => e.stopPropagation()}>
                     <AlertDialog>
                         <AlertDialogTrigger asChild>
@@ -421,7 +422,8 @@ const EditLectureDialog = ({ lecture, onSave, onOpenChange }: { lecture: Lecture
 
 // --- Main View ---
 export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Lecture[] | Lecture }) {
-    const { isSuperAdmin: isAdmin } = useAuthStore();
+    const { can } = useAuthStore();
+    const canAdminister = can('canAdministerFlashcards', null);
     const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
     const [lecturesState, setLecturesState] = useState<Lecture[]>(lectures);
     const [activeLectureId, setActiveLectureId] = useState(lectures[0]?.id);
@@ -579,7 +581,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
         if (!activeLectureId) return;
         setLecturesState(prev => prev.map(l => l.id === activeLectureId ? { ...l, name: newName } : l));
     }
-
+    
     const handleDeleteLecture = () => {
         if (!activeLectureId) return;
         setLecturesState(prev => {
@@ -665,7 +667,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                 <div className="flex flex-col mb-6 gap-6">
                     <div className="w-full flex justify-between items-center mb-4">
                         <div>
-                            {isAdmin && activeLecture && (
+                            {canAdminister && activeLecture && (
                                 <div className="flex items-center gap-2">
                                     <AlertDialog open={isEditLectureOpen} onOpenChange={setIsEditLectureOpen}>
                                         <AlertDialogTrigger asChild>
@@ -697,7 +699,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                                 </div>
                             )}
                         </div>
-                        {isAdmin && (
+                        {canAdminister && (
                             <Dialog open={isUpsertDialogOpen} onOpenChange={setIsUpsertDialogOpen}>
                                 <DialogTrigger asChild>
                                     <Button className="flex items-center gap-2 bg-black text-white hover:bg-gray-800 button-light" onClick={openCreateCardDialog}>
@@ -767,7 +769,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                                     onFlip={handleFlip}
                                     onDelete={handleDeleteCard}
                                     onEdit={openEditCardDialog}
-                                    isAdmin={isAdmin}
+                                    canAdminister={canAdminister}
                                 />
                             </motion.div>
                         ) : (
@@ -775,7 +777,7 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
                                 <p className="text-lg font-medium">
                                     {lectures.length > 0 ? "No flashcards in this lecture." : "No lectures available."}
                                 </p>
-                                {isAdmin && <p className="mt-2 text-sm">Create a new lecture and card to get started!</p>}
+                                {canAdminister && <p className="mt-2 text-sm">Create a new lecture and card to get started!</p>}
                             </div>
                         )}
                     </AnimatePresence>

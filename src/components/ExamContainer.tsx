@@ -1,4 +1,5 @@
 
+
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward } from 'lucide-react';
@@ -397,7 +398,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const isInitialRender = useRef(true);
 
-    const { studentId, isSuperAdmin } = useAuthStore();
+    const { studentId, can } = useAuthStore();
     const { db: firestore } = useFirebase();
     
     const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
@@ -719,7 +720,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                 <div className={cn(containerClasses, "exam-results-screen")}>
                     <TooltipProvider>
                         <div className="relative">
-                             {isSuperAdmin && (
+                             {can('canAdministerExams', null) && (
                                 <button onClick={() => setIsReportModalOpen(true)} className="report-btn absolute top-0 left-0">
                                     <FileText size={20} />
                                     <span className="report-text">Report</span>
@@ -828,7 +829,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                          <div className="exam-progress-header">
                             <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
                              <div className="flex justify-between items-center mb-2">
-                                {isSuperAdmin ? (
+                                {can('canAdministerExams', null) ? (
                                      <button onClick={() => handleSubmit(true)} className="skip-btn">
                                         <SkipForward size={16} />
                                         <span className="skip-text">Skip</span>
@@ -1144,4 +1145,3 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
-

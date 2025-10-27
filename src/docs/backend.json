@@ -62,7 +62,6 @@
                     "canAddFolder",
                     "canUploadFile",
                     "canAddLink",
-                    "canCreateFlashcard",
                     "canRename",
                     "canDelete",
                     "canMove",
@@ -70,10 +69,12 @@
                     "canChangeIcon",
                     "canToggleVisibility",
                     "canUpdateFile",
-                    "canReorder",
                     "canCreateQuestions",
                     "canAccessQuestionCreator",
-                    "canAccessAdminPanel"
+                    "canAccessAdminPanel",
+                    "canReorder",
+                    "canAdministerExams",
+                    "canAdministerFlashcards"
                   ]
                 }
               }
@@ -164,5 +165,3 @@
     }
   }
 }
-
-    

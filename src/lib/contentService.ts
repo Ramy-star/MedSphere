@@ -1,4 +1,5 @@
 
+
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, serverTimestamp, increment, deleteDoc as deleteFirestoreDoc, collectionGroup } from 'firebase/firestore';
@@ -271,7 +272,7 @@ export const contentService = {
     }
   },
 
-  async createInteractiveFlashcard(parentId: string | null, name: string, data: string, sourceFileId: string): Promise<Content> {
+  async createInteractiveFlashcard(parentId: string | null): Promise<Content> {
     if (!db) throw new Error("Firestore not initialized");
 
     const newId = uuidv4();
@@ -284,12 +285,12 @@ export const contentService = {
 
       const newContentData: Content = {
         id: newId,
-        name: name,
+        name: 'New Flashcards',
         type: 'INTERACTIVE_FLASHCARD',
         parentId: parentId,
         metadata: {
-          quizData: data,
-          sourceFileId: sourceFileId,
+          quizData: '[]', // Start with an empty array of flashcards
+          sourceFileId: '',
         },
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
@@ -874,5 +875,3 @@ export const contentService = {
     }
   }
 };
-
-    

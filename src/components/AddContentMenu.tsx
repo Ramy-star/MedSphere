@@ -1,4 +1,5 @@
 
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -78,9 +79,9 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   }
   
   const handleAddFlashcard = async () => {
-    if (!parentId) return;
+    if (!parentId || !can('canAdministerFlashcards', parentId)) return;
     try {
-        await contentService.createInteractiveFlashcard(parentId, 'New Flashcards', '[]', '');
+        await contentService.createInteractiveFlashcard(parentId);
         toast({ title: 'Flashcards Created', description: `A new flashcard set has been created.` });
         setPopoverOpen(false);
     } catch(error: any) {
@@ -137,7 +138,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           label: "Create Flashcard",
           icon: FlashcardIcon,
           action: handleAddFlashcard,
-          permission: 'canCreateFlashcard'
+          permission: 'canAdministerFlashcards'
       },
   ]
 
