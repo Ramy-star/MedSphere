@@ -16,10 +16,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield } from 'lucide-react';
 import { Content } from '@/lib/contentService';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
-import { doc, updateDoc } from 'firebase/firestore';
+import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth-store';
 
 
 type UserRole = {
@@ -32,6 +33,7 @@ type UserRole = {
 
 type UserProfile = {
     uid: string;
+    username?: string;
     roles?: UserRole[];
     displayName?: string;
 };
@@ -60,11 +62,30 @@ const permissionGroups = {
     ]
 };
 
+async function logAdminAction(actor: any, action: string, target: any, details?: object) {
+    if (!db) return;
+    try {
+        await addDoc(collection(db, 'auditLogs'), {
+            timestamp: new Date().toISOString(),
+            actorId: actor.uid,
+            actorName: actor.displayName || actor.username,
+            action: action,
+            targetId: target.uid,
+            targetName: target.displayName || target.username,
+            details: details || {}
+        });
+    } catch(error) {
+        console.error("Failed to log admin action:", error);
+    }
+}
+
 
 export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProfile | null, open: boolean, onOpenChange: (open: boolean) => void }) {
     const [roles, setRoles] = useState<UserRole[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
+    const { user: currentUser } = useAuthStore();
+    const originalRoles = useMemo(() => user?.roles || [], [user]);
 
     useEffect(() => {
         if (user && open) {
@@ -73,11 +94,18 @@ export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProf
     }, [user, open]);
 
     const handleSave = async () => {
-        if (!user) return;
+        if (!user || !currentUser) return;
         setIsSaving(true);
         try {
             const userRef = doc(db, 'users', user.uid);
             await updateDoc(userRef, { roles });
+
+            const details = {
+                from: JSON.stringify(originalRoles),
+                to: JSON.stringify(roles)
+            };
+            await logAdminAction(currentUser, 'user.updatePermissions', user, details);
+
             toast({ title: "Permissions Saved", description: `Permissions for ${user.displayName} have been updated.` });
             onOpenChange(false);
         } catch (error: any) {

@@ -35,8 +35,9 @@ import { Loader2 } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Content } from '@/lib/contentService';
 import { db } from '@/firebase';
-import { collection, doc, runTransaction } from 'firebase/firestore';
+import { collection, doc, runTransaction, addDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
+import { useAuthStore } from '@/stores/auth-store';
 
 
 const formSchema = z.object({
@@ -51,9 +52,27 @@ type AddUserDialogProps = {
   onOpenChange: (open: boolean) => void;
 };
 
+async function logAdminAction(actor: any, action: string, target: any, details?: object) {
+    if (!db) return;
+    try {
+        await addDoc(collection(db, 'auditLogs'), {
+            timestamp: new Date().toISOString(),
+            actorId: actor.uid,
+            actorName: actor.displayName || actor.username,
+            action: action,
+            targetId: target.uid,
+            targetName: target.displayName || target.username,
+            details: details || {}
+        });
+    } catch(error) {
+        console.error("Failed to log admin action:", error);
+    }
+}
+
 export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { toast } = useToast();
+  const { user: currentUser } = useAuthStore();
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -86,17 +105,23 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
         const usersRef = collection(db, 'users');
         const newUserDocRef = doc(usersRef); // Automatically generate a new ID
 
+        const newUser = {
+            uid: newUserDocRef.id,
+            displayName: values.displayName,
+            studentId: values.studentId,
+            email: values.email,
+            level: values.level,
+            createdAt: new Date().toISOString(),
+            roles: {}
+        };
+
         await runTransaction(db, async (transaction) => {
-            transaction.set(newUserDocRef, {
-                uid: newUserDocRef.id,
-                displayName: values.displayName,
-                studentId: values.studentId,
-                email: values.email,
-                level: values.level, // Save the level here
-                createdAt: new Date().toISOString(),
-                roles: {}
-            });
+            transaction.set(newUserDocRef, newUser);
         });
+
+        if (currentUser) {
+            await logAdminAction(currentUser, 'user.create', newUser);
+        }
         
         toast({ title: "User Added", description: `${values.displayName} has been added.` });
         onOpenChange(false);
@@ -113,7 +138,7 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[70vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
+      <DialogContent className="w-[90vw] sm:max-w-[425px] p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
         <div className="p-6">
           <DialogHeader>
             <DialogTitle>Add New User</DialogTitle>

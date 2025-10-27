@@ -6,7 +6,7 @@ import { Suspense, useMemo, useState, useCallback, useEffect } from 'react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX, Settings, Ban, X, GraduationCap } from 'lucide-react';
+import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX, Settings, Ban, X, GraduationCap, ArrowUpDown, History } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -17,12 +17,15 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth-store';
 import { AddUserDialog } from '@/components/AddUserDialog';
-import { doc, updateDoc, writeBatch, collection, getDocs } from 'firebase/firestore';
+import { doc, updateDoc, writeBatch, collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { PermissionsDialog } from '@/components/PermissionsDialog';
@@ -35,7 +38,8 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { formatDistanceToNow } from 'date-fns';
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -64,7 +68,38 @@ type UserProfile = {
     roles?: UserRole[];
     isBlocked?: boolean;
     level?: string;
+    createdAt?: string;
 };
+
+type AuditLog = {
+    id: string;
+    timestamp: string;
+    actorId: string;
+    actorName: string;
+    action: string;
+    targetId: string;
+    targetName: string;
+    details?: { [key: string]: any };
+}
+
+type SortOption = 'name' | 'createdAt' | 'level';
+
+async function logAdminAction(actor: UserProfile, action: string, target: UserProfile, details?: object) {
+    if (!db) return;
+    try {
+        await addDoc(collection(db, 'auditLogs'), {
+            timestamp: new Date().toISOString(),
+            actorId: actor.uid,
+            actorName: actor.displayName || actor.username,
+            action: action,
+            targetId: target.uid,
+            targetName: target.displayName || target.username,
+            details: details || {}
+        });
+    } catch(error) {
+        console.error("Failed to log admin action:", error);
+    }
+}
 
 
 function AdminPageContent() {
@@ -79,10 +114,15 @@ function AdminPageContent() {
     const [userForPermissions, setUserForPermissions] = useState<UserProfile | null>(null);
     const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
     const [userToDemote, setUserToDemote] = useState<UserProfile | null>(null);
+    const [sortOption, setSortOption] = useState<SortOption>('name');
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
-    const { studentId: currentStudentId } = useAuthStore();
+    const { data: auditLogs, loading: loadingLogs } = useCollection<AuditLog>('auditLogs', {
+        orderBy: ['timestamp', 'desc'],
+        limit: 100
+    });
+    const { studentId: currentStudentId, user: currentUser, isSuperAdmin } = useAuthStore();
     const { toast } = useToast();
 
     const studentIdToLevelMap = useMemo(() => {
@@ -99,7 +139,7 @@ function AdminPageContent() {
         router.push(`/admin?tab=${value}`, { scroll: false });
     };
 
-    const isSuperAdmin = useCallback((user: UserProfile) => {
+    const isUserSuperAdmin = useCallback((user: UserProfile) => {
         return user.studentId === SUPER_ADMIN_ID;
     }, []);
     
@@ -112,13 +152,22 @@ function AdminPageContent() {
         const uniqueUsers = Array.from(new Map(users.map(user => [user.uid, user])).values());
         
         return uniqueUsers.sort((a, b) => {
-            const aIsSuper = isSuperAdmin(a);
-            const bIsSuper = isSuperAdmin(b);
+            const aIsSuper = isUserSuperAdmin(a);
+            const bIsSuper = isUserSuperAdmin(b);
             if (aIsSuper && !bIsSuper) return -1;
             if (!aIsSuper && bIsSuper) return 1;
-            return (a.displayName || a.username || '').localeCompare(b.displayName || b.username || '');
+
+            switch (sortOption) {
+                case 'createdAt':
+                    return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+                case 'level':
+                    return (a.level || '').localeCompare(b.level || '');
+                case 'name':
+                default:
+                    return (a.displayName || a.username || '').localeCompare(b.displayName || b.username || '');
+            }
         });
-    }, [users, isSuperAdmin]);
+    }, [users, isUserSuperAdmin, sortOption]);
 
 
     const filteredUsers = useMemo(() => {
@@ -136,10 +185,11 @@ function AdminPageContent() {
     
     const admins = useMemo(() => {
         if (!filteredUsers) return [];
-        return filteredUsers.filter(user => isSuperAdmin(user) || isSubAdmin(user));
-    }, [filteredUsers, isSubAdmin, isSuperAdmin]);
+        return filteredUsers.filter(user => isUserSuperAdmin(user) || isSubAdmin(user));
+    }, [filteredUsers, isSubAdmin, isUserSuperAdmin]);
     
     const handleToggleSubAdmin = useCallback(async (user: UserProfile) => {
+        if (!currentUser) return;
         const userRef = doc(db, 'users', user.uid);
         const hasSubAdminRole = isSubAdmin(user);
 
@@ -154,19 +204,21 @@ function AdminPageContent() {
             await updateDoc(userRef, {
                 roles: [...currentRoles, newSubAdminRole]
             });
+            await logAdminAction(currentUser, 'user.promote', user);
             toast({ title: "Permissions Updated", description: `${user.displayName} is now an admin.` });
         } catch (error: any) {
             console.error("Error updating user role:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not update user permissions." });
         }
-    }, [isSubAdmin, toast]);
+    }, [isSubAdmin, toast, currentUser]);
 
     const handleDemoteConfirm = useCallback(async () => {
-        if (!userToDemote) return;
+        if (!userToDemote || !currentUser) return;
         const userRef = doc(db, 'users', userToDemote.uid);
         try {
             const newRoles = Array.isArray(userToDemote.roles) ? userToDemote.roles.filter(r => r.role !== 'subAdmin') : [];
             await updateDoc(userRef, { roles: newRoles });
+            await logAdminAction(currentUser, 'user.demote', userToDemote);
             toast({ title: "Permissions Updated", description: `${userToDemote.displayName} is no longer an admin.` });
         } catch(error: any) {
             console.error("Error demoting user:", error);
@@ -174,13 +226,15 @@ function AdminPageContent() {
         } finally {
             setUserToDemote(null);
         }
-    }, [userToDemote, toast]);
+    }, [userToDemote, toast, currentUser]);
     
     const handleToggleBlock = useCallback(async (user: UserProfile) => {
+        if (!currentUser) return;
         const userRef = doc(db, 'users', user.uid);
         const newBlockState = !user.isBlocked;
         try {
             await updateDoc(userRef, { isBlocked: newBlockState });
+            await logAdminAction(currentUser, newBlockState ? 'user.block' : 'user.unblock', user);
             toast({ 
                 title: `User ${newBlockState ? 'Blocked' : 'Unblocked'}`, 
                 description: `${user.displayName} has been ${newBlockState ? 'blocked' : 'unblocked'}.`
@@ -189,20 +243,21 @@ function AdminPageContent() {
             console.error("Error toggling user block state:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not update user status." });
         }
-    }, [toast]);
+    }, [toast, currentUser]);
 
     const handleDeleteUser = useCallback(async () => {
-        if (!userToDelete) return;
+        if (!userToDelete || !currentUser) return;
         const batch = writeBatch(db);
         const userRef = doc(db, 'users', userToDelete.uid);
         batch.delete(userRef);
         await batch.commit();
+        await logAdminAction(currentUser, 'user.delete', userToDelete);
         toast({ title: "User Deleted", description: `${userToDelete.displayName} has been deleted.` });
         setUserToDelete(null);
-    }, [userToDelete, toast]);
+    }, [userToDelete, toast, currentUser]);
 
-    const UserCard = React.memo(({ user, isManagementView = false }: { user: UserProfile, isManagementView?: boolean }) => {
-        const userIsSuperAdmin = isSuperAdmin(user);
+    const UserCard = React.memo(({ user }: { user: UserProfile }) => {
+        const userIsSuperAdmin = isUserSuperAdmin(user);
         const userIsSubAdmin = isSubAdmin(user);
         const isCurrentUser = user.studentId === currentStudentId;
         const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
@@ -210,6 +265,10 @@ function AdminPageContent() {
         const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" />
                        : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
                        : <User className="w-5 h-5 text-white" />;
+        
+        const mobileRoleIcon = userIsSuperAdmin ? <Crown className="w-3 h-3 text-yellow-400" />
+                                : userIsSubAdmin ? <Shield className="w-3 h-3 text-blue-400" />
+                                : <User className="w-3 h-3 text-white" />;
 
         const RoleText = () => {
           if (userIsSuperAdmin) {
@@ -247,7 +306,7 @@ function AdminPageContent() {
                                     </div>
                                 )}
                                 <div className="flex items-center gap-1.5">
-                                    {React.cloneElement(roleIcon, {className: `w-3 h-3 ${userIsSuperAdmin ? 'text-yellow-400' : userIsSubAdmin ? 'text-blue-400' : 'text-white'}`})}
+                                    {mobileRoleIcon}
                                     <RoleText />
                                 </div>
                             </div>
@@ -272,59 +331,46 @@ function AdminPageContent() {
                         <RoleText />
                     </div>
                    
-                    {isManagementView && !userIsSuperAdmin && (
-                        <>
-                            <div className="hidden sm:flex items-center gap-2">
-                                <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
-                                    {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
-                                </Button>
-                            </div>
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
-                                        <MoreVertical size={18} />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48 p-2">
-                                    <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
-                                        <Shield className="mr-2 h-4 w-4" />
-                                        {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
-                                        <Ban className="mr-2 h-4 w-4" />
-                                        {user.isBlocked ? 'Unblock User' : 'Block User'}
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => setUserToDelete(user)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                                        <Trash2 className="mr-2 h-4 w-4" />
-                                        <span>Delete</span>
-                                    </DropdownMenuItem>
-                                </DropdownMenuContent>
-                            </DropdownMenu>
-                        </>
-                    )}
-                    {activeTab === 'admins' && userIsSubAdmin && !userIsSuperAdmin && (
-                         <>
-                            <Button size="sm" variant="secondary" className="rounded-xl hidden sm:flex" onClick={() => setUserForPermissions(user)}>
-                                <Settings className="mr-2 h-4 w-4" />
-                                Permissions
+                   {activeTab === 'management' && !userIsSuperAdmin && (
+                        <div className="hidden sm:flex items-center gap-2">
+                            <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
+                                {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                             </Button>
-                            <div className="sm:hidden">
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
-                                            <MoreVertical size={18} />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end" className="w-48 p-2">
-                                        <DropdownMenuItem onClick={() => setUserForPermissions(user)}>
-                                            <Settings className="mr-2 h-4 w-4" />
-                                            Permissions
+                        </div>
+                    )}
+                    {(activeTab === 'management' || (activeTab === 'admins' && userIsSubAdmin)) && !userIsSuperAdmin && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
+                                    <MoreVertical size={18} />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48 p-2">
+                               {activeTab === 'admins' && userIsSubAdmin && (
+                                    <DropdownMenuItem onClick={() => setUserForPermissions(user)}>
+                                        <Settings className="mr-2 h-4 w-4" />
+                                        Permissions
+                                    </DropdownMenuItem>
+                                )}
+                                {activeTab === 'management' && (
+                                     <>
+                                        <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
+                                            <Shield className="mr-2 h-4 w-4" />
+                                            {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                                         </DropdownMenuItem>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                         </>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
+                                            <Ban className="mr-2 h-4 w-4" />
+                                            {user.isBlocked ? 'Unblock User' : 'Block User'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => setUserToDelete(user)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            <span>Delete</span>
+                                        </DropdownMenuItem>
+                                     </>
+                                )}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     )}
                 </div>
             </div>
@@ -332,7 +378,7 @@ function AdminPageContent() {
     });
     UserCard.displayName = 'UserCard';
 
-    const renderUserList = useCallback((userList: UserProfile[] | null, isManagementView = false) => {
+    const renderUserList = useCallback((userList: UserProfile[] | null) => {
         if (loadingUsers && !userList) return null;
         if (!userList || userList.length === 0) {
             return (
@@ -344,11 +390,8 @@ function AdminPageContent() {
             )
         }
         return userList.map((user, index) => (
-            <div key={user.uid}>
-                <UserCard user={user} isManagementView={isManagementView} />
-                {index < userList.length - 1 && (
-                    <div className="border-b border-white/10 mx-4 sm:mx-0"></div>
-                )}
+            <div key={user.uid} className="border-b border-white/10 mx-4 sm:mx-0 last:border-b-0">
+                <UserCard user={user} />
             </div>
         ));
     }, [loadingUsers, debouncedQuery, UserCard, activeTab]);
@@ -362,8 +405,8 @@ function AdminPageContent() {
                     </h1>
                 </div>
 
-                <div className="flex flex-row justify-between items-center mb-4 gap-4">
-                     <div className="relative w-full max-w-sm">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                     <div className="relative w-full sm:max-w-sm">
                         <Search className={cn(
                             "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300",
                             (isSearchFocused || searchQuery) ? 'text-white' : 'text-slate-400',
@@ -388,17 +431,37 @@ function AdminPageContent() {
                             </Button>
                         )}
                     </div>
-                     <Button onClick={() => setShowAddUserDialog(true)} className="rounded-2xl">
-                       <UserPlus className="sm:mr-2 h-4 w-4"/>
-                       <span className="hidden sm:inline">Add User</span>
-                   </Button>
+                    <div className="flex items-center gap-2">
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="outline" className="rounded-xl w-36 justify-between">
+                                    <ArrowUpDown className="mr-2 h-4 w-4" />
+                                    Sort by: {sortOption.charAt(0).toUpperCase() + sortOption.slice(1)}
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-48">
+                                <DropdownMenuLabel>Sort Users By</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                                    <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="createdAt">Creation Date</DropdownMenuRadioItem>
+                                    <DropdownMenuRadioItem value="level">Level</DropdownMenuRadioItem>
+                                </DropdownMenuRadioGroup>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                         <Button onClick={() => setShowAddUserDialog(true)} className="rounded-2xl">
+                           <UserPlus className="sm:mr-2 h-4 w-4"/>
+                           <span className="hidden sm:inline">Add User</span>
+                       </Button>
+                    </div>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
-                    <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
+                    <TabsList className={cn("grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin && "sm:grid-cols-4")}>
                         <TabsTrigger value="users">All Users ({filteredUsers?.length || 0})</TabsTrigger>
                         <TabsTrigger value="admins">Admins ({admins?.length || 0})</TabsTrigger>
-                        <TabsTrigger value="management">Management ({filteredUsers?.length || 0})</TabsTrigger>
+                        <TabsTrigger value="management">Management</TabsTrigger>
+                        {isSuperAdmin && <TabsTrigger value="audit">Audit Log</TabsTrigger>}
                     </TabsList>
                 </Tabs>
             </div>
@@ -412,8 +475,25 @@ function AdminPageContent() {
                         {renderUserList(admins)}
                     </TabsContent>
                     <TabsContent value="management" className="space-y-0">
-                        {renderUserList(filteredUsers, true)}
+                        {renderUserList(filteredUsers)}
                     </TabsContent>
+                    {isSuperAdmin && (
+                        <TabsContent value="audit">
+                            <div className="space-y-2">
+                                {loadingLogs ? <p>Loading logs...</p> : auditLogs?.map(log => (
+                                    <div key={log.id} className="text-sm p-3 rounded-lg bg-black/10 flex items-start gap-3">
+                                        <History className="w-4 h-4 text-slate-400 mt-1 shrink-0"/>
+                                        <div>
+                                            <p className='text-slate-100'>
+                                               <span className='font-bold'>{log.actorName}</span> performed action <span className='font-mono text-blue-300'>{log.action}</span> on <span className='font-bold'>{log.targetName}</span>
+                                            </p>
+                                            <p className='text-xs text-slate-500 mt-0.5'>{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </TabsContent>
+                    )}
                 </Tabs>
             </div>
             <AddUserDialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog} />
@@ -462,5 +542,3 @@ export default function AdminPage() {
         </Suspense>
     )
 }
-
-    
