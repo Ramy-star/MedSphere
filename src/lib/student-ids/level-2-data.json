@@ -1,0 +1,453 @@
+
+[
+ {
+  "Student ID": "223100236",
+  "Student Name": "Abd Elrahman Hossam Ahmed Mohamed",
+  "Academic Email": "AbdulRahman223100236@nmu.edu.eg"
+ },
+ {
+  "Student ID": "222100846",
+  "Student Name": "Abdulrahman Mohammed Abdulrahman Al-haythami",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223103076",
+  "Student Name": "Abdulrahman Khalid Al-sallami",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223100278",
+  "Student Name": "Abdulrahman Ahmed Al-shami",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223100499",
+  "Student Name": "Abrar Mohammed Al-olafi",
+  "Academic Email": "Abrar_223100499@nmu.edu.eg"
+ },
+ {
+  "Student ID": "223100175",
+  "Student Name": "Abbas Ali Al-hamati",
+  "Academic Email": "Abbas_223100175@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100410",
+  "Student Name": "Afnan Lutf Al-qershi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223103410",
+  "Student Name": "Afnan Mansour Al-saeedi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100444",
+  "Student Name": "Ahmed Hani Al-hammadi",
+  "Academic Email": "Ahmed_224100444@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100569",
+  "Student Name": "Ameera Ali Al-maswari",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100291",
+  "Student Name": "Ammar Yaser Al-sorori",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100143",
+  "Student Name": "Anas Tareq Al-sharafi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223103385",
+  "Student Name": "Anas Mohammed Ahmed Al-dharhani",
+  "Academic Email": "Anas_223103385@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100116",
+  "Student Name": "Areej Abdulsalam Al-wajeeh",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100406",
+  "Student Name": "Arwa Abdulmalik Al-sharabi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100332",
+  "Student Name": "Asma Abdulsalam Al-ghaili",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100522",
+  "Student Name": "Aya Mohammed Al-sharif",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100338",
+  "Student Name": "Ayat Adeeb Al-sharabi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100133",
+  "Student Name": "Ayman Rashad Al-surmi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100141",
+  "Student Name": "Basem Sultan Al-tha'walah",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100258",
+  "Student Name": "Dalal Mohammed Al-kebsi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100251",
+  "Student Name": "Dalia Mohammed Al-shameeri",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100499",
+  "Student Name": "Danah Abdullah Al-basha",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100417",
+  "Student Name": "Deema Waleed Al-thawr",
+  "Academic Email": "Deema_224100417@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100498",
+  "Student Name": "Deyala Sadeq Al-dhahab",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100281",
+  "Student Name": "Doaa Ahmed Al-kohlani",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100207",
+  "Student Name": "Enas Abdulsalam Al-dhamari",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100348",
+  "Student Name": "Fatima Fouad Al-ansi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100203",
+  "Student Name": "Fayhaa Wajdi Al-dhahyani",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100457",
+  "Student Name": "Ghaidaa Mohammed Al-ashmori",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100428",
+  "Student Name": "Ghadeer Amin Al-dobaee",
+  "Academic Email": "Ghadeer_224100428@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100376",
+  "Student Name": "Hadeel Abdulaziz Al-akoomi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100490",
+  "Student Name": "Hala Essam Al-fageeh",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100391",
+  "Student Name": "Hani Mohammed Abdurabu",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100412",
+  "Student Name": "Heba Esmaeel Al-dhamari",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224103575",
+  "Student Name": "Heba Nabil Al-serafi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100221",
+  "Student Name": "Heba Tareq Al-sharabi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100060",
+  "Student Name": "Hossam Mohammed Al-kebsi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100120",
+  "Student Name": "Huda Abduljalil Abdu",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100252",
+  "Student Name": "Ibtihal Abdulkawi Al-kebsi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100039",
+  "Student Name": "Ibrahim Abdulkareem Al-masbahi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100469",
+  "Student Name": "Ibrahim Ahmed Al-badwi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100330",
+  "Student Name": "Ibrahim Ismail Al-washali",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100100",
+  "Student Name": "Ibrahim Mohammed Al-kholani",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223103600",
+  "Student Name": "Iman Esmaeel Al-dhobaee",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100331",
+  "Student Name": "Israa Abdulqader Al-hadad",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100040",
+  "Student Name": "Jamal Mohammed Al-ahdal",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224103600",
+  "Student Name": "Jameela Adel Al-kheraiji",
+  "Academic Email": "Jameela_224103600@nmu.edu.eg"
+ },
+ {
+  "Student ID": "223103468",
+  "Student Name": "Jihad Abdulfattah Al-jabri",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100473",
+  "Student Name": "Jumanah Sadeq Al-mutahhar",
+  "Academic Email": "Jumanah_224100473@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100289",
+  "Student Name": "Khadeejah Abdulghani Al-sharafi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "225102248",
+  "Student Name": "Khaled Osama Mohammed Al-absi",
+  "Academic Email": "Khaled_225102248@nmu.edu.eg"
+ },
+ {
+  "Student ID": "225102250",
+  "Student Name": "Lara Fouad Yaseen Al-sharabi",
+  "Academic Email": "Lara_225102250@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100351",
+  "Student Name": "Lujain Ali Sallam",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100443",
+  "Student Name": "Madleen Mohammed Al-khawlani",
+  "Academic Email": "Madleen_224100443@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100209",
+  "Student Name": "Manal Yahya Al-shami",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100303",
+  "Student Name": "Maram Abdullah Al-thaibani",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100551",
+  "Student Name": "Maram Abdu Al-asbahi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100516",
+  "Student Name": "Marwa Nabil Al-ashmali",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100530",
+  "Student Name": "Marwa Tawfeeq Al-ameri",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100201",
+  "Student Name": "Mayar Sadeq Al-dhahab",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100533",
+  "Student Name": "Mohammed Abdullah Al-khawlani",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223103196",
+  "Student Name": "Mohammed Abdullah Al-ashwal",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100430",
+  "Student Name": "Mohammed Ahmed Al-matari",
+  "Academic Email": "Mohammed_224100430@nmu.edu.eg"
+ },
+ {
+  "Student ID": "222101763",
+  "Student Name": "Mohammed Hani Al-hammadi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100318",
+  "Student Name": "Mohammed Yahya Al-amari",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100282",
+  "Student Name": "Mo'men Ahmed Al-sharabi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100368",
+  "Student Name": "Mutahar Yahya Al-mutahar",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100337",
+  "Student Name": "Naheel Nabil Al-amri",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223100369",
+  "Student Name": "Najd Ahmed Al-haddi",
+  "Academic Email": "Najd_223100369@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100518",
+  "Student Name": "Omar Ali Al-ghazali",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100363",
+  "Student Name": "Omar Mohammed Al-khawlani",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100426",
+  "Student Name": "Omnia Ameen Al-ward",
+  "Academic Email": "Omnia_224100426@nmu.edu.eg"
+ },
+ {
+  "Student ID": "223103489",
+  "Student Name": "Rania Adel Al-ghaffari",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224103584",
+  "Student Name": "Reem Nabil Al-serafi",
+  "Academic Email": "Reem_224103584@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100154",
+  "Student Name": "Reham Nabil Al-sheikh",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "223100312",
+  "Student Name": "Ruba Ali Al-haifi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100471",
+  "Student Name": "Sabreen Sadeq Al-dhahab",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100366",
+  "Student Name": "Safa Abdulsalam Al-ghaili",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100191",
+  "Student Name": "Salah Mohammed Al-tha'walah",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100574",
+  "Student Name": "Saleh Mohammed Al-hadad",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100357",
+  "Student Name": "Salma Esmaeel Al-dhamari",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224103578",
+  "Student Name": "Samira Hussein Al-dhobaee",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100350",
+  "Student Name": "Sana Nabil Al-sheikh",
+  "Academic Email": "Sana_224100350@nmu.edu.eg"
+ },
+ {
+  "Student ID": "225102268",
+  "Student Name": "Sarah Aref Ali Al-maswari",
+  "Academic Email": "Sarah_225102268@nmu.edu.eg"
+ },
+ {
+  "Student ID": "223103384",
+  "Student Name": "Shatha Khalid Al-sharafi",
+  "Academic Email": "Shatha_223103384@nmu.edu.eg"
+ },
+ {
+  "Student ID": "224100364",
+  "Student Name": "Shorouq Ali Al-ghazali",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100312",
+  "Student Name": "Somayah Ali Al-haifi",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "224100552",
+  "Student Name": "Suha Mohammed Al-shameeri",
+  "Academic Email": ""
+ },
+ {
+  "Student ID": "225114133",
+  "Student Name": "Wael Abdulqawi Al-kebsi",
+  "Academic Email": "Wael_225114133@nmu.edu.eg"
+ }
+]
