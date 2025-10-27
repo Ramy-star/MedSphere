@@ -59,7 +59,7 @@ export const SubjectCard = React.memo(function SubjectCard({
             <div>
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />
-                    {can('canRename', subject.id) && (
+                    {(can('canRename', subject.id) || can('canDelete', subject.id) || can('canChangeIcon', subject.id)) && (
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
