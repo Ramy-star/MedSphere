@@ -471,7 +471,7 @@ function AdminPageContent() {
                                     <span className="hidden sm:inline">Sort by</span>
                                 </Button>
                             </DropdownMenuTrigger>
-                             <DropdownMenuContent className="w-56 p-2">
+                             <DropdownMenuContent className="w-48 sm:w-56 p-2">
                                 <DropdownMenuLabel>Sort Users By</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => { setSortOption(v as SortOption); setLevelFilter(null); }}>
@@ -639,4 +639,5 @@ export default AdminPageWithSuspense;
 
 
     
+
 
