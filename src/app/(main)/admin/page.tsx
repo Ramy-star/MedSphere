@@ -302,15 +302,11 @@ function AdminPageContent() {
                                 : userIsSubAdmin ? <Shield className="w-3 h-3 text-blue-400" />
                                 : <User className="w-3 h-3 text-white" />;
 
-        const RoleText = () => {
-          if (userIsSuperAdmin) {
-            return <span className='text-yellow-400'>Super Admin</span>;
-          }
-          if (userIsSubAdmin) {
-            return <span className='text-blue-400'>Admin</span>;
-          }
-          return <span className='text-slate-300'>User</span>;
-        };
+        const RoleText = () => (
+          userIsSuperAdmin ? <span className='text-yellow-400'>Super Admin</span>
+          : userIsSubAdmin ? <span className='text-blue-400'>Admin</span>
+          : <span className='text-slate-300'>User</span>
+        );
         
         return (
             <div 
@@ -426,7 +422,7 @@ function AdminPageContent() {
             )
         }
         return userList.map((user, index) => (
-            <div key={user.uid} className={cn("border-b border-white/10 last:border-b-0 sm:mx-0", index === 0 && 'sm:border-t', 'mx-4 sm:mx-0')}>
+            <div key={user.uid} className={cn("border-b border-white/10 last:border-b-0", 'mx-4 sm:mx-0')}>
                 <UserCard user={user} />
             </div>
         ));
@@ -510,8 +506,8 @@ function AdminPageContent() {
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className={cn("grid w-full max-w-lg mx-auto bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin ? "grid-cols-4" : "grid-cols-3")}>
-                        <TabsTrigger value="users">All Users</TabsTrigger>
-                        <TabsTrigger value="admins">Admins</TabsTrigger>
+                        <TabsTrigger value="users">All Users ({filteredAndSortedUsers.length})</TabsTrigger>
+                        <TabsTrigger value="admins">Admins ({admins.length})</TabsTrigger>
                         <TabsTrigger value="management">Management</TabsTrigger>
                         {isSuperAdmin && <TabsTrigger value="audit">History</TabsTrigger>}
                     </TabsList>
@@ -543,17 +539,26 @@ function AdminPageContent() {
                                 </Button>
                             </div>
                             <div className="space-y-2">
-                                {loadingLogs ? <p>Loading logs...</p> : auditLogs?.map(log => (
-                                    <div key={log.id} className="text-sm p-3 rounded-lg bg-black/10 flex items-start gap-3">
-                                        <History className="w-4 h-4 text-slate-400 mt-1 shrink-0"/>
-                                        <div>
-                                            <p className='text-slate-100'>
-                                               <span className='font-bold'>{log.actorName}</span> ({log.actorId}) performed action <span className='font-mono text-blue-300'>{log.action}</span> on <span className='font-bold'>{log.targetName}</span> ({log.targetId})
-                                            </p>
-                                            <p className='text-xs text-slate-500 mt-0.5'>{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
+                                {loadingLogs ? <p>Loading logs...</p> : 
+                                 auditLogs && auditLogs.length > 0 ? (
+                                    auditLogs.map(log => (
+                                        <div key={log.id} className="text-sm p-3 rounded-lg bg-black/10 flex items-start gap-3">
+                                            <History className="w-4 h-4 text-slate-400 mt-1 shrink-0"/>
+                                            <div>
+                                                <p className='text-slate-100'>
+                                                   User <span className='font-mono text-amber-300'>{log.actorId}</span> performed action <span className='font-mono text-blue-300'>{log.action}</span> on user <span className='font-mono text-amber-300'>{log.targetId}</span>
+                                                </p>
+                                                <p className='text-xs text-slate-500 mt-0.5'>{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
+                                            </div>
                                         </div>
+                                    ))
+                                 ) : (
+                                    <div className="text-center text-slate-400 py-16 flex flex-col items-center">
+                                        <History className="w-12 h-12 text-slate-500 mb-4"/>
+                                        <p className="font-semibold text-lg text-white">No History Yet</p>
+                                        <p>Administrative actions will be logged here.</p>
                                     </div>
-                                ))}
+                                 )}
                             </div>
                         </TabsContent>
                     )}
@@ -622,3 +627,6 @@ const AdminPageWithSuspense = () => (
 export default AdminPageWithSuspense;
 
 
+
+
+    
