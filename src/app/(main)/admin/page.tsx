@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -450,12 +449,12 @@ function AdminPageContent() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="rounded-xl w-36 justify-between">
+                                <Button variant="outline" className="rounded-2xl">
                                     <ArrowUpDown className="mr-2 h-4 w-4" />
-                                    Sort by: {sortOption.charAt(0).toUpperCase() + sortOption.slice(1)}
+                                    Sort by
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56">
+                            <DropdownMenuContent className="w-56 p-2">
                                 <DropdownMenuLabel>Sort Users By</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => { setSortOption(v as SortOption); setLevelFilter(null); }}>
@@ -568,16 +567,12 @@ function AdminPageContent() {
 }
 
 // Lazy load the main component to prevent chunk load errors.
-// const AdminPageContent = lazy(() => import('./AdminPageContent'));
+const AdminPageWithSuspense = () => (
+    <Suspense fallback={<div className="text-center">Loading...</div>}>
+        <AdminPageContent />
+    </Suspense>
+);
 
-export default function AdminPage() {
-    return (
-        <Suspense fallback={<div className="text-center">Loading...</div>}>
-            <AdminPageContent />
-        </Suspense>
-    )
-}
-
-
+export default AdminPageWithSuspense;
 
     
