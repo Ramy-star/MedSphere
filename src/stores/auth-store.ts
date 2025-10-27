@@ -1,4 +1,7 @@
+
 import { create } from 'zustand';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '@/firebase';
 
 const SUPER_ADMIN_ID = "221100154";
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
@@ -35,7 +38,6 @@ export const useAuthStore = create<AuthState>((set) => ({
             });
         }
     } catch (e) {
-        // Handle localStorage being unavailable
         console.error("Could not access localStorage:", e);
         set({ isAuthenticated: false, studentId: null, isSuperAdmin: false });
     }
