@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -119,6 +120,7 @@ function AdminPageContent() {
     const [userToDemote, setUserToDemote] = useState<UserProfile | null>(null);
     const [sortOption, setSortOption] = useState<SortOption>('name');
     const [levelFilter, setLevelFilter] = useState<string | null>(null);
+    const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
@@ -214,7 +216,7 @@ function AdminPageContent() {
             await updateDoc(userRef, {
                 roles: [...currentRoles, newSubAdminRole]
             });
-            await logAdminAction(currentUser, 'user.promote', user);
+            await logAdminAction(currentUser, 'user.promote', user, { to: 'admin' });
             toast({ title: "Permissions Updated", description: `${user.displayName} is now an admin.` });
         } catch (error: any) {
             console.error("Error updating user role:", error);
@@ -228,7 +230,7 @@ function AdminPageContent() {
         try {
             const newRoles = Array.isArray(userToDemote.roles) ? userToDemote.roles.filter(r => r.role !== 'subAdmin') : [];
             await updateDoc(userRef, { roles: newRoles });
-            await logAdminAction(currentUser, 'user.demote', userToDemote);
+            await logAdminAction(currentUser, 'user.demote', userToDemote, { from: 'admin' });
             toast({ title: "Permissions Updated", description: `${userToDemote.displayName} is no longer an admin.` });
         } catch(error: any) {
             console.error("Error demoting user:", error);
@@ -265,6 +267,25 @@ function AdminPageContent() {
         toast({ title: "User Deleted", description: `${userToDelete.displayName} has been deleted.` });
         setUserToDelete(null);
     }, [userToDelete, toast, currentUser]);
+    
+    const handleClearHistory = useCallback(async () => {
+        if (!db || !isSuperAdmin) return;
+        try {
+            const logsCollection = collection(db, 'auditLogs');
+            const logsSnapshot = await getDocs(logsCollection);
+            const batch = writeBatch(db);
+            logsSnapshot.forEach(doc => {
+                batch.delete(doc.ref);
+            });
+            await batch.commit();
+            toast({ title: "History Cleared", description: "The audit log has been successfully cleared." });
+        } catch (error) {
+            console.error("Error clearing audit logs:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not clear the history." });
+        } finally {
+            setShowClearHistoryDialog(false);
+        }
+    }, [isSuperAdmin, toast]);
 
     const UserCard = React.memo(({ user }: { user: UserProfile }) => {
         const userIsSuperAdmin = isUserSuperAdmin(user);
@@ -292,9 +313,7 @@ function AdminPageContent() {
         };
         
         return (
-            <div 
-                className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}
-            >
+            <div className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}>
                 <div className="flex items-center gap-4 overflow-hidden">
                     <Avatar>
                         <AvatarImage src={user.photoURL} alt={user.displayName} />
@@ -405,7 +424,7 @@ function AdminPageContent() {
             )
         }
         return userList.map((user, index) => (
-            <div key={user.uid} className="border-b border-white/10 mx-4 sm:mx-0 last:border-b-0">
+            <div key={user.uid} className={cn("border-b border-white/10 last:border-b-0 sm:mx-0", index === 0 && 'sm:border-t')}>
                 <UserCard user={user} />
             </div>
         ));
@@ -488,9 +507,9 @@ function AdminPageContent() {
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
-                    <TabsList className={cn("grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin && "sm:grid-cols-4")}>
-                        <TabsTrigger value="users">All Users ({filteredAndSortedUsers?.length || 0})</TabsTrigger>
-                        <TabsTrigger value="admins">Admins ({admins?.length || 0})</TabsTrigger>
+                    <TabsList className={cn("grid w-full max-w-lg mx-auto bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin ? "sm:grid-cols-4 grid-cols-4" : "grid-cols-3")}>
+                        <TabsTrigger value="users">All Users</TabsTrigger>
+                        <TabsTrigger value="admins">Admins</TabsTrigger>
                         <TabsTrigger value="management">Management</TabsTrigger>
                         {isSuperAdmin && <TabsTrigger value="audit">History</TabsTrigger>}
                     </TabsList>
@@ -510,6 +529,17 @@ function AdminPageContent() {
                     </TabsContent>
                     {isSuperAdmin && (
                         <TabsContent value="audit">
+                            <div className="flex justify-end mb-4">
+                                <Button
+                                  variant="destructive"
+                                  onClick={() => setShowClearHistoryDialog(true)}
+                                  disabled={!auditLogs || auditLogs.length === 0}
+                                  className="rounded-xl flex items-center gap-2"
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                    Clear History
+                                </Button>
+                            </div>
                             <div className="space-y-2">
                                 {loadingLogs ? <p>Loading logs...</p> : auditLogs?.map(log => (
                                     <div key={log.id} className="text-sm p-3 rounded-lg bg-black/10 flex items-start gap-3">
@@ -562,6 +592,20 @@ function AdminPageContent() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+            <AlertDialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
+                <AlertDialogContent className="w-[90vw] sm:w-full">
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to clear the history?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action will permanently delete all audit logs. This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleClearHistory} className="bg-red-600 hover:bg-red-700">Clear History</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
@@ -575,4 +619,3 @@ const AdminPageWithSuspense = () => (
 
 export default AdminPageWithSuspense;
 
-    
