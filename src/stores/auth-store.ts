@@ -1,6 +1,8 @@
 
 import { create } from 'zustand';
 import { verifyAndCreateUser, getUserProfile, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
+import { db } from '@/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
@@ -22,13 +24,14 @@ type UserProfile = {
   level?: string;
   createdAt?: string;
   roles?: UserRole[];
+  isBlocked?: boolean;
 };
 
 type AuthState = {
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   studentId: string | null;
-  user: UserProfile | null | undefined; // undefined means we haven't checked yet
+  user: UserProfile | null | undefined;
   checkAuth: () => Promise<void>;
   login: (studentId: string) => Promise<boolean>;
   logout: () => void;
@@ -36,7 +39,8 @@ type AuthState = {
   canAddContent: (path: string) => boolean;
 };
 
-// This function needs to be outside the store to be reused in 'can'
+let userListenerUnsubscribe: () => void = () => {};
+
 const hasPermission = (user: UserProfile | null | undefined, isSuperAdmin: boolean, permission: string, path: string): boolean => {
     if (!user) return false;
     if (isSuperAdmin) return true;
@@ -49,9 +53,9 @@ const hasPermission = (user: UserProfile | null | undefined, isSuperAdmin: boole
             if (role.scope === 'global') return true;
 
             const pathSegments = path.split('/').filter(Boolean);
-            if (pathSegments.length < 2) continue; // Not in a specific scope
+            if (pathSegments.length < 2) continue;
 
-            const scopeType = pathSegments[0]; // e.g., 'folder', 'level'
+            const scopeType = pathSegments[0];
             const scopeId = pathSegments[1];
 
             if (role.scope === scopeType && role.scopeId === scopeId) {
@@ -62,30 +66,67 @@ const hasPermission = (user: UserProfile | null | undefined, isSuperAdmin: boole
     return false;
 };
 
+const listenToUserProfile = (studentId: string) => {
+    // Unsubscribe from any previous listener
+    if (userListenerUnsubscribe) {
+        userListenerUnsubscribe();
+    }
+    
+    if (!db) {
+        console.error("Firestore (db) is not initialized in listenToUserProfile.");
+        return;
+    }
+
+    const userDocRef = doc(db, 'users', studentId);
+    userListenerUnsubscribe = onSnapshot(userDocRef, async (doc) => {
+        if (doc.exists()) {
+            const userProfile = { ...doc.data() } as UserProfile;
+            const isAdmin = await checkSuperAdmin(userProfile.studentId);
+            
+            // Check if user is blocked
+            if (userProfile.isBlocked) {
+                useAuthStore.getState().logout();
+                // Optionally, show a toast message about being blocked
+            } else {
+                 useAuthStore.setState({
+                    isAuthenticated: true,
+                    studentId: userProfile.studentId,
+                    isSuperAdmin: isAdmin,
+                    user: userProfile,
+                });
+            }
+        } else {
+            // Document was deleted, log the user out
+            useAuthStore.getState().logout();
+        }
+    }, (error) => {
+        console.error("Error listening to user profile:", error);
+        // On error (e.g. permissions), log the user out as a safeguard
+        useAuthStore.getState().logout();
+    });
+};
+
+
 const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isSuperAdmin: false,
   studentId: null,
-  user: undefined, // Initial state is 'undefined' to signify "not checked yet"
+  user: undefined,
   
   checkAuth: async () => {
+    if (userListenerUnsubscribe) {
+        userListenerUnsubscribe();
+        userListenerUnsubscribe = () => {};
+    }
+
     try {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem(VERIFIED_STUDENT_ID_KEY) : null;
         if (storedId) {
-            const userProfile = await getUserProfile(storedId);
-            if (userProfile) {
-                const isAdmin = await checkSuperAdmin(userProfile.studentId);
-                set({
-                    isAuthenticated: true,
-                    studentId: userProfile.studentId,
-                    isSuperAdmin: isAdmin,
-                    user: userProfile as UserProfile,
-                });
-                return;
-            }
+            // Set up a real-time listener instead of a one-time fetch
+            listenToUserProfile(storedId);
+        } else {
+            set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false });
         }
-        // If no stored ID or profile fetch fails, set to logged-out state
-        set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false });
     } catch (e) {
       console.error("Auth check failed:", e);
       set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false });
@@ -97,13 +138,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
       const userProfile = await verifyAndCreateUser(studentId);
       if (userProfile) {
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.studentId);
-        const isAdmin = await checkSuperAdmin(userProfile.studentId);
-        set({
-          isAuthenticated: true,
-          studentId: userProfile.studentId,
-          isSuperAdmin: isAdmin,
-          user: userProfile as UserProfile,
-        });
+        // After successful login, start listening for real-time updates
+        listenToUserProfile(userProfile.studentId);
         return true;
       } else {
         localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
@@ -117,6 +153,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
+    // Stop listening to user profile changes
+    if (userListenerUnsubscribe) {
+      userListenerUnsubscribe();
+      userListenerUnsubscribe = () => {};
+    }
     try {
       localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
     } catch (e) {
@@ -135,6 +176,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   can: (permission: string, path: string): boolean => {
       const { user, isSuperAdmin } = get();
+      if (isSuperAdmin) return true;
       return hasPermission(user, isSuperAdmin, permission, path);
   },
   
