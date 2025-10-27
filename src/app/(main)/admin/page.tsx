@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useMemo, useState } from 'react';
@@ -72,7 +73,7 @@ function AdminPageContent() {
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
-    const { studentId: currentStudentId } = useAuthStore();
+    const { studentId: currentStudentId, isSuperAdmin: isCurrentUserSuperAdmin } = useAuthStore();
     const { toast } = useToast();
 
     const handleTabChange = (value: string) => {
@@ -96,9 +97,16 @@ function AdminPageContent() {
             user.studentId?.includes(lowercasedQuery)
         );
     }, [sortedUsers, debouncedQuery]);
+    
+    const isSuperAdmin = (user: UserProfile) => {
+        if (user.studentId === currentStudentId) return isCurrentUserSuperAdmin;
+        return Array.isArray(user.roles) && user.roles.some(r => r.role === 'superAdmin');
+    };
+    
+    const isSubAdmin = (user: UserProfile) => {
+       return Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
+    };
 
-    const isSuperAdmin = (user: UserProfile) => Array.isArray(user.roles) && user.roles.some(r => r.role === 'superAdmin');
-    const isSubAdmin = (user: UserProfile) => Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
 
     const admins = useMemo(() => {
         if (!filteredUsers) return [];
@@ -194,7 +202,7 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
+                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && !isManagementView && '(You)'}</p>
                           {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
                         </div>
                         <p className="text-sm text-slate-400 truncate">{user.email} • ID: {user.studentId}</p>
