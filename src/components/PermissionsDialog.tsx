@@ -43,14 +43,21 @@ type UserProfile = {
     displayName?: string;
 };
 
-const allPermissions = [
-    { id: 'canAddContent', label: 'Add Content' },
-    { id: 'canEditContent', label: 'Edit Content' },
-    { id: 'canDeleteContent', label: 'Delete Content' },
-    { id: 'canManageUsers', label: 'Manage Users' },
-    { id: 'canAccessQuestionCreator', label: 'Access Questions Creator' },
-    { id: 'canAccessAdminPanel', label: 'Access Admin Panel' },
-];
+const permissionGroups = {
+    'Content Management': [
+        { id: 'canAddContent', label: 'Add Content' },
+        { id: 'canEditContent', label: 'Edit/Rename Content' },
+        { id: 'canDeleteContent', label: 'Delete Content' },
+    ],
+    'User Management': [
+        { id: 'canManageUsers', label: 'Manage Users & Roles' },
+    ],
+    'Page Access': [
+        { id: 'canAccessQuestionCreator', label: 'Questions Creator Page' },
+        { id: 'canAccessAdminPanel', label: 'Admin Panel Page' },
+    ]
+};
+
 
 export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProfile | null, open: boolean, onOpenChange: (open: boolean) => void }) {
     const [roles, setRoles] = useState<UserRole[]>([]);
@@ -156,7 +163,7 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
     return (
         <div className="bg-black/20 border border-white/10 p-4 rounded-xl space-y-4">
             <div className="flex justify-between items-center">
-                <h4 className="font-semibold text-white">Sub-Admin Role</h4>
+                <h4 className="font-semibold text-white capitalize">{role.scope} Admin Role</h4>
                 <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:bg-red-500/20" onClick={onRemove}>
                     <Trash2 size={16} />
                 </Button>
@@ -182,23 +189,27 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
                     </Button>
                 )}
             </div>
-
-            <div className="space-y-3 pt-2">
-                <p className="font-medium text-sm text-slate-300">Permissions:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
-                    {allPermissions.map(p => (
-                        <div key={p.id} className="flex items-center space-x-2 p-1 rounded-md">
-                            <Checkbox 
-                                id={`${role.scopeId || 'global'}-${p.id}`}
-                                checked={role.permissions?.includes(p.id)}
-                                onCheckedChange={(checked) => handlePermissionChange(p.id, !!checked)}
-                            />
-                             <label htmlFor={`${role.scopeId || 'global'}-${p.id}`} className="text-sm font-medium leading-none cursor-pointer text-slate-200">
-                                {p.label}
-                            </label>
+            
+            <div className="space-y-4 pt-2">
+                {Object.entries(permissionGroups).map(([groupName, permissions]) => (
+                    <div key={groupName}>
+                        <h5 className="font-medium text-sm text-slate-300 mb-3 border-b border-white/10 pb-2">{groupName}</h5>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
+                           {permissions.map(p => (
+                                <div key={p.id} className="flex items-center space-x-2 p-1 rounded-md">
+                                    <Checkbox 
+                                        id={`${role.scopeId || 'global'}-${p.id}`}
+                                        checked={role.permissions?.includes(p.id)}
+                                        onCheckedChange={(checked) => handlePermissionChange(p.id, !!checked)}
+                                    />
+                                     <label htmlFor={`${role.scopeId || 'global'}-${p.id}`} className="text-sm font-medium leading-none cursor-pointer text-slate-200">
+                                        {p.label}
+                                    </label>
+                                </div>
+                            ))}
                         </div>
-                    ))}
-                </div>
+                    </div>
+                ))}
             </div>
 
             {showFolderSelector && (
