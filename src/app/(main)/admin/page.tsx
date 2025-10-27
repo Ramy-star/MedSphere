@@ -344,8 +344,11 @@ function AdminPageContent() {
             )
         }
         return userList.map((user, index) => (
-            <div key={user.uid} className={cn(index !== userList.length - 1 && "border-b border-white/10")}>
+            <div key={user.uid}>
                 <UserCard user={user} isManagementView={isManagementView} />
+                {index < userList.length - 1 && (
+                    <div className="sm:border-b sm:border-white/10 mx-4 sm:mx-0"></div>
+                )}
             </div>
         ));
     }, [loadingUsers, debouncedQuery, UserCard, activeTab]);
@@ -459,5 +462,3 @@ export default function AdminPage() {
         </Suspense>
     )
 }
-
-    
