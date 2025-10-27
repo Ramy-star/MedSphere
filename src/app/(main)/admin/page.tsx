@@ -313,7 +313,9 @@ function AdminPageContent() {
         };
         
         return (
-            <div className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}>
+            <div 
+                className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}
+            >
                 <div className="flex items-center gap-4 overflow-hidden">
                     <Avatar>
                         <AvatarImage src={user.photoURL} alt={user.displayName} />
@@ -424,7 +426,7 @@ function AdminPageContent() {
             )
         }
         return userList.map((user, index) => (
-            <div key={user.uid} className={cn("border-b border-white/10 last:border-b-0 sm:mx-0", index === 0 && 'sm:border-t')}>
+            <div key={user.uid} className={cn("border-b border-white/10 last:border-b-0 sm:mx-0", index === 0 && 'sm:border-t', 'mx-4 sm:mx-0')}>
                 <UserCard user={user} />
             </div>
         ));
@@ -439,7 +441,7 @@ function AdminPageContent() {
                     </h1>
                 </div>
 
-                <div className="flex flex-col sm:flex-row justify-between items-center mb-4 gap-4">
+                <div className="flex flex-row justify-between items-center mb-4 gap-4">
                      <div className="relative w-full sm:max-w-sm">
                         <Search className={cn(
                             "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300",
@@ -468,12 +470,12 @@ function AdminPageContent() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="outline" className="rounded-2xl">
-                                    <ArrowUpDown className="mr-2 h-4 w-4" />
-                                    Sort by
+                                 <Button variant="outline" className="rounded-2xl w-full sm:w-auto">
+                                    <ArrowUpDown className="h-4 w-4 sm:mr-2" />
+                                    <span className="hidden sm:inline">Sort by</span>
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-56 p-2">
+                             <DropdownMenuContent className="w-56 p-2">
                                 <DropdownMenuLabel>Sort Users By</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => { setSortOption(v as SortOption); setLevelFilter(null); }}>
@@ -500,14 +502,14 @@ function AdminPageContent() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                          <Button onClick={() => setShowAddUserDialog(true)} className="rounded-2xl">
-                           <UserPlus className="sm:mr-2 h-4 w-4"/>
+                           <UserPlus className="h-4 w-4 sm:mr-2"/>
                            <span className="hidden sm:inline">Add User</span>
                        </Button>
                     </div>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
-                    <TabsList className={cn("grid w-full max-w-lg mx-auto bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin ? "sm:grid-cols-4 grid-cols-4" : "grid-cols-3")}>
+                    <TabsList className={cn("grid w-full max-w-lg mx-auto bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin ? "grid-cols-4" : "grid-cols-3")}>
                         <TabsTrigger value="users">All Users</TabsTrigger>
                         <TabsTrigger value="admins">Admins</TabsTrigger>
                         <TabsTrigger value="management">Management</TabsTrigger>
@@ -546,7 +548,7 @@ function AdminPageContent() {
                                         <History className="w-4 h-4 text-slate-400 mt-1 shrink-0"/>
                                         <div>
                                             <p className='text-slate-100'>
-                                               <span className='font-bold'>{log.actorName}</span> performed action <span className='font-mono text-blue-300'>{log.action}</span> on <span className='font-bold'>{log.targetName}</span>
+                                               <span className='font-bold'>{log.actorName}</span> ({log.actorId}) performed action <span className='font-mono text-blue-300'>{log.action}</span> on <span className='font-bold'>{log.targetName}</span> ({log.targetId})
                                             </p>
                                             <p className='text-xs text-slate-500 mt-0.5'>{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
                                         </div>
@@ -618,4 +620,5 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
+
 
