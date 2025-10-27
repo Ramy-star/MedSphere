@@ -91,7 +91,6 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
         const studentData = allStudentData.get(trimmedId);
         const userLevel = idToLevelMap.get(trimmedId);
         
-        // Use the studentId as the document ID for simplicity and uniqueness
         const newUserDocRef = doc(db, 'users', trimmedId);
         
         const existingDoc = await getDoc(newUserDocRef);
@@ -101,7 +100,7 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
         }
 
         const newUserProfile = {
-            uid: trimmedId, // uid and studentId are the same for simplicity
+            uid: trimmedId, 
             studentId: trimmedId,
             displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
             username: `student_${trimmedId}`,
