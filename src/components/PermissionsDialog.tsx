@@ -11,7 +11,7 @@ import {
 import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { ScrollArea } from './ui/scroll-area';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Loader2, PlusCircle, Trash2 } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Content } from '@/lib/contentService';
@@ -26,6 +26,7 @@ import {
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
 
 
 type UserRole = {
@@ -51,12 +52,19 @@ const allPermissions = [
     { id: 'canAccessAdminPanel', label: 'Access Admin Panel' },
 ];
 
-export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProfile, open: boolean, onOpenChange: (open: boolean) => void }) {
-    const [roles, setRoles] = useState<UserRole[]>(user.roles || []);
+export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProfile | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    const [roles, setRoles] = useState<UserRole[]>([]);
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
 
+    useEffect(() => {
+        if (user && open) {
+            setRoles(user.roles && Array.isArray(user.roles) ? JSON.parse(JSON.stringify(user.roles)) : []);
+        }
+    }, [user, open]);
+
     const handleSave = async () => {
+        if (!user) return;
         setIsSaving(true);
         try {
             const userRef = doc(db, 'users', user.uid);
@@ -71,7 +79,7 @@ export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProf
     };
     
     const handleAddRole = () => {
-        const newRole: UserRole = { role: 'subAdmin', scope: 'level', permissions: [] };
+        const newRole: UserRole = { role: 'subAdmin', scope: 'global', permissions: [] };
         setRoles([...roles, newRole]);
     };
     
@@ -86,40 +94,42 @@ export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProf
         newRoles[index] = { ...newRoles[index], ...updatedRole };
         setRoles(newRoles);
     };
+    
+    if (!user) return null;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="w-[90vw] max-w-2xl p-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
-                <div className="p-6">
+            <DialogContent className="w-[90vw] max-w-2xl p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white flex flex-col h-[80vh]">
+                <div className="p-6 pb-4">
                     <DialogHeader>
                         <DialogTitle>Edit Permissions for {user.displayName}</DialogTitle>
                         <DialogDescription>
                             Assign roles and specific permissions for this user.
                         </DialogDescription>
                     </DialogHeader>
-                    <ScrollArea className="h-96 mt-4 pr-4 -mr-4">
-                        <div className="space-y-6">
-                            {roles.map((role, index) => (
-                                <RoleEditor 
-                                    key={index}
-                                    role={role}
-                                    onRemove={() => handleRemoveRole(index)}
-                                    onChange={(updatedRole) => handleRoleChange(index, updatedRole)}
-                                />
-                            ))}
-                        </div>
-                    </ScrollArea>
-                    <div className="mt-6 flex justify-between items-center">
-                         <Button variant="outline" onClick={handleAddRole} className="rounded-xl">
-                            <PlusCircle className="mr-2 h-4 w-4" /> Add Role
+                </div>
+                <ScrollArea className="flex-1 px-6">
+                    <div className="space-y-6">
+                        {roles.map((role, index) => (
+                            <RoleEditor 
+                                key={index}
+                                role={role}
+                                onRemove={() => handleRemoveRole(index)}
+                                onChange={(updatedRole) => handleRoleChange(index, updatedRole)}
+                            />
+                        ))}
+                    </div>
+                </ScrollArea>
+                <div className="p-6 pt-4 mt-auto border-t border-slate-800 flex justify-between items-center">
+                     <Button variant="outline" onClick={handleAddRole} className="rounded-xl">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Role
+                    </Button>
+                    <div className="flex gap-2">
+                       <Button variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
+                        <Button onClick={handleSave} disabled={isSaving} className="rounded-xl">
+                           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                           Save Changes
                         </Button>
-                        <div className="flex gap-2">
-                           <Button variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
-                            <Button onClick={handleSave} disabled={isSaving} className="rounded-xl">
-                               {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                               Save Changes
-                            </Button>
-                        </div>
                     </div>
                 </div>
             </DialogContent>
@@ -128,10 +138,7 @@ export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProf
 }
 
 function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (updatedRole: Partial<UserRole>) => void, onRemove: () => void }) {
-    const { data: allItems } = useCollection<Content>('content');
     const [showFolderSelector, setShowFolderSelector] = useState(false);
-
-    const levels = useMemo(() => allItems?.filter(i => i.type === 'LEVEL'), [allItems]);
 
     const handleScopeSelect = (scopeItem: Content) => {
         onChange({ scopeId: scopeItem.id, scopeName: scopeItem.name });
@@ -147,15 +154,15 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
     };
 
     return (
-        <div className="glass-card p-4 rounded-xl space-y-4">
+        <div className="bg-black/20 border border-white/10 p-4 rounded-xl space-y-4">
             <div className="flex justify-between items-center">
                 <h4 className="font-semibold text-white">Sub-Admin Role</h4>
-                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400" onClick={onRemove}>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:bg-red-500/20" onClick={onRemove}>
                     <Trash2 size={16} />
                 </Button>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  <Select value={role.scope} onValueChange={(value) => onChange({ scope: value as UserRole['scope'], scopeId: undefined, scopeName: undefined })}>
                     <SelectTrigger className="bg-slate-800/60 border-slate-700 rounded-xl">
                         <SelectValue placeholder="Select scope..." />
@@ -171,22 +178,22 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
 
                 {role.scope !== 'global' && (
                      <Button variant="outline" className="rounded-xl justify-start truncate" onClick={() => setShowFolderSelector(true)}>
-                        {role.scopeId ? role.scopeName || role.scopeId : 'Select Item...'}
+                        {role.scopeId ? role.scopeName || role.scopeId : `Select ${role.scope}...`}
                     </Button>
                 )}
             </div>
 
-            <div className="space-y-2">
-                <p className="font-medium text-sm">Permissions:</p>
-                <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-3 pt-2">
+                <p className="font-medium text-sm text-slate-300">Permissions:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
                     {allPermissions.map(p => (
-                        <div key={p.id} className="flex items-center space-x-2 p-2 rounded-md hover:bg-white/10">
+                        <div key={p.id} className="flex items-center space-x-2 p-1 rounded-md">
                             <Checkbox 
                                 id={`${role.scopeId || 'global'}-${p.id}`}
                                 checked={role.permissions?.includes(p.id)}
                                 onCheckedChange={(checked) => handlePermissionChange(p.id, !!checked)}
                             />
-                             <label htmlFor={`${role.scopeId || 'global'}-${p.id}`} className="text-sm font-medium leading-none cursor-pointer">
+                             <label htmlFor={`${role.scopeId || 'global'}-${p.id}`} className="text-sm font-medium leading-none cursor-pointer text-slate-200">
                                 {p.label}
                             </label>
                         </div>
@@ -199,10 +206,9 @@ function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (u
                     open={showFolderSelector}
                     onOpenChange={setShowFolderSelector}
                     onSelect={handleScopeSelect}
-                    actionType={null} // We are just selecting a scope, not performing an action
+                    actionType={null} 
                  />
             )}
         </div>
     );
 }
-

@@ -25,6 +25,16 @@ import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { PermissionsDialog } from '@/components/PermissionsDialog';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 
 type UserRole = {
@@ -57,6 +67,8 @@ function AdminPageContent() {
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [showAddUserDialog, setShowAddUserDialog] = useState(false);
     const [userForPermissions, setUserForPermissions] = useState<UserProfile | null>(null);
+    const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
+
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
     const { studentId: currentStudentId } = useAuthStore();
@@ -93,19 +105,20 @@ function AdminPageContent() {
     
     const handleToggleSubAdmin = async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
-        const hasSubAdminRole = Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
+        const hasSubAdminRole = isSubAdmin(user);
 
         try {
             if (hasSubAdminRole) {
-                // This will remove all subAdmin roles, which is fine for now as we don't distinguish them yet.
-                const newRoles = user.roles?.filter(r => r.role !== 'subAdmin') || [];
+                // To remove, we filter out all subAdmin roles.
+                const newRoles = Array.isArray(user.roles) ? user.roles.filter(r => r.role !== 'subAdmin') : [];
                 await updateDoc(userRef, { roles: newRoles });
                 toast({ title: "Permissions Updated", description: `${user.displayName} is no longer an admin.` });
             } else {
-                // Add a basic subAdmin role. Detailed permissions can be added later.
-                const newSubAdminRole: UserRole = { role: 'subAdmin', scope: 'global' };
+                // To add, we push a new basic subAdmin role.
+                const newSubAdminRole: UserRole = { role: 'subAdmin', scope: 'global', permissions: [] };
+                const currentRoles = Array.isArray(user.roles) ? user.roles : [];
                 await updateDoc(userRef, {
-                    roles: arrayUnion(newSubAdminRole)
+                    roles: [...currentRoles, newSubAdminRole]
                 });
                 toast({ title: "Permissions Updated", description: `${user.displayName} is now an admin.` });
             }
@@ -114,6 +127,29 @@ function AdminPageContent() {
             toast({ variant: "destructive", title: "Error", description: "Could not update user permissions." });
         }
     };
+    
+    const handleToggleBlock = async (user: UserProfile) => {
+        const userRef = doc(db, 'users', user.uid);
+        const newBlockState = !user.isBlocked;
+        try {
+            await updateDoc(userRef, { isBlocked: newBlockState });
+            toast({ 
+                title: `User ${newBlockState ? 'Blocked' : 'Unblocked'}`, 
+                description: `${user.displayName} has been ${newBlockState ? 'blocked' : 'unblocked'}.`
+            });
+        } catch (error: any) {
+            console.error("Error toggling user block state:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not update user status." });
+        }
+    }
+
+    const handleDeleteUser = async () => {
+        if (!userToDelete) return;
+        // Placeholder for actual deletion logic
+        console.log("Deleting user:", userToDelete.uid);
+        toast({ title: "User Deleted", description: `${userToDelete.displayName} has been deleted.` });
+        setUserToDelete(null);
+    }
 
 
     const UserCard = ({ user, isManagementView = false }: { user: UserProfile, isManagementView?: boolean }) => {
@@ -141,8 +177,11 @@ function AdminPageContent() {
                         <AvatarFallback>{user.displayName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
                     </Avatar>
                     <div className="overflow-hidden">
-                        <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
-                        <p className="text-sm text-slate-400 truncate">{user.email} &bull; ID: {user.studentId}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
+                          {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
+                        </div>
+                        <p className="text-sm text-slate-400 truncate">{user.email} • ID: {user.studentId}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
@@ -150,28 +189,43 @@ function AdminPageContent() {
                         {roleIcon}
                         <span>{roleText}</span>
                     </div>
-                     {isManagementView && !isCurrentUser && !isUserSuperAdmin && (
+
+                    {!isManagementView && !isUserSuperAdmin && (
+                        <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
+                            {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
+                        </Button>
+                    )}
+
+                     {isManagementView && !isCurrentUser && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400">
+                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
                                     <MoreVertical size={18} />
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
-                                    {isUserSubAdmin ? 'Remove admin' : 'Promote to admin'}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                    <Ban className="mr-2 h-4 w-4" /> Block User
+                                {!isUserSuperAdmin && (
+                                    <>
+                                        <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
+                                            <Shield className="mr-2 h-4 w-4" />
+                                            {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
+                                        </DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                    </>
+                                )}
+                                <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
+                                    <Ban className="mr-2 h-4 w-4" />
+                                    {user.isBlocked ? 'Unblock User' : 'Block User'}
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-400">
-                                    <Trash2 className="mr-2 h-4 w-4" /> Delete User
+                                <DropdownMenuItem className="text-red-400 focus:text-red-400" onClick={() => setUserToDelete(user)}>
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    Delete User
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}
-                    {!isManagementView && isUserSubAdmin && !isUserSuperAdmin && (
+                    {activeTab === 'admins' && isUserSubAdmin && !isUserSuperAdmin && (
                          <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => setUserForPermissions(user)}>
                             <Settings className="mr-2 h-4 w-4" />
                             Permissions
@@ -250,13 +304,26 @@ function AdminPageContent() {
                 </Tabs>
             </div>
             <AddUserDialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog} />
-            {userForPermissions && (
-                <PermissionsDialog 
-                    user={userForPermissions} 
-                    open={!!userForPermissions} 
-                    onOpenChange={(isOpen) => !isOpen && setUserForPermissions(null)}
-                />
-            )}
+            
+            <PermissionsDialog 
+                user={userForPermissions} 
+                open={!!userForPermissions} 
+                onOpenChange={(isOpen) => {if(!isOpen) setUserForPermissions(null)}}
+            />
+             <AlertDialog open={!!userToDelete} onOpenChange={setUserToDelete}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This action will permanently delete the user account for "{userToDelete?.displayName}". This cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

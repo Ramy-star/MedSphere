@@ -22,13 +22,13 @@ import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
 import { FlashcardIcon } from './icons/FlashcardIcon';
 
 
-export type ActionType = 'select_source' | 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | 'move' | 'copy';
+export type ActionType = 'select_source' | 'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | 'move' | 'copy' | null;
 
 type FolderSelectorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSelect: (item: Content) => void;
-  actionType: ActionType | null;
+  actionType: ActionType;
   currentItemId?: string;
 };
 
@@ -99,12 +99,15 @@ const getIconForItem = (item: Content): { Icon: React.ElementType, color: string
 };
 
 function FolderTree({ node, onSelect, selectedId, level = 0, actionType, currentItemId }: { node: TreeNode, onSelect: (item: Content) => void, selectedId: string | null, level?: number, actionType: ActionType | null, currentItemId?: string }) {
-    const [isOpen, setIsOpen] = useState(false); // Collapsed by default
+    const [isOpen, setIsOpen] = useState(level < 2); // Default open first two levels
 
     const isSelectable = useMemo(() => {
-        if (!actionType) return false;
         if (node.id === currentItemId) return false;
 
+        if (actionType === null) { // For scope selection
+            return node.type !== 'FILE' && node.type !== 'LINK';
+        }
+        
         switch (actionType) {
             case 'select_source':
                 return node.type === 'FILE' && node.metadata?.mime === 'application/pdf';
@@ -153,16 +156,16 @@ function FolderTree({ node, onSelect, selectedId, level = 0, actionType, current
                 style={{ paddingLeft: `${level * 1.5 + 0.5}rem` }}
             >
                 <div className="flex items-center gap-3 flex-1 overflow-hidden">
-                   <div 
+                   <button 
                      onClick={handleToggle}
-                     className={cn("p-1 rounded-full", hasVisibleChildren && "hover:bg-white/10")}
+                     className={cn("p-1 rounded-full", hasVisibleChildren ? "hover:bg-white/10" : "cursor-default")}
                     >
                      {hasVisibleChildren ? (
                         <ChevronRight className={cn("h-4 w-4 transition-transform", isOpen && "rotate-90")} />
                      ) : (
                         <div className="w-4 h-4" /> // Placeholder for alignment
                      )}
-                   </div>
+                   </button>
                    <Icon className={cn("w-5 h-5 shrink-0", color)} />
                    <span className="truncate">{node.name}</span>
                 </div>
@@ -187,9 +190,11 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType,
     if (actionType === 'select_source') {
         return buildTree(allItems);
     }
-    // For other actions, allow selecting folders or compatible files for merging
-    const folderItems = allItems; 
-    return buildTree(folderItems);
+    const filteredItems = allItems.filter(item => {
+        if (actionType === null) return item.type !== 'FILE' && item.type !== 'LINK'; // For scope selection
+        return true;
+    });
+    return buildTree(filteredItems);
   }, [allItems, actionType]);
   
   const handleSelect = useCallback((item: Content) => {
@@ -197,7 +202,7 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType,
   }, []);
 
   const handleConfirm = () => {
-    if (selectedItem && actionType) {
+    if (selectedItem && actionType !== undefined) {
         onSelect(selectedItem);
     }
   };
@@ -224,7 +229,7 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType,
           case 'save_exam_md':
               return { title: 'Select Destination', buttonText: 'Save Here' };
           default:
-              return { title: 'Select Item', buttonText: 'Confirm' };
+              return { title: 'Select Item', buttonText: 'Select' };
       }
   }
   

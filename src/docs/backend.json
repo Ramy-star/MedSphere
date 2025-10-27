@@ -41,6 +41,7 @@
         "displayName": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time"},
+        "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
         "roles": {
           "type": "array",
           "description": "An array of roles and permissions assigned to the user.",
@@ -48,16 +49,18 @@
             "type": "object",
             "properties": {
               "role": { "type": "string", "enum": ["superAdmin", "subAdmin"], "description": "The role of the user." },
-              "scope": { "type": "string", "enum": ["level", "semester", "subject", "folder"], "description": "The scope of the sub-admin's permissions (e.g., a specific level ID)." },
-              "scopeId": { "type": "string", "description": "The ID of the item the permission applies to (e.g., a specific level or folder ID)." },
+              "scope": { "type": "string", "enum": ["global", "level", "semester", "subject", "folder"], "description": "The scope of the sub-admin's permissions (e.g., a specific level ID)." },
+              "scopeId": { "type": "string", "description": "The ID of the item the permission applies to." },
+              "scopeName": { "type": "string", "description": "The display name of the scope item." },
               "permissions": {
                 "type": "array",
                 "items": {
                   "type": "string",
-                  "enum": ["canAddContent", "canDeleteContent", "canEditContent", "canManageUsers", "canAccessQuestionCreator", "canAccessAdminPanel"]
+                  "enum": ["canAddContent", "canEditContent", "canDeleteContent", "canManageUsers", "canAccessQuestionCreator", "canAccessAdminPanel"]
                 }
               }
-            }
+            },
+            "required": ["role", "scope"]
           }
         }
       },
