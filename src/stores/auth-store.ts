@@ -28,6 +28,26 @@ type AuthState = {
   logout: () => void;
 };
 
+// Function to wait for db to be initialized
+const waitForDB = (timeout = 5000) => {
+    return new Promise((resolve) => {
+        if (db) {
+            resolve(true);
+            return;
+        }
+        const startTime = Date.now();
+        const interval = setInterval(() => {
+            if (db) {
+                clearInterval(interval);
+                resolve(true);
+            } else if (Date.now() - startTime > timeout) {
+                clearInterval(interval);
+                resolve(false);
+            }
+        }, 100);
+    });
+};
+
 const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isSuperAdmin: false,
@@ -39,9 +59,9 @@ const useAuthStore = create<AuthState>((set, get) => ({
     
     if (typeof window !== 'undefined') {
       try {
-        // This function is now called only after Firebase is initialized
-        if (!db) {
-            console.error("Firestore (db) is not initialized in checkAuth.");
+        const dbReady = await waitForDB();
+        if (!dbReady) {
+            console.error("Firestore (db) could not be initialized in time.");
             set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
             return;
         }
