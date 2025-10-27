@@ -296,7 +296,7 @@ function AdminPageContent() {
                         <Search className={cn(
                             "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300",
                             (isSearchFocused || searchQuery) ? 'text-white' : 'text-slate-400',
-                            isSearchFocused && "transform scale-110"
+                            isSearchFocused && "transform rotate-90"
                         )} />
                         <Input 
                             placeholder="Search by name, email, or ID..."
@@ -391,3 +391,5 @@ export default function AdminPage() {
         </Suspense>
     )
 }
+
+    
