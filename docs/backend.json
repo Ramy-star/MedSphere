@@ -8,7 +8,7 @@
       "properties": {
         "id": { "type": "string", "description": "Unique identifier for the content item." },
         "name": { "type": "string", "description": "Display name of the content item." },
-        "type": { "type": "string", "enum": ["LEVEL", "SEMESTER", "SUBJECT", "FOLDER", "FILE", "LINK", "INTERACTIVE_QUIZ"], "description": "The type of content." },
+        "type": { "type": "string", "enum": ["LEVEL", "SEMESTER", "SUBJECT", "FOLDER", "FILE", "LINK", "INTERACTIVE_QUIZ", "INTERACTIVE_EXAM", "INTERACTIVE_FLASHCARD"], "description": "The type of content." },
         "parentId": { "type": "string", "description": "The ID of the parent item. Null for top-level items." },
         "order": { "type": "number", "description": "The order of the item within its parent." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the item was created." },
@@ -22,7 +22,8 @@
             "mime": { "type": "string", "description": "MIME type of the file." },
             "storagePath": { "type": "string", "description": "Path to the file in Firebase Cloud Storage." },
             "sourceFileId": { "type": "string", "description": "The ID of the original source file for generated content." },
-            "quizData": { "type": "string", "description": "JSON string containing the data for an interactive quiz." }
+            "quizData": { "type": "string", "description": "JSON string containing the data for an interactive quiz." },
+            "isHidden": { "type": "boolean", "description": "Whether the content is hidden from non-admins." }
           }
         }
       },
@@ -35,6 +36,7 @@
       "properties": {
         "uid": { "type": "string" },
         "username": { "type": "string", "description": "Unique, user-chosen username." },
+        "studentId": { "type": "string", "description": "The user's verified university student ID." },
         "email": { "type": "string", "format": "email" },
         "displayName": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
@@ -42,12 +44,11 @@
         "roles": {
           "type": "object",
           "properties": {
-            "admin": { "type": "boolean" },
-            "subAdminForLevel": { "type": "string", "description": "ID of the level this user is a sub-admin for." }
+            "isSuperAdmin": { "type": "boolean" }
           }
         }
       },
-      "required": ["uid", "username"]
+      "required": ["uid", "studentId"]
     },
     "QuestionSet": {
       "title": "Question Set",
@@ -59,11 +60,25 @@
         "fileName": { "type": "string", "description": "The name of the source file for the questions." },
         "textQuestions": { "type": "string", "description": "The questions in plain text format." },
         "jsonQuestions": { "type": "string", "description": "The questions in JSON format." },
+        "textExam": { "type": "string", "description": "The exam questions in plain text format." },
+        "jsonExam": { "type": "string", "description": "The exam questions in JSON format." },
+        "textFlashcard": { "type": "string", "description": "The flashcard questions in plain text format." },
+        "jsonFlashcard": { "type": "string", "description": "The flashcard questions in JSON format." },
         "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the set was created." },
         "sourceFileId": { "type": "string", "description": "The ID of the original source file." },
         "order": { "type": "number", "description": "The display order of the question set." }
       },
       "required": ["id", "userId", "fileName", "textQuestions", "jsonQuestions", "createdAt", "sourceFileId", "order"]
+    },
+    "ClaimedStudentId": {
+      "title": "Claimed Student ID",
+      "description": "A record to show that a student ID has been claimed by a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who claimed this ID." },
+        "claimedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the ID was claimed." }
+      },
+      "required": ["userId", "claimedAt"]
     }
   },
   "auth": {
@@ -81,8 +96,10 @@
     "/users/{userId}/questionSets/{questionSetId}": {
         "schema": { "$ref": "#/entities/QuestionSet" },
         "description": "Stores user-specific generated question sets."
+    },
+    "/claimedStudentIds/{studentId}": {
+        "schema": { "$ref": "#/entities/ClaimedStudentId" },
+        "description": "Stores a record of student IDs that have been linked to an account to ensure uniqueness."
     }
   }
 }
-
-    
