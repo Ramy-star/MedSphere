@@ -253,7 +253,11 @@ function AdminPageContent() {
                             </div>
                         </div>
                         {/* Desktop view */}
-                        <p className="hidden sm:block text-sm text-slate-400 truncate">{user.email} • ID: {user.studentId}</p>
+                        <p className="hidden sm:flex items-center text-sm text-slate-400">
+                          <span className="truncate">{user.email}</span>
+                          <span className="mx-2">•</span>
+                          <span>ID: {user.studentId}</span>
+                        </p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
@@ -455,3 +459,5 @@ export default function AdminPage() {
         </Suspense>
     )
 }
+
+    
