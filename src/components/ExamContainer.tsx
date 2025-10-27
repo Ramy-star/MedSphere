@@ -8,13 +8,14 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import type { Lecture, ExamResult, MCQ } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
 import { useFirebase } from '@/firebase/provider';
 import { useAuthStore } from '@/stores/auth-store';
+import level2StudentData from '@/lib/student-ids/level-2-data.json';
 
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
@@ -906,6 +907,15 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
     const [reportData, setReportData] = useState<{ userName: string; studentId: string; score: number; total: number; percentage: number }[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const studentDataMap = useMemo(() => {
+        const map = new Map<string, { studentName: string; academicEmail: string }>();
+        level2StudentData.forEach(student => {
+            const id = String(student["Student ID"]);
+            map.set(id, { studentName: student["Student Name"], academicEmail: student["Academic Email"] });
+        });
+        return map;
+    }, []);
+
     useEffect(() => {
         if (isOpen && db) {
             const fetchReportData = async () => {
@@ -930,14 +940,16 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                     return;
                 }
                 
-                // Since we don't have a users collection, we just show student IDs
-                const finalData = Object.values(resultsByUser).map(result => ({
-                    userName: `Student ${result.userId}`, // Placeholder name
-                    studentId: result.userId,
-                    score: result.score,
-                    total: result.totalQuestions,
-                    percentage: result.percentage,
-                })).sort((a, b) => b.percentage - a.percentage);
+                const finalData = Object.values(resultsByUser).map(result => {
+                    const studentDetails = studentDataMap.get(result.userId);
+                    return {
+                        userName: studentDetails?.studentName || `Student ${result.userId}`,
+                        studentId: result.userId,
+                        score: result.score,
+                        total: result.totalQuestions,
+                        percentage: result.percentage,
+                    };
+                }).sort((a, b) => b.percentage - a.percentage);
 
                 setReportData(finalData);
                 setLoading(false);
@@ -945,7 +957,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
 
             fetchReportData();
         }
-    }, [isOpen, db, lectureId]);
+    }, [isOpen, db, lectureId, studentDataMap]);
 
 
     return (
