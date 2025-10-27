@@ -1,6 +1,6 @@
 
 import { create } from 'zustand';
-import { verifyAndCreateUser, getUserProfile, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
+import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -41,28 +41,46 @@ type AuthState = {
 
 let userListenerUnsubscribe: () => void = () => {};
 
-const hasPermission = (user: UserProfile | null | undefined, isSuperAdmin: boolean, permission: string, path: string): boolean => {
+
+const hasPermission = (user: UserProfile | null | undefined, permission: string, path: string): boolean => {
     if (!user) return false;
-    if (isSuperAdmin) return true;
 
-    const subAdminRoles = user.roles?.filter(r => r.role === 'subAdmin') || [];
-    if (subAdminRoles.length === 0) return false;
+    // Super admin always has permission.
+    if (user.roles?.some(r => r.role === 'superAdmin')) return true;
 
-    for (const role of subAdminRoles) {
-        if (role.permissions?.includes(permission)) {
-            if (role.scope === 'global') return true;
+    // Find all sub-admin roles that grant the specific permission.
+    const relevantRoles = user.roles?.filter(
+        r => r.role === 'subAdmin' && r.permissions?.includes(permission)
+    ) || [];
 
+    if (relevantRoles.length === 0) return false;
+
+    // Check if any of the relevant roles match the current path.
+    for (const role of relevantRoles) {
+        // Global scope always grants permission.
+        if (role.scope === 'global') return true;
+
+        // For specific scopes, check if the path is within that scope.
+        if (role.scopeId) {
             const pathSegments = path.split('/').filter(Boolean);
-            if (pathSegments.length < 2) continue;
-
-            const scopeType = pathSegments[0];
-            const scopeId = pathSegments[1];
-
-            if (role.scope === scopeType && role.scopeId === scopeId) {
+            
+            // Check for /level/[levelId] or /folder/[folderId]
+            // The path needs to contain the scopeId of the role.
+            if (path.includes(`/folder/${role.scopeId}`) || path.includes(`/level/${role.scopeId}`)) {
                 return true;
+            }
+            
+            // This is a simple check. For deeper nested content, we might need to
+            // traverse the hierarchy, but for now, we'll check if the current path
+            // starts with the role's scope.
+            // Example: role scope is folder 'xyz'. Path is /folder/xyz.
+            const scopePath = `/${role.scope}/${role.scopeId}`;
+            if (path.startsWith(scopePath)) {
+              return true;
             }
         }
     }
+    
     return false;
 };
 
@@ -83,10 +101,14 @@ const listenToUserProfile = (studentId: string) => {
             const userProfile = { ...doc.data() } as UserProfile;
             const isAdmin = await checkSuperAdmin(userProfile.studentId);
             
-            // Check if user is blocked
+            // Add superAdmin role if applicable, for simplified 'can' check.
+            if(isAdmin && (!userProfile.roles || !userProfile.roles.some(r => r.role === 'superAdmin'))) {
+                if(!userProfile.roles) userProfile.roles = [];
+                userProfile.roles.push({ role: 'superAdmin', scope: 'global' });
+            }
+
             if (userProfile.isBlocked) {
                 useAuthStore.getState().logout();
-                // Optionally, show a toast message about being blocked
             } else {
                  useAuthStore.setState({
                     isAuthenticated: true,
@@ -96,12 +118,10 @@ const listenToUserProfile = (studentId: string) => {
                 });
             }
         } else {
-            // Document was deleted, log the user out
             useAuthStore.getState().logout();
         }
     }, (error) => {
         console.error("Error listening to user profile:", error);
-        // On error (e.g. permissions), log the user out as a safeguard
         useAuthStore.getState().logout();
     });
 };
@@ -122,7 +142,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
     try {
         const storedId = typeof window !== 'undefined' ? localStorage.getItem(VERIFIED_STUDENT_ID_KEY) : null;
         if (storedId) {
-            // Set up a real-time listener instead of a one-time fetch
             listenToUserProfile(storedId);
         } else {
             set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false });
@@ -138,7 +157,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
       const userProfile = await verifyAndCreateUser(studentId);
       if (userProfile) {
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.studentId);
-        // After successful login, start listening for real-time updates
         listenToUserProfile(userProfile.studentId);
         return true;
       } else {
@@ -153,7 +171,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   logout: () => {
-    // Stop listening to user profile changes
     if (userListenerUnsubscribe) {
       userListenerUnsubscribe();
       userListenerUnsubscribe = () => {};
@@ -175,15 +192,14 @@ const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   can: (permission: string, path: string): boolean => {
-      const { user, isSuperAdmin } = get();
-      if (isSuperAdmin) return true;
-      return hasPermission(user, isSuperAdmin, permission, path);
+      const { user } = get();
+      return hasPermission(user, permission, path);
   },
   
   canAddContent: (path: string): boolean => {
-      const { user, isSuperAdmin } = get();
+      const { user } = get();
       if (!user) return false;
-      if (isSuperAdmin) return true;
+      if (user.roles?.some(r => r.role === 'superAdmin')) return true;
 
       const subAdminRoles = user.roles?.filter(r => r.role === 'subAdmin') || [];
       if (subAdminRoles.length === 0) return false;
@@ -193,11 +209,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
       for (const role of subAdminRoles) {
           if (role.permissions?.some(p => addPermissions.includes(p))) {
               if (role.scope === 'global') return true;
-              const pathSegments = path.split('/').filter(Boolean);
-              if (pathSegments.length < 2) continue;
-              const scopeType = pathSegments[0];
-              const scopeId = pathSegments[1];
-              if (role.scope === scopeType && role.scopeId === scopeId) {
+              
+              if (role.scopeId && path.includes(role.scopeId)) {
                   return true;
               }
           }
