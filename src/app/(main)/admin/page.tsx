@@ -37,6 +37,8 @@ import {
 } from "@/components/ui/alert-dialog"
 
 
+const SUPER_ADMIN_ID = "221100154";
+
 type UserRole = {
     role: 'superAdmin' | 'subAdmin';
     scope: 'global' | 'level' | 'semester' | 'subject' | 'folder';
@@ -72,7 +74,7 @@ function AdminPageContent() {
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
-    const { studentId: currentStudentId, isSuperAdmin: isCurrentUserSuperAdmin } = useAuthStore();
+    const { studentId: currentStudentId } = useAuthStore();
     const { toast } = useToast();
 
     const handleTabChange = (value: string) => {
@@ -80,7 +82,7 @@ function AdminPageContent() {
     };
 
     const isSuperAdmin = (user: UserProfile) => {
-        return user.studentId === currentStudentId && isCurrentUserSuperAdmin;
+        return user.studentId === SUPER_ADMIN_ID;
     };
     
     const isSubAdmin = (user: UserProfile) => {
@@ -96,7 +98,7 @@ function AdminPageContent() {
             if (!aIsSuper && bIsSuper) return 1;
             return (a.displayName || a.username || '').localeCompare(b.displayName || b.username || '');
         });
-    }, [users, currentStudentId, isCurrentUserSuperAdmin]);
+    }, [users]);
 
 
     const filteredUsers = useMemo(() => {
@@ -116,7 +118,7 @@ function AdminPageContent() {
         if (!filteredUsers) return [];
         // Only show sub-admins, not the super admin.
         return filteredUsers.filter(user => isSubAdmin(user) && !isSuperAdmin(user));
-    }, [filteredUsers, isCurrentUserSuperAdmin, currentStudentId]);
+    }, [filteredUsers]);
     
     const handleToggleSubAdmin = async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
@@ -219,7 +221,7 @@ function AdminPageContent() {
                         <span>{roleText}</span>
                     </div>
                    
-                    {!isManagementView && !isUserSuperAdmin && (
+                    {!isUserSuperAdmin && (activeTab === 'users' || activeTab === 'management') && (
                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
                             {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                         </Button>
