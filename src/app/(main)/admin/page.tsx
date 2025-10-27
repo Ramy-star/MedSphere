@@ -422,7 +422,7 @@ function AdminPageContent() {
             )
         }
         return userList.map((user, index) => (
-             <div key={user.uid} className="my-1.5 sm:my-0 sm:border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
+             <div key={user.uid} className="my-1.5 sm:my-0 border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
                 <UserCard user={user} />
             </div>
         ));
