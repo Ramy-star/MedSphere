@@ -141,7 +141,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       },
   ]
 
-  const visibleMenuItems = menuItems.filter(item => can(item.permission, pathname));
+  const visibleMenuItems = menuItems.filter(item => can(item.permission, parentId));
   
   if (!user || visibleMenuItems.length === 0) return null;
 

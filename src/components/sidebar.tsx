@@ -266,26 +266,25 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     }
     setActivePath(newActivePath);
 
-    // Only auto-open path if local storage is empty (first visit logic)
-    const savedOpenItems = localStorage.getItem('sidebarOpenItems');
-    if (!savedOpenItems) {
-        const newOpenItems = new Set<string>();
-        let itemToOpen = itemMap.get(currentId);
-        while(itemToOpen) {
-            if (itemToOpen.parentId) {
-                newOpenItems.add(itemToOpen.parentId);
-            }
-            itemToOpen = itemToOpen.parentId ? itemMap.get(itemToOpen.parentId) : undefined;
+    // Auto-open path on navigation
+    const newOpenItems = new Set<string>(openItems);
+    let itemToOpen = itemMap.get(currentId);
+    while(itemToOpen) {
+        if (itemToOpen.parentId) {
+            newOpenItems.add(itemToOpen.parentId);
         }
-        setOpenItems(newOpenItems);
+        itemToOpen = itemToOpen.parentId ? itemMap.get(itemToOpen.parentId) : undefined;
     }
-  }, [pathname, allItems, itemMap]);
+    setOpenItems(newOpenItems);
+
+  }, [pathname, allItems, itemMap, openItems]);
 
   useEffect(() => {
     if(allItems) {
       findAndOpenActivePath();
     }
-  }, [pathname, allItems, findAndOpenActivePath]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, allItems, itemMap]);
 
   const handleToggle = (id: string, hasChildren: boolean) => {
     if (!hasChildren) return;

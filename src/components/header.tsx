@@ -83,7 +83,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
         </div>
         
         <TooltipProvider>
-            {can('canAccessQuestionCreator', pathname) && (
+            {can('canAccessQuestionCreator', null) && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
@@ -95,7 +95,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     </TooltipContent>
                 </Tooltip>
             )}
-            {can('canAccessAdminPanel', pathname) && (
+            {can('canAccessAdminPanel', null) && (
                  <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>

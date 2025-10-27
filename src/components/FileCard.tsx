@@ -205,6 +205,7 @@ export const FileCard = React.memo(function FileCard({
     };
 
     const handleUpdateClick = (e: React.MouseEvent) => {
+        if (!can('canUpdateFile', item.id)) return;
         e.stopPropagation();
         e.preventDefault();
         updateFileInputRef.current?.click();
@@ -243,7 +244,7 @@ export const FileCard = React.memo(function FileCard({
                 onChange={handleFileUpdate}
             />
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
-                {showDragHandle && !isMobile && can('canMove', pathname) && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+                {showDragHandle && !isMobile && can('canMove', item.id) && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
             </div>
 
             <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -311,46 +312,46 @@ export const FileCard = React.memo(function FileCard({
                             </DropdownMenuItem>
                         )}
                         
-                        {(can('canRename', pathname) || can('canDelete', pathname)) && <DropdownMenuSeparator />}
+                        {(can('canRename', item.id) || can('canDelete', item.id)) && <DropdownMenuSeparator />}
 
-                        {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && can('canCreateQuestions', pathname) && (
+                        {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && can('canCreateQuestions', item.id) && (
                             <DropdownMenuItem onSelect={(e) => handleAction(e, handleCreateQuestions)}>
                                 <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                 <span>Create Questions</span>
                             </DropdownMenuItem>
                         )}
-                        {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', pathname) && (
+                        {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', item.id) && (
                             <DropdownMenuItem onSelect={handleUpdateClick}>
                               <RefreshCw className="mr-2 h-4 w-4" />
                               <span>Update</span>
                             </DropdownMenuItem>
                         )}
-                        {can('canRename', pathname) && (
+                        {can('canRename', item.id) && (
                             <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
                                 <Edit className="mr-2 h-4 w-4" />
                                 <span>Rename</span>
                             </DropdownMenuItem>
                         )}
-                        {can('canMove', pathname) && (
+                        {can('canMove', item.id) && (
                             <DropdownMenuItem onSelect={(e) => handleAction(e, onMove)}>
                                 <Move className="mr-2 h-4 w-4" />
                                 <span>Move</span>
                             </DropdownMenuItem>
                         )}
-                        {can('canCopy', pathname) && (
+                        {can('canCopy', item.id) && (
                             <DropdownMenuItem onSelect={(e) => handleAction(e, onCopy)}>
                                 <Copy className="mr-2 h-4 w-4" />
                                 <span>Copy</span>
                             </DropdownMenuItem>
                         )}
-                        {can('canToggleVisibility', pathname) && (
+                        {can('canToggleVisibility', item.id) && (
                              <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
                                 <VisibilityIcon className="mr-2 h-4 w-4" />
                                 <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
                             </DropdownMenuItem>
                         )}
                         
-                        {can('canDelete', pathname) && (
+                        {can('canDelete', item.id) && (
                             <>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">

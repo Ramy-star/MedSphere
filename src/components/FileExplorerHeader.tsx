@@ -93,7 +93,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
         </h1>
       </div>
       <div className="flex gap-2">
-        {canAddContent(pathname) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
+        {canAddContent(currentFolder?.id || null) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
           <div>
             <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
           </div>

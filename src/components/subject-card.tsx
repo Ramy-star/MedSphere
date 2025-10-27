@@ -59,7 +59,7 @@ export const SubjectCard = React.memo(function SubjectCard({
             <div>
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />
-                    {can('canRename', pathname) && (
+                    {can('canRename', subject.id) && (
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
@@ -83,19 +83,19 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 className="w-48 p-2"
                                 align="end"
                             >
-                                {can('canRename', pathname) && (
+                                {can('canRename', subject.id) && (
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)} onClick={(e) => e.stopPropagation()}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
                                 )}
-                                {can('canChangeIcon', pathname) && (
+                                {can('canChangeIcon', subject.id) && (
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(subject))} onClick={(e) => e.stopPropagation()}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
                                 )}
-                                {can('canDelete', pathname) && (
+                                {can('canDelete', subject.id) && (
                                     <>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10" onClick={(e) => e.stopPropagation()}>

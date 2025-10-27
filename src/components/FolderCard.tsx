@@ -81,38 +81,38 @@ export const FolderCard = React.memo(function FolderCard({
           className="w-48 p-2"
           align="end"
       >
-          {can('canRename', pathname) && (
+          {can('canRename', item.id) && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)} onClick={(e) => e.stopPropagation()}>
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Rename</span>
             </DropdownMenuItem>
           )}
-          {can('canChangeIcon', pathname) && (
+          {can('canChangeIcon', item.id) && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(item))} onClick={(e) => e.stopPropagation()}>
                 <ImageIcon className="mr-2 h-4 w-4" />
                 <span>Change Icon</span>
             </DropdownMenuItem>
           )}
-          {can('canMove', pathname) && (
+          {can('canMove', item.id) && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, onMove)}>
               <Move className="mr-2 h-4 w-4" />
               <span>Move</span>
             </DropdownMenuItem>
           )}
-          {can('canCopy', pathname) && (
+          {can('canCopy', item.id) && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, onCopy)}>
               <Copy className="mr-2 h-4 w-4" />
               <span>Copy</span>
             </DropdownMenuItem>
           )}
-          {can('canToggleVisibility', pathname) && (
+          {can('canToggleVisibility', item.id) && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
               <VisibilityIcon className="mr-2 h-4 w-4" />
               <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
             </DropdownMenuItem>
           )}
 
-          {can('canDelete', pathname) && (
+          {can('canDelete', item.id) && (
             <>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10" onClick={(e) => e.stopPropagation()}>
@@ -144,7 +144,7 @@ export const FolderCard = React.memo(function FolderCard({
                 className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
-                {!isMobile && can('canMove', pathname) && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
+                {!isMobile && can('canMove', item.id) && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
                 <div className="flex items-center gap-3 overflow-hidden flex-1">
                     {item.metadata?.iconURL ? (
                        <Image 
@@ -166,7 +166,7 @@ export const FolderCard = React.memo(function FolderCard({
                         {createdAt}
                     </p>
                     
-                    {can('canRename', pathname) && (
+                    {can('canRename', item.id) && (
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
@@ -203,7 +203,7 @@ export const FolderCard = React.memo(function FolderCard({
       >
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
-              {can('canRename', pathname) && (
+              {can('canRename', item.id) && (
                   <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                        <TooltipProvider>
                             <Tooltip>
