@@ -1,8 +1,12 @@
 
+'use client';
+
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection, query, where, orderBy } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, orderBy } from 'firebase/firestore';
+import type { Content } from '@/lib/contentService';
+
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
@@ -27,13 +31,14 @@ type UserProfile = {
   isBlocked?: boolean;
 };
 
-type ItemHierarchy = { [id: string]: string[] };
+type ItemHierarchy = { [id: string]: string[] }; // Maps item ID to its array of parent IDs
 
 type AuthState = {
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   studentId: string | null;
   user: UserProfile | null | undefined;
+  loading: boolean;
   itemHierarchy: ItemHierarchy;
   buildHierarchy: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -45,39 +50,62 @@ type AuthState = {
 
 let userListenerUnsubscribe: () => void = () => {};
 
+/**
+ * Checks if a user has a specific permission for a given item.
+ * This is the core logic for the roles and permissions system.
+ */
 const hasPermission = (user: UserProfile | null | undefined, permission: string, itemId: string | null, hierarchy: ItemHierarchy): boolean => {
-    if (!user) return false;
-
-    // Super Admins can do anything.
-    if (user.roles?.some(r => r.role === 'superAdmin')) return true;
-
-    // Page-level permissions are not tied to a specific item.
-    const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator'];
-    if (pagePermissions.includes(permission)) {
-        return user.roles?.some(r => r.permissions?.includes(permission)) || false;
+    if (!user) {
+        return false;
     }
 
-    const relevantRoles = user.roles?.filter(r => r.role === 'subAdmin' && r.permissions?.includes(permission)) || [];
-    if (relevantRoles.length === 0) return false;
+    // 1. Super Admins can do anything.
+    if (user.roles?.some(r => r.role === 'superAdmin')) {
+        return true;
+    }
 
-    // Check global scope first
-    if (relevantRoles.some(r => r.scope === 'global')) return true;
+    // 2. Handle page-level permissions separately. These should work regardless of scope.
+    const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator'];
+    if (pagePermissions.includes(permission)) {
+        // Check if ANY of the user's roles grant this page-level permission.
+        return user.roles?.some(role => role.permissions?.includes(permission)) || false;
+    }
+
+    // 3. For content-related permissions, check roles and scopes.
+    const relevantRoles = user.roles?.filter(
+        role => role.role === 'subAdmin' && role.permissions?.includes(permission)
+    ) || [];
+
+    if (relevantRoles.length === 0) {
+        return false;
+    }
+
+    // 4. Check if any relevant role has a global scope.
+    const hasGlobalScope = relevantRoles.some(role => role.scope === 'global');
+    if (hasGlobalScope) {
+        return true;
+    }
+
+    // 5. If we need to check a specific item (itemId is not null) against scoped roles.
+    if (itemId === null) {
+        // This means we are checking a content permission (like 'canAddFolder') at the root level.
+        // Without a global scope, this is not allowed.
+        return false;
+    }
     
-    // If checking a top-level action (no specific item), it's not allowed unless global
-    if (itemId === null) return false;
+    // Get the item's ancestry path (including itself).
+    const itemPath = [...(hierarchy[itemId] || []), itemId];
 
-    // Get the full ancestry path for the item
-    const itemPath = hierarchy[itemId] || [];
-    const fullItemPath = [...itemPath, itemId];
-
+    // Check if any of the item's ancestors (or the item itself) match a role's scopeId.
     for (const role of relevantRoles) {
-        if (role.scopeId && fullItemPath.includes(role.scopeId)) {
+        if (role.scopeId && itemPath.includes(role.scopeId)) {
             return true;
         }
     }
-    
+
     return false;
 };
+
 
 const listenToUserProfile = (studentId: string) => {
     if (userListenerUnsubscribe) userListenerUnsubscribe();
@@ -92,21 +120,22 @@ const listenToUserProfile = (studentId: string) => {
                 return;
             }
             
-            const isAdmin = await checkSuperAdmin(userProfile.studentId);
-            
+            const isSuper = await checkSuperAdmin(userProfile.studentId);
             const hasSuperAdminRole = userProfile.roles?.some(r => r.role === 'superAdmin');
 
-            if(isAdmin && !hasSuperAdminRole) {
+            if(isSuper && !hasSuperAdminRole) {
                 userProfile.roles = [...(userProfile.roles || []), { role: 'superAdmin', scope: 'global' }];
             }
 
             useAuthStore.setState({
                 isAuthenticated: true,
                 studentId: userProfile.studentId,
-                isSuperAdmin: isAdmin,
+                isSuperAdmin: isSuper,
                 user: userProfile,
+                loading: false,
             });
         } else {
+            // User document was deleted, log them out.
             useAuthStore.getState().logout();
         }
     }, (error) => {
@@ -120,7 +149,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isSuperAdmin: false,
   studentId: null,
-  user: undefined,
+  user: undefined, // undefined means we haven't checked yet
+  loading: true,
   itemHierarchy: {},
 
   buildHierarchy: async () => {
@@ -131,7 +161,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     const items = new Map(contentSnapshot.docs.map(d => [d.id, d.data()]));
 
     for (const [id, item] of items.entries()) {
-        const path = [];
+        const path: string[] = [];
         let currentParentId = item.parentId;
         while(currentParentId) {
             path.unshift(currentParentId);
@@ -144,18 +174,25 @@ const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   checkAuth: async () => {
+    if (typeof window === 'undefined') {
+      set({ loading: false, user: null });
+      return;
+    };
+
+    set({ loading: true });
     if (userListenerUnsubscribe) userListenerUnsubscribe();
     try {
         const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         if (storedId) {
-            get().buildHierarchy(); // Build hierarchy on auth check
+            // Re-fetch hierarchy every time auth is checked to ensure it's up-to-date
+            await get().buildHierarchy();
             listenToUserProfile(storedId);
         } else {
-            set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false });
+            set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
         }
     } catch (e) {
       console.error("Auth check failed:", e);
-      set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false });
+      set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
     }
   },
 
@@ -164,8 +201,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
       const userProfile = await verifyAndCreateUser(studentId);
       if (userProfile) {
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.studentId);
-        get().buildHierarchy();
-        listenToUserProfile(userProfile.studentId);
+        await get().checkAuth(); // This will now build hierarchy and set up the listener
         return true;
       } else {
         get().logout();
@@ -189,9 +225,13 @@ const useAuthStore = create<AuthState>((set, get) => ({
       studentId: null,
       isSuperAdmin: false,
       user: null,
+      loading: false,
       itemHierarchy: {},
     });
-    if (typeof window !== 'undefined') window.location.href = '/';
+    // Don't force redirect immediately, let components react to state change
+    if (typeof window !== 'undefined' && window.location.pathname !== '/') {
+        window.location.href = '/';
+    }
   },
 
   can: (permission: string, itemId: string | null): boolean => {
@@ -200,17 +240,18 @@ const useAuthStore = create<AuthState>((set, get) => ({
   },
   
   canAddContent: (parentId: string | null): boolean => {
-      const { user, itemHierarchy, can } = get();
+      const { user, can } = get();
       if (!user) return false;
       
       const addPermissions = ['canAddClass', 'canAddFolder', 'canUploadFile', 'canAddLink', 'canCreateFlashcard'];
       
-      // An admin with any of the "add" permissions for a folder (or globally) should see the "Add Content" button.
-      // The individual items within the menu will be filtered by their specific 'can' check.
       return addPermissions.some(p => can(p, parentId));
   }
 }));
 
-export { useAuthStore };
+// Initialize auth check on load
+if (typeof window !== 'undefined') {
+    useAuthStore.getState().checkAuth();
+}
 
-    
+export { useAuthStore };
