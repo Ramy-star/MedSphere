@@ -226,6 +226,8 @@ export const FileCard = React.memo(function FileCard({
         )
     }
 
+    const VisibilityIcon = item.metadata?.isHidden ? Eye : EyeOff;
+
     return (
         <div 
             className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
@@ -334,7 +336,7 @@ export const FileCard = React.memo(function FileCard({
                                     <span>Copy</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
-                                    <EyeOff className="mr-2 h-4 w-4" />
+                                    <VisibilityIcon className="mr-2 h-4 w-4" />
                                     <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />

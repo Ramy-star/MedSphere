@@ -1,6 +1,6 @@
 
 'use client';
-import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, EyeOff } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, Eye, EyeOff } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -73,6 +73,8 @@ export const FolderCard = React.memo(function FolderCard({
         setDropdownOpen(false);
     };
 
+    const VisibilityIcon = item.metadata?.isHidden ? Eye : EyeOff;
+
     const DropdownContent = () => (
       <DropdownMenuContent 
           className="w-48 p-2"
@@ -95,7 +97,7 @@ export const FolderCard = React.memo(function FolderCard({
             <span>Copy</span>
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
-            <EyeOff className="mr-2 h-4 w-4" />
+            <VisibilityIcon className="mr-2 h-4 w-4" />
             <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
           </DropdownMenuItem>
           <DropdownMenuSeparator />
