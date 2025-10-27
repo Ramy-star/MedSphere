@@ -54,8 +54,8 @@ export default function RootLayout({
     if (hasVisited) {
       setShowWelcome(false);
     }
-    checkAuth();
-  }, [checkAuth]);
+    // No longer call checkAuth here. It will be called by FirebaseClientProvider.
+  }, []);
 
   useEffect(() => {
     const setDynamicVh = () => {
@@ -117,7 +117,9 @@ export default function RootLayout({
                 <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
             </head>
             <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
-                 <VerificationScreen onVerified={() => checkAuth()} />
+                 <FirebaseClientProvider config={firebaseConfig}>
+                    <VerificationScreen onVerified={() => checkAuth()} />
+                 </FirebaseClientProvider>
             </body>
         </html>
     );

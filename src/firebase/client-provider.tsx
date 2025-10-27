@@ -6,6 +6,7 @@ import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
 import { FirebaseProvider } from './provider';
 import { Logo } from '@/components/logo';
+import { useAuthStore } from '@/stores/auth-store';
 
 export function FirebaseClientProvider({
   children,
@@ -17,6 +18,7 @@ export function FirebaseClientProvider({
   const [firebase, setFirebase] = useState<FirebaseContextType | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
+  const { checkAuth } = useAuthStore();
 
   useEffect(() => {
     const init = async () => {
@@ -27,6 +29,8 @@ export function FirebaseClientProvider({
 
             const instances = await initializeFirebase(config);
             setFirebase(instances);
+            // Once firebase is initialized, trigger the auth check.
+            checkAuth(); 
             setLoading(false);
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
@@ -38,7 +42,9 @@ export function FirebaseClientProvider({
     if (!firebase) {
       init();
     }
-  }, [config, firebase]);
+  // We only want this to run once on mount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
 
   if (loading) {

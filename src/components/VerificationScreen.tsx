@@ -9,9 +9,10 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { isStudentIdValid } from '@/lib/authService';
+import { FirebaseClientProvider } from '@/firebase/client-provider';
+import { getFirebaseConfig } from '@/firebase/config';
 
-
-export function VerificationScreen({ onVerified }: { onVerified: () => void }) {
+function VerificationContent({ onVerified }: { onVerified: () => void }) {
   const [studentId, setStudentId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -123,4 +124,15 @@ export function VerificationScreen({ onVerified }: { onVerified: () => void }) {
       </motion.div>
     </motion.div>
   );
+}
+
+
+export function VerificationScreen({ onVerified }: { onVerified: () => void }) {
+    const firebaseConfig = getFirebaseConfig();
+
+    return (
+        <FirebaseClientProvider config={firebaseConfig}>
+            <VerificationContent onVerified={onVerified} />
+        </FirebaseClientProvider>
+    )
 }
