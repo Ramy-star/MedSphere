@@ -37,9 +37,9 @@ type AuthState = {
 };
 
 // This function needs to be outside the store to be reused in 'can'
-const hasPermission = (user: UserProfile | null | undefined, permission: string, path: string): boolean => {
+const hasPermission = (user: UserProfile | null | undefined, isSuperAdmin: boolean, permission: string, path: string): boolean => {
     if (!user) return false;
-    if (user.roles?.some(r => r.role === 'superAdmin')) return true;
+    if (isSuperAdmin) return true;
 
     const subAdminRoles = user.roles?.filter(r => r.role === 'subAdmin') || [];
     if (subAdminRoles.length === 0) return false;
@@ -84,6 +84,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
                 return;
             }
         }
+        // If no stored ID or profile fetch fails, set to logged-out state
         set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false });
     } catch (e) {
       console.error("Auth check failed:", e);
@@ -133,14 +134,14 @@ const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   can: (permission: string, path: string): boolean => {
-      const { user } = get();
-      return hasPermission(user, permission, path);
+      const { user, isSuperAdmin } = get();
+      return hasPermission(user, isSuperAdmin, permission, path);
   },
   
   canAddContent: (path: string): boolean => {
-      const { user } = get();
+      const { user, isSuperAdmin } = get();
       if (!user) return false;
-      if (user.roles?.some(r => r.role === 'superAdmin')) return true;
+      if (isSuperAdmin) return true;
 
       const subAdminRoles = user.roles?.filter(r => r.role === 'subAdmin') || [];
       if (subAdminRoles.length === 0) return false;
