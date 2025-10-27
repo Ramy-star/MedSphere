@@ -302,11 +302,11 @@ function AdminPageContent() {
                                 : userIsSubAdmin ? <Shield className="w-3 h-3 text-blue-400" />
                                 : <User className="w-3 h-3 text-white" />;
 
-        const RoleText = () => (
-          userIsSuperAdmin ? <span className='text-yellow-400'>Super Admin</span>
-          : userIsSubAdmin ? <span className='text-blue-400'>Admin</span>
-          : <span className='text-slate-300'>User</span>
-        );
+        const RoleText = () => {
+            return userIsSuperAdmin ? <span className='text-yellow-400'>Super Admin</span>
+            : userIsSubAdmin ? <span className='text-blue-400'>Admin</span>
+            : <span className='text-slate-300'>User</span>
+        };
         
         return (
             <div 
@@ -319,7 +319,7 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                           <p className="text-sm font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
+                           <p className="text-sm font-semibold text-white truncate sm:text-base">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
                            {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
                         </div>
                         {/* Mobile view */}
@@ -422,7 +422,7 @@ function AdminPageContent() {
             )
         }
         return userList.map((user, index) => (
-            <div key={user.uid} className={cn("border-b border-white/10 last:border-b-0", 'mx-4 sm:mx-0')}>
+             <div key={user.uid} className="my-1.5 sm:my-0 sm:border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
                 <UserCard user={user} />
             </div>
         ));
@@ -466,7 +466,7 @@ function AdminPageContent() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                 <Button variant="outline" className="rounded-2xl w-full sm:w-auto">
+                                 <Button variant="outline" className="rounded-2xl w-auto sm:w-auto">
                                     <ArrowUpDown className="h-4 w-4 sm:mr-2" />
                                     <span className="hidden sm:inline">Sort by</span>
                                 </Button>
@@ -506,8 +506,8 @@ function AdminPageContent() {
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className={cn("grid w-full max-w-lg mx-auto bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin ? "grid-cols-4" : "grid-cols-3")}>
-                        <TabsTrigger value="users">All Users ({filteredAndSortedUsers.length})</TabsTrigger>
-                        <TabsTrigger value="admins">Admins ({admins.length})</TabsTrigger>
+                        <TabsTrigger value="users">All Users</TabsTrigger>
+                        <TabsTrigger value="admins">Admins</TabsTrigger>
                         <TabsTrigger value="management">Management</TabsTrigger>
                         {isSuperAdmin && <TabsTrigger value="audit">History</TabsTrigger>}
                     </TabsList>
