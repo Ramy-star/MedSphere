@@ -28,6 +28,7 @@ import { useSidebarStore } from '@/hooks/use-sidebar-store';
 import { allSubjectIcons } from '@/lib/file-data';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
+import { HierarchyIcon } from './icons/HierarchyIcon';
 
 
 type TreeNode = Content & { children?: TreeNode[] };
@@ -353,9 +354,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                     animate={{ opacity: 1, x: 0, transition: { duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] } }}
                     exit={{ opacity: 0, x: -20, transition: { duration: 0.2, ease: "easeIn" } }}
                 >
-                    <div className="p-1.5 rounded-xl bg-gradient-to-br from-green-400/30 to-green-600/30">
-                        <GraduationCap className="text-green-300 flex-shrink-0" size={20} />
-                    </div>
+                    <HierarchyIcon className="text-green-300 flex-shrink-0" size={24} />
                     <h2 className="font-bold text-white whitespace-nowrap">
                         Academic Structure
                     </h2>
