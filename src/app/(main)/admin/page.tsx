@@ -27,7 +27,10 @@ type UserProfile = {
     email?: string;
     displayName?: string;
     photoURL?: string;
-    roles?: { role: 'superAdmin' | 'subAdmin', scope?: string, scopeId?: string, permissions?: string[] }[];
+    roles?: {
+        isSuperAdmin?: boolean;
+        isSubAdmin?: boolean;
+    };
 };
 
 function AdminPageContent() {
@@ -58,13 +61,13 @@ function AdminPageContent() {
     }, [users, debouncedQuery]);
 
     const subAdmins = useMemo(() => {
-        return filteredUsers.filter(user => user.roles?.some(r => r.role === 'subAdmin' || r.role === 'superAdmin'));
+        return filteredUsers.filter(user => user.roles?.isSubAdmin || user.roles?.isSuperAdmin);
     }, [filteredUsers]);
 
 
     const UserCard = ({ user }: { user: UserProfile }) => {
-        const isSuperAdmin = user.roles?.some(r => r.role === 'superAdmin');
-        const isSubAdmin = user.roles?.some(r => r.role === 'subAdmin');
+        const isSuperAdmin = !!user.roles?.isSuperAdmin;
+        const isSubAdmin = !!user.roles?.isSubAdmin;
         const isCurrentUser = user.studentId === currentStudentId;
 
         const roleIcon = isSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" /> 

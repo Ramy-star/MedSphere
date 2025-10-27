@@ -44,7 +44,8 @@
         "roles": {
           "type": "object",
           "properties": {
-            "isSuperAdmin": { "type": "boolean" }
+            "isSuperAdmin": { "type": "boolean" },
+            "isSubAdmin": { "type": "boolean" }
           }
         }
       },
