@@ -223,13 +223,13 @@ function AdminPageContent() {
                         <span>{roleText}</span>
                     </div>
                    
-                    {!userIsSuperAdmin && (activeTab === 'users' || activeTab === 'management') && (
+                    {isManagementView && !userIsSuperAdmin && (
                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
                             {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                         </Button>
                     )}
 
-                     {isManagementView && (
+                     {isManagementView && !userIsSuperAdmin && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
@@ -237,15 +237,11 @@ function AdminPageContent() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                {!userIsSuperAdmin && (
-                                    <>
-                                        <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
-                                            <Shield className="mr-2 h-4 w-4" />
-                                            {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                    </>
-                                )}
+                                <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
                                     <Ban className="mr-2 h-4 w-4" />
                                     {user.isBlocked ? 'Unblock User' : 'Block User'}
@@ -316,9 +312,9 @@ function AdminPageContent() {
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
-                        <TabsTrigger value="users">All Users</TabsTrigger>
-                        <TabsTrigger value="admins">Admins</TabsTrigger>
-                        <TabsTrigger value="management">Management</TabsTrigger>
+                        <TabsTrigger value="users">All Users ({filteredUsers?.length || 0})</TabsTrigger>
+                        <TabsTrigger value="admins">Admins ({admins?.length || 0})</TabsTrigger>
+                        <TabsTrigger value="management">Management ({filteredUsers?.length || 0})</TabsTrigger>
                     </TabsList>
                 </Tabs>
             </div>
