@@ -538,7 +538,7 @@ function AdminPageContent() {
                                   variant="destructive"
                                   onClick={() => setShowClearHistoryDialog(true)}
                                   disabled={!auditLogs || auditLogs.length === 0}
-                                  className="rounded-xl flex items-center gap-2"
+                                  className="rounded-2xl flex items-center gap-2"
                                 >
                                     <Trash2 className="h-4 w-4" />
                                     Clear History
@@ -606,7 +606,7 @@ function AdminPageContent() {
                 </AlertDialogContent>
             </AlertDialog>
             <AlertDialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
-                <AlertDialogContent className="w-[90vw] sm:w-full">
+                <AlertDialogContent className="w-[90vw] sm:w-full rounded-2xl">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure you want to clear the history?</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -639,5 +639,6 @@ export default AdminPageWithSuspense;
 
 
     
+
 
 
