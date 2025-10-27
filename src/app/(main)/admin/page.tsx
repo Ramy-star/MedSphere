@@ -4,7 +4,7 @@
 import { Suspense, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX } from 'lucide-react';
+import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX, Settings, Ban } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -13,6 +13,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { motion } from 'framer-motion';
@@ -20,6 +21,18 @@ import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth-store';
 import { AddUserDialog } from '@/components/AddUserDialog';
+import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { PermissionsDialog } from '@/components/PermissionsDialog';
+
+
+type UserRole = {
+    role: 'superAdmin' | 'subAdmin';
+    scope: 'global' | 'level' | 'semester' | 'subject' | 'folder';
+    scopeId?: string;
+    permissions?: string[];
+};
 
 type UserProfile = {
     uid: string;
@@ -28,11 +41,10 @@ type UserProfile = {
     email?: string;
     displayName?: string;
     photoURL?: string;
-    roles?: {
-        isSuperAdmin?: boolean;
-        isSubAdmin?: boolean;
-    };
+    roles?: UserRole[];
+    isBlocked?: boolean;
 };
+
 
 function AdminPageContent() {
     const router = useRouter();
@@ -43,9 +55,11 @@ function AdminPageContent() {
     const [debouncedQuery] = useDebounce(searchQuery, 300);
     const [isSearchFocused, setIsSearchFocused] = useState(false);
     const [showAddUserDialog, setShowAddUserDialog] = useState(false);
+    const [userForPermissions, setUserForPermissions] = useState<UserProfile | null>(null);
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
     const { studentId: currentStudentId } = useAuthStore();
+    const { toast } = useToast();
 
     const handleTabChange = (value: string) => {
         router.push(`/admin?tab=${value}`, { scroll: false });
@@ -69,29 +83,58 @@ function AdminPageContent() {
         );
     }, [sortedUsers, debouncedQuery]);
 
+    const isSuperAdmin = (user: UserProfile) => user.roles?.some(r => r.role === 'superAdmin');
+    const isSubAdmin = (user: UserProfile) => user.roles?.some(r => r.role === 'subAdmin');
+
     const admins = useMemo(() => {
-        return filteredUsers.filter(user => user.roles?.isSubAdmin || user.roles?.isSuperAdmin);
+        return filteredUsers.filter(user => user.roles?.some(r => r.role === 'subAdmin' || r.role === 'superAdmin'));
     }, [filteredUsers]);
+    
+    const handleToggleSubAdmin = async (user: UserProfile) => {
+        const userRef = doc(db, 'users', user.uid);
+        const hasSubAdminRole = user.roles?.some(r => r.role === 'subAdmin');
+
+        try {
+            if (hasSubAdminRole) {
+                // To remove, we need to find the specific role object to use in arrayRemove.
+                // This is complex if there are multiple subAdmin roles. A simpler approach for now
+                // is to filter out all subAdmin roles.
+                const newRoles = user.roles?.filter(r => r.role !== 'subAdmin') || [];
+                await updateDoc(userRef, { roles: newRoles });
+                toast({ title: "Permissions Updated", description: `${user.displayName} is no longer a sub-admin.` });
+            } else {
+                // Add a basic subAdmin role. Detailed permissions can be added later.
+                const newSubAdminRole: UserRole = { role: 'subAdmin', scope: 'global' };
+                await updateDoc(userRef, {
+                    roles: arrayUnion(newSubAdminRole)
+                });
+                toast({ title: "Permissions Updated", description: `${user.displayName} is now a sub-admin.` });
+            }
+        } catch (error: any) {
+            console.error("Error updating user role:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not update user permissions." });
+        }
+    };
 
 
-    const UserCard = ({ user }: { user: UserProfile }) => {
-        const isSuperAdmin = !!user.roles?.isSuperAdmin;
-        const isSubAdmin = !!user.roles?.isSubAdmin;
+    const UserCard = ({ user, isManagementView = false }: { user: UserProfile, isManagementView?: boolean }) => {
+        const isUserSuperAdmin = isSuperAdmin(user);
+        const isUserSubAdmin = isSubAdmin(user);
         const isCurrentUser = user.studentId === currentStudentId;
 
-        const roleIcon = isSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" /> 
-                       : isSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
+        const roleIcon = isUserSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" /> 
+                       : isUserSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
                        : <User className="w-5 h-5 text-slate-400" />;
 
-        const roleText = isSuperAdmin ? 'Super Admin'
-                       : isSubAdmin ? 'Admin'
+        const roleText = isUserSuperAdmin ? 'Super Admin'
+                       : isUserSubAdmin ? 'Admin'
                        : 'User';
         
         return (
             <motion.div 
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass-card p-4 rounded-2xl flex items-center justify-between"
+                className={cn("glass-card p-4 rounded-2xl flex items-center justify-between", user.isBlocked && "opacity-50 bg-red-900/20")}
             >
                 <div className="flex items-center gap-4 overflow-hidden">
                     <Avatar>
@@ -108,8 +151,7 @@ function AdminPageContent() {
                         {roleIcon}
                         <span>{roleText}</span>
                     </div>
-                    {/* Only show dropdown if it's not the current super admin's card */}
-                    {(!isCurrentUser || !isSuperAdmin) && (
+                     {isManagementView && !isUserSuperAdmin && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400">
@@ -117,25 +159,33 @@ function AdminPageContent() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                <DropdownMenuItem>
-                                    {isSubAdmin ? 'Edit Permissions' : 'Promote to sub-admin'}
+                                <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
+                                    {isUserSubAdmin ? 'Remove sub-admin' : 'Promote to sub-admin'}
                                 </DropdownMenuItem>
-                                {isSubAdmin && !isSuperAdmin && (
-                                    <DropdownMenuItem className="text-red-400">
-                                        Remove sub-admin
-                                    </DropdownMenuItem>
-                                )}
+                                <DropdownMenuItem>
+                                    <Ban className="mr-2 h-4 w-4" /> Block User
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-400">
+                                    <Trash2 className="mr-2 h-4 w-4" /> Delete User
+                                </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
+                    )}
+                    {!isManagementView && isUserSubAdmin && !isUserSuperAdmin && (
+                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => setUserForPermissions(user)}>
+                            <Settings className="mr-2 h-4 w-4" />
+                            Permissions
+                        </Button>
                     )}
                 </div>
             </motion.div>
         )
     };
 
-    const renderUserList = (userList: UserProfile[]) => {
+    const renderUserList = (userList: UserProfile[], isManagementView = false) => {
         if (loadingUsers) return null;
-        if (userList.length === 0) {
+        if (userList.length === 0 && debouncedQuery) {
             return (
                 <div className="text-center text-slate-400 py-16 flex flex-col items-center">
                     <SearchX className="w-12 h-12 text-slate-500 mb-4"/>
@@ -144,7 +194,7 @@ function AdminPageContent() {
                 </div>
             )
         }
-        return userList.map(user => <UserCard key={user.uid} user={user} />);
+        return userList.map(user => <UserCard key={user.uid} user={user} isManagementView={isManagementView} />);
     };
 
     return (
@@ -172,13 +222,17 @@ function AdminPageContent() {
                             onBlur={() => setIsSearchFocused(false)}
                         />
                     </div>
+                     <Button onClick={() => setShowAddUserDialog(true)} className="rounded-2xl">
+                       <UserPlus className="mr-2 h-4 w-4"/>
+                       Add User
+                   </Button>
                 </div>
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
                         <TabsTrigger value="users">All Users</TabsTrigger>
                         <TabsTrigger value="admins">Admins</TabsTrigger>
-                        <TabsTrigger value="account-management">Management</TabsTrigger>
+                        <TabsTrigger value="management">Management</TabsTrigger>
                     </TabsList>
                 </Tabs>
             </div>
@@ -191,19 +245,19 @@ function AdminPageContent() {
                     <TabsContent value="admins" className="space-y-4">
                         {renderUserList(admins)}
                     </TabsContent>
-                    <TabsContent value="account-management">
-                        <div className="glass-card p-6 rounded-2xl">
-                           <h3 className="font-semibold text-lg text-white">Add New User</h3>
-                           <p className="text-slate-400 text-sm mt-1 mb-4">Manually create a new user account and assign them to an academic level.</p>
-                           <Button onClick={() => setShowAddUserDialog(true)}>
-                               <UserPlus className="mr-2 h-4 w-4"/>
-                               Add User
-                           </Button>
-                        </div>
+                    <TabsContent value="management" className="space-y-4">
+                        {renderUserList(filteredUsers, true)}
                     </TabsContent>
                 </Tabs>
             </div>
             <AddUserDialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog} />
+            {userForPermissions && (
+                <PermissionsDialog 
+                    user={userForPermissions} 
+                    open={!!userForPermissions} 
+                    onOpenChange={(isOpen) => !isOpen && setUserForPermissions(null)}
+                />
+            )}
         </div>
     );
 }

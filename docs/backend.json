@@ -41,11 +41,26 @@
         "displayName": { "type": "string" },
         "photoURL": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time"},
+        "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
         "roles": {
-          "type": "object",
-          "properties": {
-            "isSuperAdmin": { "type": "boolean" },
-            "isSubAdmin": { "type": "boolean" }
+          "type": "array",
+          "description": "An array of roles and permissions assigned to the user.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string", "enum": ["superAdmin", "subAdmin"], "description": "The role of the user." },
+              "scope": { "type": "string", "enum": ["global", "level", "semester", "subject", "folder"], "description": "The scope of the sub-admin's permissions (e.g., a specific level ID)." },
+              "scopeId": { "type": "string", "description": "The ID of the item the permission applies to." },
+              "scopeName": { "type": "string", "description": "The display name of the scope item." },
+              "permissions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["canAddContent", "canEditContent", "canDeleteContent", "canManageUsers", "canAccessQuestionCreator", "canAccessAdminPanel"]
+                }
+              }
+            },
+            "required": ["role", "scope"]
           }
         }
       },
