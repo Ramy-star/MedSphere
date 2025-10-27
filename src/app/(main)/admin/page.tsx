@@ -110,7 +110,7 @@ function AdminPageContent() {
 
     const admins = useMemo(() => {
         if (!filteredUsers) return [];
-        return filteredUsers.filter(user => isSubAdmin(user) || isSuperAdmin(user));
+        return filteredUsers.filter(user => isSubAdmin(user));
     }, [filteredUsers]);
     
     const handleToggleSubAdmin = async (user: UserProfile) => {
@@ -213,6 +213,14 @@ function AdminPageContent() {
                         {roleIcon}
                         <span>{roleText}</span>
                     </div>
+                     <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 rounded-full text-red-400 hover:bg-red-500/20"
+                        onClick={() => setUserToDelete(user)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
 
                     {!isManagementView && !isUserSuperAdmin && !isCurrentUser && (
                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
@@ -220,7 +228,7 @@ function AdminPageContent() {
                         </Button>
                     )}
 
-                     {isManagementView && !isCurrentUser && (
+                     {isManagementView && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
@@ -240,11 +248,6 @@ function AdminPageContent() {
                                 <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
                                     <Ban className="mr-2 h-4 w-4" />
                                     {user.isBlocked ? 'Unblock User' : 'Block User'}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-400 focus:text-red-400" onClick={() => setUserToDelete(user)}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    Delete User
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
