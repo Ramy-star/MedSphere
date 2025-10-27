@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Suspense, useMemo, useState } from 'react';
@@ -80,10 +78,24 @@ function AdminPageContent() {
         router.push(`/admin?tab=${value}`, { scroll: false });
     };
 
+    const isSuperAdmin = (user: UserProfile) => {
+        return user.studentId === currentStudentId && isCurrentUserSuperAdmin;
+    };
+    
+    const isSubAdmin = (user: UserProfile) => {
+       return Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
+    };
+
     const sortedUsers = useMemo(() => {
         if (!users) return [];
-        return [...users].sort((a, b) => (a.displayName || a.username || '').localeCompare(b.displayName || b.username || ''));
-    }, [users]);
+        return [...users].sort((a, b) => {
+            const aIsSuper = isSuperAdmin(a);
+            const bIsSuper = isSuperAdmin(b);
+            if (aIsSuper && !bIsSuper) return -1;
+            if (!aIsSuper && bIsSuper) return 1;
+            return (a.displayName || a.username || '').localeCompare(b.displayName || b.username || '');
+        });
+    }, [users, currentStudentId, isCurrentUserSuperAdmin]);
 
 
     const filteredUsers = useMemo(() => {
@@ -98,20 +110,11 @@ function AdminPageContent() {
         );
     }, [sortedUsers, debouncedQuery]);
     
-    const isSuperAdmin = (user: UserProfile) => {
-        if (user.studentId === currentStudentId) return isCurrentUserSuperAdmin;
-        return Array.isArray(user.roles) && user.roles.some(r => r.role === 'superAdmin');
-    };
     
-    const isSubAdmin = (user: UserProfile) => {
-       return Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
-    };
-
-
     const admins = useMemo(() => {
         if (!filteredUsers) return [];
-        return filteredUsers.filter(user => isSubAdmin(user));
-    }, [filteredUsers]);
+        return filteredUsers.filter(user => isSubAdmin(user) && !isSuperAdmin(user));
+    }, [filteredUsers, currentStudentId, isCurrentUserSuperAdmin]);
     
     const handleToggleSubAdmin = async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
@@ -222,13 +225,13 @@ function AdminPageContent() {
                         <Trash2 className="h-4 w-4" />
                       </Button>
 
-                    {!isManagementView && !isUserSuperAdmin && !isCurrentUser && (
+                    {!isManagementView && !isUserSuperAdmin && (
                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
                             {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                         </Button>
                     )}
 
-                     {isManagementView && (
+                     {isManagementView && !isUserSuperAdmin && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
@@ -236,15 +239,11 @@ function AdminPageContent() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                                {!isUserSuperAdmin && (
-                                    <>
-                                        <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
-                                            <Shield className="mr-2 h-4 w-4" />
-                                            {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
-                                        </DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                    </>
-                                )}
+                                <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
+                                    <Shield className="mr-2 h-4 w-4" />
+                                    {isUserSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
                                     <Ban className="mr-2 h-4 w-4" />
                                     {user.isBlocked ? 'Unblock User' : 'Block User'}
@@ -263,9 +262,9 @@ function AdminPageContent() {
         )
     };
 
-    const renderUserList = (userList: UserProfile[], isManagementView = false) => {
-        if (loadingUsers) return null;
-        if (userList.length === 0) {
+    const renderUserList = (userList: UserProfile[] | null, isManagementView = false) => {
+        if (loadingUsers && !userList) return null;
+        if (!userList || userList.length === 0) {
             return (
                 <div className="text-center text-slate-400 py-16 flex flex-col items-center">
                     <SearchX className="w-12 h-12 text-slate-500 mb-4"/>
@@ -376,5 +375,3 @@ export default function AdminPage() {
         </Suspense>
     )
 }
-
-    
