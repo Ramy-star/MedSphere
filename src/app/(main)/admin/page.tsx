@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -352,7 +353,7 @@ function AdminPageContent() {
                                 )}
                                 {activeTab === 'management' && (
                                      <>
-                                        <DropdownMenuItem onClick={()={() => handleToggleSubAdmin(user)}>
+                                        <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
                                             <Shield className="mr-2 h-4 w-4" />
                                             {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
                                         </DropdownMenuItem>
@@ -372,7 +373,7 @@ function AdminPageContent() {
                     )}
                 </div>
             </div>
-        )
+        );
     });
     UserCard.displayName = 'UserCard';
 
@@ -415,7 +416,7 @@ function AdminPageContent() {
                             className="pl-10 pr-10 bg-black/20 border-white/10 rounded-2xl h-10"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
-                            onFocus={()={() => setIsSearchFocused(true)}
+                            onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setIsSearchFocused(false)}
                         />
                          {searchQuery && (
@@ -544,4 +545,3 @@ export default function AdminPage() {
     )
 }
 
-    

@@ -6,8 +6,7 @@ import {
   getFirestore, 
   Firestore, 
   initializeFirestore, 
-  persistentLocalCache, 
-  persistentMultipleTabManager 
+  persistentLocalCache,
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
@@ -27,9 +26,7 @@ export async function initializeFirebase(config: FirebaseOptions) {
     if (typeof window !== 'undefined') {
       try {
         db = initializeFirestore(app, {
-            localCache: persistentLocalCache(/*{
-                tabManager: persistentMultipleTabManager()
-            }*/)
+            localCache: persistentLocalCache()
         });
         console.log("Firestore initialized with persistent cache.");
       } catch (err: any) {
