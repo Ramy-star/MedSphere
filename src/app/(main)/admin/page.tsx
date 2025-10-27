@@ -232,10 +232,28 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
+                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {(isManagementView || activeTab === 'users') && isCurrentUser && '(You)'}</p>
                           {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
                         </div>
-                        <p className="text-sm text-slate-400 truncate">{user.email} • ID: {user.studentId}</p>
+                        {/* Mobile view */}
+                        <div className="sm:hidden text-xs text-slate-400 space-y-0.5 mt-1">
+                            <p className="truncate">{user.email}</p>
+                            <p>ID: {user.studentId}</p>
+                            <div className="flex items-center gap-4">
+                                {userLevel && (
+                                    <div className="flex items-center gap-1.5">
+                                        <GraduationCap className="w-3 h-3 text-slate-300"/>
+                                        <span className="text-slate-200 font-medium">{userLevel}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-1.5">
+                                    {React.cloneElement(roleIcon, {className: "w-3 h-3"})}
+                                    <RoleText />
+                                </div>
+                            </div>
+                        </div>
+                        {/* Desktop view */}
+                        <p className="hidden sm:block text-sm text-slate-400 truncate">{user.email} • ID: {user.studentId}</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
@@ -308,7 +326,7 @@ function AdminPageContent() {
                 <UserCard user={user} isManagementView={isManagementView} />
             </div>
         ));
-    }, [loadingUsers, debouncedQuery, UserCard]);
+    }, [loadingUsers, debouncedQuery, UserCard, activeTab]);
 
     return (
         <div className="flex flex-col h-full">
@@ -419,5 +437,3 @@ export default function AdminPage() {
         </Suspense>
     )
 }
-
-    
