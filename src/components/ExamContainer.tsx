@@ -15,7 +15,11 @@ import type { Lecture, ExamResult, MCQ } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
 import { useFirebase } from '@/firebase/provider';
 import { useAuthStore } from '@/stores/auth-store';
+import level1StudentData from '@/lib/student-ids/level-1-data.json';
 import level2StudentData from '@/lib/student-ids/level-2-data.json';
+import level3StudentData from '@/lib/student-ids/level-3-data.json';
+import level4StudentData from '@/lib/student-ids/level-4-data.json';
+import level5StudentData from '@/lib/student-ids/level-5-data.json';
 
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
@@ -908,8 +912,15 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
     const [loading, setLoading] = useState(true);
 
     const studentDataMap = useMemo(() => {
+        const allStudentData = [
+            ...level1StudentData,
+            ...level2StudentData,
+            ...level3StudentData,
+            ...level4StudentData,
+            ...level5StudentData,
+        ];
         const map = new Map<string, { studentName: string; academicEmail: string }>();
-        level2StudentData.forEach(student => {
+        allStudentData.forEach((student: any) => {
             const id = String(student["Student ID"]);
             map.set(id, { studentName: student["Student Name"], academicEmail: student["Academic Email"] });
         });
