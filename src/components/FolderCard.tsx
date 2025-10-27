@@ -45,8 +45,6 @@ export const FolderCard = React.memo(function FolderCard({
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
     const { can } = useAuthStore();
-    const pathname = usePathname();
-    const router = useRouter();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     
     const renderIcon = () => {
@@ -75,6 +73,15 @@ export const FolderCard = React.memo(function FolderCard({
     };
 
     const VisibilityIcon = item.metadata?.isHidden ? Eye : EyeOff;
+
+    const hasAnyPermission = 
+      can('canRename', item.id) ||
+      can('canDelete', item.id) ||
+      can('canChangeIcon', item.id) ||
+      can('canMove', item.id) ||
+      can('canCopy', item.id) ||
+      can('canToggleVisibility', item.id);
+
 
     const DropdownContent = () => (
       <DropdownMenuContent 
@@ -166,7 +173,7 @@ export const FolderCard = React.memo(function FolderCard({
                         {createdAt}
                     </p>
                     
-                    {can('canRename', item.id) && (
+                    {hasAnyPermission && (
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
@@ -203,7 +210,7 @@ export const FolderCard = React.memo(function FolderCard({
       >
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
-              {can('canRename', item.id) && (
+              {hasAnyPermission && (
                   <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                        <TooltipProvider>
                             <Tooltip>

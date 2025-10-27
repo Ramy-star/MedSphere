@@ -142,7 +142,6 @@ export const FileCard = React.memo(function FileCard({
 }) {
     const isMobile = useIsMobile();
     const router = useRouter();
-    const pathname = usePathname();
     const { can } = useAuthStore();
     const { initiateGeneration } = useQuestionGenerationStore();
     const updateFileInputRef = useRef<HTMLInputElement>(null);
@@ -232,6 +231,15 @@ export const FileCard = React.memo(function FileCard({
 
     const VisibilityIcon = item.metadata?.isHidden ? Eye : EyeOff;
 
+    const hasAnyPermission = 
+        can('canRename', item.id) ||
+        can('canDelete', item.id) ||
+        can('canMove', item.id) ||
+        can('canCopy', item.id) ||
+        can('canToggleVisibility', item.id) ||
+        can('canUpdateFile', item.id) ||
+        can('canCreateQuestions', item.id);
+
     return (
         <div 
             className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
@@ -244,7 +252,7 @@ export const FileCard = React.memo(function FileCard({
                 onChange={handleFileUpdate}
             />
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
-                {showDragHandle && !isMobile && can('canMove', item.id) && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+                {showDragHandle && !isMobile && can('canReorder', item.id) && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
             </div>
 
             <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -269,99 +277,101 @@ export const FileCard = React.memo(function FileCard({
                     {displaySize}
                 </p>
                 
-                <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                    <TooltipProvider>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <DropdownMenuTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                    >
-                                        <MoreVertical className="w-5 h-5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                                <p>More options</p>
-                            </TooltipContent>
-                        </Tooltip>
-                    </TooltipProvider>
-                    <DropdownMenuContent 
-                        className="w-48 p-2"
-                        align="end"
-                    >
-                         <DropdownMenuItem onSelect={(e) => handleAction(e, () => onFileClick(item))}>
-                            <Eye className="mr-2 h-4 w-4" />
-                            <span>Open</span>
-                        </DropdownMenuItem>
-                        {browserUrl && (
-                        <DropdownMenuItem onSelect={(e) => handleAction(e, () => window.open(browserUrl, '_blank'))} disabled={!browserUrl}>
-                            <ExternalLink className="mr-2 h-4 w-4" />
-                            <span>Open in browser</span>
-                        </DropdownMenuItem>
-                        )}
-                        {!isLink && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' &&(
-                            <DropdownMenuItem 
-                                onSelect={(e) => handleAction(e, () => { if (storagePath) handleForceDownload(storagePath, item.name); })}
-                                disabled={!storagePath}
-                            >
-                                <Download className="mr-2 h-4 w-4" />
-                                <span>Download</span>
+                {hasAnyPermission && (
+                    <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                        >
+                                            <MoreVertical className="w-5 h-5" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>More options</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                        <DropdownMenuContent 
+                            className="w-48 p-2"
+                            align="end"
+                        >
+                            <DropdownMenuItem onSelect={(e) => handleAction(e, () => onFileClick(item))}>
+                                <Eye className="mr-2 h-4 w-4" />
+                                <span>Open</span>
                             </DropdownMenuItem>
-                        )}
-                        
-                        {(can('canRename', item.id) || can('canDelete', item.id)) && <DropdownMenuSeparator />}
-
-                        {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && can('canCreateQuestions', item.id) && (
-                            <DropdownMenuItem onSelect={(e) => handleAction(e, handleCreateQuestions)}>
-                                <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
-                                <span>Create Questions</span>
+                            {browserUrl && (
+                            <DropdownMenuItem onSelect={(e) => handleAction(e, () => window.open(browserUrl, '_blank'))} disabled={!browserUrl}>
+                                <ExternalLink className="mr-2 h-4 w-4" />
+                                <span>Open in browser</span>
                             </DropdownMenuItem>
-                        )}
-                        {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', item.id) && (
-                            <DropdownMenuItem onSelect={handleUpdateClick}>
-                              <RefreshCw className="mr-2 h-4 w-4" />
-                              <span>Update</span>
-                            </DropdownMenuItem>
-                        )}
-                        {can('canRename', item.id) && (
-                            <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
-                                <Edit className="mr-2 h-4 w-4" />
-                                <span>Rename</span>
-                            </DropdownMenuItem>
-                        )}
-                        {can('canMove', item.id) && (
-                            <DropdownMenuItem onSelect={(e) => handleAction(e, onMove)}>
-                                <Move className="mr-2 h-4 w-4" />
-                                <span>Move</span>
-                            </DropdownMenuItem>
-                        )}
-                        {can('canCopy', item.id) && (
-                            <DropdownMenuItem onSelect={(e) => handleAction(e, onCopy)}>
-                                <Copy className="mr-2 h-4 w-4" />
-                                <span>Copy</span>
-                            </DropdownMenuItem>
-                        )}
-                        {can('canToggleVisibility', item.id) && (
-                             <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
-                                <VisibilityIcon className="mr-2 h-4 w-4" />
-                                <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
-                            </DropdownMenuItem>
-                        )}
-                        
-                        {can('canDelete', item.id) && (
-                            <>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Delete</span>
+                            )}
+                            {!isLink && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' &&(
+                                <DropdownMenuItem 
+                                    onSelect={(e) => handleAction(e, () => { if (storagePath) handleForceDownload(storagePath, item.name); })}
+                                    disabled={!storagePath}
+                                >
+                                    <Download className="mr-2 h-4 w-4" />
+                                    <span>Download</span>
                                 </DropdownMenuItem>
-                            </>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
+                            )}
+                            
+                            {(can('canRename', item.id) || can('canDelete', item.id)) && <DropdownMenuSeparator />}
+
+                            {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && can('canCreateQuestions', item.id) && (
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, handleCreateQuestions)}>
+                                    <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
+                                    <span>Create Questions</span>
+                                </DropdownMenuItem>
+                            )}
+                            {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', item.id) && (
+                                <DropdownMenuItem onSelect={handleUpdateClick}>
+                                <RefreshCw className="mr-2 h-4 w-4" />
+                                <span>Update</span>
+                                </DropdownMenuItem>
+                            )}
+                            {can('canRename', item.id) && (
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    <span>Rename</span>
+                                </DropdownMenuItem>
+                            )}
+                            {can('canMove', item.id) && (
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onMove)}>
+                                    <Move className="mr-2 h-4 w-4" />
+                                    <span>Move</span>
+                                </DropdownMenuItem>
+                            )}
+                            {can('canCopy', item.id) && (
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onCopy)}>
+                                    <Copy className="mr-2 h-4 w-4" />
+                                    <span>Copy</span>
+                                </DropdownMenuItem>
+                            )}
+                            {can('canToggleVisibility', item.id) && (
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
+                                    <VisibilityIcon className="mr-2 h-4 w-4" />
+                                    <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
+                                </DropdownMenuItem>
+                            )}
+                            
+                            {can('canDelete', item.id) && (
+                                <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>Delete</span>
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                )}
             </div>
         </div>
     )

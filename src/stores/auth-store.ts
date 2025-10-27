@@ -158,18 +158,22 @@ const useAuthStore = create<AuthState>((set, get) => ({
   buildHierarchy: () => {
     if (!db) return () => {};
     
-    // Stop any previous listener
-    if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
+    // Stop any previous listener to avoid memory leaks
+    if (hierarchyListenerUnsubscribe) {
+        hierarchyListenerUnsubscribe();
+    }
 
     const q = query(collection(db, 'content'));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const hierarchy: ItemHierarchy = {};
-        const items = new Map(snapshot.docs.map(d => [d.id, d.data()]));
+        const items = new Map<string, DocumentData>();
+        snapshot.docs.forEach(d => items.set(d.id, d.data()));
         
-        for (const [id, item] of items.entries()) {
+        for (const id of items.keys()) {
             const path: string[] = [];
-            let currentParentId = item.parentId;
+            let currentItem = items.get(id);
+            let currentParentId = currentItem?.parentId;
             while(currentParentId) {
                 path.unshift(currentParentId);
                 const parentItem = items.get(currentParentId);
@@ -195,7 +199,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     };
 
     set({ loading: true });
-    // Clean up previous listeners
+    // Clean up previous listeners before starting new ones
     if (userListenerUnsubscribe) userListenerUnsubscribe();
     if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
 
