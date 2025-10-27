@@ -9,8 +9,6 @@ import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { isStudentIdValid } from '@/lib/authService';
-import { FirebaseClientProvider } from '@/firebase/client-provider';
-import { getFirebaseConfig } from '@/firebase/config';
 
 function VerificationContent({ onVerified }: { onVerified: () => void }) {
   const [studentId, setStudentId] = useState('');
@@ -128,11 +126,7 @@ function VerificationContent({ onVerified }: { onVerified: () => void }) {
 
 
 export function VerificationScreen({ onVerified }: { onVerified: () => void }) {
-    const firebaseConfig = getFirebaseConfig();
-
     return (
-        <FirebaseClientProvider config={firebaseConfig}>
-            <VerificationContent onVerified={onVerified} />
-        </FirebaseClientProvider>
+        <VerificationContent onVerified={onVerified} />
     )
 }

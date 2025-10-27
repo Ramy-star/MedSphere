@@ -1,6 +1,4 @@
 
-'use server';
-
 import { db } from '@/firebase';
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
 
@@ -27,19 +25,19 @@ const allStudentIds = new Set([
 ]);
 
 const allStudentData = new Map([
-    ...level1Data.map(d => [d['Student ID'].toString(), d]),
-    ...level2Data.map(d => [d['Student ID'].toString(), d]),
-    ...level3Data.map(d => [d['Student ID'].toString(), d]),
-    ...level4Data.map(d => [d['Student ID'].toString(), d]),
-    ...level5Data.map(d => [d['Student ID'].toString(), d]),
+    ...level1Data.map(d => [String(d['Student ID']), d]),
+    ...level2Data.map(d => [String(d['Student ID']), d]),
+    ...level3Data.map(d => [String(d['Student ID']), d]),
+    ...level4Data.map(d => [String(d['Student ID']), d]),
+    ...level5Data.map(d => [String(d['Student ID']), d]),
 ]);
 
 const idToLevelMap = new Map([
-  ...level1Ids.map(id => [id.toString(), 'Level 1']),
-  ...level2Ids.map(id => [id.toString(), 'Level 2']),
-  ...level3Ids.map(id => [id.toString(), 'Level 3']),
-  ...level4Ids.map(id => [id.toString(), 'Level 4']),
-  ...level5Ids.map(id => [id.toString(), 'Level 5']),
+  ...level1Ids.map(id => [String(id), 'Level 1']),
+  ...level2Ids.map(id => [String(id), 'Level 2']),
+  ...level3Ids.map(id => [String(id), 'Level 3']),
+  ...level4Ids.map(id => [String(id), 'Level 4']),
+  ...level5Ids.map(id => [String(id), 'Level 5']),
 ]);
 
 export async function isSuperAdmin(studentId: string | null): Promise<boolean> {
@@ -61,7 +59,8 @@ export async function getUserProfile(studentId: string): Promise<any | null> {
 
     if (!querySnapshot.empty) {
         // Should only be one user with a given studentId
-        return { id: querySnapshot.docs[0].id, ...querySnapshot.docs[0].data() };
+        const userDoc = querySnapshot.docs[0];
+        return { id: userDoc.id, ...userDoc.data() };
     }
     return null;
 }
@@ -98,7 +97,7 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
             console.log(`User profile already exists for ID ${trimmedId}, returning existing profile.`);
             return { id: existingDoc.id, ...existingDoc.data() };
         }
-
+        
         const newUserProfile = {
             uid: trimmedId, 
             studentId: trimmedId,
