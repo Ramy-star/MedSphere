@@ -205,7 +205,7 @@ function AdminPageContent() {
         
         return (
             <div 
-                className={cn("glass-card p-4 rounded-2xl flex items-center justify-between", user.isBlocked && "opacity-50 bg-red-900/20")}
+                className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}
             >
                 <div className="flex items-center gap-4 overflow-hidden">
                     <Avatar>
@@ -214,7 +214,7 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
+                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {(isCurrentUser && activeTab !== 'management') && '(You)'}</p>
                           {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
                         </div>
                         <p className="text-sm text-slate-400 truncate">{user.email} • ID: {user.studentId}</p>
@@ -279,7 +279,11 @@ function AdminPageContent() {
                 </div>
             )
         }
-        return userList.map(user => <UserCard key={user.uid} user={user} isManagementView={isManagementView} />);
+        return userList.map((user, index) => (
+            <div key={user.uid} className={cn(index !== userList.length - 1 && "border-b border-white/10")}>
+                <UserCard user={user} isManagementView={isManagementView} />
+            </div>
+        ));
     }, [loadingUsers, debouncedQuery, UserCard, handleToggleSubAdmin, handleToggleBlock]);
 
     return (
@@ -334,15 +338,17 @@ function AdminPageContent() {
             
             <div className="flex-1 overflow-y-auto mt-6 no-scrollbar pr-2 -mr-2">
                 <Tabs value={activeTab}>
-                    <TabsContent value="users" className="space-y-4">
-                        {renderUserList(filteredUsers)}
-                    </TabsContent>
-                    <TabsContent value="admins" className="space-y-4">
-                        {renderUserList(admins)}
-                    </TabsContent>
-                    <TabsContent value="management" className="space-y-4">
-                        {renderUserList(filteredUsers, true)}
-                    </TabsContent>
+                    <div className="glass-card p-2 rounded-2xl">
+                        <TabsContent value="users" className="space-y-0">
+                            {renderUserList(filteredUsers)}
+                        </TabsContent>
+                        <TabsContent value="admins" className="space-y-0">
+                            {renderUserList(admins)}
+                        </TabsContent>
+                        <TabsContent value="management" className="space-y-0">
+                            {renderUserList(filteredUsers, true)}
+                        </TabsContent>
+                    </div>
                 </Tabs>
             </div>
             <AddUserDialog open={showAddUserDialog} onOpenChange={setShowAddUserDialog} />
