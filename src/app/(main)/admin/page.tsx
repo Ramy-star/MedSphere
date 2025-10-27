@@ -2,7 +2,8 @@
 
 'use client';
 
-import { Suspense, useMemo, useState } from 'react';
+import { Suspense, useMemo, useState, useCallback } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX, Settings, Ban } from 'lucide-react';
@@ -75,23 +76,24 @@ function AdminPageContent() {
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
-    const { studentId: currentStudentId, isSuperAdmin: isCurrentUserSuperAdmin } = useAuthStore();
+    const { studentId: currentStudentId } = useAuthStore();
     const { toast } = useToast();
 
     const handleTabChange = (value: string) => {
         router.push(`/admin?tab=${value}`, { scroll: false });
     };
 
-    const isSuperAdmin = (user: UserProfile) => {
+    const isSuperAdmin = useCallback((user: UserProfile) => {
         return user.studentId === SUPER_ADMIN_ID;
-    };
+    }, []);
     
-    const isSubAdmin = (user: UserProfile) => {
+    const isSubAdmin = useCallback((user: UserProfile) => {
        return Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
-    };
+    }, []);
 
     const sortedUsers = useMemo(() => {
         if (!users) return [];
+        // Make sure there are no duplicate users from the start
         const uniqueUsers = Array.from(new Map(users.map(user => [user.uid, user])).values());
         
         return uniqueUsers.sort((a, b) => {
@@ -101,7 +103,7 @@ function AdminPageContent() {
             if (!aIsSuper && bIsSuper) return 1;
             return (a.displayName || a.username || '').localeCompare(b.displayName || b.username || '');
         });
-    }, [users]);
+    }, [users, isSuperAdmin]);
 
 
     const filteredUsers = useMemo(() => {
@@ -120,9 +122,9 @@ function AdminPageContent() {
     const admins = useMemo(() => {
         if (!filteredUsers) return [];
         return filteredUsers.filter(user => isSubAdmin(user) && !isSuperAdmin(user));
-    }, [filteredUsers]);
+    }, [filteredUsers, isSubAdmin, isSuperAdmin]);
     
-    const handleToggleSubAdmin = async (user: UserProfile) => {
+    const handleToggleSubAdmin = useCallback(async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
         const hasSubAdminRole = isSubAdmin(user);
 
@@ -142,9 +144,9 @@ function AdminPageContent() {
             console.error("Error updating user role:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not update user permissions." });
         }
-    };
+    }, [isSubAdmin, toast]);
 
-    const handleDemoteConfirm = async () => {
+    const handleDemoteConfirm = useCallback(async () => {
         if (!userToDemote) return;
         const userRef = doc(db, 'users', userToDemote.uid);
         try {
@@ -157,9 +159,9 @@ function AdminPageContent() {
         } finally {
             setUserToDemote(null);
         }
-    }
+    }, [userToDemote, toast]);
     
-    const handleToggleBlock = async (user: UserProfile) => {
+    const handleToggleBlock = useCallback(async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
         const newBlockState = !user.isBlocked;
         try {
@@ -172,9 +174,9 @@ function AdminPageContent() {
             console.error("Error toggling user block state:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not update user status." });
         }
-    }
+    }, [toast]);
 
-    const handleDeleteUser = async () => {
+    const handleDeleteUser = useCallback(async () => {
         if (!userToDelete) return;
         const batch = writeBatch(db);
         const userRef = doc(db, 'users', userToDelete.uid);
@@ -182,34 +184,10 @@ function AdminPageContent() {
         await batch.commit();
         toast({ title: "User Deleted", description: `${userToDelete.displayName} has been deleted.` });
         setUserToDelete(null);
-    }
-    
-    const deleteAllUsers = async () => {
-        if (!isCurrentUserSuperAdmin) {
-            toast({ variant: "destructive", title: "Unauthorized", description: "You do not have permission to perform this action." });
-            return;
-        }
-        
-        try {
-            const usersSnapshot = await getDocs(collection(db, "users"));
-            if (usersSnapshot.empty) {
-                toast({ title: "No Users", description: "There are no users to delete." });
-                return;
-            }
-            const batch = writeBatch(db);
-            usersSnapshot.forEach(doc => {
-                batch.delete(doc.ref);
-            });
-            await batch.commit();
-            toast({ title: "All Users Deleted", description: "All user data has been cleared from the database." });
-        } catch (error) {
-            console.error("Error deleting all users:", error);
-            toast({ variant: "destructive", title: "Error", description: "Could not delete all users." });
-        }
-    }
+    }, [userToDelete, toast]);
 
-
-    const UserCard = ({ user, isManagementView = false }: { user: UserProfile, isManagementView?: boolean }) => {
+    // Use React.memo for UserCard to prevent re-rendering when parent state changes
+    const UserCard = React.memo(({ user, isManagementView = false }: { user: UserProfile, isManagementView?: boolean }) => {
         const userIsSuperAdmin = isSuperAdmin(user);
         const userIsSubAdmin = isSubAdmin(user);
         const isCurrentUser = user.studentId === currentStudentId;
@@ -290,9 +268,10 @@ function AdminPageContent() {
                 </div>
             </motion.div>
         )
-    };
+    });
+    UserCard.displayName = 'UserCard';
 
-    const renderUserList = (userList: UserProfile[] | null, isManagementView = false) => {
+    const renderUserList = useCallback((userList: UserProfile[] | null, isManagementView = false) => {
         if (loadingUsers && !userList) return null;
         if (!userList || userList.length === 0) {
             return (
@@ -304,7 +283,7 @@ function AdminPageContent() {
             )
         }
         return userList.map(user => <UserCard key={user.uid} user={user} isManagementView={isManagementView} />);
-    };
+    }, [loadingUsers, debouncedQuery, UserCard]);
 
     return (
         <div className="flex flex-col h-full">
@@ -336,16 +315,6 @@ function AdminPageContent() {
                        Add User
                    </Button>
                 </div>
-                
-                {isCurrentUserSuperAdmin && (
-                    <div className="my-4 p-4 border border-red-500/30 bg-red-900/20 rounded-xl flex items-center justify-between">
-                        <p className="text-red-300 text-sm">This will delete all users. Use with caution.</p>
-                        <Button variant="destructive" onClick={deleteAllUsers} className="rounded-xl">
-                            <Trash2 className="mr-2 h-4 w-4"/>
-                            Delete All Users
-                        </Button>
-                    </div>
-                )}
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className="grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12">
