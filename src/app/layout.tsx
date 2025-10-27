@@ -44,7 +44,7 @@ export default function RootLayout({
 }>) {
   const [showWelcome, setShowWelcome] = useState(true);
   const [isClient, setIsClient] = useState(false);
-  const { isAuthenticated, loading } = useAuthStore();
+  const { isAuthenticated, loading, checkAuth } = useAuthStore();
   const firebaseConfig = getFirebaseConfig();
 
   useEffect(() => {
@@ -55,6 +55,10 @@ export default function RootLayout({
       setShowWelcome(false);
     }
   }, []);
+  
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
     const setDynamicVh = () => {

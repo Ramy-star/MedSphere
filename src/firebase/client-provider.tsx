@@ -1,12 +1,11 @@
 
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
 import { FirebaseProvider } from './provider';
 import { Logo } from '@/components/logo';
-import { useAuthStore } from '@/stores/auth-store';
 
 export function FirebaseClientProvider({
   children,
@@ -17,8 +16,6 @@ export function FirebaseClientProvider({
 }) {
   const [firebase, setFirebase] = useState<FirebaseContextType | null>(null);
   const [error, setError] = useState<Error | null>(null);
-  const checkAuth = useAuthStore((state) => state.checkAuth);
-  const isLoadingAuth = useAuthStore((state) => state.loading);
 
   useEffect(() => {
     let isMounted = true;
@@ -31,8 +28,6 @@ export function FirebaseClientProvider({
             const instances = await initializeFirebase(config);
             if (isMounted) {
               setFirebase(instances);
-              // Once Firebase is initialized, check authentication.
-              await checkAuth();
             }
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
@@ -50,7 +45,7 @@ export function FirebaseClientProvider({
   }, []);
 
 
-  if (!firebase || isLoadingAuth) {
+  if (!firebase) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
