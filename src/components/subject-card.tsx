@@ -15,7 +15,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
-import { useUser } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
@@ -33,8 +33,7 @@ export const SubjectCard = React.memo(function SubjectCard({
   const { id, name, iconName, color } = subject;
   const subjectPath = `/folder/${id}`;
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
-  const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const { isSuperAdmin: isAdmin } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const handleCardClick = (e: React.MouseEvent) => {
