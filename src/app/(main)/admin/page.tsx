@@ -31,6 +31,7 @@ type UserRole = {
     role: 'superAdmin' | 'subAdmin';
     scope: 'global' | 'level' | 'semester' | 'subject' | 'folder';
     scopeId?: string;
+    scopeName?: string;
     permissions?: string[];
 };
 
@@ -83,32 +84,30 @@ function AdminPageContent() {
         );
     }, [sortedUsers, debouncedQuery]);
 
-    const isSuperAdmin = (user: UserProfile) => user.roles?.some(r => r.role === 'superAdmin');
-    const isSubAdmin = (user: UserProfile) => user.roles?.some(r => r.role === 'subAdmin');
+    const isSuperAdmin = (user: UserProfile) => Array.isArray(user.roles) && user.roles.some(r => r.role === 'superAdmin');
+    const isSubAdmin = (user: UserProfile) => Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
 
     const admins = useMemo(() => {
-        return filteredUsers.filter(user => user.roles?.some(r => r.role === 'subAdmin' || r.role === 'superAdmin'));
+        return filteredUsers.filter(user => Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin' || r.role === 'superAdmin'));
     }, [filteredUsers]);
     
     const handleToggleSubAdmin = async (user: UserProfile) => {
         const userRef = doc(db, 'users', user.uid);
-        const hasSubAdminRole = user.roles?.some(r => r.role === 'subAdmin');
+        const hasSubAdminRole = Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
 
         try {
             if (hasSubAdminRole) {
-                // To remove, we need to find the specific role object to use in arrayRemove.
-                // This is complex if there are multiple subAdmin roles. A simpler approach for now
-                // is to filter out all subAdmin roles.
+                // This will remove all subAdmin roles, which is fine for now as we don't distinguish them yet.
                 const newRoles = user.roles?.filter(r => r.role !== 'subAdmin') || [];
                 await updateDoc(userRef, { roles: newRoles });
-                toast({ title: "Permissions Updated", description: `${user.displayName} is no longer a sub-admin.` });
+                toast({ title: "Permissions Updated", description: `${user.displayName} is no longer an admin.` });
             } else {
                 // Add a basic subAdmin role. Detailed permissions can be added later.
                 const newSubAdminRole: UserRole = { role: 'subAdmin', scope: 'global' };
                 await updateDoc(userRef, {
                     roles: arrayUnion(newSubAdminRole)
                 });
-                toast({ title: "Permissions Updated", description: `${user.displayName} is now a sub-admin.` });
+                toast({ title: "Permissions Updated", description: `${user.displayName} is now an admin.` });
             }
         } catch (error: any) {
             console.error("Error updating user role:", error);
@@ -151,7 +150,7 @@ function AdminPageContent() {
                         {roleIcon}
                         <span>{roleText}</span>
                     </div>
-                     {isManagementView && !isUserSuperAdmin && (
+                     {isManagementView && !isCurrentUser && !isUserSuperAdmin && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400">
@@ -160,7 +159,7 @@ function AdminPageContent() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
                                 <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
-                                    {isUserSubAdmin ? 'Remove sub-admin' : 'Promote to sub-admin'}
+                                    {isUserSubAdmin ? 'Remove admin' : 'Promote to admin'}
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
                                     <Ban className="mr-2 h-4 w-4" /> Block User
