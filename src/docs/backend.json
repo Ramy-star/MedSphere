@@ -42,14 +42,26 @@
         "photoURL": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time"},
         "roles": {
-          "type": "object",
-          "properties": {
-            "admin": { "type": "boolean" },
-            "subAdminForLevel": { "type": "string", "description": "ID of the level this user is a sub-admin for." }
+          "type": "array",
+          "description": "An array of roles and permissions assigned to the user.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string", "enum": ["superAdmin", "subAdmin"], "description": "The role of the user." },
+              "scope": { "type": "string", "enum": ["level", "semester", "subject", "folder"], "description": "The scope of the sub-admin's permissions (e.g., a specific level ID)." },
+              "scopeId": { "type": "string", "description": "The ID of the item the permission applies to (e.g., a specific level or folder ID)." },
+              "permissions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": ["canAddContent", "canDeleteContent", "canEditContent", "canManageUsers", "canAccessQuestionCreator", "canAccessAdminPanel"]
+                }
+              }
+            }
           }
         }
       },
-      "required": ["uid", "username", "studentId"]
+      "required": ["uid", "studentId"]
     },
     "QuestionSet": {
       "title": "Question Set",
