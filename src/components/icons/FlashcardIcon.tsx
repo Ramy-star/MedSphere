@@ -5,18 +5,23 @@ import React from "react";
 
 export const FlashcardIcon = React.forwardRef<SVGSVGElement, LucideProps>(
   ({ className, ...props }, ref) => (
-    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14" height="14" width="14"
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14" height="24" width="24"
         ref={ref}
         className={cn(className)}
         {...props}
     >
+        <desc>
+            Cards Streamline Icon: https://streamlinehq.com
+        </desc>
+        <g>
+            <path fill="url(#paint0_linear_14402_15202)" fill-rule="evenodd" d="M7.93682.722532C7.79745.202686 7.26312-.10581 6.74324.0334209L.722771 1.64578c-.520066.13928-.828698.67385-.6892855 1.19388L2.34364 11.4569c.13937.5199.6737.8284 1.19358.6891l6.02047-1.6123c.52011-.1393.82871-.67388.68931-1.19391L7.93682.722532ZM11.4545 9.01601 9.71026 2.50964l3.56744.95637c.5198.13936.8283.67369.6891 1.19357l-2.308 8.61782c-.1393.5201-.6739.8287-1.1939.6893l-.0012-.0003-4.42167-1.1972 3.83921-1.0282c1.18706-.3179 1.89146-1.538 1.57326-2.72499Z" clip-rule="evenodd"></path>
+        </g>
         <defs>
-            <linearGradient id="a" x1=".538" x2="16.494" y1="1.131" y2="10.125" gradientUnits="userSpaceOnUse">
-                <stop stop-color="#00d078"/>
-                <stop offset="1" stop-color="#007df0"/>
+            <linearGradient id="paint0_linear_14402_15202" x1=".538" x2="16.494" y1="1.131" y2="10.125" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#00d078"></stop>
+            <stop offset="1" stop-color="#007df0"></stop>
             </linearGradient>
         </defs>
-        <path fill="url(#a)" fill-rule="evenodd" d="M7.937.723a.975.975 0 0 0-1.194-.69L.723 1.646a.975.975 0 0 0-.69 1.194l2.31 8.617c.14.52.674.828 1.194.689l6.02-1.612a.975.975 0 0 0 .69-1.194zm3.517 8.293L9.71 2.51l3.568.956c.52.14.828.674.689 1.194l-2.308 8.617a.975.975 0 0 1-1.194.69h-.001l-4.422-1.198 3.84-1.028a2.225 2.225 0 0 0 1.573-2.725" clip-rule="evenodd"/>
     </svg>
   )
 );
