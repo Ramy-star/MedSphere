@@ -209,7 +209,7 @@ function AdminPageContent() {
 
         const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" />
                        : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
-                       : <User className="w-5 h-5 text-slate-400" />;
+                       : <User className="w-5 h-5 text-white" />;
 
         const RoleText = () => {
           if (userIsSuperAdmin) {
@@ -253,11 +253,11 @@ function AdminPageContent() {
                             </div>
                         </div>
                         {/* Desktop view */}
-                        <p className="hidden sm:flex items-center text-sm text-slate-400">
+                        <div className="hidden sm:flex items-center text-sm text-slate-400">
                           <span className="truncate">{user.email}</span>
                           <span className="mx-2">•</span>
                           <span>ID: {user.studentId}</span>
-                        </p>
+                        </div>
                     </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
@@ -389,7 +389,7 @@ function AdminPageContent() {
                         )}
                     </div>
                      <Button onClick={() => setShowAddUserDialog(true)} className="rounded-2xl">
-                       <UserPlus className="mr-2 h-4 w-4"/>
+                       <UserPlus className="sm:mr-2 h-4 w-4"/>
                        <span className="hidden sm:inline">Add User</span>
                    </Button>
                 </div>
