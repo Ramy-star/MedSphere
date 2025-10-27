@@ -8,6 +8,7 @@ import { NewFolderDialog } from './new-folder-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { NewLinkDialog } from './NewLinkDialog';
 import { Link2Icon } from './icons/Link2Icon';
+import { useAuthStore } from '@/stores/auth-store';
 
 type AddContentMenuProps = {
   parentId: string | null;
@@ -22,6 +23,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const { toast } = useToast();
+  const { isSuperAdmin } = useAuthStore();
 
   const handleAddFolder = async (folderName: string) => {
     try {
@@ -128,6 +130,8 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           action: handleAddFlashcard,
       },
   ]
+
+  if (!isSuperAdmin) return null;
 
   return (
     <>

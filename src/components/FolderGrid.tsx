@@ -30,7 +30,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import React from 'react';
-import { useUser } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
@@ -87,8 +87,7 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
     zIndex: isDragging ? 1 : 0,
     position: 'relative' as const,
   };
-  const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const { isSuperAdmin } = useAuthStore();
   
   if (!children) {
     return null;
@@ -99,11 +98,11 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
 
   const childrenWithProps = React.cloneElement(children as React.ReactElement, {
     ...((children as React.ReactElement).props),
-    showDragHandle: !isFolder && !isSubject && isAdmin,
+    showDragHandle: !isFolder && !isSubject && isSuperAdmin,
   });
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...(isAdmin ? listeners : {})}>
+    <div ref={setNodeRef} style={style} {...attributes} {...(isSuperAdmin ? listeners : {})}>
       {childrenWithProps}
     </div>
   );
@@ -125,8 +124,7 @@ export function FolderGrid({
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
 }) {
-  const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const { isSuperAdmin } = useAuthStore();
 
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
@@ -153,14 +151,14 @@ export function FolderGrid({
 
   useEffect(() => {
     if (fetchedItems) {
-      if (isAdmin) {
+      if (isSuperAdmin) {
         setSortedItems(fetchedItems);
       } else {
         // Filter out hidden items for non-admins
         setSortedItems(fetchedItems.filter(item => !item.metadata?.isHidden));
       }
     }
-  }, [fetchedItems, isAdmin]);
+  }, [fetchedItems, isSuperAdmin]);
 
   const handleFolderClick = (folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -191,7 +189,7 @@ export function FolderGrid({
   };
 
   const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isAdmin) return;
+    if (!isSuperAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
@@ -200,7 +198,7 @@ export function FolderGrid({
   };
 
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isAdmin) return;
+    if (!isSuperAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     const dropZoneNode = dropZoneRef.current;
@@ -210,14 +208,14 @@ export function FolderGrid({
   };
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isAdmin) return;
+    if (!isSuperAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
   };
 
   const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
-    if (!isAdmin) return;
+    if (!isSuperAdmin) return;
     e.preventDefault();
     e.stopPropagation();
     setIsDraggingOver(false);
@@ -231,7 +229,7 @@ export function FolderGrid({
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    if (!isAdmin) return;
+    if (!isSuperAdmin) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
         setSortedItems(currentItems => {
@@ -249,23 +247,23 @@ export function FolderGrid({
     }
   };
 
-  const handleFolderSelect = async (folderId: string, action: 'move' | 'copy') => {
-    const itemToProcess = action === 'move' ? itemToMove : itemToCopy;
-    if (!itemToProcess) return;
+  const handleFolderSelect = async (folder: Content) => {
+    const itemToProcess = currentAction === 'move' ? itemToMove : itemToCopy;
+    if (!itemToProcess || !currentAction) return;
 
     try {
-        if (action === 'move') {
-            await contentService.move(itemToProcess.id, folderId);
+        if (currentAction === 'move') {
+            await contentService.move(itemToProcess.id, folder.id);
             toast({ title: "Item Moved", description: `Moved "${itemToProcess.name}" successfully.` });
         } else { // copy
-            await contentService.copy(itemToProcess, folderId);
+            await contentService.copy(itemToProcess, folder.id);
             toast({ title: "Item Copied", description: `Copied "${itemToProcess.name}" successfully.` });
         }
     } catch (error: any) {
-        console.error(`Failed to ${action} item:`, error);
+        console.error(`Failed to ${currentAction} item:`, error);
         toast({
             variant: 'destructive',
-            title: `Error ${action === 'move' ? 'Moving' : 'Copying'} Item`,
+            title: `Error ${currentAction === 'move' ? 'Moving' : 'Copying'} Item`,
             description: error.message || 'An unknown error occurred.',
         });
     } finally {
@@ -281,7 +279,7 @@ export function FolderGrid({
       const isHidden = !item.metadata?.isHidden;
       toast({
           title: `Item ${isHidden ? 'Hidden' : 'Visible'}`,
-          description: `"${item.name}" is now ${isHidden ? 'hidden from public view' : 'visible to everyone'}.`
+          description: `"${item.name}" is now ${isHidden ? 'hidden from other users' : 'visible to everyone'}.`
       });
   };
   
@@ -342,9 +340,9 @@ export function FolderGrid({
               <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
               <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
               <p className="mt-2 text-sm text-slate-400">
-                {isAdmin ? "Drag and drop files here, or use the button to add content." : "No content has been added to this folder yet."}
+                {isSuperAdmin ? "Drag and drop files here, or use the button to add content." : "No content has been added to this folder yet."}
               </p>
-              {isAdmin && (
+              {isSuperAdmin && (
                 <AddContentMenu
                   parentId={parentId}
                   onFileSelected={onFileSelected}
@@ -360,7 +358,7 @@ export function FolderGrid({
       )}
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-        <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!isAdmin}>
+        <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!isSuperAdmin}>
           <motion.div className={containerClasses} variants={listVariants} initial="hidden" animate="visible">
             <AnimatePresence>
               {itemsToRender.map(({ item, uploadingFile }, index) => {
@@ -437,7 +435,7 @@ export function FolderGrid({
                     exit="exit"
                     className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
                   >
-                    {isAdmin ? (
+                    {isSuperAdmin ? (
                       <SortableItemWrapper id={item.id}>{renderedContent()}</SortableItemWrapper>
                     ) : (
                       renderedContent()
@@ -458,12 +456,12 @@ export function FolderGrid({
       <FolderSelectorDialog
             open={showFolderSelector}
             onOpenChange={setShowFolderSelector}
-            onSelectFolder={handleFolderSelect}
+            onSelect={handleFolderSelect}
             actionType={currentAction}
             currentItemId={itemToMove?.id || itemToCopy?.id}
       />
 
-      {isAdmin && (
+      {isSuperAdmin && (
         <>
           <RenameDialog
             item={itemToRename}

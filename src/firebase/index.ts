@@ -2,7 +2,6 @@
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
 import { 
   getFirestore, 
   Firestore, 
@@ -14,7 +13,6 @@ import { getStorage } from 'firebase/storage';
 
 // Re-export provider hooks
 export { useFirebase } from './provider';
-export { useUser } from './auth/use-user';
 export { useCollection } from './firestore/use-collection';
 export { useDoc } from './firestore/use-doc';
 
@@ -24,7 +22,6 @@ export let db: Firestore;
 export async function initializeFirebase(config: FirebaseOptions) {
   const apps = getApps();
   const app = !apps.length ? initializeApp(config) : getApp();
-  const auth = getAuth(app);
   
   if (!db) { // Check if db is already initialized
     if (typeof window !== 'undefined') {
@@ -47,6 +44,9 @@ export async function initializeFirebase(config: FirebaseOptions) {
   }
   
   const storage = getStorage(app);
+
+  // Return a dummy auth object to prevent breaking the app structure
+  const auth = { onAuthStateChanged: () => () => {} };
 
   return { app, auth, db, storage };
 }

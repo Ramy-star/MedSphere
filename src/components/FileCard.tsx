@@ -20,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { Link2Icon } from './icons/Link2Icon';
-import { useUser } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
 import { useRouter } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -140,9 +140,8 @@ export const FileCard = React.memo(function FileCard({
 }) {
     const isMobile = useIsMobile();
     const router = useRouter();
-    const { user } = useUser();
+    const { isSuperAdmin } = useAuthStore();
     const { initiateGeneration } = useQuestionGenerationStore();
-    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const updateFileInputRef = useRef<HTMLInputElement>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -239,7 +238,7 @@ export const FileCard = React.memo(function FileCard({
                 onChange={handleFileUpdate}
             />
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
-                {showDragHandle && !isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+                {showDragHandle && !isMobile && isSuperAdmin && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
             </div>
 
             <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -307,7 +306,7 @@ export const FileCard = React.memo(function FileCard({
                             </DropdownMenuItem>
                         )}
                         
-                        {isAdmin && (
+                        {isSuperAdmin && (
                             <>
                                 <DropdownMenuSeparator />
                                 {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf') && (

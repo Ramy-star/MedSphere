@@ -8,13 +8,13 @@ import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
-import { useUser } from '@/firebase/auth/use-user';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import type { Lecture, ExamResult, MCQ } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
 import { useFirebase } from '@/firebase/provider';
+import { useAuthStore } from '@/stores/auth-store';
 
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
@@ -392,8 +392,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const isInitialRender = useRef(true);
 
-    const { user } = useUser();
-    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+    const { studentId, isSuperAdmin } = useAuthStore();
     const { db: firestore } = useFirebase();
     
     const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
@@ -432,18 +431,18 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
     }, [questions, userAnswers]);
 
     const userFirstResult = useMemo(() => {
-        if (!user || !allResults) return null;
-        const userResults = allResults.filter(r => r.userId === user.uid);
+        if (!studentId || !allResults) return null;
+        const userResults = allResults.filter(r => r.userId === studentId);
         if (userResults.length === 0) return null;
         userResults.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
         return userResults[0];
-    }, [allResults, user]);
+    }, [allResults, studentId]);
 
-    const storageKey = useMemo(() => user ? `exam_progress_${lecture.id}_${user.uid}` : null, [lecture.id, user]);
+    const storageKey = useMemo(() => studentId ? `exam_progress_${lecture.id}_${studentId}` : null, [lecture.id, studentId]);
 
     const handleSubmit = useCallback(async (isSkip = false) => {
-        if (user && resultsCollectionRef && !isSkip) {
-            const userPreviousResultsQuery = query(resultsCollectionRef, where("lectureId", "==", lecture.id), where("userId", "==", user.uid));
+        if (studentId && resultsCollectionRef && !isSkip) {
+            const userPreviousResultsQuery = query(resultsCollectionRef, where("lectureId", "==", lecture.id), where("userId", "==", studentId));
             try {
                 const userPreviousResultsSnapshot = await getDocs(userPreviousResultsQuery);
 
@@ -453,7 +452,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                         score,
                         totalQuestions: questions.length,
                         percentage,
-                        userId: user.uid,
+                        userId: studentId,
                         timestamp: new Date(),
                     };
                     addDocumentNonBlocking(resultsCollectionRef, result);
@@ -471,7 +470,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, lecture.id, questions.length, user, resultsCollectionRef, score, percentage]);
+    }, [storageKey, lecture.id, questions.length, studentId, resultsCollectionRef, score, percentage]);
 
     useEffect(() => {
         if (isInitialRender.current || !storageKey) {
@@ -715,7 +714,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                 <div className={cn(containerClasses, "exam-results-screen")}>
                     <TooltipProvider>
                         <div className="relative">
-                             {isAdmin && (
+                             {isSuperAdmin && (
                                 <button onClick={() => setIsReportModalOpen(true)} className="report-btn absolute top-0 left-0">
                                     <FileText size={20} />
                                     <span className="report-text">Report</span>
@@ -824,7 +823,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                          <div className="exam-progress-header">
                             <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
                              <div className="flex justify-between items-center mb-2">
-                                {isAdmin ? (
+                                {isSuperAdmin ? (
                                      <button onClick={() => handleSubmit(true)} className="skip-btn">
                                         <SkipForward size={16} />
                                         <span className="skip-text">Skip</span>
@@ -931,14 +930,10 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                     return;
                 }
                 
-                const usersQuery = query(collection(db, "users"), where("uid", "in", userIds));
-                const usersSnapshot = await getDocs(usersQuery);
-                const usersMap = new Map<string, any>();
-                usersSnapshot.forEach(doc => usersMap.set(doc.id, doc.data()));
-                
+                // Since we don't have a users collection, we just show student IDs
                 const finalData = Object.values(resultsByUser).map(result => ({
-                    userName: usersMap.get(result.userId)?.displayName || 'Unknown User',
-                    studentId: usersMap.get(result.userId)?.studentId || 'N/A',
+                    userName: `Student ${result.userId}`, // Placeholder name
+                    studentId: result.userId,
                     score: result.score,
                     total: result.totalQuestions,
                     percentage: result.percentage,

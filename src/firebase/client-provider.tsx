@@ -27,10 +27,6 @@ export function FirebaseClientProvider({
 
             const instances = await initializeFirebase(config);
             setFirebase(instances);
-            
-            // The logic for getRedirectResult is moved to useUser hook
-            // to centralize auth state management.
-            
             setLoading(false);
         } catch (e: any) {
             console.error("Firebase initialization error:", e);

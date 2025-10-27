@@ -1,7 +1,7 @@
 'use client';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
-import { useUser } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 import Image from 'next/image';
 import { allSubjectIcons } from '@/lib/file-data';
 import { usePathname } from 'next/navigation';
@@ -14,8 +14,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 
 
 export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?: (file: File) => void }) {
-  const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const { isSuperAdmin } = useAuthStore();
   const pathname = usePathname();
   
   const { data: allItems } = useCollection<Content>('content');
@@ -93,7 +92,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
         </h1>
       </div>
       <div className="flex gap-2">
-        {isAdmin && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
+        {isSuperAdmin && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
           <div>
             <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
           </div>

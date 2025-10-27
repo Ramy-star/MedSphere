@@ -30,7 +30,6 @@ export function VerificationScreen({ onVerified }: VerificationScreenProps) {
     try {
       const isValid = await isStudentIdValid(studentId);
       if (isValid) {
-        // Store the verified ID in localStorage to be picked up by the AuthGuard
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, studentId.trim());
         onVerified();
       } else {

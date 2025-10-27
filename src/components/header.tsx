@@ -8,10 +8,9 @@ import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import { Logo } from './logo';
-import { AuthButton } from './auth-button';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useUser } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -21,8 +20,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [debouncedQuery] = useDebounce(query, 1000);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const { isSuperAdmin } = useAuthStore();
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -83,7 +81,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               </Button>
           )}
         </div>
-        {isAdmin && (
+        {isSuperAdmin && (
             <TooltipProvider>
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -97,7 +95,6 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                 </Tooltip>
             </TooltipProvider>
         )}
-        <AuthButton />
       </div>
     </header>
   );

@@ -12,7 +12,7 @@ import {
 import { Button } from './ui/button';
 import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useUser } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 import Image from 'next/image';
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
@@ -44,9 +44,8 @@ export const FolderCard = React.memo(function FolderCard({
 }) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
-    const { user } = useUser();
+    const { isSuperAdmin } = useAuthStore();
     const router = useRouter();
-    const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
     const [dropdownOpen, setDropdownOpen] = useState(false);
     
     const renderIcon = () => {
@@ -127,7 +126,7 @@ export const FolderCard = React.memo(function FolderCard({
                 className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
-                {!isMobile && isAdmin && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
+                {!isMobile && isSuperAdmin && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
                 <div className="flex items-center gap-3 overflow-hidden flex-1">
                     {item.metadata?.iconURL ? (
                        <Image 
@@ -149,7 +148,7 @@ export const FolderCard = React.memo(function FolderCard({
                         {createdAt}
                     </p>
                     
-                    {isAdmin && (
+                    {isSuperAdmin && (
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
@@ -186,7 +185,7 @@ export const FolderCard = React.memo(function FolderCard({
       >
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
-              {isAdmin && (
+              {isSuperAdmin && (
                   <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                        <TooltipProvider>
                             <Tooltip>

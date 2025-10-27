@@ -8,13 +8,11 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { Header } from "@/components/header";
 import { useState, useEffect } from "react";
-import { FirebaseClientProvider } from "@/firebase/client-provider";
-import { getFirebaseConfig } from "@/firebase/config";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { VerificationScreen } from "@/components/VerificationScreen";
 import { useMobileViewStore } from "@/hooks/use-mobile-view-store";
 import { cn } from "@/lib/utils";
-import { AuthGuard } from "@/components/AuthGuard";
+import { useAuthStore } from '@/stores/auth-store';
 
 
 const nunitoSans = Nunito_Sans({ 
@@ -36,30 +34,25 @@ const inter = Inter({
 });
 
 const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
-const VERIFIED_STUDENT_KEY = 'medsphere-is-verified';
 
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const firebaseConfig = getFirebaseConfig();
   const [showWelcome, setShowWelcome] = useState(true);
-  const [isVerified, setIsVerified] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const { isAuthenticated, checkAuth, loading } = useAuthStore();
 
   useEffect(() => {
     setIsClient(true);
     const hasVisited = localStorage.getItem(WELCOME_SCREEN_KEY);
-    const isStudentVerified = localStorage.getItem(VERIFIED_STUDENT_KEY);
 
     if (hasVisited) {
       setShowWelcome(false);
     }
-    if (isStudentVerified === 'true') {
-      setIsVerified(true);
-    }
-  }, []);
+    checkAuth();
+  }, [checkAuth]);
 
   useEffect(() => {
     const setDynamicVh = () => {
@@ -74,11 +67,6 @@ export default function RootLayout({
   const handleGetStarted = () => {
     localStorage.setItem(WELCOME_SCREEN_KEY, 'true');
     setShowWelcome(false);
-  };
-
-  const handleVerified = () => {
-    localStorage.setItem(VERIFIED_STUDENT_KEY, 'true');
-    setIsVerified(true);
   };
 
   if (!isClient) {
@@ -108,7 +96,16 @@ export default function RootLayout({
     );
   }
 
-  if (!isVerified) {
+  if (loading) {
+    // You can return a global loading spinner here if desired
+    return (
+       <html lang="en" className="dark h-full">
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background`}></body>
+        </html>
+    )
+  }
+
+  if (!isAuthenticated) {
      return (
         <html lang="en" className="dark h-full">
             <head>
@@ -117,7 +114,7 @@ export default function RootLayout({
                 <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
             </head>
             <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
-                 <VerificationScreen onVerified={handleVerified} />
+                 <VerificationScreen onVerified={() => checkAuth()} />
             </body>
         </html>
     );
@@ -136,8 +133,6 @@ export default function RootLayout({
           <link rel="preconnect" href="https://res.cloudinary.com" />
       </head>
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
-        <FirebaseClientProvider config={firebaseConfig}>
-          {/* <AuthGuard> */}
             <div className="flex flex-col h-full w-full">
               <header className="z-50 w-full">
                 <Header />
@@ -147,8 +142,6 @@ export default function RootLayout({
               </main>
             </div>
             <Toaster />
-          {/* </AuthGuard> */}
-        </FirebaseClientProvider>
       </body>
     </html>
   );
