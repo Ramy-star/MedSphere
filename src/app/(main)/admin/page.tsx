@@ -302,11 +302,11 @@ function AdminPageContent() {
                                 : userIsSubAdmin ? <Shield className="w-3 h-3 text-blue-400" />
                                 : <User className="w-3 h-3 text-white" />;
 
-        const RoleText = () => {
-            return userIsSuperAdmin ? <span className='text-yellow-400'>Super Admin</span>
+        const RoleText = () => (
+            userIsSuperAdmin ? <span className='text-yellow-400'>Super Admin</span>
             : userIsSubAdmin ? <span className='text-blue-400'>Admin</span>
             : <span className='text-slate-300'>User</span>
-        };
+        );
         
         return (
             <div 
@@ -506,8 +506,14 @@ function AdminPageContent() {
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className={cn("grid w-full max-w-lg mx-auto bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin ? "grid-cols-4" : "grid-cols-3")}>
-                        <TabsTrigger value="users">All Users</TabsTrigger>
-                        <TabsTrigger value="admins">Admins</TabsTrigger>
+                        <TabsTrigger value="users">
+                            All Users 
+                            {filteredAndSortedUsers && <span className="ml-2 bg-slate-700/80 text-slate-200 text-xs font-bold px-2 py-0.5 rounded-full">{filteredAndSortedUsers.length}</span>}
+                        </TabsTrigger>
+                        <TabsTrigger value="admins">
+                            Admins
+                            {admins && <span className="ml-2 bg-slate-700/80 text-slate-200 text-xs font-bold px-2 py-0.5 rounded-full">{admins.length}</span>}
+                        </TabsTrigger>
                         <TabsTrigger value="management">Management</TabsTrigger>
                         {isSuperAdmin && <TabsTrigger value="audit">History</TabsTrigger>}
                     </TabsList>
@@ -627,6 +633,9 @@ const AdminPageWithSuspense = () => (
 export default AdminPageWithSuspense;
 
 
+
+
+    
 
 
     
