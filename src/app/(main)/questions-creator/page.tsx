@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion, FileCheck, Layers, ChevronDown, FolderSearch } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion, FileCheck, Layers, ChevronDown, FolderSearch, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -17,7 +17,6 @@ import {
   DialogClose,
 } from '@/components/ui/dialog';
 import Link from 'next/link';
-import { useUser } from '@/firebase/auth/use-user';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { addDoc, collection, deleteDoc, doc, updateDoc, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -43,6 +42,7 @@ import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { CSS } from '@dnd-kit/utilities';
 import { contentService, type Content } from '@/lib/contentService';
 import type { Lecture } from '@/lib/types';
+import { useAuthStore } from '@/stores/auth-store';
 
 
 type SavedQuestionSet = {
@@ -311,13 +311,13 @@ function QuestionsCreatorContent() {
     closeOptionsDialog,
   } = useQuestionGenerationStore();
 
-  const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
+  const { studentId, isSuperAdmin: isAdmin } = useAuthStore();
+  
   const { data: fetchedSavedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
-    user ? `users/${user.uid}/questionSets` : '',
+    studentId ? `users/${studentId}/questionSets` : '',
     {
       orderBy: ['order', 'asc'],
-      disabled: !user,
+      disabled: !studentId,
     }
   );
 
@@ -414,7 +414,7 @@ function QuestionsCreatorContent() {
 
 
   const handleSaveCurrentQuestions = async () => {
-    if (!task || !user) {
+    if (!task || !studentId) {
       toast({
         variant: 'destructive',
         title: 'Cannot Save',
@@ -422,7 +422,7 @@ function QuestionsCreatorContent() {
       });
       return;
     }
-    await saveCurrentResults(user.uid, savedQuestions.length);
+    await saveCurrentResults(studentId, savedQuestions.length);
     toast({ title: 'Questions Saved', description: 'Your generated questions have been saved to your library.' });
 
     // Reset flow after a short delay
@@ -477,8 +477,8 @@ function QuestionsCreatorContent() {
   };
 
   const handleDeleteSet = async () => {
-    if (!itemToDelete || !user) return;
-    const docRef = doc(db, `users/${user.uid}/questionSets`, itemToDelete.id);
+    if (!itemToDelete || !studentId) return;
+    const docRef = doc(db, `users/${studentId}/questionSets`, itemToDelete.id);
     await deleteDoc(docRef);
     toast({ title: 'Set Deleted', description: 'The question set has been removed.' });
     setItemToDelete(null);
@@ -501,10 +501,10 @@ function QuestionsCreatorContent() {
             const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
 
             // Persist the new order to Firestore
-            if (user) {
+            if (studentId) {
                 const batch = writeBatch(db);
                 newOrderedItems.forEach((item, index) => {
-                    const docRef = doc(db, `users/${user.uid}/questionSets`, item.id);
+                    const docRef = doc(db, `users/${studentId}/questionSets`, item.id);
                     batch.update(docRef, { order: index });
                 });
                 batch.commit().catch(err => {

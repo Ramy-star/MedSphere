@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, Layers, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
-import { repairJson } from '@/ai/flows/question-gen-flow';
 import { reformatMarkdown } from '@/ai/flows/reformat-markdown-flow';
 import {
   Dialog,
@@ -18,7 +17,6 @@ import {
 } from '@/components/ui/dialog';
 import { notFound, useRouter } from 'next/navigation';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { useUser } from '@/firebase/auth/use-user';
 import { updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
@@ -27,6 +25,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { contentService, type Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 import type { Lecture } from '@/lib/types';
+import { useAuthStore } from '@/stores/auth-store';
 
 
 type SavedQuestionSet = {
@@ -118,10 +117,9 @@ function reorderAndStringify(obj: any): string {
 
 function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
-  const { user } = useUser();
-  const isAdmin = user?.uid === process.env.NEXT_PUBLIC_ADMIN_UID;
-  const { data: questionSet, loading } = useDoc<SavedQuestionSet>(user ? `users/${user.uid}/questionSets` : '', id, {
-    disabled: !id || !user
+  const { studentId, isSuperAdmin: isAdmin } = useAuthStore();
+  const { data: questionSet, loading } = useDoc<SavedQuestionSet>(studentId ? `users/${studentId}/questionSets` : '', id, {
+    disabled: !id || !studentId
   });
 
   const [isEditing, setIsEditing] = useState({ text: false, json: false, examText: false, examJson: false, flashcardText: false, flashcardJson: false });
@@ -179,8 +177,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   }, [isEditingTitle]);
 
   const updateQuestionSet = async (updatedData: Partial<SavedQuestionSet>) => {
-    if (!user?.uid || !id) return;
-    const docRef = doc(db, `users/${user.uid}/questionSets`, id);
+    if (!studentId || !id) return;
+    const docRef = doc(db, `users/${studentId}/questionSets`, id);
     await updateDoc(docRef, updatedData);
   };
   
@@ -236,31 +234,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   };
 
   const handleRepairJson = async () => {
-    if (!questionSet) return;
-    setIsRepairing(true);
-    try {
-        const repaired = await repairJson({
-            malformedJson: editingContent.json,
-            desiredSchema: localStorage.getItem('questionJsonPrompt') || '',
-        });
-        
-        await updateQuestionSet({ jsonQuestions: repaired });
-        setEditingContent(prev => ({...prev, json: repaired}));
-        setJsonError(null);
-        toast({
-            title: 'JSON Repaired',
-            description: 'The JSON structure has been successfully repaired.',
-        });
-    } catch (err: any) {
-        toast({
-            variant: 'destructive',
-            title: 'Repair Failed',
-            description: err.message || 'Could not repair the JSON.',
-        });
-        setJsonError(err.message || 'Could not repair the JSON.');
-    } finally {
-        setIsRepairing(false);
-    }
+    // This function is no longer needed as the flow has been removed
   };
   
   const handleCopy = (content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
@@ -786,7 +760,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
 export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:string }> }) {
   const { id } = use(params);
-  const { user, loading } = useUser();
+  const { studentId, loading } = useAuthStore();
 
   if (loading) {
     return (
@@ -796,7 +770,7 @@ export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:
     );
   }
 
-  if (!user) {
+  if (!studentId) {
     // Or a login prompt
     return <div className="text-center p-8">Please log in to view saved questions.</div>
   }
