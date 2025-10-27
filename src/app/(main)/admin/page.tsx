@@ -466,7 +466,7 @@ function AdminPageContent() {
                     <div className="flex items-center gap-2">
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                 <Button variant="outline" className="rounded-2xl w-auto sm:w-auto">
+                                 <Button variant="outline" className="rounded-2xl w-auto">
                                     <ArrowUpDown className="h-4 w-4 sm:mr-2" />
                                     <span className="hidden sm:inline">Sort by</span>
                                 </Button>
@@ -639,3 +639,4 @@ export default AdminPageWithSuspense;
 
 
     
+
