@@ -712,6 +712,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
              <div className={cn("no-scrollbar overflow-auto h-full", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')}>
               <FilePreview 
                   key={item.id}
+                  itemId={item.id}
                   ref={pdfViewerRef}
                   url={fileUrl} 
                   mime={item.metadata?.mime ?? 'application/octet-stream'} 

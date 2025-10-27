@@ -21,6 +21,7 @@ import 'react-pdf/dist/esm/Page/AnnotationLayer.css';
 import 'react-pdf/dist/esm/Page/TextLayer.css';
 
 type FilePreviewProps = {
+  itemId: string;
   url?: string;
   mime?: string;
   itemName: string;
@@ -39,7 +40,7 @@ type FilePreviewProps = {
 // Define the type for the ref handle
 export type FilePreviewRef = PdfViewerRef;
 
-const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage, onTextSelect, onSelectionChange, itemType, quizData, onExamStateChange }, ref) => {
+const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ itemId, url, mime, itemName, onPdfLoadSuccess, pdfScale, onPageChange, isFullscreen, currentPage, onTextSelect, onSelectionChange, itemType, quizData, onExamStateChange }, ref) => {
   const [content, setContent] = useState<string | Blob | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [contentUrl, setContentUrl] = useState<string|null>(null);
@@ -176,8 +177,8 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ url, mime, i
         return (
              <div ref={containerRef} className="w-full h-full overflow-y-auto no-scrollbar selectable">
                 {itemType === 'INTERACTIVE_QUIZ' && <QuizContainer lectures={lectures} />}
-                {itemType === 'INTERACTIVE_EXAM' && <ExamContainer lectures={lectures} onStateChange={onExamStateChange} />}
-                {itemType === 'INTERACTIVE_FLASHCARD' && <FlashcardContainer lectures={lectures} />}
+                {itemType === 'INTERACTIVE_EXAM' && <ExamContainer lectures={lectures} onStateChange={onExamStateChange} fileItemId={itemId} />}
+                {itemType === 'INTERACTIVE_FLASHCARD' && <FlashcardContainer lectures={lectures} fileItemId={itemId} />}
             </div>
         );
     } catch (e) {

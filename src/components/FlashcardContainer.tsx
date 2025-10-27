@@ -420,7 +420,7 @@ const EditLectureDialog = ({ lecture, onSave, onOpenChange }: { lecture: Lecture
 
 
 // --- Main View ---
-export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Lecture[] | Lecture }) {
+export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { lectures: Lecture[] | Lecture, fileItemId: string | null }) {
     const { can } = useAuthStore();
     
     const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
@@ -432,9 +432,9 @@ export function FlashcardContainer({ lectures: rawLecturesData }: { lectures: Le
     const [isUpsertDialogOpen, setIsUpsertDialogOpen] = useState(false);
     const [cardToEdit, setCardToEdit] = useState<Flashcard | null>(null);
     const [isEditLectureOpen, setIsEditLectureOpen] = useState(false);
-    const canAdminister = can('canAdministerFlashcards', activeLectureId);
-
+    
     const activeLecture = lecturesState.find(lec => lec.id === activeLectureId);
+    const canAdminister = can('canAdministerFlashcards', fileItemId);
     const flashcards = activeLecture?.flashcards || [];
     const currentCard = flashcards[currentCardIndex];
 

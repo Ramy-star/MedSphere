@@ -385,7 +385,7 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
 
 // --- MAIN EXAM COMPONENT LOGIC ---
 
-const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange }: { lecture: Lecture, onExit: () => void, onSwitchLecture: (lectureId: string) => void, allLectures: Lecture[], onStateChange?: (inProgress: boolean) => void }) => {
+const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, onStateChange }: { fileItemId: string | null; lecture: Lecture, onExit: () => void, onSwitchLecture: (lectureId: string) => void, allLectures: Lecture[], onStateChange?: (inProgress: boolean) => void }) => {
     const [examState, setExamState] = useState<'not-started' | 'in-progress' | 'finished'>('not-started');
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswers, setUserAnswers] = useState<(string | null)[]>([]);
@@ -719,7 +719,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                 <div className={cn(containerClasses, "exam-results-screen")}>
                     <TooltipProvider>
                         <div className="relative">
-                             {can('canAdministerExams', lecture.id) && (
+                             {can('canAdministerExams', fileItemId) && (
                                 <button onClick={() => setIsReportModalOpen(true)} className="report-btn absolute top-0 left-0">
                                     <FileText size={20} />
                                     <span className="report-text">Report</span>
@@ -828,7 +828,7 @@ const ExamMode = ({ lecture, onExit, onSwitchLecture, allLectures, onStateChange
                          <div className="exam-progress-header">
                             <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
                              <div className="flex justify-between items-center mb-2">
-                                {can('canAdministerExams', lecture.id) ? (
+                                {can('canAdministerExams', fileItemId) ? (
                                      <button onClick={() => handleSubmit(true)} className="skip-btn">
                                         <SkipForward size={16} />
                                         <span className="skip-text">Skip</span>
@@ -1010,7 +1010,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
     );
 };
 
-export default function ExamContainer({ lectures: rawLecturesData, onStateChange }: { lectures: Lecture[] | Lecture, onStateChange?: (inProgress: boolean) => void }) {
+export default function ExamContainer({ lectures: rawLecturesData, onStateChange, fileItemId }: { lectures: Lecture[] | Lecture, onStateChange?: (inProgress: boolean) => void, fileItemId: string | null }) {
     const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
     const [activeLectureId, setActiveLectureId] = useState('');
     const isInitialRender = useRef(true);
@@ -1134,6 +1134,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
             <ExamStyles />
             <div id="questions-container">
                  <ExamMode 
+                    fileItemId={fileItemId}
                     lecture={activeLecture} 
                     onExit={handleExit} 
                     onSwitchLecture={handleSwitchLecture}
