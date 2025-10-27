@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -44,19 +45,29 @@ type UserProfile = {
 };
 
 const permissionGroups = {
-    'Content Management': [
-        { id: 'canAddContent', label: 'Add Content' },
-        { id: 'canEditContent', label: 'Edit/Rename Content' },
-        { id: 'canDeleteContent', label: 'Delete Content' },
+    'Add Content Menu': [
+        { id: 'canAddClass', label: 'Add Class' },
+        { id: 'canAddFolder', label: 'Add Folder' },
+        { id: 'canUploadFile', label: 'Upload File' },
+        { id: 'canAddLink', label: 'Add Link' },
+        { id: 'canCreateFlashcard', label: 'Create Flashcard' },
     ],
-    'User Management': [
-        { id: 'canManageUsers', label: 'Manage Users & Roles' },
+    'Item Options Menu': [
+        { id: 'canRename', label: 'Rename' },
+        { id: 'canDelete', label: 'Delete' },
+        { id: 'canMove', label: 'Move' },
+        { id: 'canCopy', label: 'Copy' },
+        { id: 'canChangeIcon', label: 'Change Icon' },
+        { id: 'canToggleVisibility', label: 'Toggle Visibility' },
+        { id: 'canUpdateFile', label: 'Update File' },
+        { id: 'canCreateQuestions', label: 'Create Questions (AI)' },
     ],
     'Page Access': [
         { id: 'canAccessQuestionCreator', label: 'Questions Creator Page' },
-        { id: 'canAccessAdminPanel', label: 'Admin Panel Page' },
+        { id: 'canAccessAdminPanel', label: 'Admin Panel (Full Access)' },
     ]
 };
+
 
 
 export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProfile | null, open: boolean, onOpenChange: (open: boolean) => void }) {
