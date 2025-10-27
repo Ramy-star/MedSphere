@@ -20,7 +20,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [debouncedQuery] = useDebounce(query, 1000);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
-  const { isSuperAdmin } = useAuthStore();
+  const { can } = useAuthStore();
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -81,8 +81,9 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               </Button>
           )}
         </div>
-        {isSuperAdmin && (
-            <TooltipProvider>
+        
+        <TooltipProvider>
+            {can('canAccessQuestionCreator', pathname) && (
                 <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
@@ -93,6 +94,8 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                         <p>Questions Creator</p>
                     </TooltipContent>
                 </Tooltip>
+            )}
+            {can('canAccessAdminPanel', pathname) && (
                  <Tooltip>
                     <TooltipTrigger asChild>
                         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
@@ -103,8 +106,9 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                         <p>Admin Panel</p>
                     </TooltipContent>
                 </Tooltip>
-            </TooltipProvider>
-        )}
+            )}
+        </TooltipProvider>
+        
       </div>
     </header>
   );

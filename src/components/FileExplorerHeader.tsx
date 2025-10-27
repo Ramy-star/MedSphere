@@ -1,3 +1,4 @@
+
 'use client';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
@@ -14,7 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 
 
 export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?: (file: File) => void }) {
-  const { isSuperAdmin } = useAuthStore();
+  const { canAddContent } = useAuthStore();
   const pathname = usePathname();
   
   const { data: allItems } = useCollection<Content>('content');
@@ -92,7 +93,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
         </h1>
       </div>
       <div className="flex gap-2">
-        {isSuperAdmin && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
+        {canAddContent(pathname) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
           <div>
             <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
           </div>

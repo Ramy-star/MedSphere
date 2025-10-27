@@ -11,6 +11,7 @@ import { NewLinkDialog } from './NewLinkDialog';
 import { Link2Icon } from './icons/Link2Icon';
 import { useAuthStore } from '@/stores/auth-store';
 import { FlashcardIcon } from './icons/FlashcardIcon';
+import { usePathname } from 'next/navigation';
 
 type AddContentMenuProps = {
   parentId: string | null;
@@ -25,7 +26,8 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const { toast } = useToast();
-  const { isSuperAdmin } = useAuthStore();
+  const { can, user } = useAuthStore();
+  const pathname = usePathname();
 
   const handleAddFolder = async (folderName: string) => {
     try {
@@ -76,6 +78,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   }
   
   const handleAddFlashcard = async () => {
+    if (!parentId) return;
     try {
         await contentService.createInteractiveFlashcard(parentId, 'New Flashcards', '[]', '');
         toast({ title: 'Flashcards Created', description: `A new flashcard set has been created.` });
@@ -110,30 +113,37 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           label: "New Class",
           icon: Plus,
           action: () => setShowNewClassDialog(true),
+          permission: 'canAddClass'
       },
       {
           label: "New Folder",
           icon: FolderPlus,
           action: () => setShowNewFolderDialog(true),
+          permission: 'canAddFolder'
       },
       {
           label: "Upload File",
           icon: Upload,
           action: handleUploadClick,
+          permission: 'canUploadFile'
       },
       {
           label: "Add Link",
           icon: Link2Icon,
           action: () => setShowNewLinkDialog(true),
+          permission: 'canAddLink'
       },
       {
           label: "Create Flashcard",
           icon: FlashcardIcon,
           action: handleAddFlashcard,
+          permission: 'canCreateFlashcard'
       },
   ]
 
-  if (!isSuperAdmin) return null;
+  const visibleMenuItems = menuItems.filter(item => can(item.permission, pathname));
+  
+  if (!user || visibleMenuItems.length === 0) return null;
 
   return (
     <>
@@ -153,7 +163,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         >
             <div className="space-y-1">
               <p className="px-2 py-1.5 text-sm font-semibold text-slate-300">Create New</p>
-              {menuItems.map((item) => (
+              {visibleMenuItems.map((item) => (
                   <div 
                       key={item.label}
                       onClick={item.action}

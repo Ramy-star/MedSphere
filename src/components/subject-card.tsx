@@ -17,6 +17,7 @@ import {
 import { Button } from './ui/button';
 import { useAuthStore } from '@/stores/auth-store';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { usePathname } from 'next/navigation';
 
 
 export const SubjectCard = React.memo(function SubjectCard({ 
@@ -33,19 +34,15 @@ export const SubjectCard = React.memo(function SubjectCard({
   const { id, name, iconName, color } = subject;
   const subjectPath = `/folder/${id}`;
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
-  const { isSuperAdmin: isAdmin } = useAuthStore();
+  const { can } = useAuthStore();
+  const pathname = usePathname();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const handleCardClick = (e: React.MouseEvent) => {
-    // Prevent click from propagating to parent elements
     e.stopPropagation();
-    
-    // Check if the click target is the trigger or inside the menu content
     if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
         return;
     }
-    
-    // If not, proceed with navigation (handled by the Link component)
   };
   
   const handleAction = (e: Event, action: () => void) => {
@@ -62,7 +59,7 @@ export const SubjectCard = React.memo(function SubjectCard({
             <div>
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />
-                    {isAdmin && (
+                    {can('canRename', pathname) && (
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <TooltipProvider>
                                 <Tooltip>
@@ -86,19 +83,27 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 className="w-48 p-2"
                                 align="end"
                             >
+                                {can('canRename', pathname) && (
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)} onClick={(e) => e.stopPropagation()}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
+                                )}
+                                {can('canChangeIcon', pathname) && (
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(subject))} onClick={(e) => e.stopPropagation()}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10" onClick={(e) => e.stopPropagation()}>
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Delete</span>
-                                </DropdownMenuItem>
+                                )}
+                                {can('canDelete', pathname) && (
+                                    <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10" onClick={(e) => e.stopPropagation()}>
+                                            <Trash2 className="mr-2 h-4 w-4" />
+                                            <span>Delete</span>
+                                        </DropdownMenuItem>
+                                    </>
+                                )}
                             </DropdownMenuContent>
                         </DropdownMenu>
                     )}

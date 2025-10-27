@@ -89,7 +89,7 @@ type AuditLog = {
 type SortOption = 'name' | 'createdAt' | 'level';
 
 async function logAdminAction(actor: UserProfile, action: string, target: UserProfile, details?: object) {
-    if (!db) return;
+    if (!db || !actor) return;
     try {
         await addDoc(collection(db, 'auditLogs'), {
             timestamp: new Date().toISOString(),
@@ -421,7 +421,7 @@ function AdminPageContent() {
                 </div>
             )
         }
-        return userList.map((user, index) => (
+        return userList.map((user) => (
              <div key={user.uid} className="my-1.5 sm:my-0 border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
                 <UserCard user={user} />
             </div>
@@ -631,14 +631,3 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
-
-
-
-
-    
-
-
-    
-
-
-
