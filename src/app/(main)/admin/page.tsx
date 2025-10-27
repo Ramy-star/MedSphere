@@ -2,11 +2,11 @@
 
 'use client';
 
-import { Suspense, useMemo, useState, useCallback } from 'react';
+import { Suspense, useMemo, useState, useCallback, useEffect } from 'react';
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX, Settings, Ban } from 'lucide-react';
+import { Search, MoreVertical, Trash2, UserPlus, Crown, Shield, User, SearchX, Settings, Ban, X } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -18,7 +18,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore } from '@/stores/auth-store';
@@ -93,7 +92,6 @@ function AdminPageContent() {
 
     const sortedUsers = useMemo(() => {
         if (!users) return [];
-        // Make sure there are no duplicate users from the start
         const uniqueUsers = Array.from(new Map(users.map(user => [user.uid, user])).values());
         
         return uniqueUsers.sort((a, b) => {
@@ -186,7 +184,6 @@ function AdminPageContent() {
         setUserToDelete(null);
     }, [userToDelete, toast]);
 
-    // Use React.memo for UserCard to prevent re-rendering when parent state changes
     const UserCard = React.memo(({ user, isManagementView = false }: { user: UserProfile, isManagementView?: boolean }) => {
         const userIsSuperAdmin = isSuperAdmin(user);
         const userIsSubAdmin = isSubAdmin(user);
@@ -196,9 +193,15 @@ function AdminPageContent() {
                        : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
                        : <User className="w-5 h-5 text-slate-400" />;
 
-        const roleText = userIsSuperAdmin ? 'Super Admin'
-                       : userIsSubAdmin ? 'Admin'
-                       : 'User';
+        const RoleText = () => {
+          if (userIsSuperAdmin) {
+            return <span className='text-yellow-400'>Super Admin</span>
+          }
+          if (userIsSubAdmin) {
+            return <span className='text-blue-400'>Admin</span>
+          }
+          return <span className='text-slate-300'>User</span>;
+        }
         
         return (
             <div 
@@ -218,9 +221,9 @@ function AdminPageContent() {
                     </div>
                 </div>
                 <div className="flex items-center gap-4 shrink-0">
-                    <div className="hidden sm:flex items-center gap-2 text-sm text-slate-300">
+                    <div className="hidden sm:flex items-center gap-2 text-sm">
                         {roleIcon}
-                        <span>{roleText}</span>
+                        <RoleText />
                     </div>
                    
                     {isManagementView && !userIsSuperAdmin && (
@@ -297,12 +300,22 @@ function AdminPageContent() {
                         )} />
                         <Input 
                             placeholder="Search by name, email, or ID..."
-                            className="pl-10 bg-black/20 border-white/10 rounded-2xl h-10"
+                            className="pl-10 pr-10 bg-black/20 border-white/10 rounded-2xl h-10"
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             onFocus={() => setIsSearchFocused(true)}
                             onBlur={() => setIsSearchFocused(false)}
                         />
+                         {searchQuery && (
+                            <Button 
+                                variant="ghost" 
+                                size="icon"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-slate-400 hover:text-white"
+                                onClick={() => setSearchQuery('')}
+                            >
+                                <X className="w-5 h-5" />
+                            </Button>
+                        )}
                     </div>
                      <Button onClick={() => setShowAddUserDialog(true)} className="rounded-2xl">
                        <UserPlus className="mr-2 h-4 w-4"/>
@@ -378,5 +391,3 @@ export default function AdminPage() {
         </Suspense>
     )
 }
-
-    
