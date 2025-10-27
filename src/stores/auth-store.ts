@@ -1,7 +1,7 @@
 
 import { create } from 'zustand';
+import { authService } from '@/lib/authService';
 
-const SUPER_ADMIN_ID = "221100154";
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
 type UserProfile = {
@@ -13,6 +13,7 @@ type UserProfile = {
   photoURL?: string;
   level?: string;
   createdAt?: string;
+  roles?: any[];
 };
 
 type AuthState = {
@@ -22,10 +23,11 @@ type AuthState = {
   user: UserProfile | null;
   loading: boolean;
   checkAuth: () => void;
+  login: (studentId: string) => Promise<boolean>;
   logout: () => void;
 };
 
-export const useAuthStore = create<AuthState>((set, get) => ({
+export const useAuthStore = create<AuthState>((set) => ({
   isAuthenticated: false,
   isSuperAdmin: false,
   studentId: null,
@@ -34,52 +36,71 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   checkAuth: () => {
     set({ loading: true });
     try {
-        const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
-        if (storedId) {
-            // In a real app, you would fetch the full user profile from Firestore here.
-            // For now, we'll create a mock user object.
-            const mockUser: UserProfile = {
-                uid: storedId, // This is not the real uid, just for logging purposes
-                studentId: storedId,
-                displayName: `User ${storedId}`,
-                username: `user_${storedId}`
-            };
-
+      const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
+      if (storedId) {
+        authService.getUserProfile(storedId).then(userProfile => {
+          if (userProfile) {
             set({
-                isAuthenticated: true,
-                studentId: storedId,
-                isSuperAdmin: storedId === SUPER_ADMIN_ID,
-                user: mockUser
+              isAuthenticated: true,
+              studentId: userProfile.studentId,
+              isSuperAdmin: authService.isSuperAdmin(userProfile.studentId),
+              user: userProfile as UserProfile,
+              loading: false,
             });
-        } else {
-            set({
-                isAuthenticated: false,
-                studentId: null,
-                isSuperAdmin: false,
-                user: null
-            });
-        }
+          } else {
+            // ID was stored but user doesn't exist in DB, force logout
+            get().logout();
+          }
+        });
+      } else {
+        set({ isAuthenticated: false, studentId: null, isSuperAdmin: false, user: null, loading: false });
+      }
     } catch (e) {
-        console.error("Could not access localStorage:", e);
-        set({ isAuthenticated: false, studentId: null, isSuperAdmin: false, user: null });
-    } finally {
-        set({ loading: false });
+      console.error("Auth check failed:", e);
+      set({ isAuthenticated: false, studentId: null, isSuperAdmin: false, user: null, loading: false });
+    }
+  },
+  login: async (studentId: string): Promise<boolean> => {
+    set({ loading: true });
+    try {
+      const userProfile = await authService.verifyAndCreateUser(studentId);
+      if (userProfile) {
+        localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.studentId);
+        set({
+          isAuthenticated: true,
+          studentId: userProfile.studentId,
+          isSuperAdmin: authService.isSuperAdmin(userProfile.studentId),
+          user: userProfile as UserProfile,
+          loading: false,
+        });
+        return true;
+      } else {
+        localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+        set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
+        return false;
+      }
+    } catch (error) {
+      console.error("Login failed:", error);
+      set({ loading: false });
+      return false;
     }
   },
   logout: () => {
-     try {
-        localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
-     } catch(e) {
-        console.error("Could not access localStorage:", e);
-     }
-     set({
-        isAuthenticated: false,
-        studentId: null,
-        isSuperAdmin: false,
-        user: null,
-        loading: false,
-     });
-     // Force a reload to clear all application state and ensure a clean start
-     window.location.href = '/';
-  }
+    try {
+      localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+    } catch (e) {
+      console.error("Could not remove item from localStorage:", e);
+    }
+    set({
+      isAuthenticated: false,
+      studentId: null,
+      isSuperAdmin: false,
+      user: null,
+      loading: false,
+    });
+    // Optional: redirect to login page
+    if (typeof window !== 'undefined') {
+       window.location.href = '/';
+    }
+  },
 }));

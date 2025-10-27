@@ -81,7 +81,7 @@
           }
         }
       },
-      "required": ["uid", "studentId"]
+      "required": ["uid", "studentId", "createdAt"]
     },
     "QuestionSet": {
       "title": "Question Set",
@@ -112,6 +112,29 @@
         "claimedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the ID was claimed." }
       },
       "required": ["userId", "claimedAt"]
+    },
+    "AuditLog": {
+        "title": "Audit Log",
+        "description": "Represents a log of an administrative action.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "actorId": { "type": "string", "description": "UID of the user who performed the action." },
+            "actorName": { "type": "string", "description": "Display name of the actor." },
+            "action": { "type": "string", "description": "The action performed (e.g., 'user.block', 'user.promote')." },
+            "targetId": { "type": "string", "description": "UID of the user who was the target of the action." },
+            "targetName": { "type": "string", "description": "Display name of the target." },
+            "details": {
+                "type": "object",
+                "description": "Additional details about the action.",
+                 "properties": {
+                    "from": { "type": "string" },
+                    "to": { "type": "string" }
+                }
+            }
+        },
+        "required": ["id", "timestamp", "actorId", "actorName", "action", "targetId", "targetName"]
     }
   },
   "auth": {
@@ -133,6 +156,10 @@
     "/claimedStudentIds/{studentId}": {
         "schema": { "$ref": "#/entities/ClaimedStudentId" },
         "description": "Stores a record of student IDs that have been linked to an account to ensure uniqueness."
+    },
+    "/auditLogs/{logId}": {
+        "schema": { "$ref": "#/entities/AuditLog" },
+        "description": "Stores a log of all administrative actions."
     }
   }
 }

@@ -7,18 +7,14 @@ import { Input } from './ui/input';
 import { Logo } from './logo';
 import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
-import { isStudentIdValid } from '@/lib/verificationService';
+import { useAuthStore } from '@/stores/auth-store';
 
-const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
-type VerificationScreenProps = {
-  onVerified: () => void;
-};
-
-export function VerificationScreen({ onVerified }: VerificationScreenProps) {
+export function VerificationScreen({ onVerified }: { onVerified: () => void }) {
   const [studentId, setStudentId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const login = useAuthStore((state) => state.login);
 
   const handleVerification = async () => {
     if (!studentId.trim()) {
@@ -27,20 +23,15 @@ export function VerificationScreen({ onVerified }: VerificationScreenProps) {
     }
     setIsLoading(true);
     setError(null);
-    try {
-      const isValid = await isStudentIdValid(studentId);
-      if (isValid) {
-        localStorage.setItem(VERIFIED_STUDENT_ID_KEY, studentId.trim());
-        onVerified();
-      } else {
-        setError('Invalid Student ID. Please check and try again.');
-      }
-    } catch (e) {
-      console.error('Verification failed:', e);
-      setError('An error occurred. Please try again later.');
-    } finally {
-      setIsLoading(false);
+    
+    const success = await login(studentId.trim());
+    
+    if (success) {
+      onVerified();
+    } else {
+      setError('Invalid Student ID. Please check and try again.');
     }
+    setIsLoading(false);
   };
 
   return (
