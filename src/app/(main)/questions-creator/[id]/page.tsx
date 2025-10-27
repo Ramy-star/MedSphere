@@ -4,7 +4,7 @@
 import { useState, useEffect, useRef, useMemo, use } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, Layers, ChevronDown } from 'lucide-react';
+import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useToast } from '@/hooks/use-toast';
 import { reformatMarkdown } from '@/ai/flows/reformat-markdown-flow';
@@ -26,6 +26,7 @@ import { contentService, type Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 import type { Lecture } from '@/lib/types';
 import { useAuthStore } from '@/stores/auth-store';
+import Image from 'next/image';
 
 
 type SavedQuestionSet = {
@@ -442,7 +443,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_flashcard'); setShowFolderSelector(true); }} disabled={isCreating}>
-                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Layers className="h-4 w-4 text-indigo-400" />}
+                                        {isCreating ? <Loader2 className="h-4 w-4 animate-spin"/> : <Image src="/flashcard-icon.png" alt="Create Flashcard" width={20} height={20} />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>Create/Merge Interactive Flashcards</p></TooltipContent>
@@ -695,9 +696,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     icon={<FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.jsonFlashcard}
                     type="flashcardJson"
-                    isEditing={isEditing.flashcardJson}
+                    isEditing={isEditing.jsonFlashcard}
                     onToggleEdit={() => handleToggleEdit('flashcardJson')}
-                    onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardJson: value}))}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, jsonFlashcard: value}))}
                     onCancel={() => handleCancelEdit('flashcardJson')}
                     onRepair={() => {}} // Placeholder
                     isRepairing={false}

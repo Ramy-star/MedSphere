@@ -2,7 +2,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileCheck, Layers, Copy, Move, EyeOff
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileCheck, Copy, Move, EyeOff
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -26,8 +26,9 @@ import { useRouter } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { UploadProgress, UploadingFile } from './UploadProgress';
 import { FileQuestion } from './icons/FileQuestion';
+import Image from 'next/image';
 
-const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
+const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, color: string, isImage?: boolean } => {
     if (item.type === 'LINK') {
         return { Icon: Link2Icon, color: 'text-cyan-400' };
     }
@@ -41,7 +42,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
     }
 
     if (item.type === 'INTERACTIVE_FLASHCARD') {
-        return { Icon: Layers, color: 'text-indigo-400' };
+        return { Icon: () => <Image src="/flashcard-icon.png" alt="Flashcard Icon" width={24} height={24} />, color: '', isImage: true };
     }
 
     const fileName = item.name;

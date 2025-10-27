@@ -12,7 +12,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck, Layers } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -35,6 +35,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
+import Image from 'next/image';
 
 const ChatPanel = dynamic(() => import('./ChatPanel'), {
   ssr: false,
@@ -177,7 +178,7 @@ const PdfControls = ({
 };
 
 
-const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } => {
+const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, color: string } => {
     if (item.type === 'LINK') {
         return { Icon: Link2Icon, color: 'text-cyan-400' };
     }
@@ -189,7 +190,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon, color: string } 
         return { Icon: FileCheck, color: 'text-rose-400' };
     }
     if (item.type === 'INTERACTIVE_FLASHCARD') {
-        return { Icon: Layers, color: 'text-indigo-400' };
+        return { Icon: () => <Image src="/flashcard-icon.png" alt="Flashcard Icon" width={20} height={20} />, color: '' };
     }
     const mimeType = item.metadata?.mime;
 
