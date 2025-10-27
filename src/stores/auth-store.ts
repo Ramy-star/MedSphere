@@ -40,7 +40,7 @@ type AuthState = {
   user: UserProfile | null | undefined;
   loading: boolean;
   itemHierarchy: ItemHierarchy;
-  buildHierarchy: () => Promise<void>;
+  buildHierarchy: () => (() => void); // Now returns an unsubscribe function
   checkAuth: () => Promise<void>;
   login: (studentId: string) => Promise<boolean>;
   logout: () => void;
@@ -49,6 +49,8 @@ type AuthState = {
 };
 
 let userListenerUnsubscribe: () => void = () => {};
+let hierarchyListenerUnsubscribe: () => void = () => {};
+
 
 /**
  * Checks if a user has a specific permission for a given item.
@@ -153,24 +155,37 @@ const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
   itemHierarchy: {},
 
-  buildHierarchy: async () => {
-    if (!db) return;
-    const hierarchy: ItemHierarchy = {};
-    const q = query(collection(db, 'content'), orderBy('order'));
-    const contentSnapshot = await getDocs(q);
-    const items = new Map(contentSnapshot.docs.map(d => [d.id, d.data()]));
+  buildHierarchy: () => {
+    if (!db) return () => {};
+    
+    // Stop any previous listener
+    if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
 
-    for (const [id, item] of items.entries()) {
-        const path: string[] = [];
-        let currentParentId = item.parentId;
-        while(currentParentId) {
-            path.unshift(currentParentId);
-            const parentItem = items.get(currentParentId);
-            currentParentId = parentItem?.parentId;
+    const q = query(collection(db, 'content'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const hierarchy: ItemHierarchy = {};
+        const items = new Map(snapshot.docs.map(d => [d.id, d.data()]));
+        
+        for (const [id, item] of items.entries()) {
+            const path: string[] = [];
+            let currentParentId = item.parentId;
+            while(currentParentId) {
+                path.unshift(currentParentId);
+                const parentItem = items.get(currentParentId);
+                currentParentId = parentItem?.parentId;
+            }
+            hierarchy[id] = path;
         }
-        hierarchy[id] = path;
-    }
-    set({ itemHierarchy: hierarchy });
+        set({ itemHierarchy: hierarchy });
+        console.log("Real-time hierarchy updated.");
+
+    }, (error) => {
+        console.error("Error listening to content hierarchy:", error);
+    });
+
+    hierarchyListenerUnsubscribe = unsubscribe;
+    return unsubscribe; // Return the unsubscribe function for cleanup
   },
   
   checkAuth: async () => {
@@ -180,12 +195,16 @@ const useAuthStore = create<AuthState>((set, get) => ({
     };
 
     set({ loading: true });
+    // Clean up previous listeners
     if (userListenerUnsubscribe) userListenerUnsubscribe();
+    if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
+
     try {
         const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         if (storedId) {
-            // Re-fetch hierarchy every time auth is checked to ensure it's up-to-date
-            await get().buildHierarchy();
+            // Start listening to the content hierarchy in real-time
+            get().buildHierarchy();
+            // Start listening to the user profile
             listenToUserProfile(storedId);
         } else {
             set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
@@ -215,6 +234,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   logout: () => {
     if (userListenerUnsubscribe) userListenerUnsubscribe();
+    if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
     try {
       localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
     } catch (e) {
