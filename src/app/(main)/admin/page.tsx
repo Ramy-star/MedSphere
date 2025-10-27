@@ -232,7 +232,7 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                           <p className="text-sm sm:text-base font-semibold text-white truncate">{user.displayName || user.username} {(isManagementView || activeTab === 'users') && isCurrentUser && '(You)'}</p>
+                           <p className="text-sm font-semibold text-white truncate">{user.displayName || user.username} {(isManagementView || activeTab === 'users') && isCurrentUser && '(You)'}</p>
                            {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
                         </div>
                         {/* Mobile view */}
@@ -247,7 +247,7 @@ function AdminPageContent() {
                                     </div>
                                 )}
                                 <div className="flex items-center gap-1.5">
-                                    {React.cloneElement(roleIcon, {className: `w-3 h-3 ${userIsSuperAdmin ? 'text-yellow-400' : userIsSubAdmin ? 'text-blue-400' : 'text-slate-400'}`})}
+                                    {React.cloneElement(roleIcon, {className: `w-3 h-3 ${userIsSuperAdmin ? 'text-yellow-400' : userIsSubAdmin ? 'text-blue-400' : 'text-white'}`})}
                                     <RoleText />
                                 </div>
                             </div>
@@ -355,7 +355,7 @@ function AdminPageContent() {
                     </h1>
                 </div>
 
-                <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <div className="flex flex-row justify-between items-center mb-4 gap-4">
                      <div className="relative w-full max-w-sm">
                         <Search className={cn(
                             "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300",
@@ -383,7 +383,7 @@ function AdminPageContent() {
                     </div>
                      <Button onClick={() => setShowAddUserDialog(true)} className="rounded-2xl">
                        <UserPlus className="mr-2 h-4 w-4"/>
-                       Add User
+                       <span className="hidden sm:inline">Add User</span>
                    </Button>
                 </div>
 
