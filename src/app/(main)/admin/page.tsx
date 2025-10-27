@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -19,6 +20,10 @@ import {
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuLabel,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+  DropdownMenuPortal,
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -38,7 +43,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, format } from 'date-fns';
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -114,6 +119,7 @@ function AdminPageContent() {
     const [userToDelete, setUserToDelete] = useState<UserProfile | null>(null);
     const [userToDemote, setUserToDemote] = useState<UserProfile | null>(null);
     const [sortOption, setSortOption] = useState<SortOption>('name');
+    const [levelFilter, setLevelFilter] = useState<string | null>(null);
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
@@ -146,11 +152,28 @@ function AdminPageContent() {
        return Array.isArray(user.roles) && user.roles.some(r => r.role === 'subAdmin');
     }, []);
 
-    const sortedUsers = useMemo(() => {
+    const filteredAndSortedUsers = useMemo(() => {
         if (!users) return [];
-        const uniqueUsers = Array.from(new Map(users.map(user => [user.uid, user])).values());
-        
-        return uniqueUsers.sort((a, b) => {
+        let processedUsers = Array.from(new Map(users.map(user => [user.uid, user])).values());
+
+        // Apply search query filter
+        if (debouncedQuery) {
+            const lowercasedQuery = debouncedQuery.toLowerCase();
+            processedUsers = processedUsers.filter(user => 
+                user.displayName?.toLowerCase().includes(lowercasedQuery) ||
+                user.username?.toLowerCase().includes(lowercasedQuery) ||
+                user.email?.toLowerCase().includes(lowercasedQuery) ||
+                user.studentId?.includes(lowercasedQuery)
+            );
+        }
+
+        // Apply level filter
+        if (levelFilter) {
+            processedUsers = processedUsers.filter(user => (user.level || studentIdToLevelMap.get(user.studentId)) === levelFilter);
+        }
+
+        // Apply sorting
+        return processedUsers.sort((a, b) => {
             const aIsSuper = isUserSuperAdmin(a);
             const bIsSuper = isUserSuperAdmin(b);
             if (aIsSuper && !bIsSuper) return -1;
@@ -160,32 +183,21 @@ function AdminPageContent() {
                 case 'createdAt':
                     return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
                 case 'level':
-                    return (a.level || '').localeCompare(b.level || '');
+                    const levelA = a.level || studentIdToLevelMap.get(a.studentId) || '';
+                    const levelB = b.level || studentIdToLevelMap.get(b.studentId) || '';
+                    return levelA.localeCompare(levelB);
                 case 'name':
                 default:
                     return (a.displayName || a.username || '').localeCompare(b.displayName || b.username || '');
             }
         });
-    }, [users, isUserSuperAdmin, sortOption]);
+    }, [users, debouncedQuery, levelFilter, sortOption, isUserSuperAdmin, studentIdToLevelMap]);
 
 
-    const filteredUsers = useMemo(() => {
-        if (!sortedUsers) return [];
-        if (!debouncedQuery) return sortedUsers;
-        const lowercasedQuery = debouncedQuery.toLowerCase();
-        return sortedUsers.filter(user => 
-            user.displayName?.toLowerCase().includes(lowercasedQuery) ||
-            user.username?.toLowerCase().includes(lowercasedQuery) ||
-            user.email?.toLowerCase().includes(lowercasedQuery) ||
-            user.studentId?.includes(lowercasedQuery)
-        );
-    }, [sortedUsers, debouncedQuery]);
-    
-    
     const admins = useMemo(() => {
-        if (!filteredUsers) return [];
-        return filteredUsers.filter(user => isUserSuperAdmin(user) || isSubAdmin(user));
-    }, [filteredUsers, isSubAdmin, isUserSuperAdmin]);
+        if (!filteredAndSortedUsers) return [];
+        return filteredAndSortedUsers.filter(user => isUserSuperAdmin(user) || isSubAdmin(user));
+    }, [filteredAndSortedUsers, isSubAdmin, isUserSuperAdmin]);
     
     const handleToggleSubAdmin = useCallback(async (user: UserProfile) => {
         if (!currentUser) return;
@@ -260,6 +272,7 @@ function AdminPageContent() {
         const userIsSubAdmin = isSubAdmin(user);
         const isCurrentUser = user.studentId === currentStudentId;
         const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
+        const joinDate = user.createdAt ? format(new Date(user.createdAt), 'MMM dd, yyyy') : null;
 
         const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" />
                        : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
@@ -271,13 +284,13 @@ function AdminPageContent() {
 
         const RoleText = () => {
           if (userIsSuperAdmin) {
-            return <span className='text-yellow-400'>Super Admin</span>
+            return <span className='text-yellow-400'>Super Admin</span>;
           }
           if (userIsSubAdmin) {
-            return <span className='text-blue-400'>Admin</span>
+            return <span className='text-blue-400'>Admin</span>;
           }
           return <span className='text-slate-300'>User</span>;
-        }
+        };
         
         return (
             <div 
@@ -315,6 +328,12 @@ function AdminPageContent() {
                           <span className="truncate">{user.email}</span>
                           <span className="mx-2">•</span>
                           <span>ID: {user.studentId}</span>
+                           {joinDate && (
+                                <>
+                                    <span className="mx-2">•</span>
+                                    <span>Joined: {joinDate}</span>
+                                </>
+                           )}
                         </div>
                     </div>
                 </div>
@@ -332,9 +351,7 @@ function AdminPageContent() {
                    
                    {activeTab === 'management' && !userIsSuperAdmin && (
                         <div className="hidden sm:flex items-center gap-2">
-                            <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
-                                {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
-                            </Button>
+                           {/* Button removed as requested */}
                         </div>
                     )}
                     {(activeTab === 'management' || (activeTab === 'admins' && userIsSubAdmin)) && !userIsSuperAdmin && (
@@ -438,14 +455,30 @@ function AdminPageContent() {
                                     Sort by: {sortOption.charAt(0).toUpperCase() + sortOption.slice(1)}
                                 </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-48">
+                            <DropdownMenuContent className="w-56">
                                 <DropdownMenuLabel>Sort Users By</DropdownMenuLabel>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => setSortOption(v as SortOption)}>
+                                <DropdownMenuRadioGroup value={sortOption} onValueChange={(v) => { setSortOption(v as SortOption); setLevelFilter(null); }}>
                                     <DropdownMenuRadioItem value="name">Name</DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem value="createdAt">Creation Date</DropdownMenuRadioItem>
                                     <DropdownMenuRadioItem value="level">Level</DropdownMenuRadioItem>
                                 </DropdownMenuRadioGroup>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuSub>
+                                    <DropdownMenuSubTrigger>Filter by Level</DropdownMenuSubTrigger>
+                                    <DropdownMenuPortal>
+                                        <DropdownMenuSubContent>
+                                            <DropdownMenuRadioGroup value={levelFilter || ''} onValueChange={(v) => { setLevelFilter(v || null); setSortOption('name'); }}>
+                                                <DropdownMenuRadioItem value="">All Levels</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Level 1">Level 1</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Level 2">Level 2</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Level 3">Level 3</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Level 4">Level 4</DropdownMenuRadioItem>
+                                                <DropdownMenuRadioItem value="Level 5">Level 5</DropdownMenuRadioItem>
+                                            </DropdownMenuRadioGroup>
+                                        </DropdownMenuSubContent>
+                                    </DropdownMenuPortal>
+                                </DropdownMenuSub>
                             </DropdownMenuContent>
                         </DropdownMenu>
                          <Button onClick={() => setShowAddUserDialog(true)} className="rounded-2xl">
@@ -457,10 +490,10 @@ function AdminPageContent() {
 
                 <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full flex flex-col items-center">
                     <TabsList className={cn("grid w-full max-w-lg mx-auto grid-cols-3 bg-black/20 border-white/10 rounded-full p-1.5 h-12", isSuperAdmin && "sm:grid-cols-4")}>
-                        <TabsTrigger value="users">All Users ({filteredUsers?.length || 0})</TabsTrigger>
+                        <TabsTrigger value="users">All Users ({filteredAndSortedUsers?.length || 0})</TabsTrigger>
                         <TabsTrigger value="admins">Admins ({admins?.length || 0})</TabsTrigger>
                         <TabsTrigger value="management">Management</TabsTrigger>
-                        {isSuperAdmin && <TabsTrigger value="audit">Audit Log</TabsTrigger>}
+                        {isSuperAdmin && <TabsTrigger value="audit">History</TabsTrigger>}
                     </TabsList>
                 </Tabs>
             </div>
@@ -468,13 +501,13 @@ function AdminPageContent() {
             <div className="flex-1 overflow-y-auto mt-6 no-scrollbar pr-2 -mr-2">
                 <Tabs value={activeTab}>
                     <TabsContent value="users" className="space-y-0">
-                        {renderUserList(filteredUsers)}
+                        {renderUserList(filteredAndSortedUsers)}
                     </TabsContent>
                     <TabsContent value="admins" className="space-y-0">
                         {renderUserList(admins)}
                     </TabsContent>
                     <TabsContent value="management" className="space-y-0">
-                        {renderUserList(filteredUsers)}
+                        {renderUserList(filteredAndSortedUsers)}
                     </TabsContent>
                     {isSuperAdmin && (
                         <TabsContent value="audit">
@@ -545,3 +578,6 @@ export default function AdminPage() {
     )
 }
 
+
+
+    
