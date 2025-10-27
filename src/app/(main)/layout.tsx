@@ -31,7 +31,7 @@ export default function MainLayout({
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={cn(
-          "flex-1 flex flex-col h-full overflow-hidden p-4 md:p-6",
+          "flex-1 flex flex-col h-full overflow-hidden px-2 sm:px-4 md:px-6 py-4 md:py-6",
           !isHomePage && "glass-card"
         )}
       >
