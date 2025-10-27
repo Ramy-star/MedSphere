@@ -44,7 +44,7 @@ export default function RootLayout({
 }>) {
   const [showWelcome, setShowWelcome] = useState(true);
   const [isClient, setIsClient] = useState(false);
-  const { isAuthenticated, loading, checkAuth } = useAuthStore();
+  const { isAuthenticated, user, checkAuth } = useAuthStore();
   const firebaseConfig = getFirebaseConfig();
 
   useEffect(() => {
@@ -56,10 +56,6 @@ export default function RootLayout({
     }
   }, []);
   
-  useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
   useEffect(() => {
     const setDynamicVh = () => {
       document.documentElement.style.setProperty('--1dvh', `${window.innerHeight}px`);
@@ -73,6 +69,30 @@ export default function RootLayout({
   const handleGetStarted = () => {
     localStorage.setItem(WELCOME_SCREEN_KEY, 'true');
     setShowWelcome(false);
+  };
+  
+  const renderContent = () => {
+    // While the auth state is being determined, user is null.
+    if (user === undefined) {
+      return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background"></div>
+      );
+    }
+    
+    if (!isAuthenticated) {
+        return <VerificationScreen onVerified={() => { /* Handled by auth store */ }} />;
+    }
+
+    return (
+        <div className="flex flex-col h-full w-full">
+            <header className="z-50 w-full">
+            <Header />
+            </header>
+            <main className="flex flex-1 w-full overflow-hidden">
+            {children}
+            </main>
+        </div>
+    );
   };
 
   if (!isClient) {
@@ -116,23 +136,11 @@ export default function RootLayout({
       </head>
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
           <FirebaseClientProvider config={firebaseConfig}>
-            {loading ? (
-                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-background"></div>
-            ) : !isAuthenticated ? (
-                <VerificationScreen onVerified={() => { /* Handled by auth store */ }} />
-            ) : (
-                <div className="flex flex-col h-full w-full">
-                  <header className="z-50 w-full">
-                    <Header />
-                  </header>
-                  <main className="flex flex-1 w-full overflow-hidden">
-                    {children}
-                  </main>
-                </div>
-            )}
+            {renderContent()}
             <Toaster />
           </FirebaseClientProvider>
       </body>
     </html>
   );
 }
+

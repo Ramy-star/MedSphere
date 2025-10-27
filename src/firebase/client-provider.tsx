@@ -1,11 +1,12 @@
 
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
 import { FirebaseProvider } from './provider';
 import { Logo } from '@/components/logo';
+import { useAuthStore } from '@/stores/auth-store';
 
 export function FirebaseClientProvider({
   children,
@@ -16,6 +17,7 @@ export function FirebaseClientProvider({
 }) {
   const [firebase, setFirebase] = useState<FirebaseContextType | null>(null);
   const [error, setError] = useState<Error | null>(null);
+  const { checkAuth } = useAuthStore();
 
   useEffect(() => {
     let isMounted = true;
@@ -28,6 +30,9 @@ export function FirebaseClientProvider({
             const instances = await initializeFirebase(config);
             if (isMounted) {
               setFirebase(instances);
+              // Once Firebase is initialized, perform the auth check.
+              // This is the correct place to do it.
+              checkAuth();
             }
         } catch (e: any) {
             console.error("Firebase initialization error:", e);
@@ -42,7 +47,7 @@ export function FirebaseClientProvider({
     }
   // We only want this to run once on mount.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [checkAuth]);
 
 
   if (!firebase) {
