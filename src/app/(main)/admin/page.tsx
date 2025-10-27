@@ -207,7 +207,7 @@ function AdminPageContent() {
         const isCurrentUser = user.studentId === currentStudentId;
         const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
 
-        const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" /> 
+        const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" />
                        : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
                        : <User className="w-5 h-5 text-slate-400" />;
 
@@ -232,8 +232,8 @@ function AdminPageContent() {
                     </Avatar>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
-                          <p className="font-semibold text-white truncate">{user.displayName || user.username} {(isManagementView || activeTab === 'users') && isCurrentUser && '(You)'}</p>
-                          {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
+                           <p className="text-sm sm:text-base font-semibold text-white truncate">{user.displayName || user.username} {(isManagementView || activeTab === 'users') && isCurrentUser && '(You)'}</p>
+                           {user.isBlocked && <span className="text-xs font-bold text-red-400 bg-red-900/50 px-2 py-0.5 rounded-full">Blocked</span>}
                         </div>
                         {/* Mobile view */}
                         <div className="sm:hidden text-xs text-slate-400 space-y-0.5 mt-1">
@@ -247,7 +247,7 @@ function AdminPageContent() {
                                     </div>
                                 )}
                                 <div className="flex items-center gap-1.5">
-                                    {React.cloneElement(roleIcon, {className: "w-3 h-3"})}
+                                    {React.cloneElement(roleIcon, {className: `w-3 h-3 ${userIsSuperAdmin ? 'text-yellow-400' : userIsSubAdmin ? 'text-blue-400' : 'text-slate-400'}`})}
                                     <RoleText />
                                 </div>
                             </div>
@@ -269,40 +269,58 @@ function AdminPageContent() {
                     </div>
                    
                     {isManagementView && !userIsSuperAdmin && (
-                        <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
-                            {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
-                        </Button>
-                    )}
-
-                     {isManagementView && !userIsSuperAdmin && (
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
-                                    <MoreVertical size={18} />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-48 p-2">
-                                <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
-                                    <Shield className="mr-2 h-4 w-4" />
+                        <>
+                            <div className="hidden sm:flex items-center gap-2">
+                                <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => handleToggleSubAdmin(user)}>
                                     {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
-                                </DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
-                                    <Ban className="mr-2 h-4 w-4" />
-                                    {user.isBlocked ? 'Unblock User' : 'Block User'}
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => setUserToDelete(user)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                                    <Trash2 className="mr-2 h-4 w-4" />
-                                    <span>Delete</span>
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
+                                </Button>
+                            </div>
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
+                                        <MoreVertical size={18} />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48 p-2">
+                                    <DropdownMenuItem onClick={() => handleToggleSubAdmin(user)}>
+                                        <Shield className="mr-2 h-4 w-4" />
+                                        {userIsSubAdmin ? 'Remove Admin' : 'Promote to Admin'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleToggleBlock(user)}>
+                                        <Ban className="mr-2 h-4 w-4" />
+                                        {user.isBlocked ? 'Unblock User' : 'Block User'}
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => setUserToDelete(user)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                        <Trash2 className="mr-2 h-4 w-4" />
+                                        <span>Delete</span>
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </>
                     )}
                     {activeTab === 'admins' && userIsSubAdmin && !userIsSuperAdmin && (
-                         <Button size="sm" variant="secondary" className="rounded-xl" onClick={() => setUserForPermissions(user)}>
-                            <Settings className="mr-2 h-4 w-4" />
-                            Permissions
-                        </Button>
+                         <>
+                            <Button size="sm" variant="secondary" className="rounded-xl hidden sm:flex" onClick={() => setUserForPermissions(user)}>
+                                <Settings className="mr-2 h-4 w-4" />
+                                Permissions
+                            </Button>
+                            <div className="sm:hidden">
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
+                                            <MoreVertical size={18} />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-48 p-2">
+                                        <DropdownMenuItem onClick={() => setUserForPermissions(user)}>
+                                            <Settings className="mr-2 h-4 w-4" />
+                                            Permissions
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
+                         </>
                     )}
                 </div>
             </div>
@@ -337,7 +355,7 @@ function AdminPageContent() {
                     </h1>
                 </div>
 
-                <div className="flex justify-between items-center mb-6 gap-4">
+                <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
                      <div className="relative w-full max-w-sm">
                         <Search className={cn(
                             "absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 transition-all duration-300",
@@ -399,7 +417,7 @@ function AdminPageContent() {
                 onOpenChange={(isOpen) => {if(!isOpen) setUserForPermissions(null)}}
             />
              <AlertDialog open={!!userToDelete} onOpenChange={(open) => {if(!open) setUserToDelete(null)}}>
-                <AlertDialogContent>
+                <AlertDialogContent className="w-[90vw] sm:w-full">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
                     <AlertDialogDescription>
@@ -413,7 +431,7 @@ function AdminPageContent() {
                 </AlertDialogContent>
             </AlertDialog>
             <AlertDialog open={!!userToDemote} onOpenChange={(open) => {if(!open) setUserToDemote(null)}}>
-                <AlertDialogContent>
+                <AlertDialogContent className="w-[90vw] sm:w-full">
                   <AlertDialogHeader>
                     <AlertDialogTitle>Confirm Demotion</AlertDialogTitle>
                     <AlertDialogDescription>
