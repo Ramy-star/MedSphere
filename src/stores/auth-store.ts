@@ -28,41 +28,47 @@ type AuthState = {
   logout: () => void;
 };
 
+const waitForDB = async (maxRetries = 10, delay = 100): Promise<boolean> => {
+    for (let i = 0; i < maxRetries; i++) {
+        if (db) return true;
+        await new Promise(resolve => setTimeout(resolve, delay));
+    }
+    return false;
+}
+
 const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isSuperAdmin: false,
   studentId: null,
   user: null,
   loading: true,
-  checkAuth: () => {
+  checkAuth: async () => {
     set({ loading: true });
     
-    // Defer localStorage access to client-side
     if (typeof window !== 'undefined') {
       try {
+        const dbReady = await waitForDB();
+        if (!dbReady) {
+            console.error("Firestore (db) could not be initialized in time.");
+            set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
+            return;
+        }
+
         const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         if (storedId) {
-            // Check if db is initialized before using it
-            if (!db) {
-                 console.error("Firestore (db) is not initialized in checkAuth.");
-                 set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
-                 return;
+            const userProfile = await getUserProfile(storedId);
+            if (userProfile) {
+                const isAdmin = await isSuperAdmin(userProfile.studentId);
+                set({
+                    isAuthenticated: true,
+                    studentId: userProfile.studentId,
+                    isSuperAdmin: isAdmin,
+                    user: userProfile as UserProfile,
+                    loading: false,
+                });
+            } else {
+              get().logout();
             }
-            getUserProfile(storedId).then(userProfile => {
-              if (userProfile) {
-                 isSuperAdmin(userProfile.studentId).then(isAdmin => {
-                    set({
-                        isAuthenticated: true,
-                        studentId: userProfile.studentId,
-                        isSuperAdmin: isAdmin,
-                        user: userProfile as UserProfile,
-                        loading: false,
-                    });
-                 });
-              } else {
-                get().logout();
-              }
-            });
         } else {
             set({ isAuthenticated: false, studentId: null, isSuperAdmin: false, user: null, loading: false });
         }
