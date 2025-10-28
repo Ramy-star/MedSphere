@@ -1,8 +1,7 @@
 
-
 'use client';
 
-import { useEffect, useState, useCallback, use } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
@@ -13,7 +12,8 @@ import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
-function FolderPageContent({ id }: { id: string }) {
+export default function FolderPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { toast } = useToast();
@@ -159,12 +159,3 @@ function FolderPageContent({ id }: { id: string }) {
     </motion.div>
   );
 }
-
-
-function FolderPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
-  return <FolderPageContent id={id} />;
-}
-
-
-export default FolderPage;

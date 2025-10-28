@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useMemo, use } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, ChevronDown } from 'lucide-react';
@@ -760,8 +760,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 }
 
 
-export default function SavedQuestionSetPage({ params }: { params: Promise<{ id:string }> }) {
-  const { id } = use(params);
+export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { studentId, loading } = useAuthStore();
 
   if (loading) {
