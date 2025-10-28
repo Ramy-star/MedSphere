@@ -170,7 +170,7 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex-1 flex flex-col items-center pt-8 md:pt-16 pb-12 w-full max-w-2xl mx-auto overflow-y-auto no-scrollbar"
+      className="flex flex-col items-center pt-8 md:pt-16 pb-12 w-full max-w-2xl mx-auto"
     >
       <div className="relative group">
         <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
@@ -210,7 +210,7 @@ export default function ProfilePage() {
       </div>
 
       <div className="mt-8 text-center flex items-center justify-center gap-2 group w-full">
-         <div className="flex-grow flex justify-center">
+         <div className="flex justify-center">
             <div className="relative p-1">
               <h1
                 ref={nameInputRef}
