@@ -42,8 +42,8 @@ export default function MainLayout({
         
         <div className={cn(
           "flex-1 flex flex-col overflow-y-auto no-scrollbar", 
-          isHomePage && "pt-0", 
-          !isQuestionsCreatorPage && !isHomePage && "pt-4"
+          (isHomePage || isProfilePage) && "pt-0", 
+          !isQuestionsCreatorPage && !isHomePage && !isProfilePage && "pt-4"
         )}>
           {children}
         </div>
