@@ -2,6 +2,7 @@
 'use client';
 import React from 'react';
 import type { UserProfile } from '@/stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { allAchievements, Achievement } from '@/lib/achievements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
@@ -11,28 +12,28 @@ import { motion } from 'framer-motion';
 
 const tierColors = {
   bronze: {
-    bg: 'bg-orange-800/30',
+    bg: 'bg-orange-900/40',
     border: 'border-orange-600/50',
     icon: 'text-orange-400',
-    progress: 'bg-orange-500',
+    progressFill: 'bg-gradient-to-r from-orange-600 to-orange-400',
   },
   silver: {
-    bg: 'bg-slate-600/30',
-    border: 'border-slate-400/50',
+    bg: 'bg-slate-700/40',
+    border: 'border-slate-500/50',
     icon: 'text-slate-300',
-    progress: 'bg-slate-400',
+    progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
   },
   gold: {
-    bg: 'bg-yellow-700/30',
+    bg: 'bg-yellow-800/40',
     border: 'border-yellow-500/50',
     icon: 'text-yellow-400',
-    progress: 'bg-yellow-500',
+    progressFill: 'bg-gradient-to-r from-yellow-600 to-yellow-400',
   },
   special: {
-    bg: 'bg-purple-800/30',
+    bg: 'bg-purple-800/40',
     border: 'border-purple-500/50',
     icon: 'text-purple-400',
-    progress: 'bg-purple-500',
+    progressFill: 'bg-gradient-to-r from-purple-600 to-purple-400',
   },
 };
 
@@ -47,7 +48,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
   const cardContent = (
     <motion.div
       className={cn(
-        "relative flex h-full flex-col justify-between rounded-2xl border p-4 text-center transition-all duration-300",
+        "relative flex h-full min-w-[150px] flex-col justify-between rounded-2xl border p-4 text-center transition-all duration-300",
         earned ? `${colors.bg} ${colors.border}` : "border-slate-800 bg-slate-900/50",
         !earned && "group-hover:border-slate-700 group-hover:bg-slate-800/40"
       )}
@@ -69,8 +70,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
 
       {!earned && goal > 0 && (
         <div className="mt-3">
-          <Progress value={progressPercent} className={cn("h-1", colors.progress)} />
-          <p className="mt-1 text-xs text-slate-500">{currentProgress} / {goal}</p>
+           <Progress value={progressPercent} className="h-1 bg-black/30" indicatorClassName={colors.progressFill} />
         </div>
       )}
     </motion.div>
@@ -95,35 +95,52 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
 };
 
 export const AchievementsSection = ({ user }: { user: UserProfile }) => {
+  const { isSuperAdmin } = useAuthStore();
   const userStats = user.stats || {};
   const earnedAchievements = new Set(user.achievements?.map(a => a.badgeId) || []);
 
-  const categorizedAchievements = allAchievements.reduce((acc, ach) => {
+  const categorizedAndGroupedAchievements = allAchievements.reduce((acc, ach) => {
     if (!acc[ach.category]) {
-      acc[ach.category] = [];
+      acc[ach.category] = {};
     }
-    acc[ach.category].push(ach);
+    if (!acc[ach.category][ach.group]) {
+      acc[ach.category][ach.group] = [];
+    }
+    acc[ach.category][ach.group].push(ach);
     return acc;
-  }, {} as Record<string, Achievement[]>);
+  }, {} as Record<string, Record<string, Achievement[]>>);
 
   return (
     <div className="mt-12">
       <h2 className="text-2xl font-bold text-white mb-6">Achievements</h2>
-      {Object.entries(categorizedAchievements).map(([category, achievements]) => (
-        <div key={category} className="mb-8">
-          <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-            {achievements.map((ach) => (
-              <BadgeCard
-                key={ach.id}
-                achievement={ach}
-                userStats={userStats}
-                earned={earnedAchievements.has(ach.id)}
-              />
-            ))}
-          </div>
-        </div>
-      ))}
+      {Object.entries(categorizedAndGroupedAchievements).map(([category, groups]) => {
+        const isSpecialCategory = category === 'Special';
+        const hasEarnedSpecial = isSuperAdmin || Object.values(groups).flat().some(ach => earnedAchievements.has(ach.id));
+        
+        if (isSpecialCategory && !hasEarnedSpecial) {
+            return null;
+        }
+
+        return (
+            <div key={category} className="mb-8">
+              <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
+              <div className="space-y-4">
+                {Object.entries(groups).map(([group, achievements]) => (
+                  <div key={group} className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+                    {achievements.map((ach) => (
+                      <BadgeCard
+                        key={ach.id}
+                        achievement={ach}
+                        userStats={userStats}
+                        earned={isSuperAdmin || earnedAchievements.has(ach.id)}
+                      />
+                    ))}
+                  </div>
+                ))}
+              </div>
+            </div>
+        );
+      })}
     </div>
   );
 };
