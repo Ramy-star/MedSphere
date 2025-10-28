@@ -5,7 +5,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
@@ -29,6 +28,7 @@ import level2Ids from '@/lib/student-ids/level-2.json';
 import level3Ids from '@/lib/student-ids/level-3.json';
 import level4Ids from '@/lib/student-ids/level-4.json';
 import level5Ids from '@/lib/student-ids/level-5.json';
+import { InfoCard } from '@/components/profile/InfoCard';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -36,19 +36,6 @@ level2Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 2'));
 level3Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 3'));
 level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
 level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
-
-const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) => (
-    <div className="glass-card flex items-center gap-4 p-4 rounded-2xl">
-        <div className="p-2 bg-slate-700/50 rounded-xl">
-            <Icon className="w-5 h-5 text-slate-300" />
-        </div>
-        <div className="flex-1">
-            <span className="text-sm text-slate-400">{label}</span>
-            <p className="text-base font-medium text-white mt-0.5 font-mono break-all">{value}</p>
-        </div>
-    </div>
-);
-
 
 export default function ProfilePage() {
   const { user } = useAuthStore();
@@ -88,9 +75,8 @@ export default function ProfilePage() {
 
     setIsSavingName(true);
     try {
-      const userRef = doc(db, 'users', user.uid);
+      const userRef = doc(db, 'users', user.id);
       await updateDoc(userRef, { displayName: newDisplayName });
-      // The onSnapshot listener in auth-store will update the state automatically.
       toast({ title: 'Success', description: 'Your name has been updated.' });
       setEditingName(false);
     } catch (error) {
@@ -121,7 +107,6 @@ export default function ProfilePage() {
     setIsUploading(true);
     try {
         await contentService.uploadUserAvatar(user, file, (progress) => {});
-        // The user object will be updated automatically by the auth store listener
         toast({ title: 'Success', description: 'Profile picture updated.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
@@ -136,7 +121,6 @@ export default function ProfilePage() {
       setIsUploading(true);
       try {
           await contentService.deleteUserAvatar(user);
-          // The user object will be updated automatically by the auth store listener
           toast({ title: 'Success', description: 'Profile picture removed.' });
       } catch(error: any) {
           toast({ variant: 'destructive', title: 'Error', description: 'Could not remove profile picture.' });
@@ -175,7 +159,13 @@ export default function ProfilePage() {
       <div className="flex flex-col items-center">
         <div className="relative group mt-8">
           <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
-            <AvatarImage src={user.photoURL} alt={user.displayName} />
+            <AvatarImage 
+                src={user.photoURL} 
+                alt={user.displayName}
+                className="pointer-events-none select-none"
+                onDragStart={(e) => e.preventDefault()}
+                onContextMenu={(e) => e.preventDefault()}
+            />
             <AvatarFallback className="text-4xl">
               {user.displayName?.[0] || <UserIcon />}
             </AvatarFallback>

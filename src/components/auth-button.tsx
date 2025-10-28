@@ -1,5 +1,4 @@
 'use client';
-import { signOut } from 'firebase/auth';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon } from 'lucide-react';
@@ -37,7 +36,13 @@ export function AuthButton() {
               onClick={() => router.push('/profile')}
             >
               <Avatar className={cn("h-9 w-9 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
-                <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} />
+                <AvatarImage 
+                    src={user.photoURL ?? ''} 
+                    alt={user.displayName ?? ''} 
+                    className="pointer-events-none select-none"
+                    onDragStart={(e) => e.preventDefault()}
+                    onContextMenu={(e) => e.preventDefault()}
+                />
                 <AvatarFallback>
                   <UserIcon className="h-5 w-5" />
                 </AvatarFallback>

@@ -20,6 +20,8 @@ import level2StudentData from '@/lib/student-ids/level-2-data.json';
 import level3StudentData from '@/lib/student-ids/level-3-data.json';
 import level4StudentData from '@/lib/student-ids/level-4-data.json';
 import level5StudentData from '@/lib/student-ids/level-5-data.json';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { User as UserIcon } from 'lucide-react';
 
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
@@ -909,7 +911,8 @@ interface AdminReportModalProps {
 
 const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps) => {
     const { db } = useFirebase();
-    const [reportData, setReportData] = useState<{ userName: string; studentId: string; score: number; total: number; percentage: number }[]>([]);
+    const { user: currentUser } = useAuthStore();
+    const [reportData, setReportData] = useState<{ userProfile: any, result: ExamResult }[]>([]);
     const [loading, setLoading] = useState(true);
 
     const studentDataMap = useMemo(() => {
@@ -937,7 +940,6 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                 const resultsSnapshot = await getDocs(resultsQuery);
                 const resultsByUser: { [userId: string]: ExamResult } = {};
 
-                // Get the first result for each user
                 resultsSnapshot.forEach(doc => {
                     const result = doc.data() as ExamResult;
                     if (!resultsByUser[result.userId] || new Date(result.timestamp) < new Date(resultsByUser[result.userId].timestamp)) {
@@ -952,16 +954,16 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                     return;
                 }
                 
+                const userProfilesPromises = userIds.map(id => getDoc(doc(db, 'users', id)));
+                const userProfilesSnapshots = await Promise.all(userProfilesPromises);
+                const userProfilesMap = new Map(userProfilesSnapshots.map(snap => [snap.id, snap.data()]));
+
                 const finalData = Object.values(resultsByUser).map(result => {
-                    const studentDetails = studentDataMap.get(result.userId);
                     return {
-                        userName: studentDetails?.studentName || `Student ${result.userId}`,
-                        studentId: result.userId,
-                        score: result.score,
-                        total: result.totalQuestions,
-                        percentage: result.percentage,
+                        userProfile: userProfilesMap.get(result.userId) || { displayName: `Student ${result.userId}`, studentId: result.userId },
+                        result: result,
                     };
-                }).sort((a, b) => b.percentage - a.percentage);
+                }).sort((a, b) => b.result.percentage - a.result.percentage);
 
                 setReportData(finalData);
                 setLoading(false);
@@ -969,7 +971,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
 
             fetchReportData();
         }
-    }, [isOpen, db, lectureId, studentDataMap]);
+    }, [isOpen, db, lectureId]);
 
 
     return (
@@ -992,14 +994,35 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                 </tr>
                             </thead>
                             <tbody>
-                                {reportData.map((data, index) => (
-                                    <tr key={index} className="border-b bg-gray-800 border-gray-700">
-                                        <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-white">{data.userName}</th>
-                                        <td className="px-6 py-4">{data.studentId}</td>
-                                        <td className="px-6 py-4">{`${data.score} / ${data.total}`}</td>
-                                        <td className="px-6 py-4">{data.percentage.toFixed(2)}%</td>
-                                    </tr>
-                                ))}
+                                {reportData.map((data, index) => {
+                                    const { userProfile, result } = data;
+                                    const isSuperAdmin = userProfile.roles?.some((r: any) => r.role === 'superAdmin');
+                                    const isSubAdmin = userProfile.roles?.some((r: any) => r.role === 'subAdmin') && !isSuperAdmin;
+                                    const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-slate-400" : "ring-transparent";
+                                    
+                                    return (
+                                        <tr key={index} className="border-b bg-gray-800 border-gray-700">
+                                            <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-white">
+                                                <div className="flex items-center gap-3">
+                                                    <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
+                                                        <AvatarImage 
+                                                            src={userProfile.photoURL} 
+                                                            alt={userProfile.displayName} 
+                                                            className="pointer-events-none select-none"
+                                                            onDragStart={(e) => e.preventDefault()}
+                                                            onContextMenu={(e) => e.preventDefault()}
+                                                        />
+                                                        <AvatarFallback><UserIcon size={16}/></AvatarFallback>
+                                                    </Avatar>
+                                                    {userProfile.displayName}
+                                                </div>
+                                            </th>
+                                            <td className="px-6 py-4">{result.userId}</td>
+                                            <td className="px-6 py-4">{`${result.score} / ${result.totalQuestions}`}</td>
+                                            <td className="px-6 py-4">{result.percentage.toFixed(2)}%</td>
+                                        </tr>
+                                    )
+                                })}
                             </tbody>
                         </table>
                     ) : (
