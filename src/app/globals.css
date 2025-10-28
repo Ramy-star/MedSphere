@@ -90,6 +90,41 @@
   .react-pdf__Page__textContent {
     mix-blend-mode: multiply;
   }
+
+  /* Expanding button styles */
+  .expanding-btn {
+    @apply bg-transparent font-semibold rounded-full cursor-pointer inline-flex items-center justify-center gap-2 overflow-hidden transition-all duration-300 ease-in-out;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+  }
+
+  .expanding-btn .expanding-text {
+    @apply whitespace-nowrap opacity-0 max-w-0 transition-all duration-200 ease-in-out;
+  }
+
+  .expanding-btn:hover {
+    width: 120px;
+    padding: 0 16px;
+  }
+
+  .expanding-btn:hover .expanding-text {
+    @apply opacity-100 max-w-[100px] ml-2;
+  }
+
+  .expanding-btn.destructive {
+    @apply border-2 border-destructive text-destructive;
+  }
+  .expanding-btn.destructive:hover {
+    @apply bg-destructive text-primary-foreground;
+  }
+
+  .expanding-btn.warning {
+    @apply border-2 border-yellow-500 text-yellow-500;
+  }
+  .expanding-btn.warning:hover {
+    @apply bg-yellow-500 text-black;
+  }
 }
 
 input:focus {
@@ -339,24 +374,6 @@ button.lecture-tab-btn.active {
 }
 .review-option > svg {
   flex-shrink: 0;
-}
-
-.exit-btn {
-    @apply bg-transparent border-2 border-destructive text-destructive font-semibold rounded-full cursor-pointer inline-flex items-center justify-center gap-2 overflow-hidden transition-all duration-300 ease-in-out;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-}
-.exit-btn .exit-text {
-    @apply whitespace-nowrap opacity-0 max-w-0 transition-all duration-200 ease-in-out;
-}
-.exit-btn:hover {
-    @apply bg-destructive text-primary-foreground;
-    width: 120px; /* Expanded width */
-    padding: 0 16px;
-}
-.exit-btn:hover .exit-text {
-    @apply opacity-100 max-w-[100px] ml-2;
 }
 
 .report-btn {

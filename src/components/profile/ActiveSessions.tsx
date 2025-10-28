@@ -1,11 +1,10 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import type { UserProfile, UserSession } from '@/stores/auth-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { Button } from '@/components/ui/button';
-import { Monitor, Smartphone, Tablet, LogOut, Laptop } from 'lucide-react';
+import { Monitor, Smartphone, Tablet, LogOut, Laptop, Ban } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import {
   AlertDialog,
@@ -31,6 +30,8 @@ const getDeviceIcon = (device: string | undefined) => {
 
 export const ActiveSessions = ({ user }: { user: UserProfile }) => {
     const { logoutSession, currentSessionId } = useAuthStore();
+    const [sessionToLogout, setSessionToLogout] = useState<string | null>(null);
+
     const sessions = user.sessions || [];
     
     if (sessions.length === 0) {
@@ -66,33 +67,73 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
                                 </div>
                            </div>
                            {!isCurrent && (
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="destructive" size="sm" className="rounded-xl h-8 text-xs sm:ml-auto">
-                                            <LogOut className="mr-2 h-3.5 w-3.5" />
-                                            Logout
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                            <AlertDialogDescription>
-                                                This will log out the session on "{session.device}". You will need to sign in again on that device.
-                                            </AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={() => logoutSession(session.sessionId)} className="bg-red-600 hover:bg-red-700">
-                                                Log out
-                                            </AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                <div className="flex items-center gap-2 sm:ml-auto">
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <button className="expanding-btn warning">
+                                                <Ban size={20} />
+                                                <span className="expanding-text">Block</span>
+                                            </button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Block this device?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    Blocking a device is a future feature. This action will log out the session for now.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => logoutSession(session.sessionId)}>Confirm</AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <button className="expanding-btn destructive">
+                                                <LogOut size={20} />
+                                                <span className="expanding-text">Logout</span>
+                                            </button>
+                                        </AlertDialogTrigger>
+                                        <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                <AlertDialogDescription>
+                                                    This will log out the session on "{session.device}". You will need to sign in again on that device.
+                                                </AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooter>
+                                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                <AlertDialogAction onClick={() => logoutSession(session.sessionId)} className="bg-red-600 hover:bg-red-700">
+                                                    Log out
+                                                </AlertDialogAction>
+                                            </AlertDialogFooter>
+                                        </AlertDialogContent>
+                                    </AlertDialog>
+                                </div>
                            )}
                         </div>
                     );
                 })}
             </div>
+
+            <AlertDialog open={!!sessionToLogout} onOpenChange={(open) => !open && setSessionToLogout(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                           This will log out the selected session.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => { if(sessionToLogout) logoutSession(sessionToLogout); setSessionToLogout(null); }}>
+                            Logout
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

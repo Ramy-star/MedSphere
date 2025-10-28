@@ -346,10 +346,10 @@ export default function ProfilePage() {
       <AchievementsSection user={user} />
       
       <div className="mt-16 flex justify-center">
-          <Button variant="destructive" onClick={logout} className="rounded-xl bg-red-800/80 hover:bg-red-700/90 border border-red-600">
-              <LogOut className="mr-2 h-4 w-4" />
-              Logout
-          </Button>
+          <button onClick={logout} className="expanding-btn destructive">
+              <LogOut size={20} />
+              <span className="expanding-text">Logout</span>
+          </button>
       </div>
 
     </motion.div>
