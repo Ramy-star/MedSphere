@@ -1,3 +1,4 @@
+
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference } from 'firebase/firestore';
@@ -582,6 +583,65 @@ export const contentService = {
         await updateDoc(doc(db, 'users', user.id), {
             photoURL: null,
             'metadata.cloudinaryPublicId': null
+        });
+    },
+
+    async uploadUserCoverPhoto(user: UserProfile, file: File, onProgress: (progress: number) => void): Promise<{ publicId: string, url: string }> {
+        const folder = `covers/${user.id}`;
+        const public_id = `${folder}/${uuidv4()}`;
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        const paramsToSign = { public_id, folder, timestamp };
+        const sigResponse = await fetch('/api/sign-cloudinary-params', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paramsToSign })
+        });
+        if (!sigResponse.ok) throw new Error('Failed to get signature.');
+        const { signature, apiKey, cloudName } = await sigResponse.json();
+
+        if (user.metadata?.coverPhotoCloudinaryPublicId) {
+            await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
+        }
+
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', apiKey);
+            formData.append('timestamp', String(timestamp));
+            formData.append('signature', signature);
+            formData.append('public_id', public_id);
+            formData.append('folder', folder);
+
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) onProgress((event.loaded / event.total) * 100);
+            };
+            xhr.onload = async () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    const finalUrl = createProxiedUrl(data.secure_url);
+                    await updateDoc(doc(db, 'users', user.id), {
+                        'metadata.coverPhotoURL': finalUrl,
+                        'metadata.coverPhotoCloudinaryPublicId': data.public_id,
+                    });
+                    resolve({ publicId: data.public_id, url: finalUrl });
+                } else {
+                    reject(new Error(`Upload failed: ${xhr.statusText}`));
+                }
+            };
+            xhr.onerror = () => reject(new Error('Network error.'));
+            xhr.send(formData);
+        });
+    },
+
+    async deleteUserCoverPhoto(user: UserProfile) {
+        if (!user.metadata?.coverPhotoCloudinaryPublicId) return;
+        await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
+        await updateDoc(doc(db, 'users', user.id), {
+            'metadata.coverPhotoURL': null,
+            'metadata.coverPhotoCloudinaryPublicId': null
         });
     },
 

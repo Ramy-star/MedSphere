@@ -54,7 +54,9 @@
         "metadata": {
             "type": "object",
             "properties": {
-                "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the avatar." }
+                "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the avatar." },
+                "coverPhotoURL": { "type": "string", "format": "uri", "description": "URL for the user's cover photo." },
+                "coverPhotoCloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the cover photo." }
             }
         },
         "roles": {

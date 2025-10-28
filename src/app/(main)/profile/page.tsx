@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -29,6 +29,7 @@ import level3Ids from '@/lib/student-ids/level-3.json';
 import level4Ids from '@/lib/student-ids/level-4.json';
 import level5Ids from '@/lib/student-ids/level-5.json';
 import { InfoCard } from '@/components/profile/InfoCard';
+import Image from 'next/image';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -44,9 +45,13 @@ export default function ProfilePage() {
   const [editingName, setEditingName] = useState(false);
   const [isSavingName, setIsSavingName] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showDeleteCoverConfirm, setShowDeleteCoverConfirm] = useState(false);
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const coverFileInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
@@ -116,6 +121,27 @@ export default function ProfilePage() {
     }
   };
 
+  const handleCoverImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+
+    if (!file.type.startsWith('image/')) {
+        toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please select an image file.'});
+        return;
+    }
+
+    setIsUploadingCover(true);
+    try {
+        await contentService.uploadUserCoverPhoto(user, file, (progress) => {});
+        toast({ title: 'Success', description: 'Cover photo updated.' });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+        console.error('Error uploading cover photo:', error);
+    } finally {
+        setIsUploadingCover(false);
+    }
+  };
+
   const handleDeletePicture = async () => {
       if (!user) return;
       setIsUploading(true);
@@ -128,6 +154,21 @@ export default function ProfilePage() {
       } finally {
           setIsUploading(false);
           setShowDeleteConfirm(false);
+      }
+  }
+
+  const handleDeleteCoverPicture = async () => {
+      if (!user) return;
+      setIsUploadingCover(true);
+      try {
+          await contentService.deleteUserCoverPhoto(user);
+          toast({ title: 'Success', description: 'Cover photo removed.' });
+      } catch(error: any) {
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not remove cover photo.' });
+          console.error("Error deleting cover photo:", error);
+      } finally {
+          setIsUploadingCover(false);
+          setShowDeleteCoverConfirm(false);
       }
   }
   
@@ -156,8 +197,52 @@ export default function ProfilePage() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full max-w-2xl mx-auto pb-12"
     >
-      <div className="flex flex-col items-center">
-        <div className="relative group mt-8">
+      <div className="relative group/cover h-48 bg-slate-800 rounded-b-3xl overflow-hidden">
+        {user.metadata?.coverPhotoURL && (
+            <Image
+                src={user.metadata.coverPhotoURL}
+                alt="Cover photo"
+                layout="fill"
+                objectFit="cover"
+                className="pointer-events-none select-none"
+                onDragStart={(e) => e.preventDefault()}
+                onContextMenu={(e) => e.preventDefault()}
+            />
+        )}
+         <div className="absolute inset-0 bg-black/30"></div>
+         <input
+            type="file"
+            ref={coverFileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleCoverImageChange}
+          />
+         <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover/cover:opacity-100 transition-opacity">
+            <Button
+                size="sm"
+                className="h-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 text-white"
+                onClick={() => coverFileInputRef.current?.click()}
+                disabled={isUploadingCover}
+            >
+                {isUploadingCover ? <Loader2 className="w-4 h-4 animate-spin"/> : <Camera className="w-4 h-4 mr-2" />}
+                <span className="text-xs">Change Cover</span>
+            </Button>
+             {user.metadata?.coverPhotoURL && (
+                  <Button
+                      size="icon"
+                      variant="destructive"
+                      className="h-8 w-8 rounded-full bg-red-800/80 hover:bg-red-700/90 border border-red-600"
+                      onClick={() => setShowDeleteCoverConfirm(true)}
+                      disabled={isUploadingCover}
+                  >
+                      <Trash2 className="w-4 h-4" />
+                  </Button>
+              )}
+         </div>
+      </div>
+
+      <div className="flex flex-col items-center -mt-16">
+        <div className="relative group/avatar">
           <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
             <AvatarImage 
                 src={user.photoURL} 
@@ -180,7 +265,7 @@ export default function ProfilePage() {
           <div className="absolute bottom-1 right-1 flex gap-1">
               <Button
                 size="icon"
-                className="h-8 w-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 group-hover:opacity-100 md:opacity-0 transition-opacity"
+                className="h-8 w-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 opacity-0 group-hover/avatar:opacity-100 transition-opacity"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
               >
@@ -190,7 +275,7 @@ export default function ProfilePage() {
                   <Button
                       size="icon"
                       variant="destructive"
-                      className="h-8 w-8 rounded-full bg-red-800/80 hover:bg-red-700/90 border border-red-600 group-hover:opacity-100 md:opacity-0 transition-opacity"
+                      className="h-8 w-8 rounded-full bg-red-800/80 hover:bg-red-700/90 border border-red-600 opacity-0 group-hover/avatar:opacity-100 transition-opacity"
                       onClick={() => setShowDeleteConfirm(true)}
                       disabled={isUploading}
                   >
@@ -264,6 +349,20 @@ export default function ProfilePage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeletePicture} className="bg-red-600 hover:bg-red-700">Remove Picture</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={showDeleteCoverConfirm} onOpenChange={setShowDeleteCoverConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove your cover photo.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteCoverPicture} className="bg-red-600 hover:bg-red-700">Remove Cover</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
