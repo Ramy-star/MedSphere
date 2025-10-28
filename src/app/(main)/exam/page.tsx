@@ -20,6 +20,6 @@ export default function ExamPage() {
     }
 
     return (
-        <ExamContainer lectures={lecturesData} />
+        <ExamContainer lectures={lecturesData} fileItemId={null} />
     );
 }
