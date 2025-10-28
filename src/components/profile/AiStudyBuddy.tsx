@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Send, ArrowLeft } from 'lucide-react';
@@ -10,6 +10,9 @@ import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
 import type { UserProfile } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import { useToast } from '@/hooks/use-toast';
 
 type Suggestion = {
     label: string;
@@ -22,12 +25,30 @@ type InitialInsight = {
     suggestedActions: Suggestion[];
 };
 
+type ChatMessage = {
+    role: 'user' | 'model';
+    text: string;
+};
+
 export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const [initialInsight, setInitialInsight] = useState<InitialInsight | null>(null);
     const [loading, setLoading] = useState(true);
-    const [currentResponse, setCurrentResponse] = useState<string | null>(null);
+    const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isResponding, setIsResponding] = useState(false);
     const [customQuestion, setCustomQuestion] = useState('');
+    const [view, setView] = useState<'intro' | 'chat'>('intro');
+    const { toast } = useToast();
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    };
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [chatHistory, isResponding]);
+    
 
     const fetchInitialInsight = useCallback(async () => {
         setLoading(true);
@@ -43,11 +64,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         try {
             const result = await getStudyBuddyInsight(userStats);
             setInitialInsight(result);
-            setCurrentResponse(result.mainInsight);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
-            setCurrentResponse("I'm having a little trouble connecting right now. Please try again in a moment.");
         } finally {
             setLoading(false);
         }
@@ -58,8 +77,13 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     }, [fetchInitialInsight]);
 
     const submitQuery = async (prompt: string) => {
+        if (!prompt) return;
+
+        setView('chat');
         setIsResponding(true);
-        setCurrentResponse(null); // Clear previous response
+        const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt }];
+        setChatHistory(newHistory);
+
         try {
             const userStats = {
                 displayName: user.displayName || user.username,
@@ -73,11 +97,18 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             const response = await answerStudyBuddyQuery({
                 userStats,
                 question: prompt,
+                chatHistory: newHistory.slice(0, -1), // Send history up to the latest question
             });
-            setCurrentResponse(response);
+            setChatHistory(prev => [...prev, { role: 'model', text: response }]);
         } catch (e) {
             console.error("Failed to get answer from study buddy", e);
-            setCurrentResponse("Sorry, I couldn't process that request. Please try again.");
+             toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: "Sorry, I couldn't process that request. Please try again.",
+            });
+            // Remove the user message if AI fails
+            setChatHistory(prev => prev.slice(0, -1));
         } finally {
             setIsResponding(false);
         }
@@ -101,12 +132,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     };
     
     const handleBackToIntro = () => {
-        if(initialInsight) {
-            setCurrentResponse(initialInsight.mainInsight);
-        }
+        setView('intro');
+        setChatHistory([]); // Clear chat history when going back to intro
     };
-
-    const isChatMode = initialInsight ? currentResponse !== initialInsight.mainInsight : false;
 
     if (loading) {
         return (
@@ -127,6 +155,71 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     
     if (!initialInsight) return null;
 
+    const IntroView = () => (
+        <>
+            <h3 className="text-xl font-bold text-white">
+                {initialInsight.greeting}
+            </h3>
+            <p className="text-slate-300 mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</p>
+            <div className="mt-6 flex flex-wrap gap-3">
+                {initialInsight.suggestedActions.map((suggestion, index) => (
+                    <motion.div
+                        key={index}
+                        initial={{ opacity: 0, x: -10 }}
+                        animate={{ opacity: 1, x: 0, transition: { delay: 0.2 + index * 0.1 } }}
+                    >
+                        <Button
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            variant="outline"
+                            className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
+                            disabled={isResponding}
+                        >
+                            {suggestion.label}
+                        </Button>
+                    </motion.div>
+                ))}
+            </div>
+        </>
+    );
+
+    const ChatView = () => (
+        <>
+            <div className="flex items-center justify-between mb-4">
+                 <Button
+                    onClick={handleBackToIntro}
+                    variant="outline"
+                    className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
+                >
+                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    Back
+                </Button>
+            </div>
+            <div className="space-y-4 max-h-80 overflow-y-auto no-scrollbar pr-2 -mr-2">
+                {chatHistory.map((message, index) => (
+                    <div key={index} className="flex flex-col gap-2">
+                        {message.role === 'user' && (
+                             <div className="text-sm self-end bg-blue-600 text-white rounded-2xl px-4 py-2 max-w-[80%]">
+                                {message.text}
+                            </div>
+                        )}
+                        {message.role === 'model' && (
+                            <div className="text-sm self-start bg-slate-700/70 text-slate-200 rounded-2xl px-4 py-2 max-w-[80%] prose prose-sm prose-invert">
+                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+                            </div>
+                        )}
+                    </div>
+                ))}
+                {isResponding && (
+                     <div className="self-start flex items-center gap-2 text-slate-400">
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Thinking...</span>
+                    </div>
+                )}
+                <div ref={messagesEndRef} />
+            </div>
+        </>
+    );
+
     return (
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
@@ -139,86 +232,41 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 </div>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 w-full">
                 <AnimatePresence mode="wait">
                     <motion.div
-                        key={isChatMode ? 'chat' : 'intro'}
+                        key={view}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                         transition={{ duration: 0.3 }}
                     >
-                        <h3 className="text-xl font-bold text-white">
-                            {isChatMode ? "Here's what I found..." : initialInsight.greeting}
-                        </h3>
-                        {isResponding ? (
-                             <div className="flex items-center gap-3 mt-2 text-slate-400">
-                                <Loader2 className="w-4 h-4 animate-spin" />
-                                <span>Thinking...</span>
-                            </div>
-                        ) : (
-                            <p className="text-slate-300 mt-2 max-w-prose whitespace-pre-wrap">{currentResponse}</p>
-                        )}
+                        {view === 'intro' ? <IntroView /> : <ChatView />}
                     </motion.div>
                 </AnimatePresence>
 
-                <div className="mt-6 flex flex-col gap-3">
-                   {isChatMode ? (
-                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-                             <Button
-                                onClick={handleBackToIntro}
-                                variant="outline"
-                                className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
-                            >
-                                <ArrowLeft className="w-4 h-4 mr-2" />
-                                Back to Suggestions
-                            </Button>
-                        </motion.div>
-                   ) : (
-                    <>
-                        <div className="flex flex-wrap gap-3">
-                            {initialInsight.suggestedActions.map((suggestion, index) => (
-                                <motion.div
-                                    key={index}
-                                    initial={{ opacity: 0, x: -10 }}
-                                    animate={{ opacity: 1, x: 0, transition: { delay: 0.2 + index * 0.1 } }}
-                                >
-                                    <Button
-                                        onClick={() => handleSuggestionClick(suggestion)}
-                                        variant="outline"
-                                        className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
-                                        disabled={isResponding}
-                                    >
-                                        {suggestion.label}
-                                    </Button>
-                                </motion.div>
-                            ))}
-                        </div>
-                        <motion.div 
-                            className="flex items-center gap-2 mt-2"
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
-                        >
-                            <Input 
-                                placeholder="Or ask something else..."
-                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-full h-10 px-4"
-                                value={customQuestion}
-                                onChange={(e) => setCustomQuestion(e.target.value)}
-                                onKeyDown={handleCustomQuestionKeyDown}
-                                disabled={isResponding}
-                            />
-                             <Button 
-                                size="icon" 
-                                className="rounded-full h-10 w-10 flex-shrink-0"
-                                onClick={handleCustomQuestionSubmit}
-                                disabled={isResponding || !customQuestion.trim()}
-                            >
-                                <Send className="w-4 h-4" />
-                            </Button>
-                        </motion.div>
-                    </>
-                   )}
-                </div>
+                 <motion.div 
+                    className="flex items-center gap-2 mt-4"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+                >
+                    <Input 
+                        placeholder="Ask something else..."
+                        className="flex-1 bg-slate-800/60 border-slate-700 rounded-full h-10 px-4"
+                        value={customQuestion}
+                        onChange={(e) => setCustomQuestion(e.target.value)}
+                        onKeyDown={handleCustomQuestionKeyDown}
+                        disabled={isResponding}
+                    />
+                     <Button 
+                        size="icon" 
+                        className="rounded-full h-10 w-10 flex-shrink-0"
+                        onClick={handleCustomQuestionSubmit}
+                        disabled={isResponding || !customQuestion.trim()}
+                    >
+                        <Send className="w-4 h-4" />
+                    </Button>
+                </motion.div>
             </div>
         </motion.div>
     );
