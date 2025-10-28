@@ -40,23 +40,13 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = useCallback(() => {
-        // Debounce scrolling to prevent jerky movements during rapid updates
-        setTimeout(() => {
-            if (chatContainerRef.current) {
-                chatContainerRef.current.scrollTo({
-                    top: chatContainerRef.current.scrollHeight,
-                    behavior: 'smooth',
-                });
-            }
-        }, 100);
-    }, []);
-
     useEffect(() => {
-        if (view === 'chat' && chatHistory.length > 0) {
-            scrollToBottom();
+        // This effect ensures the view scrolls down when new messages are added.
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
-    }, [chatHistory, view, scrollToBottom]);
+    }, [chatHistory, isResponding]);
+
 
     const fetchInitialInsight = useCallback(async () => {
         setLoading(true);
@@ -168,7 +158,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             <h3 className="text-xl font-bold text-white">
                 {initialInsight.greeting}
             </h3>
-            <p className="text-slate-300 mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</p>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-300 mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
             <div className="mt-6 flex flex-wrap gap-3">
                 {initialInsight.suggestedActions.map((suggestion, index) => (
                     <motion.div
