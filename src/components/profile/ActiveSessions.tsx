@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -43,7 +44,6 @@ const TimeAgo = ({ dateString }: { dateString: string }) => {
 
 export const ActiveSessions = ({ user }: { user: UserProfile }) => {
     const { logoutSession, currentSessionId } = useAuthStore();
-    const [sessionToLogout, setSessionToLogout] = useState<string | null>(null);
 
     const sessions = user.sessions?.filter(s => s.status !== 'logged_out') || [];
     

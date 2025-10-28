@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayRemove, arrayUnion, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayUnion, getDoc, arrayRemove } from 'firebase/firestore';
 import type { Content } from '@/lib/contentService';
 import { nanoid } from 'nanoid';
 
@@ -140,30 +140,53 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
     return false;
 };
 
-const getDeviceDescription = () => {
-    if (typeof window === 'undefined') return 'Server';
-    const ua = navigator.userAgent;
-    let browser = 'Unknown Browser';
-    let os = 'Unknown OS';
+const getDeviceDescription = (): string => {
+  if (typeof window === 'undefined') return 'Server';
+  const ua = navigator.userAgent;
 
-    // OS Detection
-    if (ua.includes('Win')) os = 'Windows';
-    if (ua.includes('Mac')) os = 'macOS';
-    if (ua.includes('Linux')) os = 'Linux';
-    if (ua.includes('Android')) os = 'Android';
-    if (ua.includes('like Mac')) os = 'iOS'; // For iPad/iPhone
+  let os = 'Unknown OS';
+  let device = 'Device';
+  let browser = 'Unknown Browser';
 
-    // Browser Detection
-    if (ua.includes('Firefox')) browser = 'Firefox';
-    else if (ua.includes('SamsungBrowser')) browser = 'Samsung Internet';
-    else if (ua.includes('Opera') || ua.includes('OPR')) browser = 'Opera';
-    else if (ua.includes('Trident')) browser = 'Internet Explorer';
-    else if (ua.includes('Edge')) browser = 'Edge';
-    else if (ua.includes('Edg')) browser = 'Edge (Chromium)';
-    else if (ua.includes('Chrome')) browser = 'Chrome';
-    else if (ua.includes('Safari')) browser = 'Safari';
+  // OS Detection
+  if (/Windows/.test(ua)) {
+    os = 'Windows';
+    device = 'Windows PC';
+  } else if (/Macintosh|Mac OS X/.test(ua)) {
+    os = 'macOS';
+    device = 'Apple Mac';
+    if (/MacIntel/.test(navigator.platform) && 'ontouchend' in document) {
+        device = 'Apple iPad'; // iPad on iPadOS 13+
+    }
+  } else if (/Android/.test(ua)) {
+    os = 'Android';
+    device = 'Android Device';
+    const samsung = /SAMSUNG|SM-/.test(ua);
+    const xiaomi = /Xiaomi|Redmi|POCO/.test(ua);
+    const huawei = /Huawei/i.test(ua);
+    const oneplus = /OnePlus/i.test(ua);
+    if(samsung) device = 'Samsung Phone';
+    if(xiaomi) device = 'Xiaomi Phone';
+    if(huawei) device = 'Huawei Phone';
+    if(oneplus) device = 'OnePlus Phone';
 
-    return `${os} - ${browser}`;
+  } else if (/iPhone|iPad|iPod/.test(ua)) {
+    os = 'iOS';
+    device = 'Apple ' + ua.match(/iPhone|iPad|iPod/)?.[0];
+  } else if (/Linux/.test(ua)) {
+    os = 'Linux';
+    device = 'Linux PC';
+  }
+
+  // Browser Detection
+  if (/Firefox/.test(ua)) browser = 'Firefox';
+  else if (/SamsungBrowser/.test(ua)) browser = 'Samsung Internet';
+  else if (/Opera|OPR/.test(ua)) browser = 'Opera';
+  else if (/Edge|Edg/.test(ua)) browser = 'Edge';
+  else if (/Chrome/.test(ua)) browser = 'Chrome';
+  else if (/Safari/.test(ua)) browser = 'Safari';
+
+  return `${device} (${browser})`;
 };
 
 
@@ -377,9 +400,12 @@ const useAuthStore = create<AuthState>((set, get) => ({
     if (!user || !user.sessions) return;
     
     const userDocRef = doc(db, 'users', user.id);
-    const updatedSessions = user.sessions.map(s => 
-        s.sessionId === sessionId ? { ...s, status: 'logged_out' } : s
-    );
+    const sessionToLogout = user.sessions.find(s => s.sessionId === sessionId);
+    if (!sessionToLogout) return;
+    
+    // To ensure immutability and trigger re-renders correctly, we create a new array
+    const updatedSessions = user.sessions.filter(s => s.sessionId !== sessionId);
+    updatedSessions.push({ ...sessionToLogout, status: 'logged_out' });
 
     await updateDoc(userDocRef, {
         sessions: updatedSessions
