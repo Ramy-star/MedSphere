@@ -31,15 +31,15 @@ const StudyBuddyOutputSchema = z.object({
 
 const studyBuddyPrompt = ai.definePrompt({
     name: 'studyBuddyPrompt',
-    input: { schema: UserStatsSchema },
+    input: { schema: UserStatsSchema.extend({ timeOfDay: z.string(), firstName: z.string() }) },
     output: { schema: StudyBuddyOutputSchema },
     prompt: `
         You are a friendly and encouraging AI Study Buddy for a medical student.
         Your goal is to provide a personalized, insightful, and motivating message based on the user's recent activity stats.
 
-        The current time of day is: {{timeOfDay}}
+        The current time of day is: {{{timeOfDay}}}
         The user's stats are:
-        - Display Name: {{{displayName}}}
+        - Name: {{{firstName}}}
         - Username: {{{username}}}
         - Files Uploaded: {{{filesUploaded}}}
         - Folders Created: {{{foldersCreated}}}
@@ -48,7 +48,7 @@ const studyBuddyPrompt = ai.definePrompt({
         - AI Queries: {{{aiQueries}}}
 
         Follow these rules precisely:
-        1.  **Greeting:** Start with a brief, warm greeting appropriate for the time of day (morning, afternoon, evening). Address the user by their display name.
+        1.  **Greeting:** Start with a brief, warm greeting appropriate for the time of day (morning, afternoon, evening). Address the user by their first name.
         2.  **Main Insight:** Based on the stats, generate ONE key insight. Make it feel personal and observant.
             - If they have high activity, praise their hard work.
             - If activity is low, gently encourage them to get started.
@@ -59,7 +59,7 @@ const studyBuddyPrompt = ai.definePrompt({
 
         Example Output:
         {
-          "greeting": "Good morning, Dr. [Name]!",
+          "greeting": "Good morning, [FirstName]!",
           "mainInsight": "You've been busy organizing! I see you've created {{foldersCreated}} new folders.",
           "suggestedActions": [
             { "label": "What should I study next?", "prompt": "Based on my recent activity, what subject do you recommend I study next?" },
@@ -72,15 +72,16 @@ const studyBuddyPrompt = ai.definePrompt({
 export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema>) {
     const hour = new Date().getHours();
     const timeOfDay = hour < 12 ? 'morning' : hour < 18 ? 'afternoon' : 'evening';
+    const firstName = stats.displayName?.split(' ')[0] || stats.username;
     
     try {
-        const { output } = await studyBuddyPrompt({ ...stats, timeOfDay });
+        const { output } = await studyBuddyPrompt({ ...stats, timeOfDay, firstName });
         return output;
     } catch (error) {
         console.error("Error generating study buddy insight:", error);
         // Return a default, safe response on error
         return {
-            greeting: `Hello, ${stats.displayName || stats.username}!`,
+            greeting: `Hello, ${firstName}!`,
             mainInsight: "Ready to dive into your studies? Let's make today productive. You can ask me to summarize your progress or suggest what to study next.",
             suggestedActions: [
                 { label: "Summarize my progress", prompt: "Can you give me a brief summary of my study progress so far?" },
