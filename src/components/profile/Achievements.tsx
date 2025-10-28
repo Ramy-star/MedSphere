@@ -37,9 +37,20 @@ const tierColors = {
   },
 };
 
+const silverOverride = {
+    bg: 'bg-slate-800/50',
+    border: 'border-slate-600/70',
+    icon: 'text-slate-300',
+    progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
+}
+
+
 const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievement, userStats: any, earned: boolean }) => {
-  const { icon: Icon, name, description, tier, condition } = achievement;
-  const colors = tierColors[tier];
+  const { id, icon: Icon, name, description, tier, condition } = achievement;
+  
+  // Specific override for "A Good Start" to be silver/gray
+  const isGoodStart = id === 'FIRST_LOGIN';
+  const colors = isGoodStart ? silverOverride : tierColors[tier];
   
   const currentProgress = userStats[condition.stat] || 0;
   const goal = condition.value;
@@ -120,30 +131,32 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
         if (isSpecialCategory && !hasEarnedSpecial) {
             return null;
         }
+        
+        const isConsistencyCategory = category === 'Consistency & Perseverance';
 
         return (
             <React.Fragment key={category}>
                 <div className="mb-8">
-                <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
-                <div className="space-y-4">
-                    {Object.entries(groups).map(([group, achievements], groupIndex) => (
-                    <div key={group}>
-                        <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
-                        {achievements.map((ach) => (
-                            <BadgeCard
-                            key={ach.id}
-                            achievement={ach}
-                            userStats={userStats}
-                            earned={isSuperAdmin || earnedAchievements.has(ach.id)}
-                            />
+                    <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
+                    <div className="space-y-4">
+                        {Object.entries(groups).map(([group, achievements], groupIndex) => (
+                        <React.Fragment key={group}>
+                            <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
+                            {achievements.map((ach) => (
+                                <BadgeCard
+                                key={ach.id}
+                                achievement={ach}
+                                userStats={userStats}
+                                earned={isSuperAdmin || earnedAchievements.has(ach.id)}
+                                />
+                            ))}
+                            </div>
+                            {!isConsistencyCategory && groupIndex < Object.keys(groups).length - 1 && (
+                                <hr className="my-2 border-slate-800" />
+                            )}
+                        </React.Fragment>
                         ))}
-                        </div>
-                        {category !== 'Consistency & Perseverance' && groupIndex < Object.keys(groups).length - 1 && (
-                            <hr className="my-6 border-slate-800" />
-                        )}
                     </div>
-                    ))}
-                </div>
                 </div>
                 {categoryIndex < Object.keys(categorizedAndGroupedAchievements).length - 1 && (
                     <hr className="my-8 border-t-2 border-slate-800" />
