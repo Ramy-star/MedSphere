@@ -272,7 +272,7 @@ function AdminPageContent() {
         const isCurrentUser = user.studentId === currentStudentId;
         const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
         const joinDate = user.createdAt ? format(new Date(user.createdAt), 'MMM dd, yyyy') : null;
-        const avatarRingClass = userIsSuperAdmin ? "ring-yellow-400" : userIsSubAdmin ? "ring-blue-400" : "ring-transparent";
+        const avatarRingClass = userIsSuperAdmin ? "border-yellow-400" : userIsSubAdmin ? "border-blue-400" : "border-transparent";
 
 
         const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" />
@@ -294,16 +294,18 @@ function AdminPageContent() {
                 className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}
             >
                 <div className="flex items-center gap-4 overflow-hidden">
-                    <Avatar className={cn("h-9 w-9 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
-                        <AvatarImage 
-                            src={user.photoURL} 
-                            alt={user.displayName}
-                            className="pointer-events-none select-none"
-                            onDragStart={(e) => e.preventDefault()}
-                            onContextMenu={(e) => e.preventDefault()}
-                         />
-                        <AvatarFallback>{user.displayName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
-                    </Avatar>
+                    <div className={cn("relative h-9 w-9 rounded-full flex items-center justify-center border-2", avatarRingClass)}>
+                        <Avatar className={cn("h-full w-full")}>
+                            <AvatarImage 
+                                src={user.photoURL} 
+                                alt={user.displayName}
+                                className="pointer-events-none select-none"
+                                onDragStart={(e) => e.preventDefault()}
+                                onContextMenu={(e) => e.preventDefault()}
+                             />
+                            <AvatarFallback>{user.displayName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
+                        </Avatar>
+                    </div>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
                            <p className="text-sm font-semibold text-white truncate sm:text-base">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
