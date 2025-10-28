@@ -272,7 +272,7 @@ function AdminPageContent() {
         const isCurrentUser = user.studentId === currentStudentId;
         const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
         const joinDate = user.createdAt ? format(new Date(user.createdAt), 'MMM dd, yyyy') : null;
-        const avatarRingClass = userIsSuperAdmin ? "ring-yellow-400" : userIsSubAdmin ? "ring-slate-400" : "ring-transparent";
+        const avatarRingClass = userIsSuperAdmin ? "ring-yellow-400" : userIsSubAdmin ? "ring-blue-400" : "ring-transparent";
 
 
         const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" />

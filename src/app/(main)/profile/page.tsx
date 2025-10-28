@@ -145,7 +145,7 @@ export default function ProfilePage() {
   const roleText = isSuperAdmin ? 'Super Admin' : isSubAdmin ? 'Admin' : 'Student';
   const roleColor = isSuperAdmin ? 'text-yellow-400' : isSubAdmin ? 'text-blue-400' : 'text-slate-300';
   const RoleIcon = isSuperAdmin ? Crown : isSubAdmin ? Shield : UserIcon;
-  const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-slate-400" : "ring-transparent";
+  const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
   const userLevel = user.level || studentIdToLevelMap.get(user.studentId) || 'Not Specified';
 
 

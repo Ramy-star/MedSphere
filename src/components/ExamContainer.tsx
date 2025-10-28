@@ -21,7 +21,7 @@ import level3StudentData from '@/lib/student-ids/level-3-data.json';
 import level4StudentData from '@/lib/student-ids/level-4-data.json';
 import level5StudentData from '@/lib/student-ids/level-5-data.json';
 import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import { User as UserIcon } from 'lucide-react';
+import { User as UserIcon, Crown, Shield } from 'lucide-react';
 
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
@@ -998,7 +998,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                     const { userProfile, result } = data;
                                     const isSuperAdmin = userProfile.roles?.some((r: any) => r.role === 'superAdmin');
                                     const isSubAdmin = userProfile.roles?.some((r: any) => r.role === 'subAdmin') && !isSuperAdmin;
-                                    const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-slate-400" : "ring-transparent";
+                                    const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
                                     
                                     return (
                                         <tr key={index} className="border-b bg-gray-800 border-gray-700">
@@ -1017,7 +1017,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                                     {userProfile.displayName}
                                                 </div>
                                             </td>
-                                            <td className="px-6 py-4">{result.userId}</td>
+                                            <td className="px-6 py-4">{userProfile.studentId}</td>
                                             <td className="px-6 py-4">{`${result.score} / ${result.totalQuestions}`}</td>
                                             <td className="px-6 py-4">{result.percentage.toFixed(2)}%</td>
                                         </tr>

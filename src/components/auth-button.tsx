@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -24,7 +25,7 @@ export function AuthButton() {
   if (user) {
     const isSuperAdmin = user.roles?.some(r => r.role === 'superAdmin');
     const isSubAdmin = user.roles?.some(r => r.role === 'subAdmin') && !isSuperAdmin;
-    const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-slate-400" : "ring-transparent";
+    const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
     
     return (
       <TooltipProvider>
