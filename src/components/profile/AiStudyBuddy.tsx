@@ -41,17 +41,22 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = useCallback(() => {
-        if (chatContainerRef.current) {
-            chatContainerRef.current.scrollTo({
-                top: chatContainerRef.current.scrollHeight,
-                behavior: 'smooth'
-            });
-        }
+        // Debounce scrolling to prevent jerky movements during rapid updates
+        setTimeout(() => {
+            if (chatContainerRef.current) {
+                chatContainerRef.current.scrollTo({
+                    top: chatContainerRef.current.scrollHeight,
+                    behavior: 'smooth',
+                });
+            }
+        }, 100);
     }, []);
 
     useEffect(() => {
-        scrollToBottom();
-    }, [chatHistory, scrollToBottom]);
+        if (view === 'chat' && chatHistory.length > 0) {
+            scrollToBottom();
+        }
+    }, [chatHistory, view, scrollToBottom]);
 
     const fetchInitialInsight = useCallback(async () => {
         setLoading(true);
@@ -186,7 +191,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     );
 
     const ChatView = () => (
-        <>
+        <div className="flex flex-col h-full">
             <div className="flex items-center justify-between mb-4">
                  <Button
                     onClick={handleBackToIntro}
@@ -197,7 +202,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                     Back
                 </Button>
             </div>
-            <div ref={chatContainerRef} className="space-y-4 max-h-80 overflow-y-auto no-scrollbar pr-2 -mr-2">
+            <div ref={chatContainerRef} className="flex-1 space-y-4 max-h-80 overflow-y-auto no-scrollbar pr-2 -mr-2">
                 {chatHistory.map((message, index) => (
                     <div key={index} className="flex flex-col gap-2">
                         {message.role === 'user' && (
@@ -219,7 +224,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                     </div>
                 )}
             </div>
-        </>
+        </div>
     );
 
     return (
@@ -234,19 +239,21 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 </div>
             </div>
 
-            <div className="flex-1 w-full">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={view}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
-                    >
-                        {view === 'intro' ? <IntroView /> : <ChatView />}
-                    </motion.div>
-                </AnimatePresence>
-
+            <div className="flex-1 flex flex-col w-full min-h-[160px]">
+                <div className="flex-1">
+                    <AnimatePresence mode="wait">
+                        <motion.div
+                            key={view}
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            transition={{ duration: 0.3 }}
+                            className="h-full"
+                        >
+                            {view === 'intro' ? <IntroView /> : <ChatView />}
+                        </motion.div>
+                    </AnimatePresence>
+                </div>
                  <motion.div 
                     className="flex items-center gap-2 mt-4"
                     initial={{ opacity: 0, y: 10 }}
