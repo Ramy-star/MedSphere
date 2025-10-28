@@ -5,7 +5,7 @@
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection, query, orderBy } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData } from 'firebase/firestore';
 import type { Content } from '@/lib/contentService';
 
 
@@ -20,7 +20,7 @@ export type UserRole = {
 };
 
 export type UserProfile = {
-  id: string; // Document ID
+  id: string; // Document ID from Firestore, now mandatory
   uid: string;
   username: string;
   studentId: string;

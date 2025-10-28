@@ -68,14 +68,14 @@ type AuditLog = {
 type SortOption = 'name' | 'createdAt' | 'level';
 
 async function logAdminAction(actor: UserProfile, action: string, target: UserProfile, details?: object) {
-    if (!db || !actor) return;
+    if (!db || !actor || !actor.id) return;
     try {
         await addDoc(collection(db, 'auditLogs'), {
             timestamp: new Date().toISOString(),
-            actorId: actor.uid,
+            actorId: actor.id,
             actorName: actor.displayName || actor.username,
             action: action,
-            targetId: target.uid,
+            targetId: target.id,
             targetName: target.displayName || target.username,
             details: details || {}
         });
