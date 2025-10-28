@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
 import { generateQuestions, convertQuestionsToJson } from '@/ai/flows/question-gen-flow';
@@ -37,7 +38,7 @@ interface GenerationTask {
   generationOptions: GenerationOptions;
 }
 
-interface PendingSource {
+export interface PendingSource {
     id: string;
     fileName: string;
     fileUrl?: string; // For existing files
