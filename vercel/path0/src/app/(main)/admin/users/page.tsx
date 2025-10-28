@@ -19,7 +19,7 @@ import type { UserProfile } from '@/stores/auth-store';
 
 
 function UserManagementPage() {
-    const { user, isSuperAdmin } = useAuthStore();
+    const { user, isSuperAdmin, loading: userLoading } = useAuthStore();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -32,10 +32,10 @@ function UserManagementPage() {
 
     // Redirect if user is not a super admin
     useEffect(() => {
-        if (user === null && !isSuperAdmin) {
+        if (!userLoading && !isSuperAdmin) {
             router.replace('/');
         }
-    }, [user, isSuperAdmin, router]);
+    }, [userLoading, isSuperAdmin, router]);
 
     const filteredUsers = debouncedSearchTerm
         ? allUsers?.filter(u =>
@@ -70,7 +70,7 @@ function UserManagementPage() {
     };
 
 
-    if (!user && !isSuperAdmin) {
+    if (userLoading || !isSuperAdmin) {
         return (
             <div className="flex-1 flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin" />
@@ -191,5 +191,3 @@ function UserManagementPage() {
 }
 
 export default UserManagementPage;
-
-    
