@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { UserProfile, UserSession } from '@/stores/auth-store';
 import { useAuthStore } from '@/stores/auth-store';
 import { Monitor, Smartphone, Tablet, LogOut, Laptop, Ban } from 'lucide-react';
@@ -15,9 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { Button } from '../ui/button';
 
 const getDeviceIcon = (device: string | undefined) => {
     if (!device) return <Monitor className="w-5 h-5 text-slate-400" />;
@@ -26,6 +24,20 @@ const getDeviceIcon = (device: string | undefined) => {
     if (lowerDevice.includes('ipad') || lowerDevice.includes('tablet')) return <Tablet className="w-5 h-5 text-slate-400" />;
     if (lowerDevice.includes('mac') || lowerDevice.includes('windows') || lowerDevice.includes('linux')) return <Laptop className="w-5 h-5 text-slate-400" />;
     return <Monitor className="w-5 h-5 text-slate-400" />;
+};
+
+const TimeAgo = ({ dateString }: { dateString: string }) => {
+    const [timeAgo, setTimeAgo] = useState(() => formatDistanceToNow(parseISO(dateString), { addSuffix: true }));
+
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTimeAgo(formatDistanceToNow(parseISO(dateString), { addSuffix: true }));
+        }, 60000); // Update every minute
+
+        return () => clearInterval(interval);
+    }, [dateString]);
+
+    return <span>{timeAgo}</span>;
 };
 
 
@@ -61,9 +73,7 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
                                         {isCurrent && <span className="text-xs font-bold text-green-400 bg-green-900/50 px-2 py-0.5 rounded-full">Current</span>}
                                     </p>
                                     <p className="text-xs text-slate-400 mt-1">
-                                        <span>{session.ipAddress || 'IP not available'}</span>
-                                        <span className="mx-1.5">•</span>
-                                        <span>Last active {formatDistanceToNow(parseISO(session.lastActive), { addSuffix: true })}</span>
+                                        <span>Last active <TimeAgo dateString={session.lastActive} /></span>
                                     </p>
                                 </div>
                            </div>

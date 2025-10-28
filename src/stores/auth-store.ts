@@ -15,7 +15,6 @@ const CURRENT_SESSION_ID_KEY = 'medsphere-session-id';
 export type UserSession = {
     sessionId: string;
     device: string;
-    ipAddress?: string; // This would typically be populated server-side
     lastActive: string; // ISO String
     loggedIn: string; // ISO String
     status?: 'active' | 'logged_out';
@@ -75,7 +74,7 @@ type AuthState = {
   buildHierarchy: () => (() => void); // Now returns an unsubscribe function
   checkAuth: () => Promise<void>;
   login: (studentId: string) => Promise<boolean>;
-  logout: () => void;
+  logout: (localOnly?: boolean) => void;
   logoutSession: (sessionId: string) => Promise<void>;
   can: (permission: string, itemId: string | null) => boolean;
   canAddContent: (parentId: string | null) => boolean;
@@ -144,13 +143,27 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
 const getDeviceDescription = () => {
     if (typeof window === 'undefined') return 'Server';
     const ua = navigator.userAgent;
-    if (/android/i.test(ua)) return "Android Device";
-    if (/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream) return "iOS Device";
-    if (/windows phone/i.test(ua)) return "Windows Phone";
-    if (/mac/i.test(ua)) return "Mac";
-    if (/windows/i.test(ua)) return "Windows PC";
-    if (/linux/i.test(ua)) return "Linux PC";
-    return 'Unknown Device';
+    let browser = 'Unknown Browser';
+    let os = 'Unknown OS';
+
+    // OS Detection
+    if (ua.includes('Win')) os = 'Windows';
+    if (ua.includes('Mac')) os = 'macOS';
+    if (ua.includes('Linux')) os = 'Linux';
+    if (ua.includes('Android')) os = 'Android';
+    if (ua.includes('like Mac')) os = 'iOS'; // For iPad/iPhone
+
+    // Browser Detection
+    if (ua.includes('Firefox')) browser = 'Firefox';
+    else if (ua.includes('SamsungBrowser')) browser = 'Samsung Internet';
+    else if (ua.includes('Opera') || ua.includes('OPR')) browser = 'Opera';
+    else if (ua.includes('Trident')) browser = 'Internet Explorer';
+    else if (ua.includes('Edge')) browser = 'Edge';
+    else if (ua.includes('Edg')) browser = 'Edge (Chromium)';
+    else if (ua.includes('Chrome')) browser = 'Chrome';
+    else if (ua.includes('Safari')) browser = 'Safari';
+
+    return `${os} - ${browser}`;
 };
 
 
@@ -325,13 +338,15 @@ const useAuthStore = create<AuthState>((set, get) => ({
                     const userProfile = userDoc.data() as UserProfile;
                     const sessionToRemove = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
                     if (sessionToRemove) {
+                        // Mark as logged out instead of removing
+                        const updatedSessions = userProfile.sessions?.map(s => s.sessionId === currentSessionId ? { ...s, status: 'logged_out' } : s);
                         await updateDoc(userDocRef, {
-                            sessions: arrayRemove(sessionToRemove)
+                            sessions: updatedSessions
                         });
                     }
                 }
             } catch (error) {
-                console.error("Error removing session from DB on logout:", error);
+                console.error("Error updating session status on logout:", error);
             }
         }
     }
