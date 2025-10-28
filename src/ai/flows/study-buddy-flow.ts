@@ -75,7 +75,7 @@ export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema
     
     try {
         const { output } = await studyBuddyPrompt({ ...stats, timeOfDay, firstName });
-        return output;
+        return output!;
     } catch (error) {
         console.error("Error generating study buddy insight:", error);
         // Return a default, safe response on error

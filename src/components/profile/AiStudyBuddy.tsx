@@ -271,4 +271,3 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         </motion.div>
     );
 }
-
