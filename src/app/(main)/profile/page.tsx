@@ -210,7 +210,7 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-5xl mx-auto pb-12"
+      className="w-full max-w-5xl pb-12"
     >
       <div className="relative group/cover h-48 bg-slate-800 rounded-b-3xl overflow-hidden">
         {user.metadata?.coverPhotoURL && (
@@ -256,9 +256,9 @@ export default function ProfilePage() {
          </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-16 px-4 sm:px-8 gap-4">
+      <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-14 px-4 sm:px-8 gap-4">
         <div className="relative group/avatar">
-          <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
+          <Avatar className={cn("h-28 w-28 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
             <AvatarImage 
                 src={user.photoURL} 
                 alt={user.displayName}
@@ -300,47 +300,49 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="text-center sm:text-left sm:pb-4">
+        <div className="text-center sm:text-left sm:pb-4 w-full">
             <div className="flex items-center justify-center sm:justify-start gap-2 group w-full">
-              <div className="relative p-1">
-                <h1
-                  ref={nameInputRef}
-                  contentEditable={editingName}
-                  suppressContentEditableWarning={true}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleSaveName();
-                    }
-                    if (e.key === 'Escape') {
-                      e.preventDefault();
-                      handleCancelEdit();
-                    }
-                  }}
-                  className={cn(
-                    "text-4xl font-bold outline-none whitespace-nowrap",
-                    editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
-                  )}
-                >
-                  {user.displayName}
-                </h1>
-              </div>
+              <h1
+                ref={nameInputRef}
+                contentEditable={editingName}
+                suppressContentEditableWarning={true}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSaveName();
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    handleCancelEdit();
+                  }
+                }}
+                className={cn(
+                  "text-3xl font-bold outline-none whitespace-nowrap",
+                  editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
+                )}
+              >
+                {user.displayName}
+              </h1>
 
-              {editingName ? (
-                <div className="flex items-center gap-1">
-                   <Button size="icon" onClick={handleSaveName} disabled={isSavingName} className="h-9 w-9 rounded-full flex-shrink-0">
-                      {isSavingName ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                  </Button>
-                   <Button size="icon" variant="ghost" onClick={handleCancelEdit} className="h-9 w-9 rounded-full flex-shrink-0">
-                      <X className="w-5 h-5" />
-                  </Button>
-                </div>
-              ) : (
-                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full group-hover:opacity-100 md:opacity-0 transition-opacity flex-shrink-0" onClick={() => setEditingName(true)}>
+              {!editingName && (
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full group-hover:opacity-100 md:opacity-0 transition-opacity flex-shrink-0" onClick={() => setEditingName(true)}>
                       <Edit className="w-5 h-5" />
                   </Button>
               )}
             </div>
+
+            {editingName && (
+                <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
+                   <Button size="sm" onClick={handleSaveName} disabled={isSavingName} className="h-8 rounded-full flex-shrink-0">
+                      {isSavingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1.5" />}
+                      Save
+                  </Button>
+                   <Button size="sm" variant="ghost" onClick={handleCancelEdit} className="h-8 rounded-full flex-shrink-0">
+                      <X className="w-4 h-4 mr-1.5" />
+                      Cancel
+                  </Button>
+                </div>
+            )}
 
             <p className={cn("mt-1 text-lg font-medium flex items-center justify-center sm:justify-start gap-2", roleColor)}>
               <RoleIcon className="w-5 h-5" />
