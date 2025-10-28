@@ -10,7 +10,7 @@ import {
 } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { useFirebase } from '../provider';
+import { useFirebase } from '@/firebase/provider';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase';
 import type { UserProfile as BaseUserProfile } from '@/stores/auth-store';
