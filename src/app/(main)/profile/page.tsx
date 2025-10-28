@@ -256,7 +256,7 @@ export default function ProfilePage() {
          </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-14 px-4 sm:px-8 gap-4">
+      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end -mt-14 px-4 sm:px-8 gap-4">
         <div className="relative group/avatar">
           <Avatar className={cn("h-28 w-28 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
             <AvatarImage 
