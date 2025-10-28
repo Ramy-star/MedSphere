@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -10,30 +11,13 @@ import {
 } from 'react';
 import type { User as FirebaseUser } from 'firebase/auth';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { useFirebase } from '../provider';
+import { useFirebase } from '@/firebase/provider';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/firebase';
+import type { UserProfile as BaseUserProfile } from '@/stores/auth-store';
 
-export type Roles = {
-  isSuperAdmin?: boolean;
-  isBlocked?: boolean;
-  permissions?: {
-    scope: 'level' | 'semester' | 'subject' | 'folder';
-    scopeId: string;
-    jobs: string[];
-  }[];
-};
 
-export type UserProfile = {
-  uid: string;
-  username: string;
-  email: string;
-  displayName: string;
-  photoURL: string;
-  studentId: string;
-  createdAt: string;
-  roles?: Roles;
-};
+export type UserProfile = BaseUserProfile;
 
 export interface User extends FirebaseUser {
   profile: UserProfile | null;

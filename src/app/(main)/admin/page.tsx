@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -27,7 +26,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from '@/lib/utils';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore, type UserProfile, type UserRole } from '@/stores/auth-store';
 import { AddUserDialog } from '@/components/AddUserDialog';
 import { doc, updateDoc, writeBatch, collection, getDocs, addDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -53,28 +52,6 @@ import level5Ids from '@/lib/student-ids/level-5.json';
 
 
 const SUPER_ADMIN_ID = "221100154";
-
-type UserRole = {
-    role: 'superAdmin' | 'subAdmin';
-    scope: 'global' | 'level' | 'semester' | 'subject' | 'folder';
-    scopeId?: string;
-    scopeName?: string;
-    permissions?: string[];
-};
-
-type UserProfile = {
-    id: string; // useCollection requires an 'id' property. The 'uid' is the document ID.
-    uid: string;
-    username: string;
-    studentId: string;
-    email?: string;
-    displayName?: string;
-    photoURL?: string;
-    roles?: UserRole[];
-    isBlocked?: boolean;
-    level?: string;
-    createdAt?: string;
-};
 
 type AuditLog = {
     id: string;

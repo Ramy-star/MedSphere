@@ -4,13 +4,13 @@
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection, query, orderBy } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData } from 'firebase/firestore';
 import type { Content } from '@/lib/contentService';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
-type UserRole = {
+export type UserRole = {
     role: 'superAdmin' | 'subAdmin';
     scope: 'global' | 'level' | 'semester' | 'subject' | 'folder';
     scopeId?: string;
@@ -18,7 +18,8 @@ type UserRole = {
     permissions?: string[];
 };
 
-type UserProfile = {
+export type UserProfile = {
+  id: string; // Document ID from Firestore, now mandatory
   uid: string;
   username: string;
   studentId: string;
@@ -116,7 +117,7 @@ const listenToUserProfile = (studentId: string) => {
     const userDocRef = doc(db, 'users', studentId);
     userListenerUnsubscribe = onSnapshot(userDocRef, async (doc) => {
         if (doc.exists()) {
-            const userProfile = { ...doc.data() } as UserProfile;
+            const userProfile = { id: doc.id, ...doc.data() } as UserProfile;
             if (userProfile.isBlocked) {
                 useAuthStore.getState().logout();
                 return;
