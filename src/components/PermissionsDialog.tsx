@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import {
@@ -22,22 +20,8 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { FlashcardIcon } from './icons/FlashcardIcon';
+import type { UserProfile, UserRole } from '@/stores/auth-store';
 
-
-type UserRole = {
-    role: 'superAdmin' | 'subAdmin';
-    scope: 'global' | 'level' | 'semester' | 'subject' | 'folder';
-    scopeId?: string;
-    scopeName?: string; // For display purposes
-    permissions?: string[];
-};
-
-type UserProfile = {
-    uid: string;
-    username?: string;
-    roles?: UserRole[];
-    displayName?: string;
-};
 
 const permissionGroups = {
     'Add Content Menu': [
@@ -69,14 +53,14 @@ const permissionGroups = {
 };
 
 async function logAdminAction(actor: any, action: string, target: any, details?: object) {
-    if (!db) return;
+    if (!db || !actor || !target) return;
     try {
         await addDoc(collection(db, 'auditLogs'), {
             timestamp: new Date().toISOString(),
-            actorId: actor.uid,
+            actorId: actor.id,
             actorName: actor.displayName || actor.username,
             action: action,
-            targetId: target.uid,
+            targetId: target.id,
             targetName: target.displayName || target.username,
             details: details || {}
         });
@@ -103,7 +87,7 @@ export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProf
         if (!user || !currentUser) return;
         setIsSaving(true);
         try {
-            const userRef = doc(db, 'users', user.uid);
+            const userRef = doc(db, 'users', user.id);
             await updateDoc(userRef, { roles });
 
             const details = {

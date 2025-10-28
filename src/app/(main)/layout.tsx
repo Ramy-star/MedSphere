@@ -18,6 +18,7 @@ export default function MainLayout({
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const isQuestionsCreatorPage = pathname.startsWith('/questions-creator');
+  const isProfilePage = pathname === '/profile';
 
 
   return (
@@ -32,7 +33,7 @@ export default function MainLayout({
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={cn(
           "flex-1 flex flex-col h-full overflow-hidden px-2 sm:px-4 md:px-6 py-4 md:py-6",
-          !isHomePage && "glass-card"
+          !isHomePage && !isProfilePage && "glass-card"
         )}
       >
         <div className="flex-shrink-0 flex flex-col min-h-[48px]">
