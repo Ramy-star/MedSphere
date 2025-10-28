@@ -59,6 +59,30 @@
                 "coverPhotoCloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the cover photo." }
             }
         },
+        "stats": {
+            "type": "object",
+            "description": "User activity statistics for achievements.",
+            "properties": {
+                "filesUploaded": { "type": "number", "default": 0 },
+                "foldersCreated": { "type": "number", "default": 0 },
+                "examsCompleted": { "type": "number", "default": 0 },
+                "aiQueries": { "type": "number", "default": 0 },
+                "consecutiveLoginDays": { "type": "number", "default": 0 },
+                "lastLoginDate": { "type": "string", "format": "date" }
+            }
+        },
+        "achievements": {
+            "type": "array",
+            "description": "An array of earned achievements.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "badgeId": { "type": "string", "description": "The ID of the earned badge." },
+                    "earnedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the badge was earned." }
+                },
+                "required": ["badgeId", "earnedAt"]
+            }
+        },
         "roles": {
           "type": "array",
           "description": "An array of roles and permissions assigned to the user.",

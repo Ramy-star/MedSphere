@@ -29,6 +29,7 @@ import level3Ids from '@/lib/student-ids/level-3.json';
 import level4Ids from '@/lib/student-ids/level-4.json';
 import level5Ids from '@/lib/student-ids/level-5.json';
 import { InfoCard } from '@/components/profile/InfoCard';
+import { AchievementsSection } from '@/components/profile/Achievements';
 import Image from 'next/image';
 
 const studentIdToLevelMap = new Map<string, string>();
@@ -337,6 +338,8 @@ export default function ProfilePage() {
         <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
         <InfoCard icon={School} label="Academic Level" value={userLevel} />
       </div>
+
+      <AchievementsSection user={user} />
     </motion.div>
     <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
