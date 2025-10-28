@@ -15,7 +15,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 const getDeviceIcon = (device: string | undefined) => {
@@ -117,23 +116,6 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
                     );
                 })}
             </div>
-
-            <AlertDialog open={!!sessionToLogout} onOpenChange={(open) => !open && setSessionToLogout(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                           This will log out the selected session.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => { if(sessionToLogout) logoutSession(sessionToLogout); setSessionToLogout(null); }}>
-                            Logout
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
         </div>
     );
 };

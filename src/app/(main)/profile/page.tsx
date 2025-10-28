@@ -51,6 +51,7 @@ export default function ProfilePage() {
   const [isUploadingCover, setIsUploadingCover] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteCoverConfirm, setShowDeleteCoverConfirm] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -346,7 +347,7 @@ export default function ProfilePage() {
       <AchievementsSection user={user} />
       
       <div className="mt-16 flex justify-center">
-          <button onClick={logout} className="expanding-btn destructive">
+          <button onClick={() => setShowLogoutConfirm(true)} className="expanding-btn destructive">
               <LogOut size={20} />
               <span className="expanding-text">Logout</span>
           </button>
@@ -378,6 +379,20 @@ export default function ProfilePage() {
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDeleteCoverPicture} className="bg-red-600 hover:bg-red-700">Remove Cover</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to log out?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will be returned to the verification screen.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">Log Out</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

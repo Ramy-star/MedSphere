@@ -4,7 +4,7 @@
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayRemove, arrayUnion, getDoc } from 'firebase/firestore';
 import type { Content } from '@/lib/contentService';
 import { nanoid } from 'nanoid';
 
@@ -54,6 +54,11 @@ export type UserProfile = {
     badgeId: string;
     earnedAt: string;
   }[];
+  metadata?: {
+    cloudinaryPublicId?: string;
+    coverPhotoURL?: string;
+    coverPhotoCloudinaryPublicId?: string;
+  };
 };
 
 type ItemHierarchy = { [id: string]: string[] }; // Maps item ID to its array of parent IDs
