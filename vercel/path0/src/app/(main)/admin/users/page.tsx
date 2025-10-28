@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useAuthStore } from '@/stores/auth-store';
@@ -51,7 +52,9 @@ function UserManagementPage() {
         const userRef = doc(db, 'users', targetUser.uid);
 
         try {
-            await writeBatch(db).update(userRef, { 'isBlocked': !isCurrentlyBlocked }).commit();
+            const batch = writeBatch(db);
+            batch.update(userRef, { 'isBlocked': !isCurrentlyBlocked });
+            await batch.commit();
             toast({
                 title: isCurrentlyBlocked ? 'User Unblocked' : 'User Blocked',
                 description: `${targetUser.displayName} has been ${isCurrentlyBlocked ? 'unblocked' : 'blocked'}.`
@@ -188,3 +191,5 @@ function UserManagementPage() {
 }
 
 export default UserManagementPage;
+
+    
