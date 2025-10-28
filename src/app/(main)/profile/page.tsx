@@ -38,8 +38,8 @@ level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
 level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
 
 const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) => (
-    <div className="glass-card flex items-center gap-4 p-4 rounded-xl">
-        <div className="p-2 bg-slate-700/50 rounded-lg">
+    <div className="glass-card flex items-center gap-4 p-4 rounded-2xl">
+        <div className="p-2 bg-slate-700/50 rounded-xl">
             <Icon className="w-5 h-5 text-slate-300" />
         </div>
         <div className="flex-1">
@@ -88,7 +88,7 @@ export default function ProfilePage() {
 
     setIsSavingName(true);
     try {
-      const userRef = doc(db, 'users', user.id);
+      const userRef = doc(db, 'users', user.uid);
       await updateDoc(userRef, { displayName: newDisplayName });
       // The onSnapshot listener in auth-store will update the state automatically.
       toast({ title: 'Success', description: 'Your name has been updated.' });
@@ -170,70 +170,69 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center pt-8 md:pt-16 pb-12 w-full max-w-2xl mx-auto"
+      className="w-full max-w-2xl mx-auto pb-12"
     >
-      <div className="relative group">
-        <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
-          <AvatarImage src={user.photoURL} alt={user.displayName} />
-          <AvatarFallback className="text-4xl">
-            {user.displayName?.[0] || <UserIcon />}
-          </AvatarFallback>
-        </Avatar>
-        <input
-          type="file"
-          ref={fileInputRef}
-          className="hidden"
-          accept="image/*"
-          onChange={handleImageChange}
-        />
-        <div className="absolute bottom-1 right-1 flex gap-1">
-            <Button
-              size="icon"
-              className="h-8 w-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 group-hover:opacity-100 md:opacity-0 transition-opacity"
-              onClick={() => fileInputRef.current?.click()}
-              disabled={isUploading}
-            >
-                {isUploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Camera className="w-4 h-4" />}
-            </Button>
-            {user.photoURL && (
-                <Button
-                    size="icon"
-                    variant="destructive"
-                    className="h-8 w-8 rounded-full bg-red-800/80 hover:bg-red-700/90 border border-red-600 group-hover:opacity-100 md:opacity-0 transition-opacity"
-                    onClick={() => setShowDeleteConfirm(true)}
-                    disabled={isUploading}
-                >
-                    <Trash2 className="w-4 h-4" />
-                </Button>
-            )}
-        </div>
-      </div>
-
-      <div className="mt-8 text-center flex items-center justify-center gap-2 group w-full">
-         <div className="flex justify-center">
-            <div className="relative p-1">
-              <h1
-                ref={nameInputRef}
-                contentEditable={editingName}
-                suppressContentEditableWarning={true}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSaveName();
-                  }
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    handleCancelEdit();
-                  }
-                }}
-                className={cn(
-                  "text-4xl font-bold outline-none whitespace-nowrap",
-                  editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
-                )}
+      <div className="flex flex-col items-center">
+        <div className="relative group mt-8">
+          <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
+            <AvatarImage src={user.photoURL} alt={user.displayName} />
+            <AvatarFallback className="text-4xl">
+              {user.displayName?.[0] || <UserIcon />}
+            </AvatarFallback>
+          </Avatar>
+          <input
+            type="file"
+            ref={fileInputRef}
+            className="hidden"
+            accept="image/*"
+            onChange={handleImageChange}
+          />
+          <div className="absolute bottom-1 right-1 flex gap-1">
+              <Button
+                size="icon"
+                className="h-8 w-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 group-hover:opacity-100 md:opacity-0 transition-opacity"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={isUploading}
               >
-                {user.displayName}
-              </h1>
-            </div>
+                  {isUploading ? <Loader2 className="w-4 h-4 animate-spin"/> : <Camera className="w-4 h-4" />}
+              </Button>
+              {user.photoURL && (
+                  <Button
+                      size="icon"
+                      variant="destructive"
+                      className="h-8 w-8 rounded-full bg-red-800/80 hover:bg-red-700/90 border border-red-600 group-hover:opacity-100 md:opacity-0 transition-opacity"
+                      onClick={() => setShowDeleteConfirm(true)}
+                      disabled={isUploading}
+                  >
+                      <Trash2 className="w-4 h-4" />
+                  </Button>
+              )}
+          </div>
+        </div>
+
+        <div className="mt-8 text-center flex items-center justify-center gap-2 group w-full">
+          <div className="relative p-1">
+            <h1
+              ref={nameInputRef}
+              contentEditable={editingName}
+              suppressContentEditableWarning={true}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSaveName();
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  handleCancelEdit();
+                }
+              }}
+              className={cn(
+                "text-4xl font-bold outline-none whitespace-nowrap",
+                editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
+              )}
+            >
+              {user.displayName}
+            </h1>
           </div>
 
           {editingName ? (
@@ -250,12 +249,13 @@ export default function ProfilePage() {
                   <Edit className="w-5 h-5" />
               </Button>
           )}
-      </div>
+        </div>
 
-      <p className={cn("mt-2 text-lg font-medium flex items-center gap-2", roleColor)}>
-        <RoleIcon className="w-5 h-5" />
-        {roleText}
-      </p>
+        <p className={cn("mt-2 text-lg font-medium flex items-center gap-2", roleColor)}>
+          <RoleIcon className="w-5 h-5" />
+          {roleText}
+        </p>
+      </div>
 
       <div className="mt-12 w-full space-y-4">
         <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
