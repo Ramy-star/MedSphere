@@ -4,11 +4,21 @@
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayRemove, arrayUnion } from 'firebase/firestore';
 import type { Content } from '@/lib/contentService';
+import { nanoid } from 'nanoid';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
+const CURRENT_SESSION_ID_KEY = 'medsphere-session-id';
+
+export type UserSession = {
+    sessionId: string;
+    device: string;
+    ipAddress?: string; // This would typically be populated server-side
+    lastActive: string; // ISO String
+    loggedIn: string; // ISO String
+};
 
 export type UserRole = {
     role: 'superAdmin' | 'subAdmin';
@@ -30,6 +40,20 @@ export type UserProfile = {
   createdAt?: string;
   roles?: UserRole[];
   isBlocked?: boolean;
+  favorites?: string[];
+  sessions?: UserSession[];
+  stats?: {
+    filesUploaded?: number;
+    foldersCreated?: number;
+    examsCompleted?: number;
+    aiQueries?: number;
+    consecutiveLoginDays?: number;
+    lastLoginDate?: string;
+  };
+   achievements?: {
+    badgeId: string;
+    earnedAt: string;
+  }[];
 };
 
 type ItemHierarchy = { [id: string]: string[] }; // Maps item ID to its array of parent IDs
@@ -38,6 +62,7 @@ type AuthState = {
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   studentId: string | null;
+  currentSessionId: string | null;
   user: UserProfile | null | undefined;
   loading: boolean;
   itemHierarchy: ItemHierarchy;
@@ -45,6 +70,7 @@ type AuthState = {
   checkAuth: () => Promise<void>;
   login: (studentId: string) => Promise<boolean>;
   logout: () => void;
+  logoutSession: (sessionId: string) => Promise<void>;
   can: (permission: string, itemId: string | null) => boolean;
   canAddContent: (parentId: string | null) => boolean;
 };
@@ -109,6 +135,18 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
     return false;
 };
 
+const getDeviceDescription = () => {
+    if (typeof window === 'undefined') return 'Server';
+    const ua = navigator.userAgent;
+    if (/android/i.test(ua)) return "Android Device";
+    if (/iPad|iPhone|iPod/.test(ua) && !(window as any).MSStream) return "iOS Device";
+    if (/windows phone/i.test(ua)) return "Windows Phone";
+    if (/mac/i.test(ua)) return "Mac";
+    if (/windows/i.test(ua)) return "Windows PC";
+    if (/linux/i.test(ua)) return "Linux PC";
+    return 'Unknown Device';
+};
+
 
 const listenToUserProfile = (studentId: string) => {
     if (userListenerUnsubscribe) userListenerUnsubscribe();
@@ -152,6 +190,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isSuperAdmin: false,
   studentId: null,
+  currentSessionId: typeof window !== 'undefined' ? localStorage.getItem(CURRENT_SESSION_ID_KEY) : null,
   user: undefined, // undefined means we haven't checked yet
   loading: true,
   itemHierarchy: {},
@@ -225,6 +264,23 @@ const useAuthStore = create<AuthState>((set, get) => ({
       const userProfile = await verifyAndCreateUser(studentId);
       if (userProfile) {
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.studentId);
+        
+        const sessionId = nanoid();
+        localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
+        set({ currentSessionId: sessionId });
+
+        const newSession: UserSession = {
+            sessionId,
+            device: getDeviceDescription(),
+            loggedIn: new Date().toISOString(),
+            lastActive: new Date().toISOString(),
+        };
+        
+        const userDocRef = doc(db, 'users', userProfile.id);
+        await updateDoc(userDocRef, {
+            sessions: arrayUnion(newSession)
+        });
+
         await get().checkAuth(); // This will now build hierarchy and set up the listener
         return true;
       } else {
@@ -237,11 +293,28 @@ const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  logout: () => {
+  logout: async () => {
     if (userListenerUnsubscribe) userListenerUnsubscribe();
     if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
+    
+    const { studentId, currentSessionId } = get();
+    if (studentId && currentSessionId) {
+        const userDocRef = doc(db, 'users', studentId);
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+            const userProfile = userDoc.data() as UserProfile;
+            const sessionToRemove = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
+            if (sessionToRemove) {
+                await updateDoc(userDocRef, {
+                    sessions: arrayRemove(sessionToRemove)
+                });
+            }
+        }
+    }
+
     try {
       localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+      localStorage.removeItem(CURRENT_SESSION_ID_KEY);
     } catch (e) {
       console.error("Could not remove item from localStorage:", e);
     }
@@ -252,10 +325,23 @@ const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       loading: false,
       itemHierarchy: {},
+      currentSessionId: null,
     });
-    // Don't force redirect immediately, let components react to state change
+    
     if (typeof window !== 'undefined' && window.location.pathname !== '/') {
         window.location.href = '/';
+    }
+  },
+
+  logoutSession: async (sessionId: string) => {
+    const { user } = get();
+    if (!user) return;
+    const userDocRef = doc(db, 'users', user.id);
+    const sessionToRemove = user.sessions?.find(s => s.sessionId === sessionId);
+    if(sessionToRemove) {
+        await updateDoc(userDocRef, {
+            sessions: arrayRemove(sessionToRemove)
+        });
     }
   },
 

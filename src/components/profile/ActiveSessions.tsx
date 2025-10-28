@@ -1,0 +1,98 @@
+
+'use client';
+
+import React from 'react';
+import type { UserProfile, UserSession } from '@/stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
+import { Button } from '@/components/ui/button';
+import { Monitor, Smartphone, Tablet, LogOut, Laptop } from 'lucide-react';
+import { formatDistanceToNow, parseISO } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
+const getDeviceIcon = (device: string | undefined) => {
+    if (!device) return <Monitor className="w-5 h-5 text-slate-400" />;
+    const lowerDevice = device.toLowerCase();
+    if (lowerDevice.includes('iphone') || lowerDevice.includes('android')) return <Smartphone className="w-5 h-5 text-slate-400" />;
+    if (lowerDevice.includes('ipad') || lowerDevice.includes('tablet')) return <Tablet className="w-5 h-5 text-slate-400" />;
+    if (lowerDevice.includes('mac') || lowerDevice.includes('windows') || lowerDevice.includes('linux')) return <Laptop className="w-5 h-5 text-slate-400" />;
+    return <Monitor className="w-5 h-5 text-slate-400" />;
+};
+
+
+export const ActiveSessions = ({ user }: { user: UserProfile }) => {
+    const { logoutSession, currentSessionId } = useAuthStore();
+    const sessions = user.sessions || [];
+    
+    if (sessions.length === 0) {
+        return null;
+    }
+    
+    const sortedSessions = [...sessions].sort((a, b) => {
+        if (a.sessionId === currentSessionId) return -1;
+        if (b.sessionId === currentSessionId) return 1;
+        return parseISO(b.lastActive).getTime() - parseISO(a.lastActive).getTime();
+    });
+
+    return (
+        <div className="mt-12">
+            <h2 className="text-2xl font-bold text-white mb-6">Active Sessions</h2>
+            <div className="space-y-3">
+                {sortedSessions.map((session) => {
+                    const isCurrent = session.sessionId === currentSessionId;
+                    return (
+                        <div key={session.sessionId} className="glass-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl">
+                           <div className="flex items-center gap-4">
+                                {getDeviceIcon(session.device)}
+                                <div>
+                                    <p className="font-medium text-white flex items-center gap-2">
+                                        {session.device || 'Unknown Device'}
+                                        {isCurrent && <span className="text-xs font-bold text-green-400 bg-green-900/50 px-2 py-0.5 rounded-full">Current</span>}
+                                    </p>
+                                    <p className="text-xs text-slate-400 mt-1">
+                                        <span>{session.ipAddress || 'IP not available'}</span>
+                                        <span className="mx-1.5">•</span>
+                                        <span>Last active {formatDistanceToNow(parseISO(session.lastActive), { addSuffix: true })}</span>
+                                    </p>
+                                </div>
+                           </div>
+                           {!isCurrent && (
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="destructive" size="sm" className="rounded-xl h-8 text-xs sm:ml-auto">
+                                            <LogOut className="mr-2 h-3.5 w-3.5" />
+                                            Logout
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This will log out the session on "{session.device}". You will need to sign in again on that device.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={() => logoutSession(session.sessionId)} className="bg-red-600 hover:bg-red-700">
+                                                Log out
+                                            </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
+                           )}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
