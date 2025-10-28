@@ -12,26 +12,26 @@ import { motion } from 'framer-motion';
 
 const tierColors = {
   bronze: {
-    bg: 'bg-orange-900/40',
-    border: 'border-orange-600/50',
-    icon: 'text-orange-400',
-    progressFill: 'bg-gradient-to-r from-orange-600 to-orange-400',
+    bg: 'bg-orange-950/50',
+    border: 'border-orange-800/60',
+    icon: 'text-orange-500',
+    progressFill: 'bg-gradient-to-r from-orange-700 to-orange-500',
   },
   silver: {
-    bg: 'bg-slate-700/40',
-    border: 'border-slate-500/50',
-    icon: 'text-slate-300',
-    progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
+    bg: 'bg-blue-950/50',
+    border: 'border-blue-700/60',
+    icon: 'text-blue-400',
+    progressFill: 'bg-gradient-to-r from-blue-600 to-blue-400',
   },
   gold: {
-    bg: 'bg-yellow-800/40',
-    border: 'border-yellow-500/50',
+    bg: 'bg-yellow-900/40',
+    border: 'border-yellow-600/50',
     icon: 'text-yellow-400',
     progressFill: 'bg-gradient-to-r from-yellow-600 to-yellow-400',
   },
   special: {
-    bg: 'bg-purple-800/40',
-    border: 'border-purple-500/50',
+    bg: 'bg-purple-950/40', // slightly transparent background
+    border: 'border-purple-700/60',
     icon: 'text-purple-400',
     progressFill: 'bg-gradient-to-r from-purple-600 to-purple-400',
   },
@@ -125,16 +125,21 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
             <div key={category} className="mb-8">
               <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
               <div className="space-y-4">
-                {Object.entries(groups).map(([group, achievements]) => (
-                  <div key={group} className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
-                    {achievements.map((ach) => (
-                      <BadgeCard
-                        key={ach.id}
-                        achievement={ach}
-                        userStats={userStats}
-                        earned={isSuperAdmin || earnedAchievements.has(ach.id)}
-                      />
-                    ))}
+                {Object.entries(groups).map(([group, achievements], groupIndex) => (
+                  <div key={group}>
+                    <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
+                      {achievements.map((ach) => (
+                        <BadgeCard
+                          key={ach.id}
+                          achievement={ach}
+                          userStats={userStats}
+                          earned={isSuperAdmin || earnedAchievements.has(ach.id)}
+                        />
+                      ))}
+                    </div>
+                    {groupIndex < Object.keys(groups).length - 1 && (
+                      <hr className="my-6 border-slate-800" />
+                    )}
                   </div>
                 ))}
               </div>

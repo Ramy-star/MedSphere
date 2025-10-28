@@ -2,7 +2,7 @@
 'use client';
 import { 
     UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, 
-    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass, Wand2, ZoomIn 
+    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -14,7 +14,7 @@ export interface Achievement {
   description: string;
   icon: LucideIcon;
   tier: AchievementTier;
-  category: 'Organization' | 'Learning' | 'Consistency' | 'Special';
+  category: 'Organization & Contribution' | 'Learning & Interaction' | 'Consistency & Perseverance' | 'Special';
   condition: {
     stat: 'filesUploaded' | 'foldersCreated' | 'examsCompleted' | 'aiQueries' | 'consecutiveLoginDays' | 'accountAgeDays';
     value: number;
@@ -30,7 +30,7 @@ export const allAchievements: Achievement[] = [
     description: 'Upload 10 files',
     icon: UploadCloud,
     tier: 'bronze',
-    category: 'Organization',
+    category: 'Organization & Contribution',
     condition: { stat: 'filesUploaded', value: 10 },
     group: 'filesUploaded',
   },
@@ -40,7 +40,7 @@ export const allAchievements: Achievement[] = [
     description: 'Upload 50 files',
     icon: UploadCloud,
     tier: 'silver',
-    category: 'Organization',
+    category: 'Organization & Contribution',
     condition: { stat: 'filesUploaded', value: 50 },
     group: 'filesUploaded',
   },
@@ -50,7 +50,7 @@ export const allAchievements: Achievement[] = [
     description: 'Upload 200 files',
     icon: UploadCloud,
     tier: 'gold',
-    category: 'Organization',
+    category: 'Organization & Contribution',
     condition: { stat: 'filesUploaded', value: 200 },
     group: 'filesUploaded',
   },
@@ -60,7 +60,7 @@ export const allAchievements: Achievement[] = [
     description: 'Create 10 folders',
     icon: FolderPlus,
     tier: 'bronze',
-    category: 'Organization',
+    category: 'Organization & Contribution',
     condition: { stat: 'foldersCreated', value: 10 },
     group: 'foldersCreated',
   },
@@ -70,7 +70,7 @@ export const allAchievements: Achievement[] = [
     description: 'Create 50 folders',
     icon: FolderKanban,
     tier: 'silver',
-    category: 'Organization',
+    category: 'Organization & Contribution',
     condition: { stat: 'foldersCreated', value: 50 },
     group: 'foldersCreated',
   },
@@ -80,7 +80,7 @@ export const allAchievements: Achievement[] = [
     description: 'Create 100 folders',
     icon: Library,
     tier: 'gold',
-    category: 'Organization',
+    category: 'Organization & Contribution',
     condition: { stat: 'foldersCreated', value: 100 },
     group: 'foldersCreated',
   },
@@ -91,7 +91,7 @@ export const allAchievements: Achievement[] = [
     description: 'Complete 5 exams',
     icon: FileCheck2,
     tier: 'bronze',
-    category: 'Learning',
+    category: 'Learning & Interaction',
     condition: { stat: 'examsCompleted', value: 5 },
     group: 'examsCompleted',
   },
@@ -101,7 +101,7 @@ export const allAchievements: Achievement[] = [
     description: 'Complete 25 exams',
     icon: FileCheck2,
     tier: 'silver',
-    category: 'Learning',
+    category: 'Learning & Interaction',
     condition: { stat: 'examsCompleted', value: 25 },
     group: 'examsCompleted',
   },
@@ -111,7 +111,7 @@ export const allAchievements: Achievement[] = [
     description: 'Complete 100 exams',
     icon: GraduationCap,
     tier: 'gold',
-    category: 'Learning',
+    category: 'Learning & Interaction',
     condition: { stat: 'examsCompleted', value: 100 },
     group: 'examsCompleted',
   },
@@ -121,7 +121,7 @@ export const allAchievements: Achievement[] = [
     description: 'Ask the AI 20 questions',
     icon: MessageSquareQuote,
     tier: 'bronze',
-    category: 'Learning',
+    category: 'Learning & Interaction',
     condition: { stat: 'aiQueries', value: 20 },
     group: 'aiQueries',
   },
@@ -131,7 +131,7 @@ export const allAchievements: Achievement[] = [
     description: 'Ask the AI 100 questions',
     icon: MessageSquareQuote,
     tier: 'silver',
-    category: 'Learning',
+    category: 'Learning & Interaction',
     condition: { stat: 'aiQueries', value: 100 },
     group: 'aiQueries',
   },
@@ -141,7 +141,7 @@ export const allAchievements: Achievement[] = [
     description: 'Ask the AI 500 questions',
     icon: BrainCircuit,
     tier: 'gold',
-    category: 'Learning',
+    category: 'Learning & Interaction',
     condition: { stat: 'aiQueries', value: 500 },
     group: 'aiQueries',
   },
@@ -151,19 +151,9 @@ export const allAchievements: Achievement[] = [
     name: 'A Good Start',
     description: 'Log in for the first time',
     icon: Sunrise,
-    tier: 'special',
-    category: 'Consistency',
+    tier: 'silver',
+    category: 'Consistency & Perseverance',
     condition: { stat: 'consecutiveLoginDays', value: 1 },
-    group: 'milestones',
-  },
-  {
-    id: 'ONE_YEAR_MEMBER',
-    name: 'Dedicated Companion',
-    description: 'Complete one full year as a MedSphere member',
-    icon: HeartHandshake,
-    tier: 'gold',
-    category: 'Consistency',
-    condition: { stat: 'accountAgeDays', value: 365 },
     group: 'milestones',
   },
   {
@@ -172,7 +162,7 @@ export const allAchievements: Achievement[] = [
     description: 'Log in for 7 consecutive days',
     icon: CalendarDays,
     tier: 'bronze',
-    category: 'Consistency',
+    category: 'Consistency & Perseverance',
     condition: { stat: 'consecutiveLoginDays', value: 7 },
     group: 'loginStreak',
   },
@@ -182,9 +172,19 @@ export const allAchievements: Achievement[] = [
     description: 'Log in for 30 consecutive days',
     icon: CalendarDays,
     tier: 'silver',
-    category: 'Consistency',
+    category: 'Consistency & Perseverance',
     condition: { stat: 'consecutiveLoginDays', value: 30 },
     group: 'loginStreak',
+  },
+  {
+    id: 'ONE_YEAR_MEMBER',
+    name: 'Dedicated Companion',
+    description: 'Complete one full year as a MedSphere member',
+    icon: HeartHandshake,
+    tier: 'gold',
+    category: 'Consistency & Perseverance',
+    condition: { stat: 'accountAgeDays', value: 365 },
+    group: 'milestones',
   },
   // --- Special & Hidden Badges ---
   {
