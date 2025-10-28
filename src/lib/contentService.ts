@@ -5,11 +5,11 @@ import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { sha256file } from './hashFile';
 import { nanoid } from 'nanoid';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cacheService } from './cacheService';
 import type { Lecture } from './types';
+import type { UserProfile } from '@/stores/auth-store';
 
 
 export type Content = {
@@ -521,6 +521,71 @@ export const contentService = {
     return xhr;
   },
 
+    async uploadUserAvatar(user: UserProfile, file: File, onProgress: (progress: number) => void): Promise<{ publicId: string, url: string }> {
+        const folder = `avatars/${user.id}`;
+        const public_id = `${folder}/${uuidv4()}`;
+        const timestamp = Math.floor(Date.now() / 1000);
+
+        const paramsToSign = { public_id, folder, timestamp };
+        const sigResponse = await fetch('/api/sign-cloudinary-params', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ paramsToSign })
+        });
+        if (!sigResponse.ok) throw new Error('Failed to get signature.');
+        const { signature, apiKey, cloudName } = await sigResponse.json();
+
+        // Delete old avatar if it exists
+        if (user.photoURL && user.metadata?.cloudinaryPublicId) {
+            await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
+        }
+
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('api_key', apiKey);
+            formData.append('timestamp', String(timestamp));
+            formData.append('signature', signature);
+            formData.append('public_id', public_id);
+            formData.append('folder', folder);
+
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) {
+                    onProgress((event.loaded / event.total) * 100);
+                }
+            };
+            
+            xhr.onload = async () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const data = JSON.parse(xhr.responseText);
+                    const finalUrl = createProxiedUrl(data.secure_url);
+                    await updateDoc(doc(db, 'users', user.id), {
+                        photoURL: finalUrl,
+                        'metadata.cloudinaryPublicId': data.public_id,
+                    });
+                    resolve({ publicId: data.public_id, url: finalUrl });
+                } else {
+                    reject(new Error(`Upload failed: ${xhr.statusText}`));
+                }
+            };
+            xhr.onerror = () => reject(new Error('Network error.'));
+            xhr.send(formData);
+        });
+    },
+
+    async deleteUserAvatar(user: UserProfile) {
+        if (!user.metadata?.cloudinaryPublicId) return;
+        await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
+        await updateDoc(doc(db, 'users', user.id), {
+            photoURL: null,
+            'metadata.cloudinaryPublicId': null
+        });
+    },
+
+
   async uploadAndSetIcon(itemId: string, iconFile: File, callbacks: Omit<UploadCallbacks, 'onSuccess'> & { onSuccess: (url: string) => void }): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
 
@@ -533,18 +598,11 @@ export const contentService = {
         const oldPublicId = existingItem.metadata?.iconCloudinaryPublicId;
 
         if (oldPublicId) {
-            console.log(`Deleting old icon: ${oldPublicId}`);
-            await fetch('/api/delete-cloudinary', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ publicId: oldPublicId, resourceType: 'image' }),
-            }).catch(err => console.error("Failed to delete old icon, proceeding with upload anyway:", err));
+            await this.deleteCloudinaryAsset(oldPublicId, 'image');
         }
 
-        const hash = await sha256file(iconFile);
         const folder = 'icons';
-        const public_id = `${folder}/${hash}`;
-        
+        const public_id = `${folder}/${uuidv4()}`;
         const timestamp = Math.floor(Date.now() / 1000);
         const paramsToSign = { public_id, folder, timestamp };
 
@@ -732,6 +790,13 @@ export const contentService = {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
+
+        // Ensure icon URL is copied, but not public ID to avoid deleting original
+        if (originalItem.metadata?.iconURL) {
+            if (!newItemData.metadata) newItemData.metadata = {};
+            newItemData.metadata.iconURL = originalItem.metadata.iconURL;
+            newItemData.metadata.iconCloudinaryPublicId = undefined; // Don't copy public id
+        }
         
         const newDocRef = doc(db, 'content', newId);
         batch.set(newDocRef, newItemData);
@@ -787,6 +852,22 @@ export const contentService = {
     }
   },
 
+  async deleteCloudinaryAsset(publicId: string, resourceType: 'image' | 'video' | 'raw' = 'raw'): Promise<void> {
+    try {
+        const res = await fetch('/api/delete-cloudinary', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ publicId, resourceType }),
+        });
+        if (!res.ok) {
+            const errorBody = await res.json();
+            throw new Error(`Failed to delete asset from Cloudinary: ${errorBody.details || res.statusText}`);
+        }
+    } catch (err) {
+        console.error("Cloudinary deletion via API failed:", err);
+        // Don't re-throw, as this is a cleanup operation and shouldn't block the main flow.
+    }
+  },
 
   async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
@@ -839,14 +920,7 @@ export const contentService = {
 
         if (filesToDeleteFromCloudinary.length > 0) {
             for (const file of filesToDeleteFromCloudinary) {
-                const res = await fetch('/api/delete-cloudinary', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(file),
-                });
-                if (!res.ok) {
-                    console.error(`Failed to delete ${file.publicId} from Cloudinary. Status: ${res.status}`);
-                }
+                await this.deleteCloudinaryAsset(file.publicId, file.resourceType);
             }
         }
         

@@ -1,10 +1,8 @@
 'use client';
-import { useState } from 'react';
 import { signOut } from 'firebase/auth';
-import { useFirebase } from '@/firebase/provider';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { LogIn, User } from 'lucide-react';
+import { User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
@@ -17,7 +15,7 @@ import {
 
 
 export function AuthButton() {
-  const { user, loading, isSuperAdmin, isSubAdmin } = useAuthStore();
+  const { user, loading } = useAuthStore();
   const router = useRouter();
 
   if (loading) {
@@ -25,7 +23,10 @@ export function AuthButton() {
   }
 
   if (user) {
+    const isSuperAdmin = user.roles?.some(r => r.role === 'superAdmin');
+    const isSubAdmin = user.roles?.some(r => r.role === 'subAdmin') && !isSuperAdmin;
     const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-slate-400" : "ring-transparent";
+    
     return (
       <TooltipProvider>
         <Tooltip>
@@ -38,7 +39,7 @@ export function AuthButton() {
               <Avatar className={cn("h-9 w-9 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
                 <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} />
                 <AvatarFallback>
-                  <User className="h-5 w-5" />
+                  <UserIcon className="h-5 w-5" />
                 </AvatarFallback>
               </Avatar>
             </Button>
@@ -51,10 +52,5 @@ export function AuthButton() {
     );
   }
 
-  // Fallback, though login is now handled by VerificationScreen
-  return (
-    <Button size="icon" className="rounded-full h-9 w-9" variant="ghost">
-       <LogIn className="h-4 w-4" />
-    </Button>
-  );
+  return null; // Don't show anything if not logged in, as VerificationScreen handles it.
 }

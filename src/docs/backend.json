@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Content": {
@@ -20,8 +21,15 @@
             "size": { "type": "number", "description": "File size in bytes." },
             "mime": { "type": "string", "description": "MIME type of the file." },
             "storagePath": { "type": "string", "description": "Path to the file in Firebase Cloud Storage." },
+            "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the file resource." },
+            "cloudinaryResourceType": { "type": "string", "enum": ["image", "video", "raw"], "description": "The resource type on Cloudinary." },
+            "iconURL": { "type": "string", "format": "uri", "description": "URL for a custom folder/subject icon." },
+            "iconCloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the icon resource." },
+            "url": { "type": "string", "format": "uri", "description": "The URL for LINK type content." },
+            "shortId": { "type": "string", "description": "A short ID for links." },
             "sourceFileId": { "type": "string", "description": "The ID of the original source file for generated content." },
             "quizData": { "type": "string", "description": "JSON string containing the data for an interactive quiz." },
+            "isClassContainer": { "type": "boolean", "description": "True if the folder represents a class." },
             "isHidden": { "type": "boolean", "description": "Whether the content is hidden from non-admins." }
           }
         }
@@ -33,7 +41,8 @@
       "description": "Represents a user's profile information, including their role.",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
+        "id": { "type": "string", "description": "The Firestore document ID, same as studentId." },
+        "uid": { "type": "string", "description": "The user's student ID." },
         "username": { "type": "string", "description": "Unique, user-chosen username." },
         "studentId": { "type": "string", "description": "The user's verified university student ID." },
         "email": { "type": "string", "format": "email" },
@@ -42,6 +51,12 @@
         "createdAt": { "type": "string", "format": "date-time"},
         "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
         "level": { "type": "string", "description": "The academic level of the user." },
+        "metadata": {
+            "type": "object",
+            "properties": {
+                "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the avatar." }
+            }
+        },
         "roles": {
           "type": "array",
           "description": "An array of roles and permissions assigned to the user.",
@@ -83,7 +98,7 @@
           }
         }
       },
-      "required": ["uid", "studentId", "createdAt"]
+      "required": ["id", "uid", "studentId", "createdAt"]
     },
     "QuestionSet": {
       "title": "Question Set",

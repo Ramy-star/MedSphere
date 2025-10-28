@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -67,14 +68,14 @@ type AuditLog = {
 type SortOption = 'name' | 'createdAt' | 'level';
 
 async function logAdminAction(actor: UserProfile, action: string, target: UserProfile, details?: object) {
-    if (!db || !actor) return;
+    if (!db || !actor || !actor.id) return;
     try {
         await addDoc(collection(db, 'auditLogs'), {
             timestamp: new Date().toISOString(),
-            actorId: actor.uid,
+            actorId: actor.id,
             actorName: actor.displayName || actor.username,
             action: action,
-            targetId: target.uid,
+            targetId: target.id,
             targetName: target.displayName || target.username,
             details: details || {}
         });
@@ -133,7 +134,7 @@ function AdminPageContent() {
 
     const filteredAndSortedUsers = useMemo(() => {
         if (!users) return [];
-        let processedUsers = Array.from(new Map(users.map(user => [user.uid, user])).values());
+        let processedUsers = Array.from(new Map(users.map(user => [user.id, user])).values());
 
         // Apply search query filter
         if (debouncedQuery) {
@@ -180,7 +181,7 @@ function AdminPageContent() {
     
     const handleToggleSubAdmin = useCallback(async (user: UserProfile) => {
         if (!currentUser) return;
-        const userRef = doc(db, 'users', user.uid);
+        const userRef = doc(db, 'users', user.id);
         const hasSubAdminRole = isSubAdmin(user);
 
         if (hasSubAdminRole) {
@@ -204,7 +205,7 @@ function AdminPageContent() {
 
     const handleDemoteConfirm = useCallback(async () => {
         if (!userToDemote || !currentUser) return;
-        const userRef = doc(db, 'users', userToDemote.uid);
+        const userRef = doc(db, 'users', userToDemote.id);
         try {
             const newRoles = Array.isArray(userToDemote.roles) ? userToDemote.roles.filter(r => r.role !== 'subAdmin') : [];
             await updateDoc(userRef, { roles: newRoles });
@@ -220,7 +221,7 @@ function AdminPageContent() {
     
     const handleToggleBlock = useCallback(async (user: UserProfile) => {
         if (!currentUser) return;
-        const userRef = doc(db, 'users', user.uid);
+        const userRef = doc(db, 'users', user.id);
         const newBlockState = !user.isBlocked;
         try {
             await updateDoc(userRef, { isBlocked: newBlockState });
@@ -238,7 +239,7 @@ function AdminPageContent() {
     const handleDeleteUser = useCallback(async () => {
         if (!userToDelete || !currentUser) return;
         const batch = writeBatch(db);
-        const userRef = doc(db, 'users', userToDelete.uid);
+        const userRef = doc(db, 'users', userToDelete.id);
         batch.delete(userRef);
         await batch.commit();
         await logAdminAction(currentUser, 'user.delete', userToDelete);
@@ -400,7 +401,7 @@ function AdminPageContent() {
             )
         }
         return userList.map((user) => (
-             <div key={user.uid} className="my-1.5 sm:my-0 border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
+             <div key={user.id} className="my-1.5 sm:my-0 border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
                 <UserCard user={user} />
             </div>
         ));
