@@ -12,8 +12,8 @@ import { motion } from 'framer-motion';
 
 const tierColors = {
   bronze: {
-    bg: 'bg-orange-950/50',
-    border: 'border-orange-800/60',
+    bg: 'bg-orange-950/60',
+    border: 'border-orange-800/70',
     icon: 'text-orange-500',
     progressFill: 'bg-gradient-to-r from-orange-700 to-orange-500',
   },
@@ -30,7 +30,7 @@ const tierColors = {
     progressFill: 'bg-gradient-to-r from-yellow-600 to-yellow-400',
   },
   special: {
-    bg: 'bg-purple-950/40', // slightly transparent background
+    bg: 'bg-purple-950/40',
     border: 'border-purple-700/60',
     icon: 'text-purple-400',
     progressFill: 'bg-gradient-to-r from-purple-600 to-purple-400',
@@ -48,7 +48,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
   const cardContent = (
     <motion.div
       className={cn(
-        "relative flex h-full min-w-[150px] flex-col justify-between rounded-2xl border p-4 text-center transition-all duration-300",
+        "relative flex h-full w-[150px] flex-col justify-between rounded-2xl border p-4 text-center transition-all duration-300",
         earned ? `${colors.bg} ${colors.border}` : "border-slate-800 bg-slate-900/50",
         !earned && "group-hover:border-slate-700 group-hover:bg-slate-800/40"
       )}
@@ -113,7 +113,7 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
   return (
     <div className="mt-12">
       <h2 className="text-2xl font-bold text-white mb-6">Achievements</h2>
-      {Object.entries(categorizedAndGroupedAchievements).map(([category, groups]) => {
+      {Object.entries(categorizedAndGroupedAchievements).map(([category, groups], categoryIndex) => {
         const isSpecialCategory = category === 'Special';
         const hasEarnedSpecial = isSuperAdmin || Object.values(groups).flat().some(ach => earnedAchievements.has(ach.id));
         
@@ -122,28 +122,33 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
         }
 
         return (
-            <div key={category} className="mb-8">
-              <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
-              <div className="space-y-4">
-                {Object.entries(groups).map(([group, achievements], groupIndex) => (
-                  <div key={group}>
-                    <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
-                      {achievements.map((ach) => (
-                        <BadgeCard
-                          key={ach.id}
-                          achievement={ach}
-                          userStats={userStats}
-                          earned={isSuperAdmin || earnedAchievements.has(ach.id)}
-                        />
-                      ))}
+            <React.Fragment key={category}>
+                <div className="mb-8">
+                <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
+                <div className="space-y-4">
+                    {Object.entries(groups).map(([group, achievements], groupIndex) => (
+                    <div key={group}>
+                        <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        {achievements.map((ach) => (
+                            <BadgeCard
+                            key={ach.id}
+                            achievement={ach}
+                            userStats={userStats}
+                            earned={isSuperAdmin || earnedAchievements.has(ach.id)}
+                            />
+                        ))}
+                        </div>
+                        {category !== 'Consistency & Perseverance' && groupIndex < Object.keys(groups).length - 1 && (
+                            <hr className="my-6 border-slate-800" />
+                        )}
                     </div>
-                    {groupIndex < Object.keys(groups).length - 1 && (
-                      <hr className="my-6 border-slate-800" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
+                    ))}
+                </div>
+                </div>
+                {categoryIndex < Object.keys(categorizedAndGroupedAchievements).length - 1 && (
+                    <hr className="my-8 border-t-2 border-slate-800" />
+                )}
+          </React.Fragment>
         );
       })}
     </div>

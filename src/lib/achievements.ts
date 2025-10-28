@@ -2,7 +2,7 @@
 'use client';
 import { 
     UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, 
-    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
+    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass, Wand2, ZoomIn
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -179,7 +179,7 @@ export const allAchievements: Achievement[] = [
   {
     id: 'ONE_YEAR_MEMBER',
     name: 'Dedicated Companion',
-    description: 'Complete one full year as a MedSphere member',
+    description: 'Complete one full year as a member',
     icon: HeartHandshake,
     tier: 'gold',
     category: 'Consistency & Perseverance',
