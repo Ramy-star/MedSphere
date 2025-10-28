@@ -111,6 +111,13 @@
   .expanding-btn:hover .expanding-text {
     @apply opacity-100 max-w-[100px] ml-2;
   }
+  
+  .expanding-btn.primary {
+    @apply border-2 border-primary text-primary;
+  }
+  .expanding-btn.primary:hover {
+    @apply bg-primary text-primary-foreground;
+  }
 
   .expanding-btn.destructive {
     @apply border-2 border-destructive text-destructive;
