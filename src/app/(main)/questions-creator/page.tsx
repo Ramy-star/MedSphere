@@ -529,12 +529,12 @@ function QuestionsCreatorContent() {
 
   const isGenerating = flowStep === 'processing';
 
-  const showTextRetry = task?.status === 'error' && ['extracting', 'generating_text'].includes(task.failedStep!);
-  const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
-  const showExamTextRetry = task?.status === 'error' && task.failedStep === 'generating_exam_text';
-  const showExamJsonRetry = task?.status === 'error' && task.failedStep === 'converting_exam_json';
-  const showFlashcardTextRetry = task?.status === 'error' && task.failedStep === 'generating_flashcard_text';
-  const showFlashcardJsonRetry = task?.status === 'error' && task.failedStep === 'converting_flashcard_json';
+  const showTextRetry = !!(task?.status === 'error' && ['extracting', 'generating_text'].includes(task.failedStep!));
+  const showJsonRetry = !!(task?.status === 'error' && task.failedStep === 'converting_json');
+  const showExamTextRetry = !!(task?.status === 'error' && task.failedStep === 'generating_exam_text');
+  const showExamJsonRetry = !!(task?.status === 'error' && task.failedStep === 'converting_exam_json');
+  const showFlashcardTextRetry = !!(task?.status === 'error' && task.failedStep === 'generating_flashcard_text');
+  const showFlashcardJsonRetry = !!(task?.status === 'error' && task.failedStep === 'converting_flashcard_json');
 
 
   const handleRetry = useCallback(() => {
