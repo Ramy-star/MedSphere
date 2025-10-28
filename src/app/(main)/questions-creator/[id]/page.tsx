@@ -246,9 +246,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   };
 
   const handleRepairJson = async () => {
-<<<<<<< HEAD
-    // This function is no longer needed as the flow has been removed
-=======
     // This function is no longer available in the flow, so we remove the logic.
     // We can show a toast to inform the user.
     toast({
@@ -256,7 +253,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         title: 'Feature Removed',
         description: 'JSON repair is not currently available.',
     });
->>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
   };
   
   const handleCopy = (content: string, type: keyof EditingContentState) => {
@@ -680,7 +676,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     content={editingContent.examJson}
                     type="examJson"
                     isEditing={isEditing.jsonExam}
-                    onToggleEdit={() => handleToggleEdit('examJson')}
+                    onToggleEdit={() => handleToggleEdit('jsonExam')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
                     onCancel={() => handleCancelEdit('examJson')}
                 />
@@ -706,9 +702,9 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     content={editingContent.flashcardJson}
                     type="flashcardJson"
                     isEditing={isEditing.jsonFlashcard}
-                    onToggleEdit={() => handleToggleEdit('flashcardJson')}
+                    onToggleEdit={() => handleToggleEdit('jsonFlashcard')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, jsonFlashcard: value}))}
-                    onCancel={() => handleCancelEdit('flashcardJson')}
+                    onCancel={() => handleCancelEdit('jsonFlashcard')}
                 />
             </div>
         )}
