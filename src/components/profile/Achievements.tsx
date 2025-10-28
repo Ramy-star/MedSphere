@@ -13,8 +13,8 @@ import { motion } from 'framer-motion';
 const tierColors = {
   bronze: {
     bg: 'bg-orange-950/60',
-    border: 'border-orange-700/70',
-    icon: 'text-orange-400',
+    border: 'border-orange-800/70',
+    icon: 'text-orange-500',
     progressFill: 'bg-gradient-to-r from-orange-600 to-orange-400',
   },
   silver: {
@@ -38,8 +38,8 @@ const tierColors = {
 };
 
 const silverOverride = {
-    bg: 'bg-slate-700/40',
-    border: 'border-slate-500/60',
+    bg: 'bg-slate-800/40',
+    border: 'border-slate-600/60',
     icon: 'text-slate-200',
     progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
 }
@@ -48,7 +48,6 @@ const silverOverride = {
 const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievement, userStats: any, earned: boolean }) => {
   const { id, icon: Icon, name, description, tier, condition } = achievement;
   
-  // Specific override for "A Good Start" to be silver/gray
   const isGoodStart = id === 'FIRST_LOGIN';
   const colors = isGoodStart ? silverOverride : tierColors[tier];
   
@@ -59,7 +58,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
   const cardContent = (
     <motion.div
       className={cn(
-        "relative flex h-full w-[150px] flex-col justify-between rounded-2xl border p-4 text-center transition-all duration-300",
+        "relative flex h-[180px] w-[150px] flex-col justify-between rounded-2xl border p-4 text-center transition-all duration-300",
         earned ? `${colors.bg} ${colors.border}` : "border-slate-800 bg-slate-900/50",
         !earned && "group-hover:border-slate-700 group-hover:bg-slate-800/40"
       )}
@@ -76,7 +75,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
           )}
         </div>
         <p className={cn("text-sm font-semibold", earned ? "text-white" : "text-slate-400")}>{name}</p>
-        <p className="mt-1 text-xs text-slate-500">{description}</p>
+        <p className="mt-1 text-xs text-slate-500 line-clamp-3">{description}</p>
       </div>
 
       {!earned && goal > 0 && (
