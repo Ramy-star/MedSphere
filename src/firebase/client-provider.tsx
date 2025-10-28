@@ -1,18 +1,12 @@
-
 'use client';
 
 import { useEffect, useState, ReactNode } from 'react';
 import type { FirebaseContextType } from './provider';
 import { initializeFirebase } from '.';
-import { FirebaseProvider, useFirebase } from './provider';
+import { FirebaseProvider } from './provider';
 import { Logo } from '@/components/logo';
-<<<<<<< HEAD
 import { useAuthStore } from '@/stores/auth-store';
-=======
-import { UserProvider, useUser } from './auth/use-user';
-import { getAuth, getRedirectResult } from 'firebase/auth';
 
->>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
 
 export function FirebaseClientProvider({
   children,
@@ -28,20 +22,7 @@ export function FirebaseClientProvider({
   useEffect(() => {
     let isMounted = true;
     const init = async () => {
-      try {
-        const instances = await initializeFirebase(config);
-        setFirebase(instances);
-      } catch (e: any) {
-        console.error('Firebase initialization error:', e);
-        setError(e);
-      } finally {
-        setLoading(false);
-      }
-    };
-    init();
-  }, [config]);
-
-<<<<<<< HEAD
+        try {
             const instances = await initializeFirebase(config);
             if (isMounted) {
               setFirebase(instances);
@@ -66,9 +47,6 @@ export function FirebaseClientProvider({
 
 
   if (!firebase) {
-=======
-  if (loading || !firebase) {
->>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
               <div className="flex flex-col items-center gap-4">
@@ -100,9 +78,7 @@ export function FirebaseClientProvider({
 
   return (
     <FirebaseProvider {...firebase}>
-      <UserProvider>
         {children}
-      </UserProvider>
     </FirebaseProvider>
   );
 }

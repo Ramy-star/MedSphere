@@ -1,4 +1,3 @@
-
 'use client';
 
 import { LucideIcon, MoreVertical, Edit, Trash2, Image as ImageIcon } from 'lucide-react';
@@ -17,7 +16,6 @@ import {
 import { Button } from './ui/button';
 import { useAuthStore } from '@/stores/auth-store';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
-import { usePathname } from 'next/navigation';
 
 
 export const SubjectCard = React.memo(function SubjectCard({ 
@@ -34,13 +32,7 @@ export const SubjectCard = React.memo(function SubjectCard({
   const { id, name, iconName, color } = subject;
   const subjectPath = `/folder/${id}`;
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
-<<<<<<< HEAD
   const { can } = useAuthStore();
-  const pathname = usePathname();
-=======
-  const { user } = useUser();
-  const isAdmin = user?.profile?.roles?.isSuperAdmin;
->>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const handleCardClick = (e: React.MouseEvent) => {

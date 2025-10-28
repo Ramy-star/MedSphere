@@ -1,5 +1,3 @@
-
-
 {
   "entities": {
     "Content": {
@@ -45,7 +43,6 @@
         "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
         "level": { "type": "string", "description": "The academic level of the user." },
         "roles": {
-<<<<<<< HEAD
           "type": "array",
           "description": "An array of roles and permissions assigned to the user.",
           "items": {
@@ -83,27 +80,6 @@
               }
             },
             "required": ["role", "scope"]
-=======
-          "type": "object",
-          "properties": {
-            "isSuperAdmin": { "type": "boolean" },
-            "isBlocked": { "type": "boolean" },
-            "permissions": {
-              "type": "array",
-              "items": {
-                "type": "object",
-                "properties": {
-                  "scope": { "type": "string", "enum": ["level", "semester", "subject", "folder"] },
-                  "scopeId": { "type": "string" },
-                  "jobs": {
-                    "type": "array",
-                    "items": { "type": "string" }
-                  }
-                },
-                "required": ["scope", "scopeId", "jobs"]
-              }
-            }
->>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
           }
         }
       },

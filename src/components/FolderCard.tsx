@@ -1,4 +1,3 @@
-
 'use client';
 import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, Eye, EyeOff } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -17,7 +16,6 @@ import Image from 'next/image';
 import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
-import { useRouter, usePathname } from 'next/navigation';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
@@ -44,13 +42,7 @@ export const FolderCard = React.memo(function FolderCard({
 }) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
-<<<<<<< HEAD
     const { can } = useAuthStore();
-=======
-    const { user } = useUser();
-    const router = useRouter();
-    const isAdmin = user?.profile?.roles?.isSuperAdmin;
->>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
     const [dropdownOpen, setDropdownOpen] = useState(false);
     
     const renderIcon = () => {

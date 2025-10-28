@@ -42,11 +42,6 @@ export interface User extends FirebaseUser {
 interface UserContextType {
   user: User | null;
   loading: boolean;
-  profileExists: boolean | undefined;
-  isProcessingRedirect: boolean;
-  setIsProcessingRedirect: (isProcessing: boolean) => void;
-  isSuperAdmin: boolean;
-  isSubAdmin: boolean;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
@@ -55,95 +50,32 @@ export function UserProvider({ children }: { children: React.ReactNode }) {
   const { auth } = useFirebase();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [profileExists, setProfileExists] = useState<boolean | undefined>(
-    undefined
-  );
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
   useEffect(() => {
     if (!auth) {
       setLoading(false);
-      setIsProcessingRedirect(false);
       return;
     }
 
     const unsubscribe = onAuthStateChanged(
       auth,
       (firebaseUser) => {
-        if (firebaseUser) {
-          if (firebaseUser.isAnonymous) {
-            signOut(auth);
-            return;
-          }
-
-          const userDocRef = doc(db, 'users', firebaseUser.uid);
-
-          const unsubProfile = onSnapshot(
-            userDocRef,
-            (docSnap) => {
-              if (docSnap.exists()) {
-                const profileData = docSnap.data() as UserProfile;
-                if (profileData.roles?.isBlocked) {
-                  signOut(auth);
-                } else {
-                  setUser({ ...firebaseUser, profile: profileData });
-                  setProfileExists(true);
-                }
-              } else {
-                setUser({ ...firebaseUser, profile: null });
-                setProfileExists(false);
-              }
-              setLoading(false);
-            },
-            (profileError) => {
-              console.error('Error listening to user profile:', profileError);
-              setUser({ ...firebaseUser, profile: null });
-              setProfileExists(false);
-              setLoading(false);
-            }
-          );
-          return () => unsubProfile();
-        } else {
-          setUser(null);
-          setProfileExists(undefined);
-          setLoading(false);
-          setIsProcessingRedirect(false); // No user, no processing
-        }
+        // This is a dummy onAuthStateChanged. The real one is in auth-store.
+        // This provider is being deprecated but kept to avoid breaking imports.
+        setLoading(false);
       },
       (authError) => {
         console.error('onAuthStateChanged error:', authError);
         setLoading(false);
-        setIsProcessingRedirect(false);
       }
     );
 
     return () => unsubscribe();
   }, [auth]);
 
-  const isSuperAdmin = useMemo(
-    () => user?.profile?.roles?.isSuperAdmin === true,
-    [user]
-  );
-  const isSubAdmin = useMemo(
-    () =>
-      !!user?.profile?.roles?.permissions &&
-      user.profile.roles.permissions.length > 0 &&
-      !isSuperAdmin,
-    [user, isSuperAdmin]
-  );
-  
-  const handleSetIsProcessingRedirect = useCallback((isProcessing: boolean) => {
-      setIsProcessingRedirect(isProcessing);
-  }, []);
-
   const value = {
     user,
-    loading,
-    profileExists,
-    isProcessingRedirect,
-    setIsProcessingRedirect: handleSetIsProcessingRedirect,
-    isSuperAdmin,
-    isSubAdmin,
+    loading
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;

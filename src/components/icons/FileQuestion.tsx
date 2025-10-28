@@ -26,6 +26,3 @@ export const FileQuestion = React.forwardRef<SVGSVGElement, LucideProps>(
 );
 
 FileQuestion.displayName = 'FileQuestion';
-
-// Add this default export
-export default FileQuestion;

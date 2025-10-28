@@ -1,4 +1,3 @@
-
 'use client';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
@@ -15,18 +14,13 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 
 
 export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?: (file: File) => void }) {
-<<<<<<< HEAD
   const { canAddContent } = useAuthStore();
-=======
-  const { user } = useUser();
-  const isAdmin = user?.profile?.roles?.isSuperAdmin;
->>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
   const pathname = usePathname();
   
   const { data: allItems } = useCollection<Content>('content');
 
-  const { currentFolder, canManage } = useMemo(() => {
-    if (!allItems || !user) return { currentFolder: null, canManage: false };
+  const { currentFolder } = useMemo(() => {
+    if (!allItems) return { currentFolder: null };
 
     const itemMap = new Map<string, Content>(allItems.map(item => [item.id, item]));
     const pathSegments = pathname.split('/').filter(Boolean);
@@ -38,30 +32,10 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
       const levelName = decodeURIComponent(pathSegments[1]);
       folder = allItems.find(item => item.type === 'LEVEL' && item.name === levelName);
     }
-
-    if (!folder) return { currentFolder: null, canManage: false };
-
-    // Check permissions
-    if (isAdmin) {
-      return { currentFolder: folder, canManage: true };
-    }
-
-    const permissions = user.profile?.roles?.permissions || [];
-    let isAllowed = false;
-    let tempItem: Content | undefined = folder;
-    while (tempItem) {
-        const foundPermission = permissions.find(p => p.scopeId === tempItem!.id);
-        if (foundPermission) {
-            // In a real scenario, you'd check for specific jobs like 'canAddContent'
-            isAllowed = true; 
-            break;
-        }
-        tempItem = tempItem.parentId ? itemMap.get(tempItem.parentId) : undefined;
-    }
     
-    return { currentFolder: folder, canManage: isAllowed };
+    return { currentFolder: folder };
 
-  }, [allItems, pathname, user, isAdmin]);
+  }, [allItems, pathname]);
 
 
   const renderIcon = () => {
@@ -119,11 +93,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
         </h1>
       </div>
       <div className="flex gap-2">
-<<<<<<< HEAD
         {canAddContent(currentFolder?.id || null) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
-=======
-        {canManage && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
->>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
           <div>
             <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
           </div>
