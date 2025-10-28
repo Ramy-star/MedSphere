@@ -20,7 +20,7 @@ export type UserRole = {
 };
 
 export type UserProfile = {
-  id: string; // Document ID, same as uid for non-anonymous users
+  id: string; // Document ID
   uid: string;
   username: string;
   studentId: string;
