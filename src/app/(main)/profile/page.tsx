@@ -9,7 +9,7 @@ import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { contentService } from '@/lib/contentService';
+import { contentService, type Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import {
@@ -33,6 +33,7 @@ import { AchievementsSection } from '@/components/profile/Achievements';
 import Image from 'next/image';
 import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
+import { FilePreviewModal } from '@/components/FilePreviewModal';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -52,6 +53,7 @@ export default function ProfilePage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDeleteCoverConfirm, setShowDeleteCoverConfirm] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [previewFile, setPreviewFile] = useState<Content | null>(null);
 
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -175,6 +177,14 @@ export default function ProfilePage() {
           setShowDeleteCoverConfirm(false);
       }
   }
+
+  const handleFileClick = (item: Content) => {
+    if (item.type === 'LINK') {
+      if (item.metadata?.url) window.open(item.metadata.url, '_blank');
+      return;
+    }
+    setPreviewFile(item);
+  };
   
   if (!user) {
     return (
@@ -342,7 +352,7 @@ export default function ProfilePage() {
         <InfoCard icon={School} label="Academic Level" value={userLevel} />
       </div>
 
-      <FavoritesSection user={user} />
+      <FavoritesSection user={user} onFileClick={handleFileClick} />
       <ActiveSessions user={user} />
       <AchievementsSection user={user} />
       
@@ -396,6 +406,10 @@ export default function ProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <FilePreviewModal
+        item={previewFile}
+        onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+      />
     </>
   );
 }

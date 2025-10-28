@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo } from 'react';
@@ -11,7 +12,7 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { contentService } from '@/lib/contentService';
 
-export const FavoritesSection = ({ user }: { user: UserProfile }) => {
+export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onFileClick: (item: Content) => void }) => {
   const router = useRouter();
   const { toast } = useToast();
   const favoriteIds = useMemo(() => user.favorites || [], [user.favorites]);
@@ -34,11 +35,6 @@ export const FavoritesSection = ({ user }: { user: UserProfile }) => {
     return sortedFavorites;
   }, [allContent, favoriteIds]);
 
-  const handleFileClick = (item: Content) => {
-    // In a real app, this would open a preview modal
-    console.log("Previewing file:", item.name);
-  };
-  
   const handleFolderClick = (item: Content) => {
     router.push(`/folder/${item.id}`);
   };
@@ -108,7 +104,7 @@ export const FavoritesSection = ({ user }: { user: UserProfile }) => {
                 <FileCard
                   key={item.id}
                   item={item}
-                  onFileClick={() => handleFileClick(item)}
+                  onFileClick={() => onFileClick(item)}
                   showDragHandle={false}
                   onRename={() => {}}
                   onDelete={() => {}}
