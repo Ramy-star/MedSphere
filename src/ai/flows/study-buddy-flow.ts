@@ -74,7 +74,7 @@ export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema
     const firstName = stats.displayName?.split(' ')[0] || stats.username;
     
     try {
-        const { output } } = await studyBuddyPrompt({ ...stats, timeOfDay, firstName });
+        const { output } = await studyBuddyPrompt({ ...stats, timeOfDay, firstName });
         return output;
     } catch (error) {
         console.error("Error generating study buddy insight:", error);
