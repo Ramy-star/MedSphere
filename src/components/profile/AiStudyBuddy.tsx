@@ -1,49 +1,66 @@
 
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lightbulb, Book, FileQuestion, Star, Send } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Loader2, Lightbulb, Book, FileQuestion, Star, Send, ArrowLeft } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
+import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
 import type { UserProfile } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
-import { cn } from '@/lib/utils';
-import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 
 type Suggestion = {
     label: string;
-    action: "CREATE_QUIZ" | "TAKE_EXAM" | "REVIEW_FILES" | "EXPLORE_SUBJECTS" | "VIEW_FAVORITES" | "ASK_AI";
+    prompt: string; 
 };
 
-type Insight = {
+type InitialInsight = {
     greeting: string;
     mainInsight: string;
     suggestedActions: Suggestion[];
 };
 
-const actionIcons: Record<Suggestion['action'], React.ElementType> = {
-    CREATE_QUIZ: FileQuestion,
-    TAKE_EXAM: Book,
-    REVIEW_FILES: Book,
-    EXPLORE_SUBJECTS: Lightbulb,
-    VIEW_FAVORITES: Star,
-    ASK_AI: Send,
-};
-
-
 export function AiStudyBuddy({ user }: { user: UserProfile }) {
-    const [insight, setInsight] = useState<Insight | null>(null);
+    const [initialInsight, setInitialInsight] = useState<InitialInsight | null>(null);
     const [loading, setLoading] = useState(true);
-    const router = useRouter();
-    const { toast } = useToast();
+    const [currentResponse, setCurrentResponse] = useState<string | null>(null);
+    const [isResponding, setIsResponding] = useState(false);
+
+    const fetchInitialInsight = useCallback(async () => {
+        setLoading(true);
+        const userStats = {
+            displayName: user.displayName || user.username,
+            username: user.username,
+            filesUploaded: user.stats?.filesUploaded || 0,
+            foldersCreated: user.stats?.foldersCreated || 0,
+            examsCompleted: user.stats?.examsCompleted || 0,
+            aiQueries: user.stats?.aiQueries || 0,
+            favoritesCount: user.favorites?.length || 0,
+        };
+        try {
+            const result = await getStudyBuddyInsight(userStats);
+            setInitialInsight(result);
+            setCurrentResponse(result.mainInsight);
+        } catch (e) {
+            console.error("Failed to get study buddy insight", e);
+            setInitialInsight(null);
+            setCurrentResponse("I'm having a little trouble connecting right now. Please try again in a moment.");
+        } finally {
+            setLoading(false);
+        }
+    }, [user]);
 
     useEffect(() => {
-        const fetchInsight = async () => {
-            setLoading(true);
+        fetchInitialInsight();
+    }, [fetchInitialInsight]);
+
+    const handleSuggestionClick = async (suggestion: Suggestion) => {
+        setIsResponding(true);
+        setCurrentResponse(null); // Clear previous response
+        try {
             const userStats = {
-                displayName: user.displayName,
+                displayName: user.displayName || user.username,
                 username: user.username,
                 filesUploaded: user.stats?.filesUploaded || 0,
                 foldersCreated: user.stats?.foldersCreated || 0,
@@ -51,47 +68,26 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 aiQueries: user.stats?.aiQueries || 0,
                 favoritesCount: user.favorites?.length || 0,
             };
-            try {
-                const result = await getStudyBuddyInsight(userStats);
-                setInsight(result);
-            } catch(e) {
-                console.error("Failed to get study buddy insight", e);
-                setInsight(null); // Set to null on error
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchInsight();
-    }, [user]);
-
-    const handleSuggestionClick = (action: Suggestion['action']) => {
-        switch (action) {
-            case 'TAKE_EXAM':
-                router.push('/exam');
-                break;
-            case 'CREATE_QUIZ':
-                router.push('/questions-creator');
-                break;
-            case 'EXPLORE_SUBJECTS':
-            case 'REVIEW_FILES':
-                router.push('/');
-                break;
-            case 'VIEW_FAVORITES':
-                // For now, just stays on the profile page. Could scroll to favorites later.
-                const favoritesSection = document.getElementById('favorites-section');
-                favoritesSection?.scrollIntoView({ behavior: 'smooth' });
-                break;
-            case 'ASK_AI':
-            default:
-                toast({
-                    title: "Coming Soon!",
-                    description: "This feature is currently under development.",
-                });
-                break;
+            const response = await answerStudyBuddyQuery({
+                userStats,
+                question: suggestion.prompt,
+            });
+            setCurrentResponse(response);
+        } catch (e) {
+            console.error("Failed to get answer from study buddy", e);
+            setCurrentResponse("Sorry, I couldn't process that request. Please try again.");
+        } finally {
+            setIsResponding(false);
+        }
+    };
+    
+    const handleBackToIntro = () => {
+        if(initialInsight) {
+            setCurrentResponse(initialInsight.mainInsight);
         }
     };
 
+    const isChatMode = initialInsight ? currentResponse !== initialInsight.mainInsight : false;
 
     if (loading) {
         return (
@@ -109,8 +105,8 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             </div>
         );
     }
-
-    if (!insight) return null;
+    
+    if (!initialInsight) return null;
 
     return (
         <motion.div 
@@ -125,29 +121,59 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             </div>
 
             <div className="flex-1">
-                <h3 className="text-xl font-bold text-white">{insight.greeting}</h3>
-                <p className="text-slate-300 mt-2 max-w-prose">{insight.mainInsight}</p>
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={isChatMode ? 'chat' : 'intro'}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <h3 className="text-xl font-bold text-white">
+                            {isChatMode ? "Here's what I found..." : initialInsight.greeting}
+                        </h3>
+                        {isResponding ? (
+                             <div className="flex items-center gap-3 mt-2 text-slate-400">
+                                <Loader2 className="w-4 h-4 animate-spin" />
+                                <span>Thinking...</span>
+                            </div>
+                        ) : (
+                            <p className="text-slate-300 mt-2 max-w-prose whitespace-pre-wrap">{currentResponse}</p>
+                        )}
+                    </motion.div>
+                </AnimatePresence>
 
                 <div className="mt-6 flex flex-wrap gap-3">
-                    {insight.suggestedActions.map((suggestion, index) => {
-                        const Icon = actionIcons[suggestion.action];
-                        return (
-                            <motion.div
-                                key={index}
-                                initial={{ opacity: 0, x: -10 }}
-                                animate={{ opacity: 1, x: 0, transition: { delay: 0.2 + index * 0.1 } }}
+                   {isChatMode ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                             <Button
+                                onClick={handleBackToIntro}
+                                variant="outline"
+                                className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
                             >
-                                <Button
-                                    onClick={() => handleSuggestionClick(suggestion.action)}
-                                    variant="outline"
-                                    className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
-                                >
-                                    {Icon && <Icon className="w-4 h-4 mr-2" />}
-                                    {suggestion.label}
-                                </Button>
-                            </motion.div>
-                        );
-                    })}
+                                <ArrowLeft className="w-4 h-4 mr-2" />
+                                Back to Suggestions
+                            </Button>
+                        </motion.div>
+                   ) : (
+                    initialInsight.suggestedActions.map((suggestion, index) => (
+                        <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -10 }}
+                            animate={{ opacity: 1, x: 0, transition: { delay: 0.2 + index * 0.1 } }}
+                        >
+                            <Button
+                                onClick={() => handleSuggestionClick(suggestion)}
+                                variant="outline"
+                                className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
+                                disabled={isResponding}
+                            >
+                                <Send className="w-4 h-4 mr-2" />
+                                {suggestion.label}
+                            </Button>
+                        </motion.div>
+                    ))
+                   )}
                 </div>
             </div>
         </motion.div>

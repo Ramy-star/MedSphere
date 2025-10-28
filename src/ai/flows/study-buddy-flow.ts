@@ -19,21 +19,14 @@ const UserStatsSchema = z.object({
 }).describe("A summary of the user's statistics and activity.");
 
 const SuggestedActionSchema = z.object({
-    label: z.string().describe("The user-facing text for the button, e.g., 'Start a new exam'."),
-    action: z.enum([
-        "CREATE_QUIZ",
-        "TAKE_EXAM",
-        "REVIEW_FILES",
-        "EXPLORE_SUBJECTS",
-        "VIEW_FAVORITES",
-        "ASK_AI"
-    ]).describe("A machine-readable action key to identify what the button should do."),
+    label: z.string().describe("The user-facing text for the button, e.g., 'Summarize my progress'."),
+    prompt: z.string().describe("The specific question/prompt that will be sent to the AI if this button is clicked."),
 });
 
 const StudyBuddyOutputSchema = z.object({
     greeting: z.string().describe("A short, friendly greeting based on the time of day."),
     mainInsight: z.string().describe("A key insight or observation about the user's activity. Keep it concise and encouraging."),
-    suggestedActions: z.array(SuggestedActionSchema).min(1).max(3).describe("A list of 1 to 3 relevant suggested actions for the user to take next."),
+    suggestedActions: z.array(SuggestedActionSchema).min(1).max(3).describe("A list of 1 to 3 relevant questions the user might want to ask next."),
 });
 
 const studyBuddyPrompt = ai.definePrompt({
@@ -52,26 +45,25 @@ const studyBuddyPrompt = ai.definePrompt({
         - Folders Created: {{{foldersCreated}}}
         - Exams Completed: {{{examsCompleted}}}
         - Favorites Added: {{{favoritesCount}}}
+        - AI Queries: {{{aiQueries}}}
 
         Follow these rules precisely:
-        1.  **Greeting:** Start with a brief, warm greeting appropriate for the time of day (morning, afternoon, evening). Address the user by their display name if available, otherwise their username.
+        1.  **Greeting:** Start with a brief, warm greeting appropriate for the time of day (morning, afternoon, evening). Address the user by their display name.
         2.  **Main Insight:** Based on the stats, generate ONE key insight. Make it feel personal and observant.
-            - If they have high activity (e.g., many files uploaded or exams completed), praise their hard work.
+            - If they have high activity, praise their hard work.
             - If activity is low, gently encourage them to get started.
-            - If they have many favorites, comment on their curation skills.
-        3.  **Suggested Actions:** Provide 1 to 3 actionable suggestions that are relevant to their stats.
-            - If they have uploaded files but not completed many exams, suggest creating a quiz or taking an exam.
-            - If they seem to be organizing (creating folders), suggest they review their files.
-            - If their activity is low, suggest exploring subjects or reviewing favorites.
-            - Always make the labels encouraging and clear (e.g., "Test your knowledge" instead of just "Exam").
+        3.  **Suggested Actions:** Provide 2-3 relevant, actionable questions the user can ask you. The 'label' should be the button text, and the 'prompt' is the full question you will receive.
+            - If they have uploaded files but not used the AI much, suggest asking for a summary or quiz.
+            - If they have been studying hard, suggest a review of their progress.
+            - Always phrase the labels as questions from the user's perspective (e.g., "What should I focus on?").
 
-        Example Output Structure:
+        Example Output:
         {
           "greeting": "Good morning, Dr. [Name]!",
           "mainInsight": "You've been busy organizing! I see you've created {{foldersCreated}} new folders.",
           "suggestedActions": [
-            { "label": "Review your subjects", "action": "EXPLORE_SUBJECTS" },
-            { "label": "Ask the AI a question", "action": "ASK_AI" }
+            { "label": "What should I study next?", "prompt": "Based on my recent activity, what subject do you recommend I study next?" },
+            { "label": "Summarize my progress.", "prompt": "Can you give me a brief summary of my study progress so far?" }
           ]
         }
     `,
@@ -89,10 +81,10 @@ export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema
         // Return a default, safe response on error
         return {
             greeting: `Hello, ${stats.displayName || stats.username}!`,
-            mainInsight: "Ready to dive into your studies? Let's make today productive.",
+            mainInsight: "Ready to dive into your studies? Let's make today productive. You can ask me to summarize your progress or suggest what to study next.",
             suggestedActions: [
-                { label: "Explore your subjects", action: "EXPLORE_SUBJECTS" },
-                { label: "Take an exam", action: "TAKE_EXAM" }
+                { label: "Summarize my progress", prompt: "Can you give me a brief summary of my study progress so far?" },
+                { label: "What should I study next?", prompt: "Based on my recent activity, what subject do you recommend I study next?" }
             ]
         };
     }
