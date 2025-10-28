@@ -17,6 +17,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { Button } from '../ui/button';
 
 const getDeviceIcon = (device: string | undefined) => {
     if (!device) return <Monitor className="w-5 h-5 text-slate-400" />;
@@ -32,7 +33,7 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
     const { logoutSession, currentSessionId } = useAuthStore();
     const [sessionToLogout, setSessionToLogout] = useState<string | null>(null);
 
-    const sessions = user.sessions || [];
+    const sessions = user.sessions?.filter(s => s.status !== 'logged_out') || [];
     
     if (sessions.length === 0) {
         return null;
@@ -79,12 +80,12 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
                                             <AlertDialogHeader>
                                                 <AlertDialogTitle>Block this device?</AlertDialogTitle>
                                                 <AlertDialogDescription>
-                                                    Blocking a device is a future feature. This action will log out the session for now.
+                                                    Blocking a device is a future feature. This action will log out the session for now. Are you sure you want to proceed?
                                                 </AlertDialogDescription>
                                             </AlertDialogHeader>
                                             <AlertDialogFooter>
                                                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={() => logoutSession(session.sessionId)}>Confirm</AlertDialogAction>
+                                                <AlertDialogAction onClick={() => logoutSession(session.sessionId)} className="bg-yellow-600 hover:bg-yellow-700">Confirm Logout</AlertDialogAction>
                                             </AlertDialogFooter>
                                         </AlertDialogContent>
                                     </AlertDialog>

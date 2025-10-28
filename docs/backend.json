@@ -74,7 +74,8 @@
                     "device": { "type": "string", "description": "Description of the device/browser." },
                     "ipAddress": { "type": "string", "description": "The IP address of the login." },
                     "lastActive": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity." },
-                    "loggedIn": { "type": "string", "format": "date-time", "description": "Timestamp of when the session was created." }
+                    "loggedIn": { "type": "string", "format": "date-time", "description": "Timestamp of when the session was created." },
+                    "status": { "type": "string", "enum": ["active", "logged_out"], "description": "The status of the session." }
                 },
                 "required": ["sessionId", "device", "lastActive", "loggedIn"]
             }

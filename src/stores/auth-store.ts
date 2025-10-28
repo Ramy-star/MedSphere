@@ -18,6 +18,7 @@ export type UserSession = {
     ipAddress?: string; // This would typically be populated server-side
     lastActive: string; // ISO String
     loggedIn: string; // ISO String
+    status?: 'active' | 'logged_out';
 };
 
 export type UserRole = {
@@ -161,6 +162,17 @@ const listenToUserProfile = (studentId: string) => {
     userListenerUnsubscribe = onSnapshot(userDocRef, async (doc) => {
         if (doc.exists()) {
             const userProfile = { id: doc.id, ...doc.data() } as UserProfile;
+            
+            // Real-time session check
+            const currentSessionId = useAuthStore.getState().currentSessionId;
+            const mySession = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
+            
+            if (mySession && mySession.status === 'logged_out') {
+                console.log("Remote logout signal received. Logging out.");
+                useAuthStore.getState().logout(true); // Force logout without DB update
+                return;
+            }
+            
             if (userProfile.isBlocked) {
                 useAuthStore.getState().logout();
                 return;
@@ -279,6 +291,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
             device: getDeviceDescription(),
             loggedIn: new Date().toISOString(),
             lastActive: new Date().toISOString(),
+            status: 'active',
         };
         
         const userDocRef = doc(db, 'users', userProfile.id);
@@ -298,21 +311,27 @@ const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  logout: async () => {
+  logout: async (localOnly = false) => {
     if (userListenerUnsubscribe) userListenerUnsubscribe();
     if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
     
-    const { studentId, currentSessionId } = get();
-    if (studentId && currentSessionId) {
-        const userDocRef = doc(db, 'users', studentId);
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-            const userProfile = userDoc.data() as UserProfile;
-            const sessionToRemove = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
-            if (sessionToRemove) {
-                await updateDoc(userDocRef, {
-                    sessions: arrayRemove(sessionToRemove)
-                });
+    if (!localOnly) {
+        const { studentId, currentSessionId } = get();
+        if (studentId && currentSessionId) {
+            const userDocRef = doc(db, 'users', studentId);
+            try {
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    const userProfile = userDoc.data() as UserProfile;
+                    const sessionToRemove = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
+                    if (sessionToRemove) {
+                        await updateDoc(userDocRef, {
+                            sessions: arrayRemove(sessionToRemove)
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Error removing session from DB on logout:", error);
             }
         }
     }
@@ -340,14 +359,16 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   logoutSession: async (sessionId: string) => {
     const { user } = get();
-    if (!user) return;
+    if (!user || !user.sessions) return;
+    
     const userDocRef = doc(db, 'users', user.id);
-    const sessionToRemove = user.sessions?.find(s => s.sessionId === sessionId);
-    if(sessionToRemove) {
-        await updateDoc(userDocRef, {
-            sessions: arrayRemove(sessionToRemove)
-        });
-    }
+    const updatedSessions = user.sessions.map(s => 
+        s.sessionId === sessionId ? { ...s, status: 'logged_out' } : s
+    );
+
+    await updateDoc(userDocRef, {
+        sessions: updatedSessions
+    });
   },
 
   can: (permission: string, itemId: string | null): boolean => {
