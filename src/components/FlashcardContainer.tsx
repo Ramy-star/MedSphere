@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, PlusCircle, Trash2, Edit, X } from 'lucide-react';
 import Image from 'next/image';
-import { lecturesData as initialLecturesData } from '@/lib/data';
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as SelectPrimitive from "@radix-ui/react-select";
@@ -14,6 +13,7 @@ import { clsx, type ClassValue } from "clsx"
 import { twMerge } from "tailwind-merge"
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
+import { contentService } from '@/lib/contentService';
 
 
 // --- UTILS (from src/lib/utils.ts) ---
@@ -438,6 +438,17 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
     const flashcards = activeLecture?.flashcards || [];
     const currentCard = flashcards[currentCardIndex];
 
+    const persistChanges = async (updatedLectures: Lecture[]) => {
+      if (!fileItemId) return;
+      try {
+        await contentService.updateDoc(fileItemId, {
+          'metadata.quizData': JSON.stringify(updatedLectures, null, 2)
+        });
+      } catch (error) {
+        console.error("Failed to save flashcard changes:", error);
+      }
+    };
+
     // --- Dynamic Font Loading ---
     useEffect(() => {
         const fontLink = document.createElement('link');
@@ -484,86 +495,70 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
     };
     
     const handleUpsertCard = (lectureId: string, newLectureName: string, cardData: Omit<Flashcard, 'id'>, cardIdToEdit?: string) => {
-        setLecturesState(prevLectures => {
-            let updatedLectures = [...prevLectures];
-            let targetLectureId = lectureId;
-            let newLectureCreated = false;
+        const newLectures = [...lecturesState];
+        let targetLectureId = lectureId;
+        let newLectureCreated = false;
 
-            if (lectureId === 'new') {
-                if (!newLectureName.trim()) return prevLectures;
-                const newLec: Lecture = {
-                    id: `l${Date.now()}`,
-                    name: newLectureName.trim(),
-                    flashcards: []
-                };
-                updatedLectures.push(newLec);
-                targetLectureId = newLec.id;
-                newLectureCreated = true;
-            }
-            
-            let previousLectureId: string | undefined;
-            if(cardIdToEdit){
-                 const parentLecture = prevLectures.find(l => l.flashcards.some(c => c.id === cardIdToEdit));
-                 previousLectureId = parentLecture?.id;
-            }
+        // Handle creation of a new lecture
+        if (lectureId === 'new') {
+            if (!newLectureName.trim()) return;
+            const newLec: Lecture = {
+                id: `l${Date.now()}`,
+                name: newLectureName.trim(),
+                flashcards: []
+            };
+            newLectures.push(newLec);
+            targetLectureId = newLec.id;
+            newLectureCreated = true;
+        }
 
-            if(previousLectureId && previousLectureId !== targetLectureId){
-                const oldLectureIndex = updatedLectures.findIndex(lec => lec.id === previousLectureId);
-                if(oldLectureIndex > -1){
-                    updatedLectures[oldLectureIndex].flashcards = updatedLectures[oldLectureIndex].flashcards.filter(c => c.id !== cardIdToEdit);
-                }
-            }
+        // Find the target lecture
+        const lectureIndex = newLectures.findIndex(lec => lec.id === targetLectureId);
+        if (lectureIndex === -1) return;
 
-            const lectureIndex = updatedLectures.findIndex(lec => lec.id === targetLectureId);
-            if (lectureIndex === -1) return prevLectures;
-            
-            const lectureToUpdate = { ...updatedLectures[lectureIndex] };
-            let newFlashcards = [...lectureToUpdate.flashcards];
+        const lectureToUpdate = { ...newLectures[lectureIndex] };
+        let newFlashcards = [...lectureToUpdate.flashcards];
 
-            if (cardIdToEdit && (!previousLectureId || previousLectureId === targetLectureId)) { 
-                const cardIndex = newFlashcards.findIndex(c => c.id === cardIdToEdit);
-                if (cardIndex > -1) {
-                    newFlashcards[cardIndex] = { ...newFlashcards[cardIndex], ...cardData };
-                }
-            } else {
-                const newCard: Flashcard = {
-                     id: cardIdToEdit || `f${Date.now()}`,
-                    ...cardData
-                };
-                newFlashcards.push(newCard);
+        if (cardIdToEdit) { // Editing an existing card
+            const cardIndex = newFlashcards.findIndex(c => c.id === cardIdToEdit);
+            if (cardIndex > -1) {
+                newFlashcards[cardIndex] = { ...newFlashcards[cardIndex], ...cardData };
             }
-            lectureToUpdate.flashcards = newFlashcards;
-            updatedLectures[lectureIndex] = lectureToUpdate;
-            
-            if (newLectureCreated) {
-                setTimeout(() => {
-                    setActiveLectureId(targetLectureId);
-                    setCurrentCardIndex(lectureToUpdate.flashcards.length - 1);
-                }, 0);
-            }
+        } else { // Adding a new card
+            const newCard: Flashcard = {
+                id: `f${Date.now()}`,
+                ...cardData
+            };
+            newFlashcards.push(newCard);
+        }
 
-            return updatedLectures;
-        });
+        lectureToUpdate.flashcards = newFlashcards;
+        newLectures[lectureIndex] = lectureToUpdate;
+
+        setLecturesState(newLectures);
+        persistChanges(newLectures);
+
+        if (newLectureCreated) {
+            setActiveLectureId(targetLectureId);
+            setCurrentCardIndex(newFlashcards.length - 1);
+        }
     };
 
     const handleDeleteCard = () => {
-         if(!currentCard) return;
-         setLecturesState(prevLectures => {
-            const updatedLectures = prevLectures.map(lecture => {
-                if (lecture.id === activeLectureId) {
-                    const newFlashcards = lecture.flashcards.filter(card => card.id !== currentCard.id);
-                    return { ...lecture, flashcards: newFlashcards };
-                }
-                return lecture;
-            }).filter(Boolean);
-            
-            const activeLectureStillExists = updatedLectures.some(l => l.id === activeLectureId);
-            if(!activeLectureStillExists){
-                 setActiveLectureId(updatedLectures[0]?.id);
+        if(!currentCard || !activeLectureId) return;
+        
+        const newLectures = lecturesState.map(lecture => {
+            if (lecture.id === activeLectureId) {
+                return {
+                    ...lecture,
+                    flashcards: lecture.flashcards.filter(card => card.id !== currentCard.id)
+                };
             }
-            
-            return updatedLectures;
+            return lecture;
         });
+
+        setLecturesState(newLectures);
+        persistChanges(newLectures);
     }
     
     const openEditCardDialog = () => {
@@ -579,21 +574,22 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
 
     const handleEditLecture = (newName: string) => {
         if (!activeLectureId) return;
-        setLecturesState(prev => prev.map(l => l.id === activeLectureId ? { ...l, name: newName } : l));
+        const newLectures = lecturesState.map(l => l.id === activeLectureId ? { ...l, name: newName } : l);
+        setLecturesState(newLectures);
+        persistChanges(newLectures);
     }
     
     const handleDeleteLecture = () => {
         if (!activeLectureId) return;
-        setLecturesState(prev => {
-            const remaining = prev.filter(l => l.id !== activeLectureId);
-            if (activeLectureId) {
-                const currentIdx = prev.findIndex(l => l.id === activeLectureId);
-                const nextIdx = currentIdx > 0 ? currentIdx - 1 : 0;
-                setActiveLectureId(remaining[nextIdx]?.id || undefined);
-                setCurrentCardIndex(0);
-            }
-            return remaining;
-        });
+        const remaining = lecturesState.filter(l => l.id !== activeLectureId);
+        const currentIdx = lecturesState.findIndex(l => l.id === activeLectureId);
+        const nextIdx = currentIdx > 0 ? currentIdx - 1 : 0;
+        
+        setActiveLectureId(remaining[nextIdx]?.id || undefined);
+        setCurrentCardIndex(0);
+        
+        setLecturesState(remaining);
+        persistChanges(remaining);
     }
 
     const variants = {

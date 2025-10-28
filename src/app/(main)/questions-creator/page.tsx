@@ -36,7 +36,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
-import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/core';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
@@ -218,7 +218,7 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
 };
 
 
-const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQuestionSet, isAdmin: boolean, onDeleteClick: (set: SavedQuestionSet) => void }) => {
+const SortableQuestionSetCard = ({ set, canAdminister, onDeleteClick }: { set: SavedQuestionSet, canAdminister: boolean, onDeleteClick: (set: SavedQuestionSet) => void }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: set.id });
     const router = useRouter();
 
@@ -249,7 +249,7 @@ const SortableQuestionSetCard = ({ set, isAdmin, onDeleteClick }: { set: SavedQu
         >
             <div className="flex justify-between items-start">
                 <SavedQuestionsIcon className="w-8 h-8 shrink-0" />
-                {isAdmin && (
+                {canAdminister && (
                     <div className="flex gap-1 absolute top-2 right-2">
                         <Button
                             variant="ghost"
@@ -313,7 +313,8 @@ function QuestionsCreatorContent() {
     closeOptionsDialog,
   } = useQuestionGenerationStore();
 
-  const { studentId, isSuperAdmin: isAdmin } = useAuthStore();
+  const { studentId, can } = useAuthStore();
+  const canAdminister = can('canAccessQuestionCreator', null);
   
   const { data: fetchedSavedQuestions, loading: loadingSavedQuestions } = useCollection<SavedQuestionSet>(
     studentId ? `users/${studentId}/questionSets` : '',
@@ -1000,7 +1001,7 @@ function QuestionsCreatorContent() {
                                     <SortableQuestionSetCard
                                         key={set.id}
                                         set={set}
-                                        isAdmin={isAdmin}
+                                        canAdminister={canAdminister}
                                         onDeleteClick={setItemToDelete}
                                     />
                                 ))}

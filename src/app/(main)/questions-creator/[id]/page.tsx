@@ -120,7 +120,7 @@ function reorderAndStringify(obj: any): string {
 
 function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
-  const { studentId, isSuperAdmin: isAdmin } = useAuthStore();
+  const { studentId, can } = useAuthStore();
   const { data: questionSet, loading } = useDoc<SavedQuestionSet>(studentId ? `users/${studentId}/questionSets` : '', id, {
     disabled: !id || !studentId
   });
@@ -146,6 +146,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
   const titleRef = useRef<HTMLHeadingElement>(null);
 
+  const canAdminister = can('canAccessQuestionCreator', null);
 
   const { toast } = useToast();
 
@@ -401,7 +402,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 </div>
                 <TooltipProvider>
                     <div className="flex items-center gap-1">
-                        {isAdmin && type === 'text' && (
+                        {canAdminister && type === 'text' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('save_questions_md'); setShowFolderSelector(true); }} disabled={isSaving}>
@@ -411,7 +412,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                 <TooltipContent><p>Save as Questions File</p></TooltipContent>
                             </Tooltip>
                         )}
-                        {isAdmin && type === 'examText' && (
+                        {canAdminister && type === 'examText' && (
                              <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('save_exam_md'); setShowFolderSelector(true); }} disabled={isSaving}>
@@ -421,7 +422,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                 <TooltipContent><p>Save as Exam File</p></TooltipContent>
                             </Tooltip>
                         )}
-                        {isAdmin && type === 'json' && (
+                        {canAdminister && type === 'json' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_quiz'); setShowFolderSelector(true); }} disabled={isCreating}>
@@ -431,7 +432,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                 <TooltipContent><p>Create/Merge Interactive Quiz</p></TooltipContent>
                             </Tooltip>
                         )}
-                         {isAdmin && type === 'examJson' && (
+                         {canAdminister && type === 'examJson' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_exam'); setShowFolderSelector(true); }} disabled={isCreating}>
@@ -441,7 +442,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                                 <TooltipContent><p>Create/Merge Interactive Exam</p></TooltipContent>
                             </Tooltip>
                         )}
-                        {isAdmin && type === 'flashcardJson' && (
+                        {canAdminister && type === 'flashcardJson' && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => { setCurrentAction('create_flashcard'); setShowFolderSelector(true); }} disabled={isCreating}>
@@ -466,7 +467,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                             <TooltipContent><p>Copy</p></TooltipContent>
                         </Tooltip>
                         
-                        {isAdmin && (
+                        {canAdminister && (
                           isThisCardEditing ? (
                               <div className="flex items-center">
                                   <Tooltip>
@@ -511,7 +512,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </div>
              <textarea
                 value={content}
-                readOnly={!isThisCardEditing || !isAdmin}
+                readOnly={!isThisCardEditing || !canAdminister}
                 className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                 onChange={(e) => {
                     if (isThisCardEditing) {
@@ -565,7 +566,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                 <div className="flex items-center gap-2">
                     <h1
                       ref={titleRef}
-                      contentEditable={isEditingTitle && isAdmin}
+                      contentEditable={isEditingTitle && canAdminister}
                       suppressContentEditableWarning={true}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
@@ -578,7 +579,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     >
                       {editingTitle}
                     </h1>
-                    {isAdmin && (
+                    {canAdminister && (
                       isEditingTitle ? (
                         <div className="flex items-center">
                             <Tooltip>
@@ -718,7 +719,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                      {previewContent?.title}
                 </DialogTitle>
                 <div className="flex items-center gap-1">
-                    {isAdmin && (
+                    {canAdminister && (
                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95 text-white" onClick={() => { if(isPreviewEditing) handlePreviewSave(); setIsPreviewEditing(!isPreviewEditing); }}>
                         {isPreviewEditing ? <Check className="h-4 w-4 text-green-500" /> : <Pencil className="h-4 w-4" />}
                     </Button>

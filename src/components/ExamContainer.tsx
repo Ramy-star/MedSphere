@@ -398,6 +398,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     const isInitialRender = useRef(true);
 
     const { studentId, can } = useAuthStore();
+    const canAdminister = can('canAdministerExams', fileItemId);
     const { db: firestore } = useFirebase();
     
     const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
@@ -719,7 +720,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                 <div className={cn(containerClasses, "exam-results-screen")}>
                     <TooltipProvider>
                         <div className="relative">
-                             {can('canAdministerExams', fileItemId) && (
+                             {canAdminister && (
                                 <button onClick={() => setIsReportModalOpen(true)} className="report-btn absolute top-0 left-0">
                                     <FileText size={20} />
                                     <span className="report-text">Report</span>
@@ -828,7 +829,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                          <div className="exam-progress-header">
                             <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
                              <div className="flex justify-between items-center mb-2">
-                                {can('canAdministerExams', fileItemId) ? (
+                                {canAdminister ? (
                                      <button onClick={() => handleSubmit(true)} className="skip-btn">
                                         <SkipForward size={16} />
                                         <span className="skip-text">Skip</span>
@@ -880,7 +881,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                             </button>
 
                             {currentQuestionIndex === questions.length - 1 ? (
-                                <button onClick={() => handleSubmit(false)} className="nav-btn finish">
+                                <button onClick={() => handleSubmit(canAdminister)} className="nav-btn finish">
                                     Finish & Submit
                                 </button>
                             ) : (
