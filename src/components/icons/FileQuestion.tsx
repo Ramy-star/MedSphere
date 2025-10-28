@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import type { LucideProps } from "lucide-react";
 import React from "react";
@@ -27,3 +26,6 @@ export const FileQuestion = React.forwardRef<SVGSVGElement, LucideProps>(
 );
 
 FileQuestion.displayName = 'FileQuestion';
+
+// Add this default export
+export default FileQuestion;
