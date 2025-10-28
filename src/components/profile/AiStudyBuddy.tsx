@@ -3,7 +3,8 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, Lightbulb, Book, FileQuestion, Star, Send, ArrowLeft } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Loader2, Send, ArrowLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
@@ -26,6 +27,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const [loading, setLoading] = useState(true);
     const [currentResponse, setCurrentResponse] = useState<string | null>(null);
     const [isResponding, setIsResponding] = useState(false);
+    const [customQuestion, setCustomQuestion] = useState('');
 
     const fetchInitialInsight = useCallback(async () => {
         setLoading(true);
@@ -55,7 +57,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         fetchInitialInsight();
     }, [fetchInitialInsight]);
 
-    const handleSuggestionClick = async (suggestion: Suggestion) => {
+    const submitQuery = async (prompt: string) => {
         setIsResponding(true);
         setCurrentResponse(null); // Clear previous response
         try {
@@ -70,7 +72,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             };
             const response = await answerStudyBuddyQuery({
                 userStats,
-                question: suggestion.prompt,
+                question: prompt,
             });
             setCurrentResponse(response);
         } catch (e) {
@@ -78,6 +80,23 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             setCurrentResponse("Sorry, I couldn't process that request. Please try again.");
         } finally {
             setIsResponding(false);
+        }
+    };
+
+    const handleSuggestionClick = async (suggestion: Suggestion) => {
+        await submitQuery(suggestion.prompt);
+    };
+
+    const handleCustomQuestionSubmit = async () => {
+        if (!customQuestion.trim()) return;
+        await submitQuery(customQuestion);
+        setCustomQuestion('');
+    };
+
+    const handleCustomQuestionKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            handleCustomQuestionSubmit();
         }
     };
     
@@ -143,7 +162,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                     </motion.div>
                 </AnimatePresence>
 
-                <div className="mt-6 flex flex-wrap gap-3">
+                <div className="mt-6 flex flex-col gap-3">
                    {isChatMode ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                              <Button
@@ -156,26 +175,52 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                             </Button>
                         </motion.div>
                    ) : (
-                    initialInsight.suggestedActions.map((suggestion, index) => (
-                        <motion.div
-                            key={index}
-                            initial={{ opacity: 0, x: -10 }}
-                            animate={{ opacity: 1, x: 0, transition: { delay: 0.2 + index * 0.1 } }}
+                    <>
+                        <div className="flex flex-wrap gap-3">
+                            {initialInsight.suggestedActions.map((suggestion, index) => (
+                                <motion.div
+                                    key={index}
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0, transition: { delay: 0.2 + index * 0.1 } }}
+                                >
+                                    <Button
+                                        onClick={() => handleSuggestionClick(suggestion)}
+                                        variant="outline"
+                                        className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
+                                        disabled={isResponding}
+                                    >
+                                        {suggestion.label}
+                                    </Button>
+                                </motion.div>
+                            ))}
+                        </div>
+                        <motion.div 
+                            className="flex items-center gap-2 mt-2"
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
                         >
-                            <Button
-                                onClick={() => handleSuggestionClick(suggestion)}
-                                variant="outline"
-                                className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-200"
+                            <Input 
+                                placeholder="Or ask something else..."
+                                className="flex-1 bg-slate-800/60 border-slate-700 rounded-full h-10 px-4"
+                                value={customQuestion}
+                                onChange={(e) => setCustomQuestion(e.target.value)}
+                                onKeyDown={handleCustomQuestionKeyDown}
                                 disabled={isResponding}
+                            />
+                             <Button 
+                                size="icon" 
+                                className="rounded-full h-10 w-10 flex-shrink-0"
+                                onClick={handleCustomQuestionSubmit}
+                                disabled={isResponding || !customQuestion.trim()}
                             >
-                                <Send className="w-4 h-4 mr-2" />
-                                {suggestion.label}
+                                <Send className="w-4 h-4" />
                             </Button>
                         </motion.div>
-                    ))
+                    </>
                    )}
                 </div>
             </div>
         </motion.div>
     );
 }
+
