@@ -117,6 +117,14 @@ function reorderAndStringify(obj: any): string {
     return JSON.stringify(orderedObject, null, 2);
 }
 
+type EditingContentState = {
+    text: string;
+    json: string;
+    examText: string;
+    examJson: string;
+    flashcardText: string;
+    flashcardJson: string;
+};
 
 function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
@@ -126,10 +134,10 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   });
 
   const [isEditing, setIsEditing] = useState({ text: false, json: false, examText: false, examJson: false, flashcardText: false, flashcardJson: false });
-  const [editingContent, setEditingContent] = useState({ text: '', json: '', examText: '', examJson: '', flashcardText: '', flashcardJson: '' });
+  const [editingContent, setEditingContent] = useState<EditingContentState>({ text: '', json: '', examText: '', examJson: '', flashcardText: '', flashcardJson: '' });
   const [isRepairing, setIsRepairing] = useState(false);
   const [jsonError, setJsonError] = useState<string | null>(null);
-  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson'} | null>(null);
+  const [previewContent, setPreviewContent] = useState<{title: string, content: string, type: keyof EditingContentState} | null>(null);
   const [isPreviewEditing, setIsPreviewEditing] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState('');
@@ -160,8 +168,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             json: reorderAndStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
             examJson: reorderAndStringify(questionSet.jsonExam),
-            textFlashcard: questionSet.textFlashcard || '',
-            jsonFlashcard: reorderAndStringify(questionSet.jsonFlashcard)
+            flashcardText: questionSet.textFlashcard || '',
+            flashcardJson: reorderAndStringify(questionSet.jsonFlashcard)
         });
         setEditingTitle(questionSet.fileName.replace(/\.[^/.]+$/, ""));
     }
@@ -186,7 +194,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     await updateDoc(docRef, updatedData);
   };
   
-  const handleToggleEdit = async (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
+  const handleToggleEdit = async (type: keyof EditingContentState) => {
     if (isEditing[type]) {
       // Save
       if (questionSet) {
@@ -222,15 +230,15 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     setIsEditing(prev => ({ ...prev, [type]: !prev[type] }));
   };
 
-  const handleCancelEdit = (type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
+  const handleCancelEdit = (type: keyof EditingContentState) => {
     if (questionSet) {
-        const keyMap: Record<typeof type, string> = {
+        const keyMap: Record<keyof EditingContentState, string> = {
             text: questionSet.textQuestions || '',
             json: reorderAndStringify(questionSet.jsonQuestions),
             examText: questionSet.textExam || '',
             examJson: reorderAndStringify(questionSet.jsonExam),
-            textFlashcard: questionSet.textFlashcard || '',
-            jsonFlashcard: reorderAndStringify(questionSet.jsonFlashcard),
+            flashcardText: questionSet.textFlashcard || '',
+            flashcardJson: reorderAndStringify(questionSet.jsonFlashcard),
         };
       setEditingContent(prev => ({ ...prev, [type]: keyMap[type] }));
     }
@@ -238,10 +246,20 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   };
 
   const handleRepairJson = async () => {
+<<<<<<< HEAD
     // This function is no longer needed as the flow has been removed
+=======
+    // This function is no longer available in the flow, so we remove the logic.
+    // We can show a toast to inform the user.
+    toast({
+        variant: 'destructive',
+        title: 'Feature Removed',
+        description: 'JSON repair is not currently available.',
+    });
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
   };
   
-  const handleCopy = (content: string, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson') => {
+  const handleCopy = (content: string, type: keyof EditingContentState) => {
     navigator.clipboard.writeText(content);
     toast({ title: 'Copied to Clipboard', description: `${type.includes('Exam') ? 'Exam ' : ''}${type.includes('Flashcard') ? 'Flashcard ' : ''}${type.includes('Text') ? 'Text' : 'JSON'} has been copied.` });
     setCopiedStatus(prev => ({ ...prev, [type]: true }));
@@ -381,7 +399,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     );
   }
 
-  const OutputCard = ({ title, icon, content, type, onToggleEdit, isEditing, onContentChange, onCancel, onRepair, isRepairing, jsonError }: { title: string, icon: React.ReactNode, content: any, type: 'text' | 'json' | 'examText' | 'examJson' | 'flashcardText' | 'flashcardJson', onToggleEdit: () => void, isEditing: boolean, onContentChange: (value: string) => void, onCancel: () => void, onRepair: () => void, isRepairing: boolean, jsonError: string | null }) => {
+  const OutputCard = ({ title, icon, content, type, onToggleEdit, isEditing, onContentChange, onCancel, onRepair, isRepairing, jsonError }: { title: string, icon: React.ReactNode, content: any, type: keyof EditingContentState, onToggleEdit: () => void, isEditing: boolean, onContentChange: (value: string) => void, onCancel: () => void, onRepair?: () => void, isRepairing?: boolean, jsonError?: string | null }) => {
     const isThisCardEditing = isEditing;
     const isJsonCardWithError = type.includes('json') && jsonError;
     const isCopied = copiedStatus[type];
@@ -394,7 +412,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
             <div className="flex items-center justify-between">
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                     {icon}
                     <div>
                         <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
@@ -520,7 +538,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     }
                 }}
             />
-            {isJsonCardWithError && !isThisCardEditing && (
+            {isJsonCardWithError && !isThisCardEditing && onRepair && (
                 <div className="mt-2">
                     <Button onClick={onRepair} disabled={isRepairing} className='w-full rounded-xl bg-yellow-600/80 hover:bg-yellow-600 text-white active:scale-95'>
                         {isRepairing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wrench className="mr-2 h-4 w-4" />}
@@ -626,9 +644,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     onToggleEdit={() => handleToggleEdit('text')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, text: value}))}
                     onCancel={() => handleCancelEdit('text')}
-                    onRepair={() => {}}
-                    isRepairing={false}
-                    jsonError={null}
                 />
                 <OutputCard
                     title="JSON Questions"
@@ -658,9 +673,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     onToggleEdit={() => handleToggleEdit('examText')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examText: value}))}
                     onCancel={() => handleCancelEdit('examText')}
-                    onRepair={() => {}}
-                    isRepairing={false}
-                    jsonError={null}
                 />
                 <OutputCard
                     title="JSON Exam"
@@ -671,9 +683,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     onToggleEdit={() => handleToggleEdit('examJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
                     onCancel={() => handleCancelEdit('examJson')}
-                    onRepair={() => {}} // Placeholder
-                    isRepairing={false}
-                    jsonError={null} // Placeholder
                 />
             </div>
         )}
@@ -684,28 +693,22 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                  <OutputCard
                     title="Text Flashcard"
                     icon={<FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
-                    content={editingContent.textFlashcard}
+                    content={editingContent.flashcardText}
                     type="flashcardText"
                     isEditing={isEditing.flashcardText}
                     onToggleEdit={() => handleToggleEdit('flashcardText')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardText: value}))}
                     onCancel={() => handleCancelEdit('flashcardText')}
-                    onRepair={() => {}}
-                    isRepairing={false}
-                    jsonError={null}
                 />
                 <OutputCard
                     title="JSON Flashcard"
                     icon={<FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
-                    content={editingContent.jsonFlashcard}
+                    content={editingContent.flashcardJson}
                     type="flashcardJson"
                     isEditing={isEditing.jsonFlashcard}
                     onToggleEdit={() => handleToggleEdit('flashcardJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, jsonFlashcard: value}))}
                     onCancel={() => handleCancelEdit('flashcardJson')}
-                    onRepair={() => {}} // Placeholder
-                    isRepairing={false}
-                    jsonError={null} // Placeholder
                 />
             </div>
         )}

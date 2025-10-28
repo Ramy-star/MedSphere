@@ -144,6 +144,11 @@ export const FileCard = React.memo(function FileCard({
     const router = useRouter();
     const { can } = useAuthStore();
     const { initiateGeneration } = useQuestionGenerationStore();
+<<<<<<< HEAD
+=======
+    const isSuperAdmin = user?.profile?.roles?.isSuperAdmin;
+    const canManage = isSuperAdmin; // TODO: Implement sub-admin logic
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
     const updateFileInputRef = useRef<HTMLInputElement>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
 
@@ -252,7 +257,11 @@ export const FileCard = React.memo(function FileCard({
                 onChange={handleFileUpdate}
             />
             <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
+<<<<<<< HEAD
                 {showDragHandle && !isMobile && can('canReorder', item.id) && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+=======
+                {showDragHandle && !isMobile && canManage && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
             </div>
 
             <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -305,6 +314,7 @@ export const FileCard = React.memo(function FileCard({
                                 <Eye className="mr-2 h-4 w-4" />
                                 <span>Open</span>
                             </DropdownMenuItem>
+<<<<<<< HEAD
                             {browserUrl && (
                             <DropdownMenuItem onSelect={(e) => handleAction(e, () => window.open(browserUrl, '_blank'))} disabled={!browserUrl}>
                                 <ExternalLink className="mr-2 h-4 w-4" />
@@ -336,6 +346,25 @@ export const FileCard = React.memo(function FileCard({
                                 </DropdownMenuItem>
                             )}
                             {can('canRename', item.id) && (
+=======
+                        )}
+                        
+                        {canManage && (
+                            <>
+                                <DropdownMenuSeparator />
+                                {item.type === 'FILE' && (item.metadata?.mime === 'application/pdf') && (
+                                    <DropdownMenuItem onSelect={(e) => handleAction(e, handleCreateQuestions)}>
+                                        <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
+                                        <span>Create Questions</span>
+                                    </DropdownMenuItem>
+                                )}
+                                {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && (
+                                    <DropdownMenuItem onSelect={handleUpdateClick}>
+                                      <RefreshCw className="mr-2 h-4 w-4" />
+                                      <span>Update</span>
+                                    </DropdownMenuItem>
+                                )}
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>

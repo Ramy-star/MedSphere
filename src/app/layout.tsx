@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import type { Metadata } from "next";
@@ -36,6 +34,10 @@ const inter = Inter({
 });
 
 const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
+<<<<<<< HEAD
+=======
+const VERIFIED_STUDENT_ID_KEY = 'medsphere-is-verified';
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
 
 export default function RootLayout({
   children,
@@ -50,10 +52,20 @@ export default function RootLayout({
   useEffect(() => {
     setIsClient(true);
     const hasVisited = localStorage.getItem(WELCOME_SCREEN_KEY);
+<<<<<<< HEAD
+=======
+    const isStudentVerified = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
 
     if (hasVisited) {
       setShowWelcome(false);
     }
+<<<<<<< HEAD
+=======
+    if (isStudentVerified) {
+      setIsVerified(true);
+    }
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
   }, []);
   
   useEffect(() => {
@@ -83,6 +95,7 @@ export default function RootLayout({
         return <VerificationScreen onVerified={() => { /* Handled by auth store */ }} />;
     }
 
+<<<<<<< HEAD
     return (
         <div className="flex flex-col h-full w-full">
             <header className="z-50 w-full">
@@ -93,12 +106,19 @@ export default function RootLayout({
             </main>
         </div>
     );
+=======
+  const handleVerified = () => {
+    const studentId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
+    if (studentId) {
+        setIsVerified(true);
+    }
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
   };
 
   if (!isClient) {
     return (
         <html lang="en" className="dark h-full">
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background`}></body>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}></body>
         </html>
     );
   }
@@ -115,13 +135,31 @@ export default function RootLayout({
                 <meta name="theme-color" content="#0B0F12" />
                 <link rel="apple-touch-icon" href="/logo.svg" />
             </head>
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
                  <WelcomeScreen onGetStarted={handleGetStarted} />
             </body>
         </html>
     );
   }
 
+<<<<<<< HEAD
+=======
+  if (!isVerified) {
+     return (
+        <html lang="en" className="dark h-full">
+            <head>
+                <title>Verification - MedSphere</title>
+                <meta name="description" content="Student ID Verification" />
+                <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
+            </head>
+            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
+                 <VerificationScreen onVerified={handleVerified} />
+            </body>
+        </html>
+    );
+  }
+
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
   return (
     <html lang="en" className="dark h-full">
       <head>
@@ -134,11 +172,28 @@ export default function RootLayout({
           <link rel="apple-touch-icon" href="/logo.svg" />
           <link rel="preconnect" href="https://res.cloudinary.com" />
       </head>
+<<<<<<< HEAD
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
           <FirebaseClientProvider config={firebaseConfig}>
             {renderContent()}
             <Toaster />
           </FirebaseClientProvider>
+=======
+      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
+        <FirebaseClientProvider config={firebaseConfig}>
+          <AuthGuard>
+            <div className="flex flex-col h-full w-full">
+              <header className="z-50 w-full">
+                <Header />
+              </header>
+              <main className="flex flex-1 w-full overflow-hidden">
+                {children}
+              </main>
+            </div>
+            <Toaster />
+          </AuthGuard>
+        </FirebaseClientProvider>
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
       </body>
     </html>
   );

@@ -1,9 +1,12 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+<<<<<<< HEAD
 import { Search, X, Menu, Wand2, Shield } from 'lucide-react';
+=======
+import { Search, X, Menu, Wand2, Users } from 'lucide-react';
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -20,7 +23,12 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [debouncedQuery] = useDebounce(query, 1000);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+<<<<<<< HEAD
   const { can } = useAuthStore();
+=======
+  const { user } = useUser();
+  const isSuperAdmin = user?.profile?.roles?.isSuperAdmin;
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -81,20 +89,27 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
               </Button>
           )}
         </div>
+<<<<<<< HEAD
         
         <TooltipProvider>
             {can('canAccessQuestionCreator', null) && (
                 <Tooltip>
+=======
+        <TooltipProvider>
+            {isSuperAdmin && (
+                 <Tooltip>
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
-                            <Wand2 className="h-5 w-5" />
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-cyan-300" onClick={() => router.push('/admin/users')}>
+                            <Users className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Questions Creator</p>
+                        <p>Manage Users</p>
                     </TooltipContent>
                 </Tooltip>
             )}
+<<<<<<< HEAD
             {can('canAccessAdminPanel', null) && (
                  <Tooltip>
                     <TooltipTrigger asChild>
@@ -109,6 +124,20 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
             )}
         </TooltipProvider>
         
+=======
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
+                        <Wand2 className="h-5 w-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                    <p>Questions Creator</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+        <AuthButton />
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
       </div>
     </header>
   );

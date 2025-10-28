@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { FirebaseApp } from 'firebase/app';
@@ -18,6 +19,8 @@ export function FirebaseProvider({
 }: {
   children: React.ReactNode;
 } & FirebaseContextType) {
+  // useMemo is not strictly necessary here because the value object is
+  // created once in FirebaseClientProvider and doesn't change.
   const memoizedValue = useMemo(() => value, [value]);
   return (
     <FirebaseContext.Provider value={memoizedValue}>

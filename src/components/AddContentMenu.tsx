@@ -1,5 +1,8 @@
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -10,9 +13,13 @@ import { NewFolderDialog } from './new-folder-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { NewLinkDialog } from './NewLinkDialog';
 import { Link2Icon } from './icons/Link2Icon';
+<<<<<<< HEAD
 import { useAuthStore } from '@/stores/auth-store';
 import { FlashcardIcon } from './icons/FlashcardIcon';
 import { usePathname } from 'next/navigation';
+=======
+import { useUser } from '@/firebase/auth/use-user';
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
 
 type AddContentMenuProps = {
   parentId: string | null;
@@ -27,8 +34,13 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const { toast } = useToast();
+<<<<<<< HEAD
   const { can, user } = useAuthStore();
   const pathname = usePathname();
+=======
+  const { user } = useUser();
+  const isSuperAdmin = user?.profile?.roles?.isSuperAdmin;
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
 
   const handleAddFolder = async (folderName: string) => {
     try {
@@ -110,12 +122,16 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   };
 
   const menuItems = [
-      {
+      ...(isSuperAdmin ? [{
           label: "New Class",
           icon: Plus,
           action: () => setShowNewClassDialog(true),
+<<<<<<< HEAD
           permission: 'canAddClass'
       },
+=======
+      }] : []),
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
       {
           label: "New Folder",
           icon: FolderPlus,

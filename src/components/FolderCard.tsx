@@ -44,7 +44,13 @@ export const FolderCard = React.memo(function FolderCard({
 }) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
+<<<<<<< HEAD
     const { can } = useAuthStore();
+=======
+    const { user } = useUser();
+    const router = useRouter();
+    const isAdmin = user?.profile?.roles?.isSuperAdmin;
+>>>>>>> 784c8121c87cc3d6250fb1180e1f9bf191b10319
     const [dropdownOpen, setDropdownOpen] = useState(false);
     
     const renderIcon = () => {
