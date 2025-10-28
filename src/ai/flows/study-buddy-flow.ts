@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow for the AI Study Buddy feature on the profile page.
@@ -94,4 +95,5 @@ export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema
                 { label: "Take an exam", action: "TAKE_EXAM" }
             ]
         };
-    
+    }
+}

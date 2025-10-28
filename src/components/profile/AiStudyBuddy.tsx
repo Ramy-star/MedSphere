@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
@@ -50,9 +51,15 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 aiQueries: user.stats?.aiQueries || 0,
                 favoritesCount: user.favorites?.length || 0,
             };
-            const result = await getStudyBuddyInsight(userStats);
-            setInsight(result);
-            setLoading(false);
+            try {
+                const result = await getStudyBuddyInsight(userStats);
+                setInsight(result);
+            } catch(e) {
+                console.error("Failed to get study buddy insight", e);
+                setInsight(null); // Set to null on error
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchInsight();
@@ -67,11 +74,15 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 router.push('/questions-creator');
                 break;
             case 'EXPLORE_SUBJECTS':
+            case 'REVIEW_FILES':
                 router.push('/');
                 break;
             case 'VIEW_FAVORITES':
                 // For now, just stays on the profile page. Could scroll to favorites later.
+                const favoritesSection = document.getElementById('favorites-section');
+                favoritesSection?.scrollIntoView({ behavior: 'smooth' });
                 break;
+            case 'ASK_AI':
             default:
                 toast({
                     title: "Coming Soon!",
@@ -105,7 +116,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card flex flex-col sm:flex-row items-start gap-6 p-6 rounded-2xl mb-12"
+            className="glass-card flex flex-col sm:flex-row items-start gap-6 p-6 rounded-2xl"
         >
             <div className="flex-shrink-0">
                 <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg">
@@ -142,4 +153,3 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         </motion.div>
     );
 }
-```
