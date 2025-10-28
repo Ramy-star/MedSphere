@@ -63,6 +63,7 @@ type UserRole = {
 };
 
 type UserProfile = {
+    id: string; // useCollection requires an 'id' property. The 'uid' is the document ID.
     uid: string;
     username: string;
     studentId: string;
