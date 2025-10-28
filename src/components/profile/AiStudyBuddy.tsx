@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Send, ArrowLeft } from 'lucide-react';
@@ -40,8 +40,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        // This effect ensures the view scrolls down when new messages are added.
+    useLayoutEffect(() => {
         if (chatContainerRef.current) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
