@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -760,7 +761,7 @@ function QuestionsCreatorContent() {
                                         title="Text Questions"
                                         icon={<FileText className="w-8 h-8 text-blue-400 shrink-0" />}
                                         content={task?.textQuestions ?? null}
-                                        isLoading={isGenerating && ['extracting', 'generating_text'].includes(task.status)}
+                                        isLoading={isGenerating && task && ['extracting', 'generating_text'].includes(task.status)}
                                         loadingText={task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...'}
                                         showRetryButton={showTextRetry}
                                     />
@@ -768,7 +769,7 @@ function QuestionsCreatorContent() {
                                         title="JSON Questions"
                                         icon={<FileJson className="w-8 h-8 text-blue-400 shrink-0" />}
                                         content={task?.jsonQuestions ?? null}
-                                        isLoading={isGenerating && task.status === 'converting_json'}
+                                        isLoading={isGenerating && task?.status === 'converting_json'}
                                         loadingText='Converting to JSON...'
                                         showRetryButton={showJsonRetry}
                                     />
@@ -796,7 +797,7 @@ function QuestionsCreatorContent() {
                                         title="Text Exam"
                                         icon={<FileText className="w-8 h-8 text-red-400 shrink-0" />}
                                         content={task?.textExam ?? null}
-                                        isLoading={isGenerating && task.status === 'generating_exam_text'}
+                                        isLoading={isGenerating && task?.status === 'generating_exam_text'}
                                         loadingText='Generating exam...'
                                         showRetryButton={showExamTextRetry}
                                     />
@@ -804,7 +805,7 @@ function QuestionsCreatorContent() {
                                         title="JSON Exam"
                                         icon={<FileJson className="w-8 h-8 text-red-400 shrink-0" />}
                                         content={task?.jsonExam ?? null}
-                                        isLoading={isGenerating && task.status === 'converting_exam_json'}
+                                        isLoading={isGenerating && task?.status === 'converting_exam_json'}
                                         loadingText='Converting exam to JSON...'
                                         showRetryButton={showExamJsonRetry}
                                     />
@@ -832,7 +833,7 @@ function QuestionsCreatorContent() {
                                         title="Text Flashcard"
                                         icon={<FileText className="w-8 h-8 text-green-400 shrink-0" />}
                                         content={task?.textFlashcard ?? null}
-                                        isLoading={isGenerating && task.status === 'generating_flashcard_text'}
+                                        isLoading={isGenerating && task?.status === 'generating_flashcard_text'}
                                         loadingText='Generating flashcards...'
                                         showRetryButton={showFlashcardTextRetry}
                                     />
@@ -840,7 +841,7 @@ function QuestionsCreatorContent() {
                                         title="JSON Flashcard"
                                         icon={<FileJson className="w-8 h-8 text-green-400 shrink-0" />}
                                         content={task?.jsonFlashcard ?? null}
-                                        isLoading={isGenerating && task.status === 'converting_flashcard_json'}
+                                        isLoading={isGenerating && task?.status === 'converting_flashcard_json'}
                                         loadingText='Converting flashcards to JSON...'
                                         showRetryButton={showFlashcardJsonRetry}
                                     />
@@ -1072,5 +1073,7 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
 
     
