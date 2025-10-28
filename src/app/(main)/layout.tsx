@@ -41,7 +41,7 @@ export default function MainLayout({
         </div>
         
         <div className={cn(
-          "flex-1 flex flex-col overflow-hidden", 
+          "flex-1 flex flex-col overflow-y-auto no-scrollbar", 
           isHomePage && "pt-0", 
           !isQuestionsCreatorPage && !isHomePage && "pt-4"
         )}>

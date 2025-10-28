@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -30,11 +30,23 @@ import level4Ids from '@/lib/student-ids/level-4.json';
 import level5Ids from '@/lib/student-ids/level-5.json';
 
 const studentIdToLevelMap = new Map<string, string>();
-level1Ids.forEach(id => studentIdToLevelMap.set(id, 'Level 1'));
-level2Ids.forEach(id => studentIdToLevelMap.set(id, 'Level 2'));
-level3Ids.forEach(id => studentIdToLevelMap.set(id, 'Level 3'));
-level4Ids.forEach(id => studentIdToLevelMap.set(id, 'Level 4'));
-level5Ids.forEach(id => studentIdToLevelMap.set(id, 'Level 5'));
+level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
+level2Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 2'));
+level3Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 3'));
+level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
+level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
+
+const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label: string, value: string }) => (
+    <div className="glass-card flex items-center gap-4 p-4 rounded-xl">
+        <div className="p-2 bg-slate-700/50 rounded-lg">
+            <Icon className="w-5 h-5 text-slate-300" />
+        </div>
+        <div className="flex-1">
+            <span className="text-sm text-slate-400">{label}</span>
+            <p className="text-base font-medium text-white mt-0.5 font-mono break-all">{value}</p>
+        </div>
+    </div>
+);
 
 
 export default function ProfilePage() {
@@ -42,49 +54,58 @@ export default function ProfilePage() {
   const { toast } = useToast();
 
   const [editingName, setEditingName] = useState(false);
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isSavingName, setIsSavingName] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const nameInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLHeadingElement>(null);
 
   useEffect(() => {
     if (editingName && nameInputRef.current) {
       nameInputRef.current.focus();
-      nameInputRef.current.select();
+      // Move cursor to the end
+      const range = document.createRange();
+      const sel = window.getSelection();
+      range.selectNodeContents(nameInputRef.current);
+      range.collapse(false);
+      sel?.removeAllRanges();
+      sel?.addRange(range);
     }
   }, [editingName]);
 
-  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setDisplayName(e.target.value);
-  };
-
   const handleSaveName = async () => {
-    if (!user || displayName.trim() === '' || displayName.trim() === user.displayName) {
+    if (!user || !nameInputRef.current) return;
+    
+    const newDisplayName = nameInputRef.current.textContent?.trim() || '';
+    
+    if (newDisplayName === '' || newDisplayName === user.displayName) {
       setEditingName(false);
-      setDisplayName(user?.displayName || ''); // Revert if empty or unchanged
+      nameInputRef.current.textContent = user.displayName; // Revert if empty or unchanged
       return;
     }
+
     setIsSavingName(true);
     try {
       const userRef = doc(db, 'users', user.id);
-      await updateDoc(userRef, { displayName: displayName.trim() });
-      setUser({ ...user, displayName: displayName.trim() });
+      await updateDoc(userRef, { displayName: newDisplayName });
+      setUser({ ...user, displayName: newDisplayName });
       toast({ title: 'Success', description: 'Your name has been updated.' });
       setEditingName(false);
     } catch (error) {
       console.error('Error updating name:', error);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not update your name.' });
+      nameInputRef.current.textContent = user.displayName; // Revert on error
     } finally {
       setIsSavingName(false);
     }
   };
   
   const handleCancelEdit = () => {
+    if (nameInputRef.current && user) {
+        nameInputRef.current.textContent = user.displayName || '';
+    }
     setEditingName(false);
-    setDisplayName(user?.displayName || '');
   }
 
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -148,7 +169,7 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center pt-8 md:pt-16"
+      className="flex flex-col items-center pt-8 md:pt-16 pb-12 w-full max-w-xl mx-auto"
     >
       <div className="relative group">
         <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
@@ -187,53 +208,56 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <div className="mt-8 text-center flex items-center justify-center gap-2 group w-full max-w-lg">
-            {editingName ? (
-              <div className="flex items-center gap-2 w-full justify-center">
-                <Input
-                  ref={nameInputRef}
-                  value={displayName}
-                  onChange={handleNameChange}
-                  onKeyDown={(e) => {
-                      if (e.key === 'Enter') handleSaveName();
-                      if (e.key === 'Escape') handleCancelEdit();
-                  }}
-                  className="text-4xl font-bold h-auto bg-transparent border-none focus-visible:ring-0 focus:border-none p-0 text-center w-auto max-w-[40ch]"
-                />
-                 <Button size="icon" onClick={handleSaveName} disabled={isSavingName} className="h-9 w-9 rounded-full flex-shrink-0">
-                    {isSavingName ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                </Button>
-                 <Button size="icon" variant="ghost" onClick={handleCancelEdit} className="h-9 w-9 rounded-full flex-shrink-0">
-                    <X className="w-5 h-5" />
-                </Button>
-              </div>
-            ) : (
-                <>
-                    <h1 className="text-4xl font-bold truncate">{user.displayName}</h1>
-                    <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full group-hover:opacity-100 md:opacity-0 transition-opacity flex-shrink-0" onClick={() => setEditingName(true)}>
-                    <Edit className="w-5 h-5" />
-                    </Button>
-                </>
-            )}
+      <div className="mt-8 text-center flex items-center justify-center gap-2 group w-full">
+         <div className="flex-grow flex justify-center">
+            <h1
+              ref={nameInputRef}
+              contentEditable={editingName}
+              suppressContentEditableWarning={true}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleSaveName();
+                }
+                if (e.key === 'Escape') {
+                  e.preventDefault();
+                  handleCancelEdit();
+                }
+              }}
+              className={cn(
+                "text-4xl font-bold outline-none",
+                editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
+              )}
+            >
+              {user.displayName}
+            </h1>
+          </div>
+
+          {editingName ? (
+            <div className="flex items-center gap-1">
+               <Button size="icon" onClick={handleSaveName} disabled={isSavingName} className="h-9 w-9 rounded-full flex-shrink-0">
+                  {isSavingName ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+              </Button>
+               <Button size="icon" variant="ghost" onClick={handleCancelEdit} className="h-9 w-9 rounded-full flex-shrink-0">
+                  <X className="w-5 h-5" />
+              </Button>
+            </div>
+          ) : (
+             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full group-hover:opacity-100 md:opacity-0 transition-opacity flex-shrink-0" onClick={() => setEditingName(true)}>
+                  <Edit className="w-5 h-5" />
+              </Button>
+          )}
       </div>
+
       <p className={cn("mt-2 text-lg font-medium flex items-center gap-2", roleColor)}>
         <RoleIcon className="w-5 h-5" />
         {roleText}
       </p>
 
-      <div className="mt-12 w-full max-w-xl space-y-4">
-        <div className="glass-card p-4 rounded-xl">
-            <span className="text-sm text-slate-400">Student ID</span>
-            <p className="text-lg font-mono text-white mt-1">{user.studentId}</p>
-        </div>
-         <div className="glass-card p-4 rounded-xl">
-            <span className="text-sm text-slate-400">Email</span>
-            <p className="text-lg font-mono text-white mt-1">{user.email}</p>
-        </div>
-        <div className="glass-card p-4 rounded-xl">
-            <span className="text-sm text-slate-400">Academic Level</span>
-            <p className="text-lg font-mono text-white mt-1">{userLevel}</p>
-        </div>
+      <div className="mt-12 w-full space-y-4">
+        <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
+        <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
+        <InfoCard icon={School} label="Academic Level" value={userLevel} />
       </div>
     </motion.div>
     <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
