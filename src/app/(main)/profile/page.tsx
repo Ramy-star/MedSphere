@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -210,27 +211,29 @@ export default function ProfilePage() {
 
       <div className="mt-8 text-center flex items-center justify-center gap-2 group w-full">
          <div className="flex-grow flex justify-center">
-            <h1
-              ref={nameInputRef}
-              contentEditable={editingName}
-              suppressContentEditableWarning={true}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSaveName();
-                }
-                if (e.key === 'Escape') {
-                  e.preventDefault();
-                  handleCancelEdit();
-                }
-              }}
-              className={cn(
-                "text-4xl font-bold outline-none whitespace-nowrap",
-                editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
-              )}
-            >
-              {user.displayName}
-            </h1>
+            <div className="relative p-1">
+              <h1
+                ref={nameInputRef}
+                contentEditable={editingName}
+                suppressContentEditableWarning={true}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSaveName();
+                  }
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    handleCancelEdit();
+                  }
+                }}
+                className={cn(
+                  "text-4xl font-bold outline-none whitespace-nowrap",
+                  editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
+                )}
+              >
+                {user.displayName}
+              </h1>
+            </div>
           </div>
 
           {editingName ? (
