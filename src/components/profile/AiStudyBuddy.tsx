@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef } from 'react';
@@ -38,16 +39,16 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const [view, setView] = useState<'intro' | 'chat'>('intro');
     const { toast } = useToast();
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const chatContainerRef = useRef<HTMLDivElement>(null);
 
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [chatHistory, isResponding]);
-    
+    const scrollToBottom = useCallback(() => {
+        if (chatContainerRef.current) {
+            chatContainerRef.current.scrollTo({
+                top: chatContainerRef.current.scrollHeight,
+                behavior: 'smooth'
+            });
+        }
+    }, []);
 
     const fetchInitialInsight = useCallback(async () => {
         setLoading(true);
@@ -82,6 +83,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         setIsResponding(true);
         const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt }];
         setChatHistory(newHistory);
+        
+        // Scroll to bottom after user sends a message
+        setTimeout(scrollToBottom, 100);
 
         try {
             const userStats = {
@@ -193,7 +197,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                     Back
                 </Button>
             </div>
-            <div className="space-y-4 max-h-80 overflow-y-auto no-scrollbar pr-2 -mr-2">
+            <div ref={chatContainerRef} className="space-y-4 max-h-80 overflow-y-auto no-scrollbar pr-2 -mr-2">
                 {chatHistory.map((message, index) => (
                     <div key={index} className="flex flex-col gap-2">
                         {message.role === 'user' && (
