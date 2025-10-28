@@ -52,5 +52,5 @@ export function AuthButton() {
     );
   }
 
-  return null; // Don't show anything if not logged in, as VerificationScreen handles it.
+  return null;
 }

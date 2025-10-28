@@ -50,7 +50,7 @@ const InfoCard = ({ icon: Icon, label, value }: { icon: React.ElementType, label
 
 
 export default function ProfilePage() {
-  const { user, setUser } = useAuthStore();
+  const { user } = useAuthStore();
   const { toast } = useToast();
 
   const [editingName, setEditingName] = useState(false);
@@ -81,7 +81,7 @@ export default function ProfilePage() {
     
     if (newDisplayName === '' || newDisplayName === user.displayName) {
       setEditingName(false);
-      nameInputRef.current.textContent = user.displayName; // Revert if empty or unchanged
+      if(nameInputRef.current) nameInputRef.current.textContent = user.displayName; // Revert if empty or unchanged
       return;
     }
 
@@ -89,13 +89,13 @@ export default function ProfilePage() {
     try {
       const userRef = doc(db, 'users', user.id);
       await updateDoc(userRef, { displayName: newDisplayName });
-      setUser({ ...user, displayName: newDisplayName });
+      // The onSnapshot listener in auth-store will update the state automatically.
       toast({ title: 'Success', description: 'Your name has been updated.' });
       setEditingName(false);
     } catch (error) {
       console.error('Error updating name:', error);
       toast({ variant: 'destructive', title: 'Error', description: 'Could not update your name.' });
-      nameInputRef.current.textContent = user.displayName; // Revert on error
+      if(nameInputRef.current && user.displayName) nameInputRef.current.textContent = user.displayName; // Revert on error
     } finally {
       setIsSavingName(false);
     }
@@ -119,8 +119,8 @@ export default function ProfilePage() {
 
     setIsUploading(true);
     try {
-        const { url } = await contentService.uploadUserAvatar(user, file, (progress) => {});
-        setUser({ ...user, photoURL: url });
+        await contentService.uploadUserAvatar(user, file, (progress) => {});
+        // The user object will be updated automatically by the auth store listener
         toast({ title: 'Success', description: 'Profile picture updated.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
@@ -135,7 +135,7 @@ export default function ProfilePage() {
       setIsUploading(true);
       try {
           await contentService.deleteUserAvatar(user);
-          setUser({ ...user, photoURL: undefined });
+          // The user object will be updated automatically by the auth store listener
           toast({ title: 'Success', description: 'Profile picture removed.' });
       } catch(error: any) {
           toast({ variant: 'destructive', title: 'Error', description: 'Could not remove profile picture.' });
@@ -169,7 +169,7 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex-1 flex flex-col items-center pt-8 md:pt-16 pb-12 w-full max-w-xl mx-auto"
+      className="flex-1 flex flex-col items-center pt-8 md:pt-16 pb-12 w-full max-w-2xl mx-auto overflow-y-auto no-scrollbar"
     >
       <div className="relative group">
         <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
@@ -225,7 +225,7 @@ export default function ProfilePage() {
                 }
               }}
               className={cn(
-                "text-4xl font-bold outline-none",
+                "text-4xl font-bold outline-none whitespace-nowrap",
                 editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
               )}
             >
@@ -277,4 +277,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
