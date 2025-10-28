@@ -13,9 +13,9 @@ import { motion } from 'framer-motion';
 const tierColors = {
   bronze: {
     bg: 'bg-orange-950/60',
-    border: 'border-orange-800/70',
-    icon: 'text-orange-500',
-    progressFill: 'bg-gradient-to-r from-orange-700 to-orange-500',
+    border: 'border-orange-700/70',
+    icon: 'text-orange-400',
+    progressFill: 'bg-gradient-to-r from-orange-600 to-orange-400',
   },
   silver: {
     bg: 'bg-blue-950/50',
@@ -38,9 +38,9 @@ const tierColors = {
 };
 
 const silverOverride = {
-    bg: 'bg-slate-800/50',
-    border: 'border-slate-600/70',
-    icon: 'text-slate-300',
+    bg: 'bg-slate-700/40',
+    border: 'border-slate-500/60',
+    icon: 'text-slate-200',
     progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
 }
 
