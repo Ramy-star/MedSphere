@@ -169,7 +169,7 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex flex-col items-center pt-8 md:pt-16 pb-12 w-full max-w-xl mx-auto"
+      className="flex-1 flex flex-col items-center pt-8 md:pt-16 pb-12 w-full max-w-xl mx-auto"
     >
       <div className="relative group">
         <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
@@ -277,3 +277,4 @@ export default function ProfilePage() {
     </>
   );
 }
+
