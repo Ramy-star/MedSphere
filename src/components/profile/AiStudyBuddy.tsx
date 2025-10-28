@@ -38,7 +38,6 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const [customQuestion, setCustomQuestion] = useState('');
     const [view, setView] = useState<'intro' | 'chat'>('intro');
     const { toast } = useToast();
-    const messagesEndRef = useRef<HTMLDivElement>(null);
     const chatContainerRef = useRef<HTMLDivElement>(null);
 
     const scrollToBottom = useCallback(() => {
@@ -49,6 +48,10 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             });
         }
     }, []);
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [chatHistory, scrollToBottom]);
 
     const fetchInitialInsight = useCallback(async () => {
         setLoading(true);
@@ -84,9 +87,6 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt }];
         setChatHistory(newHistory);
         
-        // Scroll to bottom after user sends a message
-        setTimeout(scrollToBottom, 100);
-
         try {
             const userStats = {
                 displayName: user.displayName || user.username,
@@ -218,7 +218,6 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                         <span>Thinking...</span>
                     </div>
                 )}
-                <div ref={messagesEndRef} />
             </div>
         </>
     );
