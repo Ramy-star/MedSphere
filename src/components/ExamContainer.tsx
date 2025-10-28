@@ -883,7 +883,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                             </button>
 
                             {currentQuestionIndex === questions.length - 1 ? (
-                                <button onClick={() => handleSubmit(canAdminister)} className="nav-btn finish">
+                                <button onClick={() => handleSubmit(false)} className="nav-btn finish">
                                     Finish & Submit
                                 </button>
                             ) : (
@@ -1002,9 +1002,9 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                     
                                     return (
                                         <tr key={index} className="border-b bg-gray-800 border-gray-700">
-                                            <th scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-white">
+                                            <td scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-white">
                                                 <div className="flex items-center gap-3">
-                                                    <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
+                                                    <Avatar className={cn("h-7 w-7 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
                                                         <AvatarImage 
                                                             src={userProfile.photoURL} 
                                                             alt={userProfile.displayName} 
@@ -1012,11 +1012,11 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                                             onDragStart={(e) => e.preventDefault()}
                                                             onContextMenu={(e) => e.preventDefault()}
                                                         />
-                                                        <AvatarFallback><UserIcon size={16}/></AvatarFallback>
+                                                        <AvatarFallback><UserIcon size={14}/></AvatarFallback>
                                                     </Avatar>
                                                     {userProfile.displayName}
                                                 </div>
-                                            </th>
+                                            </td>
                                             <td className="px-6 py-4">{result.userId}</td>
                                             <td className="px-6 py-4">{`${result.score} / ${result.totalQuestions}`}</td>
                                             <td className="px-6 py-4">{result.percentage.toFixed(2)}%</td>

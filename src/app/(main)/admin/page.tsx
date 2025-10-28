@@ -294,7 +294,7 @@ function AdminPageContent() {
                 className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}
             >
                 <div className="flex items-center gap-4 overflow-hidden">
-                    <Avatar className={cn("h-10 w-10 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
+                    <Avatar className={cn("h-9 w-9 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
                         <AvatarImage 
                             src={user.photoURL} 
                             alt={user.displayName}
