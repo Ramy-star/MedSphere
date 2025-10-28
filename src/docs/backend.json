@@ -51,12 +51,32 @@
         "createdAt": { "type": "string", "format": "date-time"},
         "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
         "level": { "type": "string", "description": "The academic level of the user." },
+        "favorites": {
+            "type": "array",
+            "description": "An array of content IDs that the user has favorited.",
+            "items": { "type": "string" }
+        },
         "metadata": {
             "type": "object",
             "properties": {
                 "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the avatar." },
                 "coverPhotoURL": { "type": "string", "format": "uri", "description": "URL for the user's cover photo." },
                 "coverPhotoCloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the cover photo." }
+            }
+        },
+        "sessions": {
+            "type": "array",
+            "description": "A list of active user sessions.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "sessionId": { "type": "string", "description": "Unique identifier for the session." },
+                    "device": { "type": "string", "description": "Description of the device/browser." },
+                    "ipAddress": { "type": "string", "description": "The IP address of the login." },
+                    "lastActive": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity." },
+                    "loggedIn": { "type": "string", "format": "date-time", "description": "Timestamp of when the session was created." }
+                },
+                "required": ["sessionId", "device", "lastActive", "loggedIn"]
             }
         },
         "stats": {

@@ -1,5 +1,6 @@
+
 'use client';
-import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, Eye, EyeOff } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, Eye, EyeOff, Star, StarOff } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -17,6 +18,8 @@ import React, { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { contentService } from '@/lib/contentService';
+import { useToast } from '@/hooks/use-toast';
 
 
 export const FolderCard = React.memo(function FolderCard({ 
@@ -42,8 +45,11 @@ export const FolderCard = React.memo(function FolderCard({
 }) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
-    const { can } = useAuthStore();
+    const { user, can } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const { toast } = useToast();
+
+    const isFavorited = user?.favorites?.includes(item.id) || false;
     
     const renderIcon = () => {
       if (item.metadata?.iconURL) {
@@ -70,7 +76,21 @@ export const FolderCard = React.memo(function FolderCard({
         setDropdownOpen(false);
     };
 
+    const handleToggleFavorite = async () => {
+        if (!user) return;
+        try {
+            await contentService.toggleFavorite(user.id, item.id);
+            toast({
+                title: isFavorited ? 'Removed from Favorites' : 'Added to Favorites',
+                description: `"${item.name}" has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`
+            });
+        } catch(error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
+    };
+
     const VisibilityIcon = item.metadata?.isHidden ? Eye : EyeOff;
+    const FavoriteIcon = isFavorited ? StarOff : Star;
 
     const hasAnyPermission = 
       can('canRename', item.id) ||
@@ -78,7 +98,8 @@ export const FolderCard = React.memo(function FolderCard({
       can('canChangeIcon', item.id) ||
       can('canMove', item.id) ||
       can('canCopy', item.id) ||
-      can('canToggleVisibility', item.id);
+      can('canToggleVisibility', item.id) ||
+      !!user;
 
 
     const DropdownContent = () => (
@@ -86,6 +107,15 @@ export const FolderCard = React.memo(function FolderCard({
           className="w-48 p-2"
           align="end"
       >
+          {user && (
+            <DropdownMenuItem onSelect={(e) => handleAction(e, handleToggleFavorite)}>
+                <FavoriteIcon className="mr-2 h-4 w-4" />
+                <span>{isFavorited ? 'Remove from Favorite' : 'Add to Favorite'}</span>
+            </DropdownMenuItem>
+          )}
+
+          {(can('canRename', item.id) || can('canDelete', item.id) || can('canChangeIcon', item.id)) && <DropdownMenuSeparator />}
+          
           {can('canRename', item.id) && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)} onClick={(e) => e.stopPropagation()}>
                 <Edit className="mr-2 h-4 w-4" />
@@ -130,15 +160,10 @@ export const FolderCard = React.memo(function FolderCard({
     );
     
     const handleCardClick = (e: React.MouseEvent) => {
-        // Prevent click from propagating to parent elements
         e.stopPropagation();
-        
-        // Check if the click target is the trigger or inside the menu content
         if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
             return;
         }
-        
-        // If not, proceed with the folder click action
         onClick(item);
     }
 

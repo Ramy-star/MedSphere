@@ -1,7 +1,7 @@
 
 'use client';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { allContent as seedData } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -908,6 +908,34 @@ export const contentService = {
             }));
         }
         console.error("Toggle visibility failed: ", e);
+        throw e;
+    }
+  },
+
+  async toggleFavorite(userId: string, contentId: string): Promise<void> {
+    if (!db) throw new Error("Firestore not initialized");
+    const userRef = doc(db, "users", userId);
+    try {
+        const userDoc = await getDoc(userRef);
+        if (!userDoc.exists()) throw new Error("User not found");
+        
+        const favorites = userDoc.data().favorites || [];
+        const isFavorited = favorites.includes(contentId);
+
+        if (isFavorited) {
+            await updateDoc(userRef, { favorites: arrayRemove(contentId) });
+        } else {
+            await updateDoc(userRef, { favorites: arrayUnion(contentId) });
+        }
+    } catch (e: any) {
+        if (e.code === 'permission-denied') {
+            errorEmitter.emit('permission-error', new FirestorePermissionError({
+                path: `/users/${userId}`,
+                operation: 'update',
+                requestResourceData: { favorites: '...' },
+            }));
+        }
+        console.error("Toggle favorite failed:", e);
         throw e;
     }
   },

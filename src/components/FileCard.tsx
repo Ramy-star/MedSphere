@@ -1,6 +1,7 @@
+
 'use client';
 import { 
-    MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw,
+    MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw, Star, StarOff,
     File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileCheck, Copy, Move, EyeOff
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -27,6 +28,7 @@ import { UploadProgress, UploadingFile } from './UploadProgress';
 import { FileQuestion } from './icons/FileQuestion';
 import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
 import { FlashcardIcon } from './icons/FlashcardIcon';
+import { contentService } from '@/lib/contentService';
 
 const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, color: string, isImage?: boolean } => {
     if (item.type === 'LINK') {
@@ -141,10 +143,13 @@ export const FileCard = React.memo(function FileCard({
 }) {
     const isMobile = useIsMobile();
     const router = useRouter();
-    const { can } = useAuthStore();
+    const { user, can } = useAuthStore();
     const { initiateGeneration } = useQuestionGenerationStore();
     const updateFileInputRef = useRef<HTMLInputElement>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const { toast } = useToast();
+
+    const isFavorited = user?.favorites?.includes(item.id) || false;
 
     const sizeInKB = item.metadata?.size ? (item.metadata.size / 1024) : 0;
     const displaySize = (() => {
@@ -209,6 +214,19 @@ export const FileCard = React.memo(function FileCard({
         updateFileInputRef.current?.click();
     };
     
+    const handleToggleFavorite = async () => {
+        if (!user) return;
+        try {
+            await contentService.toggleFavorite(user.id, item.id);
+            toast({
+                title: isFavorited ? 'Removed from Favorites' : 'Added to Favorites',
+                description: `"${item.name}" has been ${isFavorited ? 'removed from' : 'added to'} your favorites.`
+            });
+        } catch(error: any) {
+            toast({ variant: 'destructive', title: 'Error', description: error.message });
+        }
+    };
+    
     const handleAction = (e: Event, action: () => void) => {
         e.preventDefault();
         e.stopPropagation();
@@ -229,6 +247,7 @@ export const FileCard = React.memo(function FileCard({
     }
 
     const VisibilityIcon = item.metadata?.isHidden ? Eye : EyeOff;
+    const FavoriteIcon = isFavorited ? StarOff : Star;
 
     const hasAnyPermission = 
         can('canRename', item.id) ||
@@ -237,7 +256,8 @@ export const FileCard = React.memo(function FileCard({
         can('canCopy', item.id) ||
         can('canToggleVisibility', item.id) ||
         can('canUpdateFile', item.id) ||
-        can('canCreateQuestions', item.id);
+        can('canCreateQuestions', item.id) ||
+        !!user;
 
     return (
         <div 
@@ -320,6 +340,13 @@ export const FileCard = React.memo(function FileCard({
                                 </DropdownMenuItem>
                             )}
                             
+                            {user && (
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, handleToggleFavorite)}>
+                                    <FavoriteIcon className="mr-2 h-4 w-4" />
+                                    <span>{isFavorited ? 'Remove from Favorite' : 'Add to Favorite'}</span>
+                                </DropdownMenuItem>
+                            )}
+
                             {(can('canRename', item.id) || can('canDelete', item.id)) && <DropdownMenuSeparator />}
 
                             {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && can('canCreateQuestions', item.id) && (
