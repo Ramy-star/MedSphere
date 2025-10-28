@@ -5,6 +5,7 @@ import type { FirebaseApp } from 'firebase/app';
 import type { Firestore } from 'firebase/firestore';
 import { createContext, useContext, useMemo } from 'react';
 import { FirebaseErrorListener } from './FirebaseErrorListener';
+import { UserProvider } from './auth/use-user';
 
 export type FirebaseContextType = {
   app: FirebaseApp;
@@ -24,8 +25,10 @@ export function FirebaseProvider({
   const memoizedValue = useMemo(() => value, [value]);
   return (
     <FirebaseContext.Provider value={memoizedValue}>
-      <FirebaseErrorListener />
-      {children}
+      <UserProvider>
+        <FirebaseErrorListener />
+        {children}
+      </UserProvider>
     </FirebaseContext.Provider>
   );
 }
