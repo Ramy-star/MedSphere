@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useUser, type UserProfile as BaseUserProfile } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
@@ -15,11 +15,11 @@ import { cn } from '@/lib/utils';
 import { doc, writeBatch } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import type { UserProfile } from '@/stores/auth-store';
 
-type UserProfile = BaseUserProfile & { id: string };
 
 function UserManagementPage() {
-    const { user, loading: userLoading, isSuperAdmin } = useUser();
+    const { user, isSuperAdmin, loading: userLoading } = useAuthStore();
     const router = useRouter();
     const { toast } = useToast();
 
@@ -48,11 +48,13 @@ function UserManagementPage() {
     const handleToggleBlock = async (targetUser: UserProfile) => {
         if (!isSuperAdmin) return;
         
-        const isCurrentlyBlocked = targetUser.roles?.isBlocked ?? false;
+        const isCurrentlyBlocked = targetUser.isBlocked ?? false;
         const userRef = doc(db, 'users', targetUser.uid);
 
         try {
-            await writeBatch(db).update(userRef, { 'roles.isBlocked': !isCurrentlyBlocked }).commit();
+            const batch = writeBatch(db);
+            batch.update(userRef, { 'isBlocked': !isCurrentlyBlocked });
+            await batch.commit();
             toast({
                 title: isCurrentlyBlocked ? 'User Unblocked' : 'User Blocked',
                 description: `${targetUser.displayName} has been ${isCurrentlyBlocked ? 'unblocked' : 'blocked'}.`
@@ -115,9 +117,9 @@ function UserManagementPage() {
                         animate="visible"
                     >
                         {filteredUsers && filteredUsers.map((u) => {
-                            const isBlocked = u.roles?.isBlocked ?? false;
-                            const isCurrentUserSuperAdmin = u.roles?.isSuperAdmin === true;
-                            const isSubAdmin = u.roles?.permissions && u.roles.permissions.length > 0;
+                            const isBlocked = u.isBlocked ?? false;
+                            const isCurrentUserSuperAdmin = u.roles?.some(r => r.role === 'superAdmin');
+                            const isSubAdmin = u.roles?.some(r => r.role === 'subAdmin') && !isCurrentUserSuperAdmin;
                             
                             return (
                                 <motion.div
