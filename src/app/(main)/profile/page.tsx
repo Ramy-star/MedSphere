@@ -5,7 +5,7 @@ import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -31,6 +31,8 @@ import level5Ids from '@/lib/student-ids/level-5.json';
 import { InfoCard } from '@/components/profile/InfoCard';
 import { AchievementsSection } from '@/components/profile/Achievements';
 import Image from 'next/image';
+import { FavoritesSection } from '@/components/profile/FavoritesSection';
+import { ActiveSessions } from '@/components/profile/ActiveSessions';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -40,7 +42,7 @@ level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
 level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
 
 export default function ProfilePage() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const { toast } = useToast();
 
   const [editingName, setEditingName] = useState(false);
@@ -176,7 +178,7 @@ export default function ProfilePage() {
   if (!user) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin" />
+        <Loader2 className="w-8 w-8 animate-spin" />
       </div>
     );
   }
@@ -196,7 +198,7 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-2xl mx-auto pb-12"
+      className="w-full max-w-4xl mx-auto pb-12"
     >
       <div className="relative group/cover h-48 bg-slate-800 rounded-b-3xl overflow-hidden">
         {user.metadata?.coverPhotoURL && (
@@ -339,7 +341,17 @@ export default function ProfilePage() {
         <InfoCard icon={School} label="Academic Level" value={userLevel} />
       </div>
 
+      <FavoritesSection user={user} />
+      <ActiveSessions user={user} />
       <AchievementsSection user={user} />
+      
+      <div className="mt-16 flex justify-center">
+          <Button variant="destructive" onClick={logout} className="rounded-xl bg-red-800/80 hover:bg-red-700/90 border border-red-600">
+              <LogOut className="mr-2 h-4 w-4" />
+              Logout
+          </Button>
+      </div>
+
     </motion.div>
     <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>

@@ -21,8 +21,15 @@
             "size": { "type": "number", "description": "File size in bytes." },
             "mime": { "type": "string", "description": "MIME type of the file." },
             "storagePath": { "type": "string", "description": "Path to the file in Firebase Cloud Storage." },
+            "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the file resource." },
+            "cloudinaryResourceType": { "type": "string", "enum": ["image", "video", "raw"], "description": "The resource type on Cloudinary." },
+            "iconURL": { "type": "string", "format": "uri", "description": "URL for a custom folder/subject icon." },
+            "iconCloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the icon resource." },
+            "url": { "type": "string", "format": "uri", "description": "The URL for LINK type content." },
+            "shortId": { "type": "string", "description": "A short ID for links." },
             "sourceFileId": { "type": "string", "description": "The ID of the original source file for generated content." },
             "quizData": { "type": "string", "description": "JSON string containing the data for an interactive quiz." },
+            "isClassContainer": { "type": "boolean", "description": "True if the folder represents a class." },
             "isHidden": { "type": "boolean", "description": "Whether the content is hidden from non-admins." }
           }
         }
@@ -34,7 +41,8 @@
       "description": "Represents a user's profile information, including their role.",
       "type": "object",
       "properties": {
-        "uid": { "type": "string" },
+        "id": { "type": "string", "description": "The Firestore document ID, same as studentId." },
+        "uid": { "type": "string", "description": "The user's student ID." },
         "username": { "type": "string", "description": "Unique, user-chosen username." },
         "studentId": { "type": "string", "description": "The user's verified university student ID." },
         "email": { "type": "string", "format": "email" },
@@ -43,6 +51,58 @@
         "createdAt": { "type": "string", "format": "date-time"},
         "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
         "level": { "type": "string", "description": "The academic level of the user." },
+        "favorites": {
+            "type": "array",
+            "description": "An array of content IDs that the user has favorited.",
+            "items": { "type": "string" }
+        },
+        "metadata": {
+            "type": "object",
+            "properties": {
+                "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the avatar." },
+                "coverPhotoURL": { "type": "string", "format": "uri", "description": "URL for the user's cover photo." },
+                "coverPhotoCloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the cover photo." }
+            }
+        },
+        "sessions": {
+            "type": "array",
+            "description": "A list of active user sessions.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "sessionId": { "type": "string", "description": "Unique identifier for the session." },
+                    "device": { "type": "string", "description": "Description of the device/browser." },
+                    "ipAddress": { "type": "string", "description": "The IP address of the login." },
+                    "lastActive": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity." },
+                    "loggedIn": { "type": "string", "format": "date-time", "description": "Timestamp of when the session was created." }
+                },
+                "required": ["sessionId", "device", "lastActive", "loggedIn"]
+            }
+        },
+        "stats": {
+            "type": "object",
+            "description": "User activity statistics for achievements.",
+            "properties": {
+                "filesUploaded": { "type": "number", "default": 0 },
+                "foldersCreated": { "type": "number", "default": 0 },
+                "examsCompleted": { "type": "number", "default": 0 },
+                "aiQueries": { "type": "number", "default": 0 },
+                "consecutiveLoginDays": { "type": "number", "default": 0 },
+                "lastLoginDate": { "type": "string", "format": "date" }
+            }
+        },
+        "achievements": {
+            "type": "array",
+            "description": "An array of earned achievements.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "badgeId": { "type": "string", "description": "The ID of the earned badge." },
+                    "earnedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the badge was earned." }
+                },
+                "required": ["badgeId", "earnedAt"]
+            }
+        },
         "roles": {
           "type": "array",
           "description": "An array of roles and permissions assigned to the user.",
@@ -72,7 +132,10 @@
                     "canUpdateFile",
                     "canCreateQuestions",
                     "canAccessQuestionCreator",
-                    "canAccessAdminPanel"
+                    "canAccessAdminPanel",
+                    "canReorder",
+                    "canAdministerExams",
+                    "canAdministerFlashcards"
                   ]
                 }
               }
@@ -81,7 +144,7 @@
           }
         }
       },
-      "required": ["uid", "studentId"]
+      "required": ["id", "uid", "studentId", "createdAt"]
     },
     "QuestionSet": {
       "title": "Question Set",
