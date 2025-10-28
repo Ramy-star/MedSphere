@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
@@ -34,6 +33,7 @@ import Image from 'next/image';
 import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
 import { FilePreviewModal } from '@/components/FilePreviewModal';
+import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -209,7 +209,7 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-4xl mx-auto pb-12"
+      className="w-full max-w-5xl mx-auto pb-12"
     >
       <div className="relative group/cover h-48 bg-slate-800 rounded-b-3xl overflow-hidden">
         {user.metadata?.coverPhotoURL && (
@@ -255,7 +255,7 @@ export default function ProfilePage() {
          </div>
       </div>
 
-      <div className="flex flex-col items-center -mt-16">
+      <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-16 px-4 sm:px-8 gap-4">
         <div className="relative group/avatar">
           <Avatar className={cn("h-32 w-32 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
             <AvatarImage 
@@ -299,54 +299,60 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="mt-8 text-center flex items-center justify-center gap-2 group w-full">
-          <div className="relative p-1">
-            <h1
-              ref={nameInputRef}
-              contentEditable={editingName}
-              suppressContentEditableWarning={true}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                  e.preventDefault();
-                  handleSaveName();
-                }
-                if (e.key === 'Escape') {
-                  e.preventDefault();
-                  handleCancelEdit();
-                }
-              }}
-              className={cn(
-                "text-4xl font-bold outline-none whitespace-nowrap",
-                editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
+        <div className="text-center sm:text-left sm:pb-4">
+            <div className="flex items-center justify-center sm:justify-start gap-2 group w-full">
+              <div className="relative p-1">
+                <h1
+                  ref={nameInputRef}
+                  contentEditable={editingName}
+                  suppressContentEditableWarning={true}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveName();
+                    }
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      handleCancelEdit();
+                    }
+                  }}
+                  className={cn(
+                    "text-4xl font-bold outline-none whitespace-nowrap",
+                    editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
+                  )}
+                >
+                  {user.displayName}
+                </h1>
+              </div>
+
+              {editingName ? (
+                <div className="flex items-center gap-1">
+                   <Button size="icon" onClick={handleSaveName} disabled={isSavingName} className="h-9 w-9 rounded-full flex-shrink-0">
+                      {isSavingName ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                  </Button>
+                   <Button size="icon" variant="ghost" onClick={handleCancelEdit} className="h-9 w-9 rounded-full flex-shrink-0">
+                      <X className="w-5 h-5" />
+                  </Button>
+                </div>
+              ) : (
+                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full group-hover:opacity-100 md:opacity-0 transition-opacity flex-shrink-0" onClick={() => setEditingName(true)}>
+                      <Edit className="w-5 h-5" />
+                  </Button>
               )}
-            >
-              {user.displayName}
-            </h1>
-          </div>
-
-          {editingName ? (
-            <div className="flex items-center gap-1">
-               <Button size="icon" onClick={handleSaveName} disabled={isSavingName} className="h-9 w-9 rounded-full flex-shrink-0">
-                  {isSavingName ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-              </Button>
-               <Button size="icon" variant="ghost" onClick={handleCancelEdit} className="h-9 w-9 rounded-full flex-shrink-0">
-                  <X className="w-5 h-5" />
-              </Button>
             </div>
-          ) : (
-             <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full group-hover:opacity-100 md:opacity-0 transition-opacity flex-shrink-0" onClick={() => setEditingName(true)}>
-                  <Edit className="w-5 h-5" />
-              </Button>
-          )}
-        </div>
 
-        <p className={cn("mt-2 text-lg font-medium flex items-center gap-2", roleColor)}>
-          <RoleIcon className="w-5 h-5" />
-          {roleText}
-        </p>
+            <p className={cn("mt-1 text-lg font-medium flex items-center justify-center sm:justify-start gap-2", roleColor)}>
+              <RoleIcon className="w-5 h-5" />
+              {roleText}
+            </p>
+        </div>
+      </div>
+      
+      <div className="mt-8 px-4 sm:px-0">
+        <AiStudyBuddy user={user} />
       </div>
 
-      <div className="mt-12 w-full space-y-4">
+      <div className="mt-12 w-full space-y-4 px-4 sm:px-0">
         <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
         <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
         <InfoCard icon={School} label="Academic Level" value={userLevel} />
@@ -413,3 +419,4 @@ export default function ProfilePage() {
     </>
   );
 }
+```
