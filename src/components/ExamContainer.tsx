@@ -725,13 +725,15 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                              {canAdminister && (
                                 <button onClick={() => setIsReportModalOpen(true)} className="report-btn absolute top-0 left-0">
                                     <FileText size={20} />
-                                    <span className="report-text">Report</span>
+                                    <span className="expanding-text">Report</span>
                                 </button>
                             )}
-                            <button onClick={handleExitClick} className="exit-btn absolute top-0 right-0">
-                                <LogOut size={20} />
-                                <span className="exit-text">Exit</span>
-                            </button>
+                            <div className="absolute top-0 right-0">
+                                <button onClick={handleExitClick} className="expanding-btn destructive">
+                                    <LogOut size={20} />
+                                    <span className="expanding-text">Exit</span>
+                                </button>
+                            </div>
                             <div className="results-summary">
                                 <h2 style={{ fontFamily: "'Calistoga', cursive" }}>Exam Completed!</h2>
                                 <div className="score-container">
@@ -834,7 +836,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                                 {canAdminister ? (
                                      <button onClick={() => handleSubmit(true)} className="skip-btn">
                                         <SkipForward size={16} />
-                                        <span className="skip-text">Skip</span>
+                                        <span className="expanding-text">Skip</span>
                                     </button>
                                 ) : (
                                     <div className="flex items-center gap-2 font-semibold text-lg text-muted-foreground">
@@ -1125,7 +1127,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
             height: 44px;
             padding: 0;
         }
-        .report-btn .report-text, .skip-btn .skip-text {
+        .report-btn .expanding-text, .skip-btn .expanding-text {
             white-space: nowrap;
             opacity: 0;
             max-width: 0;
@@ -1137,7 +1139,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
             width: 120px;
             padding: 0 16px;
         }
-        .report-btn:hover .report-text, .skip-btn:hover .skip-text {
+        .report-btn:hover .expanding-text, .skip-btn:hover .expanding-text {
             opacity: 1;
             max-width: 100px;
             margin-left: 0.5rem;
