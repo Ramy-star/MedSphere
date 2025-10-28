@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo, use } from 'react';
@@ -675,8 +674,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     icon={<FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.examJson}
                     type="examJson"
-                    isEditing={isEditing.jsonExam}
-                    onToggleEdit={() => handleToggleEdit('jsonExam')}
+                    isEditing={isEditing.examJson}
+                    onToggleEdit={() => handleToggleEdit('examJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
                     onCancel={() => handleCancelEdit('examJson')}
                 />
@@ -701,10 +700,10 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     icon={<FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.flashcardJson}
                     type="flashcardJson"
-                    isEditing={isEditing.jsonFlashcard}
-                    onToggleEdit={() => handleToggleEdit('jsonFlashcard')}
-                    onContentChange={(value) => setEditingContent(prev => ({...prev, jsonFlashcard: value}))}
-                    onCancel={() => handleCancelEdit('jsonFlashcard')}
+                    isEditing={isEditing.flashcardJson}
+                    onToggleEdit={() => handleToggleEdit('flashcardJson')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardJson: value}))}
+                    onCancel={() => handleCancelEdit('flashcardJson')}
                 />
             </div>
         )}
