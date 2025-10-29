@@ -86,9 +86,6 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         try {
             const result = await getStudyBuddyInsight(userStats);
             setInitialInsight(result);
-            if (result) {
-                setIsOpen(true); // Auto-open on successful load
-            }
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
