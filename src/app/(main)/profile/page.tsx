@@ -47,10 +47,15 @@ level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
 const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }: { title: string, icon: React.ElementType, children: ReactNode, defaultOpen?: boolean }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
 
+    const variants = {
+        open: { opacity: 1, height: 'auto', marginTop: '1rem' },
+        collapsed: { opacity: 0, height: 0, marginTop: '0rem' },
+    };
+
     return (
         <div className="w-full">
             <button
-                className="w-full flex items-center justify-between text-left mb-6"
+                className="w-full flex items-center justify-between text-left mb-2"
                 onClick={() => setIsOpen(!isOpen)}
             >
                 <div className="flex items-center gap-3">
@@ -66,10 +71,7 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }:
                         initial="collapsed"
                         animate="open"
                         exit="collapsed"
-                        variants={{
-                            open: { opacity: 1, height: 'auto' },
-                            collapsed: { opacity: 0, height: 0 },
-                        }}
+                        variants={variants}
                         transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
                         className="overflow-hidden"
                     >
@@ -251,19 +253,7 @@ export default function ProfilePage() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full pb-12"
     >
-      <div className="relative group/cover h-48 sm:h-64 bg-slate-800 -mx-6 -mt-6">
-        {user.metadata?.coverPhotoURL && (
-            <Image
-                src={user.metadata.coverPhotoURL}
-                alt="Cover photo"
-                layout="fill"
-                objectFit="cover"
-                className="pointer-events-none select-none"
-                onDragStart={(e) => e.preventDefault()}
-                onContextMenu={(e) => e.preventDefault()}
-            />
-        )}
-         <div className="absolute inset-0 bg-black/30"></div>
+      <div className="relative group/cover h-48 sm:h-64">
          <input
             type="file"
             ref={coverFileInputRef}
@@ -271,7 +261,7 @@ export default function ProfilePage() {
             accept="image/*"
             onChange={handleCoverImageChange}
           />
-         <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover/cover:opacity-100 transition-opacity">
+         <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover/cover:opacity-100 transition-opacity z-20">
             <Button
                 size="sm"
                 className="h-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 text-white"
@@ -391,9 +381,9 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-x-8 items-start">
         {/* Left Column */}
-        <div className="space-y-8 lg:border-r lg:border-white/10 lg:pr-8">
+        <div className="flex flex-col space-y-8 lg:border-r lg:border-white/10 lg:pr-8">
             <AiStudyBuddy user={user} />
             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
               <div className="space-y-4">
@@ -408,7 +398,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Right Column */}
-        <div className="space-y-12">
+        <div className="space-y-12 mt-8 lg:mt-0">
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
