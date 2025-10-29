@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useSearchParams } from 'next/navigation';
@@ -60,7 +61,7 @@ function SearchResults() {
         try {
             const searchResults = await search(query, allItems);
             // Filter results to only include files and links
-            const fileResults = searchResults.filter(item => item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ');
+            const fileResults = searchResults.filter(item => item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM' || item.type === 'INTERACTIVE_FLASHCARD');
             setResults(fileResults);
         } catch (error) {
             console.error("Search failed:", error);
@@ -120,12 +121,15 @@ function SearchResults() {
                                     key={item.id}
                                     className={cn("border-white/10", index !== results.length - 1 && "border-b")}
                                 >
-                                    {(item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ') && (
+                                    {(item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM' || item.type === 'INTERACTIVE_FLASHCARD') && (
                                          <FileCard
                                             item={item}
                                             onFileClick={() => handleFileClick(item)}
                                             onRename={() => setItemToRename(item)}
                                             onDelete={() => setItemToDelete(item)}
+                                            onMove={() => {}}
+                                            onCopy={() => {}}
+                                            onToggleVisibility={() => {}}
                                          />
                                     )}
                                     {item.type === 'FOLDER' && (
@@ -136,11 +140,19 @@ function SearchResults() {
                                             onIconChange={() => setItemForIconChange(item)}
                                             onClick={handleFolderClick}
                                             displayAs='list'
+                                            onMove={() => {}}
+                                            onCopy={() => {}}
+                                            onToggleVisibility={() => {}}
                                         />
                                     )}
                                     {item.type === 'SUBJECT' && (
                                         <div className="py-2">
-                                            <SubjectCard subject={item} />
+                                            <SubjectCard 
+                                              subject={item} 
+                                              onRename={() => setItemToRename(item)}
+                                              onDelete={() => setItemToDelete(item)}
+                                              onIconChange={() => setItemForIconChange(item)}
+                                            />
                                         </div>
                                     )}
                                      {item.type === 'SEMESTER' && (
