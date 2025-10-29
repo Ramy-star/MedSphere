@@ -129,7 +129,6 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
         
         return (
             <React.Fragment key={category}>
-                {categoryIndex > 0 && <div className="w-full h-px bg-slate-800 my-4" />}
                 <h3 className="text-md font-bold text-slate-300 px-2 mt-2">{category}</h3>
                 <div className="space-y-4">
                     {Object.entries(groups).map(([group, achievements], groupIndex) => (
@@ -147,6 +146,9 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
                     </React.Fragment>
                     ))}
                 </div>
+                {categoryIndex < Object.keys(categorizedAndGroupedAchievements).length - 1 && (
+                    <div className="w-full h-px bg-slate-800 my-4" />
+                )}
           </React.Fragment>
         );
       })}

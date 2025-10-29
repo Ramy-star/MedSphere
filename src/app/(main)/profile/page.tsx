@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, ChevronDown, Star, Activity, Info } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -22,6 +22,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -43,43 +49,19 @@ level3Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 3'));
 level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
 level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
 
-// Collapsible Section Component
-const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }: { title: string, icon: React.ElementType, children: ReactNode, defaultOpen?: boolean }) => {
-    const [isOpen, setIsOpen] = useState(defaultOpen);
-
-    const variants = {
-        open: { opacity: 1, height: 'auto', marginTop: '1rem' },
-        collapsed: { opacity: 0, height: 0, marginTop: '0rem' },
-    };
-
+const ProfileSection = ({ title, icon: Icon, children, value }: { title: string, icon: React.ElementType, children: React.ReactNode, value: string }) => {
     return (
-        <div className="w-full">
-            <button
-                className="w-full flex items-center justify-between text-left mb-2"
-                onClick={() => setIsOpen(!isOpen)}
-            >
+        <AccordionItem value={value} className="border-none">
+            <AccordionTrigger className="hover:no-underline mb-2 py-2">
                 <div className="flex items-center gap-3">
                     <Icon className="w-6 h-6 text-slate-300" />
                     <h2 className="text-xl sm:text-2xl font-bold text-white">{title}</h2>
                 </div>
-                <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform", isOpen ? 'rotate-180' : '')} />
-            </button>
-            <AnimatePresence initial={false}>
-                {isOpen && (
-                    <motion.div
-                        key="content"
-                        initial="collapsed"
-                        animate="open"
-                        exit="collapsed"
-                        variants={variants}
-                        transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
-                        className="overflow-hidden"
-                    >
-                        {children}
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                {children}
+            </AccordionContent>
+        </AccordionItem>
     );
 };
 
@@ -382,29 +364,31 @@ export default function ProfilePage() {
       </div>
       
       <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-x-8 items-start">
-        {/* Left Column */}
         <div className="flex flex-col space-y-8 lg:border-r lg:border-white/10 lg:pr-8">
-            <AiStudyBuddy user={user} />
-            <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
-              <div className="space-y-4">
-                  <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
-                  <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
-                  <InfoCard icon={School} label="Academic Level" value={userLevel} />
-              </div>
-            </CollapsibleSection>
-            <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={false}>
-                <ActiveSessions user={user} />
-            </CollapsibleSection>
+            <Accordion type="multiple" defaultValue={['item-1', 'item-2']} className="w-full space-y-4">
+                <AiStudyBuddy user={user} />
+                <ProfileSection title="User Information" icon={Info} value="item-1">
+                  <div className="space-y-4">
+                      <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
+                      <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
+                      <InfoCard icon={School} label="Academic Level" value={userLevel} />
+                  </div>
+                </ProfileSection>
+                <ProfileSection title="Active Sessions" icon={Activity} value="item-2">
+                    <ActiveSessions user={user} />
+                </ProfileSection>
+            </Accordion>
         </div>
 
-        {/* Right Column */}
-        <div className="space-y-12 mt-8 lg:mt-0">
-            <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
-                <FavoritesSection user={user} onFileClick={handleFileClick} />
-            </CollapsibleSection>
-            <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
-                <AchievementsSection user={user} />
-            </CollapsibleSection>
+        <div className="space-y-4 mt-8 lg:mt-0">
+            <Accordion type="multiple" defaultValue={['item-3', 'item-4']} className="w-full space-y-4">
+                 <ProfileSection title="Favorites" icon={Star} value="item-3">
+                    <FavoritesSection user={user} onFileClick={handleFileClick} />
+                </ProfileSection>
+                 <ProfileSection title="Achievements" icon={Crown} value="item-4">
+                    <AchievementsSection user={user} />
+                </ProfileSection>
+            </Accordion>
         </div>
       </div>
       
@@ -465,5 +449,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
