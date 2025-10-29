@@ -1,22 +1,28 @@
 
 'use client';
 import { cn } from "@/lib/utils";
+import type { LucideProps } from "lucide-react";
 import React from "react";
-import Image from "next/image";
 
-// Simplified the component to only accept basic HTML props to avoid type conflicts with LucideProps.
-export const AiAssistantIcon = React.forwardRef<HTMLImageElement, React.HTMLAttributes<HTMLImageElement>>(
+export const AiAssistantIcon = React.forwardRef<SVGSVGElement, LucideProps>(
   ({ className, ...props }, ref) => (
-    <Image
-      src="/ai-assistant-icon.svg"
-      alt="AI Assistant"
-      width={24}
-      height={24}
-      className={cn("pointer-events-none select-none", className)}
-      draggable={false}
-      {...props} // Pass only basic compatible props
-      ref={ref}
-    />
+    <svg id="Standard_product_icon" xmlns="http://www.w3.org/2000/svg" width="192" height="192" xmlnsXlink="http://www.w3.org/1999/xlink" version="1.1" viewBox="0 0 192 192"
+        ref={ref}
+        className={cn(className)}
+        {...props}
+    >
+      <defs>
+        <linearGradient id="linear-gradient" x1="63.88" y1="262.92" x2="143.5" y2="330.05" gradientTransform="translate(0 386) scale(1 -1)" gradientUnits="userSpaceOnUse">
+          <stop offset="0" stopColor="#346bf1"/>
+          <stop offset=".37" stopColor="#3186ff"/>
+          <stop offset=".78" stopColor="#4fa0ff"/>
+        </linearGradient>
+      </defs>
+      <rect id="bounding_box" width="192" height="192" fill="none"/>
+      <g id="art_layer">
+        <path d="M164.93,86.68c-13.56-5.84-25.42-13.84-35.6-24.01-10.17-10.17-18.18-22.04-24.01-35.6-2.24-5.2-4.04-10.54-5.42-16.02-.45-1.79-2.06-3.05-3.9-3.05s-3.45,1.26-3.9,3.05c-1.38,5.48-3.18,10.81-5.42,16.02-5.84,13.56-13.84,25.43-24.01,35.6-10.17,10.17-22.04,18.18-35.6,24.01-5.2,2.24-10.54,4.04-16.02,5.42-1.79.45-3.05,2.06-3.05,3.9s1.26,3.45,3.05,3.9c5.48,1.38,10.81,3.18,16.02,5.42,13.56,5.84,25.42,13.84,35.6,24.01,10.17,10.17,18.18,22.04,24.01,35.6,2.24,5.2,4.04,10.54,5.42,16.02.45,1.79,2.06,3.05,3.9,3.05s3.45-1.26,3.9-3.05c1.38-5.48,3.18-10.81,5.42-16.02,5.84-13.56,13.84-25.42,24.01-35.6,10.17-10.17,22.04-18.18,35.6-24.01,5.2-2.24,10.54-4.04,16.02-5.42,1.79-.45,3.05-2.06,3.05-3.9s-1.26-3.45-3.05-3.9c-5.48-1.38-10.81-3.18-16.02-5.42Z" fill="url(#linear-gradient)"/>
+      </g>
+    </svg>
   )
 );
 
