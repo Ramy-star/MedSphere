@@ -8,7 +8,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Lock } from 'lucide-react';
-import { motion } from 'framer-motion';
 
 const tierColors = {
   bronze: {
@@ -56,15 +55,12 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
   const progressPercent = goal > 0 ? Math.min((currentProgress / goal) * 100, 100) : (earned ? 100 : 0);
 
   const cardContent = (
-    <motion.div
+    <div
       className={cn(
         "relative flex h-[180px] w-[150px] flex-col justify-between rounded-2xl border p-4 text-center transition-all duration-300",
         earned ? `${colors.bg} ${colors.border}` : "border-slate-800 bg-slate-900/50",
         !earned && "group-hover:border-slate-700 group-hover:bg-slate-800/40"
       )}
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
     >
       <div className="flex flex-col items-center">
         <div className={cn("mb-3 flex h-12 w-12 items-center justify-center rounded-full", earned ? colors.bg : 'bg-slate-800')}>
@@ -83,7 +79,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
            <Progress value={progressPercent} className="h-1 bg-black/30" indicatorClassName={colors.progressFill} />
         </div>
       )}
-    </motion.div>
+    </div>
   );
 
   return (
@@ -132,7 +128,8 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
         
         return (
             <React.Fragment key={category}>
-                <h3 className="text-md font-bold text-slate-300 px-2 mt-6">{category}</h3>
+                {categoryIndex > 0 && <div className="w-full h-px bg-slate-800 my-4" />}
+                <h3 className="text-md font-bold text-slate-300 px-2 mt-2">{category}</h3>
                 <div className="space-y-4">
                     {Object.entries(groups).map(([group, achievements], groupIndex) => (
                     <React.Fragment key={group}>
