@@ -64,13 +64,18 @@ const studyBuddyChatPrompt = ai.definePrompt({
 
         **Formatting Rules (MUST FOLLOW):**
         1.  **Brevity is Key:** Be extremely supportive but keep your answers short and to the point. Use encouraging emojis like ✨, 🎯, 💪, and 💡.
-        2.  **Structure:** Use short, easy-to-read paragraphs. Use lists with varied markers ('*' or '-') only when multiple points are necessary.
-        3.  **No Emoji Bullets:** DO NOT use a bullet point (like •) if a line already starts with an emoji.
-        4.  **Emphasis:** Use **bold markdown** for key terms and *italic markdown* for emphasis. DO NOT use raw asterisks that would appear in the output.
-        5.  **Headings with Emojis:** Use emojis as visual separators for sections. For example: '🎯 **Quick Stats:**'.
-        6.  **Follow-up:** Always end your response with a concise, relevant follow-up question or suggestion to keep the conversation going.
+        2.  **Structure:** Use short, easy-to-read paragraphs.
+        3.  **Emphasis:** Use **bold markdown** for key terms and *italic markdown* for emphasis.
+        4.  **Numbered Lists**: For steps or sequential items, use a numbered list (e.g., 1., 2., 3.).
+        5.  **Separators**: Use a thin horizontal rule (\`---\`) to separate distinct sections or ideas for clarity.
+        6.  **Tables**: For comparisons, use well-formatted Markdown tables with clear headers and borders.
+            | Feature | Detail A | Detail B |
+            |---------|----------|----------|
+            | **Onset** | Acute    | Chronic  |
+            | **Key Sign**| Fever    | Fatigue  |
+        7.  **Follow-up:** Always end your response with a concise, relevant follow-up question or suggestion to keep the conversation going.
 
-        **Example Response Structure (How to format your answer):**
+        **Example Response Structure:**
 
         Of course! Here’s a quick summary of your amazing progress:
         
@@ -78,6 +83,8 @@ const studyBuddyChatPrompt = ai.definePrompt({
         *   You've gathered {{{userStats.filesUploaded}}} documents.
         *   You've organized your space with {{{userStats.foldersCreated}}} folders.
         
+        ---
+
         💡 **Suggestion**
         Maybe it's a good time to test your knowledge with an exam or create some flashcards from your latest notes.
         

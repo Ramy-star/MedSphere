@@ -1,10 +1,8 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Loader2, Send, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
@@ -16,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
+import { Textarea } from '../ui/textarea';
+
 
 type Suggestion = {
     label: string;
@@ -78,6 +78,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesRef = useRef<ChatMessage[]>([]);
     const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
@@ -188,8 +189,19 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         setCustomQuestion('');
     };
 
-    const handleCustomQuestionKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') {
+    useEffect(() => {
+        const textarea = textareaRef.current;
+        if (textarea) {
+            textarea.style.height = 'auto'; // Reset height to recalculate
+            const scrollHeight = textarea.scrollHeight;
+            const maxHeight = 120; // 120px max height
+            textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+        }
+    }, [customQuestion]);
+    
+
+    const handleCustomQuestionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleCustomQuestionSubmit();
         }
@@ -217,13 +229,13 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const IntroView = () => (
         <>
-            <div style={{color: theme.textColor}}>
+             <div style={{color: theme.textColor}}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
             </div>
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
                 {initialInsight.suggestedActions.map((suggestion, index) => (
                     <motion.div
-                        key={suggestion.label + index}
+                        key={index}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0, transition: { delay: 0.2 + index * 0.1 } }}
                     >
@@ -244,7 +256,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const ChatView = () => (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0">
+             <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0">
                  <Button onClick={handleBackToIntro} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
@@ -329,7 +341,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                 animate="open"
                                 exit="collapsed"
                                 variants={sectionVariants}
-                                className="overflow-hidden flex flex-col flex-1"
+                                className="overflow-hidden flex-1 flex flex-col"
                             >
                                 <div className="pt-4 flex-1 flex flex-col w-full min-w-0 min-h-[120px] sm:min-h-[150px]">
                                     <div className="flex-1 min-h-0">
@@ -351,21 +363,25 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
                                     >
-                                        <Input 
+                                        <Textarea
+                                            ref={textareaRef}
                                             placeholder="Ask something else..."
-                                            className="flex-1 bg-slate-800/60 border-slate-700 rounded-full h-8 sm:h-9 px-3 sm:px-4 text-xs"
+                                            className="flex-1 bg-slate-800/60 border-slate-700 rounded-2xl h-8 sm:h-9 px-3 sm:px-4 text-xs resize-none overflow-y-auto no-scrollbar"
                                             value={customQuestion}
                                             onChange={(e) => setCustomQuestion(e.target.value)}
                                             onKeyDown={handleCustomQuestionKeyDown}
                                             disabled={isResponding}
+                                            rows={1}
+                                            dir="auto"
                                         />
+
                                         <Button 
                                             size="icon" 
                                             className="rounded-full h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
                                             onClick={handleCustomQuestionSubmit}
                                             disabled={isResponding || !customQuestion.trim()}
                                         >
-                                            <Send className="w-4 h-4" />
+                                            <ArrowUp className="w-4 h-4" />
                                         </Button>
                                     </motion.div>
                                 </div>
