@@ -101,13 +101,15 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
     const allUserRoles = user.roles?.filter(role => role.role === 'subAdmin') || [];
 
     // 2. Handle page-level/global permissions that don't depend on a specific item.
-    // This is the key fix: check if *any* role grants this permission, regardless of its scope.
     const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator'];
-    if (pagePermissions.includes(permission)) {
+    if (pagePermissions.includes(permission) || itemId === null) {
+        // For these permissions, we just need to find if ANY role grants it.
         return allUserRoles.some(role => role.permissions?.includes(permission));
     }
+    
+    // ---- From here, we are dealing with content-specific permissions where itemId is not null ----
 
-    // 3. For content-related permissions, find roles that grant the specific permission.
+    // 3. Find roles that grant the specific content permission.
     const relevantRoles = allUserRoles.filter(
         role => role.permissions?.includes(permission)
     );
@@ -121,15 +123,8 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
     if (hasGlobalScope) {
         return true;
     }
-
-    // 5. If we are checking a content permission (itemId is not null) against scoped roles.
-    if (itemId === null) {
-        // This means we are checking a content permission (like 'canAddFolder') at the root level.
-        // Without a global scope, this is not allowed.
-        return false;
-    }
     
-    // Get the item's ancestry path (including itself).
+    // 5. Get the item's ancestry path (including itself).
     const itemPath = [...(hierarchy[itemId] || []), itemId];
 
     // Check if any of the item's ancestors (or the item itself) match a role's scopeId.
