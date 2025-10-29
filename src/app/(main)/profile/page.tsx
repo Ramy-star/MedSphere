@@ -258,7 +258,7 @@ export default function ProfilePage() {
 
       <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end -mt-14 px-4 sm:px-8 gap-4">
         <div className="relative group/avatar">
-          <Avatar className={cn("h-28 w-28 ring-4 ring-offset-4 ring-offset-background transition-all", avatarRingClass)}>
+          <Avatar className={cn("h-28 w-28 ring-4 ring-offset-2 ring-offset-slate-900 transition-all", avatarRingClass)}>
             <AvatarImage 
                 src={user.photoURL} 
                 alt={user.displayName}
@@ -300,39 +300,39 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div className="text-center sm:text-left sm:pb-4 w-full">
-            <div className="flex items-center justify-center sm:justify-start gap-2 group w-full">
-              <h1
-                ref={nameInputRef}
-                contentEditable={editingName}
-                suppressContentEditableWarning={true}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSaveName();
-                  }
-                  if (e.key === 'Escape') {
-                    e.preventDefault();
-                    handleCancelEdit();
-                  }
-                }}
-                className={cn(
-                  "text-3xl font-bold outline-none whitespace-nowrap",
-                  editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
-                )}
-              >
-                {user.displayName}
-              </h1>
-
-              {!editingName && (
+        <div className="text-center sm:text-left sm:pb-4 w-full group">
+            <div className="flex flex-col items-center sm:items-start">
+              <div className="flex items-center gap-2">
+                <h1
+                  ref={nameInputRef}
+                  contentEditable={editingName}
+                  suppressContentEditableWarning={true}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveName();
+                    }
+                    if (e.key === 'Escape') {
+                      e.preventDefault();
+                      handleCancelEdit();
+                    }
+                  }}
+                  className={cn(
+                    "text-3xl font-bold outline-none whitespace-nowrap",
+                    editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
+                  )}
+                >
+                  {user.displayName}
+                </h1>
+                {!editingName && (
                   <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full group-hover:opacity-100 md:opacity-0 transition-opacity flex-shrink-0" onClick={() => setEditingName(true)}>
                       <Edit className="w-5 h-5" />
                   </Button>
-              )}
-            </div>
+                )}
+              </div>
 
             {editingName && (
-                <div className="flex items-center gap-2 mt-2 justify-center sm:justify-start">
+                <div className="flex items-center gap-2 mt-2 w-full justify-center sm:justify-end">
                    <Button size="sm" onClick={handleSaveName} disabled={isSavingName} className="h-8 rounded-full flex-shrink-0">
                       {isSavingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1.5" />}
                       Save
@@ -343,6 +343,7 @@ export default function ProfilePage() {
                   </Button>
                 </div>
             )}
+            </div>
 
             <p className={cn("mt-1 text-lg font-medium flex items-center justify-center sm:justify-start gap-2", roleColor)}>
               <RoleIcon className="w-5 h-5" />
