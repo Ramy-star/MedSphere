@@ -97,30 +97,32 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
     if (user.roles?.some(r => r.role === 'superAdmin')) {
         return true;
     }
+    
+    const allUserRoles = user.roles?.filter(role => role.role === 'subAdmin') || [];
 
-    // 2. Handle page-level permissions separately. These should work regardless of scope.
+    // 2. Handle page-level/global permissions that don't depend on a specific item.
+    // This is the key fix: check if *any* role grants this permission, regardless of its scope.
     const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator'];
     if (pagePermissions.includes(permission)) {
-        // Check if ANY of the user's roles grant this page-level permission.
-        return user.roles?.some(role => role.permissions?.includes(permission)) || false;
+        return allUserRoles.some(role => role.permissions?.includes(permission));
     }
 
-    // 3. For content-related permissions, check roles and scopes.
-    const relevantRoles = user.roles?.filter(
-        role => role.role === 'subAdmin' && role.permissions?.includes(permission)
-    ) || [];
+    // 3. For content-related permissions, find roles that grant the specific permission.
+    const relevantRoles = allUserRoles.filter(
+        role => role.permissions?.includes(permission)
+    );
 
     if (relevantRoles.length === 0) {
         return false;
     }
 
-    // 4. Check if any relevant role has a global scope.
+    // 4. Check if any of these relevant roles has a global scope.
     const hasGlobalScope = relevantRoles.some(role => role.scope === 'global');
     if (hasGlobalScope) {
         return true;
     }
 
-    // 5. If we need to check a specific item (itemId is not null) against scoped roles.
+    // 5. If we are checking a content permission (itemId is not null) against scoped roles.
     if (itemId === null) {
         // This means we are checking a content permission (like 'canAddFolder') at the root level.
         // Without a global scope, this is not allowed.
@@ -316,7 +318,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const userProfile = await verifyAndCreateUser(studentId);
       if (userProfile) {
-        localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.studentId);
+        localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
         
         const sessionId = nanoid();
         localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
