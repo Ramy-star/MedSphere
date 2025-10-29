@@ -15,6 +15,7 @@ import remarkGfm from 'remark-gfm';
 import { useToast } from '@/hooks/use-toast';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '../ui/skeleton';
 
 type Suggestion = {
     label: string;
@@ -85,6 +86,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         try {
             const result = await getStudyBuddyInsight(userStats);
             setInitialInsight(result);
+            if (result) {
+                setIsOpen(true); // Auto-open on successful load
+            }
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
@@ -158,16 +162,12 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading) {
         return (
-            <div className="glass-card flex items-center gap-3 sm:gap-4 p-4 sm:p-6 rounded-2xl min-h-[140px]">
+             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl">
                 <div className="flex-shrink-0">
-                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 rounded-full flex items-center justify-center">
-                        <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 animate-spin" />
-                    </div>
+                    <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
                 <div className="space-y-2 flex-1">
-                    <div className="h-4 w-1/3 bg-slate-700/80 rounded-md animate-pulse"></div>
-                    <div className="h-3 w-3/4 bg-slate-800 rounded-md animate-pulse"></div>
-                    <div className="h-3 w-1/2 bg-slate-800 rounded-md animate-pulse"></div>
+                    <Skeleton className="h-4 w-1/3" />
                 </div>
             </div>
         );
