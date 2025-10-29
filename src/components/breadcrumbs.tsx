@@ -8,6 +8,7 @@ import { Skeleton } from './ui/skeleton';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth-store';
 
 type Crumb = {
   id: string;
@@ -19,6 +20,7 @@ export function Breadcrumbs() {
   const pathname = usePathname();
   const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
   const [crumbs, setCrumbs] = useState<Crumb[]>([]);
+  const { user } = useAuthStore();
 
   const itemMap = useMemo(() => {
     if (!allItems) return new Map<string, Content>();
@@ -55,6 +57,9 @@ export function Breadcrumbs() {
       const query = new URLSearchParams(window.location.search).get('q');
       setCrumbs([{ id: 'search', name: `Search: "${query}"`, path: pathname }]);
       return;
+    } else if (firstSegment === 'profile') {
+        setCrumbs([{ id: 'profile', name: user?.displayName || 'Profile', path: pathname }]);
+        return;
     }
 
 
@@ -77,7 +82,7 @@ export function Breadcrumbs() {
 
     setCrumbs(newCrumbs);
 
-  }, [pathname, allItems, itemMap]);
+  }, [pathname, allItems, itemMap, user]);
 
   const homeElement = (
     <div className="flex items-center">
