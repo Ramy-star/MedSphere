@@ -140,7 +140,7 @@ export default function ProfilePage() {
     
     if (newDisplayName === '' || newDisplayName === user.displayName) {
       setEditingName(false);
-      if(nameInputRef.current) nameInputRef.current.textContent = user.displayName; // Revert if empty or unchanged
+      if(nameInputRef.current) nameInputRef.current.textContent = user.displayName || ''; // Revert if empty or unchanged
       return;
     }
 
@@ -404,7 +404,7 @@ export default function ProfilePage() {
             <AiStudyBuddy user={user} />
             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
-                    <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
+                    <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? null} />
                     <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
                     <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
                 </div>
@@ -483,3 +483,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
