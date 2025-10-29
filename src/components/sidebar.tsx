@@ -9,6 +9,7 @@ import {
   Menu,
   Folder as FolderIcon,
   Book,
+  Inbox,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -29,6 +30,7 @@ import { allSubjectIcons } from '@/lib/file-data';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import Image from 'next/image';
 import { HierarchyIcon } from './icons/HierarchyIcon';
+import { useAuthStore } from '@/stores/auth-store';
 
 
 type TreeNode = Content & { children?: TreeNode[] };
@@ -86,6 +88,9 @@ const getIconForType = (item: Content) => {
         </div>
       );
     }
+    if (item.iconName === 'Inbox') {
+        return <Inbox className="h-5 w-5 text-blue-400 shrink-0" />;
+    }
     switch (item.type) {
       case 'LEVEL':
         return <Layers className="h-5 w-5 text-slate-400 shrink-0" />;
@@ -128,6 +133,7 @@ const TreeItem = ({
 
     const getActiveColor = () => {
         if (!isNodeActive) return 'text-slate-300';
+        if (node.iconName === 'Inbox') return 'text-blue-400';
         switch (node.type) {
             case 'LEVEL': return 'text-blue-400';
             case 'SEMESTER': return 'text-green-400';
@@ -209,16 +215,23 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
   const isMobile = useIsMobile();
   
   const { data: allItems } = useCollection<Content>('content');
+  const { can } = useAuthStore();
 
   const itemMap = useMemo(() => new Map<string, TreeNode>(), []);
 
   const tree = useMemo(() => {
     if (!allItems) return [];
+    
+    // Filter out hidden items for non-admins
+    const visibleItems = allItems.filter(item => 
+        !item.metadata?.isHidden || can('canAccessAdminPanel', null)
+    );
+
     // Clear and rebuild map to ensure it's fresh
     itemMap.clear();
-    const folderItems = allItems.filter(item => item.type !== 'FILE' && item.type !== 'LINK' && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD');
+    const folderItems = visibleItems.filter(item => item.type !== 'FILE' && item.type !== 'LINK' && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD');
     return buildTree(folderItems, itemMap);
-  }, [allItems, itemMap]);
+  }, [allItems, itemMap, can]);
 
   const [openItems, setOpenItems] = useState(() => {
       if (typeof window !== 'undefined') {
@@ -319,24 +332,39 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
 
   const collapsedViewContent = useMemo(() => {
      if (!tree) return null;
-     return tree.map((level) => {
-       const isPathActive = activePath.has(level.id);
-       const path = `/level/${encodeURIComponent(level.name)}`;
-       const shortName = level.name.replace('Level', 'Lvl');
+     return tree.map((node) => {
+       const isPathActive = activePath.has(node.id);
+       let path: string;
+        if (node.type === 'LEVEL') {
+            path = `/level/${encodeURIComponent(node.name)}`;
+        } else {
+            path = `/folder/${node.id}`;
+        }
+       const shortName = node.type === 'LEVEL' ? node.name.replace('Level', 'Lvl') : null;
+       const IconComponent = getIconForType(node);
+       
        return (
-            <motion.button
-                key={level.id}
-                onClick={() => handleLinkClick(path)}
-                onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
-                className={cn(
-                  'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300 transition-colors',
-                  isPathActive ? 'bg-blue-500/20 text-blue-300' : 'hover:bg-transparent'
-                )}
-                transition={{ duration: 0.2 }}
-                layout
-            >
-              <span className="font-semibold text-sm">{shortName}</span>
-            </motion.button>
+            <TooltipProvider key={node.id}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <motion.button
+                      onClick={() => handleLinkClick(path)}
+                      onMouseEnter={() => prefetcher.prefetchChildren(node.id)}
+                      className={cn(
+                        'p-2.5 rounded-2xl w-full flex items-center justify-center text-slate-300 transition-colors',
+                        isPathActive ? 'bg-blue-500/20 text-blue-300' : 'hover:bg-transparent'
+                      )}
+                      transition={{ duration: 0.2 }}
+                      layout
+                  >
+                    {IconComponent}
+                  </motion.button>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                    <p>{node.name}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
        )
      })
   }, [tree, activePath, handleLinkClick]);

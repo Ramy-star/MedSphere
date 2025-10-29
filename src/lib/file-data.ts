@@ -2,7 +2,7 @@
 import { 
     Bone, Microscope, Activity, FlaskConical, Brain, BarChart3, Lightbulb, Languages, Pill, Bug, Shield, DnaIcon, Syringe, Stethoscope,
     Wind, HeartPulse, UserCheck, Briefcase, Speech, GitMerge, Airplay, Globe, Dna, HelpingHand, Users, TestTube2, Baby, Eye, Ear,
-    FolderKanban, Star, Ambulance, Home, Scale, Folder as FolderIcon, type LucideIcon
+    FolderKanban, Star, Ambulance, Home, Scale, Folder as FolderIcon, type LucideIcon, Inbox
 } from 'lucide-react';
 import type { Content } from './contentService';
 import { SurgeryIcon } from '@/components/icons/SurgeryIcon';
@@ -61,6 +61,7 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
     'Family Medicine': Home,
     Toxicology: Scale,
     'UE 3': Star,
+    Inbox: Inbox,
 };
 
 const levelsRaw = [
@@ -147,8 +148,20 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
   ],
 };
 
-
 export const allContent: Content[] = [];
+
+// Add the hidden Telegram Inbox folder first
+allContent.push({
+    id: 'telegram-inbox-folder', // Fixed ID
+    name: 'Telegram Inbox',
+    type: 'FOLDER',
+    parentId: null,
+    iconName: 'Inbox',
+    color: 'text-blue-400',
+    metadata: {
+        isHidden: true,
+    }
+});
 
 levelsRaw.forEach(level => {
     const levelId = uuidv4();

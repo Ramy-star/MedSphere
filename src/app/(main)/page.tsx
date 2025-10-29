@@ -2,7 +2,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Content, contentService } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { useFirebase } from '@/firebase/provider';
 import { cn } from '@/lib/utils';
 import React from 'react';
 import { prefetcher } from '@/lib/prefetchService';
+import { useAuthStore } from '@/stores/auth-store';
+import { FolderCard } from '@/components/FolderCard';
 
 
 // This forces the page to be dynamically rendered.
@@ -19,10 +21,16 @@ export default function HomePage() {
   const { db } = useFirebase();
   const [isSeeding, setIsSeeding] = useState(false);
   const router = useRouter();
-  const { data: levels, loading } = useCollection<Content>('content', {
-      where: ['type', '==', 'LEVEL'],
+  const { can } = useAuthStore();
+  const { data: allItems, loading } = useCollection<Content>('content', {
+      where: ['parentId', '==', null],
       orderBy: ['order', 'asc']
   });
+
+  const levels = useMemo(() => {
+    if (!allItems) return [];
+    return allItems.filter(item => item.metadata?.isHidden ? can('canAccessAdminPanel', null) : true);
+  }, [allItems, can]);
 
   const handleSeed = useCallback(async () => {
     setIsSeeding(true);
@@ -45,7 +53,8 @@ export default function HomePage() {
   }, [loading, db, levels, handleSeed]);
 
   
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>, path: string) => {
+  const handleItemClick = (e: React.MouseEvent<HTMLDivElement>, item: Content) => {
+    const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
     // Use middle mouse button for new tab, or if ctrl/cmd is pressed
     if (e.button === 1 || e.ctrlKey || e.metaKey) {
       window.open(path, '_blank');
@@ -78,24 +87,44 @@ export default function HomePage() {
 
       return (
            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
-              {levels && levels.map((level, index) => {
+              {levels && levels.map((item, index) => {
                   const isLastItem = index === levels.length - 1;
+                  const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
+
+                  if (item.type === 'FOLDER') {
+                    return (
+                        <div key={item.id} className={cn("col-span-1")}>
+                             <FolderCard
+                                item={item}
+                                onRename={() => {}}
+                                onDelete={() => {}}
+                                onIconChange={() => {}}
+                                onClick={() => router.push(path)}
+                                onMove={() => {}}
+                                onCopy={() => {}}
+                                onToggleVisibility={() => {}}
+                                displayAs="grid"
+                            />
+                        </div>
+                    );
+                  }
+
                   return (
                     <div 
-                        key={level.id}
+                        key={item.id}
                         className={cn(
                             // On mobile, if it's the last item and the total is odd, span 2 columns
                             isLastItem && isOdd && "col-span-2 sm:col-span-1 md:col-span-1"
                         )} 
-                        onMouseDown={(e) => handleMouseDown(e, `/level/${encodeURIComponent(level.name)}`)}
-                        onMouseEnter={() => prefetcher.prefetchChildren(level.id)}
+                        onMouseDown={(e) => handleItemClick(e, item)}
+                        onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
                     >
                         <div className={cn(
                             "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center rounded-[1.25rem]",
                             // Center the content if we are spanning 2 columns
                             isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
                         )}>
-                            <h3 className="text-base md:text-xl font-semibold text-white">{level.name}</h3>
+                            <h3 className="text-base md:text-xl font-semibold text-white">{item.name}</h3>
                         </div>
                     </div>
                   )
