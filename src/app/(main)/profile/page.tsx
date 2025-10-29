@@ -403,7 +403,7 @@ export default function ProfilePage() {
             </CollapsibleSection>
         </div>
 
-        <div className="w-px bg-slate-700 h-full hidden lg:block" />
+        <div className="w-px bg-slate-600 h-full hidden lg:block" />
 
         <div className="space-y-8 mt-8 lg:mt-0">
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
@@ -472,3 +472,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
