@@ -56,8 +56,9 @@ const sectionVariants = {
         opacity: 0,
         height: 0,
         transition: {
-            duration: 0.3,
-            ease: "easeInOut",
+            type: 'spring',
+            stiffness: 400,
+            damping: 40,
             when: "afterChildren",
             staggerChildren: 0.05,
             staggerDirection: -1
@@ -221,7 +222,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
                 {initialInsight.suggestedActions.map((suggestion, index) => (
                     <motion.div
-                        key={index}
+                        key={suggestion.label + index}
                         initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0, transition: { delay: 0.2 + index * 0.1 } }}
                     >
@@ -243,7 +244,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const ChatView = () => (
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0">
-                <Button onClick={handleBackToIntro} variant="ghost" size="icon" className="text-slate-300 hover:bg-slate-700/80 h-7 w-7 rounded-full">
+                 <Button onClick={handleBackToIntro} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div className="flex items-center gap-1">
@@ -327,9 +328,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                 animate="open"
                                 exit="collapsed"
                                 variants={sectionVariants}
-                                className="overflow-hidden flex-1 flex flex-col min-h-0"
+                                className="overflow-hidden flex flex-col flex-1"
                             >
-                                <div className="mt-4 flex-1 flex flex-col w-full min-w-0 min-h-[100px] sm:min-h-[120px] overflow-hidden">
+                                <div className="pt-4 flex-1 flex flex-col w-full min-w-0 min-h-[120px] sm:min-h-[150px]">
                                     <div className="flex-1 min-h-0">
                                         <AnimatePresence mode="wait">
                                             <motion.div
