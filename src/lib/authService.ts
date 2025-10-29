@@ -53,13 +53,10 @@ export async function getUserProfile(studentId: string): Promise<any | null> {
         console.error("Firestore not initialized in authService.getUserProfile");
         return null;
     }
-    const usersRef = collection(db, 'users');
-    const q = query(usersRef, where('studentId', '==', studentId));
-    const querySnapshot = await getDocs(q);
+    const userDocRef = doc(db, 'users', studentId);
+    const userDoc = await getDoc(userDocRef);
 
-    if (!querySnapshot.empty) {
-        // Should only be one user with a given studentId
-        const userDoc = querySnapshot.docs[0];
+    if (userDoc.exists()) {
         return { id: userDoc.id, ...userDoc.data() };
     }
     return null;
@@ -89,16 +86,12 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
         console.log(`User not found for ID: ${trimmedId}. Creating new profile.`);
         const studentData = allStudentData.get(trimmedId);
         const userLevel = idToLevelMap.get(trimmedId);
+        const isUserSuperAdmin = await isSuperAdmin(trimmedId);
         
         const newUserDocRef = doc(db, 'users', trimmedId);
         
-        const existingDoc = await getDoc(newUserDocRef);
-        if (existingDoc.exists()) {
-            console.log(`User profile already exists for ID ${trimmedId}, returning existing profile.`);
-            return { id: existingDoc.id, ...existingDoc.data() };
-        }
-        
         const newUserProfile = {
+            id: trimmedId,
             uid: trimmedId, 
             studentId: trimmedId,
             displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
@@ -106,7 +99,7 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
             email: studentData?.['Academic Email'] || '',
             level: userLevel || 'Unknown',
             createdAt: new Date().toISOString(),
-            roles: [],
+            roles: isUserSuperAdmin ? [{ role: 'superAdmin', scope: 'global' }] : [],
         };
         
         await setDoc(newUserDocRef, newUserProfile);
@@ -119,3 +112,5 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
         return null;
     }
 }
+
+    

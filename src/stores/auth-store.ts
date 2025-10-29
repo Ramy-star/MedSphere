@@ -102,14 +102,13 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
 
     // 2. Handle page-level/global permissions that don't depend on a specific item.
     const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator'];
-    if (pagePermissions.includes(permission) || itemId === null) {
+    if (pagePermissions.includes(permission)) {
         // For these permissions, we just need to find if ANY role grants it.
         return allUserRoles.some(role => role.permissions?.includes(permission));
     }
     
-    // ---- From here, we are dealing with content-specific permissions where itemId is not null ----
+    // ---- From here, we are dealing with content-specific permissions ----
 
-    // 3. Find roles that grant the specific content permission.
     const relevantRoles = allUserRoles.filter(
         role => role.permissions?.includes(permission)
     );
@@ -118,13 +117,18 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
         return false;
     }
 
-    // 4. Check if any of these relevant roles has a global scope.
+    // Check for a global scope that would grant permission everywhere.
     const hasGlobalScope = relevantRoles.some(role => role.scope === 'global');
     if (hasGlobalScope) {
         return true;
     }
     
-    // 5. Get the item's ancestry path (including itself).
+    // If checking a permission at the root (e.g., adding a level), only global scope applies.
+    if (itemId === null) {
+        return false;
+    }
+    
+    // Get the item's ancestry path (including itself).
     const itemPath = [...(hierarchy[itemId] || []), itemId];
 
     // Check if any of the item's ancestors (or the item itself) match a role's scopeId.
@@ -315,9 +319,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
       if (userProfile) {
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
         
-        const sessionId = nanoid();
-        localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
-        set({ currentSessionId: sessionId });
+        const sessionId = get().currentSessionId || nanoid();
+        if (sessionId !== get().currentSessionId) {
+          localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
+          set({ currentSessionId: sessionId });
+        }
 
         const newSession: UserSession = {
             sessionId,
@@ -328,9 +334,17 @@ const useAuthStore = create<AuthState>((set, get) => ({
         };
         
         const userDocRef = doc(db, 'users', userProfile.id);
-        await updateDoc(userDocRef, {
-            sessions: arrayUnion(newSession)
-        });
+        
+        // This is a more robust way to add a session
+        const docSnap = await getDoc(userDocRef);
+        const existingSessions = (docSnap.data()?.sessions as UserSession[] || []).filter(s => s.status !== 'logged_out');
+        const thisSessionExists = existingSessions.some(s => s.sessionId === sessionId);
+
+        if (!thisSessionExists) {
+            await updateDoc(userDocRef, {
+                sessions: arrayUnion(newSession)
+            });
+        }
 
         await get().checkAuth(); // This will now build hierarchy and set up the listener
         return true;
@@ -401,8 +415,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     if (!sessionToLogout) return;
     
     // To ensure immutability and trigger re-renders correctly, we create a new array
-    const updatedSessions = user.sessions.filter(s => s.sessionId !== sessionId);
-    updatedSessions.push({ ...sessionToLogout, status: 'logged_out' });
+    const updatedSessions = user.sessions.map(s => s.sessionId === sessionId ? { ...s, status: 'logged_out' } : s);
 
     await updateDoc(userDocRef, {
         sessions: updatedSessions
@@ -430,3 +443,5 @@ if (typeof window !== 'undefined') {
 }
 
 export { useAuthStore };
+
+    
