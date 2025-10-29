@@ -33,6 +33,14 @@ type ChatMessage = {
     text: string;
 };
 
+type TimeOfDayTheme = {
+    greeting: string;
+    bgColor: string;
+    textColor: string;
+    iconColor: string;
+};
+
+
 const sectionVariants = {
     open: {
         clipPath: `inset(0% 0% 0% 0%)`,
@@ -59,7 +67,8 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const [isOpen, setIsOpen] = useState(false);
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
-    const messagesRef = useRef<ChatMessage[]>([]); // Use ref to prevent re-renders on input change
+    const messagesRef = useRef<ChatMessage[]>([]);
+    const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
 
     useEffect(() => {
         messagesRef.current = chatHistory;
@@ -70,9 +79,17 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
         }
     }, [chatHistory, isResponding]);
+    
+    const getThemeForTime = useCallback((): TimeOfDayTheme => {
+        const hour = new Date().getHours();
+        const firstName = user.displayName?.split(' ')[0] || user.username;
+        if (hour >= 5 && hour < 12) return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: '#FFE58A', textColor: '#3A3A3A', iconColor: '#3A3A3A' };
+        if (hour >= 12 && hour < 17) return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: '#FFD580', textColor: '#3A3A3A', iconColor: '#3A3A3A' };
+        if (hour >= 17 && hour < 21) return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: '#9C7CFD', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: '#1E3A8A', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+    }, [user.displayName, user.username]);
 
-
-    const fetchInitialInsight = useCallback(async () => {
+    const fetchInitialInsight = useCallback(async (greeting: string) => {
         setLoading(true);
         const userStats = {
             displayName: user.displayName || user.username,
@@ -95,11 +112,13 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     }, [user]);
 
     useEffect(() => {
-        fetchInitialInsight();
-    }, [fetchInitialInsight]);
+        const currentTheme = getThemeForTime();
+        setTheme(currentTheme);
+        fetchInitialInsight(currentTheme.greeting);
+    }, [fetchInitialInsight, getThemeForTime]);
 
     const submitQuery = async (prompt: string) => {
-        if (!prompt) return;
+        if (!prompt || !theme) return;
 
         setView('chat');
         const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: prompt }];
@@ -157,9 +176,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         setChatHistory([]);
     };
 
-    if (loading) {
+    if (loading || !theme) {
         return (
-             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl">
+             <div className={cn("glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl")} style={{ backgroundColor: theme?.bgColor }}>
                 <div className="flex-shrink-0">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
@@ -174,7 +193,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const IntroView = () => (
         <>
-            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap" style={{color: theme.textColor}}>{initialInsight.mainInsight}</ReactMarkdown>
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
                 {initialInsight.suggestedActions.map((suggestion, index) => (
                     <motion.div
@@ -235,32 +254,22 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         </div>
     );
 
-    const greeting = (() => {
-        const hour = new Date().getHours();
-        const firstName = user.displayName?.split(' ')[0] || user.username;
-        if (hour >= 5 && hour < 12) return `Good morning, ${firstName}! 🌅`;
-        if (hour >= 12 && hour < 17) return `Good afternoon, ${firstName}! 🌤️`;
-        if (hour >= 17 && hour < 21) return `Good evening, ${firstName}! 🌇`;
-        return `Good night, ${firstName}! 🌙`;
-    })();
-
-
     return (
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full">
-            <div className="glass-card p-3 sm:p-4 rounded-2xl">
+            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: theme.bgColor }}>
                 <Collapsible.Trigger className="w-full">
                     <div className="flex items-center gap-3 sm:gap-4">
                         <div className="flex-shrink-0">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden">
-                                <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
+                                <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: theme.iconColor }} />
                             </div>
                         </div>
                         <div className="flex-1 text-left">
-                             <h3 className="text-sm sm:text-base font-bold text-white">
-                                {greeting}
+                             <h3 className="text-sm sm:text-base font-bold" style={{ color: theme.textColor }}>
+                                {theme.greeting}
                             </h3>
                         </div>
-                        <ChevronDown className={cn("h-5 w-5 text-slate-400 transition-transform", isOpen && "rotate-180")} />
+                        <ChevronDown className={cn("h-5 w-5 transition-transform", isOpen && "rotate-180")} style={{ color: theme.textColor }} />
                     </div>
                 </Collapsible.Trigger>
 
