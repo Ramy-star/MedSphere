@@ -59,12 +59,7 @@ export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onF
 
 
   return (
-    <div className="mt-12">
-      <div className="flex items-center gap-3 mb-6">
-        <Star className="w-6 h-6 text-yellow-400" />
-        <h2 className="text-2xl font-bold text-white">Your Favorites</h2>
-      </div>
-
+    <>
       {loading && (
         <div className="space-y-2">
             <div className="h-12 w-full rounded-lg bg-slate-800/50 animate-pulse" />
@@ -118,6 +113,6 @@ export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onF
           })}
         </div>
       )}
-    </div>
+    </>
   );
 };

@@ -33,12 +33,14 @@ export default function MainLayout({
         animate={{ opacity: 1, y: 0 }}
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className={cn(
-          "flex-1 flex flex-col h-full overflow-hidden px-2 sm:px-4 md:px-6 py-4 md:py-6",
-          !isHomePage && !isProfilePage && "glass-card"
+          "flex-1 flex flex-col h-full overflow-hidden px-2 sm:px-6 py-4 md:py-6",
+          !isHomePage && !isProfilePage && "glass-card",
+           isProfilePage && "px-0 sm:px-0"
         )}
       >
         <div className={cn(
           "flex-shrink-0 flex flex-col min-h-[48px]",
+           "px-2 sm:px-6 md:px-6",
           isProfilePage && "-mx-6 -mt-6" // Remove padding for full-width cover
         )}>
             {!isProfilePage && <Breadcrumbs />}

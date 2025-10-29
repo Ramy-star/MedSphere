@@ -121,8 +121,7 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
   }, {} as Record<string, Record<string, Achievement[]>>);
 
   return (
-    <div className="mt-12">
-      <h2 className="text-2xl font-bold text-white mb-6">Achievements</h2>
+    <div className="space-y-4">
       {Object.entries(categorizedAndGroupedAchievements).map(([category, groups], categoryIndex) => {
         const isSpecialCategory = category === 'Special';
         const hasEarnedSpecial = isSuperAdmin || Object.values(groups).flat().some(ach => earnedAchievements.has(ach.id));
@@ -135,7 +134,7 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
 
         return (
             <React.Fragment key={category}>
-                <div className="mb-8">
+                <div className="mb-4">
                     <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
                     <div className="space-y-4">
                         {Object.entries(groups).map(([group, achievements], groupIndex) => (
@@ -158,7 +157,7 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
                     </div>
                 </div>
                 {categoryIndex < Object.keys(categorizedAndGroupedAchievements).length - 1 && (
-                    <hr className="my-8 border-t-2 border-slate-800" />
+                    <hr className="my-4 border-t-2 border-slate-800" />
                 )}
           </React.Fragment>
         );
