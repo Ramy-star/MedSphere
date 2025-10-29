@@ -83,16 +83,16 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         const hour = new Date().getHours();
         const firstName = user.displayName?.split(' ')[0] || user.username;
         if (hour >= 5 && hour < 12) { // 5:00 AM - 11:59 AM
-            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(255, 229, 138, 0.2)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(206, 167, 23, 0.25)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
         if (hour >= 12 && hour < 17) { // 12:00 PM - 4:59 PM
-            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(255, 213, 128, 0.2)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(152, 41, 13, 0.25)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
         if (hour >= 17 && hour < 21) { // 5:00 PM - 8:59 PM
-            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(156, 124, 253, 0.15)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(118, 12, 59, 0.15)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
         }
         // 9:00 PM - 4:59 AM
-        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(30, 58, 138, 0.2)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(5, 5, 61, 0.2)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
     const fetchInitialInsight = useCallback(async (greeting: string) => {
