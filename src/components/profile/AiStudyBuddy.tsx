@@ -4,7 +4,7 @@
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Loader2, Send, ArrowLeft, ChevronDown } from 'lucide-react';
+import { Loader2, Send, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
@@ -69,6 +69,8 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const messagesRef = useRef<ChatMessage[]>([]);
     const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
+    const [isExpanded, setIsExpanded] = useState(false);
+    const [fontSize, setFontSize] = useState(12); // Base font size in pixels
 
     useEffect(() => {
         messagesRef.current = chatHistory;
@@ -85,18 +87,18 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         const firstName = user.displayName?.split(' ')[0] || user.username;
         // 5:00 AM - 11:59 AM
         if (hour >= 5 && hour < 12) {
-            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(255, 229, 138, 0.35)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(209, 171, 35, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
         // 12:00 PM - 4:59 PM
         if (hour >= 12 && hour < 17) {
-            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(255, 213, 128, 0.35)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(165, 46, 17, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
         // 5:00 PM - 8:59 PM
         if (hour >= 17 && hour < 21) {
-            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(156, 124, 253, 0.25)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(118, 12, 44, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
         }
         // 9:00 PM - 4:59 AM
-        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(30, 58, 138, 0.3)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(11, 11, 86, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
     const fetchInitialInsight = useCallback(async (greeting: string) => {
@@ -189,7 +191,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading || !theme) {
         return (
-             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 150% 120% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 90%)`}}>
+             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 180% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 90%)`}}>
                 <div className="flex-shrink-0">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
@@ -204,7 +206,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const IntroView = () => (
         <>
-            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap" style={{color: theme.textColor}}>{initialInsight.mainInsight}</ReactMarkdown>
+            <div style={{color: theme.textColor}}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
+            </div>
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
                 {initialInsight.suggestedActions.map((suggestion, index) => (
                     <motion.div
@@ -240,16 +244,16 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                     Back
                 </Button>
             </div>
-            <div ref={chatContainerRef} className="flex-1 space-y-3 max-h-56 sm:max-h-64 overflow-y-auto no-scrollbar pr-2 -mr-2">
+            <div ref={chatContainerRef} className="flex-1 space-y-3 max-h-56 sm:max-h-64 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
                 {chatHistory.map((message, index) => (
                     <div key={index} className="flex flex-col gap-2">
                         {message.role === 'user' && (
-                             <div className="text-xs self-end bg-blue-600 text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%]">
+                             <div className="self-end bg-blue-600 text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%]">
                                 {message.text}
                             </div>
                         )}
                         {message.role === 'model' && (
-                            <div className="text-xs self-start bg-slate-700/70 text-slate-300 rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%] prose prose-sm prose-invert">
+                            <div className="self-start bg-slate-700/70 text-slate-300 rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%] prose prose-sm prose-invert">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
                             </div>
                         )}
@@ -266,23 +270,52 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     );
 
     return (
-        <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full">
-            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 150% 120% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}>
-                <Collapsible.Trigger className="w-full">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="flex-shrink-0">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
-                                <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+      <AnimatePresence>
+        {isExpanded && (
+           <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+              onClick={() => setIsExpanded(false)}
+            />
+        )}
+        <Collapsible.Root 
+            open={isOpen} 
+            onOpenChange={setIsOpen} 
+            className={cn(
+                "w-full transition-all duration-500 ease-in-out",
+                isExpanded && "fixed inset-0 sm:inset-5 z-50 m-auto max-w-2xl max-h-[80vh] flex"
+            )}
+        >
+            <div 
+                className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full", isExpanded ? "h-full" : "")}
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 250% 170% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}
+            >
+                <div className="flex items-start justify-between">
+                    <Collapsible.Trigger className="w-full">
+                        <div className="flex items-center gap-3 sm:gap-4">
+                            <div className="flex-shrink-0">
+                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
+                                    <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                                </div>
                             </div>
+                            <div className="flex-1 text-left">
+                                <h3 className="text-sm sm:text-base font-bold text-white">
+                                    {theme.greeting}
+                                </h3>
+                            </div>
+                            <ChevronDown className={cn("h-5 w-5 transition-transform text-slate-400", isOpen && "rotate-180")} />
                         </div>
-                        <div className="flex-1 text-left">
-                             <h3 className="text-sm sm:text-base font-bold text-white">
-                                {theme.greeting}
-                            </h3>
-                        </div>
-                        <ChevronDown className={cn("h-5 w-5 transition-transform text-slate-400", isOpen && "rotate-180")} />
+                    </Collapsible.Trigger>
+                    <div className="flex items-center absolute top-2 right-2 sm:top-3 sm:right-3">
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.max(s - 1, 10))}><Minus size={16}/></Button>
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setIsExpanded(!isExpanded)}>
+                            {isExpanded ? <Shrink size={16}/> : <Maximize size={16}/>}
+                        </Button>
                     </div>
-                </Collapsible.Trigger>
+                </div>
 
                  <AnimatePresence initial={false}>
                     {isOpen && (
@@ -292,10 +325,10 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                 animate="open"
                                 exit="collapsed"
                                 variants={sectionVariants}
-                                className="overflow-hidden"
+                                className="overflow-hidden flex-1 flex flex-col"
                             >
                                 <div className="mt-4 flex-1 flex flex-col w-full min-w-0 min-h-[100px] sm:min-h-[120px]">
-                                    <div className="flex-1">
+                                    <div className={cn("flex-1", isExpanded && "overflow-y-auto no-scrollbar")}>
                                         <AnimatePresence mode="wait">
                                             <motion.div
                                                 key={view}
@@ -338,5 +371,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                  </AnimatePresence>
             </div>
         </Collapsible.Root>
+      </AnimatePresence>
     );
 }
+
