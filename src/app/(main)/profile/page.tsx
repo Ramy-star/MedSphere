@@ -260,7 +260,7 @@ export default function ProfilePage() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full pb-12 overflow-x-hidden"
     >
-      <div className="relative group/cover h-32 sm:h-64">
+      <div className="relative group/cover h-40 sm:h-64">
          <input
             type="file"
             ref={coverFileInputRef}
@@ -472,3 +472,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    

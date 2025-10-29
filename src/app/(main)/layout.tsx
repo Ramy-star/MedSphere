@@ -40,7 +40,7 @@ export default function MainLayout({
         )}
       >
         {isProfilePage && user?.metadata?.coverPhotoURL && (
-            <div className="absolute inset-x-0 top-0 h-48 sm:h-64 z-0">
+            <div className="absolute inset-x-0 top-0 h-40 sm:h-64 z-0">
                 <Image
                     src={user.metadata.coverPhotoURL}
                     alt="Cover photo"
@@ -71,3 +71,5 @@ export default function MainLayout({
     </div>
   );
 }
+
+    
