@@ -258,9 +258,9 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full pb-12 overflow-x-hidden no-scrollbar"
+      className="w-full pb-12"
     >
-      <div className="relative group/cover h-36 sm:h-64">
+      <div className="relative group/cover sm:h-64 h-36">
          <input
             type="file"
             ref={coverFileInputRef}
@@ -474,3 +474,6 @@ export default function ProfilePage() {
   );
 }
 
+
+
+    
