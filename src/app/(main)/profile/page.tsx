@@ -261,7 +261,7 @@ export default function ProfilePage() {
   const roleColor = isSuperAdmin ? 'text-yellow-400' : isSubAdmin ? 'text-blue-400' : 'text-slate-300';
   const RoleIcon = isSuperAdmin ? Crown : isSubAdmin ? Shield : UserIcon;
   const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
-  const userLevel = user.level || studentIdToLevelMap.get(user.studentId) || 'Not Specified';
+  const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
 
   return (
     <>
@@ -405,8 +405,8 @@ export default function ProfilePage() {
             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
-                    <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
-                    <InfoCard icon={School} label="Academic Level" value={userLevel} />
+                    <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
+                    <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
                 </div>
             </CollapsibleSection>
             <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
@@ -483,5 +483,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
