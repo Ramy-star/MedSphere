@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
@@ -16,6 +15,13 @@ import { useToast } from '@/hooks/use-toast';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+
 
 type Suggestion = {
     label: string;
@@ -70,7 +76,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const messagesRef = useRef<ChatMessage[]>([]);
     const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [fontSize, setFontSize] = useState(12); // Base font size in pixels
+    const [fontSize, setFontSize] = useState(12);
 
     useEffect(() => {
         messagesRef.current = chatHistory;
@@ -85,20 +91,16 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const getThemeForTime = useCallback((): TimeOfDayTheme => {
         const hour = new Date().getHours();
         const firstName = user.displayName?.split(' ')[0] || user.username;
-        // 5:00 AM - 11:59 AM
         if (hour >= 5 && hour < 12) {
-            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(209, 171, 35, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(255, 229, 138, 0.15)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
-        // 12:00 PM - 4:59 PM
         if (hour >= 12 && hour < 17) {
-            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(165, 46, 17, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(255, 213, 128, 0.2)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
-        // 5:00 PM - 8:59 PM
         if (hour >= 17 && hour < 21) {
-            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(118, 12, 44, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(156, 124, 253, 0.15)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
         }
-        // 9:00 PM - 4:59 AM
-        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(11, 11, 86, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(30, 58, 138, 0.2)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
     const fetchInitialInsight = useCallback(async (greeting: string) => {
@@ -115,7 +117,6 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         try {
             const result = await getStudyBuddyInsight({greeting, ...userStats});
             setInitialInsight(result);
-            //if(!isOpen) setIsOpen(true);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
@@ -191,7 +192,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading || !theme) {
         return (
-             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 180% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 90%)`}}>
+             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)'}}>
                 <div className="flex-shrink-0">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
@@ -232,19 +233,47 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     );
 
     const ChatView = () => (
-        <div className="flex flex-col h-full">
+        <div className="flex flex-col h-full overflow-hidden">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
-                 <Button
-                    onClick={handleBackToIntro}
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-300 h-7"
-                >
-                    <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
-                    Back
-                </Button>
+                <TooltipProvider>
+                    <div className="flex items-center gap-1">
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    onClick={handleBackToIntro}
+                                    variant="outline"
+                                    size="icon"
+                                    className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-300 h-7 w-7"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Back to suggestions</p></TooltipContent>
+                        </Tooltip>
+                         <Tooltip>
+                            <TooltipTrigger asChild>
+                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
+                            </TooltipTrigger>
+                             <TooltipContent><p>Increase font size</p></TooltipContent>
+                        </Tooltip>
+                         <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.max(s - 1, 10))}><Minus size={16}/></Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>Decrease font size</p></TooltipContent>
+                        </Tooltip>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setIsExpanded(!isExpanded)}>
+                                    {isExpanded ? <Shrink size={16}/> : <Maximize size={16}/>}
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent><p>{isExpanded ? 'Shrink' : 'Expand'}</p></TooltipContent>
+                        </Tooltip>
+                    </div>
+                </TooltipProvider>
             </div>
-            <div ref={chatContainerRef} className="flex-1 space-y-3 max-h-56 sm:max-h-64 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
+            <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
                 {chatHistory.map((message, index) => (
                     <div key={index} className="flex flex-col gap-2">
                         {message.role === 'user' && (
@@ -273,6 +302,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
       <AnimatePresence>
         {isExpanded && (
            <motion.div
+              key="backdrop"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -290,44 +320,35 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         >
             <div 
                 className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full", isExpanded ? "h-full" : "")}
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 250% 170% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 250% 180% at 0% 0%, ${theme.bgColor}, transparent 80%)`}}
             >
-                <div className="flex items-start justify-between">
-                    <Collapsible.Trigger className="w-full">
-                        <div className="flex items-center gap-3 sm:gap-4">
-                            <div className="flex-shrink-0">
-                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
-                                    <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                                </div>
+                <Collapsible.Trigger className="w-full">
+                    <div className="flex items-center gap-3 sm:gap-4">
+                        <div className="flex-shrink-0">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
+                                <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
                             </div>
-                            <div className="flex-1 text-left">
-                                <h3 className="text-sm sm:text-base font-bold text-white">
-                                    {theme.greeting}
-                                </h3>
-                            </div>
-                            <ChevronDown className={cn("h-5 w-5 transition-transform text-slate-400", isOpen && "rotate-180")} />
                         </div>
-                    </Collapsible.Trigger>
-                    <div className="flex items-center absolute top-2 right-2 sm:top-3 sm:right-3">
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.max(s - 1, 10))}><Minus size={16}/></Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setIsExpanded(!isExpanded)}>
-                            {isExpanded ? <Shrink size={16}/> : <Maximize size={16}/>}
-                        </Button>
+                        <div className="flex-1 text-left">
+                             <h3 className="text-sm sm:text-base font-bold text-white">
+                                {theme.greeting}
+                            </h3>
+                        </div>
+                        <ChevronDown className={cn("h-5 w-5 transition-transform text-slate-400", isOpen && "rotate-180")} />
                     </div>
-                </div>
+                </Collapsible.Trigger>
 
                  <AnimatePresence initial={false}>
                     {isOpen && (
-                        <Collapsible.Content asChild forceMount>
+                        <Collapsible.Content asChild forceMount key="content">
                             <motion.div
                                 initial="collapsed"
                                 animate="open"
                                 exit="collapsed"
                                 variants={sectionVariants}
-                                className="overflow-hidden flex-1 flex flex-col"
+                                className="overflow-hidden flex-1 flex flex-col pt-4"
                             >
-                                <div className="mt-4 flex-1 flex flex-col w-full min-w-0 min-h-[100px] sm:min-h-[120px]">
+                                <div className="flex-1 flex flex-col w-full min-w-0">
                                     <div className={cn("flex-1", isExpanded && "overflow-y-auto no-scrollbar")}>
                                         <AnimatePresence mode="wait">
                                             <motion.div
@@ -374,4 +395,3 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
       </AnimatePresence>
     );
 }
-
