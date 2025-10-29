@@ -306,8 +306,8 @@ export default function ProfilePage() {
         <div className="relative group/avatar">
           <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 ring-offset-2 ring-offset-slate-900 transition-all", avatarRingClass)}>
             <AvatarImage 
-                src={user.photoURL} 
-                alt={user.displayName}
+                src={user.photoURL ?? ''} 
+                alt={user.displayName ?? ''}
                 className="pointer-events-none select-none"
                 onDragStart={(e) => e.preventDefault()}
                 onContextMenu={(e) => e.preventDefault()}
@@ -472,7 +472,7 @@ export default function ProfilePage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={logout} className="bg-red-600 hover:bg-red-700">Log Out</AlertDialogAction>
+            <AlertDialogAction onClick={() => logout()} className="bg-red-600 hover:bg-red-700">Log Out</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
