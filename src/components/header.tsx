@@ -1,8 +1,9 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, X, Menu, Wand2, Shield, User as UserIcon } from 'lucide-react';
+import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -83,6 +84,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
         </div>
         
         <TooltipProvider>
+            {can('canAccessAdminPanel', null) && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-blue-400" onClick={() => router.push('/folder/telegram-inbox-folder')}>
+                            <Inbox className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Telegram Inbox</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
             {can('canAccessQuestionCreator', null) && (
                 <Tooltip>
                     <TooltipTrigger asChild>
