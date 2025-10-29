@@ -141,7 +141,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         fetchInitialInsight(currentTheme.greeting);
     }, [fetchInitialInsight, getThemeForTime]);
 
-    const submitQuery = async (prompt: string) => {
+    const submitQuery = useCallback(async (prompt: string) => {
         if (!prompt || !theme) return;
 
         setView('chat');
@@ -176,16 +176,17 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         } finally {
             setIsResponding(false);
         }
+    }, [theme, user, toast]);
+
+    const handleSuggestionClick = (suggestion: Suggestion) => {
+        submitQuery(suggestion.prompt);
     };
 
-    const handleSuggestionClick = async (suggestion: Suggestion) => {
-        await submitQuery(suggestion.prompt);
-    };
-
-    const handleCustomQuestionSubmit = async () => {
+    const handleCustomQuestionSubmit = () => {
         if (!customQuestion.trim()) return;
-        await submitQuery(customQuestion);
+        const questionToSend = customQuestion;
         setCustomQuestion('');
+        submitQuery(questionToSend);
     };
 
     useEffect(() => {
@@ -320,7 +321,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             onOpenChange={setIsOpen} 
             className={cn(
                 "w-full transition-all duration-500 ease-in-out",
-                isExpanded && "fixed inset-0 sm:inset-5 z-50 m-auto max-w-3xl max-h-[80vh] flex"
+                isExpanded && "fixed inset-0 sm:inset-5 z-50 m-auto max-w-5xl max-h-[80vh] flex"
             )}
         >
             <div 
@@ -367,61 +368,33 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                         </motion.div>
                                     </AnimatePresence>
                                 </div>
-                                {view === 'chat' ? (
-                                     <motion.div 
-                                        className="flex items-center gap-2 mt-2 flex-shrink-0"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
-                                    >
-                                        <Textarea
-                                            ref={textareaRef}
-                                            placeholder="Ask a follow-up..."
-                                            className="flex-1 bg-slate-800/60 border-slate-700 rounded-2xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0"
-                                            value={customQuestion}
-                                            onChange={(e) => setCustomQuestion(e.target.value)}
-                                            onKeyDown={handleCustomQuestionKeyDown}
-                                            disabled={isResponding}
-                                            rows={1}
-                                            dir="auto"
-                                        />
+                                
+                                <motion.div 
+                                    className="flex items-end gap-2 mt-2 flex-shrink-0"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
+                                >
+                                    <Textarea
+                                        ref={textareaRef}
+                                        placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up..."}
+                                        className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0"
+                                        value={customQuestion}
+                                        onChange={(e) => setCustomQuestion(e.target.value)}
+                                        onKeyDown={handleCustomQuestionKeyDown}
+                                        disabled={isResponding}
+                                        rows={1}
+                                        dir="auto"
+                                    />
 
-                                        <Button 
-                                            size="icon" 
-                                            className="rounded-full h-9 w-9 flex-shrink-0"
-                                            onClick={handleCustomQuestionSubmit}
-                                            disabled={isResponding || !customQuestion.trim()}
-                                        >
-                                            <ArrowUp className="w-4 h-4" />
-                                        </Button>
-                                    </motion.div>
-                                ) : (
-                                    <motion.div 
-                                        className="flex items-center gap-2 mt-2"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+                                    <Button 
+                                        size="icon" 
+                                        className="rounded-full h-9 w-9 flex-shrink-0"
+                                        onClick={handleCustomQuestionSubmit}
+                                        disabled={isResponding || !customQuestion.trim()}
                                     >
-                                         <Textarea
-                                            ref={textareaRef}
-                                            placeholder="Ask something else..."
-                                            className="flex-1 bg-slate-800/60 border-slate-700 rounded-2xl h-auto min-h-[38px] text-sm resize-none overflow-y-auto no-scrollbar focus-visible:ring-0 focus-visible:ring-offset-0"
-                                            value={customQuestion}
-                                            onChange={(e) => setCustomQuestion(e.target.value)}
-                                            onKeyDown={handleCustomQuestionKeyDown}
-                                            disabled={isResponding}
-                                            rows={1}
-                                            dir="auto"
-                                        />
-
-                                        <Button 
-                                            size="icon" 
-                                            className="rounded-full h-9 w-9 flex-shrink-0"
-                                            onClick={handleCustomQuestionSubmit}
-                                            disabled={isResponding || !customQuestion.trim()}
-                                        >
-                                            <ArrowUp className="w-4 h-4" />
-                                        </Button>
-                                    </motion.div>
-                                )}
+                                        <ArrowUp className="w-4 h-4" />
+                                    </Button>
+                                </motion.div>
                             </motion.div>
                         </Collapsible.Content>
                     )}
