@@ -4,9 +4,10 @@
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayUnion, getDoc, arrayRemove } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayUnion, getDoc, arrayRemove, setDoc, runTransaction } from 'firebase/firestore';
 import type { Content } from '@/lib/contentService';
 import { nanoid } from 'nanoid';
+import { telegramInbox } from '@/lib/file-data';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
@@ -304,6 +305,20 @@ const useAuthStore = create<AuthState>((set, get) => ({
             get().buildHierarchy();
             // Start listening to the user profile
             listenToUserProfile(storedId);
+
+            // Ensure the Telegram Inbox exists for admins
+            const isSuper = await checkSuperAdmin(storedId);
+            if (isSuper && db) {
+                 const inboxRef = doc(db, 'content', telegramInbox.id);
+                 runTransaction(db, async transaction => {
+                    const inboxDoc = await transaction.get(inboxRef);
+                    if (!inboxDoc.exists()) {
+                         console.log("Telegram Inbox not found for admin. Creating it now.");
+                         transaction.set(inboxRef, { ...telegramInbox, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+                    }
+                }).catch(err => console.error("Failed to ensure Telegram Inbox exists:", err));
+            }
+
         } else {
             set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
         }
@@ -443,5 +458,3 @@ if (typeof window !== 'undefined') {
 }
 
 export { useAuthStore };
-
-    
