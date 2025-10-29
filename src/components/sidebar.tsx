@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -340,7 +339,11 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
         } else {
             path = `/folder/${node.id}`;
         }
-       const shortName = node.type === 'LEVEL' ? node.name.replace('Level', 'Lvl') : null;
+       
+       const shortName = node.type === 'LEVEL' 
+        ? `Lvl ${node.name.replace('Level ', '')}`
+        : null;
+
        const IconComponent = getIconForType(node);
        
        return (
@@ -357,7 +360,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                       transition={{ duration: 0.2 }}
                       layout
                   >
-                    {IconComponent}
+                    {shortName ? <span className="font-bold text-xs">{shortName}</span> : IconComponent}
                   </motion.button>
                 </TooltipTrigger>
                 <TooltipContent side="right">
