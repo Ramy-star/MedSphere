@@ -1,10 +1,11 @@
-
 'use server';
 /**
  * @fileOverview An AI flow to answer questions from the AI Study Buddy.
  */
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import fs from 'fs';
+import path from 'path';
 
 const UserStatsSchema = z.object({
     displayName: z.string().optional(),
@@ -25,6 +26,7 @@ const ChatInputSchema = z.object({
     userStats: UserStatsSchema,
     question: z.string().describe("The specific question the user asked the study buddy."),
     chatHistory: z.array(ChatHistoryMessage).optional().describe('The history of the conversation so far.'),
+    appDocumentation: z.string().optional().describe("The full content of the application's technical documentation to be used as the primary knowledge base.")
 });
 
 const studyBuddyChatPrompt = ai.definePrompt({
@@ -41,6 +43,17 @@ const studyBuddyChatPrompt = ai.definePrompt({
         - If the user asks a question in **Arabic** (including dialects like Standard or Egyptian), you MUST respond in the **same language and dialect**.
         - When responding in Arabic, ensure your tone remains friendly, supportive, and professional.
         - For mixed-language questions (Arabic/English), provide a clear and readable response that correctly handles both languages.
+        
+        ---
+        
+        **KNOWLEDGE BASE: APPLICATION DOCUMENTATION**
+        You have access to the application's internal documentation. If the user asks a technical question about how the app works, its components, data models, or anything related to its structure, you MUST use the following documentation as your primary source of truth.
+        
+        \`\`\`markdown
+        {{{appDocumentation}}}
+        \`\`\`
+
+        ---
 
         **Conversation History (for context):**
         {{#if chatHistory}}
@@ -103,10 +116,26 @@ const isRetriableError = (error: any): boolean => {
 export async function answerStudyBuddyQuery(input: z.infer<typeof ChatInputSchema>): Promise<string> {
     const maxRetries = 3;
     let delay = 1000;
+    
+    // Read the documentation file to provide real-time context to the AI
+    const docPath = path.join(process.cwd(), 'src', 'docs', 'app_documentation.md');
+    let appDocumentationContent = '';
+    try {
+        appDocumentationContent = fs.readFileSync(docPath, 'utf-8');
+    } catch (error) {
+        console.error("Could not read app documentation file:", error);
+        // Don't throw an error, just proceed without the context.
+        // The AI will still function for general conversation.
+    }
+
+    const fullInput = {
+        ...input,
+        appDocumentation: appDocumentationContent,
+    };
 
     for (let i = 0; i < maxRetries; i++) {
         try {
-            const { text } = await studyBuddyChatPrompt(input);
+            const { text } = await studyBuddyChatPrompt(fullInput);
             return text;
         } catch (error: any) {
             if (i === maxRetries - 1 || !isRetriableError(error)) {
