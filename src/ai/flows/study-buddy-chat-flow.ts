@@ -81,12 +81,31 @@ const studyBuddyChatPrompt = ai.definePrompt({
     `,
 });
 
+const isRetriableError = (error: any): boolean => {
+    const errorMessage = error.message?.toLowerCase() || '';
+    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable', 'deadline exceeded'];
+    return retriableStrings.some(s => errorMessage.includes(s));
+};
+
 export async function answerStudyBuddyQuery(input: z.infer<typeof ChatInputSchema>): Promise<string> {
-    try {
-        const { text } = await studyBuddyChatPrompt(input);
-        return text;
-    } catch (error) {
-        console.error("Error answering study buddy query:", error);
-        return "I'm sorry, I had trouble processing that request. Please try asking again in a moment.";
+    const maxRetries = 3;
+    let delay = 1000;
+
+    for (let i = 0; i < maxRetries; i++) {
+        try {
+            const { text } = await studyBuddyChatPrompt(input);
+            return text;
+        } catch (error: any) {
+            if (i === maxRetries - 1 || !isRetriableError(error)) {
+                console.error(`Final attempt failed or non-retriable error: ${error.message}`);
+                return "I'm sorry, I had trouble processing that request. Please try asking again in a moment.";
+            }
+            console.log(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+            await new Promise(res => setTimeout(res, delay));
+            delay *= 2; // Exponential backoff
+        }
     }
+    
+    // This part should not be reachable, but is included for type safety and as a fallback.
+    return "I'm sorry, I'm having trouble connecting right now. Please try again in a few minutes.";
 }
