@@ -58,25 +58,25 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
   const cardContent = (
     <div
       className={cn(
-        "relative flex h-[180px] w-[150px] flex-col justify-between rounded-2xl border p-4 text-center transition-all duration-300",
+        "relative flex h-[160px] w-[140px] sm:h-[180px] sm:w-[150px] flex-col justify-between rounded-2xl border p-3 sm:p-4 text-center transition-all duration-300",
         earned ? `${colors.bg} ${colors.border}` : "border-slate-800 bg-slate-900/50",
         !earned && "group-hover:border-slate-700 group-hover:bg-slate-800/40"
       )}
     >
       <div className="flex flex-col items-center">
-        <div className={cn("mb-3 flex h-12 w-12 items-center justify-center rounded-full", earned ? colors.bg : 'bg-slate-800')}>
+        <div className={cn("mb-2 sm:mb-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full", earned ? colors.bg : 'bg-slate-800')}>
           {earned ? (
-            <Icon className={cn("h-6 w-6", colors.icon)} />
+            <Icon className={cn("h-5 w-5 sm:h-6 sm:w-6", colors.icon)} />
           ) : (
-            <Lock className="h-6 w-6 text-slate-500" />
+            <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-slate-500" />
           )}
         </div>
-        <p className={cn("text-sm font-semibold", earned ? "text-white" : "text-slate-400")}>{name}</p>
-        <p className="mt-1 text-xs text-slate-500 line-clamp-3">{description}</p>
+        <p className={cn("text-xs sm:text-sm font-semibold", earned ? "text-white" : "text-slate-400")}>{name}</p>
+        <p className="mt-1 text-[10px] sm:text-xs text-slate-500 line-clamp-3">{description}</p>
       </div>
 
       {!earned && goal > 0 && (
-        <div className="mt-3">
+        <div className="mt-2 sm:mt-3">
            <Progress value={progressPercent} className="h-1 bg-black/30" indicatorClassName={colors.progressFill} />
         </div>
       )}
@@ -118,7 +118,7 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
   }, {} as Record<string, Record<string, Achievement[]>>);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3 sm:space-y-4">
       {Object.entries(categorizedAndGroupedAchievements).map(([category, groups], categoryIndex) => {
         const isSpecialCategory = category === 'Special';
         const hasEarnedSpecial = isSuperAdmin || Object.values(groups).flat().some(ach => earnedAchievements.has(ach.id));
@@ -129,11 +129,11 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
         
         return (
             <React.Fragment key={category}>
-                <h3 className="text-md font-bold text-slate-300 px-2 mt-2">{category}</h3>
-                <div className="space-y-4">
+                <h3 className="text-sm sm:text-md font-bold text-slate-300 px-2 mt-2">{category}</h3>
+                <div className="space-y-3 sm:space-y-4">
                     {Object.entries(groups).map(([group, achievements], groupIndex) => (
                     <React.Fragment key={group}>
-                        <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto pb-4 no-scrollbar">
                         {achievements.map((ach) => (
                             <BadgeCard
                                 key={ach.id}
@@ -147,7 +147,7 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
                     ))}
                 </div>
                 {categoryIndex < Object.keys(categorizedAndGroupedAchievements).length - 1 && (
-                    <div className="w-full h-px bg-slate-800 my-4" />
+                    <div className="w-full h-px bg-slate-800 my-3 sm:my-4" />
                 )}
           </React.Fragment>
         );

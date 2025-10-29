@@ -68,15 +68,15 @@ export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onF
       )}
 
       {!loading && favoriteItems.length === 0 && (
-         <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-2xl">
-              <FolderIcon className="mx-auto h-12 w-12 text-slate-600" />
-              <h3 className="mt-4 text-lg font-semibold text-white">No Favorites Yet</h3>
-              <p className="mt-2 text-sm text-slate-400">Click the star icon on any file or folder to add it here.</p>
+         <div className="text-center py-8 sm:py-10 border-2 border-dashed border-slate-800 rounded-2xl">
+              <FolderIcon className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-slate-600" />
+              <h3 className="mt-4 text-base sm:text-lg font-semibold text-white">No Favorites Yet</h3>
+              <p className="mt-1 sm:mt-2 text-xs sm:text-sm text-slate-400">Click the star icon on any file or folder to add it here.</p>
           </div>
       )}
 
       {!loading && favoriteItems.length > 0 && (
-        <div className="flex flex-col gap-1 glass-card p-2">
+        <div className="flex flex-col gap-1 glass-card p-1.5 sm:p-2">
           {favoriteItems.map((item) => {
             if (item.type === 'FOLDER' || item.type === 'SUBJECT' || item.type === 'SEMESTER' || item.type === 'LEVEL') {
               return (

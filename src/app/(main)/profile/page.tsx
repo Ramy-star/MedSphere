@@ -65,9 +65,9 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }:
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full space-y-2">
              <Collapsible.Trigger className="w-full">
                 <div className="flex w-full items-center justify-between py-2 mb-2 hover:bg-slate-800/50 rounded-lg px-2">
-                    <div className="flex items-center gap-3">
-                        <Icon className="w-6 h-6 text-slate-300" />
-                        <h2 className="text-xl sm:text-2xl font-bold text-white">{title}</h2>
+                    <div className="flex items-center gap-2 sm:gap-3">
+                        <Icon className="w-5 h-5 sm:w-6 sm:h-6 text-slate-300" />
+                        <h2 className="text-lg sm:text-2xl font-bold text-white">{title}</h2>
                     </div>
                      <ChevronDown className={cn("h-5 w-5 text-slate-400 transition-transform", isOpen && "rotate-180")} />
                 </div>
@@ -258,9 +258,9 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full pb-12"
+      className="w-full pb-12 overflow-x-hidden"
     >
-      <div className="relative group/cover h-48 sm:h-64">
+      <div className="relative group/cover h-32 sm:h-64">
          <input
             type="file"
             ref={coverFileInputRef}
@@ -268,7 +268,7 @@ export default function ProfilePage() {
             accept="image/*"
             onChange={handleCoverImageChange}
           />
-         <div className="absolute bottom-3 right-3 flex gap-2 opacity-0 group-hover/cover:opacity-100 transition-opacity z-20">
+         <div className="absolute bottom-2 right-2 sm:bottom-3 sm:right-3 flex gap-2 opacity-0 group-hover/cover:opacity-100 transition-opacity z-20">
             <Button
                 size="sm"
                 className="h-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 text-white"
@@ -292,9 +292,9 @@ export default function ProfilePage() {
          </div>
       </div>
 
-      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end -mt-16 px-6 sm:px-8 gap-4">
+      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end -mt-12 sm:-mt-16 px-4 sm:px-8 gap-4">
         <div className="relative group/avatar">
-          <Avatar className={cn("h-28 w-28 ring-4 ring-offset-2 ring-offset-slate-900 transition-all", avatarRingClass)}>
+          <Avatar className={cn("h-24 w-24 sm:h-28 sm:w-28 ring-4 ring-offset-2 ring-offset-slate-900 transition-all", avatarRingClass)}>
             <AvatarImage 
                 src={user.photoURL} 
                 alt={user.displayName}
@@ -302,7 +302,7 @@ export default function ProfilePage() {
                 onDragStart={(e) => e.preventDefault()}
                 onContextMenu={(e) => e.preventDefault()}
             />
-            <AvatarFallback className="text-4xl">
+            <AvatarFallback className="text-3xl sm:text-4xl">
               {user.displayName?.[0] || <UserIcon />}
             </AvatarFallback>
           </Avatar>
@@ -316,7 +316,7 @@ export default function ProfilePage() {
           <div className="absolute bottom-1 right-1 flex gap-1">
               <Button
                 size="icon"
-                className="h-8 w-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-slate-800/80 hover:bg-slate-700/90 border border-slate-600 opacity-0 group-hover/avatar:opacity-100 transition-opacity"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
               >
@@ -326,7 +326,7 @@ export default function ProfilePage() {
                   <Button
                       size="icon"
                       variant="destructive"
-                      className="h-8 w-8 rounded-full bg-red-800/80 hover:bg-red-700/90 border border-red-600 opacity-0 group-hover/avatar:opacity-100 transition-opacity"
+                      className="h-7 w-7 sm:h-8 sm:w-8 rounded-full bg-red-800/80 hover:bg-red-700/90 border border-red-600 opacity-0 group-hover/avatar:opacity-100 transition-opacity"
                       onClick={() => setShowDeleteConfirm(true)}
                       disabled={isUploading}
                   >
@@ -354,7 +354,7 @@ export default function ProfilePage() {
                     }
                   }}
                   className={cn(
-                    "text-3xl font-bold outline-none whitespace-nowrap",
+                    "text-xl sm:text-3xl font-bold outline-none whitespace-nowrap",
                     editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
                   )}
                 >
@@ -381,18 +381,18 @@ export default function ProfilePage() {
             )}
             </div>
 
-            <p className={cn("mt-1 text-lg font-medium flex items-center justify-center sm:justify-start gap-2", roleColor)}>
-              <RoleIcon className="w-5 h-5" />
+            <p className={cn("mt-1 text-sm sm:text-lg font-medium flex items-center justify-center sm:justify-start gap-2", roleColor)}>
+              <RoleIcon className="w-4 h-4 sm:w-5 sm:h-5" />
               {roleText}
             </p>
         </div>
       </div>
       
-      <div className="mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start">
-        <div className="flex flex-col space-y-8">
+      <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start px-4 sm:px-0">
+        <div className="flex flex-col space-y-6 sm:space-y-8">
             <AiStudyBuddy user={user} />
             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
-                <div className="space-y-4">
+                <div className="space-y-3 sm:space-y-4">
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
                     <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
                     <InfoCard icon={School} label="Academic Level" value={userLevel} />
@@ -403,9 +403,9 @@ export default function ProfilePage() {
             </CollapsibleSection>
         </div>
 
-        <div className="w-px bg-slate-600 h-full hidden lg:block" />
+        <div className="w-px bg-slate-700/80 h-full hidden lg:block" />
 
-        <div className="space-y-8 mt-8 lg:mt-0">
+        <div className="space-y-6 sm:space-y-8 mt-4 sm:mt-8 lg:mt-0">
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
@@ -415,7 +415,7 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-16 flex justify-center">
+      <div className="mt-12 sm:mt-16 flex justify-center">
           <button onClick={() => setShowLogoutConfirm(true)} className="expanding-btn destructive">
               <LogOut size={20} />
               <span className="expanding-text">Logout</span>
@@ -472,5 +472,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

@@ -13,6 +13,7 @@ import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useToast } from '@/hooks/use-toast';
+import Image from 'next/image';
 
 type Suggestion = {
     label: string;
@@ -139,16 +140,16 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading) {
         return (
-            <div className="glass-card flex items-center gap-4 p-6 rounded-2xl min-h-[150px]">
+            <div className="glass-card flex items-center gap-3 sm:gap-4 p-4 sm:p-6 rounded-2xl min-h-[140px]">
                 <div className="flex-shrink-0">
-                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center">
-                        <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 rounded-full flex items-center justify-center">
+                        <Loader2 className="w-6 h-6 sm:w-8 sm:h-8 text-blue-400 animate-spin" />
                     </div>
                 </div>
                 <div className="space-y-2 flex-1">
-                    <div className="h-5 w-1/3 bg-slate-700/80 rounded-md animate-pulse"></div>
-                    <div className="h-4 w-3/4 bg-slate-800 rounded-md animate-pulse"></div>
-                    <div className="h-4 w-1/2 bg-slate-800 rounded-md animate-pulse"></div>
+                    <div className="h-4 w-1/3 bg-slate-700/80 rounded-md animate-pulse"></div>
+                    <div className="h-3 w-3/4 bg-slate-800 rounded-md animate-pulse"></div>
+                    <div className="h-3 w-1/2 bg-slate-800 rounded-md animate-pulse"></div>
                 </div>
             </div>
         );
@@ -158,11 +159,11 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const IntroView = () => (
         <>
-            <h3 className="text-base font-bold text-white">
+            <h3 className="text-sm sm:text-base font-bold text-white">
                 {initialInsight.greeting}
             </h3>
-            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
-            <div className="mt-4 flex flex-wrap gap-2">
+            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
+            <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
                 {initialInsight.suggestedActions.map((suggestion, index) => (
                     <motion.div
                         key={index}
@@ -173,7 +174,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                             onClick={() => handleSuggestionClick(suggestion)}
                             variant="outline"
                             size="sm"
-                            className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-300 text-xs"
+                            className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-300 text-xs h-7 sm:h-8"
                             disabled={isResponding}
                         >
                             {suggestion.label}
@@ -186,27 +187,27 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const ChatView = () => (
         <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-2 sm:mb-3">
                  <Button
                     onClick={handleBackToIntro}
                     variant="outline"
                     size="sm"
-                    className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-300"
+                    className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-300 h-7"
                 >
-                    <ArrowLeft className="w-4 h-4 mr-2" />
+                    <ArrowLeft className="w-4 h-4 mr-1 sm:mr-2" />
                     Back
                 </Button>
             </div>
-            <div ref={chatContainerRef} className="flex-1 space-y-3 max-h-64 overflow-y-auto no-scrollbar pr-2 -mr-2">
+            <div ref={chatContainerRef} className="flex-1 space-y-3 max-h-56 sm:max-h-64 overflow-y-auto no-scrollbar pr-2 -mr-2">
                 {chatHistory.map((message, index) => (
                     <div key={index} className="flex flex-col gap-2">
                         {message.role === 'user' && (
-                             <div className="text-xs self-end bg-blue-600 text-white rounded-xl px-3 py-2 max-w-[85%]">
+                             <div className="text-xs self-end bg-blue-600 text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%]">
                                 {message.text}
                             </div>
                         )}
                         {message.role === 'model' && (
-                            <div className="text-xs self-start bg-slate-700/70 text-slate-300 rounded-xl px-3 py-2 max-w-[85%] prose prose-sm prose-invert">
+                            <div className="text-xs self-start bg-slate-700/70 text-slate-300 rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%] prose prose-sm prose-invert">
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
                             </div>
                         )}
@@ -226,15 +227,19 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card flex items-start gap-4 p-4 rounded-2xl"
+            className="glass-card flex items-start gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl"
         >
             <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg">
-                    <AiAssistantIcon className="w-7 h-7" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden">
+                    {user?.photoURL ? (
+                        <Image src={user.photoURL} alt="AI Study Buddy" layout="fill" objectFit="cover" />
+                    ) : (
+                        <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                    )}
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col w-full min-w-0 min-h-[120px]">
+            <div className="flex-1 flex flex-col w-full min-w-0 min-h-[100px] sm:min-h-[120px]">
                 <div className="flex-1">
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -256,7 +261,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 >
                     <Input 
                         placeholder="Ask something else..."
-                        className="flex-1 bg-slate-800/60 border-slate-700 rounded-full h-9 px-4 text-xs"
+                        className="flex-1 bg-slate-800/60 border-slate-700 rounded-full h-8 sm:h-9 px-3 sm:px-4 text-xs"
                         value={customQuestion}
                         onChange={(e) => setCustomQuestion(e.target.value)}
                         onKeyDown={handleCustomQuestionKeyDown}
@@ -264,7 +269,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                     />
                      <Button 
                         size="icon" 
-                        className="rounded-full h-9 w-9 flex-shrink-0"
+                        className="rounded-full h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
                         onClick={handleCustomQuestionSubmit}
                         disabled={isResponding || !customQuestion.trim()}
                     >

@@ -62,11 +62,11 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
             {sortedSessions.map((session) => {
                 const isCurrent = session.sessionId === currentSessionId;
                 return (
-                    <div key={session.sessionId} className="glass-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl">
-                       <div className="flex items-center gap-4">
+                    <div key={session.sessionId} className="glass-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-3 sm:p-4 rounded-2xl">
+                       <div className="flex items-center gap-3 sm:gap-4">
                             {getDeviceIcon(session.device)}
                             <div>
-                                <p className="font-medium text-white flex items-center gap-2">
+                                <p className="font-medium text-white text-sm sm:text-base flex items-center gap-2">
                                     {session.device || 'Unknown Device'}
                                     {isCurrent && <span className="text-xs font-bold text-green-400 bg-green-900/50 px-2 py-0.5 rounded-full">Current</span>}
                                 </p>
@@ -76,7 +76,7 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
                             </div>
                        </div>
                        {!isCurrent && (
-                            <div className="flex items-center gap-2 sm:ml-auto">
+                            <div className="flex items-center gap-2 self-end sm:self-center sm:ml-auto">
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
                                         <button className="expanding-btn warning">
