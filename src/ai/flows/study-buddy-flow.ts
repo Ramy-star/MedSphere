@@ -24,20 +24,17 @@ const SuggestedActionSchema = z.object({
 });
 
 const StudyBuddyOutputSchema = z.object({
-    greeting: z.string().describe("A short, friendly greeting based on the time of day and the user's first name."),
     mainInsight: z.string().describe("A key insight or observation about the user's activity. Keep it concise and encouraging."),
     suggestedActions: z.array(SuggestedActionSchema).min(1).max(3).describe("A list of 1 to 3 relevant questions the user might want to ask next."),
 });
 
 const studyBuddyPrompt = ai.definePrompt({
     name: 'studyBuddyPrompt',
-    input: { schema: UserStatsSchema.extend({ greeting: z.string() }) },
+    input: { schema: UserStatsSchema },
     output: { schema: StudyBuddyOutputSchema },
     prompt: `
         You are a friendly and encouraging AI Study Buddy for a medical student.
         Your goal is to provide a personalized, insightful, and motivating message based on the user's recent activity stats.
-
-        Use this exact greeting: "{{{greeting}}}"
         
         The user's stats are:
         - Files Uploaded: {{{filesUploaded}}}
@@ -47,18 +44,16 @@ const studyBuddyPrompt = ai.definePrompt({
         - AI Queries: {{{aiQueries}}}
 
         Follow these rules precisely:
-        1.  **Greeting:** Use the exact greeting provided in the input. Do not change it.
-        2.  **Main Insight:** Based on the stats, generate ONE key insight. Make it feel personal and observant.
+        1.  **Main Insight:** Based on the stats, generate ONE key insight. Make it feel personal and observant.
             - If they have high activity, praise their hard work.
             - If activity is low, gently encourage them to get started.
-        3.  **Suggested Actions:** Provide 2-3 relevant, actionable questions the user can ask you. The 'label' should be the button text, and the 'prompt' is the full question you will receive.
+        2.  **Suggested Actions:** Provide 2-3 relevant, actionable questions the user can ask you. The 'label' should be the button text, and the 'prompt' is the full question you will receive.
             - If they have uploaded files but not used the AI much, suggest asking for a summary or quiz.
             - If they have been studying hard, suggest a review of their progress.
             - Always phrase the labels as questions from the user's perspective (e.g., "What should I focus on?").
 
         Example Output:
         {
-          "greeting": "Good morning, Ramy! 🌅",
           "mainInsight": "You've been busy organizing! I see you've created {{foldersCreated}} new folders.",
           "suggestedActions": [
             { "label": "What should I study next?", "prompt": "Based on my recent activity, what subject do you recommend I study next?" },
@@ -69,28 +64,13 @@ const studyBuddyPrompt = ai.definePrompt({
 });
 
 export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema>) {
-    const hour = new Date().getHours();
-    const firstName = stats.displayName?.split(' ')[0] || stats.username;
-    
-    let greeting: string;
-    if (hour >= 5 && hour < 12) {
-        greeting = `Good morning, ${firstName}! 🌅`;
-    } else if (hour >= 12 && hour < 17) {
-        greeting = `Good afternoon, ${firstName}! 🌤️`;
-    } else if (hour >= 17 && hour < 21) {
-        greeting = `Good evening, ${firstName}! 🌇`;
-    } else {
-        greeting = `Good night, ${firstName}! 🌙`;
-    }
-    
     try {
-        const { output } = await studyBuddyPrompt({ ...stats, greeting });
+        const { output } = await studyBuddyPrompt(stats);
         return output!;
     } catch (error) {
         console.error("Error generating study buddy insight:", error);
         // Return a default, safe response on error
         return {
-            greeting: `Hello, ${firstName}!`,
             mainInsight: "Ready to dive into your studies? Let's make today productive. You can ask me to summarize your progress or suggest what to study next.",
             suggestedActions: [
                 { label: "Summarize my progress", prompt: "Can you give me a brief summary of my study progress so far?" },

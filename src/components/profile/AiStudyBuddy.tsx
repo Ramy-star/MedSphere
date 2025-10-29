@@ -235,6 +235,16 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         </div>
     );
 
+    const greeting = (() => {
+        const hour = new Date().getHours();
+        const firstName = user.displayName?.split(' ')[0] || user.username;
+        if (hour >= 5 && hour < 12) return `Good morning, ${firstName}! 🌅`;
+        if (hour >= 12 && hour < 17) return `Good afternoon, ${firstName}! 🌤️`;
+        if (hour >= 17 && hour < 21) return `Good evening, ${firstName}! 🌇`;
+        return `Good night, ${firstName}! 🌙`;
+    })();
+
+
     return (
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full">
             <div className="glass-card p-3 sm:p-4 rounded-2xl">
@@ -247,7 +257,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                         </div>
                         <div className="flex-1 text-left">
                              <h3 className="text-sm sm:text-base font-bold text-white">
-                                {initialInsight.greeting}
+                                {greeting}
                             </h3>
                         </div>
                         <ChevronDown className={cn("h-5 w-5 text-slate-400 transition-transform", isOpen && "rotate-180")} />
