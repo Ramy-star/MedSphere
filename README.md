@@ -13,13 +13,22 @@
 
 ## ✨ Core Features
 
--   **🗂️ Effortless Organization:** Intuitively structure your content by academic levels, semesters, and subjects.
--   **🚀 Seamless File Management:** Upload any file type with drag-and-drop, and manage them with ease.
--   **👁️ Instant Previews:** Preview PDFs, images, videos, Office documents, and even HTML files without leaving the app.
--   **🤖 AI-Powered Assistance:** Chat with your documents! Ask questions, get summaries, and generate quizzes with the integrated AI assistant.
--   **🔍 Universal Search:** Instantly find any file or folder across your entire library with a powerful search.
+-   **🗂️ Effortless Organization:** Intuitively structure your content by academic levels, semesters, and subjects. Create custom folders and even dedicated "Class" containers.
+-   **🚀 Seamless File Management:** Upload any file type with drag-and-drop, manage versions, and organize your digital library with ease.
+-   **👁️ Instant Previews:** Preview PDFs, images, videos, Office documents, and even HTML files directly within the app without needing to download them.
+-   **🤖 AI-Powered Assistance:**
+    -   **Chat with Documents:** Open any file and chat with an AI assistant to ask questions, get summaries, or clarify complex topics.
+    -   **AI Study Buddy:** A personalized AI companion on your profile page that offers motivation, study tips, and answers questions about the app's features.
+    -   **Questions Creator:** Generate quizzes, exams, and flashcards from your PDF documents using advanced AI.
+-   **🔍 Universal Search:** Instantly find any file or folder across your entire library with a powerful and fast search.
+-   **👤 Advanced User Profiles:**
+    -   **Personalization:** Customize your profile with an avatar and cover photo.
+    -   **Activity Tracking:** Monitor your study habits with statistics on file uploads, exams completed, and AI queries.
+    -   **Achievements:** Earn badges and unlock achievements as you reach new milestones.
+    -   **Favorites & Sessions:** Quickly access your favorite content and manage your active sessions across devices.
+-   **🔐 Secure & Private:** Built with Firebase for secure data management and Cloudinary for optimized, private file storage.
+-   **👑 Admin Panel:** A comprehensive dashboard for administrators to manage users, assign granular permissions, and monitor application activity.
 -   **📱 Fully Responsive Design:** Access and manage your study materials on any device—desktop, tablet, or smartphone.
--   **🔒 Secure & Private:** Built with Firebase for secure authentication and data management.
 
 ---
 
@@ -27,12 +36,12 @@
 
 This project is built with a modern, scalable, and type-safe technology stack:
 
--   **[Next.js](https://nextjs.org/)**: The React Framework for production.
+-   **[Next.js](https://nextjs.org/)**: The React Framework for production, utilizing the App Router.
 -   **[React](https://reactjs.org/)** & **[TypeScript](https://www.typescriptlang.org/)**: For building a type-safe, component-based UI.
 -   **[Tailwind CSS](https://tailwindcss.com/)** & **[ShadCN UI](https://ui.shadcn.com/)**: For a utility-first, modern, and accessible design system.
--   **[Firebase](https://firebase.google.com/)**: Handles database (Firestore), authentication, and storage.
+-   **[Firebase](https://firebase.google.com/)**: Handles database (Firestore) and authentication.
 -   **[Cloudinary](https://cloudinary.com/)**: Manages all file storage, uploads, and optimized delivery.
--   **[Genkit (Google AI)](https://firebase.google.com/docs/genkit)**: Powers all generative AI features.
--   **[Lucide React](https://lucide.dev/)**: For a beautiful and consistent icon set.
+-   **[Genkit (Google AI)](https://firebase.google.com/docs/genkit)**: Powers all generative AI features, from document chat to question generation.
+-   **[Zustand](https://zustand-demo.pmnd.rs/)**: For lightweight and efficient global state management.
 -   **[Framer Motion](https://www.framer.com/motion/)**: For smooth and fluid animations.
-
+-   **[Lucide React](https://lucide.dev/)**: For a beautiful and consistent icon set.
