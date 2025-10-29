@@ -135,7 +135,6 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
         return (
             <React.Fragment key={category}>
                 <div className="mb-4">
-                    <h3 className="text-lg font-semibold text-slate-300 mb-4">{category}</h3>
                     <div className="space-y-4">
                         {Object.entries(groups).map(([group, achievements], groupIndex) => (
                         <React.Fragment key={group}>

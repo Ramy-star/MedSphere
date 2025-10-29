@@ -139,9 +139,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading) {
         return (
-            <div className="glass-card flex items-center gap-4 p-6 rounded-2xl mb-12 min-h-[150px]">
+            <div className="glass-card flex items-center gap-4 p-6 rounded-2xl min-h-[150px]">
                 <div className="flex-shrink-0">
-                    <div className="w-16 h-16 bg-slate-800 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center">
                         <Loader2 className="w-8 h-8 text-blue-400 animate-spin" />
                     </div>
                 </div>
@@ -158,10 +158,10 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const IntroView = () => (
         <>
-            <h3 className="text-lg font-bold text-white">
+            <h3 className="text-base font-bold text-white">
                 {initialInsight.greeting}
             </h3>
-            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-sm mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
+            <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
             <div className="mt-4 flex flex-wrap gap-2">
                 {initialInsight.suggestedActions.map((suggestion, index) => (
                     <motion.div
@@ -226,7 +226,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="glass-card flex flex-col sm:flex-row items-start gap-4 p-4 rounded-2xl"
+            className="glass-card flex items-start gap-4 p-4 rounded-2xl"
         >
             <div className="flex-shrink-0">
                 <div className="w-12 h-12 bg-slate-800 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg">
@@ -234,7 +234,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 </div>
             </div>
 
-            <div className="flex-1 flex flex-col w-full min-h-[140px]">
+            <div className="flex-1 flex flex-col w-full min-w-0 min-h-[120px]">
                 <div className="flex-1">
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -256,7 +256,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 >
                     <Input 
                         placeholder="Ask something else..."
-                        className="flex-1 bg-slate-800/60 border-slate-700 rounded-full h-9 px-4 text-sm"
+                        className="flex-1 bg-slate-800/60 border-slate-700 rounded-full h-9 px-4 text-xs"
                         value={customQuestion}
                         onChange={(e) => setCustomQuestion(e.target.value)}
                         onKeyDown={handleCustomQuestionKeyDown}

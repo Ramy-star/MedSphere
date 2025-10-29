@@ -391,9 +391,9 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+      <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         {/* Left Column */}
-        <div className="lg:col-span-1 space-y-8 lg:border-r lg:border-white/10 lg:pr-8">
+        <div className="space-y-8 lg:border-r lg:border-white/10 lg:pr-8">
             <AiStudyBuddy user={user} />
             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
               <div className="space-y-4">
@@ -408,12 +408,12 @@ export default function ProfilePage() {
         </div>
 
         {/* Right Column */}
-        <div className="lg:col-span-2 space-y-12">
+        <div className="space-y-12">
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
             <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
-                <AchievementsSection user={user} />
+              <AchievementsSection user={user} />
             </CollapsibleSection>
         </div>
       </div>
