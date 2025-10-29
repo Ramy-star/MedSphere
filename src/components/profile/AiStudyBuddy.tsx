@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
@@ -45,8 +46,11 @@ const sectionVariants = {
         opacity: 1,
         height: 'auto',
         transition: {
-            duration: 0.4,
-            ease: [0.22, 1, 0.36, 1]
+            type: 'spring',
+            stiffness: 300,
+            damping: 30,
+            when: "beforeChildren",
+            staggerChildren: 0.05,
         }
     },
     collapsed: {
@@ -54,7 +58,10 @@ const sectionVariants = {
         height: 0,
         transition: {
             duration: 0.3,
-            ease: [0.36, 0, 0.66, -0.56]
+            ease: "easeInOut",
+            when: "afterChildren",
+            staggerChildren: 0.05,
+            staggerDirection: -1
         }
     }
 };
@@ -118,6 +125,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         try {
             const result = await getStudyBuddyInsight({greeting, ...userStats});
             setInitialInsight(result);
+            //if(!isOpen) setIsOpen(true);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
@@ -193,7 +201,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading || !theme) {
         return (
-             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)'}}>
+             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 170% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 90%)`}}>
                 <div className="flex-shrink-0">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
@@ -301,7 +309,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         >
             <div 
                 className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full", isExpanded ? "h-full" : "")}
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 250% 180% at 0% 0%, ${theme.bgColor}, transparent 80%)`}}
+                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 170% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}
             >
                 <Collapsible.Trigger className="w-full">
                     <div className="flex items-center gap-3 sm:gap-4">
@@ -327,10 +335,10 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                 animate="open"
                                 exit="collapsed"
                                 variants={sectionVariants}
-                                className={cn("overflow-hidden flex-1 flex flex-col pt-4", isExpanded ? "h-full" : "min-h-[120px] sm:min-h-[150px]")}
+                                className="overflow-hidden"
                             >
-                                <div className="flex-1 flex flex-col w-full min-w-0 h-full">
-                                    <div className="flex-1 overflow-y-auto no-scrollbar">
+                                <div className="pt-4 flex-1 flex flex-col w-full min-w-0 min-h-[120px] sm:min-h-[150px]">
+                                    <div className="flex-1 min-h-0">
                                         <AnimatePresence mode="wait">
                                             <motion.div
                                                 key={view}
