@@ -210,9 +210,9 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full max-w-5xl pb-12"
+      className="w-full pb-12"
     >
-      <div className="relative group/cover h-48 bg-slate-800 rounded-b-3xl overflow-hidden">
+      <div className="relative group/cover h-48 sm:h-64 bg-slate-800 -mx-6 -mt-6">
         {user.metadata?.coverPhotoURL && (
             <Image
                 src={user.metadata.coverPhotoURL}
@@ -256,7 +256,7 @@ export default function ProfilePage() {
          </div>
       </div>
 
-      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end -mt-14 px-4 sm:px-8 gap-4">
+      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end -mt-16 px-6 sm:px-8 gap-4">
         <div className="relative group/avatar">
           <Avatar className={cn("h-28 w-28 ring-4 ring-offset-2 ring-offset-slate-900 transition-all", avatarRingClass)}>
             <AvatarImage 
@@ -332,7 +332,7 @@ export default function ProfilePage() {
               </div>
 
             {editingName && (
-                <div className="flex items-center gap-2 mt-2 w-full justify-center sm:justify-end">
+                <div className="flex items-center gap-2 mt-2 w-full justify-center sm:justify-start">
                    <Button size="sm" onClick={handleSaveName} disabled={isSavingName} className="h-8 rounded-full flex-shrink-0">
                       {isSavingName ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4 mr-1.5" />}
                       Save
@@ -352,19 +352,24 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-8 px-4 sm:px-0">
-        <AiStudyBuddy user={user} />
-      </div>
+      <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+        {/* Left/Main Column */}
+        <div className="lg:col-span-2 space-y-12">
+            <FavoritesSection user={user} onFileClick={handleFileClick} />
+            <AchievementsSection user={user} />
+        </div>
 
-      <div className="mt-12 w-full space-y-4 px-4 sm:px-0">
-        <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
-        <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
-        <InfoCard icon={School} label="Academic Level" value={userLevel} />
+        {/* Right Column */}
+        <div className="lg:col-span-1 space-y-8">
+            <AiStudyBuddy user={user} />
+            <div className="space-y-4">
+                <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
+                <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
+                <InfoCard icon={School} label="Academic Level" value={userLevel} />
+            </div>
+            <ActiveSessions user={user} />
+        </div>
       </div>
-
-      <FavoritesSection user={user} onFileClick={handleFileClick} />
-      <ActiveSessions user={user} />
-      <AchievementsSection user={user} />
       
       <div className="mt-16 flex justify-center">
           <button onClick={() => setShowLogoutConfirm(true)} className="expanding-btn destructive">

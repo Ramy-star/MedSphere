@@ -1,3 +1,4 @@
+
 'use client';
 import { Sidebar } from "@/components/sidebar";
 import { useSidebarStore } from "@/hooks/use-sidebar-store";
@@ -36,14 +37,18 @@ export default function MainLayout({
           !isHomePage && !isProfilePage && "glass-card"
         )}
       >
-        <div className="flex-shrink-0 flex flex-col min-h-[48px]">
-            <Breadcrumbs />
+        <div className={cn(
+          "flex-shrink-0 flex flex-col min-h-[48px]",
+          isProfilePage && "-mx-6 -mt-6" // Remove padding for full-width cover
+        )}>
+            {!isProfilePage && <Breadcrumbs />}
         </div>
         
         <div className={cn(
           "flex-1 flex flex-col overflow-y-auto no-scrollbar", 
-          (isHomePage || isProfilePage) && "pt-0", 
-          !isQuestionsCreatorPage && !isHomePage && !isProfilePage && "pt-4"
+          isHomePage && "pt-0", 
+          !isQuestionsCreatorPage && !isHomePage && "pt-4",
+          isProfilePage && "pt-0"
         )}>
           {children}
         </div>
