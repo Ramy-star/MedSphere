@@ -83,10 +83,17 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const getThemeForTime = useCallback((): TimeOfDayTheme => {
         const hour = new Date().getHours();
         const firstName = user.displayName?.split(' ')[0] || user.username;
-        if (hour >= 5 && hour < 12) return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: '#FFE58A', textColor: '#3A3A3A', iconColor: '#3A3A3A' };
-        if (hour >= 12 && hour < 17) return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: '#FFD580', textColor: '#3A3A3A', iconColor: '#3A3A3A' };
-        if (hour >= 17 && hour < 21) return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: '#9C7CFD', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
-        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: '#1E3A8A', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        if (hour >= 5 && hour < 12) { // 5:00 AM - 11:59 AM
+            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(255, 229, 138, 0.2)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+        }
+        if (hour >= 12 && hour < 17) { // 12:00 PM - 4:59 PM
+            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(255, 213, 128, 0.2)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+        }
+        if (hour >= 17 && hour < 21) { // 5:00 PM - 8:59 PM
+            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(156, 124, 253, 0.15)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        }
+        // 9:00 PM - 4:59 AM
+        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(30, 58, 138, 0.2)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
     const fetchInitialInsight = useCallback(async (greeting: string) => {
@@ -101,7 +108,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             favoritesCount: user.favorites?.length || 0,
         };
         try {
-            const result = await getStudyBuddyInsight(userStats);
+            const result = await getStudyBuddyInsight({greeting, ...userStats});
             setInitialInsight(result);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
@@ -178,7 +185,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading || !theme) {
         return (
-             <div className={cn("glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl")} style={{ backgroundColor: theme?.bgColor }}>
+             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl">
                 <div className="flex-shrink-0">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
@@ -256,20 +263,20 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     return (
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full">
-            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: theme.bgColor }}>
+            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 100% 100% at 0% 0%, ${theme.bgColor}, transparent 60%)`}}>
                 <Collapsible.Trigger className="w-full">
                     <div className="flex items-center gap-3 sm:gap-4">
                         <div className="flex-shrink-0">
                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
-                                <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" style={{ color: theme.iconColor }} />
+                                <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
                             </div>
                         </div>
                         <div className="flex-1 text-left">
-                             <h3 className="text-sm sm:text-base font-bold" style={{ color: theme.textColor }}>
+                             <h3 className="text-sm sm:text-base font-bold text-white">
                                 {theme.greeting}
                             </h3>
                         </div>
-                        <ChevronDown className={cn("h-5 w-5 transition-transform", isOpen && "rotate-180")} style={{ color: theme.textColor }} />
+                        <ChevronDown className={cn("h-5 w-5 transition-transform text-slate-400", isOpen && "rotate-180")} />
                     </div>
                 </Collapsible.Trigger>
 

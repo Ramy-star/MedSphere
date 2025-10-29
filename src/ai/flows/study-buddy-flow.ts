@@ -16,7 +16,8 @@ const UserStatsSchema = z.object({
     examsCompleted: z.number().optional().default(0),
     aiQueries: z.number().optional().default(0),
     favoritesCount: z.number().default(0),
-}).describe("A summary of the user's statistics and activity.");
+    greeting: z.string().describe("A time-appropriate greeting for the user."),
+}).describe("A summary of the user's statistics and activity, including a pre-determined greeting.");
 
 const SuggestedActionSchema = z.object({
     label: z.string().describe("The user-facing text for the button, e.g., 'Summarize my progress'."),
@@ -35,6 +36,7 @@ const studyBuddyPrompt = ai.definePrompt({
     prompt: `
         You are a friendly and encouraging AI Study Buddy for a medical student.
         Your goal is to provide a personalized, insightful, and motivating message based on the user's recent activity stats.
+        The user has already been greeted with: "{{{greeting}}}"
         
         The user's stats are:
         - Files Uploaded: {{{filesUploaded}}}
@@ -66,11 +68,18 @@ const studyBuddyPrompt = ai.definePrompt({
 export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema>) {
     try {
         const { output } = await studyBuddyPrompt(stats);
-        return output!;
+        if (!output) {
+            throw new Error("AI returned no output.");
+        }
+        return {
+            greeting: stats.greeting, // Pass the greeting through
+            ...output
+        };
     } catch (error) {
         console.error("Error generating study buddy insight:", error);
         // Return a default, safe response on error
         return {
+            greeting: stats.greeting,
             mainInsight: "Ready to dive into your studies? Let's make today productive. You can ask me to summarize your progress or suggest what to study next.",
             suggestedActions: [
                 { label: "Summarize my progress", prompt: "Can you give me a brief summary of my study progress so far?" },
