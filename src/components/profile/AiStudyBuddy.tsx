@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
@@ -297,7 +298,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             onOpenChange={setIsOpen} 
             className={cn(
                 "w-full transition-all duration-500 ease-in-out",
-                isExpanded && "fixed inset-0 sm:inset-5 z-50 m-auto max-w-2xl max-h-[80vh] flex"
+                isExpanded && "fixed inset-0 sm:inset-5 z-50 m-auto max-w-3xl max-h-[80vh] flex"
             )}
         >
             <div 
