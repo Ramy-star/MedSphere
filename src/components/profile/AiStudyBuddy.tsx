@@ -49,10 +49,10 @@ const sectionVariants = {
         transition: { type: 'spring', stiffness: 300, damping: 30 }
     },
     collapsed: {
-        clipPath: `inset(0% 0% 100% 0%)`,
+        clipPath: `inset(100% 0% 0% 0%)`,
         opacity: 0,
         height: 0,
-        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+        transition: { type: 'spring', stiffness: 300, damping: 30 }
     }
 };
 
@@ -249,7 +249,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 {chatHistory.map((message, index) => (
                     <div key={index} className="flex flex-col gap-2">
                         {message.role === 'user' && (
-                             <div dir="auto" className="self-end bg-blue-600 text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%]">
+                             <div dir="auto" className="self-end bg-blue-600 text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%]" style={{fontSize: 'inherit'}}>
                                 {message.text}
                             </div>
                         )}
@@ -367,3 +367,5 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
       </AnimatePresence>
     );
 }
+
+    
