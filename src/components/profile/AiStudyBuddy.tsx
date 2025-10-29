@@ -231,11 +231,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         >
             <div className="flex-shrink-0">
                 <div className="w-10 h-10 sm:w-12 sm:h-12 bg-slate-800 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden">
-                    {user?.photoURL ? (
-                        <Image src={user.photoURL} alt="AI Study Buddy" layout="fill" objectFit="cover" />
-                    ) : (
-                        <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                    )}
+                    <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
                 </div>
             </div>
 
