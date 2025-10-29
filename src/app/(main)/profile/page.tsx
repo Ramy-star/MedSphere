@@ -484,8 +484,4 @@ export default function ProfilePage() {
   );
 }
 
-
-
-    
-
     
