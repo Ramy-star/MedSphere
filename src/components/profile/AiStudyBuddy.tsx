@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
@@ -82,17 +83,20 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const getThemeForTime = useCallback((): TimeOfDayTheme => {
         const hour = new Date().getHours();
         const firstName = user.displayName?.split(' ')[0] || user.username;
-        if (hour >= 5 && hour < 12) { // 5:00 AM - 11:59 AM
-            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(206, 167, 23, 0.25)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+        // 5:00 AM - 11:59 AM
+        if (hour >= 5 && hour < 12) {
+            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(255, 229, 138, 0.25)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
-        if (hour >= 12 && hour < 17) { // 12:00 PM - 4:59 PM
-            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(152, 41, 13, 0.25)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+        // 12:00 PM - 4:59 PM
+        if (hour >= 12 && hour < 17) {
+            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(255, 213, 128, 0.25)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
-        if (hour >= 17 && hour < 21) { // 5:00 PM - 8:59 PM
-            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(118, 12, 59, 0.15)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        // 5:00 PM - 8:59 PM
+        if (hour >= 17 && hour < 21) {
+            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(156, 124, 253, 0.15)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
         }
         // 9:00 PM - 4:59 AM
-        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(5, 5, 61, 0.2)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(30, 58, 138, 0.2)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
     const fetchInitialInsight = useCallback(async (greeting: string) => {
@@ -184,7 +188,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading || !theme) {
         return (
-             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 100% 100% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 80%)`}}>
+             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 80% 70% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 70%)`}}>
                 <div className="flex-shrink-0">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
@@ -262,7 +266,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     return (
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full">
-            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 100% 100% at 0% 0%, ${theme.bgColor}, transparent 80%)`}}>
+            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 80% 70% at 0% 0%, ${theme.bgColor}, transparent 70%)`}}>
                 <Collapsible.Trigger className="w-full">
                     <div className="flex items-center gap-3 sm:gap-4">
                         <div className="flex-shrink-0">
