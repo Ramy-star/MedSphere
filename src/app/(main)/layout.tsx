@@ -44,7 +44,7 @@ export default function MainLayout({
                 <Image
                     src={user.metadata.coverPhotoURL}
                     alt="Cover photo"
-                    layout="fill"
+                    fill
                     objectFit="cover"
                     className="pointer-events-none select-none"
                     priority
@@ -55,15 +55,15 @@ export default function MainLayout({
 
         <div className={cn(
           "flex-shrink-0 flex flex-col min-h-[48px] relative z-10",
-           isHomePage ? "px-2 sm:px-6 md:px-6" : ""
+           (isHomePage || isProfilePage) ? "px-2 sm:px-6 md:px-6" : ""
         )}>
-            {!isHomePage && <Breadcrumbs />}
+            <Breadcrumbs />
         </div>
         
         <div className={cn(
           "flex-1 flex flex-col overflow-y-auto no-scrollbar relative z-10", 
           isHomePage && "pt-0", 
-          !isQuestionsCreatorPage && !isHomePage && !isProfilePage && "pt-4"
+          !isQuestionsCreatorPage && !isHomePage && "pt-4"
         )}>
           {children}
         </div>

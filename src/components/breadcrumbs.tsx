@@ -28,6 +28,11 @@ export function Breadcrumbs() {
   }, [allItems]);
 
   useEffect(() => {
+    if (pathname === '/') {
+      setCrumbs([]);
+      return;
+    }
+    
     if (!allItems) {
       setCrumbs([]);
       return;
@@ -35,11 +40,6 @@ export function Breadcrumbs() {
 
     const pathSegments = pathname.split('/').filter(Boolean);
     
-    if (pathSegments.length === 0) {
-      setCrumbs([]);
-      return;
-    }
-
     const newCrumbs: Crumb[] = [];
     let currentId: string | null = null;
     const firstSegment = pathSegments[0];
@@ -58,7 +58,7 @@ export function Breadcrumbs() {
       setCrumbs([{ id: 'search', name: `Search: "${query}"`, path: pathname }]);
       return;
     } else if (firstSegment === 'profile') {
-        setCrumbs([{ id: 'profile', name: user?.displayName || 'Profile', path: pathname }]);
+        setCrumbs([{ id: 'profile', name: 'Profile', path: pathname }]);
         return;
     }
 
@@ -92,17 +92,6 @@ export function Breadcrumbs() {
       </Link>
     </div>
   );
-
-  // If loading, render the home element and nothing else.
-  // This avoids showing a skeleton or an incomplete path.
-  if (loadingAllItems && pathname !== '/') {
-    return (
-        <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap min-h-[20px]">
-         {homeElement}
-       </nav>
-    );
-  }
-
 
   return (
     <nav className="flex items-center gap-2 text-sm text-slate-300 flex-wrap min-h-[20px]">

@@ -130,34 +130,25 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
             return null;
         }
         
-        const isConsistencyCategory = category === 'Consistency & Perseverance';
-
         return (
             <React.Fragment key={category}>
-                <div className="mb-4">
-                    <div className="space-y-4">
-                        {Object.entries(groups).map(([group, achievements], groupIndex) => (
-                        <React.Fragment key={group}>
-                            <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
-                            {achievements.map((ach) => (
-                                <BadgeCard
-                                key={ach.id}
-                                achievement={ach}
-                                userStats={userStats}
-                                earned={isSuperAdmin || earnedAchievements.has(ach.id)}
-                                />
-                            ))}
-                            </div>
-                            {!isConsistencyCategory && groupIndex < Object.keys(groups).length - 1 && (
-                                <hr className="my-2 border-slate-800" />
-                            )}
-                        </React.Fragment>
+                <h3 className="text-md font-bold text-slate-300 px-2 mt-6">{category}</h3>
+                <div className="space-y-4">
+                    {Object.entries(groups).map(([group, achievements], groupIndex) => (
+                    <React.Fragment key={group}>
+                        <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
+                        {achievements.map((ach) => (
+                            <BadgeCard
+                            key={ach.id}
+                            achievement={ach}
+                            userStats={userStats}
+                            earned={isSuperAdmin || earnedAchievements.has(ach.id)}
+                            />
                         ))}
-                    </div>
+                        </div>
+                    </React.Fragment>
+                    ))}
                 </div>
-                {categoryIndex < Object.keys(categorizedAndGroupedAchievements).length - 1 && (
-                    <hr className="my-4 border-t-2 border-slate-800" />
-                )}
           </React.Fragment>
         );
       })}
