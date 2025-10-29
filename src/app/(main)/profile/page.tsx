@@ -229,8 +229,8 @@ export default function ProfilePage() {
   const userLevel = user.level || studentIdToLevelMap.get(user.studentId) || 'Not Specified';
 
   const sectionVariants = {
-    open: { opacity: 1, height: 'auto' },
-    collapsed: { opacity: 0, height: 0 },
+    open: { clipPath: `inset(0 0 0% 0)` },
+    collapsed: { clipPath: `inset(0 0 100% 0)` },
   };
 
   return (
@@ -376,7 +376,7 @@ export default function ProfilePage() {
                   key="info-content"
                   initial="collapsed" animate="open" exit="collapsed"
                   variants={sectionVariants}
-                  transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
                   <div className="space-y-4">
@@ -391,7 +391,7 @@ export default function ProfilePage() {
                   key="sessions-content"
                   initial="collapsed" animate="open" exit="collapsed"
                   variants={sectionVariants}
-                  transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
                     <ActiveSessions user={user} />
@@ -405,7 +405,7 @@ export default function ProfilePage() {
                   key="favorites-content"
                   initial="collapsed" animate="open" exit="collapsed"
                   variants={sectionVariants}
-                  transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
                     <FavoritesSection user={user} onFileClick={handleFileClick} />
@@ -416,7 +416,7 @@ export default function ProfilePage() {
                   key="achievements-content"
                   initial="collapsed" animate="open" exit="collapsed"
                   variants={sectionVariants}
-                  transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                   className="overflow-hidden"
                 >
                     <AchievementsSection user={user} />
