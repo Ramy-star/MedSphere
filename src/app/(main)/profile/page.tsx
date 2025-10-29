@@ -403,7 +403,7 @@ export default function ProfilePage() {
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
             <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
-              <AchievementsSection user={user} />
+                <AchievementsSection user={user} />
             </CollapsibleSection>
         </div>
       </div>
