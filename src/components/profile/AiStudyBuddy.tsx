@@ -85,18 +85,18 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         const firstName = user.displayName?.split(' ')[0] || user.username;
         // 5:00 AM - 11:59 AM
         if (hour >= 5 && hour < 12) {
-            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(255, 229, 138, 0.25)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(255, 229, 138, 0.35)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
         // 12:00 PM - 4:59 PM
         if (hour >= 12 && hour < 17) {
-            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(255, 213, 128, 0.25)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(255, 213, 128, 0.35)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
         // 5:00 PM - 8:59 PM
         if (hour >= 17 && hour < 21) {
-            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(156, 124, 253, 0.15)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(156, 124, 253, 0.25)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
         }
         // 9:00 PM - 4:59 AM
-        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(30, 58, 138, 0.2)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(30, 58, 138, 0.3)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
     const fetchInitialInsight = useCallback(async (greeting: string) => {
@@ -113,6 +113,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         try {
             const result = await getStudyBuddyInsight({greeting, ...userStats});
             setInitialInsight(result);
+            //if(!isOpen) setIsOpen(true);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
@@ -188,7 +189,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading || !theme) {
         return (
-             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 80% 70% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 70%)`}}>
+             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 150% 120% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 90%)`}}>
                 <div className="flex-shrink-0">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
@@ -266,7 +267,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     return (
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full">
-            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 80% 70% at 0% 0%, ${theme.bgColor}, transparent 70%)`}}>
+            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 150% 120% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}>
                 <Collapsible.Trigger className="w-full">
                     <div className="flex items-center gap-3 sm:gap-4">
                         <div className="flex-shrink-0">
