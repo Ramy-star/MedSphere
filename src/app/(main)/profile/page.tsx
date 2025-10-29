@@ -1,17 +1,17 @@
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, ChevronDown, Star, Activity, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { contentService, type Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -42,6 +42,45 @@ level2Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 2'));
 level3Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 3'));
 level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
 level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
+
+// Collapsible Section Component
+const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }: { title: string, icon: React.ElementType, children: ReactNode, defaultOpen?: boolean }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
+
+    return (
+        <div className="w-full">
+            <button
+                className="w-full flex items-center justify-between text-left mb-6"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <div className="flex items-center gap-3">
+                    <Icon className="w-6 h-6 text-slate-300" />
+                    <h2 className="text-xl sm:text-2xl font-bold text-white">{title}</h2>
+                </div>
+                <ChevronDown className={cn("w-5 h-5 text-slate-400 transition-transform", isOpen ? 'rotate-180' : '')} />
+            </button>
+            <AnimatePresence initial={false}>
+                {isOpen && (
+                    <motion.div
+                        key="content"
+                        initial="collapsed"
+                        animate="open"
+                        exit="collapsed"
+                        variants={{
+                            open: { opacity: 1, height: 'auto' },
+                            collapsed: { opacity: 0, height: 0 },
+                        }}
+                        transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                        className="overflow-hidden"
+                    >
+                        {children}
+                    </motion.div>
+                )}
+            </AnimatePresence>
+        </div>
+    );
+};
+
 
 export default function ProfilePage() {
   const { user, logout } = useAuthStore();
@@ -353,21 +392,29 @@ export default function ProfilePage() {
       </div>
       
       <div className="mt-12 grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Left/Main Column */}
-        <div className="lg:col-span-2 space-y-12">
-            <FavoritesSection user={user} onFileClick={handleFileClick} />
-            <AchievementsSection user={user} />
+        {/* Left Column */}
+        <div className="lg:col-span-1 space-y-8 lg:border-r lg:border-white/10 lg:pr-8">
+            <AiStudyBuddy user={user} />
+            <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
+              <div className="space-y-4">
+                  <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
+                  <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
+                  <InfoCard icon={School} label="Academic Level" value={userLevel} />
+              </div>
+            </CollapsibleSection>
+            <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={false}>
+                <ActiveSessions user={user} />
+            </CollapsibleSection>
         </div>
 
         {/* Right Column */}
-        <div className="lg:col-span-1 space-y-8">
-            <AiStudyBuddy user={user} />
-            <div className="space-y-4">
-                <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
-                <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
-                <InfoCard icon={School} label="Academic Level" value={userLevel} />
-            </div>
-            <ActiveSessions user={user} />
+        <div className="lg:col-span-2 space-y-12">
+            <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
+                <FavoritesSection user={user} onFileClick={handleFileClick} />
+            </CollapsibleSection>
+            <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
+                <AchievementsSection user={user} />
+            </CollapsibleSection>
         </div>
       </div>
       
