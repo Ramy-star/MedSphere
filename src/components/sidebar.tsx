@@ -54,7 +54,8 @@ function buildTree(items: Content[], itemMap: Map<string, TreeNode>): TreeNode[]
                  parent.children.push(node);
             }
         } else if (node.parentId === null) {
-            if (!roots.some(root => root.id === node.id)) {
+            // Exclude the Telegram Inbox from the main tree if it's handled separately
+            if (node.id !== 'telegram-inbox-folder' && !roots.some(root => root.id === node.id)) {
                 roots.push(node);
             }
         }
@@ -215,6 +216,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
   
   const { data: allItems } = useCollection<Content>('content');
   const { can } = useAuthStore();
+  const isAdmin = can('canAccessAdminPanel', null);
 
   const itemMap = useMemo(() => new Map<string, TreeNode>(), []);
 
@@ -223,7 +225,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
     
     // Filter out hidden items for non-admins
     const visibleItems = allItems.filter(item => 
-        !item.metadata?.isHidden || can('canAccessAdminPanel', null)
+        !item.metadata?.isHidden
     );
 
     // Clear and rebuild map to ensure it's fresh
@@ -331,7 +333,8 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
 
   const collapsedViewContent = useMemo(() => {
      if (!tree) return null;
-     return tree.map((node) => {
+     const items = isAdmin ? [{ id: 'telegram-inbox-folder', name: 'Telegram Inbox', type: 'FOLDER', parentId: null, iconName: 'Inbox' }, ...tree] : tree;
+     return items.map((node) => {
        const isPathActive = activePath.has(node.id);
        let path: string;
         if (node.type === 'LEVEL') {
@@ -344,7 +347,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
         ? `Lvl ${node.name.replace('Level ', '')}`
         : null;
 
-       const IconComponent = getIconForType(node);
+       const IconComponent = getIconForType(node as Content);
        
        return (
             <TooltipProvider key={node.id}>
@@ -370,7 +373,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
             </TooltipProvider>
        )
      })
-  }, [tree, activePath, handleLinkClick]);
+  }, [tree, activePath, handleLinkClick, isAdmin]);
 
 
   return (
@@ -420,17 +423,29 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
           className="flex-1 overflow-y-auto pr-1 -mr-1 flex flex-col gap-1 no-scrollbar"
         >
           {open ? (
-            tree.map(node => (
-              <TreeItem 
-                key={node.id} 
-                node={node} 
-                openItems={openItems}
-                activePath={activePath}
-                onToggle={handleToggle}
-                onLinkClick={handleLinkClick}
-                level={0} 
-              />
-            ))
+            <>
+              {isAdmin && (
+                  <TreeItem 
+                    node={{ id: 'telegram-inbox-folder', name: 'Telegram Inbox', type: 'FOLDER', parentId: null, iconName: 'Inbox' }}
+                    openItems={openItems}
+                    activePath={activePath}
+                    onToggle={() => {}}
+                    onLinkClick={handleLinkClick}
+                    level={0} 
+                  />
+              )}
+              {tree.map(node => (
+                <TreeItem 
+                  key={node.id} 
+                  node={node} 
+                  openItems={openItems}
+                  activePath={activePath}
+                  onToggle={handleToggle}
+                  onLinkClick={handleLinkClick}
+                  level={0} 
+                />
+              ))}
+            </>
           ) : (
             collapsedViewContent
           )}

@@ -1,8 +1,7 @@
-
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { allContent as seedData } from './file-data';
+import { allContent as seedData, telegramInbox } from './file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -131,41 +130,54 @@ export const contentService = {
   },
   
   async seedInitialData() {
-      if (!db) {
-          console.error("Firestore is not initialized.");
-          return;
-      }
-      const contentRef = collection(db, 'content');
-      const snapshot = await getDocs(query(contentRef, where('type', '==', 'LEVEL')));
-  
-      if (!snapshot.empty) {
-          console.log("Content collection already has levels. Skipping seed.");
-          return;
-      }
-  
-      try {
-          await runTransaction(db, async (transaction) => {
-              seedData.forEach((item, index) => {
-                  const docRef = doc(contentRef, item.id);
-                  transaction.set(docRef, { ...item, order: index, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-              });
-          });
-          console.log('Initial data seeded successfully.');
-      } catch (e: any) {
-          if (e.code === 'permission-denied') {
-              const permissionError = new FirestorePermissionError({
-                  path: '/content (batch write)',
-                  operation: 'write',
-                  requestResourceData: { note: "Seeding multiple documents" }
-              });
-              errorEmitter.emit('permission-error', permissionError);
-          } else {
-              console.error("Error seeding data:", e);
-          }
-          throw e;
-      }
-  },
-  
+    if (!db) {
+        console.error("Firestore is not initialized.");
+        return;
+    }
+    const contentRef = collection(db, 'content');
+
+    try {
+        await runTransaction(db, async (transaction) => {
+            const levelQuery = query(contentRef, where('type', '==', 'LEVEL'));
+            const levelSnapshot = await transaction.get(levelQuery);
+
+            // Seed full academic structure only if no levels exist
+            if (levelSnapshot.empty) {
+                console.log("No levels found. Seeding initial academic structure.");
+                seedData.forEach((item, index) => {
+                    if (item.id !== telegramInbox.id) { // Don't seed inbox here
+                       const docRef = doc(contentRef, item.id);
+                       transaction.set(docRef, { ...item, order: index, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+                    }
+                });
+            } else {
+                 console.log("Levels already exist. Skipping academic structure seed.");
+            }
+
+            // Always check for the Telegram Inbox folder and create if it doesn't exist
+            const inboxRef = doc(contentRef, telegramInbox.id);
+            const inboxDoc = await transaction.get(inboxRef);
+            if (!inboxDoc.exists()) {
+                console.log("Telegram Inbox not found. Creating it now.");
+                transaction.set(inboxRef, { ...telegramInbox, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+            }
+        });
+        console.log('Data seeding check completed.');
+    } catch (e: any) {
+        if (e.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: '/content (batch write)',
+                operation: 'write',
+                requestResourceData: { note: "Seeding multiple documents" }
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        } else {
+            console.error("Error during data seeding transaction:", e);
+        }
+        // Don't re-throw, as this shouldn't block the app load
+    }
+},
+
   async getChildren(parentId: string | null): Promise<Content[]> {
     if (!db) return [];
     const q = query(collection(db, 'content'), where('parentId', '==', parentId), orderBy('order'));

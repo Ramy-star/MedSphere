@@ -1,4 +1,3 @@
-
 import { 
     Bone, Microscope, Activity, FlaskConical, Brain, BarChart3, Lightbulb, Languages, Pill, Bug, Shield, DnaIcon, Syringe, Stethoscope,
     Wind, HeartPulse, UserCheck, Briefcase, Speech, GitMerge, Airplay, Globe, Dna, HelpingHand, Users, TestTube2, Baby, Eye, Ear,
@@ -148,10 +147,7 @@ const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 
   ],
 };
 
-export const allContent: Content[] = [];
-
-// Add the hidden Telegram Inbox folder first
-allContent.push({
+export const telegramInbox: Content = {
     id: 'telegram-inbox-folder', // Fixed ID
     name: 'Telegram Inbox',
     type: 'FOLDER',
@@ -161,7 +157,9 @@ allContent.push({
     metadata: {
         isHidden: true,
     }
-});
+};
+
+export const allContent: Content[] = [];
 
 levelsRaw.forEach(level => {
     const levelId = uuidv4();
