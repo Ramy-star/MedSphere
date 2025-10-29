@@ -15,13 +15,6 @@ import { useToast } from '@/hooks/use-toast';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip';
-
 
 type Suggestion = {
     label: string;
@@ -49,16 +42,20 @@ type TimeOfDayTheme = {
 
 const sectionVariants = {
     open: {
-        clipPath: `inset(0% 0% 0% 0%)`,
         opacity: 1,
         height: 'auto',
-        transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+        transition: {
+            duration: 0.4,
+            ease: [0.22, 1, 0.36, 1]
+        }
     },
     collapsed: {
-        clipPath: `inset(0% 0% 100% 0%)`,
         opacity: 0,
         height: 0,
-        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+        transition: {
+            duration: 0.3,
+            ease: [0.36, 0, 0.66, -0.56]
+        }
     }
 };
 
@@ -91,16 +88,20 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const getThemeForTime = useCallback((): TimeOfDayTheme => {
         const hour = new Date().getHours();
         const firstName = user.displayName?.split(' ')[0] || user.username;
+        // 5:00 AM - 11:59 AM
         if (hour >= 5 && hour < 12) {
-            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(255, 229, 138, 0.15)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(209, 171, 35, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
+        // 12:00 PM - 4:59 PM
         if (hour >= 12 && hour < 17) {
-            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(255, 213, 128, 0.2)', textColor: '#3A3A3A', iconColor: '#346bf1' };
+            return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(165, 46, 17, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
+        // 5:00 PM - 8:59 PM
         if (hour >= 17 && hour < 21) {
-            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(156, 124, 253, 0.15)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+            return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(118, 12, 44, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
         }
-        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(30, 58, 138, 0.2)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
+        // 9:00 PM - 4:59 AM
+        return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(11, 11, 86, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
     const fetchInitialInsight = useCallback(async (greeting: string) => {
@@ -235,43 +236,23 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const ChatView = () => (
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <TooltipProvider>
-                    <div className="flex items-center gap-1">
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button
-                                    onClick={handleBackToIntro}
-                                    variant="outline"
-                                    size="icon"
-                                    className="rounded-full bg-slate-800/60 border-slate-700 hover:bg-slate-700/80 hover:border-slate-600 text-slate-300 h-7 w-7"
-                                >
-                                    <ArrowLeft className="w-4 h-4" />
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Back to suggestions</p></TooltipContent>
-                        </Tooltip>
-                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
-                            </TooltipTrigger>
-                             <TooltipContent><p>Increase font size</p></TooltipContent>
-                        </Tooltip>
-                         <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.max(s - 1, 10))}><Minus size={16}/></Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>Decrease font size</p></TooltipContent>
-                        </Tooltip>
-                        <Tooltip>
-                            <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setIsExpanded(!isExpanded)}>
-                                    {isExpanded ? <Shrink size={16}/> : <Maximize size={16}/>}
-                                </Button>
-                            </TooltipTrigger>
-                            <TooltipContent><p>{isExpanded ? 'Shrink' : 'Expand'}</p></TooltipContent>
-                        </Tooltip>
-                    </div>
-                </TooltipProvider>
+                <div className="flex items-center gap-1">
+                    <Button
+                        onClick={handleBackToIntro}
+                        variant="ghost"
+                        size="icon"
+                        className="text-slate-300 hover:bg-slate-700/80 h-7 w-7"
+                    >
+                        <ArrowLeft className="w-4 h-4" />
+                    </Button>
+                </div>
+                <div className="flex items-center gap-1">
+                     <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.max(s - 1, 10))}><Minus size={16}/></Button>
+                     <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
+                     <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setIsExpanded(!isExpanded)}>
+                        {isExpanded ? <Shrink size={16}/> : <Maximize size={16}/>}
+                    </Button>
+                </div>
             </div>
             <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
                 {chatHistory.map((message, index) => (
@@ -340,16 +321,16 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
                  <AnimatePresence initial={false}>
                     {isOpen && (
-                        <Collapsible.Content asChild forceMount key="content">
+                        <Collapsible.Content asChild forceMount>
                             <motion.div
                                 initial="collapsed"
                                 animate="open"
                                 exit="collapsed"
                                 variants={sectionVariants}
-                                className="overflow-hidden flex-1 flex flex-col pt-4"
+                                className={cn("overflow-hidden flex-1 flex flex-col pt-4", isExpanded ? "h-full" : "min-h-[120px] sm:min-h-[150px]")}
                             >
-                                <div className="flex-1 flex flex-col w-full min-w-0">
-                                    <div className={cn("flex-1", isExpanded && "overflow-y-auto no-scrollbar")}>
+                                <div className="flex-1 flex flex-col w-full min-w-0 h-full">
+                                    <div className="flex-1 overflow-y-auto no-scrollbar">
                                         <AnimatePresence mode="wait">
                                             <motion.div
                                                 key={view}
@@ -357,7 +338,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                                 animate={{ opacity: 1, y: 0 }}
                                                 exit={{ opacity: 0, y: -10 }}
                                                 transition={{ duration: 0.3 }}
-                                                className="h-full"
+                                                className="h-full flex flex-col"
                                             >
                                                 {view === 'intro' ? <IntroView /> : <ChatView />}
                                             </motion.div>
