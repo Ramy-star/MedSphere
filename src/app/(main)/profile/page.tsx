@@ -388,26 +388,28 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-8 items-start">
+      <div className="mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start">
         <div className="flex flex-col space-y-8">
             <AiStudyBuddy user={user} />
-            <CollapsibleSection title="User Information" icon={Info} value="item-1">
+            <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-4">
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
                     <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
                     <InfoCard icon={School} label="Academic Level" value={userLevel} />
                 </div>
             </CollapsibleSection>
-            <CollapsibleSection title="Active Sessions" icon={Activity} value="item-2">
+            <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
                 <ActiveSessions user={user} />
             </CollapsibleSection>
         </div>
 
+        <div className="w-px bg-slate-700 h-full hidden lg:block" />
+
         <div className="space-y-8 mt-8 lg:mt-0">
-            <CollapsibleSection title="Favorites" icon={Star} value="item-3">
+            <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
-            <CollapsibleSection title="Achievements" icon={Crown} value="item-4">
+            <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
                <AchievementsSection user={user} />
             </CollapsibleSection>
         </div>
