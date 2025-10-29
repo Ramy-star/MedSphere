@@ -8,6 +8,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
 import { Lock } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const tierColors = {
   bronze: {
@@ -136,10 +137,10 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
                         <div className="flex flex-row gap-4 overflow-x-auto pb-4 no-scrollbar">
                         {achievements.map((ach) => (
                             <BadgeCard
-                            key={ach.id}
-                            achievement={ach}
-                            userStats={userStats}
-                            earned={isSuperAdmin || earnedAchievements.has(ach.id)}
+                                key={ach.id}
+                                achievement={ach}
+                                userStats={userStats}
+                                earned={isSuperAdmin || earnedAchievements.has(ach.id)}
                             />
                         ))}
                         </div>
