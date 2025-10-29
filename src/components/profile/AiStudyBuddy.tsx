@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
@@ -84,15 +85,19 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const getThemeForTime = useCallback((): TimeOfDayTheme => {
         const hour = new Date().getHours();
         const firstName = user.displayName?.split(' ')[0] || user.username;
+        // 5:00 AM - 11:59 AM
         if (hour >= 5 && hour < 12) {
             return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(209, 171, 35, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
+        // 12:00 PM - 4:59 PM
         if (hour >= 12 && hour < 17) {
             return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(165, 46, 17, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
+        // 5:00 PM - 8:59 PM
         if (hour >= 17 && hour < 21) {
             return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(118, 12, 44, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
         }
+        // 9:00 PM - 4:59 AM
         return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(11, 11, 86, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
@@ -110,6 +115,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         try {
             const result = await getStudyBuddyInsight({greeting, ...userStats});
             setInitialInsight(result);
+            //if(!isOpen) setIsOpen(true);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
@@ -228,12 +234,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const ChatView = () => (
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0">
-                <Button
-                    onClick={handleBackToIntro}
-                    variant="ghost"
-                    size="icon"
-                    className="text-slate-300 hover:bg-slate-700/80 h-7 w-7"
-                >
+                <Button onClick={handleBackToIntro} variant="ghost" size="icon" className="text-slate-300 hover:bg-slate-700/80 h-7 w-7">
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <div className="flex items-center gap-1">
@@ -244,16 +245,16 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                     </Button>
                 </div>
             </div>
-            <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
+             <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
                 {chatHistory.map((message, index) => (
                     <div key={index} className="flex flex-col gap-2">
                         {message.role === 'user' && (
-                             <div className="self-end bg-blue-600 text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%]">
+                             <div dir="auto" className="self-end bg-blue-600 text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%]">
                                 {message.text}
                             </div>
                         )}
                         {message.role === 'model' && (
-                            <div className="self-start bg-slate-700/70 text-slate-300 rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%] prose prose-sm prose-invert" style={{fontSize: 'inherit'}}>
+                            <div dir="auto" className="self-start bg-slate-700/70 text-slate-300 rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%] prose prose-sm prose-invert" style={{fontSize: 'inherit'}}>
                                 <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
                             </div>
                         )}
