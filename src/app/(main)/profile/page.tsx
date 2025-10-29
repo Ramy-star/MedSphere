@@ -46,16 +46,26 @@ level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
 
 const sectionVariants = {
     open: {
-        clipPath: `inset(0% 0% 0% 0%)`,
         opacity: 1,
         height: 'auto',
-        transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+        transition: {
+            type: 'spring',
+            stiffness: 300,
+            damping: 30,
+            when: "beforeChildren",
+            staggerChildren: 0.05,
+        }
     },
     collapsed: {
-        clipPath: `inset(0% 0% 100% 0%)`,
         opacity: 0,
         height: 0,
-        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+        transition: {
+            duration: 0.3,
+            ease: "easeInOut",
+            when: "afterChildren",
+            staggerChildren: 0.05,
+            staggerDirection: -1
+        }
     }
 };
 
@@ -475,5 +485,7 @@ export default function ProfilePage() {
 }
 
 
+
+    
 
     
