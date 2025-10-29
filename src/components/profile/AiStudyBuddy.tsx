@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
@@ -185,7 +184,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     if (loading || !theme) {
         return (
-             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl">
+             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 100% 100% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 80%)`}}>
                 <div className="flex-shrink-0">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
                 </div>
@@ -263,7 +262,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     return (
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full">
-            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 100% 100% at 0% 0%, ${theme.bgColor}, transparent 60%)`}}>
+            <div className="glass-card p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 100% 100% at 0% 0%, ${theme.bgColor}, transparent 80%)`}}>
                 <Collapsible.Trigger className="w-full">
                     <div className="flex items-center gap-3 sm:gap-4">
                         <div className="flex-shrink-0">
