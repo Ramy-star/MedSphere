@@ -44,7 +44,22 @@ level3Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 3'));
 level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
 level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
 
-const CollapsibleSection = ({ title, icon: Icon, children, value, defaultOpen = true }: { title: string, icon: React.ElementType, children: React.ReactNode, value: string, defaultOpen?: boolean }) => {
+const sectionVariants = {
+    open: {
+        clipPath: `inset(0% 0% 0% 0%)`,
+        opacity: 1,
+        height: 'auto',
+        transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+    },
+    collapsed: {
+        clipPath: `inset(0% 0% 100% 0%)`,
+        opacity: 0,
+        height: 0,
+        transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] }
+    }
+};
+
+const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }: { title: string, icon: React.ElementType, children: React.ReactNode, defaultOpen?: boolean }) => {
     const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full space-y-2">
@@ -64,11 +79,7 @@ const CollapsibleSection = ({ title, icon: Icon, children, value, defaultOpen = 
                       initial="collapsed"
                       animate="open"
                       exit="collapsed"
-                      variants={{
-                        open: { clipPath: `inset(0 0 0% 0)`, opacity: 1 },
-                        collapsed: { clipPath: `inset(0 0 100% 0)`, opacity: 0 },
-                      }}
-                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      variants={sectionVariants}
                       className="overflow-hidden"
                     >
                       {children}
@@ -397,7 +408,7 @@ export default function ProfilePage() {
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
             <CollapsibleSection title="Achievements" icon={Crown} value="item-4">
-                <AchievementsSection user={user} />
+               <AchievementsSection user={user} />
             </CollapsibleSection>
         </div>
       </div>
