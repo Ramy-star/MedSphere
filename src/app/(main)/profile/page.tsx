@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -22,12 +22,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -41,6 +35,7 @@ import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
 import { FilePreviewModal } from '@/components/FilePreviewModal';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
+import * as Collapsible from '@radix-ui/react-collapsible';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -49,19 +44,25 @@ level3Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 3'));
 level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
 level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
 
-const ProfileSection = ({ title, icon: Icon, children, value }: { title: string, icon: React.ElementType, children: React.ReactNode, value: string }) => {
+const CollapsibleSection = ({ title, icon: Icon, children, value }: { title: string, icon: React.ElementType, children: React.ReactNode, value: string }) => {
+    const [isOpen, setIsOpen] = useState(true);
     return (
-        <AccordionItem value={value} className="border-none">
-            <AccordionTrigger className="hover:no-underline mb-2 py-2">
-                <div className="flex items-center gap-3">
-                    <Icon className="w-6 h-6 text-slate-300" />
-                    <h2 className="text-xl sm:text-2xl font-bold text-white">{title}</h2>
+        <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full space-y-2">
+             <Collapsible.Trigger className="w-full">
+                <div className="flex w-full items-center justify-between py-2 mb-2 hover:bg-slate-800/50 rounded-lg px-2">
+                    <div className="flex items-center gap-3">
+                        <Icon className="w-6 h-6 text-slate-300" />
+                        <h2 className="text-xl sm:text-2xl font-bold text-white">{title}</h2>
+                    </div>
+                     <ChevronDown className={cn("h-5 w-5 text-slate-400 transition-transform", isOpen && "rotate-180")} />
                 </div>
-            </AccordionTrigger>
-            <AccordionContent>
-                {children}
-            </AccordionContent>
-        </AccordionItem>
+            </Collapsible.Trigger>
+            <Collapsible.Content asChild>
+                <AnimatePresence initial={false}>
+                    {isOpen && children}
+                </AnimatePresence>
+            </Collapsible.Content>
+        </Collapsible.Root>
     );
 };
 
@@ -227,6 +228,10 @@ export default function ProfilePage() {
   const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
   const userLevel = user.level || studentIdToLevelMap.get(user.studentId) || 'Not Specified';
 
+  const sectionVariants = {
+    open: { opacity: 1, height: 'auto' },
+    collapsed: { opacity: 0, height: 0 },
+  };
 
   return (
     <>
@@ -365,30 +370,58 @@ export default function ProfilePage() {
       
       <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-x-8 items-start">
         <div className="flex flex-col space-y-8 lg:border-r lg:border-white/10 lg:pr-8">
-            <Accordion type="multiple" defaultValue={['item-1', 'item-2']} className="w-full space-y-4">
-                <AiStudyBuddy user={user} />
-                <ProfileSection title="User Information" icon={Info} value="item-1">
+            <AiStudyBuddy user={user} />
+            <CollapsibleSection title="User Information" icon={Info} value="item-1">
+                <motion.div
+                  key="info-content"
+                  initial="collapsed" animate="open" exit="collapsed"
+                  variants={sectionVariants}
+                  transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                  className="overflow-hidden"
+                >
                   <div className="space-y-4">
                       <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
                       <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
                       <InfoCard icon={School} label="Academic Level" value={userLevel} />
                   </div>
-                </ProfileSection>
-                <ProfileSection title="Active Sessions" icon={Activity} value="item-2">
+                </motion.div>
+            </CollapsibleSection>
+            <CollapsibleSection title="Active Sessions" icon={Activity} value="item-2">
+                <motion.div
+                  key="sessions-content"
+                  initial="collapsed" animate="open" exit="collapsed"
+                  variants={sectionVariants}
+                  transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                  className="overflow-hidden"
+                >
                     <ActiveSessions user={user} />
-                </ProfileSection>
-            </Accordion>
+                </motion.div>
+            </CollapsibleSection>
         </div>
 
-        <div className="space-y-4 mt-8 lg:mt-0">
-            <Accordion type="multiple" defaultValue={['item-3', 'item-4']} className="w-full space-y-4">
-                 <ProfileSection title="Favorites" icon={Star} value="item-3">
+        <div className="space-y-8 mt-8 lg:mt-0">
+            <CollapsibleSection title="Favorites" icon={Star} value="item-3">
+                <motion.div
+                  key="favorites-content"
+                  initial="collapsed" animate="open" exit="collapsed"
+                  variants={sectionVariants}
+                  transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                  className="overflow-hidden"
+                >
                     <FavoritesSection user={user} onFileClick={handleFileClick} />
-                </ProfileSection>
-                 <ProfileSection title="Achievements" icon={Crown} value="item-4">
+                </motion.div>
+            </CollapsibleSection>
+            <CollapsibleSection title="Achievements" icon={Crown} value="item-4">
+                 <motion.div
+                  key="achievements-content"
+                  initial="collapsed" animate="open" exit="collapsed"
+                  variants={sectionVariants}
+                  transition={{ duration: 0.4, ease: [0.04, 0.62, 0.23, 0.98] }}
+                  className="overflow-hidden"
+                >
                     <AchievementsSection user={user} />
-                </ProfileSection>
-            </Accordion>
+                </motion.div>
+            </CollapsibleSection>
         </div>
       </div>
       
