@@ -258,9 +258,9 @@ export default function ProfilePage() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="w-full pb-12 overflow-x-hidden"
+      className="w-full pb-12 overflow-x-hidden no-scrollbar"
     >
-      <div className="relative group/cover h-40 sm:h-64">
+      <div className="relative group/cover h-36 sm:h-64">
          <input
             type="file"
             ref={coverFileInputRef}
@@ -292,9 +292,9 @@ export default function ProfilePage() {
          </div>
       </div>
 
-      <div className="relative z-10 flex flex-col sm:flex-row items-center sm:items-end -mt-12 sm:-mt-16 px-4 sm:px-8 gap-4">
+      <div className="relative z-10 flex flex-col items-center -mt-12 sm:-mt-16 px-4 sm:px-8 sm:flex-row sm:items-end sm:gap-4">
         <div className="relative group/avatar">
-          <Avatar className={cn("h-24 w-24 sm:h-28 sm:w-28 ring-4 ring-offset-2 ring-offset-slate-900 transition-all", avatarRingClass)}>
+          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 ring-offset-2 ring-offset-slate-900 transition-all", avatarRingClass)}>
             <AvatarImage 
                 src={user.photoURL} 
                 alt={user.displayName}
@@ -337,12 +337,13 @@ export default function ProfilePage() {
         </div>
 
         <div className="text-center sm:text-left sm:pb-4 w-full group">
-            <div className="flex flex-col items-center sm:items-start">
+            <div className="flex flex-col items-center sm:items-start mt-2 sm:mt-0">
               <div className="flex items-center gap-2">
                 <h1
                   ref={nameInputRef}
                   contentEditable={editingName}
                   suppressContentEditableWarning={true}
+                  onClick={() => !editingName && setEditingName(true)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter') {
                       e.preventDefault();
@@ -354,14 +355,14 @@ export default function ProfilePage() {
                     }
                   }}
                   className={cn(
-                    "text-xl sm:text-3xl font-bold outline-none whitespace-nowrap",
+                    "text-xl sm:text-3xl font-bold outline-none whitespace-nowrap cursor-pointer sm:cursor-default",
                     editingName && "ring-2 ring-blue-500 rounded-md px-2 focus:bg-white/10"
                   )}
                 >
                   {user.displayName}
                 </h1>
                 {!editingName && (
-                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full group-hover:opacity-100 md:opacity-0 transition-opacity flex-shrink-0" onClick={() => setEditingName(true)}>
+                  <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full sm:group-hover:opacity-100 sm:opacity-0 transition-opacity flex-shrink-0 hidden sm:flex" onClick={() => setEditingName(true)}>
                       <Edit className="w-5 h-5" />
                   </Button>
                 )}
@@ -473,4 +474,3 @@ export default function ProfilePage() {
   );
 }
 
-    
