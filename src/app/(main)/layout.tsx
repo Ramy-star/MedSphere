@@ -55,7 +55,7 @@ export default function MainLayout({
 
         <div className={cn(
           "flex-shrink-0 flex flex-col min-h-[48px] relative z-10",
-           (isHomePage || isProfilePage) ? "px-2 sm:px-6 md:px-6" : ""
+           (isHomePage || isProfilePage) && "px-2 sm:px-6 md:px-6"
         )}>
             <Breadcrumbs />
         </div>
