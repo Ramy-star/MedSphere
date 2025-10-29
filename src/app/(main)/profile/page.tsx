@@ -44,8 +44,8 @@ level3Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 3'));
 level4Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 4'));
 level5Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 5'));
 
-const CollapsibleSection = ({ title, icon: Icon, children, value }: { title: string, icon: React.ElementType, children: React.ReactNode, value: string }) => {
-    const [isOpen, setIsOpen] = useState(true);
+const CollapsibleSection = ({ title, icon: Icon, children, value, defaultOpen = true }: { title: string, icon: React.ElementType, children: React.ReactNode, value: string, defaultOpen?: boolean }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
     return (
         <Collapsible.Root open={isOpen} onOpenChange={setIsOpen} className="w-full space-y-2">
              <Collapsible.Trigger className="w-full">
@@ -57,11 +57,25 @@ const CollapsibleSection = ({ title, icon: Icon, children, value }: { title: str
                      <ChevronDown className={cn("h-5 w-5 text-slate-400 transition-transform", isOpen && "rotate-180")} />
                 </div>
             </Collapsible.Trigger>
-            <Collapsible.Content asChild>
-                <AnimatePresence initial={false}>
-                    {isOpen && children}
-                </AnimatePresence>
-            </Collapsible.Content>
+            <AnimatePresence initial={false}>
+              {isOpen && (
+                <Collapsible.Content asChild forceMount>
+                   <motion.div
+                      initial="collapsed"
+                      animate="open"
+                      exit="collapsed"
+                      variants={{
+                        open: { clipPath: `inset(0 0 0% 0)`, opacity: 1 },
+                        collapsed: { clipPath: `inset(0 0 100% 0)`, opacity: 0 },
+                      }}
+                      transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                      className="overflow-hidden"
+                    >
+                      {children}
+                    </motion.div>
+                </Collapsible.Content>
+              )}
+            </AnimatePresence>
         </Collapsible.Root>
     );
 };
@@ -228,11 +242,6 @@ export default function ProfilePage() {
   const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
   const userLevel = user.level || studentIdToLevelMap.get(user.studentId) || 'Not Specified';
 
-  const sectionVariants = {
-    open: { clipPath: `inset(0 0 0% 0)` },
-    collapsed: { clipPath: `inset(0 0 100% 0)` },
-  };
-
   return (
     <>
     <motion.div
@@ -368,59 +377,27 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-x-8 items-start">
-        <div className="flex flex-col space-y-8 lg:border-r lg:border-white/10 lg:pr-8">
+      <div className="mt-12 grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-8 items-start">
+        <div className="flex flex-col space-y-8">
             <AiStudyBuddy user={user} />
             <CollapsibleSection title="User Information" icon={Info} value="item-1">
-                <motion.div
-                  key="info-content"
-                  initial="collapsed" animate="open" exit="collapsed"
-                  variants={sectionVariants}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
-                >
-                  <div className="space-y-4">
-                      <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
-                      <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
-                      <InfoCard icon={School} label="Academic Level" value={userLevel} />
-                  </div>
-                </motion.div>
+                <div className="space-y-4">
+                    <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
+                    <InfoCard icon={Mail} label="Email" value={user.email || 'Not available'} />
+                    <InfoCard icon={School} label="Academic Level" value={userLevel} />
+                </div>
             </CollapsibleSection>
             <CollapsibleSection title="Active Sessions" icon={Activity} value="item-2">
-                <motion.div
-                  key="sessions-content"
-                  initial="collapsed" animate="open" exit="collapsed"
-                  variants={sectionVariants}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
-                >
-                    <ActiveSessions user={user} />
-                </motion.div>
+                <ActiveSessions user={user} />
             </CollapsibleSection>
         </div>
 
         <div className="space-y-8 mt-8 lg:mt-0">
             <CollapsibleSection title="Favorites" icon={Star} value="item-3">
-                <motion.div
-                  key="favorites-content"
-                  initial="collapsed" animate="open" exit="collapsed"
-                  variants={sectionVariants}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
-                >
-                    <FavoritesSection user={user} onFileClick={handleFileClick} />
-                </motion.div>
+                <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
             <CollapsibleSection title="Achievements" icon={Crown} value="item-4">
-                 <motion.div
-                  key="achievements-content"
-                  initial="collapsed" animate="open" exit="collapsed"
-                  variants={sectionVariants}
-                  transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-                  className="overflow-hidden"
-                >
-                    <AchievementsSection user={user} />
-                </motion.div>
+                <AchievementsSection user={user} />
             </CollapsibleSection>
         </div>
       </div>
