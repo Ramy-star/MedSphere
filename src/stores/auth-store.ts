@@ -352,15 +352,15 @@ const useAuthStore = create<AuthState>((set, get) => ({
     if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
     
     if (!localOnly) {
-        const { studentId, currentSessionId } = get();
-        if (studentId && currentSessionId) {
-            const userDocRef = doc(db, 'users', studentId);
+        const { user, currentSessionId } = get();
+        if (user && user.id && currentSessionId) {
+            const userDocRef = doc(db, 'users', user.id);
             try {
                 const userDoc = await getDoc(userDocRef);
                 if (userDoc.exists()) {
                     const userProfile = userDoc.data() as UserProfile;
-                    const sessionToRemove = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
-                    if (sessionToRemove) {
+                    const sessionToLogout = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
+                    if (sessionToLogout) {
                         // Mark as logged out instead of removing
                         const updatedSessions = userProfile.sessions?.map(s => s.sessionId === currentSessionId ? { ...s, status: 'logged_out' } : s);
                         await updateDoc(userDocRef, {
