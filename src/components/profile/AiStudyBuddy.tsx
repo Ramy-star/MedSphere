@@ -82,7 +82,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const messagesRef = useRef<ChatMessage[]>([]);
     const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
-    const [fontSize, setFontSize] = useState(12);
+    const [fontSize, setFontSize] = useState(14); // Base font size
 
     useEffect(() => {
         messagesRef.current = chatHistory;
@@ -127,7 +127,6 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         try {
             const result = await getStudyBuddyInsight({greeting, ...userStats});
             setInitialInsight(result);
-            //if(!isOpen) setIsOpen(true);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
@@ -192,9 +191,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     useEffect(() => {
         const textarea = textareaRef.current;
         if (textarea) {
-            textarea.style.height = 'auto'; // Reset height to recalculate
+            textarea.style.height = 'auto';
             const scrollHeight = textarea.scrollHeight;
-            const maxHeight = 120; // 120px max height
+            const maxHeight = 120;
             textarea.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
         }
     }, [customQuestion]);
@@ -229,7 +228,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const IntroView = () => (
         <>
-             <div style={{color: theme.textColor}}>
+            <div style={{color: theme.textColor}}>
                 <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
             </div>
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
@@ -272,13 +271,24 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 {chatHistory.map((message, index) => (
                     <div key={message.text + index} className="flex flex-col gap-2">
                         {message.role === 'user' && (
-                             <div dir="auto" className="self-end bg-blue-600 text-white rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%]" style={{fontSize: 'inherit'}}>
+                             <div dir="auto" className="self-end bg-blue-600 text-white rounded-2xl px-3 py-2 max-w-[85%] whitespace-pre-wrap break-words" style={{fontSize: 'inherit'}}>
                                 {message.text}
                             </div>
                         )}
                         {message.role === 'model' && (
-                            <div dir="auto" className="self-start bg-slate-700/70 text-slate-300 rounded-lg sm:rounded-xl px-2.5 py-1.5 sm:px-3 sm:py-2 max-w-[85%] prose prose-sm prose-invert" style={{fontSize: 'inherit'}}>
-                                <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.text}</ReactMarkdown>
+                            <div dir="auto" className="self-start text-slate-300 max-w-[95%] prose prose-sm prose-invert" style={{fontSize: 'inherit'}}>
+                                <ReactMarkdown 
+                                    remarkPlugins={[remarkGfm]}
+                                    components={{
+                                        table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
+                                        thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
+                                        tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
+                                        th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
+                                        td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0" {...props} />,
+                                    }}
+                                >
+                                    {message.text}
+                                </ReactMarkdown>
                             </div>
                         )}
                     </div>
@@ -341,32 +351,32 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                 animate="open"
                                 exit="collapsed"
                                 variants={sectionVariants}
-                                className="overflow-hidden flex-1 flex flex-col"
+                                className="overflow-hidden flex-1 flex flex-col pt-4"
                             >
-                                <div className="pt-4 flex-1 flex flex-col w-full min-w-0 min-h-[120px] sm:min-h-[150px]">
-                                    <div className="flex-1 min-h-0">
-                                        <AnimatePresence mode="wait">
-                                            <motion.div
-                                                key={view}
-                                                initial={{ opacity: 0, y: 10 }}
-                                                animate={{ opacity: 1, y: 0 }}
-                                                exit={{ opacity: 0, y: -10 }}
-                                                transition={{ duration: 0.3 }}
-                                                className="h-full flex flex-col"
-                                            >
-                                                {view === 'intro' ? <IntroView /> : <ChatView />}
-                                            </motion.div>
-                                        </AnimatePresence>
-                                    </div>
-                                    <motion.div 
+                                <div className="flex-1 min-h-0">
+                                    <AnimatePresence mode="wait">
+                                        <motion.div
+                                            key={view}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            transition={{ duration: 0.3 }}
+                                            className="h-full flex flex-col"
+                                        >
+                                            {view === 'intro' ? <IntroView /> : <ChatView />}
+                                        </motion.div>
+                                    </AnimatePresence>
+                                </div>
+                                {view === 'chat' ? (
+                                     <motion.div 
                                         className="flex items-center gap-2 mt-2 flex-shrink-0"
                                         initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+                                        animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
                                     >
                                         <Textarea
                                             ref={textareaRef}
-                                            placeholder="Ask something else..."
-                                            className="flex-1 bg-slate-800/60 border-slate-700 rounded-2xl h-8 sm:h-9 px-3 sm:px-4 text-xs resize-none overflow-y-auto no-scrollbar"
+                                            placeholder="Ask a follow-up..."
+                                            className="flex-1 bg-slate-800/60 border-slate-700 rounded-2xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0"
                                             value={customQuestion}
                                             onChange={(e) => setCustomQuestion(e.target.value)}
                                             onKeyDown={handleCustomQuestionKeyDown}
@@ -377,14 +387,41 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
                                         <Button 
                                             size="icon" 
-                                            className="rounded-full h-8 w-8 sm:h-9 sm:w-9 flex-shrink-0"
+                                            className="rounded-full h-9 w-9 flex-shrink-0"
                                             onClick={handleCustomQuestionSubmit}
                                             disabled={isResponding || !customQuestion.trim()}
                                         >
                                             <ArrowUp className="w-4 h-4" />
                                         </Button>
                                     </motion.div>
-                                </div>
+                                ) : (
+                                    <motion.div 
+                                        className="flex items-center gap-2 mt-2"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0, transition: { delay: 0.5 } }}
+                                    >
+                                         <Textarea
+                                            ref={textareaRef}
+                                            placeholder="Ask something else..."
+                                            className="flex-1 bg-slate-800/60 border-slate-700 rounded-2xl h-auto min-h-[38px] text-sm resize-none overflow-y-auto no-scrollbar focus-visible:ring-0 focus-visible:ring-offset-0"
+                                            value={customQuestion}
+                                            onChange={(e) => setCustomQuestion(e.target.value)}
+                                            onKeyDown={handleCustomQuestionKeyDown}
+                                            disabled={isResponding}
+                                            rows={1}
+                                            dir="auto"
+                                        />
+
+                                        <Button 
+                                            size="icon" 
+                                            className="rounded-full h-9 w-9 flex-shrink-0"
+                                            onClick={handleCustomQuestionSubmit}
+                                            disabled={isResponding || !customQuestion.trim()}
+                                        >
+                                            <ArrowUp className="w-4 h-4" />
+                                        </Button>
+                                    </motion.div>
+                                )}
                             </motion.div>
                         </Collapsible.Content>
                     )}

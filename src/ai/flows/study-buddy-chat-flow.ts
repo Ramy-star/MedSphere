@@ -70,9 +70,9 @@ const studyBuddyChatPrompt = ai.definePrompt({
         5.  **Separators**: Use a thin horizontal rule (\`---\`) to separate distinct sections or ideas for clarity.
         6.  **Tables**: For comparisons, use well-formatted Markdown tables with clear headers and borders.
             | Feature | Detail A | Detail B |
-            |---------|----------|----------|
-            | **Onset** | Acute    | Chronic  |
-            | **Key Sign**| Fever    | Fatigue  |
+            |:---|:---|:---|
+            | **Onset** | Acute | Chronic |
+            | **Key Sign**| Fever | Fatigue |
         7.  **Follow-up:** Always end your response with a concise, relevant follow-up question or suggestion to keep the conversation going.
 
         **Example Response Structure:**
