@@ -34,7 +34,7 @@ type SavedQuestionSet = {
   id: string;
   fileName: string;
   textQuestions: string;
-  jsonQuestions: any; // Can be object or string
+  jsonQuestions: any;
   textExam?: string;
   jsonExam?: any;
   textFlashcard?: string;
@@ -203,7 +203,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             json: 'jsonQuestions',
             examText: 'textExam',
             examJson: 'jsonExam',
-            flashcardText: 'textFlashcard',
+            flashcardText: 'flashcardText',
             flashcardJson: 'jsonFlashcard'
         };
         const dataKey = keyMap[type] as keyof SavedQuestionSet;
@@ -293,7 +293,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         json: 'jsonQuestions',
         examText: 'textExam',
         examJson: 'jsonExam',
-        flashcardText: 'textFlashcard',
+        flashcardText: 'flashcardText',
         flashcardJson: 'jsonFlashcard'
     };
     const dataKey = keyMap[type] as keyof SavedQuestionSet;
@@ -701,7 +701,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     icon={<FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.flashcardJson}
                     type="flashcardJson"
-                    isEditing={isEditing.flashcardJson}
+                    isEditing={isEditing.json}
                     onToggleEdit={() => handleToggleEdit('flashcardJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardJson: value}))}
                     onCancel={() => handleCancelEdit('flashcardJson')}
@@ -760,8 +760,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   );
 }
 
-export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function SavedQuestionSetPage({ params: { id } }: { params: { id: string } }) {
   const { studentId, loading } = useAuthStore();
 
   if (loading) {
@@ -779,5 +778,3 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
   
   return <SavedQuestionSetPageContent id={id} />;
 }
-
-    

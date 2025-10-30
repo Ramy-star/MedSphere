@@ -11,8 +11,7 @@ import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
-export default function FolderPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function FolderPage({ params: { id } }: { params: { id: string } }) {
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { toast } = useToast();
