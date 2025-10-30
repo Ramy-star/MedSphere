@@ -53,14 +53,9 @@ export default function HomePage() {
   }, [loading, db, levels, handleSeed]);
 
   
-  const handleItemClick = (e: React.MouseEvent<HTMLDivElement>, item: Content) => {
+  const handleItemClick = (item: Content) => {
     const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
-    // Use middle mouse button for new tab, or if ctrl/cmd is pressed
-    if (e.button === 1 || e.ctrlKey || e.metaKey) {
-      window.open(path, '_blank');
-    } else if (e.button === 0) { // Left click
-      router.push(path);
-    }
+    router.push(path);
   };
 
   const renderContent = () => {
@@ -91,7 +86,7 @@ export default function HomePage() {
                   const isLastItem = index === levels.length - 1;
                   const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
 
-                  if (item.type === 'FOLDER') {
+                  if (item.type === 'FOLDER' || item.type === 'SUBJECT' || item.type === 'SEMESTER' ) {
                     return (
                         <div key={item.id} className={cn("col-span-1")}>
                              <FolderCard
@@ -99,7 +94,7 @@ export default function HomePage() {
                                 onRename={() => {}}
                                 onDelete={() => {}}
                                 onIconChange={() => {}}
-                                onClick={() => router.push(path)}
+                                onClick={() => handleItemClick(item)}
                                 onMove={() => {}}
                                 onCopy={() => {}}
                                 onToggleVisibility={() => {}}
@@ -113,15 +108,14 @@ export default function HomePage() {
                     <div 
                         key={item.id}
                         className={cn(
-                            // On mobile, if it's the last item and the total is odd, span 2 columns
-                            isLastItem && isOdd && "col-span-2 sm:col-span-1 md:col-span-1"
+                            "col-span-1 cursor-pointer",
+                            isLastItem && isOdd && "col-span-2 sm:col-span-1"
                         )} 
-                        onMouseDown={(e) => handleItemClick(e, item)}
+                        onClick={() => handleItemClick(item)}
                         onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
                     >
                         <div className={cn(
-                            "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors cursor-pointer h-24 md:h-28 flex items-center justify-center text-center rounded-[1.25rem]",
-                            // Center the content if we are spanning 2 columns
+                            "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors h-24 md:h-28 flex items-center justify-center text-center rounded-[1.25rem]",
                             isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
                         )}>
                             <h3 className="text-base md:text-xl font-semibold text-white">{item.name}</h3>

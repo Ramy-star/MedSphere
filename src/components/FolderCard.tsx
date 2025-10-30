@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthStore } from '@/stores/auth-store';
 import Image from 'next/image';
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -47,6 +47,7 @@ export const FolderCard = React.memo(function FolderCard({
     const { user, can } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { toast } = useToast();
+    const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const isFavorited = user?.favorites?.includes(item.id) || false;
     
@@ -105,6 +106,7 @@ export const FolderCard = React.memo(function FolderCard({
       <DropdownMenuContent 
           className="w-48 p-2"
           align="end"
+          onCloseAutoFocus={(e) => e.preventDefault()} // Prevents re-focusing the trigger
       >
           {user && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, handleToggleFavorite)}>
@@ -116,13 +118,13 @@ export const FolderCard = React.memo(function FolderCard({
           {(can('canRename', item.id) || can('canDelete', item.id) || can('canChangeIcon', item.id)) && <DropdownMenuSeparator />}
           
           {can('canRename', item.id) && (
-            <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)} onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Rename</span>
             </DropdownMenuItem>
           )}
           {can('canChangeIcon', item.id) && (
-            <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(item))} onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(item))}>
                 <ImageIcon className="mr-2 h-4 w-4" />
                 <span>Change Icon</span>
             </DropdownMenuItem>
@@ -149,7 +151,7 @@ export const FolderCard = React.memo(function FolderCard({
           {can('canDelete', item.id) && (
             <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10" onClick={(e) => e.stopPropagation()}>
+                <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                     <Trash2 className="mr-2 h-4 w-4" />
                     <span>Delete</span>
                 </DropdownMenuItem>
@@ -158,18 +160,33 @@ export const FolderCard = React.memo(function FolderCard({
       </DropdownMenuContent>
     );
     
-    const handleCardClick = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
-            return;
+    // Prevent click from firing during a drag operation
+    const handlePointerDown = () => {
+        // Set a timeout. If a drag starts, it will be cancelled.
+        clickTimeoutRef.current = setTimeout(() => {
+          clickTimeoutRef.current = null;
+        }, 200); // 200ms threshold to differentiate click from drag
+    };
+
+    const handlePointerUp = () => {
+        if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current);
+            onClick(item);
         }
-        onClick(item);
-    }
+    };
+
+    const handleDragStart = () => {
+        if (clickTimeoutRef.current) {
+            clearTimeout(clickTimeoutRef.current);
+            clickTimeoutRef.current = null;
+        }
+    };
+
 
     if (displayAs === 'list') {
         return (
              <div 
-                onClick={handleCardClick}
+                onClick={() => onClick(item)}
                 className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
@@ -227,7 +244,9 @@ export const FolderCard = React.memo(function FolderCard({
     return (
       <div 
         onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
-        onClick={handleCardClick}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerMove={handleDragStart} // If pointer moves, it's a drag, not a click
         className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors cursor-pointer", item.metadata?.isHidden && "opacity-60 bg-white/5")}
       >
           <div className="flex justify-between items-start mb-4">
@@ -242,6 +261,7 @@ export const FolderCard = React.memo(function FolderCard({
                                             variant="ghost" 
                                             size="icon" 
                                             className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
+                                            onPointerDown={(e) => e.stopPropagation()} // Prevent card's onPointerDown
                                         >
                                             <MoreVertical className="w-5 h-5" />
                                         </Button>
