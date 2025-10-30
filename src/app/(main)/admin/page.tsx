@@ -573,7 +573,7 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteUser} variant="destructive">Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDeleteUser} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -587,7 +587,7 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDemoteConfirm} variant="destructive">Remove Admin</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDemoteConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remove Admin</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -601,7 +601,7 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClearHistory} variant="destructive">Clear History</AlertDialogAction>
+                    <AlertDialogAction onClick={handleClearHistory} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Clear History</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

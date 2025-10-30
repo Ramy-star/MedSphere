@@ -327,10 +327,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 const lectureBlob = await contentService.getFileContent(lectureFile.metadata.storagePath);
                 
                 if (lectureFile.metadata.mime === 'application/pdf') {
-                    const pdfjs = await import('pdfjs-dist');
-                    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-                    const pdf = await pdfjs.getDocument(URL.createObjectURL(lectureBlob)).promise;
-                    lectureText = await contentService.extractTextFromPdf(pdf);
+                    lectureText = await contentService.extractTextFromPdf(lectureBlob);
                 } else if (lectureFile.metadata.mime?.startsWith('text/')) {
                     lectureText = await lectureBlob.text();
                 } else {

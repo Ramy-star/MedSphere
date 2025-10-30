@@ -45,6 +45,10 @@ const nextConfig: NextConfig = {
     // Allow production builds to successfully complete even if there are ESLint errors
     ignoreDuringBuilds: false, // Keep ESLint checks but only as warnings
   },
+  experimental: {
+    // Use synchronous params to maintain backwards compatibility with Next.js 14 code
+    dynamicIO: false,
+  },
   images: {
     remotePatterns,
   },
@@ -78,17 +82,24 @@ if (isServer) {
         config.externals.push('canvas');
       }
     }
-    
+
+    // Ensure config.externals is initialized as an array
+    if (!config.externals) {
+      config.externals = [];
+    }
+
     // This handles the Genkit dependency issue
-    config.externals.push({
-      'http': 'http',
-      'https': 'https',
-      'url': 'url',
-      'zlib': 'zlib',
-      'stream': 'stream',
-      'fs': 'fs',
-      'crypto': 'crypto',
-    });
+    if (Array.isArray(config.externals)) {
+      config.externals.push({
+        'http': 'http',
+        'https': 'https',
+        'url': 'url',
+        'zlib': 'zlib',
+        'stream': 'stream',
+        'fs': 'fs',
+        'crypto': 'crypto',
+      });
+    }
     
     return config;
   },
