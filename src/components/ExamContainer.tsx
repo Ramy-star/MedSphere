@@ -407,7 +407,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     
     const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
     const examResultsQuery = useMemoFirebase(() => resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : null, [resultsCollectionRef, lecture.id]);
-    const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery);
+    const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery, { disabled: !examResultsQuery });
 
     const questions = useMemo(() => {
         const l1 = Array.isArray(lecture.mcqs_level_1) ? lecture.mcqs_level_1 : [];
