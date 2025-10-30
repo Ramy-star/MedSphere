@@ -1,15 +1,27 @@
 
-
 'use client';
 
 import { create } from 'zustand';
 import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 import { db } from '@/firebase';
-import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData } from 'firebase/firestore';
+import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayUnion, getDoc, arrayRemove, setDoc, runTransaction } from 'firebase/firestore';
 import type { Content } from '@/lib/contentService';
+import { nanoid } from 'nanoid';
+import { telegramInbox } from '@/lib/file-data';
+import { allAchievements, type Achievement } from '@/lib/achievements';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
+const CURRENT_SESSION_ID_KEY = 'medsphere-session-id';
+
+export type UserSession = {
+    sessionId: string;
+    device: string;
+    lastActive: string; // ISO String
+    loggedIn: string; // ISO String
+    status?: 'active' | 'logged_out';
+};
 
 export type UserRole = {
     role: 'superAdmin' | 'subAdmin';
@@ -31,6 +43,25 @@ export type UserProfile = {
   createdAt?: string;
   roles?: UserRole[];
   isBlocked?: boolean;
+  favorites?: string[];
+  sessions?: UserSession[];
+  stats?: {
+    filesUploaded?: number;
+    foldersCreated?: number;
+    examsCompleted?: number;
+    aiQueries?: number;
+    consecutiveLoginDays?: number;
+    lastLoginDate?: string; // Stored as 'yyyy-MM-dd'
+  };
+   achievements?: {
+    badgeId: string;
+    earnedAt: string;
+  }[];
+  metadata?: {
+    cloudinaryPublicId?: string;
+    coverPhotoURL?: string;
+    coverPhotoCloudinaryPublicId?: string;
+  };
 };
 
 type ItemHierarchy = { [id: string]: string[] }; // Maps item ID to its array of parent IDs
@@ -39,15 +70,20 @@ type AuthState = {
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   studentId: string | null;
+  currentSessionId: string | null;
   user: UserProfile | null | undefined;
   loading: boolean;
   itemHierarchy: ItemHierarchy;
+  newlyEarnedAchievement: Achievement | null;
   buildHierarchy: () => (() => void); // Now returns an unsubscribe function
   checkAuth: () => Promise<void>;
   login: (studentId: string) => Promise<boolean>;
-  logout: () => void;
+  logout: (localOnly?: boolean) => void;
+  logoutSession: (sessionId: string) => Promise<void>;
   can: (permission: string, itemId: string | null) => boolean;
   canAddContent: (parentId: string | null) => boolean;
+  checkAndAwardAchievements: () => Promise<void>;
+  clearNewlyEarnedAchievement: () => void;
 };
 
 let userListenerUnsubscribe: () => void = () => {};
@@ -67,33 +103,34 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
     if (user.roles?.some(r => r.role === 'superAdmin')) {
         return true;
     }
+    
+    const allUserRoles = user.roles?.filter(role => role.role === 'subAdmin') || [];
 
-    // 2. Handle page-level permissions separately. These should work regardless of scope.
+    // 2. Handle page-level/global permissions that don't depend on a specific item.
     const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator'];
     if (pagePermissions.includes(permission)) {
-        // Check if ANY of the user's roles grant this page-level permission.
-        return user.roles?.some(role => role.permissions?.includes(permission)) || false;
+        // For these permissions, we just need to find if ANY role grants it.
+        return allUserRoles.some(role => role.permissions?.includes(permission));
     }
+    
+    // ---- From here, we are dealing with content-specific permissions ----
 
-    // 3. For content-related permissions, check roles and scopes.
-    const relevantRoles = user.roles?.filter(
-        role => role.role === 'subAdmin' && role.permissions?.includes(permission)
-    ) || [];
+    const relevantRoles = allUserRoles.filter(
+        role => role.permissions?.includes(permission)
+    );
 
     if (relevantRoles.length === 0) {
         return false;
     }
 
-    // 4. Check if any relevant role has a global scope.
+    // Check for a global scope that would grant permission everywhere.
     const hasGlobalScope = relevantRoles.some(role => role.scope === 'global');
     if (hasGlobalScope) {
         return true;
     }
-
-    // 5. If we need to check a specific item (itemId is not null) against scoped roles.
+    
+    // If checking a permission at the root (e.g., adding a level), only global scope applies.
     if (itemId === null) {
-        // This means we are checking a content permission (like 'canAddFolder') at the root level.
-        // Without a global scope, this is not allowed.
         return false;
     }
     
@@ -110,6 +147,55 @@ const hasPermission = (user: UserProfile | null | undefined, permission: string,
     return false;
 };
 
+const getDeviceDescription = (): string => {
+  if (typeof window === 'undefined') return 'Server';
+  const ua = navigator.userAgent;
+
+  let os = 'Unknown OS';
+  let device = 'Device';
+  let browser = 'Unknown Browser';
+
+  // OS Detection
+  if (/Windows/.test(ua)) {
+    os = 'Windows';
+    device = 'Windows PC';
+  } else if (/Macintosh|Mac OS X/.test(ua)) {
+    os = 'macOS';
+    device = 'Apple Mac';
+    if (/MacIntel/.test(navigator.platform) && 'ontouchend' in document) {
+        device = 'Apple iPad'; // iPad on iPadOS 13+
+    }
+  } else if (/Android/.test(ua)) {
+    os = 'Android';
+    device = 'Android Device';
+    const samsung = /SAMSUNG|SM-/.test(ua);
+    const xiaomi = /Xiaomi|Redmi|POCO/.test(ua);
+    const huawei = /Huawei/i.test(ua);
+    const oneplus = /OnePlus/i.test(ua);
+    if(samsung) device = 'Samsung Phone';
+    if(xiaomi) device = 'Xiaomi Phone';
+    if(huawei) device = 'Huawei Phone';
+    if(oneplus) device = 'OnePlus Phone';
+
+  } else if (/iPhone|iPad|iPod/.test(ua)) {
+    os = 'iOS';
+    device = 'Apple ' + ua.match(/iPhone|iPad|iPod/)?.[0];
+  } else if (/Linux/.test(ua)) {
+    os = 'Linux';
+    device = 'Linux PC';
+  }
+
+  // Browser Detection
+  if (/Firefox/.test(ua)) browser = 'Firefox';
+  else if (/SamsungBrowser/.test(ua)) browser = 'Samsung Internet';
+  else if (/Opera|OPR/.test(ua)) browser = 'Opera';
+  else if (/Edge|Edg/.test(ua)) browser = 'Edge';
+  else if (/Chrome/.test(ua)) browser = 'Chrome';
+  else if (/Safari/.test(ua)) browser = 'Safari';
+
+  return `${device} (${browser})`;
+};
+
 
 const listenToUserProfile = (studentId: string) => {
     if (userListenerUnsubscribe) userListenerUnsubscribe();
@@ -119,15 +205,26 @@ const listenToUserProfile = (studentId: string) => {
     userListenerUnsubscribe = onSnapshot(userDocRef, async (doc) => {
         if (doc.exists()) {
             const userProfile = { id: doc.id, ...doc.data() } as UserProfile;
+            
+            // Real-time session check
+            const currentSessionId = useAuthStore.getState().currentSessionId;
+            const mySession = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
+            
+            if (mySession && mySession.status === 'logged_out') {
+                console.log("Remote logout signal received. Logging out.");
+                useAuthStore.getState().logout(true); // Force logout without DB update
+                return;
+            }
+            
             if (userProfile.isBlocked) {
                 useAuthStore.getState().logout();
                 return;
             }
             
             const isSuper = await checkSuperAdmin(userProfile.studentId);
-            const hasSuperAdminRole = userProfile.roles?.some(r => r.role === 'superAdmin');
-
-            if(isSuper && !hasSuperAdminRole) {
+            
+            // This is just to ensure consistency, the role should already be there
+            if(isSuper && !userProfile.roles?.some(r => r.role === 'superAdmin')) {
                 userProfile.roles = [...(userProfile.roles || []), { role: 'superAdmin', scope: 'global' }];
             }
 
@@ -138,6 +235,9 @@ const listenToUserProfile = (studentId: string) => {
                 user: userProfile,
                 loading: false,
             });
+            // After user profile is set, check for achievements
+            useAuthStore.getState().checkAndAwardAchievements();
+
         } else {
             // User document was deleted, log them out.
             useAuthStore.getState().logout();
@@ -153,9 +253,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
   isAuthenticated: false,
   isSuperAdmin: false,
   studentId: null,
+  currentSessionId: typeof window !== 'undefined' ? localStorage.getItem(CURRENT_SESSION_ID_KEY) : null,
   user: undefined, // undefined means we haven't checked yet
   loading: true,
   itemHierarchy: {},
+  newlyEarnedAchievement: null,
 
   buildHierarchy: () => {
     if (!db) return () => {};
@@ -212,6 +314,20 @@ const useAuthStore = create<AuthState>((set, get) => ({
             get().buildHierarchy();
             // Start listening to the user profile
             listenToUserProfile(storedId);
+
+            // Ensure the Telegram Inbox exists for admins
+            const isSuper = await checkSuperAdmin(storedId);
+            if (isSuper && db) {
+                 const inboxRef = doc(db, 'content', telegramInbox.id);
+                 runTransaction(db, async transaction => {
+                    const inboxDoc = await transaction.get(inboxRef);
+                    if (!inboxDoc.exists()) {
+                         console.log("Telegram Inbox not found for admin. Creating it now.");
+                         transaction.set(inboxRef, { ...telegramInbox, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+                    }
+                }).catch(err => console.error("Failed to ensure Telegram Inbox exists:", err));
+            }
+
         } else {
             set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
         }
@@ -223,10 +339,62 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (studentId: string): Promise<boolean> => {
     try {
-      const userProfile = await verifyAndCreateUser(studentId);
+      const { userProfile, isNewUser } = await verifyAndCreateUser(studentId);
       if (userProfile) {
-        localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.studentId);
-        await get().checkAuth(); // This will now build hierarchy and set up the listener
+        localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
+        
+        let sessionId = get().currentSessionId;
+        if (!sessionId) {
+            sessionId = nanoid();
+            localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
+            set({ currentSessionId: sessionId });
+        }
+
+        const newSession: UserSession = {
+            sessionId,
+            device: getDeviceDescription(),
+            loggedIn: new Date().toISOString(),
+            lastActive: new Date().toISOString(),
+            status: 'active',
+        };
+        
+        const userDocRef = doc(db, 'users', userProfile.id);
+        
+        const docSnap = await getDoc(userDocRef);
+        const existingSessions = (docSnap.data()?.sessions as UserSession[] || []).filter(s => s.status !== 'logged_out');
+        const thisSessionExists = existingSessions.some(s => s.sessionId === sessionId);
+
+        let finalSessions = existingSessions;
+        if (!thisSessionExists) {
+            finalSessions = [...existingSessions, newSession];
+        } else {
+            finalSessions = existingSessions.map(s => s.sessionId === sessionId ? { ...s, lastActive: new Date().toISOString() } : s);
+        }
+
+        await updateDoc(userDocRef, { sessions: finalSessions });
+        
+        // Immediately update local state with the new session and stats for new users
+        const updatedProfile: UserProfile = {
+          ...userProfile,
+          sessions: finalSessions,
+        };
+
+        if (isNewUser) {
+          // This is the key fix: update the local state immediately so the achievement check works.
+          updatedProfile.stats = {
+            filesUploaded: 0,
+            foldersCreated: 0,
+            examsCompleted: 0,
+            aiQueries: 0,
+            consecutiveLoginDays: 1,
+            lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
+          };
+          updatedProfile.achievements = [];
+        }
+
+        set({ user: updatedProfile }); // Update state BEFORE calling checkAuth
+
+        await get().checkAuth();
         return true;
       } else {
         get().logout();
@@ -238,11 +406,36 @@ const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  logout: () => {
+  logout: async (localOnly = false) => {
     if (userListenerUnsubscribe) userListenerUnsubscribe();
     if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
+    
+    if (!localOnly) {
+        const { user, currentSessionId } = get();
+        if (user && user.id && currentSessionId) {
+            const userDocRef = doc(db, 'users', user.id);
+            try {
+                const userDoc = await getDoc(userDocRef);
+                if (userDoc.exists()) {
+                    const userProfile = userDoc.data() as UserProfile;
+                    const sessionToLogout = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
+                    if (sessionToLogout) {
+                        // Mark as logged out instead of removing
+                        const updatedSessions = userProfile.sessions?.map(s => s.sessionId === currentSessionId ? { ...s, status: 'logged_out' } : s);
+                        await updateDoc(userDocRef, {
+                            sessions: updatedSessions
+                        });
+                    }
+                }
+            } catch (error) {
+                console.error("Error updating session status on logout:", error);
+            }
+        }
+    }
+
     try {
       localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+      localStorage.removeItem(CURRENT_SESSION_ID_KEY);
     } catch (e) {
       console.error("Could not remove item from localStorage:", e);
     }
@@ -253,11 +446,28 @@ const useAuthStore = create<AuthState>((set, get) => ({
       user: null,
       loading: false,
       itemHierarchy: {},
+      currentSessionId: null,
     });
-    // Don't force redirect immediately, let components react to state change
+    
     if (typeof window !== 'undefined' && window.location.pathname !== '/') {
         window.location.href = '/';
     }
+  },
+
+  logoutSession: async (sessionId: string) => {
+    const { user } = get();
+    if (!user || !user.sessions) return;
+    
+    const userDocRef = doc(db, 'users', user.id);
+    const sessionToLogout = user.sessions.find(s => s.sessionId === sessionId);
+    if (!sessionToLogout) return;
+    
+    // To ensure immutability and trigger re-renders correctly, we create a new array
+    const updatedSessions = user.sessions.map(s => s.sessionId === sessionId ? { ...s, status: 'logged_out' } : s);
+
+    await updateDoc(userDocRef, {
+        sessions: updatedSessions
+    });
   },
 
   can: (permission: string, itemId: string | null): boolean => {
@@ -272,7 +482,46 @@ const useAuthStore = create<AuthState>((set, get) => ({
       const addPermissions = ['canAddClass', 'canAddFolder', 'canUploadFile', 'canAddLink', 'canCreateFlashcard'];
       
       return addPermissions.some(p => can(p, parentId));
-  }
+  },
+  
+  checkAndAwardAchievements: async () => {
+    const { user } = get();
+    if (!user || !user.stats) return;
+
+    const earnedIds = new Set(user.achievements?.map(a => a.badgeId) || []);
+    let newAchievements: { badgeId: string; earnedAt: string }[] = [];
+    let achievementToShow: Achievement | null = null;
+    
+    allAchievements.forEach(achievement => {
+        if (!earnedIds.has(achievement.id)) {
+            const userStat = user.stats?.[achievement.condition.stat as keyof typeof user.stats];
+            if (typeof userStat === 'number' && userStat >= achievement.condition.value) {
+                newAchievements.push({
+                    badgeId: achievement.id,
+                    earnedAt: new Date().toISOString(),
+                });
+                if (!achievementToShow) { // Only show the first new one
+                    achievementToShow = achievement;
+                }
+            }
+        }
+    });
+
+    if (newAchievements.length > 0) {
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, {
+            achievements: arrayUnion(...newAchievements)
+        });
+        if(achievementToShow) {
+            set({ newlyEarnedAchievement: achievementToShow });
+        }
+    }
+  },
+
+  clearNewlyEarnedAchievement: () => {
+    set({ newlyEarnedAchievement: null });
+  },
+
 }));
 
 // Initialize auth check on load
