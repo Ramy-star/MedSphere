@@ -2,6 +2,13 @@
 import type { NextConfig } from 'next';
 import type { Configuration } from 'webpack';
 
+const withPWA = require('next-pwa')({
+  dest: 'public',
+  register: true,
+  skipWaiting: true,
+  disable: process.env.NODE_ENV === 'development',
+});
+
 const remotePatterns: Exclude<NextConfig['images'], undefined>['remotePatterns'] = [
   {
     protocol: 'https',
@@ -33,7 +40,10 @@ const nextConfig: NextConfig = {
     remotePatterns,
   },
   webpack: (config: Configuration, { isServer, dev }) => {
-    config.module?.rules.push({
+    config.module = config.module || {};
+    config.module.rules = config.module.rules || [];
+
+    config.module.rules.push({
       test: /node_modules\/@genkit-ai\/next\/lib\/hooks.js/,
       loader: 'string-replace-loader',
       options: {
@@ -59,9 +69,20 @@ if (isServer) {
         config.externals.push('canvas');
       }
     }
-
+    
+    // This handles the Genkit dependency issue
+    config.externals.push({
+      'http': 'http',
+      'https': 'https',
+      'url': 'url',
+      'zlib': 'zlib',
+      'stream': 'stream',
+      'fs': 'fs',
+      'crypto': 'crypto',
+    });
+    
     return config;
   },
 };
 
-export default nextConfig;
+export default withPWA(nextConfig);
