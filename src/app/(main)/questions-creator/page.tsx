@@ -719,43 +719,41 @@ function QuestionsCreatorContent() {
         return (
             <div className="flex flex-col items-center">
                 <AnimatePresence>
-                    {(task || pendingSource) && (
-                        <motion.div
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg w-full max-w-2xl"
-                        >
-                            <FileText className="h-5 w-5" />
-                            <p className="text-sm truncate flex-1">{pendingSource?.fileName || task?.fileName}</p>
-                            <button
-                                onClick={abortGeneration}
-                                className="p-1 rounded-full hover:bg-white/10 text-slate-300"
-                                aria-label="Cancel generation"
+                    <div className="w-full max-w-2xl flex items-center justify-between gap-4 my-4">
+                        {(task || pendingSource) && (
+                            <motion.div
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="relative flex items-center gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg flex-1"
                             >
-                                <X className="h-4 w-4" />
-                            </button>
-                        </motion.div>
-                    )}
+                                <FileText className="h-5 w-5" />
+                                <p className="text-sm truncate flex-1">{pendingSource?.fileName || task?.fileName}</p>
+                                <button
+                                    onClick={abortGeneration}
+                                    className="p-1 rounded-full hover:bg-white/10 text-slate-300"
+                                    aria-label="Cancel generation"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
+                            </motion.div>
+                        )}
+                        <button
+                            onClick={handleSaveCurrentQuestions}
+                            disabled={flowStep !== 'completed'}
+                            className={cn(
+                                "expanding-btn primary",
+                                isSaved && "border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+                            )}
+                        >
+                            <span className="flex items-center justify-center gap-2">
+                            {isSaved ? <Check size={20} /> : <Save size={20} />}
+                            <span className="expanding-text">{isSaved ? "Saved!" : "Save Results"}</span>
+                            </span>
+                        </button>
+                    </div>
                 </AnimatePresence>
                 
-                <div className="md:col-span-2 flex justify-center my-4">
-                    <button
-                        onClick={handleSaveCurrentQuestions}
-                        disabled={flowStep !== 'completed'}
-                        className={cn(
-                            "expanding-btn primary",
-                            isSaved && "border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
-                        )}
-                    >
-                         <span className="flex items-center justify-center gap-2">
-                           {isSaved ? <Check size={20} /> : <Save size={20} />}
-                           <span className="expanding-text">{isSaved ? "Saved!" : "Save Results"}</span>
-                         </span>
-                    </button>
-                </div>
-
-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
                     {generationOptions.generateQuestions && (
                         <div className="md:col-span-2">
@@ -1075,5 +1073,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
