@@ -10,6 +10,12 @@ import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cacheService } from './cacheService';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
+import * as pdfjs from 'pdfjs-dist';
+
+// Set workerSrc once, globally for client-side operations.
+if (typeof window !== 'undefined') {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+}
 
 export type Content = {
   id: string;
@@ -92,7 +98,10 @@ export const contentService = {
         });
         return blob;
     },
-    async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
+    
+    async extractTextFromPdf(fileBlob: Blob): Promise<string> {
+        const arrayBuffer = await fileBlob.arrayBuffer();
+        const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
         const maxPages = pdf.numPages;
         const textPromises: Promise<string>[] = [];
         for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
@@ -117,7 +126,7 @@ export const contentService = {
             console.error('Failed to process all pages for text extraction:', error);
             throw new Error('Failed to extract text from PDF.');
         }
-  },
+    },
  
   async seedInitialData() {
     if (!db) {

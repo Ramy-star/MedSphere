@@ -111,18 +111,19 @@ async function runGenerationProcess(
             switch (step) {
                 case 'extracting':
                     if (!documentText) {
-                        const pdfjs = await import('pdfjs-dist');
-                        pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-
-                        let fileSource: any = get().pendingSource?.fileUrl;
-                        if (get().pendingSource?.file) {
-                            fileSource = await get().pendingSource!.file!.arrayBuffer();
-                        }
+                        const source = get().pendingSource;
+                        if (!source) throw new Error("Source file is missing.");
                         
-                        // Use the passed pdfjs object
-                        const pdf = await pdfjs.getDocument({data: fileSource}).promise as PDFDocumentProxy;
-                        documentText = await contentService.extractTextFromPdf(pdf);
+                        let fileBlob: Blob;
+                        if (source.file) {
+                            fileBlob = source.file;
+                        } else if (source.fileUrl) {
+                            fileBlob = await contentService.getFileContent(source.fileUrl);
+                        } else {
+                            throw new Error("No file content or URL provided.");
+                        }
 
+                        documentText = await contentService.extractTextFromPdf(fileBlob);
                         set(state => updateTask(state, { documentText }));
                     }
                     break;
