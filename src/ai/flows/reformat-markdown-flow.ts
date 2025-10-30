@@ -39,7 +39,7 @@ const reformatPrompt = ai.definePrompt({
 });
 
 
-export async function reformatMarkdown(input: z.infer<typeof ReformatInputSchema>): Promise<string> {
+async function reformatMarkdownFlow(input: z.infer<typeof ReformatInputSchema>): Promise<string> {
     try {
         const { text } = await reformatPrompt(input);
         return text;
@@ -48,4 +48,8 @@ export async function reformatMarkdown(input: z.infer<typeof ReformatInputSchema
         // In case of an error, return the original text to avoid breaking the save functionality
         return input.rawText;
     }
+}
+
+export async function reformatMarkdown(input: z.infer<typeof ReformatInputSchema>): Promise<string> {
+    return await reformatMarkdownFlow(input);
 }

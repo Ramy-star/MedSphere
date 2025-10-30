@@ -37,7 +37,7 @@ const isRetriableError = (error: any): boolean => {
     return retriableStrings.some(s => errorMessage.includes(s));
 };
 
-export async function chatAboutDocument(
+async function chatAboutDocumentFlow(
   input: ChatInput,
   options?: { signal?: AbortSignal }
 ): Promise<string> {
@@ -82,4 +82,10 @@ export async function chatAboutDocument(
   throw new Error('Chat failed after multiple retries.');
 }
 
+export async function chatAboutDocument(
+  input: ChatInput,
+  options?: { signal?: AbortSignal }
+): Promise<string> {
+    return await chatAboutDocumentFlow(input, options);
+}
     

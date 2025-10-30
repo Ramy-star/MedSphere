@@ -65,7 +65,7 @@ const studyBuddyPrompt = ai.definePrompt({
     `,
 });
 
-export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema>) {
+async function getStudyBuddyInsightFlow(stats: z.infer<typeof UserStatsSchema>) {
     try {
         const { output } = await studyBuddyPrompt(stats);
         if (!output) {
@@ -87,4 +87,8 @@ export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema
             ]
         };
     }
+}
+
+export async function getStudyBuddyInsight(stats: z.infer<typeof UserStatsSchema>) {
+    return await getStudyBuddyInsightFlow(stats);
 }

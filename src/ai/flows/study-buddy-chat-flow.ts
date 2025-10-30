@@ -129,7 +129,7 @@ const isRetriableError = (error: any): boolean => {
     return retriableStrings.some(s => errorMessage.includes(s));
 };
 
-export async function answerStudyBuddyQuery(input: z.infer<typeof ChatInputSchema>): Promise<string> {
+async function answerStudyBuddyQueryFlow(input: z.infer<typeof ChatInputSchema>): Promise<string> {
     const maxRetries = 3;
     let delay = 1000;
     
@@ -166,4 +166,8 @@ export async function answerStudyBuddyQuery(input: z.infer<typeof ChatInputSchem
     
     // This part should not be reachable, but is included for type safety and as a fallback.
     return "I'm sorry, I'm having trouble connecting right now. Please try again in a few minutes.";
+}
+
+export async function answerStudyBuddyQuery(input: z.infer<typeof ChatInputSchema>): Promise<string> {
+    return await answerStudyBuddyQueryFlow(input);
 }

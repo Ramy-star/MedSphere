@@ -39,7 +39,7 @@ function initializeFuse(items: Content[]) {
  * @param items The array of Content items to search through.
  * @returns A promise that resolves to an array of matching Content items, sorted by relevance.
  */
-export async function search(query: string, items: Content[]): Promise<Content[]> {
+async function searchFlow(query: string, items: Content[]): Promise<Content[]> {
   if (!query) {
     return [];
   }
@@ -68,4 +68,9 @@ export async function search(query: string, items: Content[]): Promise<Content[]
   );
 
   return directMatches;
+}
+
+
+export async function search(query: string, items: Content[]): Promise<Content[]> {
+    return await searchFlow(query, items);
 }

@@ -92,12 +92,17 @@ const generateTextPrompt = ai.definePrompt({
     `,
 });
 
-export async function generateText(input: GenerateTextInput): Promise<string> {
+async function generateTextFlow(input: GenerateTextInput): Promise<string> {
     return runWithRetry(async () => {
         const { text } = await generateTextPrompt(input);
         return text;
     });
 }
+
+export async function generateText(input: GenerateTextInput): Promise<string> {
+    return await generateTextFlow(input);
+}
+
 
 // --- Questions/Exam JSON Conversion ---
 
@@ -212,7 +217,7 @@ async function convertContentToJson<T>(prompt: (input: T) => Promise<{ output: a
     });
 }
 
-export async function convertQuestionsToJson(input: ConvertQuestionsToJsonInput): Promise<any> {
+async function convertQuestionsToJsonFlow(input: ConvertQuestionsToJsonInput): Promise<any> {
     const jsonOutput = await convertContentToJson(convertQuestionsToJsonPrompt, input);
 
     // After getting the JSON, reformat the written answers
@@ -231,6 +236,15 @@ export async function convertQuestionsToJson(input: ConvertQuestionsToJsonInput)
     return jsonOutput;
 }
 
-export async function convertFlashcardsToJson(input: ConvertFlashcardsToJsonInput): Promise<any> {
+export async function convertQuestionsToJson(input: ConvertQuestionsToJsonInput): Promise<any> {
+    return await convertQuestionsToJsonFlow(input);
+}
+
+
+async function convertFlashcardsToJsonFlow(input: ConvertFlashcardsToJsonInput): Promise<any> {
     return convertContentToJson(convertFlashcardsToJsonPrompt, input);
+}
+
+export async function convertFlashcardsToJson(input: ConvertFlashcardsToJsonInput): Promise<any> {
+    return await convertFlashcardsToJsonFlow(input);
 }
