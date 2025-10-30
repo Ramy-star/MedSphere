@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -110,11 +111,11 @@ function AdminPageContent() {
 
     const studentIdToLevelMap = useMemo(() => {
         const map = new Map<string, string>();
-        level1Ids.forEach(id => map.set(id, 'Level 1'));
-        level2Ids.forEach(id => map.set(id, 'Level 2'));
-        level3Ids.forEach(id => map.set(id, 'Level 3'));
-        level4Ids.forEach(id => map.set(id, 'Level 4'));
-        level5Ids.forEach(id => map.set(id, 'Level 5'));
+        (level1Ids as string[]).forEach(id => map.set(id, 'Level 1'));
+        (level2Ids as string[]).forEach(id => map.set(id, 'Level 2'));
+        (level3Ids as string[]).forEach(id => map.set(id, 'Level 3'));
+        (level4Ids as string[]).forEach(id => map.set(id, 'Level 4'));
+        (level5Ids as string[]).forEach(id => map.set(id, 'Level 5'));
         return map;
     }, []);
 
@@ -132,7 +133,7 @@ function AdminPageContent() {
 
     const filteredAndSortedUsers = useMemo(() => {
         if (!users) return [];
-        let processedUsers = Array.from(new Map(users.map(user => [user.id, user])).values());
+        let processedUsers = Array.from(new Map(users.map((user: UserProfile) => [user.id, user])).values());
 
         // Apply search query filter
         if (debouncedQuery) {
@@ -295,8 +296,8 @@ function AdminPageContent() {
                     <div className={cn("relative h-9 w-9 rounded-full flex items-center justify-center border-2", avatarRingClass)}>
                         <Avatar className={cn("h-full w-full")}>
                             <AvatarImage 
-                                src={user.photoURL} 
-                                alt={user.displayName}
+                                src={user.photoURL ?? ''} 
+                                alt={user.displayName ?? ''}
                                 className="pointer-events-none select-none"
                                 onDragStart={(e) => e.preventDefault()}
                                 onContextMenu={(e) => e.preventDefault()}
@@ -618,12 +619,3 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
-
-___
-'handleUpdateClick' is declared but its value is never read.ts(6133)
-Binding element 'id' implicitly has an 'any' type.ts(7031)
-Binding element 'name' implicitly has an 'any' type.ts(7031)
-Parameter 'a' implicitly has an 'any' type.ts(7006)
-Parameter 'b' implicitly has an 'any' type.ts(7006)
-Parameter 'user' implicitly has an 'any' type.ts(7006)
-Parameter 'user' implicitly has an 'any' type.ts(7006)

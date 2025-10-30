@@ -409,7 +409,7 @@ function AdminPageContent() {
                 </div>
             )
         }
-        return userList.map((user) => (
+        return userList.map((user: UserProfile) => (
              <div key={user.id} className="my-1.5 sm:my-0 border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
                 <UserCard user={user} />
             </div>
@@ -619,3 +619,5 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
+
+    
