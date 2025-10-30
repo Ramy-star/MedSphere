@@ -186,13 +186,14 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType,
 
   const tree = useMemo(() => {
     if (!allItems) return [];
-    if (actionType === 'select_source') {
-        return buildTree(allItems);
-    }
+    
     const filteredItems = allItems.filter(item => {
+        if (item.id === 'telegram-inbox-folder') return false; // Always hide inbox
+        if (actionType === 'select_source') return true; // Show all for source selection
         if (actionType === null) return item.type !== 'FILE' && item.type !== 'LINK'; // For scope selection
         return true;
     });
+
     return buildTree(filteredItems);
   }, [allItems, actionType]);
   

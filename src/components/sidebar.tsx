@@ -333,7 +333,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
 
   const collapsedViewContent = useMemo(() => {
      if (!tree) return null;
-     const items = isAdmin ? [{ id: 'telegram-inbox-folder', name: 'Telegram Inbox', type: 'FOLDER', parentId: null, iconName: 'Inbox' }, ...tree] : tree;
+     const items = tree; // Remove special admin logic
      return items.map((node) => {
        const isPathActive = activePath.has(node.id);
        let path: string;
@@ -373,7 +373,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
             </TooltipProvider>
        )
      })
-  }, [tree, activePath, handleLinkClick, isAdmin]);
+  }, [tree, activePath, handleLinkClick]);
 
 
   return (
@@ -424,16 +424,6 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
         >
           {open ? (
             <>
-              {isAdmin && (
-                  <TreeItem 
-                    node={{ id: 'telegram-inbox-folder', name: 'Telegram Inbox', type: 'FOLDER', parentId: null, iconName: 'Inbox' }}
-                    openItems={openItems}
-                    activePath={activePath}
-                    onToggle={() => {}}
-                    onLinkClick={handleLinkClick}
-                    level={0} 
-                  />
-              )}
               {tree.map(node => (
                 <TreeItem 
                   key={node.id} 

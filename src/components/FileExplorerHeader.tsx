@@ -9,7 +9,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useMemo } from 'react';
 import { Button } from './ui/button';
 import { Content } from '@/lib/contentService';
-import { LucideIcon, Folder, Layers, Calendar } from 'lucide-react';
+import { LucideIcon, Folder, Layers, Calendar, Inbox } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 
 
@@ -58,6 +58,10 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
       );
     }
     
+    if (currentFolder.id === 'telegram-inbox-folder') {
+        return <Inbox className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-400" />;
+    }
+
     let Icon: LucideIcon = Folder;
     let iconColor = 'text-yellow-400';
 
