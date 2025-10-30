@@ -207,7 +207,7 @@ export const FileCard = React.memo(function FileCard({
         }
     };
 
-    const handleUpdateClick = (e: React.MouseEvent) => {
+    const handleUpdateClick = (e: Event) => {
         if (!can('canUpdateFile', item.id)) return;
         e.stopPropagation();
         e.preventDefault();
