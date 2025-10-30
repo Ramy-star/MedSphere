@@ -339,7 +339,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
   login: async (studentId: string): Promise<boolean> => {
     try {
-      const userProfile = await verifyAndCreateUser(studentId);
+      const { userProfile, isNewUser } = await verifyAndCreateUser(studentId);
       if (userProfile) {
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
         
@@ -360,7 +360,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
         
         const userDocRef = doc(db, 'users', userProfile.id);
         
-        // This is a more robust way to add a session
         const docSnap = await getDoc(userDocRef);
         const existingSessions = (docSnap.data()?.sessions as UserSession[] || []).filter(s => s.status !== 'logged_out');
         const thisSessionExists = existingSessions.some(s => s.sessionId === sessionId);
@@ -369,17 +368,33 @@ const useAuthStore = create<AuthState>((set, get) => ({
         if (!thisSessionExists) {
             finalSessions = [...existingSessions, newSession];
         } else {
-            // Update lastActive time for the existing session
             finalSessions = existingSessions.map(s => s.sessionId === sessionId ? { ...s, lastActive: new Date().toISOString() } : s);
         }
 
         await updateDoc(userDocRef, { sessions: finalSessions });
+        
+        // Immediately update local state with the new session and stats for new users
+        const updatedProfile: UserProfile = {
+          ...userProfile,
+          sessions: finalSessions,
+        };
 
-        // Update the local state immediately
-        userProfile.sessions = finalSessions;
-        set({ user: userProfile });
+        if (isNewUser) {
+          // This is the key fix: update the local state immediately so the achievement check works.
+          updatedProfile.stats = {
+            filesUploaded: 0,
+            foldersCreated: 0,
+            examsCompleted: 0,
+            aiQueries: 0,
+            consecutiveLoginDays: 1,
+            lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
+          };
+          updatedProfile.achievements = [];
+        }
 
-        await get().checkAuth(); // This will re-build hierarchy and set up listeners
+        set({ user: updatedProfile }); // Update state BEFORE calling checkAuth
+
+        await get().checkAuth();
         return true;
       } else {
         get().logout();
@@ -480,6 +495,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     allAchievements.forEach(achievement => {
         if (!earnedIds.has(achievement.id)) {
             const userStat = user.stats?.[achievement.condition.stat as keyof typeof user.stats] || 0;
+            // The key fix: Ensure we only compare numbers to numbers.
             if (typeof userStat === 'number' && userStat >= achievement.condition.value) {
                 newAchievements.push({
                     badgeId: achievement.id,

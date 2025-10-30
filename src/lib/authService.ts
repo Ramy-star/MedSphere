@@ -81,12 +81,12 @@ export async function getUserProfile(studentId: string): Promise<any | null> {
     return null;
 }
 
-export async function verifyAndCreateUser(studentId: string): Promise<any | null> {
+export async function verifyAndCreateUser(studentId: string): Promise<{ userProfile: any | null, isNewUser: boolean }> {
     const trimmedId = studentId.trim();
 
     if (!(await isStudentIdValid(trimmedId))) {
         console.log(`Verification failed: Student ID "${trimmedId}" not found in valid lists.`);
-        return null;
+        return { userProfile: null, isNewUser: false };
     }
 
     if (!db) {
@@ -96,49 +96,50 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
     
     try {
         let userProfile = await getUserProfile(trimmedId);
+        let isNewUser = false;
 
         if (userProfile) {
             console.log(`User found in Firestore for ID: ${trimmedId}`);
-            return userProfile;
+        } else {
+            isNewUser = true;
+            console.log(`User not found for ID: ${trimmedId}. Creating new profile.`);
+            
+            const studentData = allStudentData.get(trimmedId);
+            const userLevel = idToLevelMap.get(trimmedId);
+            const isUserSuperAdmin = await isSuperAdmin(trimmedId);
+            
+            const newUserDocRef = doc(db, 'users', trimmedId);
+            
+            userProfile = {
+                id: trimmedId,
+                uid: trimmedId, 
+                studentId: trimmedId,
+                displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
+                username: `student_${trimmedId}`,
+                email: studentData?.['Academic Email'] || '',
+                level: userLevel || 'Unknown',
+                createdAt: new Date().toISOString(),
+                roles: isUserSuperAdmin ? [{ role: 'superAdmin', scope: 'global' }] : [],
+                stats: {
+                    filesUploaded: 0,
+                    foldersCreated: 0,
+                    examsCompleted: 0,
+                    aiQueries: 0,
+                    consecutiveLoginDays: 1,
+                    lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
+                },
+                achievements: [],
+                sessions: [],
+            };
+            
+            await setDoc(newUserDocRef, userProfile);
+            console.log(`New user profile created for ID: ${trimmedId}`);
         }
-
-        console.log(`User not found for ID: ${trimmedId}. Creating new profile.`);
         
-        const studentData = allStudentData.get(trimmedId);
-        const userLevel = idToLevelMap.get(trimmedId);
-        const isUserSuperAdmin = await isSuperAdmin(trimmedId);
-        
-        const newUserDocRef = doc(db, 'users', trimmedId);
-        
-        const newUserProfile = {
-            id: trimmedId,
-            uid: trimmedId, 
-            studentId: trimmedId,
-            displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
-            username: `student_${trimmedId}`,
-            email: studentData?.['Academic Email'] || '',
-            level: userLevel || 'Unknown',
-            createdAt: new Date().toISOString(),
-            roles: isUserSuperAdmin ? [{ role: 'superAdmin', scope: 'global' }] : [],
-            stats: { // Initialize stats for new users
-                filesUploaded: 0,
-                foldersCreated: 0,
-                examsCompleted: 0,
-                aiQueries: 0,
-                consecutiveLoginDays: 1, // Set to 1 for the first login
-                lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
-            },
-            achievements: [], // Start with an empty achievements array
-            sessions: [], // Start with an empty sessions array
-        };
-        
-        await setDoc(newUserDocRef, newUserProfile);
-        console.log(`New user profile created for ID: ${trimmedId}`);
-
-        return newUserProfile;
+        return { userProfile, isNewUser };
 
     } catch (error) {
         console.error("Error during user verification and creation:", error);
-        return null;
+        return { userProfile: null, isNewUser: false };
     }
 }
