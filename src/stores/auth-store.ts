@@ -216,9 +216,9 @@ const listenToUserProfile = (studentId: string) => {
             }
             
             const isSuper = await checkSuperAdmin(userProfile.studentId);
-            const hasSuperAdminRole = userProfile.roles?.some(r => r.role === 'superAdmin');
-
-            if(isSuper && !hasSuperAdminRole) {
+            
+            // This is just to ensure consistency, the role should already be there
+            if(isSuper && !userProfile.roles?.some(r => r.role === 'superAdmin')) {
                 userProfile.roles = [...(userProfile.roles || []), { role: 'superAdmin', scope: 'global' }];
             }
 
