@@ -1,4 +1,3 @@
-
 export interface MCQ {
   q: string;
   o: string[];

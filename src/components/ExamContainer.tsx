@@ -324,7 +324,7 @@ const YouIndicator = (props: any) => {
     );
 };
 
-const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage }: { results: ExamResult[], userFirstResult: ExamResult | null, currentPercentage: number }) => {
+const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage }: { results: (ExamResult & { id: string })[], userFirstResult: (ExamResult & { id: string }) | null, currentPercentage: number }) => {
     
     const { data, userBinIndex } = useMemo(() => {
         const bins = Array.from({ length: 20 }, (_, i) => ({
@@ -387,6 +387,8 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
 
 // --- MAIN EXAM COMPONENT LOGIC ---
 
+type ExamResultWithId = ExamResult & { id: string };
+
 const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, onStateChange }: { fileItemId: string | null; lecture: Lecture, onExit: () => void, onSwitchLecture: (lectureId: string) => void, allLectures: Lecture[], onStateChange?: (inProgress: boolean) => void }) => {
     const [examState, setExamState] = useState<'not-started' | 'in-progress' | 'finished'>('not-started');
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -405,7 +407,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     
     const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
     const examResultsQuery = useMemoFirebase(() => resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : null, [resultsCollectionRef, lecture.id]);
-    const { data: allResults } = useCollection<ExamResult>(examResultsQuery);
+    const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery);
 
     const questions = useMemo(() => {
         const l1 = Array.isArray(lecture.mcqs_level_1) ? lecture.mcqs_level_1 : [];
@@ -455,7 +457,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                 const userPreviousResultsSnapshot = await getDocs(userPreviousResultsQuery);
 
                 if (userPreviousResultsSnapshot.empty) {
-                     const result: ExamResult = {
+                     const result: Omit<ExamResult, 'id'> = {
                         lectureId: lecture.id,
                         score,
                         totalQuestions: questions.length,
@@ -1171,4 +1173,3 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
-
