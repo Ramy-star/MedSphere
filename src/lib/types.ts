@@ -33,6 +33,7 @@ export interface Lecture {
 }
 
 export interface ExamResult {
+    id?: string; // Document ID from Firestore
     lectureId: string;
     score: number;
     totalQuestions: number;
