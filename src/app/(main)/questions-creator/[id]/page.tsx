@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -762,7 +761,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 
 
 export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
-  const { id } = params;
   const { studentId, loading } = useAuthStore();
 
   if (loading) {
@@ -778,5 +776,5 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
     return <div className="text-center p-8">Please log in to view saved questions.</div>
   }
   
-  return <SavedQuestionSetPageContent id={id} />;
+  return <SavedQuestionSetPageContent id={params.id} />;
 }
