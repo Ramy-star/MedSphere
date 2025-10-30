@@ -506,7 +506,7 @@ function AdminPageContent() {
                 </Tabs>
             </div>
             
-            <div className="flex-1 overflow-y-auto mt-6 no-scrollbar">
+            <div className="flex-1 overflow-y-auto mt-6 no-scrollbar pr-2 -mr-2">
                 <Tabs value={activeTab}>
                     <TabsContent value="users" className="space-y-0">
                         {renderUserList(filteredAndSortedUsers)}
@@ -573,7 +573,9 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteUser} variant="destructive">Delete</AlertDialogAction>
+                    <AlertDialogAction asChild>
+                      <Button onClick={handleDeleteUser} variant="destructive">Delete</Button>
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -587,7 +589,9 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDemoteConfirm} variant="destructive">Remove Admin</AlertDialogAction>
+                    <AlertDialogAction asChild>
+                      <Button onClick={handleDemoteConfirm} variant="destructive">Remove Admin</Button>
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -601,7 +605,9 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClearHistory} variant="destructive">Clear History</AlertDialogAction>
+                    <AlertDialogAction asChild>
+                      <Button onClick={handleClearHistory} variant="destructive">Clear History</Button>
+                    </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -617,3 +623,5 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
+
+    
