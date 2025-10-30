@@ -133,7 +133,7 @@ function AdminPageContent() {
 
     const filteredAndSortedUsers = useMemo(() => {
         if (!users) return [];
-        let processedUsers: UserProfile[] = Array.from(new Map(users.map((user: UserProfile) => [user.id, user])).values());
+        let processedUsers = Array.from(new Map(users.map((user: UserProfile) => [user.id, user])).values());
 
         // Apply search query filter
         if (debouncedQuery) {
@@ -619,9 +619,3 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
-```
-Property 'addEventListener' does not exist on type 'HTMLIFrameElement | null'.ts(2339)
-
-```
-
-```
