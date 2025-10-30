@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
-import { generateQuestions, convertQuestionsToJson } from '@/ai/flows/question-gen-flow';
+import { generateText, convertQuestionsToJson, convertFlashcardsToJson } from '@/ai/flows/question-gen-flow';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -118,14 +118,17 @@ async function runGenerationProcess(
                         if (get().pendingSource?.file) {
                             fileSource = await get().pendingSource!.file!.arrayBuffer();
                         }
-                        const pdf = await pdfjs.getDocument(fileSource).promise as PDFDocumentProxy;
+                        
+                        // Use the passed pdfjs object
+                        const pdf = await pdfjs.getDocument({data: fileSource}).promise as PDFDocumentProxy;
                         documentText = await contentService.extractTextFromPdf(pdf);
+
                         set(state => updateTask(state, { documentText }));
                     }
                     break;
                 
                 case 'generating_text':
-                    textQuestions = await generateQuestions({ prompt: prompts.gen, documentContent: documentText!, images: [] });
+                    textQuestions = await generateText({ prompt: prompts.gen, documentContent: documentText! });
                     set(state => updateTask(state, { textQuestions }));
                     break;
 
@@ -136,7 +139,7 @@ async function runGenerationProcess(
                     break;
                 
                 case 'generating_exam_text':
-                    textExam = await generateQuestions({ prompt: prompts.examGen, documentContent: documentText!, images: [] });
+                    textExam = await generateText({ prompt: prompts.examGen, documentContent: documentText! });
                     set(state => updateTask(state, { textExam }));
                     break;
                 
@@ -147,13 +150,13 @@ async function runGenerationProcess(
                     break;
 
                 case 'generating_flashcard_text':
-                    textFlashcard = await generateQuestions({ prompt: prompts.flashcardGen, documentContent: documentText!, images: [] });
+                    textFlashcard = await generateText({ prompt: prompts.flashcardGen, documentContent: documentText! });
                     set(state => updateTask(state, { textFlashcard }));
                     break;
 
                 case 'converting_flashcard_json':
                     const flashcardLectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
-                    jsonFlashcard = JSON.parse(await convertQuestionsToJson({ lectureName: flashcardLectureName, questionsText: textFlashcard! }));
+                    jsonFlashcard = JSON.parse(await convertFlashcardsToJson({ lectureName: flashcardLectureName, flashcardsText: textFlashcard! }));
                     set(state => updateTask(state, { jsonFlashcard }));
                     break;
 
@@ -243,24 +246,37 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             throw new Error("No completed task to save.");
         }
         
-        const lectureData: Partial<Lecture> = {
+        const lectureDataForQuestions: Partial<Lecture> = {
             id: task.sourceFileId,
             name: task.fileName.replace(/\.[^/.]+$/, ""),
             mcqs_level_1: task.jsonQuestions || [],
-            mcqs_level_2: task.jsonExam || [],
-            written: [], // Not implemented yet
-            flashcards: task.jsonFlashcard || [],
+            mcqs_level_2: [],
+            written: [],
+            flashcards: [],
         };
-        
+        const lectureDataForExam: Partial<Lecture> = {
+            id: task.sourceFileId,
+            name: task.fileName.replace(/\.[^/.]+$/, ""),
+            mcqs_level_1: [],
+            mcqs_level_2: task.jsonExam || [],
+            written: [],
+            flashcards: [],
+        };
+        const lectureDataForFlashcards: Partial<Lecture> = {
+            id: task.jsonFlashcard?.id,
+            name: task.jsonFlashcard?.name,
+            flashcards: task.jsonFlashcard?.flashcards || [],
+        };
+
         const collectionRef = collection(db, `users/${userId}/questionSets`);
         await addDoc(collectionRef, {
             fileName: task.fileName,
             textQuestions: task.textQuestions || '',
-            jsonQuestions: lectureData.mcqs_level_1,
+            jsonQuestions: lectureDataForQuestions,
             textExam: task.textExam || '',
-            jsonExam: lectureData.mcqs_level_2,
+            jsonExam: lectureDataForExam,
             textFlashcard: task.textFlashcard || '',
-            jsonFlashcard: lectureData.flashcards,
+            jsonFlashcard: lectureDataForFlashcards,
             createdAt: new Date().toISOString(),
             userId: userId,
             sourceFileId: task.sourceFileId,

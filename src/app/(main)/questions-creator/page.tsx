@@ -116,6 +116,7 @@ function reorderAndStringify(obj: any): string {
             orderedObject.flashcards = orderedObject.flashcards.map(fc => {
                 if (typeof fc !== 'object' || fc === null) return fc;
                 const orderedFc: {[key: string]: any} = {};
+                if (fc.hasOwnProperty('id')) orderedFc.id = fc.id;
                 if (fc.hasOwnProperty('front')) orderedFc.front = fc.front;
                 if (fc.hasOwnProperty('back')) orderedFc.back = fc.back;
                 Object.keys(fc).forEach(key => {
@@ -529,13 +530,9 @@ function QuestionsCreatorContent() {
 
   const isGenerating = flowStep === 'processing';
 
-  const showTextRetry = task?.status === 'error' && ['extracting', 'generating_text'].includes(task.failedStep!);
-  const showJsonRetry = task?.status === 'error' && task.failedStep === 'converting_json';
-  const showExamTextRetry = task?.status === 'error' && task.failedStep === 'generating_exam_text';
-  const showExamJsonRetry = task?.status === 'error' && task.failedStep === 'converting_exam_json';
-  const showFlashcardTextRetry = task?.status === 'error' && task.failedStep === 'generating_flashcard_text';
-  const showFlashcardJsonRetry = task?.status === 'error' && task.failedStep === 'converting_flashcard_json';
-
+  const showRetryButtonForStep = (step: 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json') => {
+      return task?.status === 'error' && task.failedStep === step;
+  };
 
   const handleRetry = useCallback(() => {
     retryGeneration(allPrompts);
@@ -728,29 +725,17 @@ function QuestionsCreatorContent() {
                                 initial={{ opacity: 0, y: -10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
-                                className="relative mt-4 flex items-center justify-between gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg"
+                                className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg"
                             >
-                                <div className="flex items-center gap-2 overflow-hidden">
-                                  <FileText className="h-5 w-5 shrink-0" />
-                                  <p className="text-sm truncate flex-1">{pendingSource?.fileName || task?.fileName}</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <button
-                                      onClick={handleSaveCurrentQuestions}
-                                      disabled={flowStep !== 'completed'}
-                                      className={cn("expanding-btn primary", isSaved && "pointer-events-none")}
-                                  >
-                                      {isSaved ? <Check size={20} /> : <Save size={20} />}
-                                      <span className="expanding-text">{isSaved ? "Saved!" : "Save Results"}</span>
-                                  </button>
-                                  <button
-                                      onClick={abortGeneration}
-                                      className="p-1 rounded-full hover:bg-white/10 text-slate-300"
-                                      aria-label="Cancel generation"
-                                  >
-                                      <X className="h-4 w-4" />
-                                  </button>
-                                </div>
+                                <FileText className="h-5 w-5" />
+                                <p className="text-sm truncate flex-1">{pendingSource?.fileName || task?.fileName}</p>
+                                <button
+                                    onClick={abortGeneration}
+                                    className="p-1 rounded-full hover:bg-white/10 text-slate-300"
+                                    aria-label="Cancel generation"
+                                >
+                                    <X className="h-4 w-4" />
+                                </button>
                             </motion.div>
                         )}
                     </AnimatePresence>
@@ -775,7 +760,7 @@ function QuestionsCreatorContent() {
                                         content={task?.textQuestions ?? null}
                                         isLoading={isGenerating && ['extracting', 'generating_text'].includes(task?.status || '')}
                                         loadingText={task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...'}
-                                        showRetryButton={showTextRetry}
+                                        showRetryButton={showRetryButtonForStep('generating_text')}
                                     />
                                     <OutputCard
                                         title="JSON Questions"
@@ -783,7 +768,7 @@ function QuestionsCreatorContent() {
                                         content={task?.jsonQuestions ?? null}
                                         isLoading={isGenerating && task?.status === 'converting_json'}
                                         loadingText='Converting to JSON...'
-                                        showRetryButton={showJsonRetry}
+                                        showRetryButton={showRetryButtonForStep('converting_json')}
                                     />
                                 </div>
                             </motion.div>
@@ -811,7 +796,7 @@ function QuestionsCreatorContent() {
                                         content={task?.textExam ?? null}
                                         isLoading={isGenerating && task?.status === 'generating_exam_text'}
                                         loadingText='Generating exam...'
-                                        showRetryButton={showExamTextRetry}
+                                        showRetryButton={showRetryButtonForStep('generating_exam_text')}
                                     />
                                     <OutputCard
                                         title="JSON Exam"
@@ -819,7 +804,7 @@ function QuestionsCreatorContent() {
                                         content={task?.jsonExam ?? null}
                                         isLoading={isGenerating && task?.status === 'converting_exam_json'}
                                         loadingText='Converting exam to JSON...'
-                                        showRetryButton={showExamJsonRetry}
+                                        showRetryButton={showRetryButtonForStep('converting_exam_json')}
                                     />
                                 </div>
                             </motion.div>
@@ -847,7 +832,7 @@ function QuestionsCreatorContent() {
                                         content={task?.textFlashcard ?? null}
                                         isLoading={isGenerating && task?.status === 'generating_flashcard_text'}
                                         loadingText='Generating flashcards...'
-                                        showRetryButton={showFlashcardTextRetry}
+                                        showRetryButton={showRetryButtonForStep('generating_flashcard_text')}
                                     />
                                     <OutputCard
                                         title="JSON Flashcard"
@@ -855,7 +840,7 @@ function QuestionsCreatorContent() {
                                         content={task?.jsonFlashcard ?? null}
                                         isLoading={isGenerating && task?.status === 'converting_flashcard_json'}
                                         loadingText='Converting flashcards to JSON...'
-                                        showRetryButton={showFlashcardJsonRetry}
+                                        showRetryButton={showRetryButtonForStep('converting_flashcard_json')}
                                     />
                                 </div>
                             </motion.div>
@@ -863,6 +848,15 @@ function QuestionsCreatorContent() {
                         </AnimatePresence>
                     </div>
                 )}
+                 <div className="md:col-span-2 flex justify-center">
+                    <Button
+                        onClick={handleSaveCurrentQuestions}
+                        disabled={flowStep !== 'completed'}
+                        className="rounded-xl mt-4"
+                    >
+                         {isSaved ? <><Check className="mr-2 h-4 w-4" /> Saved!</> : <><Save className="mr-2 h-4 w-4" /> Save Results</>}
+                    </Button>
+                </div>
             </div>
         );
     }
