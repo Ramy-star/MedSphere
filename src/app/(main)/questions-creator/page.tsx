@@ -568,7 +568,8 @@ function QuestionsCreatorContent() {
     return (
         <div className={cn(
             "relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out",
-            !hasContent && "h-24 justify-center"
+            !hasContent && "h-24 justify-center",
+            showRetryButton && "min-h-[240px]"
           )}>
            <div className="flex items-start gap-4">
                {icon}
@@ -579,7 +580,7 @@ function QuestionsCreatorContent() {
            </div>
            {hasContent && (
              <div className="mt-4 flex-grow flex flex-col">
-                <div className={cn("relative flex-grow", showRetryButton ? "min-h-[120px]" : "min-h-[96px]")}>
+                <div className="relative flex-grow">
                     {isLoading ? (
                         <div className="absolute inset-0 flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
                             <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
@@ -747,8 +748,10 @@ function QuestionsCreatorContent() {
                             isSaved && "border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
                         )}
                     >
-                         {isSaved ? <Check size={20} className="group-hover:mr-2 transition-all" /> : <Save size={20} className="group-hover:mr-2 transition-all" />}
-                         <span className="expanding-text">{isSaved ? "Saved!" : "Save Results"}</span>
+                         <span className="flex items-center justify-center gap-2">
+                           {isSaved ? <Check size={20} /> : <Save size={20} />}
+                           <span className="expanding-text">{isSaved ? "Saved!" : "Save Results"}</span>
+                         </span>
                     </button>
                 </div>
 
