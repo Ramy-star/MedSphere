@@ -167,7 +167,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             text: questionSet.textQuestions || '', 
             json: reorderAndStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
-            examJson: reorderAndStringify(questionSet.jsonExam),
+            jsonExam: reorderAndStringify(questionSet.jsonExam),
             flashcardText: questionSet.textFlashcard || '',
             flashcardJson: reorderAndStringify(questionSet.jsonFlashcard)
         });
@@ -760,11 +760,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   );
 }
 
-type SavedQuestionSetPageProps = {
-  params: { id: string };
-};
-
-export default function SavedQuestionSetPage({ params }: SavedQuestionSetPageProps) {
+export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
   const { id } = params;
   const { studentId, loading } = useAuthStore();
 
