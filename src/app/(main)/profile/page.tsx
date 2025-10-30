@@ -202,7 +202,7 @@ export default function ProfilePage() {
         toast({ title: 'Success', description: 'Cover photo updated.' });
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        console.error('Error uploading cover photo:', error);
+        console.error("Error uploading cover photo:", error);
     } finally {
         setIsUploadingCover(false);
     }
@@ -304,7 +304,7 @@ export default function ProfilePage() {
 
       <div className="relative z-10 flex flex-col items-center -mt-12 sm:-mt-16 px-4 sm:px-8 sm:flex-row sm:items-end sm:gap-4">
         <div className="relative group/avatar">
-          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 ring-offset-2 ring-offset-slate-900 transition-all", avatarRingClass)}>
+          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass)}>
             <AvatarImage 
                 src={user.photoURL ?? ''} 
                 alt={user.displayName ?? ''}
@@ -483,5 +483,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    

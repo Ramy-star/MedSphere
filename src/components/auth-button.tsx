@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -35,7 +36,7 @@ export function AuthButton() {
               className="relative h-9 w-9 rounded-full p-0"
               onClick={() => router.push('/profile')}
             >
-              <Avatar className={cn("h-9 w-9 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
+              <Avatar className={cn("h-9 w-9 ring-2 transition-all", avatarRingClass)}>
                 <AvatarImage 
                     src={user.photoURL ?? ''} 
                     alt={user.displayName ?? ''} 
