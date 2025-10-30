@@ -589,7 +589,7 @@ function QuestionsCreatorContent() {
                             <p className="ml-3 text-slate-300">{loadingText}</p>
                         </div>
                     ) : showRetryButton ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4">
+                        <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full text-center flex-grow">
                             <Button onClick={handleRetry} className="rounded-xl active:scale-95">
                                 <RotateCw className="mr-2 h-4 w-4" />
                                 Retry

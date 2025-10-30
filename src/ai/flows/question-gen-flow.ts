@@ -40,7 +40,8 @@ export type ConvertFlashcardsToJsonInput = z.infer<typeof ConvertFlashcardsToJso
 
 const isRetriableError = (error: any): boolean => {
     const errorMessage = error.message?.toLowerCase() || '';
-    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable', 'deadline exceeded'];
+    // This now includes '429' for rate limiting errors.
+    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable', 'deadline exceeded', '429'];
     return retriableStrings.some(s => errorMessage.includes(s));
 };
 
