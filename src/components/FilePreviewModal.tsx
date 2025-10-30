@@ -324,14 +324,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     
             // Now, extract text from the determined lectureFile
             if (lectureFile && lectureFile.metadata?.storagePath) {
-                const lectureBlob = await contentService.getFileContent(lectureFile.metadata.storagePath);
-                
                 if (lectureFile.metadata.mime === 'application/pdf') {
-                    const pdfjs = await import('pdfjs-dist');
-                    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
-                    const pdf = await pdfjs.getDocument(URL.createObjectURL(lectureBlob)).promise;
-                    lectureText = await contentService.extractTextFromPdf(pdf);
+                    if (!pdfProxy) {
+                        throw new Error("PDF document not loaded yet for text extraction.");
+                    }
+                    lectureText = await contentService.extractTextFromPdf(pdfProxy);
                 } else if (lectureFile.metadata.mime?.startsWith('text/')) {
+                    const lectureBlob = await contentService.getFileContent(lectureFile.metadata.storagePath);
                     lectureText = await lectureBlob.text();
                 } else {
                     if(!isQuizFile) throw new Error("Cannot extract text from this file type for AI chat.");
@@ -355,7 +354,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         } finally {
             setIsExtracting(false);
         }
-    }, [documentContext.lectureText, isExtracting, toast]);
+    }, [documentContext.lectureText, isExtracting, toast, pdfProxy]);
 
 
     useEffect(() => {
