@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -554,8 +553,7 @@ function QuestionsCreatorContent() {
     loadingText: string;
     showRetryButton: boolean;
   }) => {
-    const hasContent = !!content;
-    const isErrorState = showRetryButton;
+    const hasContent = !!content || isLoading || showRetryButton;
   
     const displayContent = useMemo(() => {
       if (typeof content === 'string') {
@@ -570,24 +568,24 @@ function QuestionsCreatorContent() {
     return (
         <div className={cn(
             "relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out",
-            !hasContent && !isLoading && !isErrorState && "h-24 justify-center"
+            !hasContent && "h-24 justify-center"
           )}>
            <div className="flex items-start gap-4">
                {icon}
                <div>
                    <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
-                   {!hasContent && !isLoading && !isErrorState && <p className="text-sm text-slate-400 mt-1">Generated content will appear here.</p>}
+                   {!hasContent && <p className="text-sm text-slate-400 mt-1">Generated content will appear here.</p>}
                </div>
            </div>
-           {(hasContent || isLoading || isErrorState) && (
+           {hasContent && (
              <div className="mt-4 flex-grow flex flex-col">
-                <div className="relative flex-grow min-h-[96px]">
+                <div className={cn("relative flex-grow", showRetryButton ? "min-h-[120px]" : "min-h-[96px]")}>
                     {isLoading ? (
                         <div className="absolute inset-0 flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
                             <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                             <p className="ml-3 text-slate-300">{loadingText}</p>
                         </div>
-                    ) : isErrorState ? (
+                    ) : showRetryButton ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4">
                             <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
                             <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
@@ -749,7 +747,7 @@ function QuestionsCreatorContent() {
                             isSaved && "border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
                         )}
                     >
-                         {isSaved ? <Check size={20} /> : <Save size={20} />}
+                         {isSaved ? <Check size={20} className="group-hover:mr-2 transition-all" /> : <Save size={20} className="group-hover:mr-2 transition-all" />}
                          <span className="expanding-text">{isSaved ? "Saved!" : "Save Results"}</span>
                     </button>
                 </div>
@@ -870,10 +868,7 @@ function QuestionsCreatorContent() {
 
     return (
       <>
-        <motion.div
-            variants={cardVariants}
-            initial="hidden"
-            animate="visible"
+        <div
             className={cn(
                 "relative group p-6 rounded-3xl transition-colors flex flex-col justify-center items-center min-h-[300px]",
                 isDragging && "border-2 border-dashed border-blue-500 bg-blue-900/20"
@@ -905,7 +900,7 @@ function QuestionsCreatorContent() {
                     </Button>
                 </div>
             </div>
-        </motion.div>
+        </div>
         <FolderSelectorDialog
             open={showFolderSelector}
             onOpenChange={setShowFolderSelector}
@@ -1077,3 +1072,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
