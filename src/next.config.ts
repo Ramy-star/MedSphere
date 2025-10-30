@@ -1,4 +1,5 @@
 
+
 import type { NextConfig } from 'next';
 import type { Configuration } from 'webpack';
 
@@ -55,5 +56,3 @@ const nextConfig: NextConfig = {
 };
 
 export default withPWA(nextConfig);
-
-    

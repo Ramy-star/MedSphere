@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -580,7 +581,7 @@ function QuestionsCreatorContent() {
            </div>
            {(hasContent || isLoading || isErrorState) && (
              <div className="mt-4 flex-grow flex flex-col">
-                <div className="relative flex-grow min-h-[40px]">
+                <div className="relative flex-grow min-h-[96px]">
                     {isLoading ? (
                         <div className="absolute inset-0 flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
                             <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
@@ -717,145 +718,151 @@ function QuestionsCreatorContent() {
     if (flowStep !== 'idle' && (pendingSource || task)) {
         const generationOptions = task?.generationOptions || { generateQuestions: true, generateExam: false, generateFlashcards: false };
         return (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="md:col-span-2">
-                     <AnimatePresence>
-                        {(task || pendingSource) && (
-                            <motion.div
-                                initial={{ opacity: 0, y: -10 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                exit={{ opacity: 0, y: -10 }}
-                                className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg"
+            <div className="flex flex-col items-center">
+                <AnimatePresence>
+                    {(task || pendingSource) && (
+                        <motion.div
+                            initial={{ opacity: 0, y: -10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            exit={{ opacity: 0, y: -10 }}
+                            className="relative mt-4 flex items-center gap-2 text-blue-300 bg-blue-900/50 p-3 rounded-lg w-full max-w-2xl"
+                        >
+                            <FileText className="h-5 w-5" />
+                            <p className="text-sm truncate flex-1">{pendingSource?.fileName || task?.fileName}</p>
+                            <button
+                                onClick={abortGeneration}
+                                className="p-1 rounded-full hover:bg-white/10 text-slate-300"
+                                aria-label="Cancel generation"
                             >
-                                <FileText className="h-5 w-5" />
-                                <p className="text-sm truncate flex-1">{pendingSource?.fileName || task?.fileName}</p>
-                                <button
-                                    onClick={abortGeneration}
-                                    className="p-1 rounded-full hover:bg-white/10 text-slate-300"
-                                    aria-label="Cancel generation"
-                                >
-                                    <X className="h-4 w-4" />
-                                </button>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
-                </div>
-
-                {generationOptions.generateQuestions && (
-                    <div className="md:col-span-2">
-                        <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                        <AnimatePresence initial={false}>
-                        {sectionsVisibility.questions && (
-                            <motion.div
-                                key="questions"
-                                initial="collapsed" animate="open" exit="collapsed"
-                                variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                                transition={{ duration: 0.3 }}
-                                className="overflow-hidden"
-                            >
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                    <OutputCard
-                                        title="Text Questions"
-                                        icon={<FileText className="w-8 h-8 text-blue-400 shrink-0" />}
-                                        content={task?.textQuestions ?? null}
-                                        isLoading={isGenerating && ['extracting', 'generating_text'].includes(task?.status || '')}
-                                        loadingText={task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...'}
-                                        showRetryButton={showRetryButtonForStep('generating_text')}
-                                    />
-                                    <OutputCard
-                                        title="JSON Questions"
-                                        icon={<FileJson className="w-8 h-8 text-blue-400 shrink-0" />}
-                                        content={task?.jsonQuestions ?? null}
-                                        isLoading={isGenerating && task?.status === 'converting_json'}
-                                        loadingText='Converting to JSON...'
-                                        showRetryButton={showRetryButtonForStep('converting_json')}
-                                    />
-                                </div>
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-                    </div>
-                )}
-
-                {generationOptions.generateExam && (
-                    <div className="md:col-span-2">
-                        <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                        <AnimatePresence initial={false}>
-                        {sectionsVisibility.exam && (
-                            <motion.div
-                                key="exam"
-                                initial="collapsed" animate="open" exit="collapsed"
-                                variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                                transition={{ duration: 0.3 }}
-                                className="overflow-hidden"
-                            >
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                    <OutputCard
-                                        title="Text Exam"
-                                        icon={<FileText className="w-8 h-8 text-red-400 shrink-0" />}
-                                        content={task?.textExam ?? null}
-                                        isLoading={isGenerating && task?.status === 'generating_exam_text'}
-                                        loadingText='Generating exam...'
-                                        showRetryButton={showRetryButtonForStep('generating_exam_text')}
-                                    />
-                                    <OutputCard
-                                        title="JSON Exam"
-                                        icon={<FileJson className="w-8 h-8 text-red-400 shrink-0" />}
-                                        content={task?.jsonExam ?? null}
-                                        isLoading={isGenerating && task?.status === 'converting_exam_json'}
-                                        loadingText='Converting exam to JSON...'
-                                        showRetryButton={showRetryButtonForStep('converting_exam_json')}
-                                    />
-                                </div>
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-                    </div>
-                )}
-
-                {generationOptions.generateFlashcards && (
-                    <div className="md:col-span-2">
-                        <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                        <AnimatePresence initial={false}>
-                        {sectionsVisibility.flashcards && (
-                            <motion.div
-                                key="flashcards"
-                                initial="collapsed" animate="open" exit="collapsed"
-                                variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                                transition={{ duration: 0.3 }}
-                                className="overflow-hidden"
-                            >
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                    <OutputCard
-                                        title="Text Flashcard"
-                                        icon={<FileText className="w-8 h-8 text-green-400 shrink-0" />}
-                                        content={task?.textFlashcard ?? null}
-                                        isLoading={isGenerating && task?.status === 'generating_flashcard_text'}
-                                        loadingText='Generating flashcards...'
-                                        showRetryButton={showRetryButtonForStep('generating_flashcard_text')}
-                                    />
-                                    <OutputCard
-                                        title="JSON Flashcard"
-                                        icon={<FileJson className="w-8 h-8 text-green-400 shrink-0" />}
-                                        content={task?.jsonFlashcard ?? null}
-                                        isLoading={isGenerating && task?.status === 'converting_flashcard_json'}
-                                        loadingText='Converting flashcards to JSON...'
-                                        showRetryButton={showRetryButtonForStep('converting_flashcard_json')}
-                                    />
-                                </div>
-                            </motion.div>
-                        )}
-                        </AnimatePresence>
-                    </div>
-                )}
-                 <div className="md:col-span-2 flex justify-center">
-                    <Button
+                                <X className="h-4 w-4" />
+                            </button>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+                
+                <div className="md:col-span-2 flex justify-center my-4">
+                    <button
                         onClick={handleSaveCurrentQuestions}
                         disabled={flowStep !== 'completed'}
-                        className="rounded-xl mt-4"
+                        className={cn(
+                            "expanding-btn primary",
+                            isSaved && "border-green-500 text-green-500 hover:bg-green-500 hover:text-white"
+                        )}
                     >
-                         {isSaved ? <><Check className="mr-2 h-4 w-4" /> Saved!</> : <><Save className="mr-2 h-4 w-4" /> Save Results</>}
-                    </Button>
+                         {isSaved ? <Check size={20} /> : <Save size={20} />}
+                         <span className="expanding-text">{isSaved ? "Saved!" : "Save Results"}</span>
+                    </button>
+                </div>
+
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
+                    {generationOptions.generateQuestions && (
+                        <div className="md:col-span-2">
+                            <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+                            <AnimatePresence initial={false}>
+                            {sectionsVisibility.questions && (
+                                <motion.div
+                                    key="questions"
+                                    initial="collapsed" animate="open" exit="collapsed"
+                                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                                    transition={{ duration: 0.3 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                        <OutputCard
+                                            title="Text Questions"
+                                            icon={<FileText className="w-8 h-8 text-blue-400 shrink-0" />}
+                                            content={task?.textQuestions ?? null}
+                                            isLoading={isGenerating && ['extracting', 'generating_text'].includes(task?.status || '')}
+                                            loadingText={task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...'}
+                                            showRetryButton={showRetryButtonForStep('generating_text')}
+                                        />
+                                        <OutputCard
+                                            title="JSON Questions"
+                                            icon={<FileJson className="w-8 h-8 text-blue-400 shrink-0" />}
+                                            content={task?.jsonQuestions ?? null}
+                                            isLoading={isGenerating && task?.status === 'converting_json'}
+                                            loadingText='Converting to JSON...'
+                                            showRetryButton={showRetryButtonForStep('converting_json')}
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+                            </AnimatePresence>
+                        </div>
+                    )}
+
+                    {generationOptions.generateExam && (
+                        <div className="md:col-span-2">
+                            <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+                            <AnimatePresence initial={false}>
+                            {sectionsVisibility.exam && (
+                                <motion.div
+                                    key="exam"
+                                    initial="collapsed" animate="open" exit="collapsed"
+                                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                                    transition={{ duration: 0.3 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                        <OutputCard
+                                            title="Text Exam"
+                                            icon={<FileText className="w-8 h-8 text-red-400 shrink-0" />}
+                                            content={task?.textExam ?? null}
+                                            isLoading={isGenerating && task?.status === 'generating_exam_text'}
+                                            loadingText='Generating exam...'
+                                            showRetryButton={showRetryButtonForStep('generating_exam_text')}
+                                        />
+                                        <OutputCard
+                                            title="JSON Exam"
+                                            icon={<FileJson className="w-8 h-8 text-red-400 shrink-0" />}
+                                            content={task?.jsonExam ?? null}
+                                            isLoading={isGenerating && task?.status === 'converting_exam_json'}
+                                            loadingText='Converting exam to JSON...'
+                                            showRetryButton={showRetryButtonForStep('converting_exam_json')}
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+                            </AnimatePresence>
+                        </div>
+                    )}
+
+                    {generationOptions.generateFlashcards && (
+                        <div className="md:col-span-2">
+                            <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+                            <AnimatePresence initial={false}>
+                            {sectionsVisibility.flashcards && (
+                                <motion.div
+                                    key="flashcards"
+                                    initial="collapsed" animate="open" exit="collapsed"
+                                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
+                                    transition={{ duration: 0.3 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+                                        <OutputCard
+                                            title="Text Flashcard"
+                                            icon={<FileText className="w-8 h-8 text-green-400 shrink-0" />}
+                                            content={task?.textFlashcard ?? null}
+                                            isLoading={isGenerating && task?.status === 'generating_flashcard_text'}
+                                            loadingText='Generating flashcards...'
+                                            showRetryButton={showRetryButtonForStep('generating_flashcard_text')}
+                                        />
+                                        <OutputCard
+                                            title="JSON Flashcard"
+                                            icon={<FileJson className="w-8 h-8 text-green-400 shrink-0" />}
+                                            content={task?.jsonFlashcard ?? null}
+                                            isLoading={isGenerating && task?.status === 'converting_flashcard_json'}
+                                            loadingText='Converting flashcards to JSON...'
+                                            showRetryButton={showRetryButtonForStep('converting_flashcard_json')}
+                                        />
+                                    </div>
+                                </motion.div>
+                            )}
+                            </AnimatePresence>
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -868,8 +875,8 @@ function QuestionsCreatorContent() {
             initial="hidden"
             animate="visible"
             className={cn(
-                "relative group glass-card p-6 rounded-3xl transition-colors flex flex-col justify-center items-center min-h-[300px]",
-                isDragging && "border-blue-500 bg-blue-900/20"
+                "relative group p-6 rounded-3xl transition-colors flex flex-col justify-center items-center min-h-[300px]",
+                isDragging && "border-2 border-dashed border-blue-500 bg-blue-900/20"
             )}
             onDrop={handleDrop}
             onDragOver={handleDragOver}
@@ -1070,5 +1077,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-
-    
