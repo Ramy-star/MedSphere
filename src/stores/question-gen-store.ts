@@ -6,7 +6,6 @@ import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
 //import { Router } from 'next/router'; // Although we can't use it here, it's a reminder of navigation
 import type { Lecture } from '@/lib/types';
-import * as pdfjs from 'pdfjs-dist';
 
 
 type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | 'completed' | 'error';
@@ -136,7 +135,7 @@ async function runGenerationProcess(
 
                 case 'converting_json':
                     const lectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
-                    jsonQuestions = JSON.parse(await convertQuestionsToJson({ lectureName: lectureName, questionsText: textQuestions! }));
+                    jsonQuestions = await convertQuestionsToJson({ lectureName: lectureName, questionsText: textQuestions! });
                     set(state => updateTask(state, { jsonQuestions }));
                     break;
                 
@@ -147,7 +146,7 @@ async function runGenerationProcess(
                 
                 case 'converting_exam_json':
                     const examLectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
-                    jsonExam = JSON.parse(await convertQuestionsToJson({ lectureName: examLectureName, questionsText: textExam! }));
+                    jsonExam = await convertQuestionsToJson({ lectureName: examLectureName, questionsText: textExam! });
                     set(state => updateTask(state, { jsonExam }));
                     break;
 
@@ -158,7 +157,7 @@ async function runGenerationProcess(
 
                 case 'converting_flashcard_json':
                     const flashcardLectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
-                    jsonFlashcard = JSON.parse(await convertFlashcardsToJson({ lectureName: flashcardLectureName, flashcardsText: textFlashcard! }));
+                    jsonFlashcard = await convertFlashcardsToJson({ lectureName: flashcardLectureName, flashcardsText: textFlashcard! });
                     set(state => updateTask(state, { jsonFlashcard }));
                     break;
 
@@ -247,38 +246,16 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         if (!task || task.status !== 'completed') {
             throw new Error("No completed task to save.");
         }
-        
-        const lectureDataForQuestions: Partial<Lecture> = {
-            id: task.sourceFileId,
-            name: task.fileName.replace(/\.[^/.]+$/, ""),
-            mcqs_level_1: task.jsonQuestions || [],
-            mcqs_level_2: [],
-            written: [],
-            flashcards: [],
-        };
-        const lectureDataForExam: Partial<Lecture> = {
-            id: task.sourceFileId,
-            name: task.fileName.replace(/\.[^/.]+$/, ""),
-            mcqs_level_1: [],
-            mcqs_level_2: task.jsonExam || [],
-            written: [],
-            flashcards: [],
-        };
-        const lectureDataForFlashcards: Partial<Lecture> = {
-            id: task.jsonFlashcard?.id,
-            name: task.jsonFlashcard?.name,
-            flashcards: task.jsonFlashcard?.flashcards || [],
-        };
 
         const collectionRef = collection(db, `users/${userId}/questionSets`);
         await addDoc(collectionRef, {
             fileName: task.fileName,
             textQuestions: task.textQuestions || '',
-            jsonQuestions: lectureDataForQuestions,
+            jsonQuestions: task.jsonQuestions || {},
             textExam: task.textExam || '',
-            jsonExam: lectureDataForExam,
+            jsonExam: task.jsonExam || {},
             textFlashcard: task.textFlashcard || '',
-            jsonFlashcard: lectureDataForFlashcards,
+            jsonFlashcard: task.jsonFlashcard || {},
             createdAt: new Date().toISOString(),
             userId: userId,
             sourceFileId: task.sourceFileId,

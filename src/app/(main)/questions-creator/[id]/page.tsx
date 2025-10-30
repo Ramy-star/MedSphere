@@ -101,6 +101,7 @@ function reorderAndStringify(obj: any): string {
             orderedObject.flashcards = orderedObject.flashcards.map(fc => {
                 if (typeof fc !== 'object' || fc === null) return fc;
                 const orderedFc: {[key: string]: any} = {};
+                if (fc.hasOwnProperty('id')) orderedFc.id = fc.id;
                 if (fc.hasOwnProperty('front')) orderedFc.front = fc.front;
                 if (fc.hasOwnProperty('back')) orderedFc.back = fc.back;
                 Object.keys(fc).forEach(key => {
@@ -202,7 +203,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             json: 'jsonQuestions',
             examText: 'textExam',
             examJson: 'jsonExam',
-            flashcardText: 'textFlashcard',
+            flashcardText: 'flashcardText',
             flashcardJson: 'jsonFlashcard'
         };
         const dataKey = keyMap[type] as keyof SavedQuestionSet;
@@ -292,7 +293,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         json: 'jsonQuestions',
         examText: 'textExam',
         examJson: 'jsonExam',
-        flashcardText: 'textFlashcard',
+        flashcardText: 'flashcardText',
         flashcardJson: 'jsonFlashcard'
     };
     const dataKey = keyMap[type] as keyof SavedQuestionSet;

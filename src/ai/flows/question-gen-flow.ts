@@ -11,14 +11,15 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { contentService } from '@/lib/contentService';
-import * as pdfjs from 'pdfjs-dist';
+import { reformatMarkdown } from './reformat-markdown-flow';
+
 
 // --- Input Schemas ---
 
 const GenerateTextInputSchema = z.object({
   prompt: z.string().describe('The user-defined prompt for generating questions.'),
   documentContent: z.string().describe('The text content extracted from the uploaded document.'),
-  images: z.array(z.string()).optional().describe("A list of images from the document, as data URIs. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
+  images: z.array(z.string()).optional().describe("A list of images from the document, as a data URIs. Expected format: 'data:<mimetype>;base64,<encoded_data>'."),
 });
 export type GenerateTextInput = z.infer<typeof GenerateTextInputSchema>;
 
@@ -189,18 +190,17 @@ const convertFlashcardsToJsonPrompt = ai.definePrompt({
 
 // --- JSON Conversion Main Function ---
 
-async function convertContentToJson<T>(prompt: (input: T) => Promise<{ output: any }>, input: T): Promise<string> {
+async function convertContentToJson<T>(prompt: (input: T) => Promise<{ output: any }>, input: T): Promise<any> {
     return runWithRetry(async () => {
         const { output } = await prompt(input);
 
         if (typeof output === 'object' && output !== null) {
-            return JSON.stringify(output, null, 2);
+            return output; // Return object directly
         }
 
         if (typeof output === 'string') {
             try {
-                const parsed = JSON.parse(output);
-                return JSON.stringify(parsed, null, 2);
+                return JSON.parse(output);
             } catch (e) {
                 console.error("The AI returned a string that is not valid JSON.", output);
                 throw new Error("Failed to convert content to a valid JSON structure. Please check the generated text and try again.");
@@ -212,10 +212,25 @@ async function convertContentToJson<T>(prompt: (input: T) => Promise<{ output: a
     });
 }
 
-export async function convertQuestionsToJson(input: ConvertQuestionsToJsonInput): Promise<string> {
-    return convertContentToJson(convertQuestionsToJsonPrompt, input);
+export async function convertQuestionsToJson(input: ConvertQuestionsToJsonInput): Promise<any> {
+    const jsonOutput = await convertContentToJson(convertQuestionsToJsonPrompt, input);
+
+    // After getting the JSON, reformat the written answers
+    if (jsonOutput.written && Array.isArray(jsonOutput.written)) {
+        for (const writtenCase of jsonOutput.written) {
+            if (writtenCase.subqs && Array.isArray(writtenCase.subqs)) {
+                for (const subq of writtenCase.subqs) {
+                    if (subq.a) {
+                        // Pass the answer to the reformatting flow
+                        subq.a = await reformatMarkdown({ rawText: subq.a });
+                    }
+                }
+            }
+        }
+    }
+    return jsonOutput;
 }
 
-export async function convertFlashcardsToJson(input: ConvertFlashcardsToJsonInput): Promise<string> {
+export async function convertFlashcardsToJson(input: ConvertFlashcardsToJsonInput): Promise<any> {
     return convertContentToJson(convertFlashcardsToJsonPrompt, input);
 }
