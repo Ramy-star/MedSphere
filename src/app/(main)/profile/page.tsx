@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, ReactNode } from 'react';
@@ -59,8 +60,9 @@ const sectionVariants = {
         opacity: 0,
         height: 0,
         transition: {
-            duration: 0.3,
-            ease: "easeInOut",
+            type: 'spring',
+            stiffness: 400,
+            damping: 40,
             when: "afterChildren",
             staggerChildren: 0.05,
             staggerDirection: -1
@@ -576,3 +578,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
