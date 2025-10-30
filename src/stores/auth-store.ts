@@ -1,3 +1,4 @@
+
 'use client';
 
 import { create } from 'zustand';
@@ -469,7 +470,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     allAchievements.forEach(achievement => {
         if (!earnedIds.has(achievement.id)) {
             const userStat = user.stats?.[achievement.condition.stat as keyof typeof user.stats] || 0;
-            if (userStat >= achievement.condition.value) {
+            if (typeof userStat === 'number' && userStat >= achievement.condition.value) {
                 newAchievements.push({
                     badgeId: achievement.id,
                     earnedAt: new Date().toISOString(),
