@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, ReactNode } from 'react';
@@ -223,7 +222,15 @@ export default function ProfilePage() {
 
   const handleDragEvents = (setter: React.Dispatch<React.SetStateAction<boolean>>) => ({
       onDragEnter: (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setter(true); },
-      onDragLeave: (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setter(false); },
+      onDragLeave: (e: React.DragEvent<HTMLDivElement>) => {
+          e.preventDefault();
+          e.stopPropagation();
+          // Check if the cursor is leaving to a child element
+          if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget as Node)) {
+              return;
+          }
+          setter(false);
+      },
       onDragOver: (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); },
   });
 
@@ -350,7 +357,7 @@ export default function ProfilePage() {
               )}
          </div>
           {isCoverDragging && (
-            <div className="absolute inset-0 bg-black/50 border-4 border-dashed border-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-lg z-10">
+            <div className="absolute inset-0 bg-black/50 border-4 border-dashed border-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-lg z-10 pointer-events-none">
               Drop to change cover
             </div>
           )}
@@ -362,7 +369,7 @@ export default function ProfilePage() {
             {...handleDragEvents(setIsAvatarDragging)}
             onDrop={(e) => handleDrop(e, 'avatar')}
         >
-          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400 ring-offset-4 ring-offset-slate-900")}>
+          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400")}>
             <AvatarImage 
                 src={user.photoURL ?? ''} 
                 alt={user.displayName ?? ''}
@@ -375,7 +382,7 @@ export default function ProfilePage() {
             </AvatarFallback>
           </Avatar>
            {isAvatarDragging && (
-                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-xs font-bold text-center p-2">
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-xs font-bold text-center p-2 pointer-events-none">
                     Drop Image
                 </div>
             )}
