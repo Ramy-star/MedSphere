@@ -14,28 +14,13 @@ import { twMerge } from "tailwind-merge"
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
 import { contentService } from '@/lib/contentService';
+import type { Lecture, Flashcard } from '@/lib/types';
 
 
 // --- UTILS (from src/lib/utils.ts) ---
 function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
-
-// --- TYPES (from src/lib/types.ts) ---
-export interface Flashcard {
-  id: string;
-  front: string;
-  back: string;
-  imageUrl?: string;
-  color?: string;
-}
-
-export interface Lecture {
-  id: string;
-  name: string;
-  flashcards: Flashcard[];
-}
-
 
 // --- UI COMPONENTS (INLINED) ---
 
@@ -235,7 +220,7 @@ const UpsertFlashcardFormContent = ({ lectures, activeLectureId, onUpsertCard, c
     
     const getInitialLectureId = () => {
         if (cardToEdit) {
-            const parentLecture = lectures.find(l => l.flashcards.some(c => c.id === cardToEdit.id));
+            const parentLecture = lectures.find(l => (l.flashcards || []).some(c => c.id === cardToEdit.id));
             return parentLecture?.id || 'new';
         }
         return activeLectureId || lectures[0]?.id || 'new';
@@ -459,8 +444,8 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
     
     // --- Reset index if lecture changes or cards are deleted ---
     useEffect(() => {
-        if (activeLecture && currentCardIndex >= activeLecture.flashcards.length) {
-            setCurrentCardIndex(Math.max(0, activeLecture.flashcards.length - 1));
+        if (activeLecture && currentCardIndex >= (activeLecture.flashcards || []).length) {
+            setCurrentCardIndex(Math.max(0, (activeLecture.flashcards || []).length - 1));
         }
     }, [lecturesState, activeLectureId, currentCardIndex, activeLecture]);
 
@@ -514,14 +499,14 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
 
         let previousLectureId: string | undefined;
         if(cardIdToEdit){
-             const parentLecture = updatedLectures.find(l => l.flashcards.some(c => c.id === cardIdToEdit));
+             const parentLecture = updatedLectures.find(l => (l.flashcards || []).some(c => c.id === cardIdToEdit));
              previousLectureId = parentLecture?.id;
         }
 
         if(previousLectureId && previousLectureId !== targetLectureId){
             const oldLectureIndex = updatedLectures.findIndex(lec => lec.id === previousLectureId);
             if(oldLectureIndex > -1){
-                updatedLectures[oldLectureIndex].flashcards = updatedLectures[oldLectureIndex].flashcards.filter(c => c.id !== cardIdToEdit);
+                updatedLectures[oldLectureIndex].flashcards = (updatedLectures[oldLectureIndex].flashcards || []).filter(c => c.id !== cardIdToEdit);
             }
         }
 
@@ -529,7 +514,7 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
         if (lectureIndex === -1) return;
         
         const lectureToUpdate = { ...updatedLectures[lectureIndex] };
-        let newFlashcards = [...lectureToUpdate.flashcards];
+        let newFlashcards = [...(lectureToUpdate.flashcards || [])];
 
         if (cardIdToEdit && (!previousLectureId || previousLectureId === targetLectureId)) { 
             const cardIndex = newFlashcards.findIndex(c => c.id === cardIdToEdit);
@@ -562,7 +547,7 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
             if (lecture.id === activeLectureId) {
                 return {
                     ...lecture,
-                    flashcards: lecture.flashcards.filter(card => card.id !== currentCard.id)
+                    flashcards: (lecture.flashcards || []).filter(card => card.id !== currentCard.id)
                 };
             }
             return lecture;
@@ -815,3 +800,4 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
         </div>
     );
 }
+

@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useState, forwardRef, MouseEvent, useCallback, useRef } from 'react';
@@ -294,11 +292,4 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(({ itemId, url,
     <div className="flex flex-col items-center justify-center h-full text-center text-slate-300 bg-slate-800/50 rounded-lg p-8">
         <p className="text-xl font-semibold mb-3">⚠️ Preview not available</p>
         <p className="text-base mb-4 text-slate-400">Unsupported file type: <code className='bg-slate-900 px-2 py-1 rounded-md text-slate-300'>{mime}</code></p>
-        <a href={url} download={itemName} className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">Download File</a>
-    </div>
-  );
-});
-
-FilePreview.displayName = 'FilePreview';
-
-export default FilePreview;
+        <a href={url} download={itemName} className="mt-4 px-5 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700
