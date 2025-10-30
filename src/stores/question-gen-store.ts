@@ -1,11 +1,10 @@
-
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
 import { generateQuestions, convertQuestionsToJson } from '@/ai/flows/question-gen-flow';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { router } from 'next/router'; // Although we can't use it here, it's a reminder of navigation
+//import { Router } from 'next/router'; // Although we can't use it here, it's a reminder of navigation
 import type { Lecture } from '@/lib/types';
 
 
@@ -323,5 +322,3 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     }
   })
 );
-
-    

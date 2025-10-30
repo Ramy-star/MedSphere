@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, PlusCircle, Trash2, Edit, X } from 'lucide-react';
@@ -410,7 +409,8 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
     
     const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
     const [lecturesState, setLecturesState] = useState<Lecture[]>(lectures);
-    const [activeLectureId, setActiveLectureId] = useState(lectures[0]?.id);
+    // FIX: allow activeLectureId to be undefined to match usages where we clear it
+    const [activeLectureId, setActiveLectureId] = useState<string | undefined>(lectures[0]?.id);
     const [currentCardIndex, setCurrentCardIndex] = useState(0);
     const [isFlipped, setIsFlipped] = useState(false);
     const [direction, setDirection] = useState(0);
@@ -581,6 +581,7 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
         const currentIdx = lecturesState.findIndex(l => l.id === activeLectureId);
         const nextIdx = currentIdx > 0 ? currentIdx - 1 : 0;
         
+        // allow setting undefined when there are no remaining lectures
         setActiveLectureId(remaining[nextIdx]?.id || undefined);
         setCurrentCardIndex(0);
         
@@ -800,4 +801,3 @@ export function FlashcardContainer({ lectures: rawLecturesData, fileItemId }: { 
         </div>
     );
 }
-

@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -134,12 +132,12 @@ function AdminPageContent() {
 
     const filteredAndSortedUsers = useMemo(() => {
         if (!users) return [];
-        let processedUsers = Array.from(new Map(users.map(user => [user.uid, user])).values());
+        let processedUsers = Array.from(new Map(users.map(user => [user.id, user])).values());
 
         // Apply search query filter
         if (debouncedQuery) {
             const lowercasedQuery = debouncedQuery.toLowerCase();
-            processedUsers = processedUsers.filter(user => 
+            processedUsers = processedUsers.filter((user: UserProfile) => 
                 user.displayName?.toLowerCase().includes(lowercasedQuery) ||
                 user.username?.toLowerCase().includes(lowercasedQuery) ||
                 user.email?.toLowerCase().includes(lowercasedQuery) ||
@@ -149,11 +147,11 @@ function AdminPageContent() {
 
         // Apply level filter
         if (levelFilter) {
-            processedUsers = processedUsers.filter(user => (user.level || studentIdToLevelMap.get(user.studentId)) === levelFilter);
+            processedUsers = processedUsers.filter((user: UserProfile) => (user.level || studentIdToLevelMap.get(user.studentId)) === levelFilter);
         }
 
         // Apply sorting
-        return processedUsers.sort((a, b) => {
+        return processedUsers.sort((a: UserProfile, b: UserProfile) => {
             const aIsSuper = isUserSuperAdmin(a);
             const bIsSuper = isUserSuperAdmin(b);
             if (aIsSuper && !bIsSuper) return -1;
@@ -176,12 +174,12 @@ function AdminPageContent() {
 
     const admins = useMemo(() => {
         if (!filteredAndSortedUsers) return [];
-        return filteredAndSortedUsers.filter(user => isUserSuperAdmin(user) || isSubAdmin(user));
+        return filteredAndSortedUsers.filter((user: UserProfile) => isUserSuperAdmin(user) || isSubAdmin(user));
     }, [filteredAndSortedUsers, isSubAdmin, isUserSuperAdmin]);
     
     const handleToggleSubAdmin = useCallback(async (user: UserProfile) => {
         if (!currentUser) return;
-        const userRef = doc(db, 'users', user.uid);
+        const userRef = doc(db, 'users', user.id);
         const hasSubAdminRole = isSubAdmin(user);
 
         if (hasSubAdminRole) {
@@ -205,7 +203,7 @@ function AdminPageContent() {
 
     const handleDemoteConfirm = useCallback(async () => {
         if (!userToDemote || !currentUser) return;
-        const userRef = doc(db, 'users', userToDemote.uid);
+        const userRef = doc(db, 'users', userToDemote.id);
         try {
             const newRoles = Array.isArray(userToDemote.roles) ? userToDemote.roles.filter(r => r.role !== 'subAdmin') : [];
             await updateDoc(userRef, { roles: newRoles });
@@ -221,7 +219,7 @@ function AdminPageContent() {
     
     const handleToggleBlock = useCallback(async (user: UserProfile) => {
         if (!currentUser) return;
-        const userRef = doc(db, 'users', user.uid);
+        const userRef = doc(db, 'users', user.id);
         const newBlockState = !user.isBlocked;
         try {
             await updateDoc(userRef, { isBlocked: newBlockState });
@@ -239,7 +237,7 @@ function AdminPageContent() {
     const handleDeleteUser = useCallback(async () => {
         if (!userToDelete || !currentUser) return;
         const batch = writeBatch(db);
-        const userRef = doc(db, 'users', userToDelete.uid);
+        const userRef = doc(db, 'users', userToDelete.id);
         batch.delete(userRef);
         await batch.commit();
         await logAdminAction(currentUser, 'user.delete', userToDelete);
@@ -272,6 +270,8 @@ function AdminPageContent() {
         const isCurrentUser = user.studentId === currentStudentId;
         const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
         const joinDate = user.createdAt ? format(new Date(user.createdAt), 'MMM dd, yyyy') : null;
+        const avatarRingClass = userIsSuperAdmin ? "border-yellow-400" : userIsSubAdmin ? "border-blue-400" : "border-transparent";
+
 
         const roleIcon = userIsSuperAdmin ? <Crown className="w-5 h-5 text-yellow-400" />
                        : userIsSubAdmin ? <Shield className="w-5 h-5 text-blue-400" />
@@ -292,10 +292,18 @@ function AdminPageContent() {
                 className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}
             >
                 <div className="flex items-center gap-4 overflow-hidden">
-                    <Avatar>
-                        <AvatarImage src={user.photoURL} alt={user.displayName} />
-                        <AvatarFallback>{user.displayName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
-                    </Avatar>
+                    <div className={cn("relative h-9 w-9 rounded-full flex items-center justify-center border-2", avatarRingClass)}>
+                        <Avatar className={cn("h-full w-full")}>
+                            <AvatarImage 
+                                src={user.photoURL} 
+                                alt={user.displayName}
+                                className="pointer-events-none select-none"
+                                onDragStart={(e) => e.preventDefault()}
+                                onContextMenu={(e) => e.preventDefault()}
+                             />
+                            <AvatarFallback>{user.displayName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
+                        </Avatar>
+                    </div>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
                            <p className="text-sm font-semibold text-white truncate sm:text-base">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
@@ -401,7 +409,7 @@ function AdminPageContent() {
             )
         }
         return userList.map((user) => (
-             <div key={user.uid} className="my-1.5 sm:my-0 border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
+             <div key={user.id} className="my-1.5 sm:my-0 border-b border-white/10 mx-2 sm:mx-0 last:border-b-0">
                 <UserCard user={user} />
             </div>
         ));
@@ -610,3 +618,12 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
+
+___
+'handleUpdateClick' is declared but its value is never read.ts(6133)
+Binding element 'id' implicitly has an 'any' type.ts(7031)
+Binding element 'name' implicitly has an 'any' type.ts(7031)
+Parameter 'a' implicitly has an 'any' type.ts(7006)
+Parameter 'b' implicitly has an 'any' type.ts(7006)
+Parameter 'user' implicitly has an 'any' type.ts(7006)
+Parameter 'user' implicitly has an 'any' type.ts(7006)

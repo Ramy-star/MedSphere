@@ -1,13 +1,14 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward } from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, LabelProps, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList, ReferenceLine } from 'recharts';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward, Crown, Shield, User as UserIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import { cn } from "@/lib/utils";
 import { useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
 import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
+import type { Query, CollectionReference, DocumentData } from 'firebase/firestore';
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import type { Lecture, ExamResult, MCQ } from '@/lib/types';
@@ -20,8 +21,10 @@ import level3StudentData from '@/lib/student-ids/level-3-data.json';
 import level4StudentData from '@/lib/student-ids/level-4-data.json';
 import level5StudentData from '@/lib/student-ids/level-5-data.json';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import { Crown, Shield, User as UserIcon } from 'lucide-react';
 
+// === Types ===
+// ضع تعريف النوع مباشرة بعد الـ imports
+type ExamResultWithId = ExamResult & { id: string };
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
 
@@ -386,8 +389,6 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
 
 // --- MAIN EXAM COMPONENT LOGIC ---
 
-type ExamResultWithId = ExamResult & { id: string };
-
 const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, onStateChange }: { fileItemId: string | null; lecture: Lecture, onExit: () => void, onSwitchLecture: (lectureId: string) => void, allLectures: Lecture[], onStateChange?: (inProgress: boolean) => void }) => {
     const [examState, setExamState] = useState<'not-started' | 'in-progress' | 'finished'>('not-started');
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -404,14 +405,22 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     const canAdminister = can('canAdministerExams', fileItemId);
     const { db: firestore } = useFirebase();
     
-    const resultsCollectionRef = useMemoFirebase(() => firestore ? collection(firestore, "examResults") : null, [firestore]);
-    const examResultsQuery = useMemoFirebase(() => resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : null, [resultsCollectionRef, lecture.id]);
-    const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery, { disabled: !examResultsQuery });
+    // استخدم undefined لتعطيل ال query بدلاً من null
+    const resultsCollectionRef = useMemoFirebase((): CollectionReference<DocumentData> | undefined => {
+        return firestore ? collection(firestore, "examResults") : undefined;
+    }, [firestore]);
+
+    const examResultsQuery = useMemoFirebase((): Query<DocumentData> | undefined => {
+        return resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : undefined;
+    }, [resultsCollectionRef, lecture.id]);
+
+    // cast هنا لتفادي تعارض التواقيع — إن أمكن، عدّل توقيع useCollection ليقبل Query|undefined
+    const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery as any, { disabled: !examResultsQuery });
 
     const questions = useMemo(() => {
-        const l1 = Array.isArray(lecture.mcqs_level_1) ? lecture.mcqs_level_1 : [];
-        const l2 = Array.isArray(lecture.mcqs_level_2) ? lecture.mcqs_level_2 : [];
-        return [...l1, ...l2];
+        const l1 = Array.isArray((lecture as any).mcqs_level_1) ? (lecture as any).mcqs_level_1 : [];
+        const l2 = Array.isArray((lecture as any).mcqs_level_2) ? (lecture as any).mcqs_level_2 : [];
+        return [...l1, ...l2] as MCQ[];
     }, [lecture]);
 
     useEffect(() => {
@@ -443,7 +452,13 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
         if (!studentId || !allResults) return null;
         const userResults = allResults.filter(r => r.userId === studentId);
         if (userResults.length === 0) return null;
-        userResults.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+        userResults.sort((a, b) => {
+            const aTs: any = (a as any).timestamp;
+            const bTs: any = (b as any).timestamp;
+            const aDate = aTs && typeof aTs.toDate === 'function' ? aTs.toDate() : new Date(aTs);
+            const bDate = bTs && typeof bTs.toDate === 'function' ? bTs.toDate() : new Date(bTs);
+            return aDate.getTime() - bDate.getTime();
+        });
         return userResults[0];
     }, [allResults, studentId]);
 
@@ -451,8 +466,8 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
 
     const handleSubmit = useCallback(async (isSkip = false) => {
         if (studentId && resultsCollectionRef && !isSkip) {
-            const userPreviousResultsQuery = query(resultsCollectionRef, where("lectureId", "==", lecture.id), where("userId", "==", studentId));
             try {
+                const userPreviousResultsQuery = query(resultsCollectionRef, where("lectureId", "==", lecture.id), where("userId", "==", studentId));
                 const userPreviousResultsSnapshot = await getDocs(userPreviousResultsQuery);
 
                 if (userPreviousResultsSnapshot.empty) {
@@ -943,10 +958,19 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                 const resultsSnapshot = await getDocs(resultsQuery);
                 const resultsByUser: { [userId: string]: ExamResult } = {};
 
-                resultsSnapshot.forEach(doc => {
-                    const result = doc.data() as ExamResult;
-                    if (!resultsByUser[result.userId] || new Date(result.timestamp) < new Date(resultsByUser[result.userId].timestamp)) {
+                resultsSnapshot.forEach(snap => {
+                    const result = snap.data() as ExamResult;
+                    const existing = resultsByUser[result.userId];
+                    const thisTs: any = (result as any).timestamp;
+                    const thisDate = thisTs && typeof thisTs.toDate === 'function' ? thisTs.toDate() : new Date(thisTs);
+                    if (!existing) {
                         resultsByUser[result.userId] = result;
+                    } else {
+                        const existingTs: any = (existing as any).timestamp;
+                        const existingDate = existingTs && typeof existingTs.toDate === 'function' ? existingTs.toDate() : new Date(existingTs);
+                        if (thisDate.getTime() < existingDate.getTime()) {
+                            resultsByUser[result.userId] = result;
+                        }
                     }
                 });
 
@@ -1172,6 +1196,3 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
-
-___
-Cannot find name 'ExamResultWithId'.ts(2304)

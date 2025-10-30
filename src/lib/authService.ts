@@ -1,6 +1,15 @@
-
 import { db } from '@/firebase';
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+
+// --- (الإضافة 1) ---
+// تعريف نوع للبيانات المستوردة من ملفات JSON
+// هذا يحل أخطاء TS(7053) وأخطاء TS(2769) الأولى
+type StudentData = {
+  "Student ID": string | number;
+  "Student Name": string;
+  "Academic Email"?: string;
+};
+// --- نهاية الإضافة ---
 
 import level1Ids from './student-ids/level-1.json';
 import level2Ids from './student-ids/level-2.json';
@@ -17,27 +26,34 @@ import level5Data from './student-ids/level-5-data.json';
 const SUPER_ADMIN_ID = "221100154";
 
 const allStudentIds = new Set([
-    ...level1Ids,
-    ...level2Ids,
-    ...level3Ids,
-    ...level4Ids,
-    ...level5Ids,
+    // إضافة cast بسيط لضمان النوع
+    ...(level1Ids as (string | number)[]),
+    ...(level2Ids as (string | number)[]),
+    ...(level3Ids as (string | number)[]),
+    ...(level4Ids as (string | number)[]),
+    ...(level5Ids as (string | number)[]),
 ]);
 
 const allStudentData = new Map([
-    ...level1Data.map(d => [String(d['Student ID']), d]),
-    ...level2Data.map(d => [String(d['Student ID']), d]),
-    ...level3Data.map(d => [String(d['Student ID']), d]),
-    ...level4Data.map(d => [String(d['Student ID']), d]),
-    ...level5Data.map(d => [String(d['Student ID']), d]),
+    // --- (التصحيح 1) ---
+    // 1. تحديد نوع levelXData كـ StudentData[]
+    // 2. استخدام "as const" لإخبار TypeScript أن هذه مصفوفة من عنصرين [key, value]
+    ...(level1Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level2Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level3Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level4Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level5Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
 ]);
 
 const idToLevelMap = new Map([
-  ...level1Ids.map(id => [String(id), 'Level 1']),
-  ...level2Ids.map(id => [String(id), 'Level 2']),
-  ...level3Ids.map(id => [String(id), 'Level 3']),
-  ...level4Ids.map(id => [String(id), 'Level 4']),
-  ...level5Ids.map(id => [String(id), 'Level 5']),
+    // --- (التصحيح 2) ---
+    // استخدام "as const" لإخبار TypeScript أن هذه مصفوفة من عنصرين [string, string]
+    // هذا يحل خطأ "Target requires 2 element(s) but source may have fewer"
+    ...level1Ids.map(id => [String(id), 'Level 1'] as const),
+    ...level2Ids.map(id => [String(id), 'Level 2'] as const),
+    ...level3Ids.map(id => [String(id), 'Level 3'] as const),
+    ...level4Ids.map(id => [String(id), 'Level 4'] as const),
+    ...level5Ids.map(id => [String(id), 'Level 5'] as const),
 ]);
 
 export async function isSuperAdmin(studentId: string | null): Promise<boolean> {
@@ -84,6 +100,8 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
         }
 
         console.log(`User not found for ID: ${trimmedId}. Creating new profile.`);
+        
+        // الآن "studentData" سيتم استنتاج نوعه كـ "StudentData | undefined"
         const studentData = allStudentData.get(trimmedId);
         const userLevel = idToLevelMap.get(trimmedId);
         const isUserSuperAdmin = await isSuperAdmin(trimmedId);
@@ -94,8 +112,10 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
             id: trimmedId,
             uid: trimmedId, 
             studentId: trimmedId,
+            // (تم حل الخطأ هنا)
             displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
             username: `student_${trimmedId}`,
+            // (تم حل الخطأ هنا)
             email: studentData?.['Academic Email'] || '',
             level: userLevel || 'Unknown',
             createdAt: new Date().toISOString(),
@@ -112,5 +132,3 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
         return null;
     }
 }
-
-    

@@ -1,4 +1,3 @@
-
 // components/ChatQuote.tsx
 import React from "react";
 import { X, CornerRightDown } from "lucide-react";

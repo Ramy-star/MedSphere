@@ -1,10 +1,9 @@
-
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon, ShieldCheck, Search, UserCog, Loader2, Ban, Shield, Settings, Trash2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -17,13 +16,16 @@ import { db } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 import type { UserProfile } from '@/stores/auth-store';
 
+interface UserProfileExtended extends UserProfile {
+  isBlocked?: boolean;
+}
 
 function UserManagementPage() {
     const { user, isSuperAdmin, loading: userLoading } = useAuthStore();
     const router = useRouter();
     const { toast } = useToast();
 
-    const { data: allUsers, loading: usersLoading } = useCollection<UserProfile>('users', {
+    const { data: allUsers, loading: usersLoading } = useCollection<UserProfileExtended>('users', {
         disabled: !isSuperAdmin
     });
 
@@ -45,11 +47,11 @@ function UserManagementPage() {
           )
         : allUsers;
         
-    const handleToggleBlock = async (targetUser: UserProfile) => {
+    const handleToggleBlock = async (targetUser: UserProfileExtended) => {
         if (!isSuperAdmin) return;
         
         const isCurrentlyBlocked = targetUser.isBlocked ?? false;
-        const userRef = doc(db, 'users', targetUser.uid);
+        const userRef = doc(db, 'users', targetUser.uid || targetUser.id || targetUser.studentId || '');
 
         try {
             const batch = writeBatch(db);
@@ -123,7 +125,7 @@ function UserManagementPage() {
                             
                             return (
                                 <motion.div
-                                    key={u.uid}
+                                    key={u.uid || u.id || u.studentId || ''}
                                     variants={{
                                         hidden: { opacity: 0, y: 20 },
                                         visible: { opacity: 1, y: 0 },

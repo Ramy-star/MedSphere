@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -112,11 +110,11 @@ function AdminPageContent() {
 
     const studentIdToLevelMap = useMemo(() => {
         const map = new Map<string, string>();
-        level1Ids.forEach(id => map.set(id, 'Level 1'));
-        level2Ids.forEach(id => map.set(id, 'Level 2'));
-        level3Ids.forEach(id => map.set(id, 'Level 3'));
-        level4Ids.forEach(id => map.set(id, 'Level 4'));
-        level5Ids.forEach(id => map.set(id, 'Level 5'));
+        (level1Ids as string[]).forEach(id => map.set(id, 'Level 1'));
+        (level2Ids as string[]).forEach(id => map.set(id, 'Level 2'));
+        (level3Ids as string[]).forEach(id => map.set(id, 'Level 3'));
+        (level4Ids as string[]).forEach(id => map.set(id, 'Level 4'));
+        (level5Ids as string[]).forEach(id => map.set(id, 'Level 5'));
         return map;
     }, []);
 

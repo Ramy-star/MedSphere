@@ -1,4 +1,3 @@
-
 'use client';
 
 import { ArrowLeft, ArrowRight } from 'lucide-react';

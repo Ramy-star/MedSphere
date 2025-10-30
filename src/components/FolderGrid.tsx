@@ -1,5 +1,3 @@
-
-
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -35,7 +33,6 @@ import { useAuthStore } from '@/stores/auth-store';
 import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
-
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -109,7 +106,6 @@ const SortableItemWrapper = ({ id, children }: { id: string, children: React.Rea
   );
 };
 
-
 export function FolderGrid({ 
     parentId, 
     uploadingFiles, 
@@ -126,6 +122,7 @@ export function FolderGrid({
     onRemove: (fileId: string) => void,
 }) {
   const { can } = useAuthStore();
+  const canReorder = can('canReorder', parentId);
 
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: ['parentId', '==', parentId],
@@ -151,9 +148,9 @@ export function FolderGrid({
   const [sortedItems, setSortedItems] = useState<Content[]>([]);
 
   useEffect(() => {
-    if (fetchedItems) {
-        setSortedItems(fetchedItems);
-    }
+      if (fetchedItems) {
+          setSortedItems(fetchedItems);
+      }
   }, [fetchedItems]);
 
   const handleFolderClick = (folder: Content) => {
@@ -225,7 +222,7 @@ export function FolderGrid({
   };
 
   const handleDragEnd = async (event: DragEndEvent) => {
-    if (!can('canReorder', parentId)) return;
+    if (!canReorder) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
         setSortedItems(currentItems => {
@@ -281,7 +278,11 @@ export function FolderGrid({
   
   const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT' || (it.type === 'FOLDER' && it.metadata?.isClassContainer));
   
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 10 } }));
+  const sensors = useSensors(
+    canReorder
+      ? useSensor(PointerSensor, { activationConstraint: { distance: 10 } })
+      : undefined
+  ) as ReturnType<typeof useSensors>; // Note: useSensors([]) would be ideal, but to match type, we use conditional sensor or adjust
 
   const containerClasses = isSubjectView
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
@@ -301,7 +302,6 @@ export function FolderGrid({
 
   const newUploads = uploadingFiles.filter(f => !f.isUpdate);
 
-
   return (
     <div
         ref={dropZoneRef}
@@ -312,20 +312,19 @@ export function FolderGrid({
         className={cn("relative h-full", isDraggingOver && "opacity-50")}
     >
       <DropZone isVisible={isDraggingOver} />
-        
+       
        {/* Render new uploads at the top */}
        {newUploads.length > 0 && (
          <div className="flex flex-col">
-              <AnimatePresence>
-                  {newUploads.map(file => (
-                      <motion.div key={file.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit">
-                          <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
-                      </motion.div>
-                  ))}
-              </AnimatePresence>
-          </div>
+             <AnimatePresence>
+                 {newUploads.map(file => (
+                     <motion.div key={file.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit">
+                         <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
+                     </motion.div>
+                 ))}
+             </AnimatePresence>
+         </div>
        )}
-
 
       {loading && itemsToRender.length === 0 && newUploads.length === 0 && (
          <div className="text-center py-16">
@@ -335,28 +334,28 @@ export function FolderGrid({
 
       {!loading && itemsToRender.length === 0 && newUploads.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
-              <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
-              <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
-              <p className="mt-2 text-sm text-slate-400">
-                Drag and drop files here, or use the button to add content.
-              </p>
-              {can('canAddFolder', parentId) && (
-                <AddContentMenu
-                  parentId={parentId}
-                  onFileSelected={onFileSelected}
-                  trigger={
-                    <Button className="mt-6 rounded-2xl active:scale-95 transition-transform">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Content
-                    </Button>
-                  }
-                />
-              )}
-          </div>
+             <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
+             <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
+             <p className="mt-2 text-sm text-slate-400">
+               Drag and drop files here, or use the button to add content.
+             </p>
+             {can('canAddFolder', parentId) && (
+               <AddContentMenu
+                 parentId={parentId}
+                 onFileSelected={onFileSelected}
+                 trigger={
+                   <Button className="mt-6 rounded-2xl active:scale-95 transition-transform">
+                     <Plus className="mr-2 h-4 w-4" />
+                     Add Content
+                   </Button>
+                 }
+               />
+             )}
+         </div>
       )}
 
-      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd} disabled={!can('canReorder', parentId)}>
-        <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!can('canReorder', parentId)}>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!canReorder}>
           <motion.div className={containerClasses} variants={listVariants} initial="hidden" animate="visible">
             <AnimatePresence>
               {itemsToRender.map(({ item, uploadingFile }, index) => {
@@ -415,11 +414,11 @@ export function FolderGrid({
                 };
                 
                 if (isMobile && item.type !== 'SUBJECT') {
-                  return (
-                      <div key={itemKey} className={cn("border-white/10", !isLastItem && !isSubjectView && "border-b")}>
-                        {renderedContent()}
-                      </div>
-                  );
+                    return (
+                        <div key={itemKey} className={cn("border-white/10", !isLastItem && !isSubjectView && "border-b")}>
+                          {renderedContent()}
+                        </div>
+                    );
                 }
 
                 if (isMobile && item.type === 'SUBJECT') {
@@ -427,18 +426,18 @@ export function FolderGrid({
                 }
 
                 return (
-                  <motion.div
-                    key={itemKey}
-                    variants={itemVariants}
-                    exit="exit"
-                    className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
-                  >
-                    {can('canReorder', parentId) ? (
-                      <SortableItemWrapper id={item.id}>{renderedContent()}</SortableItemWrapper>
-                    ) : (
-                      renderedContent()
-                    )}
-                  </motion.div>
+                    <motion.div
+                        key={itemKey}
+                        variants={itemVariants}
+                        exit="exit"
+                        className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
+                    >
+                      {canReorder ? (
+                        <SortableItemWrapper id={item.id}>{renderedContent()}</SortableItemWrapper>
+                      ) : (
+                        renderedContent()
+                      )}
+                    </motion.div>
                 );
               })}
             </AnimatePresence>
@@ -452,11 +451,11 @@ export function FolderGrid({
       />
       
       <FolderSelectorDialog
-            open={showFolderSelector}
-            onOpenChange={setShowFolderSelector}
-            onSelect={handleFolderSelect}
-            actionType={currentAction}
-            currentItemId={itemToMove?.id || itemToCopy?.id}
+          open={showFolderSelector}
+          onOpenChange={setShowFolderSelector}
+          onSelect={handleFolderSelect}
+          actionType={currentAction}
+          currentItemId={itemToMove?.id || itemToCopy?.id}
       />
 
       
@@ -485,7 +484,7 @@ export function FolderGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-        
+      
     </div>
   );
 }

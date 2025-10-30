@@ -1,4 +1,3 @@
-
 import type { Lecture } from './types';
 
 // Replace this with your actual data fetching logic
