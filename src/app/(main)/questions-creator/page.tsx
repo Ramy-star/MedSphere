@@ -895,11 +895,11 @@ function QuestionsCreatorContent() {
                 <h3 className="text-lg font-semibold text-white break-words">Start Generating</h3>
                 <p className="text-sm text-slate-400 mt-1 mb-4">Choose a file from your library, or drag & drop a new one.</p>
                 <div className="flex gap-4 justify-center">
-                    <Button onClick={() => setShowFolderSelector(true)} className="rounded-xl">
+                    <Button onClick={() => setShowFolderSelector(true)} className="rounded-2xl">
                       <FolderSearch className="mr-2 h-4 w-4"/>
                       Choose from Library
                     </Button>
-                    <Button onClick={() => fileInputRef.current?.click()} className="rounded-xl" variant="secondary">
+                    <Button onClick={() => fileInputRef.current?.click()} className="rounded-2xl" variant="secondary">
                        <FileUp className="mr-2 h-4 w-4" />
                        Upload File
                     </Button>
