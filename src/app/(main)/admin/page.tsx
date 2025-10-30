@@ -506,7 +506,7 @@ function AdminPageContent() {
                 </Tabs>
             </div>
             
-            <div className="flex-1 overflow-y-auto mt-6 no-scrollbar pr-2 -mr-2">
+            <div className="flex-1 overflow-y-auto mt-6 no-scrollbar">
                 <Tabs value={activeTab}>
                     <TabsContent value="users" className="space-y-0">
                         {renderUserList(filteredAndSortedUsers)}
@@ -573,7 +573,7 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDeleteUser} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDeleteUser} variant="destructive">Delete</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -587,7 +587,7 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleDemoteConfirm} className="bg-red-600 hover:bg-red-700">Remove Admin</AlertDialogAction>
+                    <AlertDialogAction onClick={handleDemoteConfirm} variant="destructive">Remove Admin</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
@@ -601,7 +601,7 @@ function AdminPageContent() {
                   </AlertDialogHeader>
                   <AlertDialogFooter>
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleClearHistory} className="bg-red-600 hover:bg-red-700">Clear History</AlertDialogAction>
+                    <AlertDialogAction onClick={handleClearHistory} variant="destructive">Clear History</AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>

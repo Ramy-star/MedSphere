@@ -93,10 +93,11 @@
 
   /* Expanding button styles */
   .expanding-btn {
-    @apply bg-transparent font-semibold rounded-full cursor-pointer inline-flex items-center justify-center gap-0 overflow-hidden transition-all duration-300 ease-in-out;
+    @apply bg-transparent font-semibold rounded-full cursor-pointer inline-flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out;
     width: 44px;
     height: 44px;
     padding: 0;
+    gap: 0;
   }
 
   .expanding-btn .expanding-text {
