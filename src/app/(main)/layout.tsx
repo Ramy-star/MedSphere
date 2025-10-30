@@ -9,6 +9,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useAuthStore } from "@/stores/auth-store";
+import { ImageIcon } from "lucide-react";
 
 
 export default function MainLayout({
@@ -39,19 +40,27 @@ export default function MainLayout({
           !isHomePage && "glass-card px-2 sm:px-6 py-4 md:py-6"
         )}
       >
-        {isProfilePage && user?.metadata?.coverPhotoURL && (
-            <div className="absolute inset-x-0 top-0 h-40 sm:h-64 z-0">
-                <Image
-                    src={user.metadata.coverPhotoURL}
-                    alt="Cover photo"
-                    fill
-                    objectFit="cover"
-                    className="pointer-events-none select-none"
-                    priority
-                />
-                <div className="absolute inset-0 bg-black/40"></div>
-            </div>
-        )}
+        {isProfilePage ? (
+            user?.metadata?.coverPhotoURL ? (
+                <div className="absolute inset-x-0 top-0 h-40 sm:h-64 z-0">
+                    <Image
+                        src={user.metadata.coverPhotoURL}
+                        alt="Cover photo"
+                        fill
+                        objectFit="cover"
+                        className="pointer-events-none select-none"
+                        priority
+                    />
+                    <div className="absolute inset-0 bg-black/40"></div>
+                </div>
+            ) : (
+                <div className="absolute inset-x-0 top-0 h-40 sm:h-64 z-0 flex flex-col items-center justify-center bg-slate-900/50 border-b border-dashed border-slate-700">
+                    <ImageIcon className="w-10 h-10 text-slate-500 mb-2" />
+                    <p className="text-sm font-medium text-slate-400">Add a cover photo</p>
+                    <p className="text-xs text-slate-500">Drag & drop an image or use the button</p>
+                </div>
+            )
+        ) : null}
 
         <div className={cn(
           "flex-shrink-0 flex flex-col min-h-[48px] relative z-10",
