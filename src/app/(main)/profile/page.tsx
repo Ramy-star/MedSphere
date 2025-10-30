@@ -579,4 +579,3 @@ export default function ProfilePage() {
   );
 }
 
-    
