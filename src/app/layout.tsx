@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 import { useAuthStore } from '@/stores/auth-store';
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { getFirebaseConfig } from "@/firebase/config";
-
+import { AchievementToast } from "@/components/AchievementToast";
 
 const nunitoSans = Nunito_Sans({ 
   subsets: ["latin"],
@@ -42,7 +42,7 @@ export default function RootLayout({
 }>) {
   const [showWelcome, setShowWelcome] = useState(true);
   const [isClient, setIsClient] = useState(false);
-  const { isAuthenticated, user, checkAuth } = useAuthStore();
+  const { isAuthenticated, user, checkAuth, newlyEarnedAchievement } = useAuthStore();
   const firebaseConfig = getFirebaseConfig();
 
   useEffect(() => {
@@ -136,6 +136,7 @@ export default function RootLayout({
           <FirebaseClientProvider config={firebaseConfig}>
             {renderContent()}
             <Toaster />
+            {newlyEarnedAchievement && <AchievementToast achievement={newlyEarnedAchievement} />}
           </FirebaseClientProvider>
       </body>
     </html>

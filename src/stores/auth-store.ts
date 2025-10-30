@@ -7,6 +7,7 @@ import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, upd
 import type { Content } from '@/lib/contentService';
 import { nanoid } from 'nanoid';
 import { telegramInbox } from '@/lib/file-data';
+import { allAchievements, type Achievement } from '@/lib/achievements';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
@@ -71,6 +72,7 @@ type AuthState = {
   user: UserProfile | null | undefined;
   loading: boolean;
   itemHierarchy: ItemHierarchy;
+  newlyEarnedAchievement: Achievement | null;
   buildHierarchy: () => (() => void); // Now returns an unsubscribe function
   checkAuth: () => Promise<void>;
   login: (studentId: string) => Promise<boolean>;
@@ -78,6 +80,8 @@ type AuthState = {
   logoutSession: (sessionId: string) => Promise<void>;
   can: (permission: string, itemId: string | null) => boolean;
   canAddContent: (parentId: string | null) => boolean;
+  checkAndAwardAchievements: () => Promise<void>;
+  clearNewlyEarnedAchievement: () => void;
 };
 
 let userListenerUnsubscribe: () => void = () => {};
@@ -229,6 +233,9 @@ const listenToUserProfile = (studentId: string) => {
                 user: userProfile,
                 loading: false,
             });
+            // After user profile is set, check for achievements
+            useAuthStore.getState().checkAndAwardAchievements();
+
         } else {
             // User document was deleted, log them out.
             useAuthStore.getState().logout();
@@ -248,6 +255,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
   user: undefined, // undefined means we haven't checked yet
   loading: true,
   itemHierarchy: {},
+  newlyEarnedAchievement: null,
 
   buildHierarchy: () => {
     if (!db) return () => {};
@@ -448,7 +456,46 @@ const useAuthStore = create<AuthState>((set, get) => ({
       const addPermissions = ['canAddClass', 'canAddFolder', 'canUploadFile', 'canAddLink', 'canCreateFlashcard'];
       
       return addPermissions.some(p => can(p, parentId));
-  }
+  },
+  
+  checkAndAwardAchievements: async () => {
+    const { user } = get();
+    if (!user || !user.stats) return;
+
+    const earnedIds = new Set(user.achievements?.map(a => a.badgeId) || []);
+    let newAchievements: { badgeId: string; earnedAt: string }[] = [];
+    let achievementToShow: Achievement | null = null;
+    
+    allAchievements.forEach(achievement => {
+        if (!earnedIds.has(achievement.id)) {
+            const userStat = user.stats?.[achievement.condition.stat as keyof typeof user.stats] || 0;
+            if (userStat >= achievement.condition.value) {
+                newAchievements.push({
+                    badgeId: achievement.id,
+                    earnedAt: new Date().toISOString(),
+                });
+                if (!achievementToShow) { // Only show the first new one
+                    achievementToShow = achievement;
+                }
+            }
+        }
+    });
+
+    if (newAchievements.length > 0) {
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, {
+            achievements: arrayUnion(...newAchievements)
+        });
+        if(achievementToShow) {
+            set({ newlyEarnedAchievement: achievementToShow });
+        }
+    }
+  },
+
+  clearNewlyEarnedAchievement: () => {
+    set({ newlyEarnedAchievement: null });
+  },
+
 }));
 
 // Initialize auth check on load
