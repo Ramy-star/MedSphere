@@ -201,19 +201,33 @@ async function convertContentToJson<T>(prompt: (input: T) => Promise<{ output: a
         const { output } = await prompt(input);
 
         if (typeof output === 'object' && output !== null) {
-            return output; // Return object directly
+            return output; // It's already a JSON object, return directly.
         }
 
         if (typeof output === 'string') {
             try {
+                // First, try to parse the string directly.
                 return JSON.parse(output);
             } catch (e) {
-                console.error("The AI returned a string that is not valid JSON.", output);
+                // If direct parsing fails, try to extract from a markdown code block.
+                const jsonMatch = output.match(/```(?:json)?\s*([\s\S]+?)\s*```/);
+                if (jsonMatch && jsonMatch[1]) {
+                    try {
+                        return JSON.parse(jsonMatch[1]);
+                    } catch (e2) {
+                        console.error("Failed to parse JSON even after extracting from code block.", e2);
+                        throw new Error("The AI returned a response, but it could not be converted to a valid JSON structure. Please check the generated text and try again.");
+                    }
+                }
+                
+                // If no markdown block, it's just an invalid string.
+                console.error("The AI returned a string that is not valid JSON and not in a markdown block.", output);
                 throw new Error("Failed to convert content to a valid JSON structure. Please check the generated text and try again.");
             }
         }
         
-        const errorMsg = `The AI returned an unexpected data type that could not be processed. Raw output: ${JSON.stringify(output)}`;
+        // Handle unexpected data types.
+        const errorMsg = `The AI returned an unexpected data type (${typeof output}) that could not be processed.`;
         throw new Error(errorMsg);
     });
 }
@@ -249,3 +263,4 @@ async function convertFlashcardsToJsonFlow(input: ConvertFlashcardsToJsonInput):
 export async function convertFlashcardsToJson(input: ConvertFlashcardsToJsonInput): Promise<any> {
     return await convertFlashcardsToJsonFlow(input);
 }
+
