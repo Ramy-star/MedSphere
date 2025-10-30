@@ -1,11 +1,10 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion, FileCheck, Layers, ChevronDown, FolderSearch, EyeOff } from 'lucide-react';
+import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion, FileCheck, Layers, ChevronDown, FolderSearch, EyeOff, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
@@ -189,8 +188,8 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         description="Generate standard text questions with answers."
                         checked={options.generateQuestions}
                         onCheckedChange={(c) => handleCheckedChange('generateQuestions', !!c)}
-                        icon={FileQuestion}
-                        color="text-blue-400"
+                        icon={Lightbulb}
+                        color="text-yellow-400"
                     />
                      <OptionCheckbox
                         id="generateExam"
@@ -1076,3 +1075,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
