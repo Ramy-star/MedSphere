@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -44,6 +45,8 @@ import { contentService, type Content } from '@/lib/contentService';
 import type { Lecture } from '@/lib/types';
 import { useAuthStore } from '@/stores/auth-store';
 import { SavedQuestionsIcon } from '@/components/icons/SavedQuestionsIcon';
+import { InteractiveExamIcon } from '@/components/icons/InteractiveExamIcon';
+import { FlashcardIcon } from '@/components/icons/FlashcardIcon';
 
 
 type SavedQuestionSet = {
@@ -195,7 +198,7 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         description="Create a multiple-choice exam based on the content."
                         checked={options.generateExam}
                         onCheckedChange={(c) => handleCheckedChange('generateExam', !!c)}
-                        icon={FileCheck}
+                        icon={InteractiveExamIcon}
                         color="text-rose-400"
                     />
                      <OptionCheckbox
@@ -204,7 +207,7 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         description="Produce flashcards for key concepts and terms."
                         checked={options.generateFlashcards}
                         onCheckedChange={(c) => handleCheckedChange('generateFlashcards', !!c)}
-                        icon={Layers}
+                        icon={FlashcardIcon}
                         color="text-indigo-400"
                     />
                 </div>
