@@ -1,3 +1,4 @@
+
 'use server';
 
 import { db } from '@/firebase';
@@ -19,31 +20,37 @@ const allStudentIds = new Set([
 
 /**
  * Checks if a student ID is valid.
- * It first checks against the predefined static lists, and if not found,
- * it checks the Firestore `users` collection for manually added users.
+ * It first checks the Firestore `users` collection, and if not found,
+ * it checks against the predefined static lists.
  * @param id The student ID to verify.
  * @returns True if the ID is valid, false otherwise.
  */
 export async function isStudentIdValid(id: string): Promise<boolean> {
     const trimmedId = id.trim();
+
+    // 1. Check Firestore first. This allows admin-added users to be found immediately.
+    if (db) {
+        try {
+            const userDocRef = doc(db, 'users', trimmedId);
+            const userDoc = await getDoc(userDocRef);
+            if (userDoc.exists()) {
+                return true; // User found in the database
+            }
+        } catch (error) {
+            console.error("Error checking Firestore for student ID:", error);
+            // Don't return false yet, fallback to static lists
+        }
+    } else {
+        console.error("Firestore not initialized for ID validation.");
+    }
+    
+    // 2. If not in Firestore, check the static lists.
     if (allStudentIds.has(trimmedId)) {
         return true;
     }
     
-    // Fallback to check Firestore if not in static lists
-    if (!db) {
-        console.error("Firestore not initialized for ID validation fallback.");
-        return false;
-    }
-    
-    try {
-        const userDocRef = doc(db, 'users', trimmedId);
-        const userDoc = await getDoc(userDocRef);
-        return userDoc.exists();
-    } catch (error) {
-        console.error("Error checking Firestore for student ID:", error);
-        return false; // Fail safely if DB check fails
-    }
+    // If not found in either, it's invalid.
+    return false;
 }
 
 /**

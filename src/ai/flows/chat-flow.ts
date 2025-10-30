@@ -34,7 +34,8 @@ const chatPrompt = ai.definePrompt({
 
 const isRetriableError = (error: any): boolean => {
     const errorMessage = error.message?.toLowerCase() || '';
-    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable', 'deadline exceeded'];
+    // Comprehensive list of retriable error strings including HTTP status codes and common messages.
+    const retriableStrings = ['500', '503', '504', '429', 'overloaded', 'timed out', 'service unavailable', 'deadline exceeded', 'too many requests'];
     return retriableStrings.some(s => errorMessage.includes(s));
 };
 
@@ -69,7 +70,7 @@ async function chatAboutDocumentFlow(
       }
       
       // Log the retry attempt.
-      console.log(`Attempt ${i + 1} failed. Retrying in ${delay}ms...`);
+      console.log(`Attempt ${i + 1} failed with a retriable error. Retrying in ${delay}ms...`);
       
       // Wait for the specified delay.
       await new Promise(res => setTimeout(res, delay));
@@ -89,4 +90,3 @@ export async function chatAboutDocument(
 ): Promise<string> {
     return await chatAboutDocumentFlow(input, options);
 }
-    
