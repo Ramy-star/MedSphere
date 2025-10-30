@@ -34,7 +34,7 @@ type SavedQuestionSet = {
   id: string;
   fileName: string;
   textQuestions: string;
-  jsonQuestions: any; // Can be object or string
+  jsonQuestions: any;
   textExam?: string;
   jsonExam?: any;
   textFlashcard?: string;
@@ -58,14 +58,12 @@ function reorderAndStringify(obj: any): string {
     const orderedKeys: (keyof Lecture)[] = ['id', 'name', 'mcqs_level_1', 'mcqs_level_2', 'written', 'flashcards'];
     const orderedObject: { [key: string]: any } = {};
 
-    // Add known keys in the desired order
     for (const key of orderedKeys) {
         if (obj.hasOwnProperty(key)) {
             orderedObject[key] = obj[key];
         }
     }
 
-    // Add any other keys that might exist (to prevent data loss)
     for (const key in obj) {
         if (!orderedObject.hasOwnProperty(key)) {
             orderedObject[key] = obj[key];
@@ -80,7 +78,6 @@ function reorderAndStringify(obj: any): string {
         if (mcq.hasOwnProperty('q')) orderedMcq.q = mcq.q;
         if (mcq.hasOwnProperty('o')) orderedMcq.o = mcq.o;
         if (mcq.hasOwnProperty('a')) orderedMcq.a = mcq.a;
-        // Add any other keys to be safe
         Object.keys(mcq).forEach(key => {
           if (!orderedMcq.hasOwnProperty(key)) {
             orderedMcq[key] = mcq[key];
@@ -113,6 +110,7 @@ function reorderAndStringify(obj: any): string {
             });
         }
     }
+
 
     return JSON.stringify(orderedObject, null, 2);
 }
@@ -779,3 +777,5 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    

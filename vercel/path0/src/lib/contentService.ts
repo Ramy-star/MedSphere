@@ -1,13 +1,14 @@
+
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
-import { allContent as seedData, telegramInbox } from './file-data';
+import { allContent as seedData, telegramInbox } from '@/lib/file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { nanoid } from 'nanoid';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { cacheService } from './cacheService';
+import { cacheService } from '@/lib/cacheService';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
 import * as pdfjs from 'pdfjs-dist';
@@ -99,8 +100,7 @@ export const contentService = {
         return blob;
     },
     
-    async extractTextFromPdf(pdfBlob: Blob): Promise<string> {
-        const pdf = await pdfjs.getDocument(URL.createObjectURL(pdfBlob)).promise;
+    async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
         const maxPages = pdf.numPages;
         const textPromises: Promise<string>[] = [];
         for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
@@ -977,3 +977,5 @@ export const contentService = {
     }
   }
 };
+
+    
