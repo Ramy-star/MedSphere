@@ -619,5 +619,9 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
+```
+Property 'addEventListener' does not exist on type 'HTMLIFrameElement | null'.ts(2339)
+
+```
 
 ```
