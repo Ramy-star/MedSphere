@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward } from 'lucide-react';
@@ -1173,3 +1172,10 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
+
+___
+No overload matches this call.
+  The last overload gave the following error.
+    Argument of type '{ lectures: Lecture[] | Lecture; onStateChange?: ((inProgress: boolean) => void) | undefined; fileItemId: string | null; }' is not assignable to parameter of type 'IntrinsicAttributes & { lectures: Lecture | Lecture[]; onStateChange?: ((inProgress: boolean) => void) | undefined; }'.
+      Property 'fileItemId' does not exist on type 'IntrinsicAttributes & { lectures: Lecture | Lecture[]; onStateChange?: ((inProgress: boolean) => void) | undefined; }'.ts(2769)
+ExamContainer.tsx(736, 17): The expected type comes from property 'fileItemId' which is declared here on type 'IntrinsicAttributes & { lectures: Lecture | Lecture[]; onStateChange?: ((inProgress: boolean) => void) | undefined; fileItemId: string | null; }'
