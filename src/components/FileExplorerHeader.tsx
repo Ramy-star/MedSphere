@@ -1,3 +1,4 @@
+
 'use client';
 import { ArrowRight, ArrowLeft } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
@@ -59,7 +60,7 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
     }
     
     if (currentFolder.id === 'telegram-inbox-folder') {
-        return <Inbox className="w-7 h-7 sm:w-8 sm:h-8 text-yellow-400" />;
+        return <Inbox className="w-7 h-7 sm:w-8 sm:h-8 text-blue-400" />;
     }
 
     let Icon: LucideIcon = Folder;
