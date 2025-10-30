@@ -9,6 +9,7 @@ import type { Content } from '@/lib/contentService';
 import { nanoid } from 'nanoid';
 import { telegramInbox } from '@/lib/file-data';
 import { allAchievements, type Achievement } from '@/lib/achievements';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
@@ -50,7 +51,7 @@ export type UserProfile = {
     examsCompleted?: number;
     aiQueries?: number;
     consecutiveLoginDays?: number;
-    lastLoginDate?: string;
+    lastLoginDate?: string; // Stored as 'yyyy-MM-dd'
   };
    achievements?: {
     badgeId: string;
@@ -342,10 +343,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
       if (userProfile) {
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
         
-        const sessionId = get().currentSessionId || nanoid();
-        if (sessionId !== get().currentSessionId) {
-          localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
-          set({ currentSessionId: sessionId });
+        let sessionId = get().currentSessionId;
+        if (!sessionId) {
+            sessionId = nanoid();
+            localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
+            set({ currentSessionId: sessionId });
         }
 
         const newSession: UserSession = {
@@ -363,13 +365,21 @@ const useAuthStore = create<AuthState>((set, get) => ({
         const existingSessions = (docSnap.data()?.sessions as UserSession[] || []).filter(s => s.status !== 'logged_out');
         const thisSessionExists = existingSessions.some(s => s.sessionId === sessionId);
 
+        let finalSessions = existingSessions;
         if (!thisSessionExists) {
-            await updateDoc(userDocRef, {
-                sessions: arrayUnion(newSession)
-            });
+            finalSessions = [...existingSessions, newSession];
+        } else {
+            // Update lastActive time for the existing session
+            finalSessions = existingSessions.map(s => s.sessionId === sessionId ? { ...s, lastActive: new Date().toISOString() } : s);
         }
 
-        await get().checkAuth(); // This will now build hierarchy and set up the listener
+        await updateDoc(userDocRef, { sessions: finalSessions });
+
+        // Update the local state immediately
+        userProfile.sessions = finalSessions;
+        set({ user: userProfile });
+
+        await get().checkAuth(); // This will re-build hierarchy and set up listeners
         return true;
       } else {
         get().logout();

@@ -1,5 +1,8 @@
+
 import { db } from '@/firebase';
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { format } from 'date-fns';
+
 
 // --- (الإضافة 1) ---
 // تعريف نوع للبيانات المستوردة من ملفات JSON
@@ -11,17 +14,17 @@ type StudentData = {
 };
 // --- نهاية الإضافة ---
 
-import level1Ids from './student-ids/level-1.json';
-import level2Ids from './student-ids/level-2.json';
-import level3Ids from './student-ids/level-3.json';
-import level4Ids from './student-ids/level-4.json';
-import level5Ids from './student-ids/level-5.json';
+import level1Ids from '@/lib/student-ids/level-1.json';
+import level2Ids from '@/lib/student-ids/level-2.json';
+import level3Ids from '@/lib/student-ids/level-3.json';
+import level4Ids from '@/lib/student-ids/level-4.json';
+import level5Ids from '@/lib/student-ids/level-5.json';
 
-import level1Data from './student-ids/level-1-data.json';
-import level2Data from './student-ids/level-2-data.json';
-import level3Data from './student-ids/level-3-data.json';
-import level4Data from './student-ids/level-4-data.json';
-import level5Data from './student-ids/level-5-data.json';
+import level1Data from '@/lib/student-ids/level-1-data.json';
+import level2Data from '@/lib/student-ids/level-2-data.json';
+import level3Data from '@/lib/student-ids/level-3-data.json';
+import level4Data from '@/lib/student-ids/level-4-data.json';
+import level5Data from '@/lib/student-ids/level-5-data.json';
 
 const SUPER_ADMIN_ID = "221100154";
 
@@ -101,7 +104,6 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
 
         console.log(`User not found for ID: ${trimmedId}. Creating new profile.`);
         
-        // الآن "studentData" سيتم استنتاج نوعه كـ "StudentData | undefined"
         const studentData = allStudentData.get(trimmedId);
         const userLevel = idToLevelMap.get(trimmedId);
         const isUserSuperAdmin = await isSuperAdmin(trimmedId);
@@ -112,14 +114,22 @@ export async function verifyAndCreateUser(studentId: string): Promise<any | null
             id: trimmedId,
             uid: trimmedId, 
             studentId: trimmedId,
-            // (تم حل الخطأ هنا)
             displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
             username: `student_${trimmedId}`,
-            // (تم حل الخطأ هنا)
             email: studentData?.['Academic Email'] || '',
             level: userLevel || 'Unknown',
             createdAt: new Date().toISOString(),
             roles: isUserSuperAdmin ? [{ role: 'superAdmin', scope: 'global' }] : [],
+            stats: { // Initialize stats for new users
+                filesUploaded: 0,
+                foldersCreated: 0,
+                examsCompleted: 0,
+                aiQueries: 0,
+                consecutiveLoginDays: 1, // Set to 1 for the first login
+                lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
+            },
+            achievements: [], // Start with an empty achievements array
+            sessions: [], // Start with an empty sessions array
         };
         
         await setDoc(newUserDocRef, newUserProfile);
