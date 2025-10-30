@@ -12,7 +12,11 @@ import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
-export default function FolderPage({ params }: { params: { id: string } }) {
+type FolderPageProps = {
+  params: { id: string };
+};
+
+export default function FolderPage({ params }: FolderPageProps) {
   const { id } = params;
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
