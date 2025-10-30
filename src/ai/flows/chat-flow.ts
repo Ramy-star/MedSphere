@@ -81,3 +81,5 @@ export async function chatAboutDocument(
   // This part should not be reachable, but is included for type safety.
   throw new Error('Chat failed after multiple retries.');
 }
+
+    

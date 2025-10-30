@@ -7,25 +7,6 @@ const withPWA = require('next-pwa')({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === 'development',
-  runtimeCaching: [
-    {
-      // This rule will match both direct Cloudinary URLs and URLs proxied through the worker.
-      // It looks for /image/upload/, /video/upload/, or /raw/upload/ which is common
-      // to both URL structures.
-      urlPattern: /\/(image|video|raw)\/upload\//i,
-      handler: 'CacheFirst',
-      options: {
-        cacheName: 'cloudinary-assets',
-        expiration: {
-          maxEntries: 200, // Increased entries
-          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Days
-        },
-        cacheableResponse: {
-          statuses: [0, 200], // 0 for opaque responses (cross-origin)
-        },
-      },
-    },
-  ],
 });
 
 const remotePatterns: Exclude<NextConfig['images'], undefined>['remotePatterns'] = [
@@ -74,3 +55,5 @@ const nextConfig: NextConfig = {
 };
 
 export default withPWA(nextConfig);
+
+    

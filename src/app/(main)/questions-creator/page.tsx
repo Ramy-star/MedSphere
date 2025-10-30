@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -554,7 +553,8 @@ function QuestionsCreatorContent() {
     loadingText: string;
     showRetryButton: boolean;
   }) => {
-    const hasContent = !!content || isLoading || showRetryButton;
+    const hasContent = !!content;
+    const isErrorState = showRetryButton;
   
     const displayContent = useMemo(() => {
       if (typeof content === 'string') {
@@ -569,24 +569,24 @@ function QuestionsCreatorContent() {
     return (
         <div className={cn(
             "relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out",
-             !hasContent && "h-24 justify-center"
+            !hasContent && !isLoading && !isErrorState && "h-24 justify-center"
           )}>
            <div className="flex items-start gap-4">
                {icon}
                <div>
                    <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
-                   {!hasContent && <p className="text-sm text-slate-400 mt-1">Generated content will appear here.</p>}
+                   {!hasContent && !isLoading && !isErrorState && <p className="text-sm text-slate-400 mt-1">Generated content will appear here.</p>}
                </div>
            </div>
-           {hasContent && (
+           {(hasContent || isLoading || isErrorState) && (
              <div className="mt-4 flex-grow flex flex-col">
-                <div className="relative flex-grow">
+                <div className="relative flex-grow min-h-[40px]">
                     {isLoading ? (
                         <div className="absolute inset-0 flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
                             <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
                             <p className="ml-3 text-slate-300">{loadingText}</p>
                         </div>
-                    ) : showRetryButton ? (
+                    ) : isErrorState ? (
                         <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-4">
                             <AlertCircle className="w-10 h-10 text-red-400 mb-2" />
                             <p className="text-red-400 text-sm mb-4">{task?.error || 'An error occurred.'}</p>
@@ -1070,3 +1070,5 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
+
+    
