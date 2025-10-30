@@ -41,6 +41,23 @@ const nextConfig: NextConfig = {
     remotePatterns,
   },
   webpack: (config: Configuration, { isServer, dev }) => {
+    config.module?.rules.push({
+      test: /node_modules\/@genkit-ai\/next\/lib\/hooks.js/,
+      loader: 'string-replace-loader',
+      options: {
+        search: /import 'server-only';/g,
+        replace: `const isServer = typeof window === 'undefined';
+if (isServer) {
+  try {
+    require('server-only');
+  } catch (e) {
+    // Ignore require error on client
+  }
+}
+`,
+      },
+    });
+
     // This is to prevent the "Module not found: Can't resolve 'canvas'" error during build
     if (isServer) {
       if (!config.externals) {
