@@ -1,5 +1,4 @@
 
-
 import type { NextConfig } from 'next';
 import type { Configuration } from 'webpack';
 
@@ -41,7 +40,10 @@ const nextConfig: NextConfig = {
     remotePatterns,
   },
   webpack: (config: Configuration, { isServer, dev }) => {
-    config.module?.rules.push({
+    config.module = config.module || {};
+    config.module.rules = config.module.rules || [];
+
+    config.module.rules.push({
       test: /node_modules\/@genkit-ai\/next\/lib\/hooks.js/,
       loader: 'string-replace-loader',
       options: {
