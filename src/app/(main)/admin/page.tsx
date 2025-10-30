@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Suspense, useMemo, useState, useCallback, useEffect, lazy } from 'react';
@@ -132,12 +133,12 @@ function AdminPageContent() {
 
     const filteredAndSortedUsers = useMemo(() => {
         if (!users) return [];
-        let processedUsers = Array.from(new Map(users.map(user => [user.id, user])).values());
+        let processedUsers = Array.from(new Map(users.map((user: UserProfile) => [user.id, user])).values());
 
         // Apply search query filter
         if (debouncedQuery) {
             const lowercasedQuery = debouncedQuery.toLowerCase();
-            processedUsers = processedUsers.filter(user => 
+            processedUsers = processedUsers.filter((user: UserProfile) => 
                 user.displayName?.toLowerCase().includes(lowercasedQuery) ||
                 user.username?.toLowerCase().includes(lowercasedQuery) ||
                 user.email?.toLowerCase().includes(lowercasedQuery) ||
@@ -147,11 +148,11 @@ function AdminPageContent() {
 
         // Apply level filter
         if (levelFilter) {
-            processedUsers = processedUsers.filter(user => (user.level || studentIdToLevelMap.get(user.studentId)) === levelFilter);
+            processedUsers = processedUsers.filter((user: UserProfile) => (user.level || studentIdToLevelMap.get(user.studentId)) === levelFilter);
         }
 
         // Apply sorting
-        return processedUsers.sort((a, b) => {
+        return processedUsers.sort((a: UserProfile, b: UserProfile) => {
             const aIsSuper = isUserSuperAdmin(a);
             const bIsSuper = isUserSuperAdmin(b);
             if (aIsSuper && !bIsSuper) return -1;
@@ -174,7 +175,7 @@ function AdminPageContent() {
 
     const admins = useMemo(() => {
         if (!filteredAndSortedUsers) return [];
-        return filteredAndSortedUsers.filter(user => isUserSuperAdmin(user) || isSubAdmin(user));
+        return filteredAndSortedUsers.filter((user: UserProfile) => isUserSuperAdmin(user) || isSubAdmin(user));
     }, [filteredAndSortedUsers, isSubAdmin, isUserSuperAdmin]);
     
     const handleToggleSubAdmin = useCallback(async (user: UserProfile) => {
@@ -295,8 +296,8 @@ function AdminPageContent() {
                     <div className={cn("relative h-9 w-9 rounded-full flex items-center justify-center border-2", avatarRingClass)}>
                         <Avatar className={cn("h-full w-full")}>
                             <AvatarImage 
-                                src={user.photoURL} 
-                                alt={user.displayName}
+                                src={user.photoURL ?? ''} 
+                                alt={user.displayName ?? ''}
                                 className="pointer-events-none select-none"
                                 onDragStart={(e) => e.preventDefault()}
                                 onContextMenu={(e) => e.preventDefault()}
