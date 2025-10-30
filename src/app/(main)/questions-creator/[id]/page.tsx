@@ -167,7 +167,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             text: questionSet.textQuestions || '', 
             json: reorderAndStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
-            jsonExam: reorderAndStringify(questionSet.jsonExam),
+            examJson: reorderAndStringify(questionSet.jsonExam),
             flashcardText: questionSet.textFlashcard || '',
             flashcardJson: reorderAndStringify(questionSet.jsonFlashcard)
         });
@@ -203,7 +203,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             json: 'jsonQuestions',
             examText: 'textExam',
             examJson: 'jsonExam',
-            flashcardText: 'flashcardText',
+            flashcardText: 'textFlashcard',
             flashcardJson: 'jsonFlashcard'
         };
         const dataKey = keyMap[type] as keyof SavedQuestionSet;
@@ -293,7 +293,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
         json: 'jsonQuestions',
         examText: 'textExam',
         examJson: 'jsonExam',
-        flashcardText: 'flashcardText',
+        flashcardText: 'textFlashcard',
         flashcardJson: 'jsonFlashcard'
     };
     const dataKey = keyMap[type] as keyof SavedQuestionSet;
@@ -701,7 +701,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     icon={<FileJson className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
                     content={editingContent.flashcardJson}
                     type="flashcardJson"
-                    isEditing={isEditing.json}
+                    isEditing={isEditing.flashcardJson}
                     onToggleEdit={() => handleToggleEdit('flashcardJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardJson: value}))}
                     onCancel={() => handleCancelEdit('flashcardJson')}
@@ -780,3 +780,4 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
   return <SavedQuestionSetPageContent id={id} />;
 }
 
+    
