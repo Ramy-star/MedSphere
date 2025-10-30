@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -10,10 +11,10 @@ import { prefetcher } from '@/lib/prefetchService';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
-export default function LevelPage({ params }: { params: { levelName: string } }) {
+export default function LevelPage({ params: { levelName } }: { params: { levelName: string } }) {
   const router = useRouter();
   // Firestore queries are case-sensitive. Decoding should be sufficient.
-  const decodedLevelName = decodeURIComponent(params.levelName);
+  const decodedLevelName = decodeURIComponent(levelName);
   
   const { data: levels, loading: loadingLevels } = useCollection<Content>('content', {
     where: ['name', '==', decodedLevelName],

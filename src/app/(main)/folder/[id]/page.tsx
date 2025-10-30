@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
@@ -11,8 +12,8 @@ import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
-export default function FolderPage({ params }: { params: { id: string } }) {
-  const { data: current, loading: loadingCurrent } = useDoc<Content>('content', params.id);
+export default function FolderPage({ params: { id } }: { params: { id: string } }) {
+  const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { toast } = useToast();
   
@@ -23,7 +24,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   }, [loadingCurrent, current]);
 
   const processFileUpload = useCallback(async (file: File) => {
-    if (!params.id) return;
+    if (!id) return;
 
     const tempId = `upload_${Date.now()}_${file.name}`;
 
@@ -47,10 +48,10 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         }
     };
     
-    const xhr = await contentService.createFile(params.id, file, callbacks);
+    const xhr = await contentService.createFile(id, file, callbacks);
     setUploadingFiles(prev => [...prev, { id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file, xhr }]);
 
-  }, [params.id, toast]);
+  }, [id, toast]);
 
   const handleUpdateFile = useCallback(async (itemToUpdate: Content, newFile: File) => {
     const tempId = `update_${Date.now()}_${itemToUpdate.id}`;
@@ -100,7 +101,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
 
   const handleRetryUpload = useCallback(async (fileId: string) => {
     const fileToRetry = uploadingFiles.find(f => f.id === fileId);
-    if (fileToRetry && fileToRetry.file && params.id) {
+    if (fileToRetry && fileToRetry.file && id) {
       setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, status: 'uploading', progress: 0 } : f));
 
       const callbacks: UploadCallbacks = {
@@ -122,10 +123,10 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         }
       };
 
-      const newXhr = await contentService.createFile(params.id, fileToRetry.file, callbacks);
+      const newXhr = await contentService.createFile(id, fileToRetry.file, callbacks);
       setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, xhr: newXhr } : f));
     }
-  }, [uploadingFiles, params.id, toast]);
+  }, [uploadingFiles, id, toast]);
 
   const handleRemoveUpload = (fileId: string) => {
       const fileToRemove = uploadingFiles.find(f => f.id === fileId);
@@ -146,7 +147,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         <FileExplorerHeader onFileSelected={processFileUpload} />
         <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
             <FolderGrid 
-                parentId={params.id} 
+                parentId={id} 
                 uploadingFiles={uploadingFiles} 
                 onFileSelected={processFileUpload}
                 onUpdateFile={handleUpdateFile}
