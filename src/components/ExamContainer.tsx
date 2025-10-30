@@ -20,8 +20,8 @@ import level2StudentData from '@/lib/student-ids/level-2-data.json';
 import level3StudentData from '@/lib/student-ids/level-3-data.json';
 import level4StudentData from '@/lib/student-ids/level-4-data.json';
 import level5StudentData from '@/lib/student-ids/level-5-data.json';
-import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
-import { User as UserIcon, Crown, Shield } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { Crown, Shield, User as UserIcon } from 'lucide-react';
 
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---
@@ -1171,3 +1171,4 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
+
