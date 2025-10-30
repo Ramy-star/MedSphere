@@ -115,6 +115,12 @@ export default function ProfilePage() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
 
+  // New state for drag-and-drop and confirmation
+  const [imageToConfirm, setImageToConfirm] = useState<{ file: File; type: 'avatar' | 'cover' } | null>(null);
+  const [isAvatarDragging, setIsAvatarDragging] = useState(false);
+  const [isCoverDragging, setIsCoverDragging] = useState(false);
+  const confirmationImagePreview = imageToConfirm ? URL.createObjectURL(imageToConfirm.file) : null;
+
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const coverFileInputRef = useRef<HTMLInputElement>(null);
@@ -123,7 +129,6 @@ export default function ProfilePage() {
   useEffect(() => {
     if (editingName && nameInputRef.current) {
       nameInputRef.current.focus();
-      // Move cursor to the end
       const range = document.createRange();
       const sel = window.getSelection();
       range.selectNodeContents(nameInputRef.current);
@@ -166,46 +171,86 @@ export default function ProfilePage() {
     setEditingName(false);
   }
 
+  const handleAvatarUpload = async (file: File) => {
+      if (!user) return;
+      setIsUploading(true);
+      try {
+          await contentService.uploadUserAvatar(user, file, (progress) => {});
+          toast({ title: 'Success', description: 'Profile picture updated.' });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+          console.error('Error uploading avatar:', error);
+      } finally {
+          setIsUploading(false);
+      }
+  };
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
 
     if (!file.type.startsWith('image/')) {
         toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please select an image file.'});
         return;
     }
+    setImageToConfirm({ file, type: 'avatar' });
+  };
 
-    setIsUploading(true);
-    try {
-        await contentService.uploadUserAvatar(user, file, (progress) => {});
-        toast({ title: 'Success', description: 'Profile picture updated.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        console.error('Error uploading avatar:', error);
-    } finally {
-        setIsUploading(false);
-    }
+  const handleCoverUpload = async (file: File) => {
+      if (!user) return;
+      setIsUploadingCover(true);
+      try {
+          await contentService.uploadUserCoverPhoto(user, file, (progress) => {});
+          toast({ title: 'Success', description: 'Cover photo updated.' });
+      } catch (error: any) {
+          toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
+          console.error("Error uploading cover photo:", error);
+      } finally {
+          setIsUploadingCover(false);
+      }
   };
 
   const handleCoverImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (!file || !user) return;
+    if (!file) return;
 
     if (!file.type.startsWith('image/')) {
         toast({ variant: 'destructive', title: 'Invalid File Type', description: 'Please select an image file.'});
         return;
     }
+    setImageToConfirm({ file, type: 'cover' });
+  };
 
-    setIsUploadingCover(true);
-    try {
-        await contentService.uploadUserCoverPhoto(user, file, (progress) => {});
-        toast({ title: 'Success', description: 'Cover photo updated.' });
-    } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
-        console.error("Error uploading cover photo:", error);
-    } finally {
-        setIsUploadingCover(false);
+  const handleDragEvents = (setter: React.Dispatch<React.SetStateAction<boolean>>) => ({
+      onDragEnter: (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setter(true); },
+      onDragLeave: (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); setter(false); },
+      onDragOver: (e: React.DragEvent<HTMLDivElement>) => { e.preventDefault(); e.stopPropagation(); },
+  });
+
+  const handleDrop = (e: React.DragEvent<HTMLDivElement>, type: 'avatar' | 'cover') => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsAvatarDragging(false);
+      setIsCoverDragging(false);
+
+      const file = e.dataTransfer.files?.[0];
+      if (file && file.type.startsWith('image/')) {
+          setImageToConfirm({ file, type });
+      } else {
+          toast({ variant: 'destructive', title: 'Invalid File', description: 'Please drop a single image file.' });
+      }
+  };
+  
+  const handleConfirmImageUpload = () => {
+    if (!imageToConfirm) return;
+    const { file, type } = imageToConfirm;
+
+    if (type === 'avatar') {
+        handleAvatarUpload(file);
+    } else {
+        handleCoverUpload(file);
     }
+    setImageToConfirm(null); // Close dialog
   };
 
   const handleDeletePicture = async () => {
@@ -270,7 +315,11 @@ export default function ProfilePage() {
       animate={{ opacity: 1, y: 0 }}
       className="w-full pb-12"
     >
-      <div className="relative group/cover sm:h-64 h-36">
+      <div 
+        className="relative group/cover sm:h-64 h-36"
+        {...handleDragEvents(setIsCoverDragging)}
+        onDrop={(e) => handleDrop(e, 'cover')}
+      >
          <input
             type="file"
             ref={coverFileInputRef}
@@ -300,11 +349,20 @@ export default function ProfilePage() {
                   </Button>
               )}
          </div>
+          {isCoverDragging && (
+            <div className="absolute inset-0 bg-black/50 border-4 border-dashed border-blue-400 rounded-lg flex items-center justify-center text-white font-bold text-lg z-10">
+              Drop to change cover
+            </div>
+          )}
       </div>
 
       <div className="relative z-10 flex flex-col items-center -mt-12 sm:-mt-16 px-4 sm:px-8 sm:flex-row sm:items-end sm:gap-4">
-        <div className="relative group/avatar">
-          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass)}>
+        <div 
+            className="relative group/avatar"
+            {...handleDragEvents(setIsAvatarDragging)}
+            onDrop={(e) => handleDrop(e, 'avatar')}
+        >
+          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400 ring-offset-4 ring-offset-slate-900")}>
             <AvatarImage 
                 src={user.photoURL ?? ''} 
                 alt={user.displayName ?? ''}
@@ -316,6 +374,11 @@ export default function ProfilePage() {
               {user.displayName?.[0] || <UserIcon />}
             </AvatarFallback>
           </Avatar>
+           {isAvatarDragging && (
+                <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-xs font-bold text-center p-2">
+                    Drop Image
+                </div>
+            )}
           <input
             type="file"
             ref={fileInputRef}
@@ -434,6 +497,29 @@ export default function ProfilePage() {
       </div>
 
     </motion.div>
+    <AlertDialog open={!!imageToConfirm} onOpenChange={(open) => !open && setImageToConfirm(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Confirm Image Change</AlertDialogTitle>
+                <AlertDialogDescription>
+                    Are you sure you want to set this image as your new {imageToConfirm?.type === 'avatar' ? 'profile picture' : 'cover photo'}?
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="flex justify-center my-4">
+                <Image
+                    src={confirmationImagePreview || ''}
+                    alt="Image preview"
+                    width={imageToConfirm?.type === 'avatar' ? 128 : 256}
+                    height={imageToConfirm?.type === 'avatar' ? 128 : 128}
+                    className={cn("object-cover rounded-lg", imageToConfirm?.type === 'avatar' && "rounded-full h-32 w-32")}
+                />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setImageToConfirm(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleConfirmImageUpload}>Confirm</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
