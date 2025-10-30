@@ -9,6 +9,9 @@
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
+import { contentService } from '@/lib/contentService';
+import * as pdfjs from 'pdfjs-dist';
 
 // --- Input Schemas ---
 
@@ -41,7 +44,7 @@ const isRetriableError = (error: any): boolean => {
 };
 
 async function runWithRetry<T>(fn: () => Promise<T>): Promise<T> {
-  const maxRetries = 3; // Total attempts will be initial + 3 retries = 4
+  const maxRetries = 3;
   let delay = 1000; // 1 second initial delay
 
   for (let i = 0; i < maxRetries; i++) {
