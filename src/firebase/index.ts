@@ -1,4 +1,3 @@
-
 'use client';
 
 import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/app';
@@ -10,6 +9,7 @@ import {
   memoryLocalCache
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
+import { getAuth, Auth } from 'firebase/auth';
 
 // Re-export provider hooks
 export { useFirebase } from './provider';
@@ -18,6 +18,7 @@ export { useDoc } from './firestore/use-doc';
 
 // Initialize db as a variable that can be exported.
 export let db: Firestore;
+export let auth: Auth;
 
 let dbInitialized = false;
 
@@ -48,10 +49,8 @@ export async function initializeFirebase(config: FirebaseOptions) {
     dbInitialized = true;
   }
   
+  auth = getAuth(app);
   const storage = getStorage(app);
-
-  // Return a dummy auth object to prevent breaking the app structure
-  const auth = { onAuthStateChanged: () => () => {} };
 
   return { app, auth, db, storage };
 }

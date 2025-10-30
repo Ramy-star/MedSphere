@@ -1,6 +1,7 @@
-
 'use server';
 
+import { db } from '@/firebase';
+import { collection, doc, getDoc, getDocs, query, where } from 'firebase/firestore';
 import level1 from './student-ids/level-1.json';
 import level2 from './student-ids/level-2.json';
 import level3 from './student-ids/level-3.json';
@@ -24,4 +25,19 @@ const allStudentIds = new Set([
 export async function isStudentIdValid(id: string): Promise<boolean> {
     const trimmedId = id.trim();
     return allStudentIds.has(trimmedId);
+}
+
+/**
+ * Checks if a student ID has already been claimed by a user.
+ * @param studentId The student ID to check.
+ * @returns The UID of the user who claimed it, or null if not claimed.
+ */
+export async function getClaimedStudentIdUser(studentId: string): Promise<string | null> {
+    if (!db) return null;
+    const docRef = doc(db, 'claimedStudentIds', studentId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data().userId || null;
+    }
+    return null;
 }

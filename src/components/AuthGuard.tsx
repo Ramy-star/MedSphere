@@ -1,6 +1,6 @@
 'use client';
 
-import { useUser, type UserProfile } from '@/firebase/auth/use-user';
+import { useAuthStore } from '@/stores/auth-store';
 import { Logo } from './logo';
 import { Button } from './ui/button';
 import { motion } from 'framer-motion';
@@ -20,6 +20,7 @@ import { useUsernameAvailability } from '@/hooks/use-username-availability';
 import { GoogleIcon } from './icons/GoogleIcon';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { getClaimedStudentIdUser } from '@/lib/verificationService';
+import type { UserProfile } from '@/stores/auth-store';
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
@@ -88,6 +89,7 @@ function ProfileSetupForm() {
           const batch = writeBatch(db);
           const studentIdRef = doc(db, 'claimedStudentIds', studentId);
           const newProfileData: Omit<UserProfile, 'roles'> = {
+            id: firebaseUser.uid,
             uid: firebaseUser.uid,
             email: firebaseUser.email!,
             displayName: firebaseUser.displayName!,
@@ -227,9 +229,9 @@ function ProfileSetupForm() {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
-  const { user, loading, profileExists, isProcessingRedirect } = useUser();
+  const { user, loading, isAuthenticated } = useAuthStore();
   
-  if (loading || isProcessingRedirect) {
+  if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
@@ -240,9 +242,9 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // If a user is authenticated and their profile exists, they are fully logged in.
-  if (user && profileExists) {
-    if (user.profile?.roles?.isBlocked) {
+  // If a user is authenticated, they are fully logged in.
+  if (isAuthenticated && user) {
+    if (user.isBlocked) {
       return (
         <div className="flex h-full w-full items-center justify-center bg-background p-4">
           <div className="text-center">
