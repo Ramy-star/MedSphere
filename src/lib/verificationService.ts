@@ -10,21 +10,40 @@ import level5 from './student-ids/level-5.json';
 
 // Combine all student IDs into a single set for efficient lookup
 const allStudentIds = new Set([
-    ...level1,
-    ...level2,
-    ...level3,
-    ...level4,
-    ...level5,
+    ...level1.map(String),
+    ...level2.map(String),
+    ...level3.map(String),
+    ...level4.map(String),
+    ...level5.map(String),
 ]);
 
 /**
- * Checks if a student ID is present in the predefined lists.
+ * Checks if a student ID is valid.
+ * It first checks against the predefined static lists, and if not found,
+ * it checks the Firestore `users` collection for manually added users.
  * @param id The student ID to verify.
- * @returns True if the ID is in the lists, false otherwise.
+ * @returns True if the ID is valid, false otherwise.
  */
 export async function isStudentIdValid(id: string): Promise<boolean> {
     const trimmedId = id.trim();
-    return allStudentIds.has(trimmedId);
+    if (allStudentIds.has(trimmedId)) {
+        return true;
+    }
+    
+    // Fallback to check Firestore if not in static lists
+    if (!db) {
+        console.error("Firestore not initialized for ID validation fallback.");
+        return false;
+    }
+    
+    try {
+        const userDocRef = doc(db, 'users', trimmedId);
+        const userDoc = await getDoc(userDocRef);
+        return userDoc.exists();
+    } catch (error) {
+        console.error("Error checking Firestore for student ID:", error);
+        return false; // Fail safely if DB check fails
+    }
 }
 
 /**

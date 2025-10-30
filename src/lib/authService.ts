@@ -30,11 +30,11 @@ const SUPER_ADMIN_ID = "221100154";
 
 const allStudentIds = new Set([
     // إضافة cast بسيط لضمان النوع
-    ...(level1Ids as (string | number)[]),
-    ...(level2Ids as (string | number)[]),
-    ...(level3Ids as (string | number)[]),
-    ...(level4Ids as (string | number)[]),
-    ...(level5Ids as (string | number)[]),
+    ...(level1Ids as (string | number)[]).map(String),
+    ...(level2Ids as (string | number)[]).map(String),
+    ...(level3Ids as (string | number)[]).map(String),
+    ...(level4Ids as (string | number)[]).map(String),
+    ...(level5Ids as (string | number)[]).map(String),
 ]);
 
 const allStudentData = new Map([
@@ -64,7 +64,27 @@ export async function isSuperAdmin(studentId: string | null): Promise<boolean> {
 }
 
 export async function isStudentIdValid(id: string): Promise<boolean> {
-    return allStudentIds.has(id.trim());
+    const trimmedId = id.trim();
+    // First, check the static list. This is the fastest check.
+    if (allStudentIds.has(trimmedId)) {
+        return true;
+    }
+
+    // If not in the static list, check Firestore for an existing user.
+    // This allows manually added users to log in.
+    if (!db) {
+        console.error("Firestore not initialized for student ID validation.");
+        return false;
+    }
+    
+    try {
+        const userDocRef = doc(db, 'users', trimmedId);
+        const userDoc = await getDoc(userDocRef);
+        return userDoc.exists();
+    } catch (error) {
+        console.error("Error checking student ID in Firestore:", error);
+        return false; // Fail safely
+    }
 }
 
 export async function getUserProfile(studentId: string): Promise<any | null> {
@@ -85,7 +105,7 @@ export async function verifyAndCreateUser(studentId: string): Promise<{ userProf
     const trimmedId = studentId.trim();
 
     if (!(await isStudentIdValid(trimmedId))) {
-        console.log(`Verification failed: Student ID "${trimmedId}" not found in valid lists.`);
+        console.log(`Verification failed: Student ID "${trimmedId}" not found in valid lists or database.`);
         return { userProfile: null, isNewUser: false };
     }
 
@@ -130,6 +150,7 @@ export async function verifyAndCreateUser(studentId: string): Promise<{ userProf
                 },
                 achievements: [],
                 sessions: [],
+                favorites: [],
             };
             
             await setDoc(newUserDocRef, userProfile);
