@@ -133,7 +133,7 @@ function AdminPageContent() {
 
     const filteredAndSortedUsers = useMemo(() => {
         if (!users) return [];
-        let processedUsers = Array.from(new Map(users.map((user: UserProfile) => [user.id, user])).values());
+        let processedUsers: UserProfile[] = Array.from(new Map(users.map((user: UserProfile) => [user.id, user])).values());
 
         // Apply search query filter
         if (debouncedQuery) {
