@@ -371,7 +371,7 @@ export default function ProfilePage() {
             {...handleDragEvents(setIsAvatarDragging)}
             onDrop={(e) => handleDrop(e, 'avatar')}
         >
-          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 ring-offset-slate-900 ring-offset-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400")}>
+          <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400")}>
             <AvatarImage 
                 src={user.photoURL ?? ''} 
                 alt={user.displayName ?? ''}

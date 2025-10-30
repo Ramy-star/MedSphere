@@ -36,7 +36,7 @@ export function AuthButton() {
               className="relative h-9 w-9 rounded-full p-0"
               onClick={() => router.push('/profile')}
             >
-              <Avatar className={cn("h-9 w-9 ring-2 transition-all", avatarRingClass)}>
+              <Avatar className={cn("h-9 w-9 ring-2", avatarRingClass)}>
                 <AvatarImage 
                     src={user.photoURL ?? ''} 
                     alt={user.displayName ?? ''} 
