@@ -242,7 +242,7 @@ export function FolderSelectorDialog({ open, onOpenChange, onSelect, actionType,
           <DialogTitle>{title}</DialogTitle>
         </DialogHeader>
         <div className="flex-1 overflow-hidden px-6">
-            <ScrollArea className="h-full pr-4 -mr-4">
+            <ScrollArea className="h-full">
                 {loading ? (
                     <div className="flex items-center justify-center h-full">
                         <Loader2 className="h-8 w-8 animate-spin text-blue-400" />
