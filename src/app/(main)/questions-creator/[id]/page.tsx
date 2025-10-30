@@ -761,7 +761,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 }
 
 
-export default function SavedQuestionSetPage({ params: { id } }: { params: { id: string } }) {
+export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
+  const { id } = params;
   const { studentId, loading } = useAuthStore();
 
   if (loading) {

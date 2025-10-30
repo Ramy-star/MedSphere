@@ -11,7 +11,8 @@ import { prefetcher } from '@/lib/prefetchService';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
-export default function LevelPage({ params: { levelName } }: { params: { levelName: string } }) {
+export default function LevelPage({ params }: { params: { levelName: string } }) {
+  const { levelName } = params;
   const router = useRouter();
   // Firestore queries are case-sensitive. Decoding should be sufficient.
   const decodedLevelName = decodeURIComponent(levelName);
