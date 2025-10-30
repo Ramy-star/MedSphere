@@ -6,6 +6,7 @@ import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
 //import { Router } from 'next/router'; // Although we can't use it here, it's a reminder of navigation
 import type { Lecture } from '@/lib/types';
+import * as pdfjs from 'pdfjs-dist';
 
 
 type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | 'completed' | 'error';

@@ -34,7 +34,7 @@ const chatPrompt = ai.definePrompt({
 
 const isRetriableError = (error: any): boolean => {
     const errorMessage = error.message?.toLowerCase() || '';
-    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable'];
+    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable', 'deadline exceeded'];
     return retriableStrings.some(s => errorMessage.includes(s));
 };
 
