@@ -99,7 +99,8 @@ export const contentService = {
         return blob;
     },
     
-    async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
+    async extractTextFromPdf(pdfBlob: Blob): Promise<string> {
+        const pdf = await pdfjs.getDocument(URL.createObjectURL(pdfBlob)).promise;
         const maxPages = pdf.numPages;
         const textPromises: Promise<string>[] = [];
         for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
