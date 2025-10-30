@@ -167,7 +167,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             text: questionSet.textQuestions || '', 
             json: reorderAndStringify(questionSet.jsonQuestions), 
             examText: questionSet.textExam || '', 
-            examJson: reorderAndStringify(questionSet.jsonExam),
+            json: reorderAndStringify(questionSet.jsonExam),
             flashcardText: questionSet.textFlashcard || '',
             flashcardJson: reorderAndStringify(questionSet.jsonFlashcard)
         });
@@ -780,3 +780,5 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
   
   return <SavedQuestionSetPageContent id={id} />;
 }
+
+    
