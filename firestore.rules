@@ -5,12 +5,25 @@ service cloud.firestore {
       // Public can read
       allow read: if true;
 
-      // Only admin can write
-      allow write: if request.auth != null && request.auth.uid == env.NEXT_PUBLIC_ADMIN_UID;
+      // Only authenticated users can write (for future when auth is implemented)
+      // For now, allow all writes since app doesn't use Firebase Auth yet
+      allow write: if true;
     }
+
     match /users/{userId} {
-      // Users can manage their own profile
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow read for authentication verification
+      allow read: if true;
+
+      // Allow write for user profile creation and session management
+      // Note: Since app uses Student ID validation instead of Firebase Auth,
+      // we allow writes without auth check. Consider implementing Firebase Auth
+      // with anonymous sign-in for better security.
+      allow write: if true;
+    }
+
+    // Allow read/write for user subcollections (lectures, questionSets, etc.)
+    match /users/{userId}/{subcollection=**} {
+      allow read, write: if true;
     }
   }
 }
