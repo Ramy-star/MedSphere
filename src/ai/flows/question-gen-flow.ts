@@ -136,11 +136,7 @@ const generateQuestionsPrompt = ai.definePrompt({
 export async function generateQuestions(input: GenerateQuestionsInput): Promise<GeneratedQuestionData> {
     
     try {
-        const { output } = await ai.generate({
-          model: 'googleai/gemini-pro', // Explicitly use gemini-pro for tool calling
-          prompt: await generateQuestionsPrompt.render(input),
-          tools: [processLectureContentTool],
-        });
+        const { output } = await generateQuestionsPrompt(input);
         
         const toolCall = output.toolCalls?.[0];
 
