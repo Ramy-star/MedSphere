@@ -11,6 +11,7 @@ import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { reformatMarkdown } from './reformat-markdown-flow';
 import type { Lecture } from '@/lib/types';
+import { googleAI } from '@genkit-ai/google-genai';
 
 // --- Zod Schemas for Structured Output ---
 
@@ -135,7 +136,12 @@ const generateQuestionsPrompt = ai.definePrompt({
 export async function generateQuestions(input: GenerateQuestionsInput): Promise<GeneratedQuestionData> {
     
     try {
-        const { output } = await generateQuestionsPrompt(input);
+        const { output } = await ai.generate({
+          model: googleAI('gemini-pro'), // Explicitly use gemini-pro for tool calling
+          prompt: await generateQuestionsPrompt.render(input),
+          tools: [processLectureContentTool],
+        });
+        
         const toolCall = output.toolCalls?.[0];
 
         if (!toolCall || toolCall.name !== 'processLectureContent') {
