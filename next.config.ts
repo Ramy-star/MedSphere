@@ -18,6 +18,10 @@ const remotePatterns: Exclude<NextConfig['images'], undefined>['remotePatterns']
     protocol: 'https' as const,
     hostname: 'picsum.photos',
   },
+  {
+    protocol: 'https' as const,
+    hostname: 'medsphere.roumio777.workers.dev',
+  },
 ];
 
 // Dynamically add the worker hostname to remotePatterns if it's set
