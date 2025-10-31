@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
-import { generateText, convertQuestionsToJson, convertFlashcardsToJson } from '@/ai/flows/question-gen-flow';
+import { generateQuestionsText, convertQuestionsToJson, convertFlashcardsToJson } from '@/ai/flows/question-gen-flow';
+import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
 import type { Lecture } from '@/lib/types';
@@ -62,7 +63,7 @@ interface QuestionGenerationState {
   cancelConfirmation: () => void;
   abortGeneration: () => void;
   closeOptionsDialog: () => void;
-  convertTextToJson: (type: 'questions' | 'exam' | 'flashcards') => Promise<void>;
+  convertTextToJson: (type: 'questions' | 'exam' | 'flashcards', prompts: { json: string, examJson: string, flashcardJson: string }) => Promise<void>;
 }
 
 const updateTask = (state: QuestionGenerationState, partialTask: Partial<Omit<GenerationTask, 'abortController'>>): QuestionGenerationState => ({
@@ -96,8 +97,7 @@ async function runGenerationProcess(
         
         set(state => updateTask(state, { progress: 30 }));
         
-        const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
-        const documentText = await contentService.extractTextFromPdf(pdf);
+        const documentText = await contentService.extractTextFromPdf(fileBlob);
         
         set(state => updateTask(state, { documentText, progress: 50 }));
         
@@ -106,15 +106,15 @@ async function runGenerationProcess(
 
         if (generationOptions.generateQuestions) {
             set(state => updateTask(state, { status: 'generating_text', progress: 60 }));
-            results.textQuestions = await generateText({ prompt: prompts.gen, documentContent: documentText });
+            results.textQuestions = await generateQuestionsText({ prompt: prompts.gen, documentContent: documentText });
         }
         if (generationOptions.generateExam) {
             set(state => updateTask(state, { status: 'generating_exam_text', progress: 75 }));
-            results.textExam = await generateText({ prompt: prompts.examGen, documentContent: documentText });
+            results.textExam = await generateQuestionsText({ prompt: prompts.examGen, documentContent: documentText });
         }
         if (generationOptions.generateFlashcards) {
             set(state => updateTask(state, { status: 'generating_flashcard_text', progress: 90 }));
-            results.textFlashcard = await generateText({ prompt: prompts.flashcardGen, documentContent: documentText });
+            results.textFlashcard = await generateQuestionsText({ prompt: prompts.flashcardGen, documentContent: documentText });
         }
 
         if (signal.aborted) throw new Error('Aborted');
@@ -191,7 +191,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         runGenerationProcess(newTask, prompts, set, get);
     },
     
-    convertTextToJson: async (type) => {
+    convertTextToJson: async (type, prompts) => {
         const { task } = get();
         if (!task || !task.documentText) return;
 

@@ -46,7 +46,7 @@ const generateTextPrompt = ai.definePrompt({
     `,
 });
 
-export async function generateText(input: GenerateTextInput): Promise<string> {
+export async function generateQuestionsText(input: GenerateTextInput): Promise<string> {
     try {
         const { text } = await generateTextPrompt(input);
         return text;
