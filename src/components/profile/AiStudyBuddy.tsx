@@ -4,8 +4,6 @@ import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
-import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
 import type { UserProfile } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import ReactMarkdown from 'react-markdown';
@@ -125,7 +123,41 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             favoritesCount: user.favorites?.length || 0,
         };
         try {
-            const result = await getStudyBuddyInsight({greeting, ...userStats});
+            // Call the API route instead of direct server action
+            const response = await fetch('/api/ai/study-buddy', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    lectures: [], // Pass actual data if available
+                    questionSets: [],
+                    studySessions: [],
+                }),
+            });
+
+            if (!response.ok) {
+                throw new Error('Failed to fetch study buddy insight');
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to fetch study buddy insight');
+            }
+
+            // Parse the AI response to extract the structured data
+            // For now, we'll use the insight as the mainInsight
+            const result: InitialInsight = {
+                greeting: greeting,
+                mainInsight: data.insight,
+                suggestedActions: [
+                    { label: 'Study Tips', prompt: 'Can you give me some study tips?' },
+                    { label: 'My Progress', prompt: 'How am I doing with my studies?' },
+                    { label: 'Next Steps', prompt: 'What should I focus on next?' },
+                ],
+            };
+
             setInitialInsight(result);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
@@ -148,26 +180,43 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: prompt }];
         setChatHistory(newHistory);
         setIsResponding(true);
-        
+
         try {
-            const userStats = {
-                displayName: user.displayName || user.username,
-                username: user.username,
-                filesUploaded: user.stats?.filesUploaded || 0,
-                foldersCreated: user.stats?.foldersCreated || 0,
-                examsCompleted: user.stats?.examsCompleted || 0,
-                aiQueries: user.stats?.aiQueries || 0,
-                favoritesCount: user.favorites?.length || 0,
-            };
-            const response = await answerStudyBuddyQuery({
-                userStats,
-                question: prompt,
-                chatHistory: newHistory.slice(0, -1),
+            // Prepare conversation history in Genkit format
+            const conversationHistory = newHistory.slice(0, -1).map(msg => ({
+                role: msg.role,
+                parts: [{ text: msg.text }]
+            }));
+
+            // Call the API route instead of direct server action
+            const response = await fetch('/api/ai/study-buddy-chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    query: prompt,
+                    lectures: [], // Pass actual data if available
+                    questionSets: [],
+                    studySessions: [],
+                    conversationHistory,
+                }),
             });
-            setChatHistory(prev => [...prev, { role: 'model', text: response }]);
+
+            if (!response.ok) {
+                throw new Error('Failed to get study buddy response');
+            }
+
+            const data = await response.json();
+
+            if (!data.success) {
+                throw new Error(data.error || 'Failed to get study buddy response');
+            }
+
+            setChatHistory(prev => [...prev, { role: 'model', text: data.answer }]);
         } catch (e) {
             console.error("Failed to get answer from study buddy", e);
-             toast({
+            toast({
                 variant: 'destructive',
                 title: 'Error',
                 description: "Sorry, I couldn't process that request. Please try again.",

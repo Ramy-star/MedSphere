@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
-import { generateText, convertQuestionsToJson, convertFlashcardsToJson } from '@/ai/flows/question-gen-flow';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -68,6 +67,35 @@ const updateTask = (state: QuestionGenerationState, partialTask: Partial<Omit<Ge
   task: state.task ? { ...state.task, ...partialTask } : null,
 });
 
+/**
+ * Helper function to call the question generation API
+ */
+async function callQuestionsAPI(action: string, payload: any): Promise<any> {
+    const response = await fetch('/api/ai/generate-questions', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            action,
+            ...payload,
+        }),
+    });
+
+    if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'API request failed');
+    }
+
+    const data = await response.json();
+
+    if (!data.success) {
+        throw new Error(data.error || 'API request failed');
+    }
+
+    return data.result;
+}
+
 async function runGenerationProcess(
     initialTask: GenerationTask,
     prompts: {gen: string, json: string, examGen: string, examJson: string, flashcardGen: string, flashcardJson: string},
@@ -129,35 +157,53 @@ async function runGenerationProcess(
                     break;
                 
                 case 'generating_text':
-                    textQuestions = await generateText({ prompt: prompts.gen, documentContent: documentText! });
+                    textQuestions = await callQuestionsAPI('generateText', {
+                        prompt: prompts.gen,
+                        documentContent: documentText!
+                    });
                     set(state => updateTask(state, { textQuestions }));
                     break;
 
                 case 'converting_json':
                     const lectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
-                    jsonQuestions = await convertQuestionsToJson({ lectureName: lectureName, questionsText: textQuestions! });
+                    jsonQuestions = await callQuestionsAPI('convertQuestions', {
+                        lectureName: lectureName,
+                        questionsText: textQuestions!
+                    });
                     set(state => updateTask(state, { jsonQuestions }));
                     break;
                 
                 case 'generating_exam_text':
-                    textExam = await generateText({ prompt: prompts.examGen, documentContent: documentText! });
+                    textExam = await callQuestionsAPI('generateText', {
+                        prompt: prompts.examGen,
+                        documentContent: documentText!
+                    });
                     set(state => updateTask(state, { textExam }));
                     break;
                 
                 case 'converting_exam_json':
                     const examLectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
-                    jsonExam = await convertQuestionsToJson({ lectureName: examLectureName, questionsText: textExam! });
+                    jsonExam = await callQuestionsAPI('convertQuestions', {
+                        lectureName: examLectureName,
+                        questionsText: textExam!
+                    });
                     set(state => updateTask(state, { jsonExam }));
                     break;
 
                 case 'generating_flashcard_text':
-                    textFlashcard = await generateText({ prompt: prompts.flashcardGen, documentContent: documentText! });
+                    textFlashcard = await callQuestionsAPI('generateText', {
+                        prompt: prompts.flashcardGen,
+                        documentContent: documentText!
+                    });
                     set(state => updateTask(state, { textFlashcard }));
                     break;
 
                 case 'converting_flashcard_json':
                     const flashcardLectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
-                    jsonFlashcard = await convertFlashcardsToJson({ lectureName: flashcardLectureName, flashcardsText: textFlashcard! });
+                    jsonFlashcard = await callQuestionsAPI('convertFlashcards', {
+                        lectureName: flashcardLectureName,
+                        flashcardsText: textFlashcard!
+                    });
                     set(state => updateTask(state, { jsonFlashcard }));
                     break;
 

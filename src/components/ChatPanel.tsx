@@ -4,7 +4,6 @@ import React, { useEffect, useState, useRef, useCallback } from 'react';
 import { Button } from './ui/button';
 import { X, RefreshCw, Check, Minus, Plus, ArrowUp, CornerRightDown, ChevronDown, Lightbulb } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { chatAboutDocument } from '@/ai/flows/chat-flow';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -405,44 +404,95 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
            return;
         }
 
+        // Prepare user message with quoted text if present
         let fullQuestionForModel = trimmedQuestion;
         if(localQuotedText) {
             fullQuestionForModel = `Regarding this quote:\n\n> ${localQuotedText}\n\n${trimmedQuestion}`;
         }
-        
+
         const userMessage: ChatMessage = {
             role: 'user',
             text: trimmedQuestion,
             quotedText: localQuotedText,
         };
-        
+
         setChatHistory(prev => [...prev, userMessage]);
         setIsAiThinking(true);
         abortControllerRef.current = new AbortController();
-        
+
         try {
-            const response = await chatAboutDocument({
-                question: fullQuestionForModel,
-                documentContent: documentText,
-                chatHistory: historyToUse,
-                hasQuestions: !!questionsText,
-                questionsContent: questionsText || '',
-            }, { signal: abortControllerRef.current.signal });
-            
-            setChatHistory(prev => [...historyToUse, userMessage, { role: 'model', text: response }]);
+            // Prepare conversation history in Genkit format
+            const conversationHistory = historyToUse.map(msg => ({
+                role: msg.role,
+                parts: [{ text: msg.text }]
+            }));
+
+            // Prepare document content with questions if available
+            let enhancedDocumentContent = documentText;
+            if (questionsText) {
+                enhancedDocumentContent = `${documentText}\n\n--- Generated Questions ---\n${questionsText}`;
+            }
+
+            // Call the API route
+            const apiResponse = await fetch('/api/ai/chat', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    conversationHistory,
+                    userMessage: fullQuestionForModel,
+                    documentContent: enhancedDocumentContent,
+                    fileName: 'Document', // You can pass actual fileName if available
+                }),
+                signal: abortControllerRef.current.signal,
+            });
+
+            if (!apiResponse.ok) {
+                const errorData = await apiResponse.json();
+                throw new Error(errorData.error || 'AI request failed');
+            }
+
+            const data = await apiResponse.json();
+
+            if (!data.success) {
+                throw new Error(data.error || 'AI request failed');
+            }
+
+            // Add AI response to chat history
+            setChatHistory(prev => [...historyToUse, userMessage, { role: 'model', text: data.response }]);
 
         } catch (error: any) {
             if (error.name === 'AbortError') {
               console.log("Chat request aborted.");
               setChatHistory(prev => [...historyToUse, userMessage]);
             } else {
-                console.error("Error calling AI flow:", error);
+                console.error("Error calling AI API:", error);
+
+                // Provide user-friendly error messages
+                let errorTitle = "AI Assistant Error";
+                let errorDescription = "The AI assistant could not be reached. Please try again later.";
+
+                if (error.message.includes('API key')) {
+                    errorTitle = "Configuration Error";
+                    errorDescription = "AI service is not properly configured. Please contact support.";
+                } else if (error.message.includes('quota')) {
+                    errorTitle = "Service Limit Reached";
+                    errorDescription = "AI service quota exceeded. Please try again later.";
+                } else if (error.message.includes('timeout')) {
+                    errorTitle = "Request Timeout";
+                    errorDescription = "The AI request took too long. Please try again.";
+                } else if (error.message.includes('network')) {
+                    errorTitle = "Network Error";
+                    errorDescription = "Please check your internet connection and try again.";
+                }
+
                 toast({
                     variant: "destructive",
-                    title: "AI Assistant Error",
-                    description: "The AI assistant could not be reached. Please try again later."
+                    title: errorTitle,
+                    description: errorDescription
                 });
-                 setChatHistory(prev => [...historyToUse, userMessage]);
+                setChatHistory(prev => [...historyToUse, userMessage]);
             }
         } finally {
             setIsAiThinking(false);
