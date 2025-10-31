@@ -1,5 +1,5 @@
-
 import type {Config} from 'tailwindcss';
+import { fontFamily } from 'tailwindcss/defaultTheme';
 
 const config = {
   darkMode: ['class'],
@@ -18,6 +18,12 @@ const config = {
       },
     },
     extend: {
+      fontFamily: {
+        sans: ['var(--font-nunito-sans)', ...fontFamily.sans],
+        ubuntu: ['var(--font-ubuntu)', ...fontFamily.sans],
+        inter: ['var(--font-inter)', ...fontFamily.sans],
+        'plex-arabic': ['"IBM Plex Sans Arabic"', 'sans-serif'],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
