@@ -137,7 +137,7 @@ export async function generateQuestions(input: GenerateQuestionsInput): Promise<
     
     try {
         const { output } = await ai.generate({
-          model: googleAI('gemini-pro'), // Explicitly use gemini-pro for tool calling
+          model: 'googleai/gemini-pro', // Explicitly use gemini-pro for tool calling
           prompt: await generateQuestionsPrompt.render(input),
           tools: [processLectureContentTool],
         });
@@ -208,7 +208,7 @@ export async function generateQuestions(input: GenerateQuestionsInput): Promise<
                 flashcards: toolInput.flashcards,
             };
             generatedData.jsonFlashcard = flashcardJson;
-            generatedData.textFlashcard = toolInput.flashcards.map((f: Flashcard) => `Front: ${f.front}\nBack: ${f.back}`).join('\n\n');
+            generatedData.textFlashcard = toolInput.flashcards.map((f: any) => `Front: ${f.front}\nBack: ${f.back}`).join('\n\n');
         }
         
         return generatedData;
