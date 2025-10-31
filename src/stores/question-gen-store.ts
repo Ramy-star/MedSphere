@@ -2,10 +2,10 @@
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
 import { generateQuestionsText, generateExamText, generateFlashcardsText, convertQuestionsToJson, convertFlashcardsToJson } from '@/ai/flows/question-gen-flow';
-import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import * as pdfjs from 'pdfjs-dist';
 import { useAuthStore } from './auth-store';
+import * as pdfjs from 'pdfjs-dist';
 
 if (typeof window !== 'undefined') {
     pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -90,7 +90,7 @@ async function runGenerationProcess(
         set(state => {
             if (!state.task) return {};
             const newTask = { ...state.task };
-            const statusKey = type; // Direct mapping
+            const statusKey = type;
             
             if (newTask.status[statusKey]) {
                 newTask.status[statusKey] = {
@@ -99,19 +99,18 @@ async function runGenerationProcess(
                     error: error || null,
                 };
             }
-
+            
             const keyMap: Record<keyof GenerationOptions, GenerationType> = {
                 generateQuestions: 'questions',
                 generateExam: 'exam',
                 generateFlashcards: 'flashcards'
             };
-            
+
             const allDone = Object.keys(state.task.generationOptions)
                 .filter(key => state.task!.generationOptions[key as keyof GenerationOptions])
                 .every(key => {
                     const statusKey = keyMap[key as keyof GenerationOptions];
                     const taskStatus = newTask.status[statusKey];
-                    // A task is considered "done" if it completed or errored out.
                     return taskStatus.status === 'completed' || taskStatus.status === 'error';
                 });
 
@@ -304,7 +303,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
 
     retryGeneration: (type, prompts) => {
         const { task } = get();
-        if(!task || task.status[type].status !== 'error') return;
+        if(!task) return; // Only retry if there is a task.
         
         const newAbortController = new AbortController();
         const newTask = { ...task, abortController: newAbortController };

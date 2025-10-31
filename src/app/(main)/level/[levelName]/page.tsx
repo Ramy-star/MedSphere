@@ -11,7 +11,7 @@ import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
-  const { levelName } = params;
+  const { levelName } = React.use(params);
   const router = useRouter();
   // Firestore queries are case-sensitive. Decoding should be sufficient.
   const decodedLevelName = decodeURIComponent(levelName);

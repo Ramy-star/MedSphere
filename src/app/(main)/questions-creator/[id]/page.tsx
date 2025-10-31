@@ -52,7 +52,7 @@ type EditingContentState = {
 };
 
 function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const { id } = React.use(params);
   const router = useRouter();
   const { studentId, can } = useAuthStore();
   const { convertExistingTextToJson } = useQuestionGenerationStore();
@@ -294,7 +294,7 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
         flashcardText: { action: 'create_flashcard' as const, Icon: FlashcardIcon, label: 'Create Interactive Flashcards', conversionType: 'flashcards' as const },
     };
     
-    const config = interactiveButtonConfig[type];
+    const config = interactiveButtonConfig[type as keyof typeof interactiveButtonConfig];
 
     return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
@@ -524,7 +524,6 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
 }
 
 export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
-  // const { id } = React.use(params);
   const { studentId, loading } = useAuthStore();
 
   if (loading) {
