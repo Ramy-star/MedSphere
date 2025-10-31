@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
@@ -38,6 +39,12 @@ type TimeOfDayTheme = {
     bgColor: string;
     textColor: string;
     iconColor: string;
+};
+
+// Helper function to detect RTL text
+const isRtl = (text: string) => {
+  const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFF\uFE70-\uFEFC]/;
+  return rtlRegex.test(text);
 };
 
 
@@ -277,7 +284,10 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                             </div>
                         )}
                         {message.role === 'model' && (
-                            <div dir="auto" className="self-start text-slate-300 max-w-[95%] prose prose-sm prose-invert" style={{fontSize: 'inherit'}}>
+                             <div dir="auto" className={cn(
+                                "text-slate-300 max-w-[95%] prose prose-sm prose-invert",
+                                isRtl(message.text) ? "self-end text-right" : "self-start text-left"
+                             )} style={{fontSize: 'inherit'}}>
                                 <ReactMarkdown 
                                     remarkPlugins={[remarkGfm]}
                                     components={{
@@ -285,7 +295,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                         thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
                                         tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
                                         th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
-                                        td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top last:border-r-0" {...props} />,
+                                        td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top" {...props} />,
                                     }}
                                 >
                                     {message.text}

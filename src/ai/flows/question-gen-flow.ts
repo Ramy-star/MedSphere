@@ -109,16 +109,58 @@ const convertQuestionsToJsonPrompt = ai.definePrompt({
     input: { schema: ConvertInputSchema },
     output: { schema: QuestionsOutputSchema },
     prompt: `
-        You are a data conversion expert. Convert the following text, which contains medical questions, into a structured JSON object.
-        The JSON object must conform to the specified output schema.
-        Set the 'id' and 'name' of the JSON output to the provided lecture name.
-        
-        LECTURE NAME: {{{lectureName}}}
+        You are a data conversion machine. Your ONLY job is to perform a direct, 1-to-1 conversion of the provided text into a JSON object.
+        - **DO NOT** change, rephrase, add, or omit any content.
+        - **DO NOT** create new questions or answers.
+        - Your output MUST be ONLY the JSON object, perfectly matching the provided schema.
+        - The 'id' and 'name' of the JSON output MUST be the provided lecture name.
+        - Every question, option, and answer from the text MUST be present in the JSON.
+        - The order of questions and options MUST be preserved exactly.
 
+        **EXAMPLE INPUT TEXT:**
+        Level 1 MCQs:
+        1. What is the capital of France?
+        a) Berlin
+        b) Madrid
+        c) Paris
+        d) Rome
+        e) London
+        Answer: c) Paris
+
+        2. What is 2 + 2?
+        a) 3
+        b) 4
+        c) 5
+        d) 6
+        e) 7
+        Answer: b) 4
+        
+        **EXAMPLE JSON OUTPUT for the input above:**
+        {
+          "id": "Example Lecture",
+          "name": "Example Lecture",
+          "mcqs_level_1": [
+            {
+              "q": "1. What is the capital of France?",
+              "o": ["a) Berlin", "b) Madrid", "c) Paris", "d) Rome", "e) London"],
+              "a": "c) Paris"
+            },
+            {
+              "q": "2. What is 2 + 2?",
+              "o": ["a) 3", "b) 4", "c) 5", "d) 6", "e) 7"],
+              "a": "b) 4"
+            }
+          ]
+        }
+
+        ---
+        LECTURE NAME: {{{lectureName}}}
+        
         TEXT TO CONVERT:
         {{{text}}}
     `,
 });
+
 
 const convertFlashcardsToJsonPrompt = ai.definePrompt({
     name: 'convertFlashcardsToJsonPrompt',
@@ -143,6 +185,7 @@ export async function convertQuestionsToJson(input: ConvertInput): Promise<objec
             throw new Error("AI returned no output for JSON conversion.");
         }
         
+        // Reformat markdown in answers for written questions
         if (output.written) {
             for (const writtenCase of output.written) {
                 if (writtenCase.subqs && Array.isArray(writtenCase.subqs)) {
@@ -176,3 +219,4 @@ export async function convertFlashcardsToJson(input: ConvertInput): Promise<obje
         throw new Error(message);
     }
 }
+
