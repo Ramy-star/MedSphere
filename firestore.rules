@@ -1,16 +1,34 @@
+
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
+    // Allow any authenticated user to read content
     match /content/{contentId} {
-      // Public can read
-      allow read: if true;
-
-      // Only admin can write
-      allow write: if request.auth != null && request.auth.uid == env.NEXT_PUBLIC_ADMIN_UID;
+      allow read: if request.auth != null;
+      // Write access can be more restrictive, e.g., for admins or content owners
+      // For now, let's keep it restricted to prevent accidental writes.
+      allow write: if false; // Example: change to your admin logic if needed
     }
+
+    // Users can read their own profile, and only write to their own profile
     match /users/{userId} {
-      // Users can manage their own profile
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Rules for subcollections
+    match /users/{userId}/{allSubcollections=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /claimedStudentIds/{studentId} {
+        allow read, write: if request.auth != null;
+    }
+
+    match /auditLogs/{logId} {
+        allow read: if request.auth != null; // Or restrict to admins
+        allow write: if false; // Only server/trusted clients should write audit logs
     }
   }
 }

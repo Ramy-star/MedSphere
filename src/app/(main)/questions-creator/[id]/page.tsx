@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, ChevronDown } from 'lucide-react';
@@ -124,7 +124,8 @@ type EditingContentState = {
     flashcardJson: string;
 };
 
-function SavedQuestionSetPageContent({ id }: { id: string }) {
+function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
+  const { id } = React.use(params);
   const router = useRouter();
   const { studentId, can } = useAuthStore();
   const { data: questionSet, loading } = useDoc<SavedQuestionSet>(studentId ? `users/${studentId}/questionSets` : '', id, {
@@ -758,7 +759,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   );
 }
 
-export default function SavedQuestionSetPage({ params: { id } }: { params: { id: string } }) {
+export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
   const { studentId, loading } = useAuthStore();
 
   if (loading) {
@@ -774,5 +775,5 @@ export default function SavedQuestionSetPage({ params: { id } }: { params: { id:
     return <div className="text-center p-8">Please log in to view saved questions.</div>
   }
   
-  return <SavedQuestionSetPageContent id={id} />;
+  return <SavedQuestionSetPageContent params={params} />;
 }

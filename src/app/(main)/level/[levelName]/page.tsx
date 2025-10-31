@@ -3,16 +3,15 @@
 
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import React from 'react';
 import { prefetcher } from '@/lib/prefetchService';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
-  const { levelName } = params;
+  const { levelName } = React.use(params);
   const router = useRouter();
   // Firestore queries are case-sensitive. Decoding should be sufficient.
   const decodedLevelName = decodeURIComponent(levelName);
