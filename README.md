@@ -1,4 +1,3 @@
-
 <div align="center">
   <img src="public/logo.svg" alt="MedSphere Logo" width="120">
   <h1 align="center">MedSphere</h1>
@@ -36,12 +35,12 @@
 
 This project is built with a modern, scalable, and type-safe technology stack:
 
--   **[Next.js](https://nextjs.org/)**: The React Framework for production, utilizing the App Router.
--   **[React](https://reactjs.org/)** & **[TypeScript](https://www.typescriptlang.org/)**: For building a type-safe, component-based UI.
--   **[Tailwind CSS](https://tailwindcss.com/)** & **[ShadCN UI](https://ui.shadcn.com/)**: For a utility-first, modern, and accessible design system.
--   **[Firebase](https://firebase.google.com/)**: Handles database (Firestore) and authentication.
--   **[Cloudinary](https://cloudinary.com/)**: Manages all file storage, uploads, and optimized delivery.
--   **[Genkit (Google AI)](https://firebase.google.com/docs/genkit)**: Powers all generative AI features, from document chat to question generation.
--   **[Zustand](https://zustand-demo.pmnd.rs/)**: For lightweight and efficient global state management.
--   **[Framer Motion](https://www.framer.com/motion/)**: For smooth and fluid animations.
--   **[Lucide React](https://lucide.dev/)**: For a beautiful and consistent icon set.
+-   **Framework**: [Next.js](https://nextjs.org/) (App Router)
+-   **UI**: [React](https://reactjs.org/) & [TypeScript](https://www.typescriptlang.org/)
+-   **Styling**: [Tailwind CSS](https://tailwindcss.com/) & [ShadCN UI](https://ui.shadcn.com/)
+-   **Backend & Database**: [Firebase](https://firebase.google.com/) (Firestore, Authentication)
+-   **File Storage**: [Cloudinary](https://cloudinary.com/)
+-   **Generative AI**: [Genkit (Google AI)](https://firebase.google.com/docs/genkit)
+-   **State Management**: [Zustand](https://zustand-demo.pmnd.rs/)
+-   **Animations**: [Framer Motion](https://www.framer.com/motion/)
+-   **Icons**: [Lucide React](https://lucide.dev/)
