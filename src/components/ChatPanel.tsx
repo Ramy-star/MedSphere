@@ -44,6 +44,13 @@ type ChatMessage = {
     quotedText?: string;
 };
 
+// Helper function to detect RTL text
+const isRtl = (text: string) => {
+  const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFF\uFE70-\uFEFC]/;
+  return rtlRegex.test(text);
+};
+
+
 type ChatMessageProps = {
     msg: ChatMessage;
     onRegenerate: () => void;
@@ -85,8 +92,9 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onRegenerate, isLastM
                 <div 
                     dir="auto"
                     className={cn(
-                        "rounded-[28px] px-4 py-2.5 max-w-[90%] selectable self-end text-white font-inter", 
-                        fontSizeClass
+                        "rounded-[28px] px-4 py-2.5 max-w-[90%] selectable self-end text-white", 
+                        fontSizeClass,
+                        isRtl(msg.text) ? 'font-plex-arabic' : 'font-inter'
                     )} 
                     style={{backgroundColor: '#003f7a', wordBreak: 'break-word', whiteSpace: 'pre-wrap'}}
                 >
@@ -99,8 +107,8 @@ const ChatMessage = React.memo(function ChatMessage({ msg, onRegenerate, isLastM
     const showActions = !isAiThinking && isLastMessage;
 
     return (
-        <div className="group/message">
-            <div dir="auto" className="relative font-inter selectable">
+        <div className={cn("group/message", isRtl(msg.text) ? 'font-plex-arabic' : 'font-inter')}>
+            <div dir="auto" className="relative selectable">
                  <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     className={cn("prose prose-sm max-w-full", fontSizeClass)}
@@ -269,8 +277,9 @@ const ChatInputForm = React.memo(function ChatInputForm({
                         ref={textareaRef}
                         dir="auto"
                         className={cn(
-                            "w-full bg-transparent py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 font-inter no-scrollbar",
-                            "border-0 rounded-[28px]"
+                            "w-full bg-transparent py-3 pl-4 pr-12 text-white placeholder-[#9A9A9A] h-auto min-h-[52px] max-h-[150px] resize-none overflow-y-auto focus-visible:ring-0 focus-visible:ring-offset-0 no-scrollbar",
+                            "border-0 rounded-[28px]",
+                             isRtl(chatInput) ? 'font-plex-arabic' : 'font-inter'
                         )}
                         placeholder="Ask anything..."
                         value={chatInput}
@@ -547,7 +556,7 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
             <div ref={messagesContainerRef} className="flex-1 overflow-y-auto">
                  <div className="space-y-4 px-4 sm:px-6 pt-4 sm:pt-6 pb-2 sm:pb-3 selectable">
                     {chatHistory.length === 0 && !isAiThinking && (
-                        <div className={cn("prose prose-sm max-w-full font-inter", fontSizes[fontSizeIndex])}>
+                        <div className={cn("prose prose-sm max-w-full", fontSizes[fontSizeIndex])}>
                             {isExtracting ? (
                                 <div className="flex flex-col gap-4">
                                   <div className="flex items-center gap-2 text-white">

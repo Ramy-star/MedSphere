@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
@@ -277,7 +276,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             </div>
              <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
                 {chatHistory.map((message, index) => (
-                    <div key={message.text + index} className="flex flex-col gap-2">
+                    <div key={message.text + index} className={cn("flex flex-col gap-2", isRtl(message.text) ? 'font-plex-arabic' : 'font-inter')}>
                         {message.role === 'user' && (
                              <div dir="auto" className="self-end bg-blue-600 text-white rounded-2xl px-3 py-2 max-w-[85%] whitespace-pre-wrap break-words" style={{fontSize: 'inherit'}}>
                                 {message.text}
@@ -387,7 +386,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                     <Textarea
                                         ref={textareaRef}
                                         placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up..."}
-                                        className="flex-1 bg-slate-800/60 border-slate-700 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0"
+                                        className={cn("flex-1 bg-slate-800/60 border-slate-700 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
                                         value={customQuestion}
                                         onChange={(e) => setCustomQuestion(e.target.value)}
                                         onKeyDown={handleCustomQuestionKeyDown}
