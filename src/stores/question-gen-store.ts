@@ -6,6 +6,11 @@ import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
 //import { Router } from 'next/router'; // Although we can't use it here, it's a reminder of navigation
 import type { Lecture } from '@/lib/types';
+import * as pdfjs from 'pdfjs-dist';
+
+if (typeof window !== 'undefined') {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+}
 
 
 type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | 'completed' | 'error';
@@ -123,7 +128,8 @@ async function runGenerationProcess(
                             throw new Error("No file content or URL provided.");
                         }
 
-                        documentText = await contentService.extractTextFromPdf(fileBlob);
+                        const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
+                        documentText = await contentService.extractTextFromPdf(pdf);
                         set(state => updateTask(state, { documentText }));
                     }
                     break;

@@ -99,22 +99,29 @@ export const contentService = {
         return blob;
     },
     
-    async extractTextFromPdf(pdfBlob: Blob): Promise<string> {
-        const pdf = await pdfjs.getDocument(URL.createObjectURL(pdfBlob)).promise;
-        const maxPages = pdf.numPages;
+    async extractTextFromPdf(pdf: PDFDocumentProxy | Blob): Promise<string> {
+        let pdfDoc: PDFDocumentProxy;
+        if (pdf instanceof Blob) {
+            pdfDoc = await pdfjs.getDocument(await pdf.arrayBuffer()).promise;
+        } else {
+            pdfDoc = pdf;
+        }
+
+        const maxPages = pdfDoc.numPages;
         const textPromises: Promise<string>[] = [];
+
         for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
             textPromises.push(
-                pdf.getPage(pageNum)
+                pdfDoc.getPage(pageNum)
                 .then(async (page) => {
                     const textContent = await page.getTextContent();
                     return textContent.items
-                    .map((item: any) => item.str) // Type assertion to access 'str'
+                    .map((item: any) => item.str)
                     .join(' ');
                 })
                 .catch((error) => {
                     console.error(`Error extracting text from page ${pageNum}:`, error);
-                    return ''; // Return empty string on error to not fail the whole process
+                    return '';
                 })
             );
         }
