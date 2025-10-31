@@ -132,103 +132,89 @@ const generateQuestionsPrompt = ai.definePrompt({
     `,
 });
 
-const isRetriableError = (error: any): boolean => {
-    const errorMessage = error.message?.toLowerCase() || '';
-    const retriableStrings = ['500', '503', '504', 'overloaded', 'timed out', 'service unavailable', 'deadline exceeded'];
-    return retriableStrings.some(s => errorMessage.includes(s));
-};
-
 export async function generateQuestions(input: GenerateQuestionsInput): Promise<GeneratedQuestionData> {
     
-    let lastError: any = null;
-    const maxRetries = 3;
-    let delay = 1000;
+    try {
+        const { output } = await generateQuestionsPrompt(input);
+        const toolCall = output.toolCalls?.[0];
 
-    for (let i = 0; i < maxRetries; i++) {
-        try {
-            const { output } = await generateQuestionsPrompt(input);
-            const toolCall = output.toolCalls?.[0];
+        if (!toolCall || toolCall.name !== 'processLectureContent') {
+            throw new Error("AI failed to generate structured content using the required tool.");
+        }
+        
+        const toolInput = toolCall.input;
+        const lectureId = input.lectureName.toLowerCase().replace(/\s+/g, '-').slice(0, 50);
 
-            if (!toolCall || toolCall.name !== 'processLectureContent') {
-                throw new Error("AI failed to generate structured content using the required tool.");
-            }
-            
-            const toolInput = toolCall.input;
-            const lectureId = input.lectureName.toLowerCase().replace(/\s+/g, '-').slice(0, 50);
+        const generatedData: GeneratedQuestionData = {
+            textQuestions: '',
+            jsonQuestions: {},
+            textExam: '',
+            jsonExam: {},
+            textFlashcard: '',
+            jsonFlashcard: {},
+        };
 
-            const generatedData: GeneratedQuestionData = {
-                textQuestions: '',
-                jsonQuestions: {},
-                textExam: '',
-                jsonExam: {},
-                textFlashcard: '',
-                jsonFlashcard: {},
+        // Process and Reformat Questions/Exams
+        if (input.generationOptions.generateQuestions || input.generationOptions.generateExam) {
+            const lectureJson: Partial<Lecture> = {
+                id: lectureId,
+                name: input.lectureName,
             };
 
-            // Process and Reformat Questions/Exams
-            if (input.generationOptions.generateQuestions || input.generationOptions.generateExam) {
-                const lectureJson: Partial<Lecture> = {
-                    id: lectureId,
-                    name: input.lectureName,
-                };
-
-                if (toolInput.mcqs_level_1) lectureJson.mcqs_level_1 = toolInput.mcqs_level_1;
-                if (toolInput.mcqs_level_2) lectureJson.mcqs_level_2 = toolInput.mcqs_level_2;
-                if (toolInput.written) {
-                    for (const writtenCase of toolInput.written) {
-                        if (writtenCase.subqs && Array.isArray(writtenCase.subqs)) {
-                            for (const subq of writtenCase.subqs) {
-                                if (subq.a) {
-                                    subq.a = await reformatMarkdown({ rawText: subq.a });
-                                }
+            if (toolInput.mcqs_level_1) lectureJson.mcqs_level_1 = toolInput.mcqs_level_1;
+            if (toolInput.mcqs_level_2) lectureJson.mcqs_level_2 = toolInput.mcqs_level_2;
+            if (toolInput.written) {
+                for (const writtenCase of toolInput.written) {
+                    if (writtenCase.subqs && Array.isArray(writtenCase.subqs)) {
+                        for (const subq of writtenCase.subqs) {
+                            if (subq.a) {
+                                subq.a = await reformatMarkdown({ rawText: subq.a });
                             }
                         }
                     }
-                    lectureJson.written = toolInput.written;
                 }
+                lectureJson.written = toolInput.written;
+            }
 
-                generatedData.jsonQuestions = lectureJson; // Store as a single object for both
-                generatedData.jsonExam = lectureJson;      // This simplifies the client logic
+            generatedData.jsonQuestions = lectureJson; // Store as a single object for both
+            generatedData.jsonExam = lectureJson;      // This simplifies the client logic
 
-                // Generate text representations
-                let questionsText = '';
-                if (lectureJson.mcqs_level_1?.length) {
-                    questionsText += 'MCQs Level 1:\n' + lectureJson.mcqs_level_1.map(q => `${q.q}\n${q.o.join('\n')}\nAnswer: ${q.a}`).join('\n\n');
-                }
-                if (lectureJson.mcqs_level_2?.length) {
-                    questionsText += '\n\nMCQs Level 2:\n' + lectureJson.mcqs_level_2.map(q => `${q.q}\n${q.o.join('\n')}\nAnswer: ${q.a}`).join('\n\n');
-                }
-                if (lectureJson.written?.length) {
-                    questionsText += '\n\nWritten Cases:\n' + lectureJson.written.map(c => `Case: ${c.case}\n` + c.subqs.map(s => `${s.q}\nAnswer: ${s.a}`).join('\n')).join('\n\n');
-                }
-                generatedData.textQuestions = questionsText;
-                generatedData.textExam = questionsText; // Same text for both
+            // Generate text representations
+            let questionsText = '';
+            if (lectureJson.mcqs_level_1?.length) {
+                questionsText += 'MCQs Level 1:\n' + lectureJson.mcqs_level_1.map(q => `${q.q}\n${q.o.join('\n')}\nAnswer: ${q.a}`).join('\n\n');
             }
-            
-            // Process Flashcards
-            if (input.generationOptions.generateFlashcards && toolInput.flashcards) {
-                const flashcardJson = {
-                    id: lectureId,
-                    name: input.lectureName,
-                    flashcards: toolInput.flashcards,
-                };
-                generatedData.jsonFlashcard = flashcardJson;
-                generatedData.textFlashcard = toolInput.flashcards.map((f: Flashcard) => `Front: ${f.front}\nBack: ${f.back}`).join('\n\n');
+            if (lectureJson.mcqs_level_2?.length) {
+                questionsText += '\n\nMCQs Level 2:\n' + lectureJson.mcqs_level_2.map(q => `${q.q}\n${q.o.join('\n')}\nAnswer: ${q.a}`).join('\n\n');
             }
-            
-            return generatedData; // Success, exit loop
-        } catch (error: any) {
-            lastError = error;
-            if (!isRetriableError(error) || i === maxRetries - 1) {
-                throw error; // Not a retriable error or last attempt, re-throw
+            if (lectureJson.written?.length) {
+                questionsText += '\n\nWritten Cases:\n' + lectureJson.written.map(c => `Case: ${c.case}\n` + c.subqs.map(s => `${s.q}\nAnswer: ${s.a}`).join('\n')).join('\n\n');
             }
-            console.log(`Attempt ${i + 1} failed with retriable error. Retrying in ${delay}ms...`);
-            await new Promise(resolve => setTimeout(resolve, delay));
-            delay *= 2; // Exponential backoff
+            generatedData.textQuestions = questionsText;
+            generatedData.textExam = questionsText; // Same text for both
         }
+        
+        // Process Flashcards
+        if (input.generationOptions.generateFlashcards && toolInput.flashcards) {
+            const flashcardJson = {
+                id: lectureId,
+                name: input.lectureName,
+                flashcards: toolInput.flashcards,
+            };
+            generatedData.jsonFlashcard = flashcardJson;
+            generatedData.textFlashcard = toolInput.flashcards.map((f: Flashcard) => `Front: ${f.front}\nBack: ${f.back}`).join('\n\n');
+        }
+        
+        return generatedData;
+    } catch (error: any) {
+        console.error("Error in generateQuestions flow:", error);
+        
+        // Check for specific non-retriable errors from the GenAI service
+        if (error.message && (error.message.includes('400 Bad Request') || error.message.includes('INVALID_ARGUMENT'))) {
+            throw new Error(`The AI model rejected the request due to invalid input. This might be due to the document's content or length. Details: ${error.message}`);
+        }
+        
+        // Re-throw other errors to be handled by the client
+        throw error;
     }
-    
-    // This line should not be reachable if the loop completes, but it's a fallback.
-    throw lastError || new Error("Failed to generate questions after multiple retries.");
 }
-
