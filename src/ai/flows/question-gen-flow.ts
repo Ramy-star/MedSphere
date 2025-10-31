@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview AI flow for the Questions Creator feature using a tool-based approach.
@@ -9,6 +10,7 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import { reformatMarkdown } from './reformat-markdown-flow';
+import type { Lecture } from '@/lib/types';
 
 // --- Zod Schemas for Structured Output ---
 
