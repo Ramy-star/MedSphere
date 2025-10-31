@@ -18,15 +18,24 @@ export const maxDuration = 30; // 30 seconds for insight generation
  *
  * Request Body:
  * {
- *   lectures: Array<Lecture>,
- *   questionSets: Array<QuestionSet>,
- *   studySessions: Array<StudySession>
+ *   displayName?: string,
+ *   username: string,
+ *   filesUploaded?: number,
+ *   foldersCreated?: number,
+ *   examsCompleted?: number,
+ *   aiQueries?: number,
+ *   favoritesCount?: number,
+ *   greeting: string
  * }
  *
  * Response:
  * {
  *   success: true,
- *   insight: string (AI-generated insight)
+ *   result: {
+ *     greeting: string,
+ *     mainInsight: string,
+ *     suggestedActions: Array<{label: string, prompt: string}>
+ *   }
  * }
  * OR
  * {
@@ -44,64 +53,54 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { lectures, questionSets, studySessions } = body;
+    const { displayName, username, filesUploaded, foldersCreated, examsCompleted, aiQueries, favoritesCount, greeting } = body;
 
     // Validate required fields
-    if (!lectures || !Array.isArray(lectures)) {
-      console.error(`[${requestId}] Validation failed: lectures must be an array`);
+    if (!username || typeof username !== 'string') {
+      console.error(`[${requestId}] Validation failed: username is required`);
       return NextResponse.json(
         {
           success: false,
-          error: 'Lectures data is required and must be an array',
+          error: 'Username is required and must be a string',
           errorType: 'validation'
         },
         { status: 400 }
       );
     }
 
-    if (!questionSets || !Array.isArray(questionSets)) {
-      console.error(`[${requestId}] Validation failed: questionSets must be an array`);
+    if (!greeting || typeof greeting !== 'string') {
+      console.error(`[${requestId}] Validation failed: greeting is required`);
       return NextResponse.json(
         {
           success: false,
-          error: 'Question sets data is required and must be an array',
+          error: 'Greeting is required and must be a string',
           errorType: 'validation'
         },
         { status: 400 }
       );
     }
 
-    if (!studySessions || !Array.isArray(studySessions)) {
-      console.error(`[${requestId}] Validation failed: studySessions must be an array`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Study sessions data is required and must be an array',
-          errorType: 'validation'
-        },
-        { status: 400 }
-      );
-    }
+    console.log(`[${requestId}] Generating insight for user: ${username}`);
+    console.log(`[${requestId}] Stats: files=${filesUploaded || 0}, folders=${foldersCreated || 0}, exams=${examsCompleted || 0}`);
 
-    console.log(`[${requestId}] Generating insight for:`);
-    console.log(`[${requestId}] - ${lectures.length} lectures`);
-    console.log(`[${requestId}] - ${questionSets.length} question sets`);
-    console.log(`[${requestId}] - ${studySessions.length} study sessions`);
-
-    // Call the AI flow
-    const insight = await getStudyBuddyInsight({
-      lectures,
-      questionSets,
-      studySessions,
+    // Call the AI flow with user stats
+    const result = await getStudyBuddyInsight({
+      displayName,
+      username,
+      filesUploaded: filesUploaded || 0,
+      foldersCreated: foldersCreated || 0,
+      examsCompleted: examsCompleted || 0,
+      aiQueries: aiQueries || 0,
+      favoritesCount: favoritesCount || 0,
+      greeting,
     });
 
     const duration = Date.now() - startTime;
     console.log(`[${requestId}] Insight generated successfully in ${duration}ms`);
-    console.log(`[${requestId}] Insight length: ${insight.length} chars`);
 
     return NextResponse.json({
       success: true,
-      insight,
+      result,
     });
 
   } catch (error: any) {

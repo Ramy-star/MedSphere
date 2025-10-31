@@ -43,10 +43,11 @@ export default function TestAISystemPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          conversationHistory: [],
-          userMessage: 'What is this document about?',
+          chatHistory: [],
+          question: 'What is this document about?',
           documentContent: 'This is a test document about artificial intelligence and machine learning.',
-          fileName: 'test.pdf',
+          hasQuestions: false,
+          questionsContent: '',
         }),
       });
 
@@ -86,9 +87,14 @@ export default function TestAISystemPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          lectures: [],
-          questionSets: [],
-          studySessions: [],
+          displayName: 'Test User',
+          username: 'testuser',
+          filesUploaded: 5,
+          foldersCreated: 3,
+          examsCompleted: 2,
+          aiQueries: 10,
+          favoritesCount: 4,
+          greeting: 'Good morning, Test User!',
         }),
       });
 
@@ -100,7 +106,7 @@ export default function TestAISystemPage() {
           status: 'success',
           message: `Success! Insight received in ${duration}ms`,
           duration,
-          response: data.insight.substring(0, 100) + '...',
+          response: data.result.mainInsight.substring(0, 100) + '...',
         });
       } else {
         setStudyBuddyTest({
@@ -128,11 +134,17 @@ export default function TestAISystemPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          query: 'What should I study today?',
-          lectures: [],
-          questionSets: [],
-          studySessions: [],
-          conversationHistory: [],
+          question: 'What should I study today?',
+          userStats: {
+            displayName: 'Test User',
+            username: 'testuser',
+            filesUploaded: 5,
+            foldersCreated: 3,
+            examsCompleted: 2,
+            aiQueries: 10,
+            favoritesCount: 4,
+          },
+          chatHistory: [],
         }),
       });
 

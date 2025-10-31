@@ -113,26 +113,22 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
 
     const fetchInitialInsight = useCallback(async (greeting: string) => {
         setLoading(true);
-        const userStats = {
-            displayName: user.displayName || user.username,
-            username: user.username,
-            filesUploaded: user.stats?.filesUploaded || 0,
-            foldersCreated: user.stats?.foldersCreated || 0,
-            examsCompleted: user.stats?.examsCompleted || 0,
-            aiQueries: user.stats?.aiQueries || 0,
-            favoritesCount: user.favorites?.length || 0,
-        };
         try {
-            // Call the API route instead of direct server action
+            // Call the API route with user stats
             const response = await fetch('/api/ai/study-buddy', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    lectures: [], // Pass actual data if available
-                    questionSets: [],
-                    studySessions: [],
+                    displayName: user.displayName || user.username,
+                    username: user.username,
+                    filesUploaded: user.stats?.filesUploaded || 0,
+                    foldersCreated: user.stats?.foldersCreated || 0,
+                    examsCompleted: user.stats?.examsCompleted || 0,
+                    aiQueries: user.stats?.aiQueries || 0,
+                    favoritesCount: user.favorites?.length || 0,
+                    greeting: greeting,
                 }),
             });
 
@@ -146,19 +142,8 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 throw new Error(data.error || 'Failed to fetch study buddy insight');
             }
 
-            // Parse the AI response to extract the structured data
-            // For now, we'll use the insight as the mainInsight
-            const result: InitialInsight = {
-                greeting: greeting,
-                mainInsight: data.insight,
-                suggestedActions: [
-                    { label: 'Study Tips', prompt: 'Can you give me some study tips?' },
-                    { label: 'My Progress', prompt: 'How am I doing with my studies?' },
-                    { label: 'Next Steps', prompt: 'What should I focus on next?' },
-                ],
-            };
-
-            setInitialInsight(result);
+            // The API returns the complete result structure
+            setInitialInsight(data.result);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
             setInitialInsight(null);
@@ -182,24 +167,33 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         setIsResponding(true);
 
         try {
-            // Prepare conversation history in Genkit format
-            const conversationHistory = newHistory.slice(0, -1).map(msg => ({
+            // Prepare chat history in the correct format (just role and text)
+            const chatHistory = newHistory.slice(0, -1).map(msg => ({
                 role: msg.role,
-                parts: [{ text: msg.text }]
+                text: msg.text
             }));
 
-            // Call the API route instead of direct server action
+            // Prepare user stats
+            const userStats = {
+                displayName: user.displayName || user.username,
+                username: user.username,
+                filesUploaded: user.stats?.filesUploaded || 0,
+                foldersCreated: user.stats?.foldersCreated || 0,
+                examsCompleted: user.stats?.examsCompleted || 0,
+                aiQueries: user.stats?.aiQueries || 0,
+                favoritesCount: user.favorites?.length || 0,
+            };
+
+            // Call the API route
             const response = await fetch('/api/ai/study-buddy-chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    query: prompt,
-                    lectures: [], // Pass actual data if available
-                    questionSets: [],
-                    studySessions: [],
-                    conversationHistory,
+                    question: prompt,
+                    userStats,
+                    chatHistory,
                 }),
             });
 

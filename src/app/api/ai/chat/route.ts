@@ -18,10 +18,11 @@ export const maxDuration = 60; // 60 seconds for AI processing
  *
  * Request Body:
  * {
- *   conversationHistory: Array<{role: 'user' | 'model', parts: Array<{text: string}>}>,
- *   userMessage: string,
+ *   chatHistory: Array<{role: 'user' | 'model', text: string}>,
+ *   question: string,
  *   documentContent: string,
- *   fileName: string
+ *   hasQuestions?: boolean,
+ *   questionsContent?: string
  * }
  *
  * Response:
@@ -45,15 +46,15 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { conversationHistory, userMessage, documentContent, fileName } = body;
+    const { chatHistory, question, documentContent, hasQuestions, questionsContent } = body;
 
     // Validate required fields
-    if (!userMessage || typeof userMessage !== 'string') {
-      console.error(`[${requestId}] Validation failed: Missing or invalid userMessage`);
+    if (!question || typeof question !== 'string') {
+      console.error(`[${requestId}] Validation failed: Missing or invalid question`);
       return NextResponse.json(
         {
           success: false,
-          error: 'User message is required and must be a string',
+          error: 'Question is required and must be a string',
           errorType: 'validation'
         },
         { status: 400 }
@@ -72,42 +73,30 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (!fileName || typeof fileName !== 'string') {
-      console.error(`[${requestId}] Validation failed: Missing or invalid fileName`);
+    // Validate chat history format
+    if (chatHistory && !Array.isArray(chatHistory)) {
+      console.error(`[${requestId}] Validation failed: chatHistory must be an array`);
       return NextResponse.json(
         {
           success: false,
-          error: 'File name is required and must be a string',
+          error: 'Chat history must be an array',
           errorType: 'validation'
         },
         { status: 400 }
       );
     }
 
-    // Validate conversation history format
-    if (conversationHistory && !Array.isArray(conversationHistory)) {
-      console.error(`[${requestId}] Validation failed: conversationHistory must be an array`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Conversation history must be an array',
-          errorType: 'validation'
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log(`[${requestId}] Calling chatAboutDocument for file: ${fileName}`);
-    console.log(`[${requestId}] User message length: ${userMessage.length} chars`);
+    console.log(`[${requestId}] Processing question: "${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`);
     console.log(`[${requestId}] Document content length: ${documentContent.length} chars`);
-    console.log(`[${requestId}] Conversation history length: ${conversationHistory?.length || 0} messages`);
+    console.log(`[${requestId}] Chat history length: ${chatHistory?.length || 0} messages`);
 
     // Call the AI flow (this runs on the server with access to environment variables)
     const response = await chatAboutDocument({
-      conversationHistory: conversationHistory || [],
-      userMessage,
+      question,
       documentContent,
-      fileName,
+      chatHistory: chatHistory || [],
+      hasQuestions: hasQuestions || false,
+      questionsContent: questionsContent || '',
     });
 
     const duration = Date.now() - startTime;

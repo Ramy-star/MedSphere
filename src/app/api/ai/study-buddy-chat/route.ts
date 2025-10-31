@@ -18,11 +18,17 @@ export const maxDuration = 60; // 60 seconds for chat processing
  *
  * Request Body:
  * {
- *   query: string,
- *   lectures: Array<Lecture>,
- *   questionSets: Array<QuestionSet>,
- *   studySessions: Array<StudySession>,
- *   conversationHistory: Array<{role: string, parts: Array<{text: string}>}>
+ *   question: string,
+ *   userStats: {
+ *     displayName?: string,
+ *     username: string,
+ *     filesUploaded?: number,
+ *     foldersCreated?: number,
+ *     examsCompleted?: number,
+ *     aiQueries?: number,
+ *     favoritesCount?: number
+ *   },
+ *   chatHistory?: Array<{role: 'user' | 'model', text: string}>
  * }
  *
  * Response:
@@ -46,80 +52,66 @@ export async function POST(request: NextRequest) {
   try {
     // Parse request body
     const body = await request.json();
-    const { query, lectures, questionSets, studySessions, conversationHistory } = body;
+    const { question, userStats, chatHistory } = body;
 
     // Validate required fields
-    if (!query || typeof query !== 'string') {
-      console.error(`[${requestId}] Validation failed: Missing or invalid query`);
+    if (!question || typeof question !== 'string') {
+      console.error(`[${requestId}] Validation failed: Missing or invalid question`);
       return NextResponse.json(
         {
           success: false,
-          error: 'Query is required and must be a string',
+          error: 'Question is required and must be a string',
           errorType: 'validation'
         },
         { status: 400 }
       );
     }
 
-    if (!lectures || !Array.isArray(lectures)) {
-      console.error(`[${requestId}] Validation failed: lectures must be an array`);
+    if (!userStats || typeof userStats !== 'object') {
+      console.error(`[${requestId}] Validation failed: userStats must be an object`);
       return NextResponse.json(
         {
           success: false,
-          error: 'Lectures data is required and must be an array',
+          error: 'User stats are required and must be an object',
           errorType: 'validation'
         },
         { status: 400 }
       );
     }
 
-    if (!questionSets || !Array.isArray(questionSets)) {
-      console.error(`[${requestId}] Validation failed: questionSets must be an array`);
+    if (!userStats.username || typeof userStats.username !== 'string') {
+      console.error(`[${requestId}] Validation failed: username is required in userStats`);
       return NextResponse.json(
         {
           success: false,
-          error: 'Question sets data is required and must be an array',
+          error: 'Username is required in user stats',
           errorType: 'validation'
         },
         { status: 400 }
       );
     }
 
-    if (!studySessions || !Array.isArray(studySessions)) {
-      console.error(`[${requestId}] Validation failed: studySessions must be an array`);
+    if (chatHistory && !Array.isArray(chatHistory)) {
+      console.error(`[${requestId}] Validation failed: chatHistory must be an array`);
       return NextResponse.json(
         {
           success: false,
-          error: 'Study sessions data is required and must be an array',
+          error: 'Chat history must be an array',
           errorType: 'validation'
         },
         { status: 400 }
       );
     }
 
-    if (conversationHistory && !Array.isArray(conversationHistory)) {
-      console.error(`[${requestId}] Validation failed: conversationHistory must be an array`);
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Conversation history must be an array',
-          errorType: 'validation'
-        },
-        { status: 400 }
-      );
-    }
-
-    console.log(`[${requestId}] Processing query: "${query.substring(0, 50)}${query.length > 50 ? '...' : ''}"`);
-    console.log(`[${requestId}] Context: ${lectures.length} lectures, ${questionSets.length} question sets, ${studySessions.length} sessions`);
-    console.log(`[${requestId}] Conversation history: ${conversationHistory?.length || 0} messages`);
+    console.log(`[${requestId}] Processing question: "${question.substring(0, 50)}${question.length > 50 ? '...' : ''}"`);
+    console.log(`[${requestId}] For user: ${userStats.username}`);
+    console.log(`[${requestId}] Chat history: ${chatHistory?.length || 0} messages`);
 
     // Call the AI flow
     const answer = await answerStudyBuddyQuery({
-      query,
-      lectures,
-      questionSets,
-      studySessions,
-      conversationHistory: conversationHistory || [],
+      userStats,
+      question,
+      chatHistory: chatHistory || [],
     });
 
     const duration = Date.now() - startTime;

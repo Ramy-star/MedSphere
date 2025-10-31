@@ -421,29 +421,24 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         abortControllerRef.current = new AbortController();
 
         try {
-            // Prepare conversation history in Genkit format
-            const conversationHistory = historyToUse.map(msg => ({
+            // Prepare chat history in the correct format (just role and text)
+            const chatHistory = historyToUse.map(msg => ({
                 role: msg.role,
-                parts: [{ text: msg.text }]
+                text: msg.text
             }));
 
-            // Prepare document content with questions if available
-            let enhancedDocumentContent = documentText;
-            if (questionsText) {
-                enhancedDocumentContent = `${documentText}\n\n--- Generated Questions ---\n${questionsText}`;
-            }
-
-            // Call the API route
+            // Call the API route with the correct parameter names
             const apiResponse = await fetch('/api/ai/chat', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    conversationHistory,
-                    userMessage: fullQuestionForModel,
-                    documentContent: enhancedDocumentContent,
-                    fileName: 'Document', // You can pass actual fileName if available
+                    chatHistory,
+                    question: fullQuestionForModel,
+                    documentContent: documentText,
+                    hasQuestions: !!questionsText,
+                    questionsContent: questionsText || '',
                 }),
                 signal: abortControllerRef.current.signal,
             });
