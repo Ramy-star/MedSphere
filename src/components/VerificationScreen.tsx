@@ -1,47 +1,100 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Logo } from './logo';
 import { motion } from 'framer-motion';
-import { ArrowRight, Loader2 } from 'lucide-react';
+import { ArrowRight, Loader2, AlertCircle } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { isStudentIdValid } from '@/lib/authService';
+import { db } from '@/firebase';
 
 function VerificationContent({ onVerified }: { onVerified: () => void }) {
   const [studentId, setStudentId] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [dbStatus, setDbStatus] = useState<'checking' | 'ready' | 'error'>('checking');
   const login = useAuthStore((state) => state.login);
+
+  // Check Firebase initialization on mount
+  useEffect(() => {
+    console.log('[VERIFICATION] Checking Firebase initialization...');
+
+    if (!db) {
+      console.error('[VERIFICATION] ✗ Firebase not initialized!');
+      setDbStatus('error');
+      setError('Database connection failed. Please refresh the page.');
+    } else {
+      console.log('[VERIFICATION] ✓ Firebase initialized successfully');
+      setDbStatus('ready');
+    }
+  }, []);
 
   const handleVerification = async () => {
     const trimmedId = studentId.trim();
+
+    console.log('[VERIFICATION] Starting verification for ID:', trimmedId);
+
     if (!trimmedId) {
       setError('Please enter your Student ID.');
       return;
     }
-    setIsLoading(true);
-    setError(null);
-    
-    // Client-side quick check first to fail fast
-    const isValid = await isStudentIdValid(trimmedId);
-    if (!isValid) {
-      setError('Invalid Student ID. Please check and try again.');
-      setIsLoading(false);
+
+    // Check Firebase status first
+    if (!db) {
+      console.error('[VERIFICATION] ✗ Cannot proceed: Firebase not initialized');
+      setError('Database connection not available. Please refresh the page.');
       return;
     }
-    
-    // If valid locally, proceed with the full login/creation logic
-    const success = await login(trimmedId);
-    
-    if (success) {
-      // onVerified is now implicitly handled by the auth store state change
-    } else {
-      // This case might happen if there's a DB error during user creation
-      setError('Could not complete verification. Please try again later.');
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      console.log('[VERIFICATION] Step 1: Validating Student ID...');
+
+      // Client-side quick check first to fail fast
+      const isValid = await isStudentIdValid(trimmedId);
+
+      if (!isValid) {
+        console.log('[VERIFICATION] ✗ ID validation failed');
+        setError('Invalid Student ID. Please check and try again.');
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('[VERIFICATION] ✓ ID validated, proceeding to login...');
+
+      // If valid locally, proceed with the full login/creation logic
+      const success = await login(trimmedId);
+
+      if (success) {
+        console.log('[VERIFICATION] ✓ Login successful!');
+        // onVerified is now implicitly handled by the auth store state change
+      } else {
+        console.error('[VERIFICATION] ✗ Login failed');
+        setError('Could not complete verification. Please check console for details and try again.');
+      }
+    } catch (err: any) {
+      console.error('[VERIFICATION] ✗ Unexpected error during verification:', err);
+      console.error('[VERIFICATION] Error name:', err.name);
+      console.error('[VERIFICATION] Error message:', err.message);
+      console.error('[VERIFICATION] Error stack:', err.stack);
+
+      // Provide more specific error messages
+      if (err.code === 'permission-denied') {
+        setError('Access denied. Please contact administrator.');
+      } else if (err.code === 'unavailable') {
+        setError('Service temporarily unavailable. Please try again.');
+      } else if (err.message?.includes('network')) {
+        setError('Network error. Please check your connection.');
+      } else {
+        setError(`Verification failed: ${err.message || 'Unknown error'}. Check console for details.`);
+      }
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   };
 
   return (
@@ -94,21 +147,39 @@ function VerificationContent({ onVerified }: { onVerified: () => void }) {
           transition={{ duration: 0.5, delay: 1.1 }}
         >
           <div className="flex flex-col gap-4">
+            {/* Database Status Indicator */}
+            {dbStatus === 'checking' && (
+              <div className="flex items-center gap-2 text-slate-400 text-xs">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                <span>Connecting to database...</span>
+              </div>
+            )}
+            {dbStatus === 'error' && (
+              <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 p-2 rounded">
+                <AlertCircle className="h-4 w-4" />
+                <span>Database connection failed</span>
+              </div>
+            )}
+
              <Input
               type="text"
               placeholder="Enter your ID"
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleVerification()}
+              onKeyDown={(e) => e.key === 'Enter' && !isLoading && dbStatus === 'ready' && handleVerification()}
               className="bg-slate-800/60 border-slate-700 text-white h-12 text-center text-lg tracking-wider rounded-2xl"
-              disabled={isLoading}
+              disabled={isLoading || dbStatus !== 'ready'}
             />
-            {error && <p className="text-red-400 text-sm">{error}</p>}
-            <Button 
-              size="lg" 
-              onClick={handleVerification} 
-              disabled={isLoading || !studentId.trim()}
-              className="rounded-2xl bg-slate-700/50 hover:bg-slate-700/80 text-primary-foreground font-bold text-lg h-12 transition-transform active:scale-95"
+            {error && (
+              <div className="text-red-400 text-sm bg-red-500/10 p-3 rounded-lg border border-red-500/20">
+                {error}
+              </div>
+            )}
+            <Button
+              size="lg"
+              onClick={handleVerification}
+              disabled={isLoading || !studentId.trim() || dbStatus !== 'ready'}
+              className="rounded-2xl bg-slate-700/50 hover:bg-slate-700/80 text-primary-foreground font-bold text-lg h-12 transition-transform active:scale-95 disabled:opacity-50"
             >
               {isLoading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />

@@ -23,19 +23,33 @@ export function FirebaseClientProvider({
     let isMounted = true;
     const init = async () => {
         try {
+            console.log('[FIREBASE] Initializing Firebase...');
             const instances = await initializeFirebase(config);
             if (isMounted) {
+              console.log('[FIREBASE] ✓ Firebase initialized successfully');
               setFirebase(instances);
               // Once Firebase is initialized, perform the auth check.
               // This is the correct place to do it.
               checkAuth();
             }
         } catch (e: any) {
-            console.error("Firebase initialization error:", e);
-            if(isMounted) setError(e);
+            console.error("[FIREBASE] ✗ Firebase initialization failed:", e);
+            console.error("[FIREBASE] Error details:", {
+              name: e.name,
+              message: e.message,
+              stack: e.stack
+            });
+
+            // Create a more descriptive error
+            const detailedError = new Error(
+              e.message || 'Firebase initialization failed. Please check environment variables.'
+            );
+            detailedError.stack = e.stack;
+
+            if(isMounted) setError(detailedError);
         }
     }
-    
+
     init();
 
     return () => {
