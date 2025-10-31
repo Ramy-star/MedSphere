@@ -71,6 +71,8 @@ const updateTask = (state: QuestionGenerationState, partialTask: Partial<Omit<Ge
  * Helper function to call the question generation API
  */
 async function callQuestionsAPI(action: string, payload: any): Promise<any> {
+    console.log(`[QUESTION-GEN] Calling API with action: ${action}`);
+
     const response = await fetch('/api/ai/generate-questions', {
         method: 'POST',
         headers: {
@@ -82,17 +84,41 @@ async function callQuestionsAPI(action: string, payload: any): Promise<any> {
         }),
     });
 
+    console.log(`[QUESTION-GEN] API response status: ${response.status}`);
+
     if (!response.ok) {
-        const errorData = await response.json();
+        let errorData;
+        try {
+            errorData = await response.json();
+        } catch (e) {
+            console.error('[QUESTION-GEN] Failed to parse error response as JSON');
+            throw new Error(`API request failed with status ${response.status}`);
+        }
+
+        console.error('[QUESTION-GEN] ✗ API Error:', errorData);
+        console.error('[QUESTION-GEN] Error type:', errorData.errorType);
+        console.error('[QUESTION-GEN] Error message:', errorData.error);
+
+        // Provide user-friendly error messages based on error type
+        if (errorData.errorType === 'configuration') {
+            throw new Error('Server configuration error: AI service is not properly configured. Please contact the administrator to add GEMINI_API_KEY to Vercel environment variables.');
+        } else if (errorData.errorType === 'authentication') {
+            throw new Error('AI service authentication failed. Please contact the administrator.');
+        } else if (errorData.errorType === 'quota') {
+            throw new Error('AI service quota exceeded. Please try again later.');
+        }
+
         throw new Error(errorData.error || 'API request failed');
     }
 
     const data = await response.json();
 
     if (!data.success) {
+        console.error('[QUESTION-GEN] ✗ API returned success=false:', data.error);
         throw new Error(data.error || 'API request failed');
     }
 
+    console.log(`[QUESTION-GEN] ✓ API call successful for action: ${action}`);
     return data.result;
 }
 
@@ -222,11 +248,32 @@ async function runGenerationProcess(
         }
 
     } catch (err: any) {
-        console.error("Error during question generation process:", err);
+        console.error("[QUESTION-GEN] ✗ Error during question generation process:", err);
+        console.error("[QUESTION-GEN] Error name:", err.name);
+        console.error("[QUESTION-GEN] Error message:", err.message);
+        console.error("[QUESTION-GEN] Error stack:", err.stack);
+
         const currentTask = get().task;
         const currentStatus = currentTask ? currentTask.status : 'idle';
+
+        // Provide more context in the error message
+        let errorMessage = err.message || 'An unexpected error occurred.';
+
+        // Add helpful hints based on error type
+        if (errorMessage.includes('Server configuration error') || errorMessage.includes('GEMINI_API_KEY')) {
+            errorMessage = 'AI service configuration error: The server administrator needs to add GEMINI_API_KEY to Vercel environment variables. Please contact support.';
+        } else if (errorMessage.includes('quota exceeded')) {
+            errorMessage = 'AI service quota exceeded. Please try again later or contact the administrator.';
+        }
+
+        console.error("[QUESTION-GEN] Setting error state with message:", errorMessage);
+
         set(state => ({
-            ...updateTask(state, { status: 'error', failedStep: currentStatus as FailedStep, error: err.message || 'An unexpected error occurred.' }),
+            ...updateTask(state, {
+                status: 'error',
+                failedStep: currentStatus as FailedStep,
+                error: errorMessage
+            }),
             flowStep: 'error',
         }));
     }

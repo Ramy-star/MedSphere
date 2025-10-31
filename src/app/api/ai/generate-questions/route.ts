@@ -49,6 +49,19 @@ export async function POST(request: NextRequest) {
   console.log(`[${requestId}] Question generation request received`);
   const startTime = Date.now();
 
+  // Check for API key before processing
+  if (!process.env.GEMINI_API_KEY) {
+    console.error(`[${requestId}] ✗ CRITICAL: GEMINI_API_KEY not configured`);
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Server configuration error: AI service is not properly configured. Please contact the administrator to add GEMINI_API_KEY to environment variables.',
+        errorType: 'configuration'
+      },
+      { status: 500 }
+    );
+  }
+
   try {
     // Parse request body
     const body = await request.json();
@@ -222,31 +235,48 @@ export async function POST(request: NextRequest) {
   } catch (error: any) {
     const duration = Date.now() - startTime;
     console.error(`[${requestId}] Error after ${duration}ms:`, error);
+    console.error(`[${requestId}] Error name:`, error.name);
+    console.error(`[${requestId}] Error message:`, error.message);
+    console.error(`[${requestId}] Error stack:`, error.stack);
 
     // Categorize error types
     let errorType = 'unknown';
     let statusCode = 500;
     let errorMessage = error.message || 'An unexpected error occurred';
 
-    if (errorMessage.includes('API key')) {
-      errorType = 'api_key';
-      errorMessage = 'AI API key is missing or invalid. Please check your environment configuration.';
+    // Check for configuration/API key errors
+    if (errorMessage.includes('API key') || errorMessage.includes('GEMINI_API_KEY') || errorMessage.includes('apiKey')) {
+      errorType = 'configuration';
+      errorMessage = 'Server configuration error: AI service API key is missing or invalid. Please contact the administrator to configure GEMINI_API_KEY in Vercel environment variables.';
       statusCode = 500;
-    } else if (errorMessage.includes('quota') || errorMessage.includes('limit')) {
+    }
+    // Check for Google AI specific errors
+    else if (errorMessage.includes('PERMISSION_DENIED') || errorMessage.includes('authentication')) {
+      errorType = 'authentication';
+      errorMessage = 'AI service authentication failed. The API key may be invalid or expired. Please contact the administrator.';
+      statusCode = 500;
+    }
+    // Check for quota/rate limit errors
+    else if (errorMessage.includes('quota') || errorMessage.includes('limit') || errorMessage.includes('RESOURCE_EXHAUSTED')) {
       errorType = 'quota';
-      errorMessage = 'AI service quota exceeded. Please try again later.';
+      errorMessage = 'AI service quota exceeded. Please try again later or contact the administrator.';
       statusCode = 429;
-    } else if (errorMessage.includes('timeout') || errorMessage.includes('timed out')) {
+    }
+    // Check for timeout errors
+    else if (errorMessage.includes('timeout') || errorMessage.includes('timed out') || errorMessage.includes('DEADLINE_EXCEEDED')) {
       errorType = 'timeout';
       errorMessage = 'AI request timed out. Please try again with a smaller document or simpler prompt.';
       statusCode = 504;
-    } else if (errorMessage.includes('network') || errorMessage.includes('fetch')) {
+    }
+    // Check for network errors
+    else if (errorMessage.includes('network') || errorMessage.includes('fetch') || errorMessage.includes('UNAVAILABLE')) {
       errorType = 'network';
       errorMessage = 'Network error occurred. Please check your connection and try again.';
       statusCode = 503;
     }
 
     console.error(`[${requestId}] Categorized as ${errorType} error with status ${statusCode}`);
+    console.error(`[${requestId}] User-facing message: ${errorMessage}`);
 
     return NextResponse.json(
       {

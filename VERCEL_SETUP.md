@@ -1,12 +1,18 @@
 # Vercel Deployment Setup Guide
 
-This guide explains how to properly configure environment variables in Vercel to fix the authentication issues.
+This guide explains how to properly configure environment variables in Vercel to fix authentication and AI feature issues.
 
-## Problem
+## Common Problems
 
+### Authentication Problem
 If you see the error: **"Couldn't complete verification, please try again later"**
 
 This means Firebase is not properly initialized because environment variables are missing or incorrectly configured.
+
+### AI Features Problem
+If you see the error: **"Server configuration error"** when trying to generate questions, exams, or flashcards
+
+This means the Gemini AI API key is missing from your environment variables.
 
 ## Solution: Configure Environment Variables in Vercel
 
@@ -32,6 +38,8 @@ You need to add **6 Firebase environment variables**. Get these values from your
 
 #### Variables to add in Vercel:
 
+**Firebase Variables (Required for Authentication):**
+
 | Variable Name | Example Value | Description |
 |--------------|---------------|-------------|
 | `NEXT_PUBLIC_FIREBASE_API_KEY` | `AIzaSyC...` | Firebase API Key |
@@ -41,11 +49,20 @@ You need to add **6 Firebase environment variables**. Get these values from your
 | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` | `123456789` | Firebase Messaging Sender ID |
 | `NEXT_PUBLIC_FIREBASE_APP_ID` | `1:123456:web:abc123` | Firebase App ID |
 
-**Also add the Gemini API key:**
+**⚠️ CRITICAL: Gemini API Key (Required for AI Features) ⚠️**
 
-| Variable Name | Example Value | Description |
-|--------------|---------------|-------------|
-| `GEMINI_API_KEY` | `AIzaSyC...` | Google Gemini API Key |
+| Variable Name | Example Value | Description | How to Get |
+|--------------|---------------|-------------|-----------|
+| `GEMINI_API_KEY` | `AIzaSyC...` | Google Gemini API Key for AI features | Get from: https://aistudio.google.com/app/apikey |
+
+**Without `GEMINI_API_KEY`, the following features will NOT work:**
+- ❌ Question Generation
+- ❌ Exam Generation
+- ❌ Flashcard Generation
+- ❌ AI Study Buddy Chat
+- ❌ AI Chat Assistant
+
+**Error you'll see:** `Server configuration error: AI service is not properly configured`
 
 ### Step 3: Configure for All Environments
 
@@ -155,12 +172,50 @@ service cloud.firestore {
 }
 ```
 
+### Issue: "Server configuration error" when generating questions
+
+**Cause:** `GEMINI_API_KEY` is missing from Vercel environment variables.
+
+**Solution:**
+
+1. Get your Gemini API key:
+   - Go to: https://aistudio.google.com/app/apikey
+   - Sign in with your Google account
+   - Click **"Create API Key"**
+   - Copy the key (starts with `AIzaSy...`)
+
+2. Add to Vercel:
+   - Go to Vercel → Your Project → Settings → Environment Variables
+   - Add new variable:
+     - **Name:** `GEMINI_API_KEY`
+     - **Value:** Your API key from step 1
+     - **Environments:** ✅ Production, ✅ Preview, ✅ Development
+   - Click **Save**
+
+3. Redeploy your site
+
+4. Test by trying to generate questions from a PDF
+
+**To verify it's working, check console logs:**
+```
+[GENKIT] ✓ API key configured
+[QUESTION-GEN] ✓ API call successful
+```
+
+**If still failing, check console for:**
+```
+[GENKIT] ✗ CRITICAL: GEMINI_API_KEY environment variable is not set
+[QUESTION-GEN] ✗ API Error: Server configuration error
+```
+
 ### Issue: Still not working after following all steps
 
 **Debug Steps:**
 
 1. Open browser console (F12)
-2. Look for errors starting with `[FIREBASE CONFIG]`, `[FIREBASE]`, `[AUTH]`, or `[VERIFICATION]`
+2. Look for errors starting with:
+   - `[FIREBASE CONFIG]`, `[FIREBASE]`, `[AUTH]`, `[VERIFICATION]` (for authentication)
+   - `[GENKIT]`, `[QUESTION-GEN]` (for AI features)
 3. Take a screenshot of all error messages
 4. Check Vercel deployment logs:
    - Go to Vercel → Deployments → Click latest deployment → Runtime Logs
@@ -168,10 +223,15 @@ service cloud.firestore {
 
 ## Important Notes
 
-- ⚠️ All Firebase variables **MUST** start with `NEXT_PUBLIC_` (except `GEMINI_API_KEY`)
-- ⚠️ After adding/changing variables, you **MUST** redeploy
+- ⚠️ **All 7 environment variables are REQUIRED** for the application to work fully:
+  - 6 Firebase variables (for authentication and database)
+  - 1 Gemini API key (for AI features)
+- ⚠️ All Firebase variables **MUST** start with `NEXT_PUBLIC_` prefix
+- ⚠️ `GEMINI_API_KEY` does **NOT** need the `NEXT_PUBLIC_` prefix (it's server-side only)
+- ⚠️ After adding/changing variables, you **MUST** redeploy for changes to take effect
 - ⚠️ Variables added to Vercel are **NOT** stored in your code (they're environment-specific)
 - ✅ Keep your Firebase API keys safe but note they're meant to be public (protected by Firestore rules)
+- ✅ Keep your Gemini API key private (it's server-side only and should never be exposed to the browser)
 
 ## Testing Page
 
