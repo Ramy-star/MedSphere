@@ -100,30 +100,51 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     try {
-        const usersRef = collection(db, 'users');
-        const newUserDocRef = doc(usersRef); // Automatically generate a new ID
+        // CRITICAL FIX: Use studentId as the document ID, not auto-generated ID
+        // This ensures the user can login with their studentId
+        const newUserDocRef = doc(db, 'users', values.studentId);
 
+        // Create user profile with all required fields (matching verifyAndCreateUser format)
         const newUser = {
-            uid: newUserDocRef.id,
-            displayName: values.displayName,
+            id: values.studentId,
+            uid: values.studentId,
             studentId: values.studentId,
+            displayName: values.displayName,
+            username: `student_${values.studentId}`,
             email: values.email,
             level: values.level,
             createdAt: new Date().toISOString(),
-            roles: {}
+            roles: [], // Must be an array, not an object
+            stats: {
+                filesUploaded: 0,
+                foldersCreated: 0,
+                examsCompleted: 0,
+                aiQueries: 0,
+                consecutiveLoginDays: 0,
+                lastLoginDate: '',
+            },
+            achievements: [],
+            sessions: [],
+            favorites: [],
         };
 
         await runTransaction(db, async (transaction) => {
+            // Check if user already exists
+            const existingDoc = await transaction.get(newUserDocRef);
+            if (existingDoc.exists()) {
+                throw new Error('A user with this Student ID already exists.');
+            }
             transaction.set(newUserDocRef, newUser);
         });
 
         if (currentUser) {
             await logAdminAction(currentUser, 'user.create', newUser);
         }
-        
-        toast({ title: "User Added", description: `${values.displayName} has been added.` });
+
+        toast({ title: "User Added", description: `${values.displayName} has been added successfully and can now login.` });
         onOpenChange(false);
     } catch (error: any) {
+        console.error('Error adding user:', error);
         toast({
             variant: "destructive",
             title: "Error adding user",
