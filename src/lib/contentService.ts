@@ -102,7 +102,8 @@ export const contentService = {
     async extractTextFromPdf(pdf: PDFDocumentProxy | Blob): Promise<string> {
         let pdfDoc: PDFDocumentProxy;
         if (pdf instanceof Blob) {
-            pdfDoc = await pdfjs.getDocument(await pdf.arrayBuffer()).promise;
+            const loadingTask = pdfjs.getDocument(await pdf.arrayBuffer());
+            pdfDoc = await loadingTask.promise;
         } else {
             pdfDoc = pdf;
         }

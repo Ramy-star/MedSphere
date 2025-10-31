@@ -23,7 +23,6 @@ import level5StudentData from '@/lib/student-ids/level-5-data.json';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 
 // === Types ===
-// ضع تعريف النوع مباشرة بعد الـ imports
 type ExamResultWithId = ExamResult & { id: string };
 
 // --- HELPER COMPONENTS (from ShadCN UI) ---

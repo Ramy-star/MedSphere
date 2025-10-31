@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UploadCloud, FileText, FileJson, Save, Wand2, Loader2, AlertCircle, Copy, Download, Trash2, Pencil, Check, Eye, X, Wrench, Folder, DownloadCloud, Settings, FileUp, RotateCw, FileQuestion, FileCheck, Layers, ChevronDown, FolderSearch, EyeOff, Lightbulb } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -118,7 +119,7 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         icon={Lightbulb}
                         color="text-yellow-400"
                     />
-                     <OptionCheckbox
+                    <OptionCheckbox
                         id="generateFlashcards"
                         label="Flashcards"
                         description="Produce flashcards for key concepts and terms."
@@ -207,10 +208,13 @@ function QuestionsCreatorContent() {
   const activeTab = searchParams.get('tab') || 'generate';
 
   const [generationPrompt, setGenerationPrompt] = useState('');
+  const [jsonPrompt, setJsonPrompt] = useState('');
   const [examGenerationPrompt, setExamGenerationPrompt] = useState('');
+  const [examJsonPrompt, setExamJsonPrompt] = useState('');
   const [flashcardGenerationPrompt, setFlashcardGenerationPrompt] = useState('');
-  const [originalPrompts, setOriginalPrompts] = useState({ gen: '', examGen: '', flashcardGen: '' });
-  const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, examGen: false, flashcardGen: false });
+  const [flashcardJsonPrompt, setFlashcardJsonPrompt] = useState('');
+  const [originalPrompts, setOriginalPrompts] = useState({ gen: '', json: '', examGen: '', examJson: '', flashcardGen: '', flashcardJson: '' });
+  const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false, examGen: false, examJson: false, flashcardGen: false, flashcardJson: false });
   const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
   const [showFolderSelector, setShowFolderSelector] = useState(false);
 
@@ -231,6 +235,7 @@ function QuestionsCreatorContent() {
     cancelConfirmation,
     abortGeneration,
     closeOptionsDialog,
+    convertTextToJson,
   } = useQuestionGenerationStore();
 
   const { studentId, can } = useAuthStore();
@@ -263,21 +268,30 @@ function QuestionsCreatorContent() {
 
   const { toast } = useToast();
 
-  const handleSavePrompt = (type: 'gen' | 'examGen' | 'flashcardGen') => {
+  const handleSavePrompt = (type: 'gen' | 'json' | 'examGen' | 'examJson' | 'flashcardGen' | 'flashcardJson') => {
     const keyMap = {
         gen: 'questionGenPrompt',
+        json: 'questionJsonPrompt',
         examGen: 'examGenPrompt',
+        examJson: 'examJsonPrompt',
         flashcardGen: 'flashcardGenPrompt',
+        flashcardJson: 'flashcardJsonPrompt'
     };
     const promptMap = {
         gen: generationPrompt,
+        json: jsonPrompt,
         examGen: examGenerationPrompt,
+        examJson: examJsonPrompt,
         flashcardGen: flashcardGenerationPrompt,
+        flashcardJson: flashcardJsonPrompt,
     };
     const titleMap = {
         gen: 'Question Generation Prompt',
+        json: 'JSON Conversion Prompt',
         examGen: 'Exam Generation Prompt',
-        flashcardGen: 'Flashcard Generation Prompt'
+        examJson: 'Exam JSON Conversion Prompt',
+        flashcardGen: 'Flashcard Generation Prompt',
+        flashcardJson: 'Flashcard JSON Conversion Prompt'
     }
 
     localStorage.setItem(keyMap[type], promptMap[type]);
@@ -286,25 +300,34 @@ function QuestionsCreatorContent() {
     setIsEditingPrompts(prev => ({...prev, [type]: false}));
   }
 
-  const handleCancelPrompt = (type: 'gen' | 'examGen' | 'flashcardGen') => {
+  const handleCancelPrompt = (type: 'gen' | 'json' | 'examGen' | 'examJson' | 'flashcardGen' | 'flashcardJson') => {
     const promptSetterMap = {
         gen: setGenerationPrompt,
+        json: setJsonPrompt,
         examGen: setExamGenerationPrompt,
+        examJson: setExamJsonPrompt,
         flashcardGen: setFlashcardGenerationPrompt,
+        flashcardJson: setFlashcardJsonPrompt,
     };
-    promptSetterMap[type](originalPrompts[type]);
+    promptSetterMap[type](originalPrompts[type as keyof typeof originalPrompts]);
     setIsEditingPrompts(prev => ({...prev, [type]: false}));
   }
 
   useEffect(() => {
-    const gen = localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions and a few written cases based on the provided text. The questions should cover the main topics and details of the provided content.';
+    const gen = localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.';
+    const json = localStorage.getItem('questionJsonPrompt') || 'Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.';
     const examGen = localStorage.getItem('examGenPrompt') || 'Generate 20 difficult exam-style multiple-choice questions based on the document.';
-    const flashcardGen = localStorage.getItem('flashcardGenPrompt') || 'Generate 15 flashcards based on the key concepts in the document. Each flashcard should have a "front" (the question) and a "back" (the answer).';
-    
+    const examJson = localStorage.getItem('examJsonPrompt') || 'Convert the exam questions into a JSON array with structure: { "question": "...", "options": [...], "answer": "..." }.';
+    const flashcardGen = localStorage.getItem('flashcardGenPrompt') || 'Generate 15 flashcards based on the key concepts in the document.';
+    const flashcardJson = localStorage.getItem('flashcardJsonPrompt') || 'Convert the flashcards into a JSON array with structure: { "front": "...", "back": "..." }.';
+
     setGenerationPrompt(gen);
+    setJsonPrompt(json);
     setExamGenerationPrompt(examGen);
+    setExamJsonPrompt(examJson);
     setFlashcardGenerationPrompt(flashcardGen);
-    setOriginalPrompts({ gen, examGen, flashcardGen });
+    setFlashcardJsonPrompt(flashcardJson);
+    setOriginalPrompts({ gen, json, examGen, examJson, flashcardGen, flashcardJson });
   }, []);
 
   useEffect(() => {
@@ -337,9 +360,12 @@ function QuestionsCreatorContent() {
 
   const allPrompts = useMemo(() => ({
     gen: generationPrompt,
+    json: jsonPrompt,
     examGen: examGenerationPrompt,
+    examJson: examJsonPrompt,
     flashcardGen: flashcardGenerationPrompt,
-  }), [generationPrompt, examGenerationPrompt, flashcardGenerationPrompt]);
+    flashcardJson: flashcardJsonPrompt,
+  }), [generationPrompt, jsonPrompt, examGenerationPrompt, examJsonPrompt, flashcardGenerationPrompt, flashcardJsonPrompt]);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -471,7 +497,7 @@ function QuestionsCreatorContent() {
                     {flowStep === 'processing' && (
                         <div className="flex items-center justify-center w-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-8 glass-card">
                             <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
-                            <p className="ml-3 text-slate-300">Generating content... This may take a moment.</p>
+                            <p className="ml-3 text-slate-300">{task?.status.replace(/_/g, ' ')}...</p>
                         </div>
                     )}
                     {flowStep === 'error' && (
@@ -540,26 +566,38 @@ function QuestionsCreatorContent() {
     );
   }
 
-  const renderPromptCard = (type: 'gen' | 'examGen' | 'flashcardGen') => {
+  const renderPromptCard = (type: 'gen' | 'json' | 'examGen' | 'examJson' | 'flashcardGen' | 'flashcardJson') => {
       const titleMap = {
           gen: "Question Generation Prompt",
+          json: "Text-to-JSON Conversion Prompt",
           examGen: "Exam Generation Prompt",
-          flashcardGen: "Flashcard Generation Prompt"
+          examJson: "Exam-to-JSON Conversion Prompt",
+          flashcardGen: "Flashcard Generation Prompt",
+          flashcardJson: "Flashcard-to-JSON Conversion Prompt"
       }
       const iconMap = {
           gen: <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
+          json: <FileJson className="w-8 h-8 text-blue-400 shrink-0" />,
           examGen: <FileText className="w-8 h-8 text-red-400 shrink-0" />,
+          examJson: <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
           flashcardGen: <FileText className="w-8 h-8 text-green-400 shrink-0" />,
+          flashcardJson: <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
       }
       const promptMap = {
           gen: generationPrompt,
+          json: jsonPrompt,
           examGen: examGenerationPrompt,
+          examJson: examJsonPrompt,
           flashcardGen: flashcardGenerationPrompt,
+          flashcardJson: flashcardJsonPrompt,
       }
       const setPromptMap = {
           gen: setGenerationPrompt,
+          json: setJsonPrompt,
           examGen: setExamGenerationPrompt,
+          examJson: setExamJsonPrompt,
           flashcardGen: setFlashcardGenerationPrompt,
+          flashcardJson: setFlashcardJsonPrompt,
       }
 
       return (
@@ -577,7 +615,7 @@ function QuestionsCreatorContent() {
                             <>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button onClick={() => handleSavePrompt(type)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                        <Button onClick={() => handleSavePrompt(type as any)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
                                             <Check className="h-5 w-5 text-green-400" />
                                         </Button>
                                     </TooltipTrigger>
@@ -585,7 +623,7 @@ function QuestionsCreatorContent() {
                                 </Tooltip>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button onClick={() => handleCancelPrompt(type)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                        <Button onClick={() => handleCancelPrompt(type as any)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
                                             <X className="h-5 w-5 text-red-400" />
                                         </Button>
                                     </TooltipTrigger>

@@ -13,7 +13,7 @@ import { getAuth, Auth } from 'firebase/auth';
 
 // Re-export provider hooks
 export { useFirebase } from './provider';
-export { useCollection } from './firestore/use-collection';
+export { useCollection, useMemoFirebase } from './firestore/use-collection';
 export { useDoc } from './firestore/use-doc';
 
 // Initialize db as a variable that can be exported.
