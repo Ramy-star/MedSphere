@@ -1,3 +1,4 @@
+
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
 import { generateQuestionsText, generateExamText, generateFlashcardsText } from '@/ai/flows/question-gen-flow';
@@ -78,27 +79,37 @@ async function runGenerationProcess(
     type: GenerationType,
     task: GenerationTask,
     prompts: {gen: string, examGen: string, flashcardGen: string},
-    set: (updater: (state: QuestionGenerationState) => QuestionGenerationState) => void,
+    set: (updater: (state: QuestionGenerationState) => Partial<QuestionGenerationState>) => void,
     get: () => QuestionGenerationState
 ) {
     const { signal } = task.abortController;
 
     const updateStatus = (status: GenerationStatus['status'], error?: string | null) => {
         set(state => {
-            if (!state.task) return state;
+            if (!state.task) return {};
             const newTask = { ...state.task };
             newTask.status[type] = {
                 ...newTask.status[type],
                 status: status,
                 error: error || null,
             };
+
+            const keyMap: Record<keyof GenerationOptions, GenerationType> = {
+                generateQuestions: 'questions',
+                generateExam: 'exam',
+                generateFlashcards: 'flashcards'
+            };
+
             // Check if all active processes are finished
             const allDone = Object.keys(state.task.generationOptions)
                 .filter(key => state.task!.generationOptions[key as keyof GenerationOptions])
-                .every(key => newTask.status[key as GenerationType].status === 'completed' || newTask.status[key as GenerationType].status === 'error');
+                .every(key => {
+                    const statusKey = keyMap[key as keyof GenerationOptions];
+                    const taskStatus = newTask.status[statusKey];
+                    return taskStatus.status === 'completed' || taskStatus.status === 'error';
+                });
 
             return {
-                ...state,
                 task: newTask,
                 flowStep: allDone ? 'completed' : 'processing',
             };
@@ -123,7 +134,6 @@ async function runGenerationProcess(
             documentText = await contentService.extractTextFromPdf(pdf);
             
             set(state => ({
-                ...state,
                 task: state.task ? { ...state.task, status: { ...state.task.status, documentText } } : null
             }));
         }
@@ -150,18 +160,22 @@ async function runGenerationProcess(
         if (signal.aborted) throw new Error('Aborted');
 
         set(state => {
-            if (!state.task) return state;
+            if (!state.task) return {};
             const newTask = { ...state.task };
             newTask.status[type].text = generatedText;
-            return { ...state, task: newTask };
+            return { task: newTask };
         });
 
         updateStatus('completed');
 
     } catch (err: any) {
-        if (err.name === 'AbortError') {
+        if (err.name === 'AbortError' || signal.aborted) {
              console.log(`Generation process for ${type} aborted by user.`);
              updateStatus('idle'); // Reset this specific task status
+             const anyStillProcessing = Object.values(get().task!.status).some(s => s.status === 'processing');
+             if(!anyStillProcessing) {
+                set(() => ({ flowStep: get().task!.status.documentText ? 'completed' : 'idle' }));
+             }
              return;
         }
         console.error(`Error during ${type} generation:`, err);
@@ -180,7 +194,9 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     initiateGeneration: (source) => {
         const { task, isSaved } = get();
 
-        if (task && task.status && Object.values(task.status).some(s => s.status === 'completed') && !isSaved) {
+        const hasCompletedWork = task && Object.values(task.status).some(s => s.status === 'completed');
+
+        if (hasCompletedWork && !isSaved) {
             set(state => ({
                 ...state,
                 flowStep: 'awaiting_confirmation',
@@ -228,8 +244,6 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
 
         const { fileName, sourceFileId, status } = task;
         
-        // At this point, no JSON conversion is needed before saving.
-        // The text is saved, and JSON conversion happens on demand later.
         await addDoc(collection(db, `users/${userId}/questionSets`), {
             fileName: fileName,
             textQuestions: status.questions.text || '',
