@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
 import { generateQuestionsText, convertQuestionsToJson, convertFlashcardsToJson } from '@/ai/flows/question-gen-flow';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { addDoc, collection } from 'firebase/firestore';
+import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import type { Lecture } from '@/lib/types';
 import * as pdfjs from 'pdfjs-dist';
@@ -11,8 +11,8 @@ if (typeof window !== 'undefined') {
     pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 }
 
-type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | 'completed' | 'error';
-type FailedStep = 'extracting' | 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json' | null;
+type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'generating_exam_text' | 'generating_flashcard_text' | 'completed' | 'error';
+type FailedStep = 'extracting' | 'generating_text' | 'generating_exam_text' | 'generating_flashcard_text' | null;
 type GenerationFlowStep = 'idle' | 'awaiting_options' | 'processing' | 'completed' | 'error' | 'awaiting_confirmation';
 
 export interface GenerationOptions {
@@ -29,11 +29,11 @@ interface GenerationTask {
   failedStep: FailedStep;
   documentText: string | null;
   textQuestions: string | null;
-  jsonQuestions: any | null; // Changed to any to hold object before stringifying
+  jsonQuestions: any | null; // This will be populated by convertTextToJson
   textExam: string | null;
-  jsonExam: any | null; // Changed to any
+  jsonExam: any | null;
   textFlashcard: string | null;
-  jsonFlashcard: any | null; // Changed to any
+  jsonFlashcard: any | null;
   error: string | null;
   progress: number;
   abortController: AbortController;
@@ -55,15 +55,15 @@ interface QuestionGenerationState {
   
   // Actions
   initiateGeneration: (source: PendingSource) => void;
-  startGeneration: (options: GenerationOptions, prompts: {gen: string, json: string, examGen: string, examJson: string, flashcardGen: string, flashcardJson: string}) => void;
+  startGeneration: (options: GenerationOptions, prompts: {gen: string, examGen: string, flashcardGen: string}) => void;
   saveCurrentResults: (userId: string, currentItemCount: number) => Promise<void>;
   resetFlow: () => void;
-  retryGeneration: (prompts: {gen: string, json: string, examGen: string, examJson: string, flashcardGen: string, flashcardJson: string}) => Promise<void>;
+  retryGeneration: (prompts: {gen: string, examGen: string, flashcardGen: string}) => Promise<void>;
   confirmContinue: () => void;
   cancelConfirmation: () => void;
   abortGeneration: () => void;
   closeOptionsDialog: () => void;
-  convertTextToJson: (type: 'questions' | 'exam' | 'flashcards', prompts: { json: string, examJson: string, flashcardJson: string }) => Promise<void>;
+  convertTextToJson: (type: 'questions' | 'exam' | 'flashcards') => Promise<void>;
 }
 
 const updateTask = (state: QuestionGenerationState, partialTask: Partial<Omit<GenerationTask, 'abortController'>>): QuestionGenerationState => ({
@@ -191,24 +191,36 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         runGenerationProcess(newTask, prompts, set, get);
     },
     
-    convertTextToJson: async (type, prompts) => {
+    convertTextToJson: async (type) => {
         const { task } = get();
-        if (!task || !task.documentText) return;
-
         const lectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
+        
+        if (!task) throw new Error("No active task.");
 
         if (type === 'questions' && task.textQuestions) {
-            set(state => updateTask(state, { status: 'converting_json' }));
             const json = await convertQuestionsToJson({ lectureName, questionsText: task.textQuestions });
-            set(state => updateTask(state, { jsonQuestions: json, status: 'completed' }));
+            set(state => updateTask(state, { jsonQuestions: json }));
+            // Also update the document in firestore
+            const { studentId } = useAuthStore.getState();
+            if (studentId && task.id.startsWith('saved_')) {
+              await updateDoc(doc(db, `users/${studentId}/questionSets`, task.id.replace('saved_', '')), { jsonQuestions: json });
+            }
         } else if (type === 'exam' && task.textExam) {
-            set(state => updateTask(state, { status: 'converting_exam_json' }));
             const json = await convertQuestionsToJson({ lectureName, questionsText: task.textExam });
-            set(state => updateTask(state, { jsonExam: json, status: 'completed' }));
+            set(state => updateTask(state, { jsonExam: json }));
+             const { studentId } = useAuthStore.getState();
+            if (studentId && task.id.startsWith('saved_')) {
+              await updateDoc(doc(db, `users/${studentId}/questionSets`, task.id.replace('saved_', '')), { jsonExam: json });
+            }
         } else if (type === 'flashcards' && task.textFlashcard) {
-            set(state => updateTask(state, { status: 'converting_flashcard_json' }));
             const json = await convertFlashcardsToJson({ lectureName, flashcardsText: task.textFlashcard });
-            set(state => updateTask(state, { jsonFlashcard: json, status: 'completed' }));
+            set(state => updateTask(state, { jsonFlashcard: json }));
+             const { studentId } = useAuthStore.getState();
+            if (studentId && task.id.startsWith('saved_')) {
+              await updateDoc(doc(db, `users/${studentId}/questionSets`, task.id.replace('saved_', '')), { jsonFlashcard: json });
+            }
+        } else {
+            throw new Error(`Cannot convert ${type}, source text is missing.`);
         }
     },
 
