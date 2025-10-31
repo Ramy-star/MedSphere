@@ -302,7 +302,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                              <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCreateInteractive(config.action)} disabled={isConverting === config.conversionType}>
-                                        {isConverting === config.conversionType ? <Loader2 className="h-4 w-4 animate-spin"/> : <config.Icon className="h-5 w-5" />}
+                                        {isConverting === config.conversionType ? <Loader2 className="h-4 w-4 animate-spin"/> : <config.Icon className={cn("h-5 w-5", config.action === 'create_quiz' && "text-yellow-400")} />}
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent><p>{config.label}</p></TooltipContent>

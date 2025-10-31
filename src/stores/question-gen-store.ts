@@ -5,6 +5,7 @@ import { generateQuestionsText, generateExamText, generateFlashcardsText, conver
 import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import * as pdfjs from 'pdfjs-dist';
+import { useAuthStore } from './auth-store';
 
 if (typeof window !== 'undefined') {
     pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -89,7 +90,7 @@ async function runGenerationProcess(
         set(state => {
             if (!state.task) return {};
             const newTask = { ...state.task };
-            const statusKey = type as keyof TaskStatus;
+            const statusKey = type; // Direct mapping
             
             if (newTask.status[statusKey]) {
                 newTask.status[statusKey] = {
@@ -104,12 +105,13 @@ async function runGenerationProcess(
                 generateExam: 'exam',
                 generateFlashcards: 'flashcards'
             };
-
+            
             const allDone = Object.keys(state.task.generationOptions)
                 .filter(key => state.task!.generationOptions[key as keyof GenerationOptions])
                 .every(key => {
                     const statusKey = keyMap[key as keyof GenerationOptions];
                     const taskStatus = newTask.status[statusKey];
+                    // A task is considered "done" if it completed or errored out.
                     return taskStatus.status === 'completed' || taskStatus.status === 'error';
                 });
 
@@ -166,7 +168,7 @@ async function runGenerationProcess(
         set(state => {
             if (!state.task) return {};
             const newTask = { ...state.task };
-            const statusKey = type as keyof TaskStatus;
+            const statusKey = type;
             if (newTask.status[statusKey]) {
                 newTask.status[statusKey].text = generatedText;
             }
@@ -242,7 +244,9 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         const { studentId } = useAuthStore.getState();
         if (!studentId) throw new Error("User not logged in");
     
-        const lectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
+        const questionSet = await getDoc(doc(db, `users/${studentId}/questionSets`, questionSetId)).then(d => d.data());
+        const lectureName = questionSet?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
+
         let jsonResult: object;
     
         if (type === 'flashcards') {
