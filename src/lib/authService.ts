@@ -65,40 +65,71 @@ export async function isSuperAdmin(studentId: string | null): Promise<boolean> {
 
 export async function isStudentIdValid(id: string): Promise<boolean> {
     const trimmedId = id.trim();
+
+    console.log(`[AUTH] Validating Student ID: ${trimmedId}`);
+
     // First, check the static list. This is the fastest check.
     if (allStudentIds.has(trimmedId)) {
+        console.log(`[AUTH] ✓ Student ID found in static lists`);
         return true;
     }
+
+    console.log(`[AUTH] Student ID not in static lists, checking Firestore...`);
 
     // If not in the static list, check Firestore for an existing user.
     // This allows manually added users to log in.
     if (!db) {
-        console.error("Firestore not initialized for student ID validation.");
+        console.error("[AUTH] ✗ CRITICAL: Firestore not initialized");
+        console.error("[AUTH] db value:", db);
+        console.error("[AUTH] typeof db:", typeof db);
         return false;
     }
-    
+
     try {
         const userDocRef = doc(db, 'users', trimmedId);
+        console.log(`[AUTH] Checking Firestore: users/${trimmedId}`);
         const userDoc = await getDoc(userDocRef);
-        return userDoc.exists();
-    } catch (error) {
-        console.error("Error checking student ID in Firestore:", error);
-        return false; // Fail safely
+        const exists = userDoc.exists();
+
+        if (exists) {
+            console.log(`[AUTH] ✓ User found in Firestore`);
+        } else {
+            console.log(`[AUTH] ✗ User not found in Firestore`);
+        }
+
+        return exists;
+    } catch (error: any) {
+        console.error("[AUTH] ✗ Firestore error:", error);
+        console.error("[AUTH] Error code:", error.code);
+        console.error("[AUTH] Error message:", error.message);
+        return false;
     }
 }
 
 export async function getUserProfile(studentId: string): Promise<any | null> {
+    console.log(`[AUTH] Getting user profile for: ${studentId}`);
+
     if (!db) {
-        console.error("Firestore not initialized in authService.getUserProfile");
+        console.error("[AUTH] ✗ Firestore not initialized in getUserProfile");
         return null;
     }
-    const userDocRef = doc(db, 'users', studentId);
-    const userDoc = await getDoc(userDocRef);
 
-    if (userDoc.exists()) {
-        return { id: userDoc.id, ...userDoc.data() };
+    try {
+        const userDocRef = doc(db, 'users', studentId);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+            console.log(`[AUTH] ✓ Profile found for ${studentId}`);
+            return { id: userDoc.id, ...userDoc.data() };
+        }
+
+        console.log(`[AUTH] ✗ No profile found for ${studentId}`);
+        return null;
+    } catch (error: any) {
+        console.error(`[AUTH] ✗ Error getting profile:`, error);
+        console.error(`[AUTH] Error code:`, error.code);
+        return null;
     }
-    return null;
 }
 
 export async function verifyAndCreateUser(studentId: string): Promise<{ userProfile: any | null, isNewUser: boolean }> {
