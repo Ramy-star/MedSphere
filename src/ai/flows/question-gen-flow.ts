@@ -1,7 +1,7 @@
 'use server';
 /**
  * @fileOverview AI flow for the Questions Creator feature.
- * This file implements a two-step process: text generation and then text-to-JSON conversion.
+ * This file implements separate flows for generating different types of educational content.
  */
 
 import { ai } from '@/ai/genkit';
@@ -10,30 +10,25 @@ import { reformatMarkdown } from './reformat-markdown-flow';
 
 // --- Zod Schemas for input ---
 
-const GenerateTextInputSchema = z.object({
-  prompt: z.string().describe('The detailed instructions for the kind of text to generate (e.g., questions, exam).'),
+const GenerateInputSchema = z.object({
+  prompt: z.string().describe('The detailed instructions for the kind of text to generate.'),
   documentContent: z.string().describe('The text content extracted from the document.'),
 });
-export type GenerateTextInput = z.infer<typeof GenerateTextInputSchema>;
+export type GenerateInput = z.infer<typeof GenerateInputSchema>;
 
-const ConvertQuestionsToJsonInputSchema = z.object({
+
+const ConvertInputSchema = z.object({
   lectureName: z.string().describe('The name of the lecture for context.'),
-  questionsText: z.string().describe('The text-based questions to be converted to JSON.'),
+  text: z.string().describe('The text-based content to be converted to JSON.'),
 });
-export type ConvertQuestionsToJsonInput = z.infer<typeof ConvertQuestionsToJsonInputSchema>;
-
-const ConvertFlashcardsToJsonInputSchema = z.object({
-    lectureName: z.string().describe('The name of the lecture for context.'),
-    flashcardsText: z.string().describe('The text-based flashcards to be converted to JSON.'),
-});
-export type ConvertFlashcardsToJsonInput = z.infer<typeof ConvertFlashcardsToJsonInputSchema>;
+export type ConvertInput = z.infer<typeof ConvertInputSchema>;
 
 
-// --- 1. Text Generation Flow ---
+// --- 1. Text Generation Flows ---
 
-const generateTextPrompt = ai.definePrompt({
-    name: 'generateTextPrompt',
-    input: { schema: GenerateTextInputSchema },
+const generatePrompt = ai.definePrompt({
+    name: 'generateQuestionContentPrompt',
+    input: { schema: GenerateInputSchema },
     prompt: `
         You are an expert medical content creator. Based on the DOCUMENT CONTENT below, please fulfill the following TASK.
         
@@ -46,16 +41,27 @@ const generateTextPrompt = ai.definePrompt({
     `,
 });
 
-export async function generateQuestionsText(input: GenerateTextInput): Promise<string> {
+async function runTextGeneration(input: GenerateInput): Promise<string> {
     try {
-        const { text } = await generateTextPrompt(input);
+        const { text } = await generatePrompt(input);
         return text;
     } catch(e: any) {
-        console.error("Error in generateText flow:", e);
-        // Provide a more specific error message if available
+        console.error("Error in text generation flow:", e);
         const message = e.cause?.message || e.message || 'The AI model failed to generate text.';
         throw new Error(message);
     }
+}
+
+export async function generateQuestionsText(input: GenerateInput): Promise<string> {
+    return runTextGeneration(input);
+}
+
+export async function generateExamText(input: GenerateInput): Promise<string> {
+    return runTextGeneration(input);
+}
+
+export async function generateFlashcardsText(input: GenerateInput): Promise<string> {
+    return runTextGeneration(input);
 }
 
 
@@ -99,7 +105,7 @@ const FlashcardsOutputSchema = z.object({
 
 const convertQuestionsToJsonPrompt = ai.definePrompt({
     name: 'convertQuestionsToJsonPrompt',
-    input: { schema: ConvertQuestionsToJsonInputSchema },
+    input: { schema: ConvertInputSchema },
     output: { schema: QuestionsOutputSchema },
     prompt: `
         You are a data conversion expert. Convert the following text, which contains medical questions, into a structured JSON object.
@@ -109,13 +115,13 @@ const convertQuestionsToJsonPrompt = ai.definePrompt({
         LECTURE NAME: {{{lectureName}}}
 
         TEXT TO CONVERT:
-        {{{questionsText}}}
+        {{{text}}}
     `,
 });
 
 const convertFlashcardsToJsonPrompt = ai.definePrompt({
     name: 'convertFlashcardsToJsonPrompt',
-    input: { schema: ConvertFlashcardsToJsonInputSchema },
+    input: { schema: ConvertInputSchema },
     output: { schema: FlashcardsOutputSchema },
     prompt: `
         You are a data conversion expert. Convert the following text, which contains flashcards, into a structured JSON object.
@@ -125,18 +131,17 @@ const convertFlashcardsToJsonPrompt = ai.definePrompt({
         LECTURE NAME: {{{lectureName}}}
 
         TEXT TO CONVERT:
-        {{{flashcardsText}}}
+        {{{text}}}
     `,
 });
 
-export async function convertQuestionsToJson(input: ConvertQuestionsToJsonInput): Promise<object> {
+export async function convertQuestionsToJson(input: ConvertInput): Promise<object> {
     try {
         const { output } = await convertQuestionsToJsonPrompt(input);
         if (!output) {
             throw new Error("AI returned no output for JSON conversion.");
         }
         
-        // Reformat markdown in written answers
         if (output.written) {
             for (const writtenCase of output.written) {
                 if (writtenCase.subqs && Array.isArray(writtenCase.subqs)) {
@@ -157,7 +162,7 @@ export async function convertQuestionsToJson(input: ConvertQuestionsToJsonInput)
     }
 }
 
-export async function convertFlashcardsToJson(input: ConvertFlashcardsToJsonInput): Promise<object> {
+export async function convertFlashcardsToJson(input: ConvertInput): Promise<object> {
     try {
         const { output } = await convertFlashcardsToJsonPrompt(input);
          if (!output) {

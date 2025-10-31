@@ -1,19 +1,28 @@
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
-import { generateQuestionsText, convertQuestionsToJson, convertFlashcardsToJson } from '@/ai/flows/question-gen-flow';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { addDoc, collection, doc, updateDoc } from 'firebase/firestore';
+import { generateQuestionsText, generateExamText, generateFlashcardsText } from '@/ai/flows/question-gen-flow';
+import { addDoc, collection } from 'firebase/firestore';
 import { db } from '@/firebase';
-import type { Lecture } from '@/lib/types';
 import * as pdfjs from 'pdfjs-dist';
 
 if (typeof window !== 'undefined') {
     pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 }
 
-type GenerationStatus = 'idle' | 'extracting' | 'generating_text' | 'generating_exam_text' | 'generating_flashcard_text' | 'completed' | 'error';
-type FailedStep = 'extracting' | 'generating_text' | 'generating_exam_text' | 'generating_flashcard_text' | null;
-type GenerationFlowStep = 'idle' | 'awaiting_options' | 'processing' | 'completed' | 'error' | 'awaiting_confirmation';
+type GenerationType = 'questions' | 'exam' | 'flashcards';
+
+type GenerationStatus = {
+  status: 'idle' | 'processing' | 'completed' | 'error';
+  error: string | null;
+  text: string | null;
+};
+
+type TaskStatus = {
+  documentText: string | null;
+  questions: GenerationStatus;
+  exam: GenerationStatus;
+  flashcards: GenerationStatus;
+};
 
 export interface GenerationOptions {
     generateQuestions: boolean;
@@ -25,17 +34,7 @@ interface GenerationTask {
   id: string;
   fileName: string;
   sourceFileId: string;
-  status: GenerationStatus;
-  failedStep: FailedStep;
-  documentText: string | null;
-  textQuestions: string | null;
-  jsonQuestions: any | null; // This will be populated by convertTextToJson
-  textExam: string | null;
-  jsonExam: any | null;
-  textFlashcard: string | null;
-  jsonFlashcard: any | null;
-  error: string | null;
-  progress: number;
+  status: TaskStatus;
   abortController: AbortController;
   generationOptions: GenerationOptions;
 }
@@ -43,9 +42,12 @@ interface GenerationTask {
 export interface PendingSource {
     id: string;
     fileName: string;
-    fileUrl?: string; // For existing files
-    file?: File;      // For new uploads
+    fileUrl?: string;
+    file?: File;
 }
+
+type GenerationFlowStep = 'idle' | 'awaiting_options' | 'processing' | 'completed' | 'error' | 'awaiting_confirmation';
+
 
 interface QuestionGenerationState {
   flowStep: GenerationFlowStep;
@@ -53,91 +55,120 @@ interface QuestionGenerationState {
   task: GenerationTask | null;
   isSaved: boolean;
   
-  // Actions
   initiateGeneration: (source: PendingSource) => void;
   startGeneration: (options: GenerationOptions, prompts: {gen: string, examGen: string, flashcardGen: string}) => void;
   saveCurrentResults: (userId: string, currentItemCount: number) => Promise<void>;
   resetFlow: () => void;
-  retryGeneration: (prompts: {gen: string, examGen: string, flashcardGen: string}) => Promise<void>;
+  retryGeneration: (type: GenerationType, prompts: {gen: string, examGen: string, flashcardGen: string}) => void;
   confirmContinue: () => void;
   cancelConfirmation: () => void;
   abortGeneration: () => void;
   closeOptionsDialog: () => void;
-  convertTextToJson: (type: 'questions' | 'exam' | 'flashcards') => Promise<void>;
 }
 
-const updateTask = (state: QuestionGenerationState, partialTask: Partial<Omit<GenerationTask, 'abortController'>>): QuestionGenerationState => ({
-  ...state,
-  task: state.task ? { ...state.task, ...partialTask } : null,
-});
+const initialGenerationStatus: GenerationStatus = { status: 'idle', error: null, text: null };
+const initialTaskStatus: TaskStatus = {
+  documentText: null,
+  questions: { ...initialGenerationStatus },
+  exam: { ...initialGenerationStatus },
+  flashcards: { ...initialGenerationStatus },
+};
 
 async function runGenerationProcess(
-    initialTask: GenerationTask,
+    type: GenerationType,
+    task: GenerationTask,
     prompts: {gen: string, examGen: string, flashcardGen: string},
     set: (updater: (state: QuestionGenerationState) => QuestionGenerationState) => void,
     get: () => QuestionGenerationState
 ) {
-    const { signal } = initialTask.abortController;
+    const { signal } = task.abortController;
+
+    const updateStatus = (status: GenerationStatus['status'], error?: string | null) => {
+        set(state => {
+            if (!state.task) return state;
+            const newTask = { ...state.task };
+            newTask.status[type] = {
+                ...newTask.status[type],
+                status: status,
+                error: error || null,
+            };
+            // Check if all active processes are finished
+            const allDone = Object.keys(state.task.generationOptions)
+                .filter(key => state.task!.generationOptions[key as keyof GenerationOptions])
+                .every(key => newTask.status[key as GenerationType].status === 'completed' || newTask.status[key as GenerationType].status === 'error');
+
+            return {
+                ...state,
+                task: newTask,
+                flowStep: allDone ? 'completed' : 'processing',
+            };
+        });
+    };
 
     try {
-        if (signal.aborted) throw new Error('Aborted');
-        set(state => updateTask(state, { status: 'extracting', progress: 10, error: null, failedStep: null }));
-        
-        const source = get().pendingSource;
-        if (!source) throw new Error("Source file is missing.");
+        updateStatus('processing');
 
-        let fileBlob: Blob;
-        if (source.file) {
-            fileBlob = source.file;
-        } else if (source.fileUrl) {
-            fileBlob = await contentService.getFileContent(source.fileUrl);
+        let documentText = get().task?.status.documentText;
+        if (!documentText) {
+            const source = get().pendingSource;
+            if (!source) throw new Error("Source file is missing.");
+            
+            let fileBlob: Blob;
+            if (source.file) fileBlob = source.file;
+            else if (source.fileUrl) fileBlob = await contentService.getFileContent(source.fileUrl);
+            else throw new Error("No file content or URL provided.");
+
+            const loadingTask = pdfjs.getDocument(await fileBlob.arrayBuffer());
+            const pdf = await loadingTask.promise;
+            documentText = await contentService.extractTextFromPdf(pdf);
+            
+            set(state => ({
+                ...state,
+                task: state.task ? { ...state.task, status: { ...state.task.status, documentText } } : null
+            }));
+        }
+
+        if (signal.aborted) throw new Error('Aborted');
+
+        let generatedText: string | null = null;
+        let prompt = '';
+        let generator: (input: { prompt: string; documentContent: string; }) => Promise<string>;
+
+        if (type === 'questions') {
+            prompt = prompts.gen;
+            generator = generateQuestionsText;
+        } else if (type === 'exam') {
+            prompt = prompts.examGen;
+            generator = generateExamText;
         } else {
-            throw new Error("No file content or URL provided.");
+            prompt = prompts.flashcardGen;
+            generator = generateFlashcardsText;
         }
         
-        set(state => updateTask(state, { progress: 30 }));
+        generatedText = await generator({ prompt, documentContent: documentText! });
         
-        const documentText = await contentService.extractTextFromPdf(fileBlob);
-        
-        set(state => updateTask(state, { documentText, progress: 50 }));
-        
-        const { generationOptions } = initialTask;
-        let results: Partial<GenerationTask> = {};
-
-        if (generationOptions.generateQuestions) {
-            set(state => updateTask(state, { status: 'generating_text', progress: 60 }));
-            results.textQuestions = await generateQuestionsText({ prompt: prompts.gen, documentContent: documentText });
-        }
-        if (generationOptions.generateExam) {
-            set(state => updateTask(state, { status: 'generating_exam_text', progress: 75 }));
-            results.textExam = await generateQuestionsText({ prompt: prompts.examGen, documentContent: documentText });
-        }
-        if (generationOptions.generateFlashcards) {
-            set(state => updateTask(state, { status: 'generating_flashcard_text', progress: 90 }));
-            results.textFlashcard = await generateQuestionsText({ prompt: prompts.flashcardGen, documentContent: documentText });
-        }
-
         if (signal.aborted) throw new Error('Aborted');
 
-        set(state => ({
-            ...updateTask(state, { ...results, status: 'completed', progress: 100 }),
-            isSaved: false,
-            flowStep: 'completed',
-        }));
+        set(state => {
+            if (!state.task) return state;
+            const newTask = { ...state.task };
+            newTask.status[type].text = generatedText;
+            return { ...state, task: newTask };
+        });
+
+        updateStatus('completed');
 
     } catch (err: any) {
         if (err.name === 'AbortError') {
-             console.log("Generation process aborted by user.");
+             console.log(`Generation process for ${type} aborted by user.`);
+             updateStatus('idle'); // Reset this specific task status
              return;
         }
-        console.error("Error during question generation process:", err);
-        const currentStatus = get().task?.status || 'idle';
-        set(state => ({
-            ...updateTask(state, { status: 'error', failedStep: currentStatus as FailedStep, error: err.message || 'An unexpected error occurred.' }),
-            flowStep: 'error',
-        }));
+        console.error(`Error during ${type} generation:`, err);
+        updateStatus('error', err.message || 'An unexpected error occurred.');
     }
 }
+
 
 export const useQuestionGenerationStore = create<QuestionGenerationState>()(
   (set, get) => ({
@@ -149,16 +180,14 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     initiateGeneration: (source) => {
         const { task, isSaved } = get();
 
-        if (task && task.status === 'completed' && !isSaved) {
+        if (task && task.status && Object.values(task.status).some(s => s.status === 'completed') && !isSaved) {
             set(state => ({
                 ...state,
                 flowStep: 'awaiting_confirmation',
                 pendingSource: source,
             }));
         } else {
-            if (task) {
-                task.abortController.abort();
-            }
+            if (task) task.abortController.abort();
             set({ pendingSource: source, flowStep: 'awaiting_options', task: null, isSaved: false });
         }
     },
@@ -172,77 +201,46 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
             id: taskId,
             fileName: pendingSource.fileName,
             sourceFileId: pendingSource.id,
-            status: 'idle',
-            failedStep: null,
-            documentText: null,
-            textQuestions: null,
-            jsonQuestions: null,
-            textExam: null,
-            jsonExam: null,
-            textFlashcard: null,
-            jsonFlashcard: null,
-            error: null,
-            progress: 0,
+            status: { ...initialTaskStatus },
             abortController: new AbortController(),
             generationOptions: options,
         };
 
         set({ task: newTask, flowStep: 'processing', isSaved: false });
-        runGenerationProcess(newTask, prompts, set, get);
-    },
-    
-    convertTextToJson: async (type) => {
-        const { task } = get();
-        const lectureName = get().pendingSource?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
-        
-        if (!task) throw new Error("No active task.");
 
-        if (type === 'questions' && task.textQuestions) {
-            const json = await convertQuestionsToJson({ lectureName, questionsText: task.textQuestions });
-            set(state => updateTask(state, { jsonQuestions: json }));
-            // Also update the document in firestore
-            const { studentId } = useAuthStore.getState();
-            if (studentId && task.id.startsWith('saved_')) {
-              await updateDoc(doc(db, `users/${studentId}/questionSets`, task.id.replace('saved_', '')), { jsonQuestions: json });
-            }
-        } else if (type === 'exam' && task.textExam) {
-            const json = await convertQuestionsToJson({ lectureName, questionsText: task.textExam });
-            set(state => updateTask(state, { jsonExam: json }));
-             const { studentId } = useAuthStore.getState();
-            if (studentId && task.id.startsWith('saved_')) {
-              await updateDoc(doc(db, `users/${studentId}/questionSets`, task.id.replace('saved_', '')), { jsonExam: json });
-            }
-        } else if (type === 'flashcards' && task.textFlashcard) {
-            const json = await convertFlashcardsToJson({ lectureName, flashcardsText: task.textFlashcard });
-            set(state => updateTask(state, { jsonFlashcard: json }));
-             const { studentId } = useAuthStore.getState();
-            if (studentId && task.id.startsWith('saved_')) {
-              await updateDoc(doc(db, `users/${studentId}/questionSets`, task.id.replace('saved_', '')), { jsonFlashcard: json });
-            }
-        } else {
-            throw new Error(`Cannot convert ${type}, source text is missing.`);
+        if (options.generateQuestions) {
+            runGenerationProcess('questions', newTask, prompts, set, get);
+        }
+        if (options.generateExam) {
+            runGenerationProcess('exam', newTask, prompts, set, get);
+        }
+        if (options.generateFlashcards) {
+            runGenerationProcess('flashcards', newTask, prompts, set, get);
         }
     },
-
+    
     saveCurrentResults: async (userId: string, currentItemCount: number) => {
         const { task } = get();
 
-        if (!task || task.status !== 'completed') {
+        if (!task || get().flowStep !== 'completed') {
             throw new Error("No completed task to save.");
         }
 
-        const collectionRef = collection(db, `users/${userId}/questionSets`);
-        await addDoc(collectionRef, {
-            fileName: task.fileName,
-            textQuestions: task.textQuestions || '',
-            jsonQuestions: task.jsonQuestions || {},
-            textExam: task.textExam || '',
-            jsonExam: task.jsonExam || {},
-            textFlashcard: task.textFlashcard || '',
-            jsonFlashcard: task.jsonFlashcard || {},
+        const { fileName, sourceFileId, status } = task;
+        
+        // At this point, no JSON conversion is needed before saving.
+        // The text is saved, and JSON conversion happens on demand later.
+        await addDoc(collection(db, `users/${userId}/questionSets`), {
+            fileName: fileName,
+            textQuestions: status.questions.text || '',
+            jsonQuestions: {},
+            textExam: status.exam.text || '',
+            jsonExam: {},
+            textFlashcard: status.flashcards.text || '',
+            jsonFlashcard: {},
             createdAt: new Date().toISOString(),
             userId: userId,
-            sourceFileId: task.sourceFileId,
+            sourceFileId: sourceFileId,
             order: currentItemCount,
         });
         
@@ -251,9 +249,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
 
     resetFlow: () => {
         const { task } = get();
-        if (task) {
-            task.abortController.abort();
-        }
+        if (task) task.abortController.abort();
         set({
             flowStep: 'idle',
             pendingSource: null,
@@ -262,12 +258,16 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         });
     },
 
-    retryGeneration: async (prompts) => {
+    retryGeneration: (type, prompts) => {
         const { task } = get();
-        if(!task || task.status !== 'error') return;
-        const newTask = { ...task, abortController: new AbortController() };
-        set({ task: newTask, flowStep: 'processing' });
-        runGenerationProcess(newTask, prompts, set, get);
+        if(!task || task.status[type].status !== 'error') return;
+        
+        const newAbortController = new AbortController();
+        const newTask = { ...task, abortController: newAbortController };
+        
+        set({ task: newTask });
+        
+        runGenerationProcess(type, newTask, prompts, set, get);
     },
 
     confirmContinue: () => {
