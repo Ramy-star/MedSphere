@@ -16,7 +16,7 @@ import {
 } from '@/components/ui/dialog';
 import { notFound, useRouter } from 'next/navigation';
 import { useDoc } from '@/firebase/firestore/use-doc';
-import { updateDoc, doc } from 'firebase/firestore';
+import { updateDoc, doc, getDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
 import { FolderSelectorDialog } from '@/components/FolderSelectorDialog';
 import { UploadProgress, type UploadingFile } from '@/components/UploadProgress';
@@ -53,7 +53,7 @@ type EditingContentState = {
 function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
   const { studentId, can } = useAuthStore();
-  const { convertTextToJson } = useQuestionGenerationStore();
+  const { convertExistingTextToJson } = useQuestionGenerationStore();
 
   const { data: questionSet, loading } = useDoc<SavedQuestionSet>(studentId ? `users/${studentId}/questionSets` : '', id, {
     disabled: !id || !studentId
@@ -67,8 +67,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [editingTitle, setEditingTitle] = useState('');
   const [showFolderSelector, setShowFolderSelector] = useState(false);
   const [copiedStatus, setCopiedStatus] = useState({ text: false, examText: false, flashcardText: false });
-  const [currentAction, setCurrentAction] = useState<'save_questions_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | null>(null);
-  const [isConverting, setIsConverting] = useState< 'quiz' | 'exam' | 'flashcards' | null>(null);
+  const [currentAction, setCurrentAction] = useState<'create_quiz' | 'create_exam' | 'create_flashcard' | null>(null);
+  const [isConverting, setIsConverting] = useState< 'questions' | 'exam' | 'flashcards' | null>(null);
   
   const titleRef = useRef<HTMLHeadingElement>(null);
   const canAdminister = can('canAccessQuestionCreator', null);
@@ -207,15 +207,19 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   };
 
   const handleCreateInteractive = async (action: 'create_quiz' | 'create_exam' | 'create_flashcard') => {
-    if (!questionSet) return;
+    if (!questionSet || !studentId) return;
 
     setCurrentAction(action);
     const conversionType = action === 'create_quiz' ? 'questions' : action === 'create_exam' ? 'exam' : 'flashcards';
+    const textToConvert = conversionType === 'questions' ? editingContent.text
+                       : conversionType === 'exam' ? editingContent.examText
+                       : editingContent.flashcardText;
+    
     setIsConverting(conversionType);
     
     try {
-        await convertTextToJson(conversionType);
-        // After conversion, the store will be updated. We then open the folder selector.
+        await convertExistingTextToJson(id, textToConvert, conversionType);
+        // After conversion, the store will be updated, so we can proceed
         setShowFolderSelector(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Conversion Failed', description: e.message || 'Could not convert text to a structured format.'});
@@ -225,12 +229,12 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   };
 
   const handleSaveToFile = async (destination: Content) => {
-    if (!questionSet || !currentAction) return;
+    if (!questionSet || !currentAction || !studentId) return;
 
     setShowFolderSelector(false);
     
-    // We need to get the latest state of the questionSet from the store
-    // as it would have been updated by convertTextToJson
+    // Get the latest state of the questionSet from the database
+    // as it would have been updated by convertExistingTextToJson
     const updatedQuestionSet = await getDoc(doc(db, `users/${studentId!}/questionSets`, id)).then(d => d.data() as SavedQuestionSet);
 
     try {
@@ -239,7 +243,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
           : currentAction === 'create_exam' ? updatedQuestionSet.jsonExam
           : updatedQuestionSet.jsonFlashcard;
 
-        if (!dataToSave || (Array.isArray(dataToSave) && dataToSave.length === 0)) {
+        if (!dataToSave || (typeof dataToSave === 'object' && Object.keys(dataToSave).length === 0)) {
             throw new Error("No structured data available to create interactive content.");
         }
 
@@ -276,7 +280,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     const isCopied = copiedStatus[type];
 
     const interactiveButtonConfig = {
-        text: { action: 'create_quiz' as const, Icon: Lightbulb, label: 'Create Interactive Quiz', conversionType: 'quiz' as const },
+        text: { action: 'create_quiz' as const, Icon: Lightbulb, label: 'Create Interactive Quiz', conversionType: 'questions' as const },
         examText: { action: 'create_exam' as const, Icon: InteractiveExamIcon, label: 'Create Interactive Exam', conversionType: 'exam' as const },
         flashcardText: { action: 'create_flashcard' as const, Icon: FlashcardIcon, label: 'Create Interactive Flashcards', conversionType: 'flashcards' as const },
     };
