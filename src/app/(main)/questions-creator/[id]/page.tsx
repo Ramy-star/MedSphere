@@ -58,14 +58,12 @@ function reorderAndStringify(obj: any): string {
     const orderedKeys: (keyof Lecture)[] = ['id', 'name', 'mcqs_level_1', 'mcqs_level_2', 'written', 'flashcards'];
     const orderedObject: { [key: string]: any } = {};
 
-    // Add known keys in the desired order
     for (const key of orderedKeys) {
         if (obj.hasOwnProperty(key)) {
             orderedObject[key] = obj[key];
         }
     }
 
-    // Add any other keys that might exist (to prevent data loss)
     for (const key in obj) {
         if (!orderedObject.hasOwnProperty(key)) {
             orderedObject[key] = obj[key];
@@ -147,8 +145,8 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
   const [currentAction, setCurrentAction] = useState<'save_questions_md' | 'save_exam_md' | 'create_quiz' | 'create_exam' | 'create_flashcard' | null>(null);
   const [sectionsVisibility, setSectionsVisibility] = useState({
     questions: true,
-    exam: true,
     flashcards: true,
+    exam: true,
   });
 
 
@@ -657,32 +655,6 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
             </div>
         )}
 
-        <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-        {sectionsVisibility.exam && (
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
-                <OutputCard
-                    title="Text Exam"
-                    icon={<FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
-                    content={editingContent.examText}
-                    type="examText"
-                    isEditing={isEditing.examText}
-                    onToggleEdit={() => handleToggleEdit('examText')}
-                    onContentChange={(value) => setEditingContent(prev => ({...prev, examText: value}))}
-                    onCancel={() => handleCancelEdit('examText')}
-                />
-                <OutputCard
-                    title="JSON Exam"
-                    icon={<FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
-                    content={editingContent.examJson}
-                    type="examJson"
-                    isEditing={isEditing.examJson}
-                    onToggleEdit={() => handleToggleEdit('examJson')}
-                    onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
-                    onCancel={() => handleCancelEdit('examJson')}
-                />
-            </div>
-        )}
-
         <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
         {sectionsVisibility.flashcards && (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
@@ -705,6 +677,32 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
                     onToggleEdit={() => handleToggleEdit('flashcardJson')}
                     onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardJson: value}))}
                     onCancel={() => handleCancelEdit('flashcardJson')}
+                />
+            </div>
+        )}
+
+        <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
+        {sectionsVisibility.exam && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start mt-8">
+                <OutputCard
+                    title="Text Exam"
+                    icon={<FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
+                    content={editingContent.examText}
+                    type="examText"
+                    isEditing={isEditing.examText}
+                    onToggleEdit={() => handleToggleEdit('examText')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, examText: value}))}
+                    onCancel={() => handleCancelEdit('examText')}
+                />
+                <OutputCard
+                    title="JSON Exam"
+                    icon={<FileJson className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
+                    content={editingContent.examJson}
+                    type="examJson"
+                    isEditing={isEditing.examJson}
+                    onToggleEdit={() => handleToggleEdit('examJson')}
+                    onContentChange={(value) => setEditingContent(prev => ({...prev, examJson: value}))}
+                    onCancel={() => handleCancelEdit('examJson')}
                 />
             </div>
         )}

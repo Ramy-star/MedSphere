@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, Suspense, useCallback, useRef } from 'react';
@@ -61,7 +62,6 @@ type SavedQuestionSet = {
   order: number;
 };
 
-
 const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boolean, onOpenChange: (open: boolean) => void, onGenerate: (options: GenerationOptions) => void }) => {
     const [options, setOptions] = useState<GenerationOptions>({
         generateQuestions: false,
@@ -119,15 +119,6 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         color="text-yellow-400"
                     />
                      <OptionCheckbox
-                        id="generateExam"
-                        label="MCQ Exam"
-                        description="Create a multiple-choice exam based on the content."
-                        checked={options.generateExam}
-                        onCheckedChange={(c) => handleCheckedChange('generateExam', !!c)}
-                        icon={InteractiveExamIcon}
-                        color="text-rose-400"
-                    />
-                     <OptionCheckbox
                         id="generateFlashcards"
                         label="Flashcards"
                         description="Produce flashcards for key concepts and terms."
@@ -135,6 +126,15 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         onCheckedChange={(c) => handleCheckedChange('generateFlashcards', !!c)}
                         icon={FlashcardIcon}
                         color="text-indigo-400"
+                    />
+                     <OptionCheckbox
+                        id="generateExam"
+                        label="MCQ Exam"
+                        description="Create a multiple-choice exam based on the content."
+                        checked={options.generateExam}
+                        onCheckedChange={(c) => handleCheckedChange('generateExam', !!c)}
+                        icon={InteractiveExamIcon}
+                        color="text-rose-400"
                     />
                 </div>
                  <div className="flex justify-center gap-2 p-6">
@@ -428,6 +428,7 @@ function QuestionsCreatorContent() {
 
   const renderGenerateTabContent = () => {
     if (flowStep !== 'idle' && (pendingSource || task)) {
+        const generationOptions = task?.generationOptions;
         return (
             <div className="flex flex-col items-center">
                 <AnimatePresence>
@@ -467,38 +468,28 @@ function QuestionsCreatorContent() {
                 </AnimatePresence>
                 
                 <div className="w-full">
-                     <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out">
-                         <div className="flex items-start gap-4">
-                            <Wand2 className="w-8 h-8 text-yellow-400 shrink-0" />
-                            <div>
-                                <h3 className="text-lg font-semibold text-white break-words">Generated Content</h3>
-                            </div>
-                         </div>
-                         <div className="mt-4 flex-grow flex flex-col">
-                              {task?.status === 'processing' && (
-                                <div className="flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-8">
-                                    <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
-                                    <p className="ml-3 text-slate-300">Generating content... This may take a moment.</p>
-                                </div>
-                              )}
-                              {task?.status === 'error' && (
-                                 <div className="flex flex-col items-center justify-center w-full h-full text-center flex-grow p-8">
-                                    <p className="text-red-400 mb-4">{task.error}</p>
-                                    <Button onClick={handleRetry} className="rounded-xl active:scale-95">
-                                        <RotateCw className="mr-2 h-4 w-4" />
-                                        Retry
-                                    </Button>
-                                </div>
-                              )}
-                              {task?.status === 'completed' && (
-                                <div className="text-center p-8">
-                                    <FileCheck className="w-12 h-12 text-green-400 mx-auto mb-4"/>
-                                    <h3 className="text-xl font-bold text-white">Generation Complete!</h3>
-                                    <p className="text-slate-300 mt-2">Your questions, exam, and flashcards are ready. You can now save them to your library.</p>
-                                </div>
-                              )}
-                         </div>
-                     </div>
+                    {flowStep === 'processing' && (
+                        <div className="flex items-center justify-center w-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl p-8 glass-card">
+                            <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+                            <p className="ml-3 text-slate-300">Generating content... This may take a moment.</p>
+                        </div>
+                    )}
+                    {flowStep === 'error' && (
+                        <div className="flex flex-col items-center justify-center w-full text-center flex-grow p-8 glass-card">
+                            <p className="text-red-400 mb-4">{task?.error}</p>
+                            <Button onClick={handleRetry} className="rounded-xl active:scale-95">
+                                <RotateCw className="mr-2 h-4 w-4" />
+                                Retry
+                            </Button>
+                        </div>
+                    )}
+                    {flowStep === 'completed' && (
+                        <div className="text-center p-8 glass-card">
+                            <FileCheck className="w-12 h-12 text-green-400 mx-auto mb-4"/>
+                            <h3 className="text-xl font-bold text-white">Generation Complete!</h3>
+                            <p className="text-slate-300 mt-2">Your content is ready. You can now save the results to your library.</p>
+                        </div>
+                    )}
                 </div>
             </div>
         );
@@ -649,11 +640,11 @@ function QuestionsCreatorContent() {
            {renderGenerateTabContent()}
         </TabsContent>
 
-        <TabsContent value="prompts" className="w-full max-w-7xl mx-auto mt-4">
+        <TabsContent value="prompts" className="w-full max-w-4xl mx-auto mt-4">
              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {renderPromptCard('gen')}
-                {renderPromptCard('examGen')}
                 {renderPromptCard('flashcardGen')}
+                {renderPromptCard('examGen')}
             </div>
         </TabsContent>
 
