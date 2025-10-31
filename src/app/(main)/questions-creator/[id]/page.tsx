@@ -51,7 +51,8 @@ type EditingContentState = {
     flashcardText: string;
 };
 
-function SavedQuestionSetPageContent({ id }: { id: string }) {
+function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
+  const id = React.use(params.id);
   const router = useRouter();
   const { studentId, can } = useAuthStore();
   const { convertExistingTextToJson } = useQuestionGenerationStore();
@@ -236,7 +237,14 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
     
     // Get the latest state of the questionSet from the database
     // as it would have been updated by convertExistingTextToJson
-    const updatedQuestionSet = await getDoc(doc(db, `users/${studentId!}/questionSets`, id)).then(d => d.data() as SavedQuestionSet);
+    const updatedQuestionSetDoc = await getDoc(doc(db, `users/${studentId!}/questionSets`, id));
+    if (!updatedQuestionSetDoc.exists()) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not find the updated question set.' });
+        setCurrentAction(null);
+        return;
+    }
+    const updatedQuestionSet = updatedQuestionSetDoc.data() as SavedQuestionSet;
+
 
     try {
         const dataToSave = 
@@ -516,7 +524,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 }
 
 export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
-  const { id } = React.use(params);
+  // const { id } = React.use(params);
   const { studentId, loading } = useAuthStore();
 
   if (loading) {
@@ -532,5 +540,5 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
     return <div className="text-center p-8">Please log in to view saved questions.</div>
   }
   
-  return <SavedQuestionSetPageContent id={id} />;
+  return <SavedQuestionSetPageContent params={params} />;
 }

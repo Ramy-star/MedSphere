@@ -117,7 +117,7 @@ async function runGenerationProcess(
 
             return {
                 task: newTask,
-                flowStep: allDone ? 'completed' : 'processing',
+                flowStep: allDone ? (Object.values(newTask.status).some(s => s.status === 'error') ? 'error' : 'completed') : 'processing',
             };
         });
     };
@@ -244,7 +244,10 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
         const { studentId } = useAuthStore.getState();
         if (!studentId) throw new Error("User not logged in");
     
-        const questionSet = await getDoc(doc(db, `users/${studentId}/questionSets`, questionSetId)).then(d => d.data());
+        const questionSetDoc = await getDoc(doc(db, `users/${studentId}/questionSets`, questionSetId));
+        if (!questionSetDoc.exists()) throw new Error("Question set not found.");
+
+        const questionSet = questionSetDoc.data();
         const lectureName = questionSet?.fileName.replace(/\.[^/.]+$/, "") || 'Unknown Lecture';
 
         let jsonResult: object;
@@ -265,7 +268,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     saveCurrentResults: async (userId: string, currentItemCount: number) => {
         const { task } = get();
 
-        if (!task || get().flowStep !== 'completed') {
+        if (!task || (task.status.questions.status !== 'completed' && task.status.exam.status !== 'completed' && task.status.flashcards.status !== 'completed')) {
             throw new Error("No completed task to save.");
         }
 
