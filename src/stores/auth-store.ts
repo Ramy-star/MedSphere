@@ -338,16 +338,33 @@ const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   login: async (studentId: string): Promise<boolean> => {
+    console.log('[AUTH-STORE] ========== LOGIN PROCESS STARTED ==========');
+    console.log('[AUTH-STORE] Student ID:', studentId);
+
     try {
+      console.log('[AUTH-STORE] Step 1: Calling verifyAndCreateUser...');
       const { userProfile, isNewUser } = await verifyAndCreateUser(studentId);
+
+      console.log('[AUTH-STORE] Step 1 Result:', {
+        hasUserProfile: !!userProfile,
+        isNewUser,
+        userProfileId: userProfile?.id
+      });
+
       if (userProfile) {
+        console.log('[AUTH-STORE] Step 2: Storing verified ID in localStorage...');
         localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
-        
+        console.log('[AUTH-STORE] ✓ Stored ID:', userProfile.id);
+
         let sessionId = get().currentSessionId;
         if (!sessionId) {
+            console.log('[AUTH-STORE] Step 3: No existing session, creating new one...');
             sessionId = nanoid();
             localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
             set({ currentSessionId: sessionId });
+            console.log('[AUTH-STORE] ✓ Created new session ID:', sessionId);
+        } else {
+            console.log('[AUTH-STORE] Step 3: Using existing session ID:', sessionId);
         }
 
         const newSession: UserSession = {
@@ -357,30 +374,60 @@ const useAuthStore = create<AuthState>((set, get) => ({
             lastActive: new Date().toISOString(),
             status: 'active',
         };
-        
+        console.log('[AUTH-STORE] Step 4: Created session object:', newSession);
+
+        console.log('[AUTH-STORE] Step 5: Checking if db is initialized...');
+        if (!db) {
+            console.error('[AUTH-STORE] ✗ CRITICAL: db is not initialized!');
+            console.error('[AUTH-STORE] db value:', db);
+            throw new Error('Database is not initialized');
+        }
+        console.log('[AUTH-STORE] ✓ db is initialized');
+
         const userDocRef = doc(db, 'users', userProfile.id);
-        
+        console.log('[AUTH-STORE] Step 6: Created document reference: users/' + userProfile.id);
+
+        console.log('[AUTH-STORE] Step 7: Fetching existing document...');
         const docSnap = await getDoc(userDocRef);
+        console.log('[AUTH-STORE] ✓ Document fetched, exists:', docSnap.exists());
+
         const existingSessions = (docSnap.data()?.sessions as UserSession[] || []).filter(s => s.status !== 'logged_out');
+        console.log('[AUTH-STORE] Step 8: Existing active sessions count:', existingSessions.length);
+
         const thisSessionExists = existingSessions.some(s => s.sessionId === sessionId);
+        console.log('[AUTH-STORE] This session already exists?', thisSessionExists);
 
         let finalSessions = existingSessions;
         if (!thisSessionExists) {
+            console.log('[AUTH-STORE] Step 9: Adding new session to array...');
             finalSessions = [...existingSessions, newSession];
         } else {
+            console.log('[AUTH-STORE] Step 9: Updating existing session...');
             finalSessions = existingSessions.map(s => s.sessionId === sessionId ? { ...s, lastActive: new Date().toISOString() } : s);
         }
+        console.log('[AUTH-STORE] Final sessions count:', finalSessions.length);
 
-        await updateDoc(userDocRef, { sessions: finalSessions });
-        
+        console.log('[AUTH-STORE] Step 10: Updating document in Firestore...');
+        try {
+            await updateDoc(userDocRef, { sessions: finalSessions });
+            console.log('[AUTH-STORE] ✓ Document updated successfully');
+        } catch (updateError: any) {
+            console.error('[AUTH-STORE] ✗ FAILED to update document!');
+            console.error('[AUTH-STORE] Error code:', updateError.code);
+            console.error('[AUTH-STORE] Error message:', updateError.message);
+            console.error('[AUTH-STORE] Full error:', updateError);
+            throw updateError;
+        }
+
         // Immediately update local state with the new session and stats for new users
+        console.log('[AUTH-STORE] Step 11: Updating local state...');
         const updatedProfile: UserProfile = {
           ...userProfile,
           sessions: finalSessions,
         };
 
         if (isNewUser) {
-          // This is the key fix: update the local state immediately so the achievement check works.
+          console.log('[AUTH-STORE] New user detected, setting initial stats...');
           updatedProfile.stats = {
             filesUploaded: 0,
             foldersCreated: 0,
@@ -392,16 +439,29 @@ const useAuthStore = create<AuthState>((set, get) => ({
           updatedProfile.achievements = [];
         }
 
-        set({ user: updatedProfile }); // Update state BEFORE calling checkAuth
+        set({ user: updatedProfile });
+        console.log('[AUTH-STORE] ✓ Local state updated');
 
+        console.log('[AUTH-STORE] Step 12: Calling checkAuth...');
         await get().checkAuth();
+        console.log('[AUTH-STORE] ✓ checkAuth completed');
+
+        console.log('[AUTH-STORE] ========== LOGIN SUCCESS ==========');
         return true;
       } else {
+        console.error('[AUTH-STORE] ✗ No user profile returned from verifyAndCreateUser');
+        console.log('[AUTH-STORE] Logging out...');
         get().logout();
+        console.log('[AUTH-STORE] ========== LOGIN FAILED (No Profile) ==========');
         return false;
       }
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (error: any) {
+      console.error('[AUTH-STORE] ========== LOGIN FAILED (Exception) ==========');
+      console.error('[AUTH-STORE] Error name:', error?.name);
+      console.error('[AUTH-STORE] Error message:', error?.message);
+      console.error('[AUTH-STORE] Error code:', error?.code);
+      console.error('[AUTH-STORE] Full error:', error);
+      console.error('[AUTH-STORE] Error stack:', error?.stack);
       return false;
     }
   },
