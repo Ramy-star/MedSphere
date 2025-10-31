@@ -2,7 +2,7 @@
 'use client';
 
 import { useSearchParams } from 'next/navigation';
-import { useEffect, useState, Suspense, useCallback } from 'react';
+import React, { useEffect, useState, Suspense, useCallback } from 'react';
 import { search } from '@/ai/flows/search-flow';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 import { FileCard } from '@/components/FileCard';
@@ -23,7 +23,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from '@/components/ui/button';
-import React from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';

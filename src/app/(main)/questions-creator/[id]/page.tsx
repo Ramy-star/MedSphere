@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -515,7 +516,7 @@ function SavedQuestionSetPageContent({ id }: { id: string }) {
 }
 
 export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const { id } = React.use(params);
   const { studentId, loading } = useAuthStore();
 
   if (loading) {
