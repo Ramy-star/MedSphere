@@ -21,6 +21,8 @@ import level3StudentData from '@/lib/student-ids/level-3-data.json';
 import level4StudentData from '@/lib/student-ids/level-4-data.json';
 import level5StudentData from '@/lib/student-ids/level-5-data.json';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { contentService } from '@/lib/contentService';
+import { updateDoc } from 'firebase/firestore';
 
 // === Types ===
 type ExamResultWithId = ExamResult & { id: string };
@@ -400,7 +402,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const isInitialRender = useRef(true);
 
-    const { studentId, can, awardSpecialAchievement } = useAuthStore();
+    const { studentId, user, can, awardSpecialAchievement, checkAndAwardAchievements } = useAuthStore();
     const canAdminister = can('canAdministerExams', fileItemId);
     const { db: firestore } = useFirebase();
     
@@ -469,24 +471,29 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
             awardSpecialAchievement('NIGHT_OWL');
         }
 
-        if (studentId && resultsCollectionRef && !isSkip) {
+        if (studentId && resultsCollectionRef && !isSkip && !userFirstResult) {
             try {
-                const userPreviousResultsQuery = query(resultsCollectionRef, where("lectureId", "==", lecture.id), where("userId", "==", studentId));
-                const userPreviousResultsSnapshot = await getDocs(userPreviousResultsQuery);
+                 const result: Omit<ExamResult, 'id'> = {
+                    lectureId: lecture.id,
+                    score,
+                    totalQuestions: questions.length,
+                    percentage,
+                    userId: studentId,
+                    timestamp: new Date(),
+                };
+                await addDocumentNonBlocking(resultsCollectionRef, result);
 
-                if (userPreviousResultsSnapshot.empty) {
-                     const result: Omit<ExamResult, 'id'> = {
-                        lectureId: lecture.id,
-                        score,
-                        totalQuestions: questions.length,
-                        percentage,
-                        userId: studentId,
-                        timestamp: new Date(),
-                    };
-                    addDocumentNonBlocking(resultsCollectionRef, result);
+                if (user) {
+                  const userRef = doc(firestore, 'users', user.id);
+                  const newStats = { ...user.stats };
+                  newStats.examsCompleted = (newStats.examsCompleted || 0) + 1;
+                  await updateDoc(userRef, { stats: newStats });
+                  // Trigger achievement check after updating stats
+                  checkAndAwardAchievements();
                 }
+
             } catch (e) {
-                console.error("Error checking or submitting exam results:", e)
+                console.error("Error submitting exam results:", e)
             }
         }
         
@@ -498,7 +505,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, lecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement]);
+    }, [storageKey, lecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements]);
 
     useEffect(() => {
         if (isInitialRender.current || !storageKey) {
@@ -852,21 +859,26 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                     <div className={containerClasses}>
                          <div className="exam-progress-header">
                             <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
-                             <div className="flex justify-between items-center mb-2">
-                                {canAdminister ? (
-                                     <button onClick={() => handleSubmit(true)} className="skip-btn">
-                                        <SkipForward size={16} />
-                                        <span className="expanding-text">Skip</span>
-                                    </button>
-                                ) : (
+                             <div className="relative flex justify-between items-center mb-2">
+                                <div className="absolute left-0 top-1/2 -translate-y-1/2">
+                                    {canAdminister && (
+                                        <button onClick={() => handleSubmit(true)} className="skip-btn">
+                                            <SkipForward size={16} />
+                                            <span className="expanding-text">Skip</span>
+                                        </button>
+                                    )}
+                                </div>
+                                <div className="flex-1 flex justify-center">
                                     <div className="flex items-center gap-2 font-semibold text-lg text-muted-foreground">
                                         <Clock size={20} />
                                         <span>{formatTime(timeLeft)}</span>
                                     </div>
-                                )}
-                                <button className="quick-exit-btn" onClick={handleQuickExit} aria-label="Exit Exam">
-                                    <X size={20} />
-                                </button>
+                                </div>
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                                    <button className="quick-exit-btn" onClick={handleQuickExit} aria-label="Exit Exam">
+                                        <X size={20} />
+                                    </button>
+                                </div>
                             </div>
                             <div className="progress-bar-container">
                                 <div className="progress-bar" style={{ width: `${progress}%` }}></div>
