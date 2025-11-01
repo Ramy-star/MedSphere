@@ -1,7 +1,7 @@
 
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -618,7 +618,7 @@ const ExamMode = ({
     const [questionAnimation, setQuestionAnimation] = useState('');
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isUpsertMcqDialogOpen, setIsUpsertMcqDialogOpen] = useState(false);
-    const [mcqToEdit, setMcqToEdit] = useState<{mcq: MCQ, level: 1 | 2} | null>(null);
+    const [mcqToEdit, setMcqToEdit] = useState<{ mcq: MCQ, level: 1 | 2 } | null>(null);
     const [isFullLectureEditorOpen, setIsFullLectureEditorOpen] = useState(false);
     const isInitialRender = useRef(true);
 
@@ -1102,7 +1102,7 @@ const ExamMode = ({
                     <TooltipProvider>
                         <div className="relative">
                              {canAdminister && (
-                                <button onClick={() => setIsReportModalOpen(true)} className="report-btn absolute top-0 left-0">
+                                <button onClick={() => setIsReportModalOpen(true)} className="expanding-btn primary absolute top-0 left-0">
                                     <FileText size={20} />
                                     <span className="expanding-text">Report</span>
                                 </button>
@@ -1214,8 +1214,8 @@ const ExamMode = ({
                              <div className="relative flex justify-center items-center mb-2">
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2">
                                     {canAdminister && (
-                                        <button onClick={() => handleSubmit(true)} className="skip-btn">
-                                            <SkipForward size={16} />
+                                        <button onClick={() => handleSubmit(true)} className="expanding-btn secondary">
+                                            <SkipForward size={20} />
                                             <span className="expanding-text">Skip</span>
                                         </button>
                                     )}
@@ -1481,7 +1481,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
 
     return (
         <main className="exam-page-container">
-            <div id="questions-container">
+            <div id="questions-container" className="h-full">
                  <ExamMode 
                     fileItemId={fileItemId}
                     lectures={lecturesState}
@@ -1496,4 +1496,3 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
-
