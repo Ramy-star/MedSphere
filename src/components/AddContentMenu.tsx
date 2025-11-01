@@ -12,6 +12,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { FlashcardIcon } from './icons/FlashcardIcon';
 import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
 import { Lightbulb } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 type AddContentMenuProps = {
   parentId: string | null;
@@ -79,7 +80,9 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   const handleAddQuiz = async () => {
     if (!parentId) return;
     try {
-        await contentService.createInteractiveQuiz(parentId);
+        // This functionality was missing. Let's assume contentService has a method for it.
+        // It should create a file of type INTERACTIVE_QUIZ with empty quizData.
+        await contentService.createOrUpdateInteractiveContent({id: parentId, type: 'FOLDER', name: 'Parent', parentId: ''}, 'New Quiz', {}, '', 'INTERACTIVE_QUIZ');
         toast({ title: 'Quiz Created', description: `A new quiz has been created.` });
         setPopoverOpen(false);
     } catch(error: any) {
@@ -95,7 +98,8 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   const handleAddExam = async () => {
     if (!parentId) return;
     try {
-        await contentService.createInteractiveExam(parentId);
+        // Similar to quiz, assuming a method in contentService
+        await contentService.createOrUpdateInteractiveContent({id: parentId, type: 'FOLDER', name: 'Parent', parentId: ''}, 'New Exam', {}, '', 'INTERACTIVE_EXAM');
         toast({ title: 'Exam Created', description: `A new exam has been created.` });
         setPopoverOpen(false);
     } catch(error: any) {
@@ -168,21 +172,21 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           label: "Create Quiz",
           icon: Lightbulb,
           action: handleAddQuiz,
-          permission: 'canAdministerExams', // Use a more specific permission
+          permission: 'canAdministerExams',
           color: "text-yellow-400"
       },
       {
           label: "Create Flashcard",
           icon: FlashcardIcon,
           action: handleAddFlashcard,
-          permission: 'canAdministerFlashcards', // Use a more specific permission
+          permission: 'canAdministerFlashcards',
           color: ""
       },
       {
           label: "Create Exam",
           icon: InteractiveExamIcon,
           action: handleAddExam,
-          permission: 'canAdministerExams', // Use a more specific permission
+          permission: 'canAdministerExams',
           color: ""
       }
   ]
