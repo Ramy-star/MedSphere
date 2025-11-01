@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,7 +21,7 @@ export function VerificationScreen() {
     login: state.login,
     createProfileAndLogin: state.createProfileAndLogin
   }));
-
+  
   const handleAction = async () => {
     const trimmedId = studentId.trim();
     if (!trimmedId) return;
@@ -30,12 +29,13 @@ export function VerificationScreen() {
   };
 
   const handleSecretCreated = (newSecret: string) => {
-    setSecretCode(newSecret);
-    setShowCreateSecret(false);
-    // Automatically trigger login after creating a new secret code for a new user
-    if (authState === 'awaiting_secret_creation' && get().studentId) {
-        createProfileAndLogin(get().studentId, newSecret);
+    // This function will be called when a new user creates their secret code.
+    // It will then trigger the final profile creation and login step.
+    const state = useAuthStore.getState();
+    if (state.authState === 'awaiting_secret_creation' && state.studentId) {
+        createProfileAndLogin(state.studentId, newSecret);
     }
+    setShowCreateSecret(false);
   }
 
   // Effect to automatically open the secret creation screen if the state requires it
@@ -89,7 +89,7 @@ export function VerificationScreen() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.9 }}
           >
-            New user? Enter your ID and create a secret code. <br/>
+            New user? Enter your ID and leave the secret code blank. <br/>
             Returning user? Enter your ID and secret code.
           </motion.p>
           
@@ -120,7 +120,7 @@ export function VerificationScreen() {
               />
 
               <button 
-                onClick={() => setShowCreateSecret(true)}
+                onClick={() => login(studentId)}
                 className="text-blue-400 text-sm hover:underline text-center"
               >
                 Don't have a secret code?
@@ -144,12 +144,16 @@ export function VerificationScreen() {
           </motion.div>
         </motion.div>
       </motion.div>
-
-      <CreateSecretCodeScreen
-        open={showCreateSecret}
-        onOpenChange={setShowCreateSecret}
-        onSecretCreated={handleSecretCreated}
-      />
+      
+      <AnimatePresence>
+        {showCreateSecret && (
+            <CreateSecretCodeScreen
+                open={showCreateSecret}
+                onOpenChange={setShowCreateSecret}
+                onSecretCreated={handleSecretCreated}
+            />
+        )}
+      </AnimatePresence>
     </>
   );
 }

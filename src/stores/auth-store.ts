@@ -1,4 +1,3 @@
-
 'use client';
 
 import { create } from 'zustand';
@@ -64,8 +63,6 @@ export type UserProfile = {
   secretCodeHash: string;
 };
 
-type ItemHierarchy = { [id: string]: string[] }; // Maps item ID to its array of parent IDs
-
 type AuthFlowState = 'anonymous' | 'authenticated' | 'awaiting_secret_creation';
 
 type AuthState = {
@@ -90,6 +87,8 @@ type AuthState = {
   checkAndAwardAchievements: () => Promise<void>;
   clearNewlyEarnedAchievement: () => void;
 };
+
+type ItemHierarchy = { [id: string]: string[] }; // Maps item ID to its array of parent IDs
 
 let userListenerUnsubscribe: () => void = () => {};
 let hierarchyListenerUnsubscribe: () => void = () => {};
@@ -229,6 +228,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
         const userProfile = await verifySecretCode(studentId, secretCode);
         if (userProfile) {
            localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
+           set({ authState: 'authenticated' }); // This line was missing!
            await get().checkAuth();
         } else {
           throw new Error("Incorrect Secret Code.");
@@ -247,6 +247,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
           const userProfile = await createUserProfile(studentId, secretCode);
           if (userProfile) {
               localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
+              set({ authState: 'authenticated' });
               await get().checkAuth();
           } else {
               throw new Error("Could not create user profile.");
