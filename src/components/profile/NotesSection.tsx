@@ -1,9 +1,9 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { db } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { Plus, Check, Loader2, Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, Image as ImageIcon, Minus, Trash2 } from 'lucide-react';
+import { Plus, Check, Loader2, Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, Image as ImageIcon, Minus, Trash2, Edit, Palette } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
