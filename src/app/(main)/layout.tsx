@@ -11,6 +11,7 @@ import Image from "next/image";
 import { useAuthStore } from "@/stores/auth-store";
 import { ImageIcon } from "lucide-react";
 import { Header } from "@/components/header";
+import { FloatingAssistant } from "@/components/profile/FloatingAssistant";
 
 
 export default function MainLayout({
@@ -81,6 +82,7 @@ export default function MainLayout({
           </div>
         </motion.main>
       </div>
+      {!isProfilePage && user && <FloatingAssistant user={user} />}
     </>
   );
 }

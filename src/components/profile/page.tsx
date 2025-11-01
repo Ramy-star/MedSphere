@@ -35,7 +35,7 @@ import { ActiveSessions } from '@/components/profile/ActiveSessions';
 import { FilePreviewModal } from '@/components/FilePreviewModal';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 import * as Collapsible from '@radix-ui/react-collapsible';
-import { NotesSection } from '@/components/profile/NotesSection';
+import { ProfileNotesSection } from './ProfileNotesSection';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -474,15 +474,15 @@ export default function ProfilePage() {
       <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start px-4 sm:px-0">
         <div className="flex flex-col space-y-6 sm:space-y-8">
             <AiStudyBuddy user={user} />
-            <CollapsibleSection title="My Notes" icon={StickyNote} defaultOpen={true}>
-                <NotesSection userId={user.id} />
-            </CollapsibleSection>
             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
-                    <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? null} />
+                    <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                     <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
                     <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
                 </div>
+            </CollapsibleSection>
+            <CollapsibleSection title="My Notes" icon={StickyNote} defaultOpen={false}>
+                <ProfileNotesSection user={user} />
             </CollapsibleSection>
             <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
                 <ActiveSessions user={user} />

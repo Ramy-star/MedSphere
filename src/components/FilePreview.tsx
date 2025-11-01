@@ -260,7 +260,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(
 
     if (mime === 'application/pdf') {
       return (
-        <div ref={containerRef} className={cn(baseClass, 'w-full h-full')}>
+        <div ref={containerRef} className={cn(baseClass, 'w-full h-full overflow-auto')}>
           <PdfViewer
             ref={ref}
             file={contentUrl ?? ''}

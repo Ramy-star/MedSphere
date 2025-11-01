@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useMemo, useState } from 'react';
@@ -52,13 +51,14 @@ export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onF
       .sort((a, b) => {
         const aIndex = favoriteIds.indexOf(a.id);
         const bIndex = favoriteIds.indexOf(b.id);
-        return bIndex - aIndex;
+        return bIndex - aIndex; // Newest first
       });
     return sortedFavorites;
   }, [allContent, favoriteIds]);
 
   const handleFolderClick = (item: Content) => {
-    router.push(`/folder/${item.id}`);
+    const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
+    router.push(path);
   };
 
   const handleRename = async (newName: string) => {

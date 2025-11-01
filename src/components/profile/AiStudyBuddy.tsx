@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
@@ -15,6 +15,7 @@ import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { Textarea } from '../ui/textarea';
+import { Check } from 'lucide-react';
 
 
 type Suggestion = {
@@ -89,6 +90,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
     const [isExpanded, setIsExpanded] = useState(false);
     const [fontSize, setFontSize] = useState(14); // Base font size
+    const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
 
     useEffect(() => {
         messagesRef.current = chatHistory;
@@ -205,6 +207,12 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         }
     }, [customQuestion]);
     
+    const handleCopyMessage = (text: string, index: number) => {
+        navigator.clipboard.writeText(text);
+        toast({ title: "Copied to clipboard" });
+        setCopiedMessageIndex(index);
+        setTimeout(() => setCopiedMessageIndex(null), 2000);
+    };
 
     const handleCustomQuestionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
@@ -276,7 +284,7 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             </div>
              <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
                 {chatHistory.map((message, index) => (
-                    <div key={message.text + index} className={cn("flex flex-col gap-2", isRtl(message.text) ? 'font-plex-arabic' : 'font-inter')}>
+                    <div key={message.text + index} className={cn("flex flex-col gap-2 group", isRtl(message.text) ? 'font-plex-arabic' : 'font-inter')}>
                         {message.role === 'user' && (
                              <div dir="auto" className="self-end bg-blue-600 text-white rounded-2xl px-3 py-2 max-w-[85%] whitespace-pre-wrap break-words" style={{fontSize: 'inherit'}}>
                                 {message.text}
@@ -299,6 +307,14 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                 >
                                     {message.text}
                                 </ReactMarkdown>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 rounded-full text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mt-2"
+                                    onClick={() => handleCopyMessage(message.text, index)}
+                                >
+                                    {copiedMessageIndex === index ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
+                                </Button>
                             </div>
                         )}
                     </div>

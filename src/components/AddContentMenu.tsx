@@ -10,6 +10,8 @@ import { NewLinkDialog } from './NewLinkDialog';
 import { Link2Icon } from './icons/Link2Icon';
 import { useAuthStore } from '@/stores/auth-store';
 import { FlashcardIcon } from './icons/FlashcardIcon';
+import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
+import { Lightbulb } from 'lucide-react';
 
 type AddContentMenuProps = {
   parentId: string | null;
@@ -90,6 +92,38 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
     }
   }
 
+  const handleAddQuiz = async () => {
+    if (!parentId) return;
+    try {
+        await contentService.createInteractiveQuiz(parentId);
+        toast({ title: 'Quiz Created', description: `A new quiz has been created.` });
+        setPopoverOpen(false);
+    } catch(error: any) {
+        console.error("Failed to create quiz:", error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Error creating quiz', 
+            description: error.message || 'An unknown error occurred.' 
+        });
+    }
+  }
+
+  const handleAddExam = async () => {
+    if (!parentId) return;
+    try {
+        await contentService.createInteractiveExam(parentId);
+        toast({ title: 'Exam Created', description: `A new exam has been created.` });
+        setPopoverOpen(false);
+    } catch(error: any) {
+        console.error("Failed to create exam:", error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Error creating exam', 
+            description: error.message || 'An unknown error occurred.' 
+        });
+    }
+  }
+
   const handleUploadClick = () => {
     fileInputRef.current?.click();
   };
@@ -136,6 +170,18 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           action: handleAddFlashcard,
           permission: 'canCreateFlashcard'
       },
+       {
+          label: "Create Quiz",
+          icon: Lightbulb,
+          action: handleAddQuiz,
+          permission: 'canCreateFlashcard' // Using same permission for simplicity
+      },
+      {
+          label: "Create Exam",
+          icon: InteractiveExamIcon,
+          action: handleAddExam,
+          permission: 'canCreateFlashcard' // Using same permission for simplicity
+      }
   ]
 
   const visibleMenuItems = menuItems.filter(item => can(item.permission, parentId));

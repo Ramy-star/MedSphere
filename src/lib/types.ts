@@ -40,3 +40,13 @@ export interface ExamResult {
     timestamp: Date;
     userId: string;
 }
+
+export interface Note {
+  id: string;
+  content: string;
+  color: string;
+  createdAt: string;
+  updatedAt: string;
+  sourceFileId?: string;
+  pageNumber?: number;
+}
