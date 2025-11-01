@@ -1,7 +1,7 @@
 
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown, GripVertical } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -20,6 +20,9 @@ import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors, closestCenter } from '@dnd-kit/core';
+import { SortableContext, arrayMove, rectSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 
 // === Types ===
@@ -360,6 +363,180 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
 
 // --- MAIN EXAM COMPONENT LOGIC ---
 
+const motionVariants = {
+  hidden: { opacity: 0, y: 10 },
+  visible: (i: number) => ({
+    opacity: 1,
+    y: 0,
+    transition: {
+      delay: i * 0.05,
+      duration: 0.3,
+      ease: "easeOut",
+    },
+  }),
+};
+
+const SortableMcqItem = ({ mcq, level, onEdit, onDelete }: { mcq: MCQ, level: 1 | 2, onEdit: () => void, onDelete: () => void }) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: mcq.q,
+    transition: { duration: 550, easing: 'cubic-bezier(0.4, 0, 0.2, 1)' },
+  });
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition: isDragging ? undefined : transition,
+    zIndex: isDragging ? 10 : 'auto',
+    position: 'relative',
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} {...attributes}>
+      <div className="group flex items-center justify-between p-2 rounded-lg border mb-2 bg-white/5 border-white/10 hover:bg-white/10">
+        <div className="flex items-center gap-3 flex-grow min-w-0">
+          <div {...listeners} className="cursor-grab p-1">
+             <GripVertical className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+          </div>
+          <span className="truncate text-sm">{mcq.q}</span>
+        </div>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity pl-2 flex-shrink-0">
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-white hover:bg-white/20" onClick={onEdit}>
+            <Pencil className="w-4 h-4" />
+          </Button>
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:bg-red-500/20 hover:text-red-400" onClick={onDelete}>
+            <Trash2 className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+
+const FullLectureEditorDialog = ({
+    isOpen,
+    onClose,
+    lecture,
+    onDeleteMcq,
+    onOpenUpsertDialog,
+    onLectureNameSave,
+} : {
+    isOpen: boolean;
+    onClose: () => void;
+    lecture: Lecture;
+    onDeleteMcq: (mcqToDelete: MCQ, level: 1 | 2) => void;
+    onOpenUpsertDialog: (mcq: MCQ, level: 1 | 2) => void;
+    onLectureNameSave: (newName: string) => void;
+}) => {
+    const [lectureName, setLectureName] = useState(lecture.name);
+    const dndId = React.useId();
+
+    useEffect(() => {
+        setLectureName(lecture.name);
+    }, [lecture]);
+
+    const handleSave = () => {
+        if (lectureName.trim() && lectureName.trim() !== lecture.name) {
+            onLectureNameSave(lectureName.trim());
+        }
+        onClose();
+    };
+    
+    // This is a placeholder for drag-and-drop reordering, which is complex.
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+    const handleDragEnd = (event: DragEndEvent) => {
+      // Reordering logic would go here
+    };
+
+    const allMcqs = [
+        ...(lecture.mcqs_level_1 || []).map(mcq => ({ ...mcq, level: 1 as const })),
+        ...(lecture.mcqs_level_2 || []).map(mcq => ({ ...mcq, level: 2 as const }))
+    ];
+
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col exam-theme-wrapper !bg-card !text-foreground">
+                <DialogHeader className="pb-4 border-b">
+                    <DialogTitle className="font-headline text-xl flex items-center gap-2">
+                        <Edit className="w-5 h-5 text-primary" />
+                        Edit Lecture
+                    </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 mb-4">
+                    <label className="text-sm font-medium">Lecture Name</label>
+                    <Input value={lectureName} onChange={(e) => setLectureName(e.target.value)} className="bg-background"/>
+                </div>
+                <h3 className="font-semibold text-lg border-b pb-2 mb-2">Questions</h3>
+                <div className="flex-grow overflow-y-auto space-y-2 pr-2 -mr-2">
+                     <DndContext id={dndId} sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+                        <SortableContext items={allMcqs.map(q => q.q)} strategy={rectSortingStrategy}>
+                            {allMcqs.length > 0 ? allMcqs.map((mcq, index) => (
+                                <SortableMcqItem
+                                    key={mcq.q + index}
+                                    mcq={mcq}
+                                    level={mcq.level}
+                                    onEdit={() => onOpenUpsertDialog(mcq, mcq.level)}
+                                    onDelete={() => onDeleteMcq(mcq, mcq.level)}
+                                />
+                            )) : (
+                                <p className="text-sm text-muted-foreground text-center py-8">No questions in this lecture yet.</p>
+                            )}
+                        </SortableContext>
+                    </DndContext>
+                </div>
+                <DialogFooter className="pt-4 border-t mt-auto">
+                    <Button variant="outline" onClick={onClose}>Cancel</Button>
+                    <Button onClick={handleSave}>Save & Close</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
+const UpsertMcqDialog = ({
+    isOpen,
+    onClose,
+    lectures,
+    activeLectureId,
+    onUpsert,
+    mcqToEdit,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    lectures: Lecture[];
+    activeLectureId?: string;
+    onUpsert: (lectureId: string, newLectureName: string, mcq: MCQ, level: 1 | 2, originalMcq?: MCQ) => void;
+    mcqToEdit: { mcq: MCQ, level: 1 | 2 } | null;
+}) => {
+    const isEditing = !!mcqToEdit;
+    const formKey = useMemo(() => mcqToEdit?.mcq.q || `new-${Date.now()}`, [mcqToEdit]);
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[625px] exam-theme-wrapper !bg-card !text-foreground">
+                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
+                    <DialogHeader className="pb-4 border-b">
+                        <motion.div custom={0} initial="hidden" animate="visible" variants={motionVariants}>
+                            <DialogTitle className="font-headline text-xl flex items-center gap-2">
+                               {isEditing ? <Edit className="w-5 h-5 text-primary" /> : <PlusCircle className="w-5 h-5 text-primary" />}
+                               {isEditing ? 'Edit Question' : 'Create a New Question'}
+                            </DialogTitle>
+                        </motion.div>
+                    </DialogHeader>
+                    <UpsertMcqFormContent
+                        key={formKey}
+                        lectures={lectures}
+                        activeLectureId={activeLectureId}
+                        onUpsert={onUpsert}
+                        closeDialog={onClose}
+                        mcqToEdit={mcqToEdit}
+                    />
+                </motion.div>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
 const UpsertMcqFormContent = ({
     lectures,
     activeLectureId,
@@ -425,166 +602,76 @@ const UpsertMcqFormContent = ({
 
     return (
         <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-4">
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Lecture</label>
-                <Select value={lectureId} onValueChange={setLectureId}>
-                    <SelectTrigger><SelectValue placeholder="Select a lecture" /></SelectTrigger>
-                    <SelectContent>
-                        {lectures.map(lec => (<SelectItem key={lec.id} value={lec.id}>{lec.name}</SelectItem>))}
-                        <SelectItem value="new">Create a new lecture...</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
+             <motion.div custom={1} initial="hidden" animate="visible" variants={motionVariants}>
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Lecture</label>
+                    <Select value={lectureId} onValueChange={setLectureId}>
+                        <SelectTrigger><SelectValue placeholder="Select a lecture" /></SelectTrigger>
+                        <SelectContent>
+                            {lectures.map(lec => (<SelectItem key={lec.id} value={lec.id}>{lec.name}</SelectItem>))}
+                            <SelectItem value="new">Create a new lecture...</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </motion.div>
 
             {lectureId === 'new' && (
-                <div className="space-y-2">
-                    <label className="text-sm font-medium">New Lecture Name</label>
-                    <Input value={newLectureName} onChange={(e) => setNewLectureName(e.target.value)} placeholder="e.g., L6 Cardiology" required />
-                </div>
+                <motion.div custom={2} initial="hidden" animate="visible" variants={motionVariants}>
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium">New Lecture Name</label>
+                        <Input value={newLectureName} onChange={(e) => setNewLectureName(e.target.value)} placeholder="e.g., L6 Cardiology" required />
+                    </div>
+                </motion.div>
             )}
             
-             <div className="space-y-2">
-                <label className="text-sm font-medium">Question Level</label>
-                <Select value={String(level)} onValueChange={(v) => setLevel(Number(v) as 1 | 2)}>
-                    <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                    <SelectContent>
-                       <SelectItem value="1">Level 1</SelectItem>
-                       <SelectItem value="2">Level 2</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-
-            <div className="space-y-2">
-                <label className="text-sm font-medium">Question</label>
-                <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g., What is the primary function of the mitochondria?" required />
-            </div>
-
-            <div className="space-y-3">
-                <label className="text-sm font-medium">Options</label>
-                {Array.from({ length: 5 }).map((_, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                       <span className="font-semibold text-gray-500">{String.fromCharCode(65 + index)}</span>
-                        <Input value={options[index] || ''} onChange={(e) => handleOptionChange(index, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + index)}`} />
-                    </div>
-                ))}
-            </div>
-
-             <div className="space-y-2">
-                <label className="text-sm font-medium">Correct Answer</label>
-                <Input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Copy-paste the exact text of the correct option" required />
-            </div>
+            <motion.div custom={3} initial="hidden" animate="visible" variants={motionVariants}>
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Question Level</label>
+                    <Select value={String(level)} onValueChange={(v) => setLevel(Number(v) as 1 | 2)}>
+                        <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                        <SelectContent>
+                           <SelectItem value="1">Level 1</SelectItem>
+                           <SelectItem value="2">Level 2</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </motion.div>
             
-            <div className="flex justify-end pt-4">
-                <Button type="submit">{isEditing ? 'Save Changes' : 'Add Question'}</Button>
-            </div>
+            <motion.div custom={4} initial="hidden" animate="visible" variants={motionVariants}>
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">Question</label>
+                    <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g., What is the primary function of the mitochondria?" required />
+                </div>
+            </motion.div>
+
+            <motion.div custom={5} initial="hidden" animate="visible" variants={motionVariants}>
+                <div className="space-y-3">
+                    <label className="text-sm font-medium">Options</label>
+                    {Array.from({ length: 5 }).map((_, index) => (
+                        <div key={index} className="flex items-center gap-2">
+                           <span className="font-semibold text-gray-500">{String.fromCharCode(65 + index)}</span>
+                            <Input value={options[index] || ''} onChange={(e) => handleOptionChange(index, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + index)}`} />
+                        </div>
+                    ))}
+                </div>
+            </motion.div>
+
+            <motion.div custom={6} initial="hidden" animate="visible" variants={motionVariants}>
+                 <div className="space-y-2">
+                    <label className="text-sm font-medium">Correct Answer</label>
+                    <Input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Copy-paste the exact text of the correct option" required />
+                </div>
+            </motion.div>
+
+            <DialogFooter className="pt-4 mt-4 border-t sm:justify-center gap-2">
+                <motion.div custom={7} initial="hidden" animate="visible" variants={motionVariants} className="w-full sm:w-28">
+                    <Button type="button" variant="outline" className="w-full" onClick={closeDialog}>Cancel</Button>
+                </motion.div>
+                <motion.div custom={8} initial="hidden" animate="visible" variants={motionVariants} className="w-full sm:w-28">
+                     <Button type="submit" className="w-full">{isEditing ? 'Save Changes' : 'Add Question'}</Button>
+                </motion.div>
+            </DialogFooter>
         </form>
-    );
-};
-
-const UpsertMcqDialog = ({
-    isOpen,
-    onClose,
-    lectures,
-    activeLectureId,
-    onUpsert,
-    mcqToEdit,
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    lectures: Lecture[];
-    activeLectureId?: string;
-    onUpsert: (lectureId: string, newLectureName: string, mcq: MCQ, level: 1 | 2, originalMcq?: MCQ) => void;
-    mcqToEdit: { mcq: MCQ, level: 1 | 2 } | null;
-}) => {
-    const isEditing = !!mcqToEdit;
-    const formKey = useMemo(() => mcqToEdit?.mcq.q || `new-${Date.now()}`, [mcqToEdit]);
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[625px]">
-                <DialogHeader>
-                    <DialogTitle>{isEditing ? 'Edit Question' : 'Create a New Question'}</DialogTitle>
-                </DialogHeader>
-                <UpsertMcqFormContent
-                    key={formKey}
-                    lectures={lectures}
-                    activeLectureId={activeLectureId}
-                    onUpsert={onUpsert}
-                    closeDialog={onClose}
-                    mcqToEdit={mcqToEdit}
-                />
-            </DialogContent>
-        </Dialog>
-    );
-};
-
-const FullLectureEditorDialog = ({
-    isOpen,
-    onClose,
-    lecture,
-    onDeleteMcq,
-    onOpenUpsertDialog,
-    onLectureNameSave,
-} : {
-    isOpen: boolean;
-    onClose: () => void;
-    lecture: Lecture;
-    onDeleteMcq: (mcqToDelete: MCQ, level: 1 | 2) => void;
-    onOpenUpsertDialog: (mcq: MCQ, level: 1 | 2) => void;
-    onLectureNameSave: (newName: string) => void;
-}) => {
-    const [lectureName, setLectureName] = useState(lecture.name);
-
-    useEffect(() => {
-        setLectureName(lecture.name);
-    }, [lecture]);
-
-    const handleSave = () => {
-        if (lectureName.trim() && lectureName.trim() !== lecture.name) {
-            onLectureNameSave(lectureName.trim());
-        }
-        onClose();
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>Edit Lecture</DialogTitle>
-                </DialogHeader>
-                <div className="space-y-2 mb-4">
-                    <label className="text-sm font-medium">Lecture Name</label>
-                    <Input value={lectureName} onChange={(e) => setLectureName(e.target.value)} />
-                </div>
-                <div className="flex-grow overflow-y-auto space-y-4 pr-2 -mr-2">
-                    <h3 className="font-semibold text-lg">Questions</h3>
-                    {(lecture.mcqs_level_1 || []).map((mcq, index) => (
-                        <div key={`l1-${index}`} className="flex items-center justify-between p-2 rounded-md bg-secondary">
-                            <p className="text-sm truncate flex-1 pr-4">{mcq.q}</p>
-                            <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenUpsertDialog(mcq, 1)}><Edit size={14}/></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDeleteMcq(mcq, 1)}><Trash2 size={14}/></Button>
-                            </div>
-                        </div>
-                    ))}
-                     {(lecture.mcqs_level_2 || []).map((mcq, index) => (
-                        <div key={`l2-${index}`} className="flex items-center justify-between p-2 rounded-md bg-secondary">
-                            <p className="text-sm truncate flex-1 pr-4">{mcq.q}</p>
-                            <div className="flex gap-1">
-                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenUpsertDialog(mcq, 2)}><Edit size={14}/></Button>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDeleteMcq(mcq, 2)}><Trash2 size={14}/></Button>
-                            </div>
-                        </div>
-                    ))}
-                    {(!lecture.mcqs_level_1 || lecture.mcqs_level_1.length === 0) && (!lecture.mcqs_level_2 || lecture.mcqs_level_2.length === 0) && (
-                        <p className="text-sm text-muted-foreground text-center py-4">No questions in this lecture yet.</p>
-                    )}
-                </div>
-                <div className="flex justify-end pt-4 border-t mt-4">
-                    <Button onClick={handleSave}>Save & Close</Button>
-                </div>
-            </DialogContent>
-        </Dialog>
     );
 };
 
@@ -957,25 +1044,51 @@ const ExamMode = ({
         <div className='text-black bg-[#f5f7fa] font-["Segoe_UI"] text-[17px] w-full h-full exam-theme-wrapper'>
             <style>{`
                 .exam-theme-wrapper {
-                    --background: 220 24% 95%; /* light gray-blue */
-                    --foreground: 222.2 84% 4.9%; /* very dark blue, almost black */
-                    --card: 210 40% 98%; /* very light gray-blue, almost white */
-                    --popover: 210 40% 98%;
-                    --primary: 224 76% 48%; /* blue */
-                    --primary-foreground: 210 40% 98%;
-                    --secondary: 210 40% 96.1%; /* light gray */
-                    --secondary-foreground: 217 91% 20%;
-                    --muted: 210 40% 96.1%;
-                    --muted-foreground: 215.4 16.3% 46.9%; /* gray */
-                    --accent: 243 77% 59%; /* purple-blue */
-                    --accent-foreground: 210 40% 98%;
-                    --destructive: 0 84.2% 60.2%; /* red */
-                    --destructive-foreground: 210 40% 98%;
-                    --border: 214.3 31.8% 91.4%; /* light gray */
-                    --input: 214.3 31.8% 91.4%;
-                    --ring: 224 76% 48%;
+                    --background: hsl(220 24% 95%);
+                    --foreground: hsl(222.2 84% 4.9%);
+                    --card: hsl(210 40% 98%);
+                    --card-foreground: hsl(222.2 84% 4.9%);
+                    --popover: hsl(210 40% 98%);
+                    --popover-foreground: hsl(222.2 84% 4.9%);
+                    --primary: hsl(224 76% 48%);
+                    --primary-foreground: hsl(210 40% 98%);
+                    --secondary: hsl(210 40% 96.1%);
+                    --secondary-foreground: hsl(217 91% 20%);
+                    --muted: hsl(210 40% 96.1%);
+                    --muted-foreground: hsl(215.4 16.3% 46.9%);
+                    --accent: hsl(243 77% 59%);
+                    --accent-foreground: hsl(210 40% 98%);
+                    --destructive: hsl(0 84.2% 60.2%);
+                    --destructive-foreground: hsl(210 40% 98%);
+                    --border: hsl(214.3 31.8% 91.4%);
+                    --input: hsl(214.3 31.8% 91.4%);
+                    --ring: hsl(224 76% 48%);
                 }
                 .exam-theme-wrapper > div { color: hsl(var(--foreground)); }
+                .expanding-btn {
+                    @apply bg-transparent font-semibold rounded-full cursor-pointer inline-flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out;
+                    width: 44px;
+                    height: 44px;
+                    padding: 0;
+                    gap: 0;
+                }
+                .expanding-btn .expanding-text {
+                    @apply whitespace-nowrap opacity-0 max-w-0 transition-all duration-200 ease-in-out;
+                }
+                .expanding-btn:hover {
+                    width: 120px; /* Adjust expanded width */
+                    padding: 0 16px;
+                    @apply justify-start gap-2;
+                }
+                .expanding-btn:hover .expanding-text {
+                    @apply opacity-100 max-w-full;
+                }
+                .expanding-btn.primary { @apply border-2 border-primary text-primary; }
+                .expanding-btn.primary:hover { @apply bg-primary text-primary-foreground; }
+                .expanding-btn.destructive { @apply border-2 border-destructive text-destructive; }
+                .expanding-btn.destructive:hover { @apply bg-destructive text-destructive-foreground; }
+                .expanding-btn.secondary { @apply border-2 border-gray-400 text-gray-500; }
+                .expanding-btn.secondary:hover { @apply bg-gray-400 text-white; }
             `}</style>
             <AlertDialog open={isExitAlertOpen} onOpenChange={setIsExitAlertOpen}>
                 <AlertDialogContent className="rounded-2xl">
@@ -1480,7 +1593,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
     }
 
     return (
-        <main className="exam-page-container">
+        <main className="exam-page-container h-full">
             <div id="questions-container" className="h-full">
                  <ExamMode 
                     fileItemId={fileItemId}
