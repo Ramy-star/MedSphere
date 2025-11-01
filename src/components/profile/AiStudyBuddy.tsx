@@ -51,7 +51,7 @@ type TimeOfDayTheme = {
 
 // Helper function to detect RTL text
 const isRtl = (text: string) => {
-  const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFF\uFE70-\uFEFC]/;
+  const rtlRegex = /[\u0590-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
   return rtlRegex.test(text);
 };
 
@@ -337,7 +337,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                      <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
                      {onToggleExpand && (
                         <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={onToggleExpand}>
-                            {isFloating ? <Shrink size={16}/> : <Maximize size={16}/>}
+                            {isFloating ? <Maximize size={16}/> : <Shrink size={16}/>}
                         </Button>
                      )}
                 </div>
@@ -388,11 +388,33 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             </div>
         </div>
     );
+    
+    const ContentSwitch = () => {
+        if (isFloating && !isOpen) return null; // Don't render content if floating and closed
+        
+        return (
+            <div className="flex-1 min-h-0">
+                <AnimatePresence mode="wait">
+                    <motion.div
+                        key={view}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.3 }}
+                        className="h-full flex flex-col"
+                    >
+                        {view === 'intro' ? <IntroView /> : <ChatView />}
+                    </motion.div>
+                </AnimatePresence>
+            </div>
+        );
+    };
+
 
     return (
         <Collapsible.Root 
             open={isOpen} 
-            onOpenChange={setIsOpen} 
+            onOpenChange={isFloating ? undefined : setIsOpen} 
             className={cn("w-full transition-all duration-500 ease-in-out", isFloating ? "h-full" : "")}
         >
             <div 
@@ -429,20 +451,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                                 variants={sectionVariants}
                                 className="overflow-hidden flex-1 flex flex-col pt-4"
                             >
-                                <div className="flex-1 min-h-0">
-                                    <AnimatePresence mode="wait">
-                                        <motion.div
-                                            key={view}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            transition={{ duration: 0.3 }}
-                                            className="h-full flex flex-col"
-                                        >
-                                            {view === 'intro' ? <IntroView /> : <ChatView />}
-                                        </motion.div>
-                                    </AnimatePresence>
-                                </div>
+                                <ContentSwitch />
                                 
                                 <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
                                     <PopoverTrigger asChild>
