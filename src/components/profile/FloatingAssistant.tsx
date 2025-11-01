@@ -1,11 +1,10 @@
-
 'use client';
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { AiStudyBuddy } from './AiStudyBuddy';
+import { X } from 'lucide-react';
 
 export const FloatingAssistant = ({ user }: { user: typeof useAuthStore.arguments.user }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -36,7 +35,7 @@ export const FloatingAssistant = ({ user }: { user: typeof useAuthStore.argument
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                 >
-                    <AnimatePresence>
+                    <AnimatePresence mode="wait">
                         <motion.div
                             key={isOpen ? 'close' : 'open'}
                             initial={{ rotate: -90, opacity: 0, scale: 0.5 }}
