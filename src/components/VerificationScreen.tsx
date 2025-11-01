@@ -1,10 +1,11 @@
+
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Logo } from './logo';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { CreateSecretCodeScreen } from './CreateSecretCodeScreen';
@@ -14,23 +15,38 @@ export function VerificationScreen() {
   const [secretCode, setSecretCode] = useState('');
   const [showCreateSecret, setShowCreateSecret] = useState(false);
   
-  const { error, loading, login } = useAuthStore(state => ({
+  const { error, loading, authState, login, createProfileAndLogin } = useAuthStore(state => ({
     error: state.error,
     loading: state.loading,
+    authState: state.authState,
     login: state.login,
+    createProfileAndLogin: state.createProfileAndLogin
   }));
 
   const handleAction = async () => {
     const trimmedId = studentId.trim();
-    const trimmedSecret = secretCode.trim();
     if (!trimmedId) return;
-    await login(trimmedId, trimmedSecret || undefined);
+    await login(trimmedId, secretCode.trim() || undefined);
   };
 
   const handleSecretCreated = (newSecret: string) => {
     setSecretCode(newSecret);
     setShowCreateSecret(false);
+    // Automatically trigger login after creating a new secret code for a new user
+    if (authState === 'awaiting_secret_creation' && get().studentId) {
+        createProfileAndLogin(get().studentId, newSecret);
+    }
   }
+
+  // Effect to automatically open the secret creation screen if the state requires it
+  useEffect(() => {
+    if (authState === 'awaiting_secret_creation') {
+      setShowCreateSecret(true);
+    } else {
+      setShowCreateSecret(false);
+    }
+  }, [authState]);
+
 
   return (
     <>

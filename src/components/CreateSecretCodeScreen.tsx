@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,14 +26,14 @@ const PasswordRequirement = ({ met, text }: { met: boolean, text: string }) => (
     <motion.div
       initial={{ opacity: 0, y: -5 }}
       animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-2 text-sm"
+      className={cn("flex items-center gap-2 text-sm transition-colors", met ? "text-green-400" : "text-slate-500")}
     >
       {met ? (
-        <CheckCircle2 className="h-4 w-4 text-green-400" />
+        <CheckCircle2 className="h-4 w-4" />
       ) : (
-        <XCircle className="h-4 w-4 text-slate-500" />
+        <XCircle className="h-4 w-4" />
       )}
-      <span className={cn(met ? "text-slate-300" : "text-slate-500")}>{text}</span>
+      <span>{text}</span>
     </motion.div>
 );
 

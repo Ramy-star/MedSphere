@@ -1,4 +1,5 @@
-'use server';
+
+'use client';
 
 import { db } from '@/firebase';
 import { collection, doc, getDoc, getDocs, query, setDoc, where, runTransaction } from 'firebase/firestore';
@@ -80,6 +81,11 @@ export async function verifySecretCode(studentId: string, secretCode: string): P
     }
 
     const userProfile = userDoc.data();
+    if (!userProfile.secretCodeHash) {
+        // This case should ideally not happen for a claimed ID, but as a fallback:
+        return null;
+    }
+    
     const isMatch = await compare(secretCode, userProfile.secretCodeHash);
     
     if (isMatch) {
@@ -127,8 +133,10 @@ export async function createUserProfile(studentId: string, secretCode: string): 
                 consecutiveLoginDays: 1,
                 lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
             },
-            achievements: [],
+            achievements: [{ badgeId: 'FIRST_LOGIN', earnedAt: new Date().toISOString() }],
             sessions: [],
+            favorites: [],
+            metadata: {},
         };
 
         transaction.set(userDocRef, newUserProfile);

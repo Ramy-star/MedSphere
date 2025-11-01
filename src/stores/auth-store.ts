@@ -1,3 +1,4 @@
+
 'use client';
 
 import { create } from 'zustand';
@@ -233,8 +234,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
           throw new Error("Incorrect Secret Code.");
         }
       } else {
-        if (!secretCode) throw new Error("New user must create a secret code.");
-        await get().createProfileAndLogin(studentId, secretCode);
+        set({ authState: 'awaiting_secret_creation', studentId: studentId, loading: false });
       }
     } catch (error: any) {
         console.error("Login/Verification error:", error);
