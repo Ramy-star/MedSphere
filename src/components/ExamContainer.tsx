@@ -27,6 +27,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { contentService } from '@/lib/contentService';
 import { updateDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Textarea } from './ui/textarea';
 
 // === Types ===
 type ExamResultWithId = ExamResult & { id: string };
@@ -365,6 +366,195 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
 }
 
 // --- MAIN EXAM COMPONENT LOGIC ---
+
+// Correctly define the dialog component inside the file, before it's used.
+const UpsertMcqDialog = ({
+    isOpen,
+    onClose,
+    lectures,
+    activeLectureId,
+    onUpsert,
+    mcqToEdit,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    lectures: Lecture[];
+    activeLectureId?: string;
+    onUpsert: (lectureId: string, newLectureName: string, mcq: MCQ, level: 1 | 2, originalMcq?: MCQ) => void;
+    mcqToEdit: { mcq: MCQ, level: 1 | 2 } | null;
+}) => {
+    const isEditing = !!mcqToEdit;
+    const formKey = useMemo(() => mcqToEdit?.mcq.q || `new-${Date.now()}`, [mcqToEdit]);
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[625px]">
+                <DialogHeader>
+                    <DialogTitle>{isEditing ? 'Edit Question' : 'Create a New Question'}</DialogTitle>
+                </DialogHeader>
+                <UpsertMcqFormContent
+                    key={formKey}
+                    lectures={lectures}
+                    activeLectureId={activeLectureId}
+                    onUpsert={onUpsert}
+                    closeDialog={onClose}
+                    mcqToEdit={mcqToEdit}
+                />
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+const UpsertMcqFormContent = ({
+    lectures,
+    activeLectureId,
+    onUpsert,
+    closeDialog,
+    mcqToEdit,
+}: {
+    lectures: Lecture[];
+    activeLectureId?: string;
+    onUpsert: (lectureId: string, newLectureName: string, mcq: MCQ, level: 1 | 2, originalMcq?: MCQ) => void;
+    closeDialog: () => void;
+    mcqToEdit: { mcq: MCQ, level: 1 | 2 } | null;
+}) => {
+    const isEditing = !!mcqToEdit;
+
+    const getInitialLectureId = () => {
+        if (isEditing) {
+            const parentLecture = lectures.find(l => 
+                (l.mcqs_level_1 || []).some(mcq => mcq.q === mcqToEdit.mcq.q) ||
+                (l.mcqs_level_2 || []).some(mcq => mcq.q === mcqToEdit.mcq.q)
+            );
+            return parentLecture?.id || 'new';
+        }
+        return activeLectureId || lectures[0]?.id || 'new';
+    };
+    
+    const [lectureId, setLectureId] = useState<string>(getInitialLectureId);
+    const [newLectureName, setNewLectureName] = useState('');
+    const [question, setQuestion] = useState(isEditing ? mcqToEdit.mcq.q : '');
+    const [options, setOptions] = useState<string[]>(isEditing ? mcqToEdit.mcq.o : ['', '', '', '', '']);
+    const [answer, setAnswer] = useState(isEditing ? mcqToEdit.mcq.a : '');
+    const [level, setLevel] = useState<1 | 2>(isEditing ? mcqToEdit.level : 1);
+
+    const handleOptionChange = (index: number, value: string) => {
+        const newOptions = [...options];
+        newOptions[index] = value;
+        setOptions(newOptions);
+    };
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const trimmedQuestion = question.trim();
+        const trimmedOptions = options.map(o => o.trim()).filter(Boolean);
+        const trimmedAnswer = answer.trim();
+
+        if (!trimmedQuestion || trimmedOptions.length < 2 || !trimmedAnswer) {
+            alert("Please fill out the question, at least two options, and the answer.");
+            return;
+        }
+
+        if (!trimmedOptions.includes(trimmedAnswer)) {
+            alert("The correct answer must be one of the provided options.");
+            return;
+        }
+
+        const newMcq: MCQ = { q: trimmedQuestion, o: trimmedOptions, a: trimmedAnswer };
+        onUpsert(lectureId, newLectureName, newMcq, level, mcqToEdit?.mcq);
+        closeDialog();
+    };
+
+    return (
+        <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-4">
+            <div className="space-y-2">
+                <label className="text-sm font-medium">Lecture</label>
+                <Select value={lectureId} onValueChange={setLectureId}>
+                    <SelectTrigger><SelectValue placeholder="Select a lecture" /></SelectTrigger>
+                    <SelectContent>
+                        {lectures.map(lec => (<SelectItem key={lec.id} value={lec.id}>{lec.name}</SelectItem>))}
+                        <SelectItem value="new">Create a new lecture...</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            {lectureId === 'new' && (
+                <div className="space-y-2">
+                    <label className="text-sm font-medium">New Lecture Name</label>
+                    <Input value={newLectureName} onChange={(e) => setNewLectureName(e.target.value)} placeholder="e.g., L6 Cardiology" required />
+                </div>
+            )}
+            
+             <div className="space-y-2">
+                <label className="text-sm font-medium">Question Level</label>
+                <Select value={String(level)} onValueChange={(v) => setLevel(Number(v) as 1 | 2)}>
+                    <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                    <SelectContent>
+                       <SelectItem value="1">Level 1</SelectItem>
+                       <SelectItem value="2">Level 2</SelectItem>
+                    </SelectContent>
+                </Select>
+            </div>
+
+            <div className="space-y-2">
+                <label className="text-sm font-medium">Question</label>
+                <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g., What is the primary function of the mitochondria?" required />
+            </div>
+
+            <div className="space-y-3">
+                <label className="text-sm font-medium">Options</label>
+                {options.map((option, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                       <span className="font-semibold text-gray-500">{String.fromCharCode(65 + index)}</span>
+                        <Input value={option} onChange={(e) => handleOptionChange(index, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + index)}`} />
+                    </div>
+                ))}
+            </div>
+
+             <div className="space-y-2">
+                <label className="text-sm font-medium">Correct Answer</label>
+                <Input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Copy-paste the exact text of the correct option" required />
+            </div>
+            
+            <div className="flex justify-end pt-4">
+                <Button type="submit">{isEditing ? 'Save Changes' : 'Add Question'}</Button>
+            </div>
+        </form>
+    );
+};
+
+
+const EditLectureDialog = ({ lecture, onSave, onOpenChange }: { lecture: Lecture, onSave: (newName: string) => void, onOpenChange: (open: boolean) => void }) => {
+    const [name, setName] = useState(lecture.name);
+
+    useEffect(() => {
+        setName(lecture.name);
+    }, [lecture]);
+
+    const handleSave = () => {
+        if (name.trim()) {
+            onSave(name.trim());
+            onOpenChange(false);
+        }
+    };
+
+    return (
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Edit Lecture Name</AlertDialogTitle>
+                <AlertDialogDescription>Enter the new name for the "{lecture.name}" lecture.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-4">
+                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Lecture Name" />
+            </div>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => onOpenChange(false)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    );
+};
+
 
 const ExamMode = ({
     fileItemId,
@@ -999,7 +1189,7 @@ const ExamMode = ({
                                                 className={cn('option-btn', {'selected': userAnswers[currentQuestionIndex] === option})}
                                                 onClick={() => handleSelectOption(option)}
                                             >
-                                                <span className="option-letter">{String.fromCharCode(97 + index).toUpperCase()}</span>
+                                                <span className="option-letter">{String.fromCharCode(65 + index).toUpperCase()}</span>
                                                 <span>{option.substring(option.indexOf(')') + 1).trim()}</span>
                                             </button>
                                         ))}
