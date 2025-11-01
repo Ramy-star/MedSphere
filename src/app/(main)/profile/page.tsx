@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, StickyNote } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, NotebookPen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -474,12 +474,12 @@ export default function ProfilePage() {
       <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start max-w-7xl mx-auto w-full px-4 sm:px-8">
         <div className="flex flex-col space-y-6 sm:space-y-8">
             <AiStudyBuddy user={user} />
-            <CollapsibleSection title="My Notes" icon={StickyNote} defaultOpen={false}>
+             <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
                 <ProfileNotesSection user={user} />
             </CollapsibleSection>
         </div>
 
-        <div className="w-px bg-slate-700/80 h-full hidden lg:block" />
+        <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
 
         <div className="flex flex-col space-y-6 sm:space-y-8">
              <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
