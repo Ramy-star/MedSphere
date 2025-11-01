@@ -73,7 +73,7 @@ export function VerificationScreen() {
           initial={{ scale: 0.9, y: 20, opacity: 0 }}
           animate={{ scale: 1, y: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2, ease: 'easeOut' }}
-          className="relative z-10 flex flex-col items-center text-center glass-card p-8 md:p-12 rounded-[1.75rem] max-w-md w-full"
+          className="relative z-10 flex flex-col items-center text-center glass-card p-8 md:p-12 rounded-[1.75rem] max-w-lg w-full"
         >
           <motion.div
             initial={{ y: -20, opacity: 0 }}
@@ -100,14 +100,14 @@ export function VerificationScreen() {
           >
             <p className="mb-2">Enter your Student ID, then:</p>
             <ul className="list-none p-0 text-left inline-block space-y-1">
-              <li className="flex items-start gap-2">
-                <span className="text-blue-400 mt-1 font-bold">●</span>
+              <li className="flex items-center gap-2">
+                <span className="text-blue-400 font-bold">●</span>
                 <span>
                   <strong>New user?</strong> Create your secret code first.
                 </span>
               </li>
-              <li className="flex items-start gap-2">
-                <span className="text-green-400 mt-1 font-bold">●</span>
+              <li className="flex items-center gap-2">
+                <span className="text-green-400 font-bold">●</span>
                  <span>
                   <strong>Existing user?</strong> Enter your secret code to log in.
                 </span>
