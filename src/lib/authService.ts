@@ -1,4 +1,3 @@
-
 'use server';
 
 import { db } from '@/firebase';
@@ -51,7 +50,7 @@ export async function getStudentDetails(studentId: string): Promise<{ isValid: b
     }
 
     if (!db) {
-        throw new Error("Database service is not available.");
+        throw new Error("Could not connect to the database to verify student ID.");
     }
 
     try {
@@ -61,11 +60,8 @@ export async function getStudentDetails(studentId: string): Promise<{ isValid: b
         if (userDoc.exists()) {
             return { isValid: true, isClaimed: true, userProfile: { id: userDoc.id, ...userDoc.data() } };
         }
-
-        const claimedIdRef = doc(db, 'claimedStudentIds', trimmedId);
-        const claimedIdDoc = await getDoc(claimedIdRef);
         
-        return { isValid: true, isClaimed: claimedIdDoc.exists(), userProfile: null };
+        return { isValid: true, isClaimed: false, userProfile: null };
 
     } catch (error) {
         console.error("Error checking student details:", error);
@@ -99,12 +95,11 @@ export async function createUserProfile(studentId: string, secretCode: string): 
     if (!db) throw new Error("Database service is not available.");
 
     return runTransaction(db, async (transaction) => {
-        const claimedIdRef = doc(db, 'claimedStudentIds', trimmedId);
         const userDocRef = doc(db, 'users', trimmedId);
+        const userDoc = await transaction.get(userDocRef);
 
-        const claimedDoc = await transaction.get(claimedIdRef);
-        if (claimedDoc.exists()) {
-            throw new Error("This Student ID has already been claimed.");
+        if (userDoc.exists()) {
+            throw new Error("This Student ID has already been registered.");
         }
 
         const studentData = allStudentData.get(trimmedId);
@@ -137,7 +132,6 @@ export async function createUserProfile(studentId: string, secretCode: string): 
         };
 
         transaction.set(userDocRef, newUserProfile);
-        transaction.set(claimedIdRef, { userId: trimmedId, claimedAt: new Date().toISOString() });
 
         return newUserProfile;
     });
