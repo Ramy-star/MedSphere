@@ -50,6 +50,7 @@
         "photoURL": { "type": "string", "format": "uri" },
         "createdAt": { "type": "string", "format": "date-time"},
         "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
+        "secretCodeHash": { "type": "string", "description": "The hashed secret code for the user." },
         "level": { "type": "string", "description": "The academic level of the user." },
         "favorites": {
             "type": "array",
@@ -144,7 +145,7 @@
           }
         }
       },
-      "required": ["id", "uid", "studentId", "createdAt"]
+      "required": ["id", "uid", "studentId", "createdAt", "secretCodeHash"]
     },
     "QuestionSet": {
       "title": "Question Set",

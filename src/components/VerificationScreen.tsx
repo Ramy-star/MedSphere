@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -7,42 +8,25 @@ import { Logo } from './logo';
 import { motion } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
-import { isStudentIdValid } from '@/lib/authService';
 
-function VerificationContent({ onVerified }: { onVerified: () => void }) {
+export function VerificationScreen() {
   const [studentId, setStudentId] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const login = useAuthStore((state) => state.login);
+  const [secretCode, setSecretCode] = useState('');
+  
+  const { authState, error, loading, handleVerification } = useAuthStore(state => ({
+    authState: state.authState,
+    error: state.error,
+    loading: state.loading,
+    handleVerification: state.handleVerification,
+  }));
 
-  const handleVerification = async () => {
+  const handleAction = async () => {
     const trimmedId = studentId.trim();
-    if (!trimmedId) {
-      setError('Please enter your Student ID.');
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    
-    // Client-side quick check first to fail fast
-    const isValid = await isStudentIdValid(trimmedId);
-    if (!isValid) {
-      setError('Invalid Student ID. Please check and try again.');
-      setIsLoading(false);
-      return;
-    }
-    
-    // If valid locally, proceed with the full login/creation logic
-    const success = await login(trimmedId);
-    
-    if (success) {
-      // onVerified is now implicitly handled by the auth store state change
-    } else {
-      // This case might happen if there's a DB error during user creation
-      setError('Could not complete verification. Please try again later.');
-    }
-    setIsLoading(false);
+    if (!trimmedId) return;
+    await handleVerification(trimmedId, secretCode.trim() || undefined);
   };
+  
+  const showSecretCodeInput = authState === 'needs_secret_code_prompt';
 
   return (
     <motion.div
@@ -84,7 +68,8 @@ function VerificationContent({ onVerified }: { onVerified: () => void }) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.9 }}
         >
-          Please enter your university student ID to access MedSphere.
+          For new users, enter your ID and leave the secret code empty. <br/>
+          Existing users must enter both.
         </motion.p>
         
         <motion.div
@@ -99,18 +84,40 @@ function VerificationContent({ onVerified }: { onVerified: () => void }) {
               placeholder="Enter your ID"
               value={studentId}
               onChange={(e) => setStudentId(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleVerification()}
+              onKeyDown={(e) => e.key === 'Enter' && handleAction()}
               className="bg-slate-800/60 border-slate-700 text-white h-12 text-center text-lg tracking-wider rounded-2xl"
-              disabled={isLoading}
+              disabled={loading}
             />
+            <AnimatePresence>
+            {showSecretCodeInput && (
+                <motion.div
+                    initial={{ opacity: 0, height: 0, marginTop: 0 }}
+                    animate={{ opacity: 1, height: 'auto', marginTop: '1rem' }}
+                    exit={{ opacity: 0, height: 0, marginTop: 0 }}
+                    transition={{ duration: 0.3 }}
+                >
+                    <Input
+                        type="password"
+                        placeholder="Enter your Secret Code"
+                        value={secretCode}
+                        onChange={(e) => setSecretCode(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && handleAction()}
+                        className="bg-slate-800/60 border-slate-700 text-white h-12 text-center text-lg tracking-wider rounded-2xl"
+                        disabled={loading}
+                    />
+                </motion.div>
+            )}
+            </AnimatePresence>
+
             {error && <p className="text-red-400 text-sm">{error}</p>}
+            
             <Button 
               size="lg" 
-              onClick={handleVerification} 
-              disabled={isLoading || !studentId.trim()}
+              onClick={handleAction} 
+              disabled={loading || !studentId.trim()}
               className="rounded-2xl bg-slate-700/50 hover:bg-slate-700/80 text-primary-foreground font-bold text-lg h-12 transition-transform active:scale-95"
             >
-              {isLoading ? (
+              {loading ? (
                 <Loader2 className="h-5 w-5 animate-spin" />
               ) : (
                 <>Verify <ArrowRight className="ml-2 h-5 w-5" /></>
@@ -121,11 +128,4 @@ function VerificationContent({ onVerified }: { onVerified: () => void }) {
       </motion.div>
     </motion.div>
   );
-}
-
-
-export function VerificationScreen({ onVerified }: { onVerified: () => void }) {
-    return (
-        <VerificationContent onVerified={onVerified} />
-    )
 }

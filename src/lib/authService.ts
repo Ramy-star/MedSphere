@@ -1,18 +1,10 @@
 
+'use server';
+
 import { db } from '@/firebase';
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from 'firebase/firestore';
+import { collection, doc, getDoc, getDocs, query, setDoc, where, runTransaction } from 'firebase/firestore';
 import { format } from 'date-fns';
-
-
-// --- (الإضافة 1) ---
-// تعريف نوع للبيانات المستوردة من ملفات JSON
-// هذا يحل أخطاء TS(7053) وأخطاء TS(2769) الأولى
-type StudentData = {
-  "Student ID": string | number;
-  "Student Name": string;
-  "Academic Email"?: string;
-};
-// --- نهاية الإضافة ---
+import { hash, compare } from 'bcryptjs';
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -29,117 +21,124 @@ import level5Data from '@/lib/student-ids/level-5-data.json';
 const SUPER_ADMIN_ID = "221100154";
 
 const allStudentIds = new Set([
-    // إضافة cast بسيط لضمان النوع
-    ...(level1Ids as (string | number)[]),
-    ...(level2Ids as (string | number)[]),
-    ...(level3Ids as (string | number)[]),
-    ...(level4Ids as (string | number)[]),
-    ...(level5Ids as (string | number)[]),
-]);
+    ...level1Ids,
+    ...level2Ids,
+    ...level3Ids,
+    ...level4Ids,
+    ...level5Ids,
+].map(String));
 
 const allStudentData = new Map([
-    // --- (التصحيح 1) ---
-    // 1. تحديد نوع levelXData كـ StudentData[]
-    // 2. استخدام "as const" لإخبار TypeScript أن هذه مصفوفة من عنصرين [key, value]
-    ...(level1Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
-    ...(level2Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
-    ...(level3Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
-    ...(level4Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
-    ...(level5Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level1Data as any[]).map(d => [String(d['Student ID']), d]),
+    ...(level2Data as any[]).map(d => [String(d['Student ID']), d]),
+    ...(level3Data as any[]).map(d => [String(d['Student ID']), d]),
+    ...(level4Data as any[]).map(d => [String(d['Student ID']), d]),
+    ...(level5Data as any[]).map(d => [String(d['Student ID']), d]),
 ]);
 
 const idToLevelMap = new Map([
-    // --- (التصحيح 2) ---
-    // استخدام "as const" لإخبار TypeScript أن هذه مصفوفة من عنصرين [string, string]
-    // هذا يحل خطأ "Target requires 2 element(s) but source may have fewer"
-    ...level1Ids.map(id => [String(id), 'Level 1'] as const),
-    ...level2Ids.map(id => [String(id), 'Level 2'] as const),
-    ...level3Ids.map(id => [String(id), 'Level 3'] as const),
-    ...level4Ids.map(id => [String(id), 'Level 4'] as const),
-    ...level5Ids.map(id => [String(id), 'Level 5'] as const),
+    ...level1Ids.map(id => [String(id), 'Level 1']),
+    ...level2Ids.map(id => [String(id), 'Level 2']),
+    ...level3Ids.map(id => [String(id), 'Level 3']),
+    ...level4Ids.map(id => [String(id), 'Level 4']),
+    ...level5Ids.map(id => [String(id), 'Level 5']),
 ]);
 
-export async function isSuperAdmin(studentId: string | null): Promise<boolean> {
-    return !!studentId && studentId === SUPER_ADMIN_ID;
-}
-
-export async function isStudentIdValid(id: string): Promise<boolean> {
-    return allStudentIds.has(id.trim());
-}
-
-export async function getUserProfile(studentId: string): Promise<any | null> {
-    if (!db) {
-        console.error("Firestore not initialized in authService.getUserProfile");
-        return null;
+export async function getStudentDetails(studentId: string): Promise<{ isValid: boolean, isClaimed: boolean, userProfile: any | null }> {
+    const trimmedId = studentId.trim();
+    if (!allStudentIds.has(trimmedId)) {
+        return { isValid: false, isClaimed: false, userProfile: null };
     }
+
+    if (!db) {
+        throw new Error("Database service is not available.");
+    }
+
+    try {
+        const userDocRef = doc(db, 'users', trimmedId);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+            return { isValid: true, isClaimed: true, userProfile: { id: userDoc.id, ...userDoc.data() } };
+        }
+
+        const claimedIdRef = doc(db, 'claimedStudentIds', trimmedId);
+        const claimedIdDoc = await getDoc(claimedIdRef);
+        
+        return { isValid: true, isClaimed: claimedIdDoc.exists(), userProfile: null };
+
+    } catch (error) {
+        console.error("Error checking student details:", error);
+        throw new Error("Could not connect to the database to verify student ID.");
+    }
+}
+
+
+export async function verifySecretCode(studentId: string, secretCode: string): Promise<any | null> {
+    if (!db) throw new Error("Database not available.");
     const userDocRef = doc(db, 'users', studentId);
     const userDoc = await getDoc(userDocRef);
 
-    if (userDoc.exists()) {
-        return { id: userDoc.id, ...userDoc.data() };
+    if (!userDoc.exists()) {
+        return null;
     }
+
+    const userProfile = userDoc.data();
+    const isMatch = await compare(secretCode, userProfile.secretCodeHash);
+    
+    if (isMatch) {
+        return { id: userDoc.id, ...userProfile };
+    }
+
     return null;
 }
 
-export async function verifyAndCreateUser(studentId: string): Promise<{ userProfile: any | null, isNewUser: boolean }> {
+export async function createUserProfile(studentId: string, secretCode: string): Promise<any> {
     const trimmedId = studentId.trim();
 
-    if (!(await isStudentIdValid(trimmedId))) {
-        console.log(`Verification failed: Student ID "${trimmedId}" not found in valid lists.`);
-        return { userProfile: null, isNewUser: false };
-    }
+    if (!db) throw new Error("Database service is not available.");
 
-    if (!db) {
-        console.error("Firestore not initialized in authService.verifyAndCreateUser");
-        throw new Error("Database service is not available.");
-    }
-    
-    try {
-        let userProfile = await getUserProfile(trimmedId);
-        let isNewUser = false;
+    return runTransaction(db, async (transaction) => {
+        const claimedIdRef = doc(db, 'claimedStudentIds', trimmedId);
+        const userDocRef = doc(db, 'users', trimmedId);
 
-        if (userProfile) {
-            console.log(`User found in Firestore for ID: ${trimmedId}`);
-        } else {
-            isNewUser = true;
-            console.log(`User not found for ID: ${trimmedId}. Creating new profile.`);
-            
-            const studentData = allStudentData.get(trimmedId);
-            const userLevel = idToLevelMap.get(trimmedId);
-            const isUserSuperAdmin = await isSuperAdmin(trimmedId);
-            
-            const newUserDocRef = doc(db, 'users', trimmedId);
-            
-            userProfile = {
-                id: trimmedId,
-                uid: trimmedId, 
-                studentId: trimmedId,
-                displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
-                username: `student_${trimmedId}`,
-                email: studentData?.['Academic Email'] || '',
-                level: userLevel || 'Unknown',
-                createdAt: new Date().toISOString(),
-                roles: isUserSuperAdmin ? [{ role: 'superAdmin', scope: 'global' }] : [],
-                stats: {
-                    filesUploaded: 0,
-                    foldersCreated: 0,
-                    examsCompleted: 0,
-                    aiQueries: 0,
-                    consecutiveLoginDays: 1,
-                    lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
-                },
-                achievements: [],
-                sessions: [],
-            };
-            
-            await setDoc(newUserDocRef, userProfile);
-            console.log(`New user profile created for ID: ${trimmedId}`);
+        const claimedDoc = await transaction.get(claimedIdRef);
+        if (claimedDoc.exists()) {
+            throw new Error("This Student ID has already been claimed.");
         }
-        
-        return { userProfile, isNewUser };
 
-    } catch (error) {
-        console.error("Error during user verification and creation:", error);
-        return { userProfile: null, isNewUser: false };
-    }
+        const studentData = allStudentData.get(trimmedId);
+        const userLevel = idToLevelMap.get(trimmedId);
+        const isUserSuperAdmin = trimmedId === SUPER_ADMIN_ID;
+
+        const secretCodeHash = await hash(secretCode, 10);
+
+        const newUserProfile = {
+            id: trimmedId,
+            uid: trimmedId, 
+            studentId: trimmedId,
+            displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
+            username: `student_${trimmedId}`,
+            email: studentData?.['Academic Email'] || '',
+            level: userLevel || 'Unknown',
+            createdAt: new Date().toISOString(),
+            roles: isUserSuperAdmin ? [{ role: 'superAdmin', scope: 'global' }] : [],
+            secretCodeHash,
+            stats: {
+                filesUploaded: 0,
+                foldersCreated: 0,
+                examsCompleted: 0,
+                aiQueries: 0,
+                consecutiveLoginDays: 1,
+                lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
+            },
+            achievements: [],
+            sessions: [],
+        };
+
+        transaction.set(userDocRef, newUserProfile);
+        transaction.set(claimedIdRef, { userId: trimmedId, claimedAt: new Date().toISOString() });
+
+        return newUserProfile;
+    });
 }

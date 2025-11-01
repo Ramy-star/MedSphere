@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Metadata } from "next";
@@ -8,12 +9,16 @@ import { Header } from "@/components/header";
 import { useState, useEffect } from "react";
 import { WelcomeScreen } from "@/components/WelcomeScreen";
 import { VerificationScreen } from "@/components/VerificationScreen";
+import { CreateSecretCodeScreen } from "@/components/CreateSecretCodeScreen";
 import { useMobileViewStore } from "@/hooks/use-mobile-view-store";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from '@/stores/auth-store';
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 import { getFirebaseConfig } from "@/firebase/config";
 import { AchievementToast } from "@/components/AchievementToast";
+import { Loader2 } from "lucide-react";
+import { Logo } from "@/components/logo";
+
 
 const nunitoSans = Nunito_Sans({ 
   subsets: ["latin"],
@@ -42,7 +47,7 @@ export default function RootLayout({
 }>) {
   const [showWelcome, setShowWelcome] = useState(true);
   const [isClient, setIsClient] = useState(false);
-  const { isAuthenticated, user, checkAuth, newlyEarnedAchievement } = useAuthStore();
+  const { authState, user, newlyEarnedAchievement, checkAuth } = useAuthStore();
   const firebaseConfig = getFirebaseConfig();
 
   useEffect(() => {
@@ -70,27 +75,46 @@ export default function RootLayout({
   };
   
   const renderContent = () => {
-    // While the auth state is being determined, user is null.
-    if (user === undefined) {
-      return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background"></div>
-      );
+    switch (authState) {
+        case 'loading':
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+                    <div className="flex flex-col items-center gap-4">
+                        <Logo className="h-16 w-16 animate-pulse" />
+                        <p className="text-slate-400">Connecting to MedSphere...</p>
+                    </div>
+                </div>
+            );
+        case 'anonymous':
+            return <VerificationScreen />;
+        case 'awaiting_secret_creation':
+            return <CreateSecretCodeScreen />;
+        case 'authenticated':
+            if (user?.isBlocked) {
+              return (
+                <div className="flex h-full w-full items-center justify-center bg-background p-4">
+                  <div className="text-center">
+                    <h1 className="text-2xl font-bold text-red-500">Account Blocked</h1>
+                    <p className="text-slate-400 mt-2">
+                      Your account has been blocked. Please contact an administrator.
+                    </p>
+                  </div>
+                </div>
+              );
+            }
+            return (
+                <div className="flex flex-col h-full w-full">
+                    <header className="z-50 w-full">
+                        <Header />
+                    </header>
+                    <main className="flex flex-1 w-full overflow-hidden">
+                        {children}
+                    </main>
+                </div>
+            );
+        default:
+             return <VerificationScreen />;
     }
-    
-    if (!isAuthenticated) {
-        return <VerificationScreen onVerified={() => { /* Handled by auth store */ }} />;
-    }
-
-    return (
-        <div className="flex flex-col h-full w-full">
-            <header className="z-50 w-full">
-            <Header />
-            </header>
-            <main className="flex flex-1 w-full overflow-hidden">
-            {children}
-            </main>
-        </div>
-    );
   };
 
   if (!isClient) {
