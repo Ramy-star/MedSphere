@@ -960,7 +960,43 @@ const ExamMode = ({
     }
     
     return (
-        <>
+        <div className='text-black bg-[#f5f7fa] font-["Segoe_UI"] text-[17px] w-full h-full exam-theme-wrapper'>
+            <style>{`
+                 /* --- Keyframes for Animations --- */
+                @keyframes accordion-down {
+                  from { height: 0; }
+                  to { height: var(--radix-accordion-content-height); }
+                }
+                @keyframes accordion-up {
+                  from { height: var(--radix-accordion-content-height); }
+                  to { height: 0; }
+                }
+                @keyframes staggerFadeIn {
+                    from { opacity: 0; transform: translateY(15px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                
+                .exam-theme-wrapper {
+                    --background: #f5f7fa;
+                    --foreground: #333;
+                    --card: #ffffff;
+                    --popover: #ffffff;
+                    --primary: #3b82f6;
+                    --primary-foreground: #ffffff;
+                    --secondary: #f3f4f6;
+                    --secondary-foreground: #111827;
+                    --muted: #f3f4f6;
+                    --muted-foreground: #6b7280;
+                    --accent: #f9fafb;
+                    --accent-foreground: #111827;
+                    --destructive: #ef4444;
+                    --destructive-foreground: #ffffff;
+                    --border: #e5e7eb;
+                    --input: #e5e7eb;
+                    --ring: #3b82f6;
+                }
+                .exam-theme-wrapper > div { color: var(--foreground); }
+            `}</style>
             <AlertDialog open={isExitAlertOpen} onOpenChange={setIsExitAlertOpen}>
                 <AlertDialogContent className="rounded-2xl">
                     <AlertDialogHeader>
@@ -1267,7 +1303,7 @@ const ExamMode = ({
                     </div>
                 );
             })()}
-        </>
+        </div>
     );
 };
 
@@ -1481,7 +1517,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
     }
 
     return (
-        <main className="exam-page-container bg-background text-foreground">
+        <main className="exam-page-container">
             <div id="questions-container">
                  <ExamMode 
                     fileItemId={fileItemId}
@@ -1497,3 +1533,4 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
+

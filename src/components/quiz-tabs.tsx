@@ -74,7 +74,7 @@ const GlobalStyles = () => (
         }
 
         /* --- Base screen styles --- */
-        body.quiz-active {
+        .quiz-active {
             font-family: var(--base-font);
             background-color: var(--page-bg);
             color: var(--text-color);
@@ -414,7 +414,7 @@ const GlobalStyles = () => (
 
         /* --- Mobile-Specific Styles --- */
         @media (max-width: 768px) {
-            body.quiz-active {
+            .quiz-active {
                 font-size: 15px;
             }
             .header {
