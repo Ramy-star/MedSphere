@@ -1,13 +1,12 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, ChevronDown } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check, ChevronDown } from "lucide-react";
+import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
 import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
@@ -70,7 +69,6 @@ const Button = React.forwardRef<HTMLButtonElement, React.ButtonHTMLAttributes<HT
   );
 });
 Button.displayName = "Button";
-
 
 const AlertDialog = AlertDialogPrimitive.Root;
 const AlertDialogTrigger = AlertDialogPrimitive.Trigger;
@@ -367,7 +365,25 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
 
 // --- MAIN EXAM COMPONENT LOGIC ---
 
-const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, onStateChange }: { fileItemId: string | null; lecture: Lecture, onExit: () => void, onSwitchLecture: (lectureId: string) => void, allLectures: Lecture[], onStateChange?: (inProgress: boolean) => void }) => {
+const ExamMode = ({
+    fileItemId,
+    lectures: initialLectures,
+    activeLecture,
+    onExit,
+    onSwitchLecture,
+    onLecturesUpdate,
+    allLectures,
+    onStateChange
+}: {
+    fileItemId: string | null;
+    lectures: Lecture[];
+    activeLecture: Lecture;
+    onExit: () => void;
+    onSwitchLecture: (lectureId: string) => void;
+    onLecturesUpdate: (updatedLectures: Lecture[]) => void;
+    allLectures: Lecture[];
+    onStateChange?: (inProgress: boolean) => void;
+}) => {
     const [examState, setExamState] = useState<'not-started' | 'in-progress' | 'finished'>('not-started');
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswers, setUserAnswers] = useState<(string | null)[]>([]);
@@ -378,7 +394,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     const [questionAnimation, setQuestionAnimation] = useState('');
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isUpsertMcqDialogOpen, setIsUpsertMcqDialogOpen] = useState(false);
-    const [mcqToEdit, setMcqToEdit] = useState<MCQ | null>(null);
+    const [mcqToEdit, setMcqToEdit] = useState<{mcq: MCQ, level: 1 | 2} | null>(null);
     const [isEditLectureOpen, setIsEditLectureOpen] = useState(false);
     const isInitialRender = useRef(true);
 
@@ -391,16 +407,16 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     }, [firestore]);
 
     const examResultsQuery = useMemoFirebase((): Query<DocumentData> | undefined => {
-        return resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : undefined;
-    }, [resultsCollectionRef, lecture.id]);
+        return resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", activeLecture.id)) : undefined;
+    }, [resultsCollectionRef, activeLecture.id]);
 
     const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery as any, { disabled: !examResultsQuery });
 
     const questions = useMemo(() => {
-        const l1 = Array.isArray((lecture as any).mcqs_level_1) ? (lecture as any).mcqs_level_1 : [];
-        const l2 = Array.isArray((lecture as any).mcqs_level_2) ? (lecture as any).mcqs_level_2 : [];
+        const l1 = Array.isArray(activeLecture?.mcqs_level_1) ? activeLecture.mcqs_level_1 : [];
+        const l2 = Array.isArray(activeLecture?.mcqs_level_2) ? activeLecture.mcqs_level_2 : [];
         return [...l1, ...l2] as MCQ[];
-    }, [lecture]);
+    }, [activeLecture]);
 
     useEffect(() => {
         if (onStateChange) {
@@ -441,7 +457,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
         return userResults[0];
     }, [allResults, studentId]);
 
-    const storageKey = useMemo(() => studentId ? `exam_progress_${lecture.id}_${studentId}` : null, [lecture.id, studentId]);
+    const storageKey = useMemo(() => studentId ? `exam_progress_${activeLecture.id}_${studentId}` : null, [activeLecture.id, studentId]);
 
     const handleSubmit = useCallback(async (isSkip = false) => {
         const hour = new Date().getHours();
@@ -453,7 +469,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
         if (studentId && resultsCollectionRef && !isSkip && !userHasAlreadySubmitted) {
             try {
                  const result: Omit<ExamResult, 'id'> = {
-                    lectureId: lecture.id,
+                    lectureId: activeLecture.id,
                     score,
                     totalQuestions: questions.length,
                     percentage,
@@ -482,7 +498,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, lecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements]);
+    }, [storageKey, activeLecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements]);
 
 
     useEffect(() => {
@@ -504,7 +520,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
         } catch (error) {
             console.error("Could not access localStorage:", error);
         }
-    }, [storageKey, questions.length, lecture.id]);
+    }, [storageKey, questions.length, activeLecture.id]);
 
     useEffect(() => {
         if (examState === 'in-progress' && storageKey) {
@@ -645,9 +661,71 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
         setIsExitAlertOpen(true);
     };
 
+    // Admin functions
+    const handleUpsertMcq = (lectureId: string, newLectureName: string, mcqData: MCQ, level: 1 | 2, originalMcq?: MCQ) => {
+        let updatedLectures = [...initialLectures];
+        let targetLectureId = lectureId;
+        let newLectureCreated = false;
+
+        if (lectureId === 'new') {
+            if (!newLectureName.trim()) return;
+            const newLec: Lecture = {
+                id: `l${Date.now()}`,
+                name: newLectureName.trim(),
+                mcqs_level_1: [], mcqs_level_2: []
+            };
+            updatedLectures.push(newLec);
+            targetLectureId = newLec.id;
+            newLectureCreated = true;
+        }
+
+        const lectureIndex = updatedLectures.findIndex(l => l.id === targetLectureId);
+        if (lectureIndex === -1) return;
+
+        const lectureToUpdate = {...updatedLectures[lectureIndex]};
+        const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
+        let mcqs = [...(lectureToUpdate[key] || [])];
+
+        if (originalMcq) {
+            const mcqIndex = mcqs.findIndex(m => m.q === originalMcq.q);
+            if (mcqIndex > -1) mcqs[mcqIndex] = mcqData;
+        } else {
+            mcqs.push(mcqData);
+        }
+        lectureToUpdate[key] = mcqs;
+        updatedLectures[lectureIndex] = lectureToUpdate;
+
+        onLecturesUpdate(updatedLectures);
+        if (newLectureCreated) {
+            setTimeout(() => onSwitchLecture(targetLectureId), 0);
+        }
+    };
+
+    const handleDeleteMcq = (mcqToDelete: MCQ, level: 1 | 2) => {
+        const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
+        const updatedLectures = initialLectures.map(l => {
+            if (l.id === activeLecture.id) {
+                return {...l, [key]: (l[key] || []).filter(mcq => mcq.q !== mcqToDelete.q)}
+            }
+            return l;
+        });
+        onLecturesUpdate(updatedLectures);
+    };
+
+    const handleEditLecture = (newName: string) => {
+        const updatedLectures = initialLectures.map(l => l.id === activeLecture.id ? {...l, name: newName} : l);
+        onLecturesUpdate(updatedLectures);
+    };
+
+    const handleDeleteLecture = () => {
+        const updatedLectures = initialLectures.filter(l => l.id !== activeLecture.id);
+        onLecturesUpdate(updatedLectures);
+        onSwitchLecture(updatedLectures[0]?.id || '');
+    };
+    
     const containerClasses = `exam-container ${isAnimating ? 'animating-out' : 'animating-in'}`;
 
-    if (questions.length === 0 && examState === 'not-started') {
+    if (questions.length === 0 && examState === 'not-started' && !canAdminister) {
         return <div className="exam-container"><p>No multiple-choice questions available for this lecture.</p></div>;
     }
     
@@ -694,19 +772,66 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
             <AdminReportModal
                 isOpen={isReportModalOpen}
                 onClose={() => setIsReportModalOpen(false)}
-                lectureId={lecture.id}
+                lectureId={activeLecture.id}
+            />
+            
+            <UpsertMcqDialog
+                isOpen={isUpsertMcqDialogOpen}
+                onClose={() => {setIsUpsertMcqDialogOpen(false); setMcqToEdit(null);}}
+                lectures={initialLectures}
+                activeLectureId={activeLecture.id}
+                onUpsert={handleUpsertMcq}
+                mcqToEdit={mcqToEdit}
             />
 
             {examState === 'not-started' && (
                 <div className={cn(containerClasses, "start-mode")}>
                     <div className="exam-start-screen">
+                        <div className="w-full flex justify-between items-center mb-4">
+                            <div>
+                                {canAdminister && (
+                                    <div className="flex items-center gap-2">
+                                        <AlertDialog open={isEditLectureOpen} onOpenChange={setIsEditLectureOpen}>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600"><Edit size={14}/></Button>
+                                            </AlertDialogTrigger>
+                                            <EditLectureDialog 
+                                                lecture={activeLecture} 
+                                                onSave={handleEditLecture} 
+                                                onOpenChange={setIsEditLectureOpen} 
+                                            />
+                                        </AlertDialog>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600"><Trash2 size={14}/></Button>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This will permanently delete this lecture and all its questions.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleDeleteLecture} className="bg-red-500 hover:bg-red-600">Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </div>
+                                )}
+                            </div>
+                            {canAdminister && (
+                                <Button onClick={() => setIsUpsertMcqDialogOpen(true)} className="flex items-center gap-2">
+                                    <PlusCircle size={18} /> Create Question
+                                </Button>
+                            )}
+                        </div>
                         <div id="lecture-tabs">
                             {allLectures.map(l => (
                                 <button 
                                     key={l.id}
-                                    className={cn('lecture-tab-btn', {'active': lecture.id === l.id})}
+                                    className={cn('lecture-tab-btn', {'active': activeLecture.id === l.id})}
                                     onClick={() => {
-                                        if (lecture.id !== l.id) onSwitchLecture(l.id);
+                                        if (activeLecture.id !== l.id) onSwitchLecture(l.id);
                                     }}
                                 >
                                     {l.name}
@@ -714,7 +839,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                             ))}
                         </div>
                         <hr className="w-full border-t border-border mb-8" />
-                        <h2 style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name} Exam</h2>
+                        <h2 style={{ fontFamily: "'Calistoga', cursive" }}>{activeLecture.name} Exam</h2>
                         <p>{`Ready to test your knowledge? You have ${questions.length} questions.`}</p>
                         <button onClick={() => handleStartExam(false)} className="start-exam-btn">
                             Start Exam
@@ -836,7 +961,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                 return (
                     <div className={containerClasses}>
                          <div className="exam-progress-header">
-                            <h3 className="text-lg font-bold text-center mb-4" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
+                            <h3 className="text-lg font-bold text-center mb-4" style={{ fontFamily: "'Calistoga', cursive" }}>{activeLecture.name}</h3>
                              <div className="relative flex justify-center items-center mb-2">
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2">
                                     {canAdminister && (
@@ -1056,9 +1181,25 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
 };
 
 export default function ExamContainer({ lectures: rawLecturesData, onStateChange, fileItemId }: { lectures: Lecture[] | Lecture, onStateChange?: (inProgress: boolean) => void, fileItemId: string | null }) {
-    const lectures = Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []);
-    const [activeLectureId, setActiveLectureId] = useState('');
+    const [lecturesState, setLecturesState] = useState<Lecture[]>(Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []));
+    const [activeLectureId, setActiveLectureId] = useState<string | undefined>(lecturesState[0]?.id);
     const isInitialRender = useRef(true);
+
+    const persistChanges = async (updatedLectures: Lecture[]) => {
+      if (!fileItemId) return;
+      try {
+        await contentService.updateDoc(fileItemId, {
+          'metadata.quizData': JSON.stringify(updatedLectures, null, 2)
+        });
+      } catch (error) {
+        console.error("Failed to save exam changes:", error);
+      }
+    };
+    
+    const handleLecturesUpdate = (updatedLectures: Lecture[]) => {
+        setLecturesState(updatedLectures);
+        persistChanges(updatedLectures);
+    };
 
     useEffect(() => {
         const fontLinks = [
@@ -1090,17 +1231,17 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
     };
     
     useEffect(() => {
-        if (isInitialRender.current && lectures.length > 0) {
-            setActiveLectureId(lectures[0].id);
+        if (isInitialRender.current && lecturesState.length > 0) {
+            setActiveLectureId(lecturesState[0].id);
             isInitialRender.current = false;
         }
-    }, [lectures]);
+    }, [lecturesState]);
 
-    if (!lectures || lectures.length === 0) {
+    if (!lecturesState || lecturesState.length === 0) {
         return <p className="p-4 text-center">No lectures available.</p>;
     }
 
-    const activeLecture = lectures.find(l => l.id === activeLectureId);
+    const activeLecture = lecturesState.find(l => l.id === activeLectureId);
 
     if (!activeLecture) {
         return <div className="flex items-center justify-center h-full"><p>Loading lecture...</p></div>;
@@ -1109,25 +1250,23 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
     const ExamStyles = () => (
       <style>{`
         .exam-theme-wrapper {
-            --background: 220 24% 95%;
-            --foreground: 222.2 84% 4.9%;
-            --card: 210 40% 98%;
-            --card-foreground: 222.2 84% 4.9%;
-            --popover: 210 40% 98%;
-            --popover-foreground: 222.2 84% 4.9%;
-            --primary: 224 76% 48%;
-            --primary-foreground: 210 40% 98%;
-            --secondary: 210 40% 96.1%;
-            --secondary-foreground: 217 91% 20%;
-            --muted: 210 40% 96.1%;
-            --muted-foreground: 215.4 16.3% 46.9%;
-            --accent: 243 77% 59%;
-            --accent-foreground: 210 40% 98%;
-            --destructive: 0 84.2% 60.2%;
-            --destructive-foreground: 210 40% 98%;
-            --border: 214.3 31.8% 91.4%;
-            --input: 214.3 31.8% 91.4%;
-            --ring: 224 76% 48%;
+            --background: #ffffff;
+            --foreground: #333333;
+            --card: #ffffff;
+            --popover: #ffffff;
+            --primary: #3b82f6;
+            --primary-foreground: #ffffff;
+            --secondary: #f3f4f6;
+            --secondary-foreground: #111827;
+            --muted: #f3f4f6;
+            --muted-foreground: #6b7280;
+            --accent: #f9fafb;
+            --accent-foreground: #111827;
+            --destructive: #ef4444;
+            --destructive-foreground: #ffffff;
+            --border: #e5e7eb;
+            --input: #e5e7eb;
+            --ring: #3b82f6;
         }
         .report-btn, .skip-btn {
             background-color: transparent;
@@ -1180,13 +1319,19 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
             <div id="questions-container">
                  <ExamMode 
                     fileItemId={fileItemId}
-                    lecture={activeLecture} 
+                    lectures={lecturesState}
+                    activeLecture={activeLecture}
                     onExit={handleExit} 
                     onSwitchLecture={handleSwitchLecture}
-                    allLectures={lectures}
+                    onLecturesUpdate={handleLecturesUpdate}
+                    allLectures={lecturesState}
                     onStateChange={onStateChange}
                 />
             </div>
         </main>
     );
 }
+```,
+  "redacted": true
+}
+```
