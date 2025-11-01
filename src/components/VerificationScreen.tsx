@@ -8,21 +8,35 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { CreateSecretCodeScreen } from './CreateSecretCodeScreen';
+import { getStudentDetails } from '@/lib/authService';
 
 export function VerificationScreen() {
   const [studentId, setStudentId] = useState('');
   const [secretCode, setSecretCode] = useState('');
+  const [isNewUser, setIsNewUser] = useState(false);
   
-  const { error, loading, authState, login, createProfileAndLogin } = useAuthStore(state => ({
+  const { error, loading, authState, login, createProfileAndLogin, set } = useAuthStore(state => ({
     error: state.error,
     loading: state.loading,
     authState: state.authState,
     login: state.login,
-    createProfileAndLogin: state.createProfileAndLogin
+    createProfileAndLogin: state.createProfileAndLogin,
+    set: useAuthStore.setState,
   }));
-
-  const [showCreateSecret, setShowCreateSecret] = useState(false);
   
+  useEffect(() => {
+    const checkId = async () => {
+      if (studentId.trim().length >= 8) { // Basic validation before checking
+        const details = await getStudentDetails(studentId.trim());
+        setIsNewUser(details.isValid && !details.isClaimed);
+      } else {
+        setIsNewUser(false);
+      }
+    };
+    checkId();
+  }, [studentId]);
+
+
   const handleAction = async () => {
     const trimmedId = studentId.trim();
     if (!trimmedId) return;
@@ -34,17 +48,13 @@ export function VerificationScreen() {
     if (state.authState === 'awaiting_secret_creation' && state.studentId) {
         createProfileAndLogin(state.studentId, newSecret);
     }
-    setShowCreateSecret(false);
   }
-
-  // Effect to automatically open the secret creation screen if the state requires it
-  useEffect(() => {
-    if (authState === 'awaiting_secret_creation') {
-      setShowCreateSecret(true);
-    } else {
-      setShowCreateSecret(false);
-    }
-  }, [authState]);
+  
+  const handleOpenSecretCreation = () => {
+      if (isNewUser) {
+          set({ authState: 'awaiting_secret_creation', studentId: studentId.trim(), error: null });
+      }
+  }
 
 
   return (
@@ -88,7 +98,7 @@ export function VerificationScreen() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.9 }}
           >
-            Enter your ID. If you're a returning user, also enter your secret code.
+            Enter your ID to continue. If you are a returning user, please also provide your secret code.
           </motion.p>
           
           <motion.div
@@ -118,8 +128,9 @@ export function VerificationScreen() {
               />
 
               <button 
-                onClick={() => set({ authState: 'awaiting_secret_creation', studentId })}
-                className="text-blue-400 text-sm hover:underline text-center"
+                onClick={handleOpenSecretCreation}
+                disabled={!isNewUser || loading}
+                className="text-sm hover:underline text-center disabled:text-slate-500 disabled:no-underline disabled:cursor-not-allowed text-blue-400"
               >
                 Don't have a secret code?
               </button>

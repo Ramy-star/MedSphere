@@ -199,8 +199,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
       return;
     }
     set({ loading: true });
-    if (userListenerUnsubscribe) userListenerUnsubscribe();
-    if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
     try {
         const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         if (storedId) {
@@ -229,11 +227,13 @@ const useAuthStore = create<AuthState>((set, get) => ({
         if (userProfile) {
            localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
            listenToUserProfile(userProfile.id);
+           // This was the missing piece. We must update the state here.
            set({ authState: 'authenticated' });
         } else {
           throw new Error("Incorrect Secret Code.");
         }
       } else {
+        // User is new. Prompt them to create a secret code.
         set({ authState: 'awaiting_secret_creation', studentId, loading: false });
       }
     } catch (error: any) {
@@ -248,6 +248,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
           if (userProfile) {
               localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
               listenToUserProfile(userProfile.id);
+              // Explicitly set authenticated state after profile creation
               set({ authState: 'authenticated' });
           } else {
               throw new Error("Could not create user profile.");
