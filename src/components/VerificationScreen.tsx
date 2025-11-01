@@ -92,14 +92,28 @@ export function VerificationScreen() {
             Student ID Verification
           </motion.h1>
 
-          <motion.p
-            className="text-slate-300 text-sm md:text-base max-w-sm mb-8"
+           <motion.div
+            className="text-slate-300 text-sm md:text-base max-w-sm mb-8 text-center"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.9 }}
           >
-            Enter your ID to continue. If you are a returning user, please also provide your secret code.
-          </motion.p>
+            <p className="mb-2">أدخل رقمك الجامعي ثم:</p>
+            <ul className="list-none p-0 text-left inline-block space-y-1">
+              <li className="flex items-start gap-2">
+                <span className="text-blue-400 mt-1 font-bold">●</span>
+                <span className='text-right'>
+                  <strong>مستخدم جديد؟</strong> أنشئ رمزك السري أولاً.
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <span className="text-green-400 mt-1 font-bold">●</span>
+                 <span className='text-right'>
+                  <strong>مستخدم حالي؟</strong> أدخل رمزك السري لتسجيل الدخول.
+                </span>
+              </li>
+            </ul>
+          </motion.div>
           
           <motion.div
             className="w-full max-w-xs"
@@ -124,7 +138,7 @@ export function VerificationScreen() {
                 onChange={(e) => setSecretCode(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleAction()}
                 className="bg-slate-800/60 border-slate-700 text-white h-12 text-center text-lg tracking-wider rounded-2xl"
-                disabled={loading}
+                disabled={loading || isNewUser}
               />
 
               <button 
