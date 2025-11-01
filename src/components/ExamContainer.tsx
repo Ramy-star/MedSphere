@@ -406,7 +406,6 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     const canAdminister = can('canAdministerExams', fileItemId);
     const { db: firestore } = useFirebase();
     
-    // استخدم undefined لتعطيل ال query بدلاً من null
     const resultsCollectionRef = useMemoFirebase((): CollectionReference<DocumentData> | undefined => {
         return firestore ? collection(firestore, "examResults") : undefined;
     }, [firestore]);
@@ -415,7 +414,6 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
         return resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", lecture.id)) : undefined;
     }, [resultsCollectionRef, lecture.id]);
 
-    // cast هنا لتفادي تعارض التواقيع — إن أمكن، عدّل توقيع useCollection ليقبل Query|undefined
     const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery as any, { disabled: !examResultsQuery });
 
     const questions = useMemo(() => {
@@ -467,11 +465,12 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
 
     const handleSubmit = useCallback(async (isSkip = false) => {
         const hour = new Date().getHours();
-        if (hour >= 0 && hour < 4) { // Between midnight and 4 AM
+        if (hour >= 0 && hour < 4) {
             awardSpecialAchievement('NIGHT_OWL');
         }
 
-        if (studentId && resultsCollectionRef && !isSkip && !userFirstResult) {
+        const userHasAlreadySubmitted = !!userFirstResult;
+        if (studentId && resultsCollectionRef && !isSkip && !userHasAlreadySubmitted) {
             try {
                  const result: Omit<ExamResult, 'id'> = {
                     lectureId: lecture.id,
@@ -482,13 +481,11 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                     timestamp: new Date(),
                 };
                 await addDocumentNonBlocking(resultsCollectionRef, result);
-
                 if (user) {
                   const userRef = doc(firestore, 'users', user.id);
                   const newStats = { ...user.stats };
                   newStats.examsCompleted = (newStats.examsCompleted || 0) + 1;
                   await updateDoc(userRef, { stats: newStats });
-                  // Trigger achievement check after updating stats
                   checkAndAwardAchievements();
                 }
 
@@ -506,6 +503,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
         }
         triggerAnimation('finished');
     }, [storageKey, lecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements]);
+
 
     useEffect(() => {
         if (isInitialRender.current || !storageKey) {
@@ -858,8 +856,8 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                 return (
                     <div className={containerClasses}>
                          <div className="exam-progress-header">
-                            <h3 className="text-lg font-bold text-center mb-2" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
-                             <div className="relative flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-bold text-center mb-4" style={{ fontFamily: "'Calistoga', cursive" }}>{lecture.name}</h3>
+                             <div className="relative flex justify-center items-center mb-2">
                                 <div className="absolute left-0 top-1/2 -translate-y-1/2">
                                     {canAdminister && (
                                         <button onClick={() => handleSubmit(true)} className="skip-btn">
@@ -868,11 +866,9 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
                                         </button>
                                     )}
                                 </div>
-                                <div className="flex-1 flex justify-center">
-                                    <div className="flex items-center gap-2 font-semibold text-lg text-muted-foreground">
-                                        <Clock size={20} />
-                                        <span>{formatTime(timeLeft)}</span>
-                                    </div>
+                                <div className="flex items-center gap-2 font-semibold text-lg text-muted-foreground">
+                                    <Clock size={20} />
+                                    <span>{formatTime(timeLeft)}</span>
                                 </div>
                                 <div className="absolute right-0 top-1/2 -translate-y-1/2">
                                     <button className="quick-exit-btn" onClick={handleQuickExit} aria-label="Exit Exam">
@@ -948,6 +944,8 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
     const { user: currentUser } = useAuthStore();
     const [reportData, setReportData] = useState<{ userProfile: any, result: ExamResult }[]>([]);
     const [loading, setLoading] = useState(true);
+    const reportContentRef = useRef<HTMLDivElement>(null);
+
 
     const studentDataMap = useMemo(() => {
         const allStudentData = [
@@ -1023,7 +1021,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                 <DialogHeader>
                     <DialogTitle>Exam Report</DialogTitle>
                 </DialogHeader>
-                <div className="max-h-[60vh] overflow-y-auto">
+                <div ref={reportContentRef} className="max-h-[60vh] overflow-y-auto">
                     {loading ? (
                         <p>Loading report...</p>
                     ) : reportData.length > 0 ? (
