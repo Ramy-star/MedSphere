@@ -85,9 +85,6 @@ if (isServer) {
       'crypto': 'crypto',
     });
     
-    // This resolves the bcryptjs issue with Next.js server components
-    config.externals.push('bcryptjs');
-
     return config;
   },
 };

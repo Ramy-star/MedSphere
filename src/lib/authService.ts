@@ -1,10 +1,8 @@
-
 'use client';
 
 import { db } from '@/firebase';
 import { collection, doc, getDoc, getDocs, query, setDoc, where, runTransaction } from 'firebase/firestore';
 import { format } from 'date-fns';
-import { hash, compare } from 'bcryptjs';
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -19,6 +17,27 @@ import level4Data from '@/lib/student-ids/level-4-data.json';
 import level5Data from '@/lib/student-ids/level-5-data.json';
 
 const SUPER_ADMIN_ID = "221100154";
+
+// --- Hashing functions using Web Crypto API ---
+// These functions will only run in the client, where crypto.subtle is available.
+
+async function hashSecretCode(secretCode: string): Promise<string> {
+    if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
+        throw new Error("Crypto API not available.");
+    }
+    const encoder = new TextEncoder();
+    const data = encoder.encode(secretCode);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
+
+async function compareSecretCode(secretCode: string, hash: string): Promise<boolean> {
+    const newHash = await hashSecretCode(secretCode);
+    return newHash === hash;
+}
+
 
 const allStudentIds = new Set([
     ...level1Ids,
@@ -82,11 +101,10 @@ export async function verifySecretCode(studentId: string, secretCode: string): P
 
     const userProfile = userDoc.data();
     if (!userProfile.secretCodeHash) {
-        // This case should ideally not happen for a claimed ID, but as a fallback:
         return null;
     }
     
-    const isMatch = await compare(secretCode, userProfile.secretCodeHash);
+    const isMatch = await compareSecretCode(secretCode, userProfile.secretCodeHash);
     
     if (isMatch) {
         return { id: userDoc.id, ...userProfile };
@@ -112,7 +130,7 @@ export async function createUserProfile(studentId: string, secretCode: string): 
         const userLevel = idToLevelMap.get(trimmedId);
         const isUserSuperAdmin = trimmedId === SUPER_ADMIN_ID;
 
-        const secretCodeHash = await hash(secretCode, 10);
+        const secretCodeHash = await hashSecretCode(secretCode);
 
         const newUserProfile = {
             id: trimmedId,
