@@ -13,18 +13,14 @@ import type { Lecture, ExamResult, MCQ } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
 import { useFirebase } from '@/firebase/provider';
 import { useAuthStore } from '@/stores/auth-store';
-import level1StudentData from '@/lib/student-ids/level-1-data.json';
-import level2StudentData from '@/lib/student-ids/level-2-data.json';
-import level3StudentData from '@/lib/student-ids/level-3-data.json';
-import level4StudentData from '@/lib/student-ids/level-4-data.json';
-import level5StudentData from '@/lib/student-ids/level-5-data.json';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { contentService } from '@/lib/contentService';
 import { updateDoc, collection, doc, query, where, getDocs, CollectionReference, DocumentData, Query } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
 import { useCollection } from '@/firebase/firestore/use-collection';
+import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+
 
 // === Types ===
 type ExamResultWithId = ExamResult & { id: string };
@@ -108,7 +104,7 @@ AlertDialogContent.displayName = AlertDialogPrimitive.Content.displayName;
 
 const AlertDialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn("flex flex-col space-y-2 text-center sm:text-left", className)}
+    className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)}
     {...props}
   />
 );
@@ -726,7 +722,7 @@ const ExamMode = ({
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, activeLecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements, handleSubmit]);
+    }, [storageKey, activeLecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements]);
 
 
     useEffect(() => {
@@ -1299,27 +1295,10 @@ interface AdminReportModalProps {
 
 const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps) => {
     const { db } = useFirebase();
-    const { user: currentUser } = useAuthStore();
     const [reportData, setReportData] = useState<{ userProfile: any, result: ExamResult }[]>([]);
     const [loading, setLoading] = useState(true);
     const reportContentRef = useRef<HTMLDivElement>(null);
 
-
-    const studentDataMap = useMemo(() => {
-        const allStudentData = [
-            ...level1StudentData,
-            ...level2StudentData,
-            ...level3StudentData,
-            ...level4StudentData,
-            ...level5StudentData,
-        ];
-        const map = new Map<string, { studentName: string; academicEmail: string }>();
-        allStudentData.forEach((student: any) => {
-            const id = String(student["Student ID"]);
-            map.set(id, { studentName: student["Student Name"], academicEmail: student["Academic Email"] });
-        });
-        return map;
-    }, []);
 
     useEffect(() => {
         if (isOpen && db) {
@@ -1517,3 +1496,4 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
+
