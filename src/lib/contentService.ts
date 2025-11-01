@@ -99,21 +99,13 @@ export const contentService = {
         return blob;
     },
     
-    async extractTextFromPdf(pdf: PDFDocumentProxy | Blob): Promise<string> {
-        let pdfDoc: PDFDocumentProxy;
-        if (pdf instanceof Blob) {
-            const loadingTask = pdfjs.getDocument(await pdf.arrayBuffer());
-            pdfDoc = await loadingTask.promise;
-        } else {
-            pdfDoc = pdf;
-        }
-
-        const maxPages = pdfDoc.numPages;
+    async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
+        const maxPages = pdf.numPages;
         const textPromises: Promise<string>[] = [];
 
         for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
             textPromises.push(
-                pdfDoc.getPage(pageNum)
+                pdf.getPage(pageNum)
                 .then(async (page) => {
                     const textContent = await page.getTextContent();
                     return textContent.items
@@ -271,35 +263,6 @@ export const contentService = {
       throw e;
     }
   },
-  async createInteractiveFlashcard(parentId: string | null): Promise<Content> {
-    if (!db) throw new Error("Firestore not initialized");
-    const newId = uuidv4();
-    const newRef = doc(db, 'content', newId);
-    return runTransaction(db, async (transaction) => {
-      const childrenQuery = query(collection(db, 'content'), where('parentId', '==', parentId));
-      const childrenSnapshot = await getDocs(childrenQuery);
-      const order = childrenSnapshot.size;
-      const newContentData: Content = {
-        id: newId,
-        name: 'New Flashcards',
-        type: 'INTERACTIVE_FLASHCARD',
-        parentId: parentId,
-        metadata: {
-          quizData: JSON.stringify([{
-            id: `l${Date.now()}`,
-            name: 'New Lecture',
-            flashcards: []
-          }]),
-          sourceFileId: '',
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-        order: order,
-      };
-      transaction.set(newRef, newContentData);
-      return newContentData;
-    });
-  },
   async createOrUpdateInteractiveContent(
     destination: Content,
     name: string,
@@ -310,18 +273,20 @@ export const contentService = {
       if (!db) throw new Error("Firestore not initialized");
  
       const originalFileName = name.replace(/\.[^/.]+$/, "");
-      let contentName: string;
+      let contentName = name;
      
-      switch (type) {
-          case 'INTERACTIVE_QUIZ':
-              contentName = `${originalFileName} - Quiz`;
-              break;
-          case 'INTERACTIVE_EXAM':
-              contentName = `${originalFileName} - Exam`;
-              break;
-          case 'INTERACTIVE_FLASHCARD':
-              contentName = `${originalFileName} - Flashcards`;
-              break;
+      if(destination.type === 'FOLDER') {
+         switch (type) {
+            case 'INTERACTIVE_QUIZ':
+                contentName = `${originalFileName} - Quiz`;
+                break;
+            case 'INTERACTIVE_EXAM':
+                contentName = `${originalFileName} - Exam`;
+                break;
+            case 'INTERACTIVE_FLASHCARD':
+                contentName = `${originalFileName} - Flashcards`;
+                break;
+        }
       }
      
       const newLectureData: Lecture = {
@@ -348,7 +313,9 @@ export const contentService = {
                   type: type,
                   parentId: destination.id,
                   metadata: {
-                      quizData: JSON.stringify([newLectureData], null, 2),
+                      quizData: type === 'INTERACTIVE_FLASHCARD'
+                        ? JSON.stringify([{ id: `l${Date.now()}`, name: name, flashcards: [] }], null, 2)
+                        : JSON.stringify([newLectureData], null, 2),
                       sourceFileId,
                   },
                   createdAt: new Date().toISOString(),

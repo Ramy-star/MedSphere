@@ -11,7 +11,7 @@ import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
-import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck } from 'lucide-react';
+import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck, Edit } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
@@ -36,6 +36,8 @@ import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
 import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
 import { FlashcardIcon } from './icons/FlashcardIcon';
+import { useAuthStore } from '@/stores/auth-store';
+import { useRouter } from 'next/navigation';
 
 const ChatPanel = dynamic(() => import('./ChatPanel'), {
   ssr: false,
@@ -227,6 +229,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, 
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
+  const router = useRouter();
   const [showChat, setShowChat] = useState(false);
   const [initialQuotedText, setInitialQuotedText] = useState<string | null>(null);
   
@@ -250,6 +253,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const manualPageInputInProgress = useRef(false);
   const [selection, setSelection] = useState<{ text: string; position: { top: number; left: number } } | null>(null);
 
+  const { can } = useAuthStore();
 
   const ZOOM_STEP = 0.1;
   const MAX_ZOOM = 5;
@@ -326,7 +330,8 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             if (lectureFile && lectureFile.metadata?.storagePath) {
                  const lectureBlob = await contentService.getFileContent(lectureFile.metadata.storagePath);
                 if (lectureFile.metadata.mime === 'application/pdf') {
-                    lectureText = await contentService.extractTextFromPdf(lectureBlob);
+                    const pdf = await pdfjs.getDocument(await lectureBlob.arrayBuffer()).promise;
+                    lectureText = await contentService.extractTextFromPdf(pdf);
                 } else if (lectureFile.metadata.mime?.startsWith('text/')) {
                     lectureText = await lectureBlob.text();
                 } else {
@@ -537,6 +542,21 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     }
   };
 
+  const handleEditInteractiveContent = () => {
+    if (!item) return;
+    const sourceId = item.metadata?.sourceFileId;
+    if (sourceId) {
+      router.push(`/questions-creator/${sourceId}`);
+      handleClose();
+    } else {
+        toast({
+            variant: 'destructive',
+            title: 'Source Not Found',
+            description: 'Cannot edit this item because its original source file ID is missing.'
+        });
+    }
+  }
+
 
   if (!item) return null;
   
@@ -552,6 +572,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isChatAvailable = (isPdf || isMarkdown || isTextFile || isQuiz) && !isExamInProgress;
   const isQuoteAvailable = (isPdf || isMarkdown || isTextFile || isQuiz) && !isExamInProgress;
   const displayName = item.name;
+  const canEditInteractive = can('canAdministerExams', item.id) && (item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM');
   
   const renderLoadingSkeleton = () => (
     <div className="relative flex-1 flex flex-col bg-[#13161C] overflow-hidden">
@@ -608,7 +629,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                            <ExternalLink className="w-5 h-5" />
+                                            <SquareArrowOutUpRight className="w-5 h-5" />
                                         </Button>
                                     </TooltipTrigger>
                                     <TooltipContent side="bottom" sideOffset={8}><p>Open in browser</p></TooltipContent>
@@ -654,6 +675,16 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
               <TooltipProvider delayDuration={100}>
                 <div className={cn('hidden md:flex items-center gap-1 sm:gap-2', isQuiz && 'opacity-0 pointer-events-none')}>
+                    {canEditInteractive && (
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button variant="ghost" size="icon" onClick={handleEditInteractiveContent} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                    <Edit className="w-5 h-5" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent side="bottom" sideOffset={8}><p>Edit Questions</p></TooltipContent>
+                        </Tooltip>
+                    )}
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={handleDownload} disabled={!fileUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
@@ -665,7 +696,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     <Tooltip>
                         <TooltipTrigger asChild>
                             <Button variant="ghost" size="icon" onClick={() => window.open(openUrl, '_blank')} disabled={!openUrl} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                <ExternalLink className="w-5 h-5" />
+                                <SquareArrowOutUpRight className="w-5 h-5" />
                             </Button>
                         </TooltipTrigger>
                         <TooltipContent side="bottom" sideOffset={8}><p>Open in browser</p></TooltipContent>
@@ -703,7 +734,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             </div>
         </header>
 
-        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz && "w-full max-w-6xl mx-auto", isFullscreen && "w-full h-full")}>
+        <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz ? "w-full max-w-6xl mx-auto" : "overflow-x-auto", isFullscreen && "w-full h-full")}>
              <div className={cn("no-scrollbar overflow-auto h-full", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')}>
               <FilePreview 
                   key={item.id}

@@ -24,6 +24,9 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [showNewClassDialog, setShowNewClassDialog] = useState(false);
   const [showNewLinkDialog, setShowNewLinkDialog] = useState(false);
+  
+  const [interactiveContentType, setInteractiveContentType] = useState<'quiz' | 'exam' | 'flashcard' | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
   const { toast } = useToast();
@@ -77,56 +80,37 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
     }
   }
   
-  const handleAddQuiz = async () => {
-    if (!parentId) return;
+  const handleAddInteractiveContent = async (name: string) => {
+    if (!parentId || !interactiveContentType) return;
     try {
-        // This functionality was missing. Let's assume contentService has a method for it.
-        // It should create a file of type INTERACTIVE_QUIZ with empty quizData.
-        await contentService.createOrUpdateInteractiveContent({id: parentId, type: 'FOLDER', name: 'Parent', parentId: ''}, 'New Quiz', {}, '', 'INTERACTIVE_QUIZ');
-        toast({ title: 'Quiz Created', description: `A new quiz has been created.` });
+        const typeMap = {
+            quiz: 'INTERACTIVE_QUIZ',
+            exam: 'INTERACTIVE_EXAM',
+            flashcard: 'INTERACTIVE_FLASHCARD'
+        };
+        const friendlyNameMap = {
+            quiz: 'Quiz',
+            exam: 'Exam',
+            flashcard: 'Flashcard Set'
+        };
+
+        const type = typeMap[interactiveContentType] as 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD';
+        
+        await contentService.createOrUpdateInteractiveContent({id: parentId, type: 'FOLDER', name: 'Parent', parentId: ''}, name, {}, '', type);
+        toast({ title: `${friendlyNameMap[interactiveContentType]} Created`, description: `"${name}" has been created.` });
         setPopoverOpen(false);
     } catch(error: any) {
-        console.error("Failed to create quiz:", error);
+        console.error(`Failed to create ${interactiveContentType}:`, error);
         toast({ 
             variant: 'destructive', 
-            title: 'Error creating quiz', 
+            title: `Error creating ${interactiveContentType}`, 
             description: error.message || 'An unknown error occurred.' 
         });
+    } finally {
+        setInteractiveContentType(null);
     }
   };
 
-  const handleAddExam = async () => {
-    if (!parentId) return;
-    try {
-        // Similar to quiz, assuming a method in contentService
-        await contentService.createOrUpdateInteractiveContent({id: parentId, type: 'FOLDER', name: 'Parent', parentId: ''}, 'New Exam', {}, '', 'INTERACTIVE_EXAM');
-        toast({ title: 'Exam Created', description: `A new exam has been created.` });
-        setPopoverOpen(false);
-    } catch(error: any) {
-        console.error("Failed to create exam:", error);
-        toast({ 
-            variant: 'destructive', 
-            title: 'Error creating exam', 
-            description: error.message || 'An unknown error occurred.' 
-        });
-    }
-  };
-
-  const handleAddFlashcard = async () => {
-    if (!parentId) return;
-    try {
-        await contentService.createInteractiveFlashcard(parentId);
-        toast({ title: 'Flashcards Created', description: `A new flashcard set has been created.` });
-        setPopoverOpen(false);
-    } catch(error: any) {
-        console.error("Failed to create flashcards:", error);
-        toast({ 
-            variant: 'destructive', 
-            title: 'Error creating flashcards', 
-            description: error.message || 'An unknown error occurred.' 
-        });
-    }
-  }
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -142,7 +126,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         event.target.value = '';
     }
   };
-
+  
   const menuItems = [
       {
           label: "New Class",
@@ -171,21 +155,21 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       {
           label: "Create Quiz",
           icon: Lightbulb,
-          action: handleAddQuiz,
+          action: () => setInteractiveContentType('quiz'),
           permission: 'canAdministerExams',
           color: "text-yellow-400"
       },
       {
           label: "Create Flashcard",
           icon: FlashcardIcon,
-          action: handleAddFlashcard,
+          action: () => setInteractiveContentType('flashcard'),
           permission: 'canAdministerFlashcards',
           color: ""
       },
       {
           label: "Create Exam",
           icon: InteractiveExamIcon,
-          action: handleAddExam,
+          action: () => setInteractiveContentType('exam'),
           permission: 'canAdministerExams',
           color: ""
       }
@@ -229,6 +213,13 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       <NewFolderDialog open={showNewFolderDialog} onOpenChange={setShowNewFolderDialog} onAddFolder={handleAddFolder} />
       <NewFolderDialog open={showNewClassDialog} onOpenChange={setShowNewClassDialog} onAddFolder={handleAddClass} title="Add new class" description="Create a new class container." />
       <NewLinkDialog open={showNewLinkDialog} onOpenChange={setShowNewLinkDialog} onAddLink={handleAddLink} />
+      <NewFolderDialog
+        open={!!interactiveContentType}
+        onOpenChange={(isOpen) => !isOpen && setInteractiveContentType(null)}
+        onAddFolder={handleAddInteractiveContent}
+        title={`Create New ${interactiveContentType?.charAt(0).toUpperCase()}${interactiveContentType?.slice(1)}`}
+        description={`Enter a name for the new ${interactiveContentType}.`}
+      />
     </>
   );
 }
