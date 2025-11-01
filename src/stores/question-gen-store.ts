@@ -134,9 +134,11 @@ async function runGenerationProcess(
             else if (source.fileUrl) fileBlob = await contentService.getFileContent(source.fileUrl);
             else throw new Error("No file content or URL provided.");
 
-            const loadingTask = pdfjs.getDocument(await fileBlob.arrayBuffer());
-            const pdf = await loadingTask.promise;
-            documentText = await contentService.extractTextFromPdf(pdf);
+            if (fileBlob.type === 'application/pdf') {
+                documentText = await contentService.extractTextFromPdf(fileBlob);
+            } else {
+                documentText = await fileBlob.text();
+            }
             
             set(state => ({
                 task: state.task ? { ...state.task, status: { ...state.task.status, documentText } } : null

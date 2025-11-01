@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -25,6 +26,7 @@ export function VerificationScreen() {
   }));
   
   useEffect(() => {
+    let debounceTimer: NodeJS.Timeout;
     const checkId = async () => {
       if (studentId.trim().length >= 8) { // Basic validation before checking
         const details = await getStudentDetails(studentId.trim());
@@ -33,7 +35,16 @@ export function VerificationScreen() {
         setIsNewUser(false);
       }
     };
-    checkId();
+
+    if (studentId.trim()) {
+        debounceTimer = setTimeout(() => {
+            checkId();
+        }, 300); // Debounce API call
+    } else {
+        setIsNewUser(false);
+    }
+
+    return () => clearTimeout(debounceTimer);
   }, [studentId]);
 
 
@@ -98,21 +109,21 @@ export function VerificationScreen() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.9 }}
           >
-            <p className="mb-2">Enter your Student ID, then:</p>
-            <ul className="list-none p-0 text-left inline-block space-y-1">
-              <li className="flex items-center gap-2">
-                <span className="text-blue-400 font-bold">●</span>
-                <span>
-                  <strong>New user?</strong> Create your secret code first.
-                </span>
-              </li>
-              <li className="flex items-center gap-2">
-                <span className="text-green-400 font-bold">●</span>
+             <p className="mb-2">Enter your Student ID to begin:</p>
+             <ul className="list-none p-0 inline-block space-y-1 text-left">
+               <li className="flex items-center gap-2">
+                 <span className="text-blue-400 font-bold -translate-y-px">●</span>
                  <span>
-                  <strong>Existing user?</strong> Enter your secret code to log in.
-                </span>
-              </li>
-            </ul>
+                   <strong>New user?</strong> Create your secret code first.
+                 </span>
+               </li>
+               <li className="flex items-center gap-2">
+                 <span className="text-green-400 font-bold -translate-y-px">●</span>
+                 <span>
+                   <strong>Existing user?</strong> Enter your secret code to log in.
+                 </span>
+               </li>
+             </ul>
           </motion.div>
           
           <motion.div
