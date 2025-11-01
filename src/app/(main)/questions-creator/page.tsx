@@ -311,12 +311,12 @@ function QuestionsCreatorContent() {
   }, []);
 
   useEffect(() => {
-    if (flowStep === 'error' && task?.status && Object.values(task.status).some(s => s?.status === 'error')) {
-      toast({
-        variant: 'destructive',
-        title: 'Generation Failed',
-        description: 'One or more generation tasks failed. You can retry them individually.',
-      });
+    if (flowStep === 'error' && task?.status && Object.values(task.status).some(s => s && typeof s === 'object' && s.status === 'error')) {
+        toast({
+            variant: 'destructive',
+            title: 'Generation Failed',
+            description: 'One or more generation tasks failed. You can retry them individually.',
+        });
     }
   }, [flowStep, task?.status, toast]);
 

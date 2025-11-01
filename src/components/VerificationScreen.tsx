@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { CreateSecretCodeScreen } from './CreateSecretCodeScreen';
-import { getStudentDetails } from '@/lib/authService';
+import { getStudentDetails } from '@/lib/verificationService'; // Corrected import
 
 export function VerificationScreen() {
   const [studentId, setStudentId] = useState('');

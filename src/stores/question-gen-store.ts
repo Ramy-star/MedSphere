@@ -328,6 +328,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     },
 
     closeOptionsDialog: () => {
+        // If user closes the dialog, reset the flow
         if (get().flowStep === 'awaiting_options') {
             get().resetFlow();
         }
