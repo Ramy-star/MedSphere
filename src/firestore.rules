@@ -30,6 +30,7 @@ service cloud.firestore {
 
     match /examResults/{resultId} {
       allow read: if request.auth != null;
+      allow list: if request.auth != null;
       allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
       allow write: if false; // Prevent updates after creation
     }
