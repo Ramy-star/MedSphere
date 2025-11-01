@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect, useRef, useMemo } from 'react';
@@ -198,7 +197,7 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
           toast({ title: 'Title Updated' });
       }
       setIsEditingTitle(false);
-  }
+  };
 
   const handleTitleCancel = () => {
     if (titleRef.current && questionSet) {

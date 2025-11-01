@@ -1,4 +1,3 @@
-
 import { create } from 'zustand';
 import { contentService } from '@/lib/contentService';
 import { generateQuestionsText, generateExamText, generateFlashcardsText, convertQuestionsToJson, convertFlashcardsToJson } from '@/ai/flows/question-gen-flow';
@@ -133,12 +132,10 @@ async function runGenerationProcess(
             if (source.file) fileBlob = source.file;
             else if (source.fileUrl) fileBlob = await contentService.getFileContent(source.fileUrl);
             else throw new Error("No file content or URL provided.");
-
-            if (fileBlob.type === 'application/pdf') {
-                documentText = await contentService.extractTextFromPdf(fileBlob);
-            } else {
-                documentText = await fileBlob.text();
-            }
+            
+            const loadingTask = pdfjs.getDocument(await fileBlob.arrayBuffer());
+            const pdf = await loadingTask.promise;
+            documentText = await contentService.extractTextFromPdf(pdf);
             
             set(state => ({
                 task: state.task ? { ...state.task, status: { ...state.task.status, documentText } } : null
@@ -269,7 +266,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     saveCurrentResults: async (userId: string, currentItemCount: number) => {
         const { task } = get();
 
-        if (!task || (task.status.questions.status !== 'completed' && task.status.exam.status !== 'completed' && task.status.flashcards.status !== 'completed')) {
+        if (!task || !(task.status.questions.status === 'completed' || task.status.exam.status === 'completed' || task.status.flashcards.status === 'completed')) {
             throw new Error("No completed task to save.");
         }
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -55,9 +54,9 @@ export function VerificationScreen() {
   };
 
   const handleSecretCreated = (newSecret: string) => {
-    const state = useAuthStore.getState();
-    if (state.authState === 'awaiting_secret_creation' && state.studentId) {
-        createProfileAndLogin(state.studentId, newSecret);
+    const { studentId: storedStudentId } = useAuthStore.getState();
+    if (storedStudentId) {
+        createProfileAndLogin(storedStudentId, newSecret);
     }
   }
   
@@ -109,7 +108,7 @@ export function VerificationScreen() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.9 }}
           >
-             <p className="mb-2">Enter your Student ID to begin:</p>
+             <p className="mb-2">Enter your Student ID to begin, then:</p>
              <ul className="list-none p-0 inline-block space-y-1 text-left">
                <li className="flex items-center gap-2">
                  <span className="text-blue-400 font-bold -translate-y-px">●</span>

@@ -1,4 +1,3 @@
-
 'use client';
 import React from 'react';
 import type { UserProfile } from '@/stores/auth-store';
@@ -120,12 +119,18 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
         const isSpecialCategory = category === 'Special';
         
         let achievementsToRender: Achievement[] = [];
-        if(isSpecialCategory && !isSuperAdmin) {
+        if(isSpecialCategory) {
+            // For special category, only show achievements that have been earned.
             achievementsToRender = Object.values(groups).flat().filter(ach => earnedAchievements.has(ach.id));
+             // If the user is a super admin, show all special achievements
+            if (isSuperAdmin) {
+              achievementsToRender = Object.values(groups).flat();
+            }
         } else {
             achievementsToRender = Object.values(groups).flat();
         }
 
+        // If it's the special category and there are no earned achievements to show (and user is not admin), skip rendering the category.
         if (isSpecialCategory && achievementsToRender.length === 0) {
             return null;
         }

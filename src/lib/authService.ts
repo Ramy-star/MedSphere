@@ -1,8 +1,8 @@
 'use client';
 
 import { db } from '@/firebase';
-import { collection, doc, getDoc, getDocs, query, setDoc, where, runTransaction } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -18,26 +18,19 @@ import level5Data from '@/lib/student-ids/level-5-data.json';
 
 const SUPER_ADMIN_ID = "221100154";
 
-// --- Hashing functions using Web Crypto API ---
-// These functions will only run in the client, where crypto.subtle is available.
-
+// --- Hashing functions using bcryptjs ---
+// Dynamically import bcryptjs only when needed to avoid bundling issues.
 async function hashSecretCode(secretCode: string): Promise<string> {
-    if (typeof window === 'undefined' || !window.crypto || !window.crypto.subtle) {
-        throw new Error("Crypto API not available.");
-    }
-    const encoder = new TextEncoder();
-    const data = encoder.encode(secretCode);
-    const hashBuffer = await window.crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
+    const bcrypt = (await import('bcryptjs')).default;
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(secretCode, salt);
+    return hash;
 }
 
 async function compareSecretCode(secretCode: string, hash: string): Promise<boolean> {
-    const newHash = await hashSecretCode(secretCode);
-    return newHash === hash;
+    const bcrypt = (await import('bcryptjs')).default;
+    return await bcrypt.compare(secretCode, hash);
 }
-
 
 const allStudentIds = new Set([
     ...level1Ids,
@@ -101,7 +94,7 @@ export async function verifySecretCode(studentId: string, secretCode: string): P
 
     const userProfile = userDoc.data();
     if (!userProfile.secretCodeHash) {
-        return null;
+        return null; 
     }
     
     const isMatch = await compareSecretCode(secretCode, userProfile.secretCodeHash);
@@ -117,48 +110,47 @@ export async function createUserProfile(studentId: string, secretCode: string): 
     const trimmedId = studentId.trim();
 
     if (!db) throw new Error("Database service is not available.");
+    
+    const userDocRef = doc(db, 'users', trimmedId);
+    const userDoc = await getDoc(userDocRef);
 
-    return runTransaction(db, async (transaction) => {
-        const userDocRef = doc(db, 'users', trimmedId);
-        const userDoc = await transaction.get(userDocRef);
+    if (userDoc.exists()) {
+        throw new Error("This Student ID has already been registered.");
+    }
 
-        if (userDoc.exists()) {
-            throw new Error("This Student ID has already been registered.");
-        }
+    const studentData = allStudentData.get(trimmedId);
+    const userLevel = idToLevelMap.get(trimmedId);
+    const isUserSuperAdmin = trimmedId === SUPER_ADMIN_ID;
 
-        const studentData = allStudentData.get(trimmedId);
-        const userLevel = idToLevelMap.get(trimmedId);
-        const isUserSuperAdmin = trimmedId === SUPER_ADMIN_ID;
+    const secretCodeHash = await hashSecretCode(secretCode);
 
-        const secretCodeHash = await hashSecretCode(secretCode);
+    const newUserProfile = {
+        id: trimmedId,
+        uid: trimmedId, 
+        studentId: trimmedId,
+        displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
+        username: `student_${trimmedId}`,
+        email: studentData?.['Academic Email'] || '',
+        level: userLevel || 'Unknown',
+        createdAt: new Date().toISOString(),
+        roles: isUserSuperAdmin ? [{ role: 'superAdmin', scope: 'global' }] : [],
+        secretCodeHash,
+        stats: {
+            filesUploaded: 0,
+            foldersCreated: 0,
+            examsCompleted: 0,
+            aiQueries: 0,
+            consecutiveLoginDays: 1,
+            lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
+            accountAgeDays: 0,
+        },
+        achievements: [{ badgeId: 'FIRST_LOGIN', earnedAt: new Date().toISOString() }],
+        sessions: [],
+        favorites: [],
+        metadata: {},
+    };
 
-        const newUserProfile = {
-            id: trimmedId,
-            uid: trimmedId, 
-            studentId: trimmedId,
-            displayName: studentData?.['Student Name'] || `Student ${trimmedId}`,
-            username: `student_${trimmedId}`,
-            email: studentData?.['Academic Email'] || '',
-            level: userLevel || 'Unknown',
-            createdAt: new Date().toISOString(),
-            roles: isUserSuperAdmin ? [{ role: 'superAdmin', scope: 'global' }] : [],
-            secretCodeHash,
-            stats: {
-                filesUploaded: 0,
-                foldersCreated: 0,
-                examsCompleted: 0,
-                aiQueries: 0,
-                consecutiveLoginDays: 1,
-                lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
-            },
-            achievements: [{ badgeId: 'FIRST_LOGIN', earnedAt: new Date().toISOString() }],
-            sessions: [],
-            favorites: [],
-            metadata: {},
-        };
+    await setDoc(userDocRef, newUserProfile);
 
-        transaction.set(userDocRef, newUserProfile);
-
-        return newUserProfile;
-    });
+    return newUserProfile;
 }

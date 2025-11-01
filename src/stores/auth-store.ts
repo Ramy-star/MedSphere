@@ -148,7 +148,7 @@ const listenToUserProfile = (studentId: string) => {
             if (userProfile.isBlocked) {
                 useAuthStore.getState().logout(); return;
             }
-            const isSuper = userProfile.roles?.some(r => r.role === 'superAdmin');
+            const isSuper = userProfile.studentId === '221100154';
             useAuthStore.setState({ authState: 'authenticated', isAuthenticated: true, studentId: userProfile.studentId, isSuperAdmin: !!isSuper, user: userProfile, loading: false, error: null });
             useAuthStore.getState().checkAndAwardAchievements();
         } else {
