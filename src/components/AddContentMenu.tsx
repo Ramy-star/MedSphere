@@ -76,22 +76,6 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
     }
   }
   
-  const handleAddFlashcard = async () => {
-    if (!parentId) return;
-    try {
-        await contentService.createInteractiveFlashcard(parentId);
-        toast({ title: 'Flashcards Created', description: `A new flashcard set has been created.` });
-        setPopoverOpen(false);
-    } catch(error: any) {
-        console.error("Failed to create flashcards:", error);
-        toast({ 
-            variant: 'destructive', 
-            title: 'Error creating flashcards', 
-            description: error.message || 'An unknown error occurred.' 
-        });
-    }
-  }
-
   const handleAddQuiz = async () => {
     if (!parentId) return;
     try {
@@ -106,7 +90,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
             description: error.message || 'An unknown error occurred.' 
         });
     }
-  }
+  };
 
   const handleAddExam = async () => {
     if (!parentId) return;
@@ -119,6 +103,22 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         toast({ 
             variant: 'destructive', 
             title: 'Error creating exam', 
+            description: error.message || 'An unknown error occurred.' 
+        });
+    }
+  };
+
+  const handleAddFlashcard = async () => {
+    if (!parentId) return;
+    try {
+        await contentService.createInteractiveFlashcard(parentId);
+        toast({ title: 'Flashcards Created', description: `A new flashcard set has been created.` });
+        setPopoverOpen(false);
+    } catch(error: any) {
+        console.error("Failed to create flashcards:", error);
+        toast({ 
+            variant: 'destructive', 
+            title: 'Error creating flashcards', 
             description: error.message || 'An unknown error occurred.' 
         });
     }
@@ -165,22 +165,25 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           permission: 'canAddLink'
       },
       {
-          label: "Create Flashcard",
-          icon: FlashcardIcon,
-          action: handleAddFlashcard,
-          permission: 'canCreateFlashcard'
-      },
-       {
           label: "Create Quiz",
           icon: Lightbulb,
           action: handleAddQuiz,
-          permission: 'canCreateFlashcard' // Using same permission for simplicity
+          permission: 'canAdministerExams', // Use a more specific permission
+          color: "text-yellow-400"
+      },
+      {
+          label: "Create Flashcard",
+          icon: FlashcardIcon,
+          action: handleAddFlashcard,
+          permission: 'canAdministerFlashcards', // Use a more specific permission
+          color: ""
       },
       {
           label: "Create Exam",
           icon: InteractiveExamIcon,
           action: handleAddExam,
-          permission: 'canCreateFlashcard' // Using same permission for simplicity
+          permission: 'canAdministerExams', // Use a more specific permission
+          color: ""
       }
   ]
 
@@ -212,7 +215,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
                       onClick={item.action}
                       className="flex items-center gap-3 p-2 rounded-xl text-sm text-slate-200 hover:bg-white/10 cursor-pointer transition-colors"
                   >
-                      <item.icon className="h-4 w-4 text-slate-400" />
+                      <item.icon className={cn("h-4 w-4 text-slate-400", item.color)} />
                       <span>{item.label}</span>
                   </div>
               ))}
