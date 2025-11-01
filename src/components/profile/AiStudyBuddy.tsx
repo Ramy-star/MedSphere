@@ -51,7 +51,7 @@ type TimeOfDayTheme = {
 
 // Helper function to detect RTL text
 const isRtl = (text: string) => {
-  const rtlRegex = /[\u0590-\u07FF\uFB1D-\uFEFC]/;
+  const rtlRegex = /[\u0590-\u07FF\uFB1D-\uFDFF\uFE70-\uFEFC]/;
   return rtlRegex.test(text);
 };
 
@@ -392,10 +392,12 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen:
     );
     
     const ContentSwitch = () => {
+      // For floating assistant, content is always visible when it's open.
+      // For profile page, content visibility is handled by the collapsible.
       if (!isOpen) return null;
         
         return (
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 pt-4 flex flex-col">
                 <AnimatePresence mode="wait">
                     <motion.div
                         key={view}
@@ -417,10 +419,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen:
         <Collapsible.Root 
             open={isOpen} 
             onOpenChange={isFloating ? undefined : setIsCollapsibleOpen} 
-            className={cn("w-full transition-all duration-500 ease-in-out", isFloating ? "h-full" : "")}
+            className={cn("w-full transition-all duration-500 ease-in-out flex flex-col", isFloating ? "h-full" : "")}
         >
             <div 
-                className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full", isFloating ? "h-full" : "")}
+                className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full", isFloating ? "h-full flex-1" : "")}
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 170% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}
             >
                 <div className="flex items-center gap-3 sm:gap-4">
@@ -443,7 +445,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen:
                     )}
                 </div>
 
-                 <AnimatePresence initial={false}>
+                <AnimatePresence initial={false}>
                     {isOpen && (
                         <Collapsible.Content asChild forceMount>
                             <motion.div
@@ -451,7 +453,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen:
                                 animate="open"
                                 exit="collapsed"
                                 variants={sectionVariants}
-                                className="overflow-hidden flex-1 flex flex-col pt-4"
+                                className="overflow-hidden flex-1 flex flex-col"
                             >
                                 <ContentSwitch />
                                 
