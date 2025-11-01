@@ -98,18 +98,18 @@ export function VerificationScreen() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.9 }}
           >
-            <p className="mb-2">أدخل رقمك الجامعي ثم:</p>
+            <p className="mb-2">Enter your Student ID, then:</p>
             <ul className="list-none p-0 text-left inline-block space-y-1">
               <li className="flex items-start gap-2">
                 <span className="text-blue-400 mt-1 font-bold">●</span>
-                <span className='text-right'>
-                  <strong>مستخدم جديد؟</strong> أنشئ رمزك السري أولاً.
+                <span>
+                  <strong>New user?</strong> Create your secret code first.
                 </span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-green-400 mt-1 font-bold">●</span>
-                 <span className='text-right'>
-                  <strong>مستخدم حالي؟</strong> أدخل رمزك السري لتسجيل الدخول.
+                 <span>
+                  <strong>Existing user?</strong> Enter your secret code to log in.
                 </span>
               </li>
             </ul>
