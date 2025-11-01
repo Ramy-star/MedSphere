@@ -86,9 +86,8 @@ export default function RootLayout({
                 </div>
             );
         case 'anonymous':
-            return <VerificationScreen />;
         case 'awaiting_secret_creation':
-            return <CreateSecretCodeScreen />;
+            return <VerificationScreen />;
         case 'authenticated':
             if (user?.isBlocked) {
               return (
@@ -102,16 +101,8 @@ export default function RootLayout({
                 </div>
               );
             }
-            return (
-                <div className="flex flex-col h-full w-full">
-                    <header className="z-50 w-full">
-                        <Header />
-                    </header>
-                    <main className="flex flex-1 w-full overflow-hidden">
-                        {children}
-                    </main>
-                </div>
-            );
+            // This is the key fix: Render the children directly, which will be the main authenticated layout.
+            return children;
         default:
              return <VerificationScreen />;
     }
@@ -156,9 +147,11 @@ export default function RootLayout({
           <link rel="apple-touch-icon" href="/logo.svg" />
           <link rel="preconnect" href="https://res.cloudinary.com" />
       </head>
-      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full`}>
+      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background`}>
           <FirebaseClientProvider config={firebaseConfig}>
-            {renderContent()}
+            <div className="flex flex-col h-full w-full">
+                {renderContent()}
+            </div>
             <Toaster />
             {newlyEarnedAchievement && <AchievementToast achievement={newlyEarnedAchievement} />}
           </FirebaseClientProvider>

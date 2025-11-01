@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useAuthStore } from "@/stores/auth-store";
 import { ImageIcon } from "lucide-react";
+import { Header } from "@/components/header";
 
 
 export default function MainLayout({
@@ -26,59 +27,60 @@ export default function MainLayout({
   const isProfilePage = pathname === '/profile';
 
   return (
-    <div className="flex flex-1 w-full p-2 sm:p-4 gap-4 overflow-hidden">
-      <Sidebar 
-        open={isMobile ? isMobileSidebarOpen : undefined} 
-        setOpen={isMobile ? setMobileSidebarOpen : undefined} 
-      />
-      <motion.main
-        initial={{ opacity: 0, y: -5 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ type: "spring", stiffness: 300, damping: 30 }}
-        className={cn(
-          "flex-1 flex flex-col h-full overflow-hidden relative",
-          !isHomePage && "glass-card px-2 sm:px-6 py-4 md:py-6"
-        )}
-      >
-        {isProfilePage ? (
-            user?.metadata?.coverPhotoURL ? (
-                <div className="absolute inset-x-0 top-0 h-40 sm:h-64 z-0">
-                    <Image
-                        src={user.metadata.coverPhotoURL}
-                        alt="Cover photo"
-                        fill
-                        objectFit="cover"
-                        className="pointer-events-none select-none"
-                        priority
-                    />
-                    <div className="absolute inset-0 bg-black/40"></div>
-                </div>
-            ) : (
-                <div className="absolute inset-x-0 top-0 h-40 sm:h-64 z-0 flex flex-col items-center justify-center bg-slate-900/50 border-b border-dashed border-slate-700">
-                    <ImageIcon className="w-10 h-10 text-slate-500 mb-2" />
-                    <p className="text-sm font-medium text-slate-400">Add a cover photo</p>
-                    <p className="text-xs text-slate-500">Drag & drop an image or use the button</p>
-                </div>
-            )
-        ) : null}
+    <>
+      <Header />
+      <div className="flex flex-1 w-full p-2 sm:p-4 gap-4 overflow-hidden">
+        <Sidebar 
+          open={isMobile ? isMobileSidebarOpen : undefined} 
+          setOpen={isMobile ? setMobileSidebarOpen : undefined} 
+        />
+        <motion.main
+          initial={{ opacity: 0, y: -5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+          className={cn(
+            "flex-1 flex flex-col h-full overflow-hidden relative",
+            !isHomePage && "glass-card px-2 sm:px-6 py-4 md:py-6"
+          )}
+        >
+          {isProfilePage ? (
+              user?.metadata?.coverPhotoURL ? (
+                  <div className="absolute inset-x-0 top-0 h-40 sm:h-64 z-0">
+                      <Image
+                          src={user.metadata.coverPhotoURL}
+                          alt="Cover photo"
+                          fill
+                          objectFit="cover"
+                          className="pointer-events-none select-none"
+                          priority
+                      />
+                      <div className="absolute inset-0 bg-black/40"></div>
+                  </div>
+              ) : (
+                  <div className="absolute inset-x-0 top-0 h-40 sm:h-64 z-0 flex flex-col items-center justify-center bg-slate-900/50 border-b border-dashed border-slate-700">
+                      <ImageIcon className="w-10 h-10 text-slate-500 mb-2" />
+                      <p className="text-sm font-medium text-slate-400">Add a cover photo</p>
+                      <p className="text-xs text-slate-500">Drag & drop an image or use the button</p>
+                  </div>
+              )
+          ) : null}
 
-        <div className={cn(
-          "flex-shrink-0 flex flex-col min-h-[48px] relative z-10",
-          isHomePage && "px-2 sm:px-6 pt-4 md:pt-6" // Apply consistent padding on homepage
-        )}>
-            <Breadcrumbs />
-        </div>
-        
-        <div className={cn(
-          "flex-1 flex flex-col overflow-y-auto no-scrollbar relative z-10", 
-          isHomePage && "pt-0", 
-          !isQuestionsCreatorPage && !isHomePage && "pt-4"
-        )}>
-          {children}
-        </div>
-      </motion.main>
-    </div>
+          <div className={cn(
+            "flex-shrink-0 flex flex-col min-h-[48px] relative z-10",
+            isHomePage && "px-2 sm:px-6 pt-4 md:pt-6" // Apply consistent padding on homepage
+          )}>
+              <Breadcrumbs />
+          </div>
+          
+          <div className={cn(
+            "flex-1 flex flex-col overflow-y-auto no-scrollbar relative z-10", 
+            isHomePage && "pt-0", 
+            !isQuestionsCreatorPage && !isHomePage && "pt-4"
+          )}>
+            {children}
+          </div>
+        </motion.main>
+      </div>
+    </>
   );
 }
-
-    
