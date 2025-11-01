@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy, Paperclip } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
@@ -15,8 +15,16 @@ import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { Textarea } from '../ui/textarea';
-import { Check } from 'lucide-react';
+import { Check, X } from 'lucide-react';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { Content, contentService } from '@/lib/contentService';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { FileText } from 'lucide-react';
+import * as pdfjs from 'pdfjs-dist';
 
+if (typeof window !== 'undefined') {
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+}
 
 type Suggestion = {
     label: string;
@@ -91,6 +99,19 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [fontSize, setFontSize] = useState(14); // Base font size
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
+    const [showFileSearch, setShowFileSearch] = useState(false);
+    const [fileSearchQuery, setFileSearchQuery] = useState('');
+    const [referencedFile, setReferencedFile] = useState<Content | null>(null);
+
+    const { data: allFiles } = useCollection<Content>('content');
+
+    const filteredFiles = useMemo(() => {
+        if (!allFiles) return [];
+        const pdfFiles = allFiles.filter(item => item.type === 'FILE' && item.metadata?.mime === 'application/pdf');
+        if (!fileSearchQuery) return pdfFiles.slice(0, 10);
+        return pdfFiles.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
+    }, [allFiles, fileSearchQuery]);
+
 
     useEffect(() => {
         messagesRef.current = chatHistory;
@@ -105,19 +126,15 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     const getThemeForTime = useCallback((): TimeOfDayTheme => {
         const hour = new Date().getHours();
         const firstName = user.displayName?.split(' ')[0] || user.username;
-        // 5:00 AM - 11:59 AM
         if (hour >= 5 && hour < 12) {
             return { greeting: `Good morning, ${firstName}! 🌅`, bgColor: 'rgba(209, 171, 35, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
-        // 12:00 PM - 4:59 PM
         if (hour >= 12 && hour < 17) {
             return { greeting: `Good afternoon, ${firstName}! 🌤️`, bgColor: 'rgba(165, 46, 17, 0.6)', textColor: '#3A3A3A', iconColor: '#346bf1' };
         }
-        // 5:00 PM - 8:59 PM
         if (hour >= 17 && hour < 21) {
             return { greeting: `Good evening, ${firstName}! 🌇`, bgColor: 'rgba(118, 12, 44, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
         }
-        // 9:00 PM - 4:59 AM
         return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(11, 11, 86, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
@@ -150,14 +167,23 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     }, [fetchInitialInsight, getThemeForTime]);
 
     const submitQuery = useCallback(async (prompt: string) => {
-        if (!prompt || !theme) return;
+        if (!prompt && !referencedFile) return;
+        if (!theme) return;
 
         setView('chat');
-        const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: prompt }];
+        const userMessageText = referencedFile ? `${prompt}` : prompt;
+        const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: userMessageText }];
         setChatHistory(newHistory);
         setIsResponding(true);
-        
+        let fileContent: string | undefined;
+
         try {
+            if (referencedFile && referencedFile.metadata?.storagePath) {
+                 const fileBlob = await contentService.getFileContent(referencedFile.metadata.storagePath);
+                 const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
+                 fileContent = await contentService.extractTextFromPdf(pdf);
+            }
+            
             const userStats = {
                 displayName: user.displayName || user.username,
                 username: user.username,
@@ -167,10 +193,14 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 aiQueries: user.stats?.aiQueries || 0,
                 favoritesCount: user.favorites?.length || 0,
             };
+            
+            const fullPrompt = referencedFile ? `Using the file "${referencedFile.name}" as context, answer the following: ${prompt}` : prompt;
+
             const response = await answerStudyBuddyQuery({
                 userStats,
-                question: prompt,
+                question: fullPrompt,
                 chatHistory: newHistory.slice(0, -1),
+                referencedFileContent: fileContent,
             });
             setChatHistory(prev => [...prev, { role: 'model', text: response }]);
         } catch (e) {
@@ -183,19 +213,45 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
             setChatHistory(prev => prev.slice(0, -1));
         } finally {
             setIsResponding(false);
+            setReferencedFile(null);
         }
-    }, [theme, user, toast]);
+    }, [theme, user, toast, referencedFile]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
         submitQuery(suggestion.prompt);
     };
 
     const handleCustomQuestionSubmit = () => {
-        if (!customQuestion.trim()) return;
+        if (!customQuestion.trim() && !referencedFile) return;
         const questionToSend = customQuestion;
         setCustomQuestion('');
         submitQuery(questionToSend);
     };
+    
+    const handleFileSelect = (file: Content) => {
+        setReferencedFile(file);
+        setShowFileSearch(false);
+        setFileSearchQuery('');
+        setCustomQuestion(prev => prev.substring(0, prev.lastIndexOf('@')));
+        textareaRef.current?.focus();
+    };
+
+
+    const handleQuestionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const value = e.target.value;
+        const atIndex = value.lastIndexOf('@');
+        
+        if (atIndex !== -1 && value.substring(atIndex + 1).trim() === '') {
+            setShowFileSearch(true);
+            setFileSearchQuery('');
+        } else if (atIndex !== -1 && showFileSearch) {
+            setFileSearchQuery(value.substring(atIndex + 1));
+        } else {
+            setShowFileSearch(false);
+        }
+        setCustomQuestion(value);
+    }
+
 
     useEffect(() => {
         const textarea = textareaRef.current;
@@ -218,6 +274,9 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleCustomQuestionSubmit();
+        }
+        if (e.key === 'Escape' && showFileSearch) {
+            setShowFileSearch(false);
         }
     };
     
@@ -394,31 +453,68 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                                     </AnimatePresence>
                                 </div>
                                 
+                                <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
+                                    <PopoverTrigger asChild>
+                                        <div className="w-full"></div>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        side="top"
+                                        align="start"
+                                        className="w-[calc(100%-1rem)] sm:w-[500px] p-2 bg-slate-900 border-slate-700"
+                                        onOpenAutoFocus={(e) => e.preventDefault()}
+                                    >
+                                        <div className="text-xs text-slate-400 p-2">Mention a PDF file...</div>
+                                        <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                            {filteredFiles.map(file => (
+                                                <button
+                                                    key={file.id}
+                                                    onClick={() => handleFileSelect(file)}
+                                                    className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
+                                                >
+                                                    <FileText className="w-4 h-4 text-red-400" />
+                                                    <span className="truncate">{file.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                                
                                 <motion.div 
-                                    className="flex items-end gap-2 mt-2 flex-shrink-0"
+                                    className="flex flex-col gap-2 mt-2 flex-shrink-0"
                                     initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
                                 >
-                                    <Textarea
-                                        ref={textareaRef}
-                                        placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up..."}
-                                        className={cn("flex-1 bg-slate-800/60 border-slate-700 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
-                                        value={customQuestion}
-                                        onChange={(e) => setCustomQuestion(e.target.value)}
-                                        onKeyDown={handleCustomQuestionKeyDown}
-                                        disabled={isResponding}
-                                        rows={1}
-                                        dir="auto"
-                                    />
+                                    {referencedFile && (
+                                        <div className="flex items-center gap-2 p-2 bg-slate-800/60 rounded-lg text-sm text-slate-200">
+                                            <Paperclip className="w-4 h-4 text-blue-400" />
+                                            <span className="truncate flex-1">{referencedFile.name}</span>
+                                            <button onClick={() => setReferencedFile(null)} className="p-1 hover:bg-slate-700 rounded-full">
+                                                <X className="w-4 h-4" />
+                                            </button>
+                                        </div>
+                                    )}
+                                    <div className="flex items-end gap-2">
+                                        <Textarea
+                                            ref={textareaRef}
+                                            placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up, or type '@' to reference a file."}
+                                            className={cn("flex-1 bg-slate-800/60 border-slate-700 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
+                                            value={customQuestion}
+                                            onChange={handleQuestionChange}
+                                            onKeyDown={handleCustomQuestionKeyDown}
+                                            disabled={isResponding}
+                                            rows={1}
+                                            dir="auto"
+                                        />
 
-                                    <Button 
-                                        size="icon" 
-                                        className="rounded-full h-9 w-9 flex-shrink-0"
-                                        onClick={handleCustomQuestionSubmit}
-                                        disabled={isResponding || !customQuestion.trim()}
-                                    >
-                                        <ArrowUp className="w-4 h-4" />
-                                    </Button>
+                                        <Button 
+                                            size="icon" 
+                                            className="rounded-full h-9 w-9 flex-shrink-0"
+                                            onClick={handleCustomQuestionSubmit}
+                                            disabled={isResponding || (!customQuestion.trim() && !referencedFile)}
+                                        >
+                                            <ArrowUp className="w-4 h-4" />
+                                        </Button>
+                                    </div>
                                 </motion.div>
                             </motion.div>
                         </Collapsible.Content>
