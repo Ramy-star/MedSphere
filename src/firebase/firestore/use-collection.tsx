@@ -11,6 +11,7 @@ import {
   Query,
   DocumentData,
   QueryConstraint,
+  FirestoreError,
 } from 'firebase/firestore';
 import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
@@ -45,10 +46,12 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
     setLoading(true);
     let isMounted = true;
 
-    try {
-        let q: Query<DocumentData>;
+    let q: Query<DocumentData>;
+    let queryStringPath: string;
 
+    try {
         if (typeof pathOrQuery === 'string') {
+          queryStringPath = pathOrQuery;
           let constraints: QueryConstraint[] = [];
           if (memoizedOptions.where) {
               if (Array.isArray(memoizedOptions.where[0])) {
@@ -68,49 +71,54 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
           q = query(collection(db, pathOrQuery), ...constraints);
         } else {
           q = pathOrQuery;
+          // Attempt to derive path from query for error reporting
+          // This is a simplified approach and might not cover all edge cases
+          queryStringPath = (q as any)._query?.path?.segments?.join('/') || 'complex query';
         }
 
-        const unsubscribe = onSnapshot(
-        q,
-        (snapshot) => {
-            if (!isMounted) return;
-            const result: T[] = [];
-            snapshot.forEach((doc) => {
-              result.push({ id: doc.id, ...doc.data() } as T);
-            });
-            setData(result);
-            setLoading(false);
-            setError(null);
-        },
-        (err) => {
-            if (!isMounted) return;
-            const path = typeof pathOrQuery === 'string' ? pathOrQuery : 'a query';
-            console.error(`Error fetching collection ${path}:`, err);
-            
-            if (err.code === 'permission-denied') {
-                const permissionError = new FirestorePermissionError({
-                    path: path,
-                    operation: 'list',
-                });
-                 errorEmitter.emit('permission-error', permissionError);
-                 setError(permissionError);
-            } else {
-                 setError(err);
-            }
-            setLoading(false);
-        }
-        );
-
-        return () => {
-          isMounted = false;
-          unsubscribe();
-        };
     } catch (e: any) {
         if (!isMounted) return;
         console.error("Error setting up collection listener:", e);
         setError(e);
         setLoading(false);
+        return;
     }
+    
+    const unsubscribe = onSnapshot(
+    q,
+    (snapshot) => {
+        if (!isMounted) return;
+        const result: T[] = [];
+        snapshot.forEach((doc) => {
+          result.push({ id: doc.id, ...doc.data() } as T);
+        });
+        setData(result);
+        setLoading(false);
+        setError(null);
+    },
+    (err: FirestoreError) => {
+        if (!isMounted) return;
+        
+        console.error(`Error fetching collection ${queryStringPath}:`, err);
+        
+        if (err.code === 'permission-denied') {
+            const permissionError = new FirestorePermissionError({
+                path: queryStringPath,
+                operation: 'list',
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            setError(permissionError); // Set the specific error state
+        } else {
+              setError(err);
+        }
+        setLoading(false);
+    }
+    );
+
+    return () => {
+      isMounted = false;
+      unsubscribe();
+    };
   }, [db, pathOrQuery, memoizedOptions]);
 
   return { data, loading, error };
