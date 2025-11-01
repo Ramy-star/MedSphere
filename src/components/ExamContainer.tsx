@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown } from 'lucide-react';
@@ -19,11 +20,11 @@ import level4StudentData from '@/lib/student-ids/level-4-data.json';
 import level5StudentData from '@/lib/student-ids/level-5-data.json';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { contentService } from '@/lib/contentService';
-import { updateDoc, collection, doc, query, where, getDocs } from 'firebase/firestore';
+import { updateDoc, collection, doc, query, where, getDocs, CollectionReference, DocumentData, Query } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Textarea } from './ui/textarea';
 import { cn } from '@/lib/utils';
-
+import { useCollection } from '@/firebase/firestore/use-collection';
 
 // === Types ===
 type ExamResultWithId = ExamResult & { id: string };
@@ -629,11 +630,11 @@ const ExamMode = ({
     const canAdminister = can('canAdministerExams', fileItemId);
     const { db: firestore } = useFirebase();
     
-    const resultsCollectionRef = useMemoFirebase((): CollectionReference<DocumentData> | undefined => {
+    const resultsCollectionRef = useMemo((): CollectionReference<DocumentData> | undefined => {
         return firestore ? collection(firestore, "examResults") : undefined;
     }, [firestore]);
 
-    const examResultsQuery = useMemoFirebase((): Query<DocumentData> | undefined => {
+    const examResultsQuery = useMemo((): Query<DocumentData> | undefined => {
         return resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", activeLecture.id)) : undefined;
     }, [resultsCollectionRef, activeLecture.id]);
 
@@ -725,7 +726,7 @@ const ExamMode = ({
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, activeLecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements]);
+    }, [storageKey, activeLecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements, handleSubmit]);
 
 
     useEffect(() => {
