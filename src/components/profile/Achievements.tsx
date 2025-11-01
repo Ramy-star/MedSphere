@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import type { UserProfile } from '@/stores/auth-store';
@@ -40,7 +41,9 @@ const tierColors = {
 const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievement, userStats: any, earned: boolean }) => {
   const { id, icon: Icon, name, description, tier, condition } = achievement;
   
-  const colors = tierColors[tier];
+  const colors = tier === 'silver' && name === 'A Good Start' 
+    ? tierColors.silver 
+    : tierColors[tier];
   
   const currentProgress = userStats[condition.stat] || 0;
   const goal = condition.value;
@@ -55,9 +58,12 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
       )}
     >
       <div className="flex flex-col items-center">
-        <div className={cn("mb-2 sm:mb-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full", earned ? colors.bg : 'bg-slate-800')}>
+        <div className={cn(
+          "mb-2 sm:mb-3 flex h-10 w-10 sm:h-12 sm:w-12 items-center justify-center rounded-full", 
+          earned ? (id === 'FIRST_LOGIN' ? 'bg-gradient-to-br from-slate-400 to-slate-600' : colors.bg) : 'bg-slate-800'
+        )}>
           {earned ? (
-            <Icon className={cn("h-5 w-5 sm:h-6 sm:w-6", colors.icon)} />
+            <Icon className={cn("h-5 w-5 sm:h-6 sm:w-6", (id === 'FIRST_LOGIN' ? 'text-white' : colors.icon))} />
           ) : (
             <Lock className="h-5 w-5 sm:h-6 sm:w-6 text-slate-500" />
           )}
@@ -112,9 +118,15 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
     <div className="space-y-3 sm:space-y-4">
       {Object.entries(categorizedAndGroupedAchievements).map(([category, groups], categoryIndex) => {
         const isSpecialCategory = category === 'Special';
-        const hasEarnedSpecial = isSuperAdmin || Object.values(groups).flat().some(ach => earnedAchievements.has(ach.id));
         
-        if (isSpecialCategory && !hasEarnedSpecial) {
+        let achievementsToRender: Achievement[] = [];
+        if(isSpecialCategory && !isSuperAdmin) {
+            achievementsToRender = Object.values(groups).flat().filter(ach => earnedAchievements.has(ach.id));
+        } else {
+            achievementsToRender = Object.values(groups).flat();
+        }
+
+        if (isSpecialCategory && achievementsToRender.length === 0) {
             return null;
         }
         
@@ -122,20 +134,16 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
             <React.Fragment key={category}>
                 <h3 className="text-sm sm:text-md font-bold text-slate-300 px-2 mt-2">{category}</h3>
                 <div className="space-y-3 sm:space-y-4">
-                    {Object.entries(groups).map(([group, achievements], groupIndex) => (
-                    <React.Fragment key={group}>
-                        <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto pb-4 no-scrollbar">
-                        {achievements.map((ach) => (
-                            <BadgeCard
-                                key={ach.id}
-                                achievement={ach}
-                                userStats={userStats}
-                                earned={isSuperAdmin || earnedAchievements.has(ach.id)}
-                            />
-                        ))}
-                        </div>
-                    </React.Fragment>
-                    ))}
+                  <div className="flex flex-row gap-3 sm:gap-4 overflow-x-auto pb-4 no-scrollbar">
+                  {achievementsToRender.map((ach) => (
+                      <BadgeCard
+                          key={ach.id}
+                          achievement={ach}
+                          userStats={userStats}
+                          earned={isSuperAdmin || earnedAchievements.has(ach.id)}
+                      />
+                  ))}
+                  </div>
                 </div>
                 {categoryIndex < Object.keys(categorizedAndGroupedAchievements).length - 1 && (
                     <div className="w-full h-px bg-slate-800 my-3 sm:my-4" />

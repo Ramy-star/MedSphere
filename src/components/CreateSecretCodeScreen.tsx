@@ -42,6 +42,7 @@ export function CreateSecretCodeScreen({ open, onOpenChange, onSecretCreated }: 
     const [confirmSecretCode, setConfirmSecretCode] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [showSecret, setShowSecret] = useState(false);
+    const [showConfirmSecret, setShowConfirmSecret] = useState(false);
     const [validation, setValidation] = useState({
         minLength: false,
         uppercase: false,
@@ -64,13 +65,14 @@ export function CreateSecretCodeScreen({ open, onOpenChange, onSecretCreated }: 
     }, [secretCode]);
 
     const allValidationsMet = Object.values(validation).every(Boolean);
+    const codesMatch = secretCode !== '' && secretCode === confirmSecretCode;
 
     const handleCreate = () => {
         if (!allValidationsMet) {
             setError("Secret code does not meet all requirements.");
             return;
         }
-        if (secretCode !== confirmSecretCode) {
+        if (!codesMatch) {
             setError("Secret codes do not match.");
             return;
         }
@@ -86,6 +88,7 @@ export function CreateSecretCodeScreen({ open, onOpenChange, onSecretCreated }: 
             setConfirmSecretCode('');
             setError(null);
             setShowSecret(false);
+            setShowConfirmSecret(false);
             setValidation({ minLength: false, uppercase: false, lowercase: false, number: false, special: false });
         }
     }, [open]);
@@ -120,14 +123,29 @@ export function CreateSecretCodeScreen({ open, onOpenChange, onSecretCreated }: 
                             {showSecret ? <EyeOff size={20} /> : <Eye size={20} />}
                         </Button>
                     </div>
-                     <Input
-                        type="password"
-                        placeholder="Confirm Secret Code"
-                        value={confirmSecretCode}
-                        onChange={(e) => setConfirmSecretCode(e.target.value)}
-                        onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-                        className="bg-slate-800/60 border-slate-700 text-white h-12 text-center text-lg tracking-wider rounded-2xl"
-                    />
+                    <div className="relative">
+                        <Input
+                            type={showConfirmSecret ? "text" : "password"}
+                            placeholder="Confirm Secret Code"
+                            value={confirmSecretCode}
+                            onChange={(e) => setConfirmSecretCode(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
+                            className="bg-slate-800/60 border-slate-700 text-white h-12 text-center text-lg tracking-wider rounded-2xl pr-10"
+                        />
+                         <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 text-slate-400"
+                            onClick={() => setShowConfirmSecret(!showConfirmSecret)}
+                        >
+                            {showConfirmSecret ? <EyeOff size={20} /> : <Eye size={20} />}
+                        </Button>
+                        {confirmSecretCode && !codesMatch && (
+                            <p className="text-red-400 text-xs text-left mt-1.5 px-2">Codes do not match.</p>
+                        )}
+                    </div>
+
 
                     {error && <p className="text-red-400 text-sm">{error}</p>}
                 </div>
@@ -144,7 +162,7 @@ export function CreateSecretCodeScreen({ open, onOpenChange, onSecretCreated }: 
                     <Button
                         size="lg"
                         onClick={handleCreate}
-                        disabled={!allValidationsMet || secretCode !== confirmSecretCode}
+                        disabled={!allValidationsMet || !codesMatch}
                         className="w-full rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg h-12 transition-transform active:scale-95"
                     >
                         <Save className="mr-2 h-5 w-5" />
