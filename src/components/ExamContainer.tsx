@@ -1,4 +1,3 @@
-
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, ChevronDown } from 'lucide-react';
@@ -367,44 +366,6 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
 
 // --- MAIN EXAM COMPONENT LOGIC ---
 
-// Correctly define the dialog component inside the file, before it's used.
-const UpsertMcqDialog = ({
-    isOpen,
-    onClose,
-    lectures,
-    activeLectureId,
-    onUpsert,
-    mcqToEdit,
-}: {
-    isOpen: boolean;
-    onClose: () => void;
-    lectures: Lecture[];
-    activeLectureId?: string;
-    onUpsert: (lectureId: string, newLectureName: string, mcq: MCQ, level: 1 | 2, originalMcq?: MCQ) => void;
-    mcqToEdit: { mcq: MCQ, level: 1 | 2 } | null;
-}) => {
-    const isEditing = !!mcqToEdit;
-    const formKey = useMemo(() => mcqToEdit?.mcq.q || `new-${Date.now()}`, [mcqToEdit]);
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="sm:max-w-[625px]">
-                <DialogHeader>
-                    <DialogTitle>{isEditing ? 'Edit Question' : 'Create a New Question'}</DialogTitle>
-                </DialogHeader>
-                <UpsertMcqFormContent
-                    key={formKey}
-                    lectures={lectures}
-                    activeLectureId={activeLectureId}
-                    onUpsert={onUpsert}
-                    closeDialog={onClose}
-                    mcqToEdit={mcqToEdit}
-                />
-            </DialogContent>
-        </Dialog>
-    );
-};
-
 const UpsertMcqFormContent = ({
     lectures,
     activeLectureId,
@@ -450,11 +411,14 @@ const UpsertMcqFormContent = ({
         const trimmedOptions = options.map(o => o.trim()).filter(Boolean);
         const trimmedAnswer = answer.trim();
 
+        if (lectureId === 'new' && !newLectureName.trim()) {
+            alert("Please provide a name for the new lecture.");
+            return;
+        }
         if (!trimmedQuestion || trimmedOptions.length < 2 || !trimmedAnswer) {
             alert("Please fill out the question, at least two options, and the answer.");
             return;
         }
-
         if (!trimmedOptions.includes(trimmedAnswer)) {
             alert("The correct answer must be one of the provided options.");
             return;
@@ -503,10 +467,10 @@ const UpsertMcqFormContent = ({
 
             <div className="space-y-3">
                 <label className="text-sm font-medium">Options</label>
-                {options.map((option, index) => (
+                {Array.from({ length: 5 }).map((_, index) => (
                     <div key={index} className="flex items-center gap-2">
                        <span className="font-semibold text-gray-500">{String.fromCharCode(65 + index)}</span>
-                        <Input value={option} onChange={(e) => handleOptionChange(index, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + index)}`} />
+                        <Input value={options[index] || ''} onChange={(e) => handleOptionChange(index, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + index)}`} />
                     </div>
                 ))}
             </div>
@@ -523,35 +487,110 @@ const UpsertMcqFormContent = ({
     );
 };
 
+const UpsertMcqDialog = ({
+    isOpen,
+    onClose,
+    lectures,
+    activeLectureId,
+    onUpsert,
+    mcqToEdit,
+}: {
+    isOpen: boolean;
+    onClose: () => void;
+    lectures: Lecture[];
+    activeLectureId?: string;
+    onUpsert: (lectureId: string, newLectureName: string, mcq: MCQ, level: 1 | 2, originalMcq?: MCQ) => void;
+    mcqToEdit: { mcq: MCQ, level: 1 | 2 } | null;
+}) => {
+    const isEditing = !!mcqToEdit;
+    const formKey = useMemo(() => mcqToEdit?.mcq.q || `new-${Date.now()}`, [mcqToEdit]);
 
-const EditLectureDialog = ({ lecture, onSave, onOpenChange }: { lecture: Lecture, onSave: (newName: string) => void, onOpenChange: (open: boolean) => void }) => {
-    const [name, setName] = useState(lecture.name);
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-[625px]">
+                <DialogHeader>
+                    <DialogTitle>{isEditing ? 'Edit Question' : 'Create a New Question'}</DialogTitle>
+                </DialogHeader>
+                <UpsertMcqFormContent
+                    key={formKey}
+                    lectures={lectures}
+                    activeLectureId={activeLectureId}
+                    onUpsert={onUpsert}
+                    closeDialog={onClose}
+                    mcqToEdit={mcqToEdit}
+                />
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+const FullLectureEditorDialog = ({
+    isOpen,
+    onClose,
+    lecture,
+    onDeleteMcq,
+    onOpenUpsertDialog,
+    onLectureNameSave,
+} : {
+    isOpen: boolean;
+    onClose: () => void;
+    lecture: Lecture;
+    onDeleteMcq: (mcqToDelete: MCQ, level: 1 | 2) => void;
+    onOpenUpsertDialog: (mcq: MCQ, level: 1 | 2) => void;
+    onLectureNameSave: (newName: string) => void;
+}) => {
+    const [lectureName, setLectureName] = useState(lecture.name);
 
     useEffect(() => {
-        setName(lecture.name);
+        setLectureName(lecture.name);
     }, [lecture]);
 
     const handleSave = () => {
-        if (name.trim()) {
-            onSave(name.trim());
-            onOpenChange(false);
+        if (lectureName.trim() && lectureName.trim() !== lecture.name) {
+            onLectureNameSave(lectureName.trim());
         }
+        onClose();
     };
 
     return (
-        <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Edit Lecture Name</AlertDialogTitle>
-                <AlertDialogDescription>Enter the new name for the "{lecture.name}" lecture.</AlertDialogDescription>
-            </AlertDialogHeader>
-            <div className="py-4">
-                <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Lecture Name" />
-            </div>
-            <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => onOpenChange(false)}>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleSave}>Save</AlertDialogAction>
-            </AlertDialogFooter>
-        </AlertDialogContent>
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="sm:max-w-2xl max-h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Edit Lecture</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2 mb-4">
+                    <label className="text-sm font-medium">Lecture Name</label>
+                    <Input value={lectureName} onChange={(e) => setLectureName(e.target.value)} />
+                </div>
+                <div className="flex-grow overflow-y-auto space-y-4 pr-2 -mr-2">
+                    <h3 className="font-semibold text-lg">Questions</h3>
+                    {(lecture.mcqs_level_1 || []).map((mcq, index) => (
+                        <div key={`l1-${index}`} className="flex items-center justify-between p-2 rounded-md bg-secondary">
+                            <p className="text-sm truncate flex-1 pr-4">{mcq.q}</p>
+                            <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenUpsertDialog(mcq, 1)}><Edit size={14}/></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDeleteMcq(mcq, 1)}><Trash2 size={14}/></Button>
+                            </div>
+                        </div>
+                    ))}
+                     {(lecture.mcqs_level_2 || []).map((mcq, index) => (
+                        <div key={`l2-${index}`} className="flex items-center justify-between p-2 rounded-md bg-secondary">
+                            <p className="text-sm truncate flex-1 pr-4">{mcq.q}</p>
+                            <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onOpenUpsertDialog(mcq, 2)}><Edit size={14}/></Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => onDeleteMcq(mcq, 2)}><Trash2 size={14}/></Button>
+                            </div>
+                        </div>
+                    ))}
+                    {(!lecture.mcqs_level_1 || lecture.mcqs_level_1.length === 0) && (!lecture.mcqs_level_2 || lecture.mcqs_level_2.length === 0) && (
+                        <p className="text-sm text-muted-foreground text-center py-4">No questions in this lecture yet.</p>
+                    )}
+                </div>
+                <div className="flex justify-end pt-4 border-t mt-4">
+                    <Button onClick={handleSave}>Save & Close</Button>
+                </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -586,7 +625,7 @@ const ExamMode = ({
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const [isUpsertMcqDialogOpen, setIsUpsertMcqDialogOpen] = useState(false);
     const [mcqToEdit, setMcqToEdit] = useState<{mcq: MCQ, level: 1 | 2} | null>(null);
-    const [isEditLectureOpen, setIsEditLectureOpen] = useState(false);
+    const [isFullLectureEditorOpen, setIsFullLectureEditorOpen] = useState(false);
     const isInitialRender = useRef(true);
 
     const { studentId, user, can, awardSpecialAchievement, checkAndAwardAchievements } = useAuthStore();
@@ -903,11 +942,11 @@ const ExamMode = ({
         onLecturesUpdate(updatedLectures);
     };
 
-    const handleEditLecture = (newName: string) => {
+    const handleEditLectureSave = (newName: string) => {
         const updatedLectures = initialLectures.map(l => l.id === activeLecture.id ? {...l, name: newName} : l);
         onLecturesUpdate(updatedLectures);
     };
-
+    
     const handleDeleteLecture = () => {
         const updatedLectures = initialLectures.filter(l => l.id !== activeLecture.id);
         onLecturesUpdate(updatedLectures);
@@ -975,6 +1014,18 @@ const ExamMode = ({
                 mcqToEdit={mcqToEdit}
             />
 
+            {activeLecture && <FullLectureEditorDialog 
+                isOpen={isFullLectureEditorOpen}
+                onClose={() => setIsFullLectureEditorOpen(false)}
+                lecture={activeLecture}
+                onDeleteMcq={handleDeleteMcq}
+                onOpenUpsertDialog={(mcq, level) => {
+                    setMcqToEdit({mcq, level});
+                    setIsUpsertMcqDialogOpen(true);
+                }}
+                onLectureNameSave={handleEditLectureSave}
+            />}
+
             {examState === 'not-started' && (
                 <div className={cn(containerClasses, "start-mode")}>
                     <div className="exam-start-screen">
@@ -982,16 +1033,7 @@ const ExamMode = ({
                             <div>
                                 {canAdminister && (
                                     <div className="flex items-center gap-2">
-                                        <AlertDialog open={isEditLectureOpen} onOpenChange={setIsEditLectureOpen}>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600"><Edit size={14}/></Button>
-                                            </AlertDialogTrigger>
-                                            <EditLectureDialog 
-                                                lecture={activeLecture} 
-                                                onSave={handleEditLecture} 
-                                                onOpenChange={setIsEditLectureOpen} 
-                                            />
-                                        </AlertDialog>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600" onClick={() => setIsFullLectureEditorOpen(true)}><Edit size={14}/></Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
                                                 <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600"><Trash2 size={14}/></Button>
@@ -1438,75 +1480,8 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         return <div className="flex items-center justify-center h-full"><p>Loading lecture...</p></div>;
     }
 
-    const ExamStyles = () => (
-      <style>{`
-        .exam-theme-wrapper {
-            --background: #ffffff;
-            --foreground: #333333;
-            --card: #ffffff;
-            --popover: #ffffff;
-            --primary: #3b82f6;
-            --primary-foreground: #ffffff;
-            --secondary: #f3f4f6;
-            --secondary-foreground: #111827;
-            --muted: #f3f4f6;
-            --muted-foreground: #6b7280;
-            --accent: #f9fafb;
-            --accent-foreground: #111827;
-            --destructive: #ef4444;
-            --destructive-foreground: #ffffff;
-            --border: #e5e7eb;
-            --input: #e5e7eb;
-            --ring: #3b82f6;
-        }
-        .report-btn, .skip-btn {
-            background-color: transparent;
-            border: 2px solid #3b82f6;
-            color: #3b82f6;
-            font-weight: 600;
-            border-radius: 9999px;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            overflow: hidden;
-            transition: all 0.3s ease-in-out;
-            width: 44px;
-            height: 44px;
-            padding: 0;
-        }
-        .report-btn .expanding-text, .skip-btn .expanding-text {
-            white-space: nowrap;
-            opacity: 0;
-            max-width: 0;
-            transition: all 0.2s ease-in-out;
-        }
-        .report-btn:hover, .skip-btn:hover {
-            background-color: #3b82f6;
-            color: white;
-            width: 120px;
-            padding: 0 16px;
-        }
-        .report-btn:hover .expanding-text, .skip-btn:hover .expanding-text {
-            opacity: 1;
-            max-width: 100px;
-            margin-left: 0.5rem;
-        }
-        .skip-btn {
-          border-color: #6b7280;
-          color: #6b7280;
-        }
-        .skip-btn:hover {
-          background-color: #6b7280;
-          color: white;
-        }
-      `}</style>
-    )
-
     return (
-        <main className="exam-theme-wrapper exam-page-container bg-background text-foreground">
-            <ExamStyles />
+        <main className="exam-page-container bg-background text-foreground">
             <div id="questions-container">
                  <ExamMode 
                     fileItemId={fileItemId}
