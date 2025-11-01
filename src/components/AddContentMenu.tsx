@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -159,7 +160,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           permission: 'canAdministerExams',
           color: "text-yellow-400"
       },
-      {
+       {
           label: "Create Flashcard",
           icon: FlashcardIcon,
           action: () => setInteractiveContentType('flashcard'),
@@ -173,7 +174,10 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           permission: 'canAdministerExams',
           color: ""
       }
-  ]
+  ].sort((a, b) => {
+    const order = ['Create Quiz', 'Create Flashcard', 'Create Exam', 'New Class', 'New Folder', 'Upload File', 'Add Link'];
+    return order.indexOf(a.label) - order.indexOf(b.label);
+  });
 
   const visibleMenuItems = menuItems.filter(item => can(item.permission, parentId));
   
@@ -217,8 +221,8 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
         open={!!interactiveContentType}
         onOpenChange={(isOpen) => !isOpen && setInteractiveContentType(null)}
         onAddFolder={handleAddInteractiveContent}
-        title={`Create New ${interactiveContentType?.charAt(0).toUpperCase()}${interactiveContentType?.slice(1)}`}
-        description={`Enter a name for the new ${interactiveContentType}.`}
+        title={`Create New ${interactiveContentType === 'quiz' ? 'Quiz' : interactiveContentType === 'exam' ? 'Exam' : 'Flashcard Set'}`}
+        description={`Enter a name for the new interactive content.`}
       />
     </>
   );

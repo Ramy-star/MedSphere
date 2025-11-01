@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -38,6 +39,8 @@ import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
 import { FlashcardIcon } from './icons/FlashcardIcon';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
+import * as pdfjs from 'pdfjs-dist';
+
 
 const ChatPanel = dynamic(() => import('./ChatPanel'), {
   ssr: false,
@@ -674,7 +677,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
             <div className='flex items-center gap-1 sm:gap-2 flex-1 justify-end'>
               <TooltipProvider delayDuration={100}>
-                <div className={cn('hidden md:flex items-center gap-1 sm:gap-2', isQuiz && 'opacity-0 pointer-events-none')}>
+                <div className={cn('hidden md:flex items-center gap-1 sm:gap-2')}>
                     {canEditInteractive && (
                         <Tooltip>
                             <TooltipTrigger asChild>
