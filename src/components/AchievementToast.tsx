@@ -8,10 +8,10 @@ import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
 
 const tierColors = {
-  bronze: { bg: 'bg-gradient-to-br from-orange-300 to-orange-600', text: 'text-white' },
-  silver: { bg: 'bg-gradient-to-br from-slate-300 to-slate-500', text: 'text-white' },
-  gold: { bg: 'bg-gradient-to-br from-yellow-300 to-yellow-500', text: 'text-gray-900' },
-  special: { bg: 'bg-gradient-to-br from-purple-400 to-indigo-600', text: 'text-white' },
+  bronze: { bg: 'bg-gradient-to-br from-orange-300 to-orange-600', text: 'text-white', icon: 'text-white' },
+  silver: { bg: 'bg-gradient-to-br from-slate-300 to-slate-500', text: 'text-white', icon: 'text-white' },
+  gold: { bg: 'bg-gradient-to-br from-yellow-300 to-yellow-500', text: 'text-gray-900', icon: 'text-yellow-800' },
+  special: { bg: 'bg-gradient-to-br from-purple-400 to-indigo-600', text: 'text-white', icon: 'text-white' },
 };
 
 const ConfettiPiece = ({ id, color, left, delay, duration }: { id: number, color: string, left: string, delay: string, duration: string }) => (
@@ -42,14 +42,12 @@ export const AchievementToast = ({ achievement }: { achievement: Achievement }) 
     };
     
     const isGoodStart = achievement.id === 'FIRST_LOGIN';
-    const silverOverride = {
-        bg: 'bg-slate-800/40',
-        border: 'border-slate-600/60',
-        icon: 'text-slate-200',
-        progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
-    }
+    const specialSilverStyle = {
+        bg: 'bg-gradient-to-br from-slate-400 to-slate-600',
+        icon: 'text-white'
+    };
 
-    const colors = isGoodStart ? silverOverride : tierColors[achievement.tier] || tierColors.bronze;
+    const colors = tierColors[achievement.tier] || tierColors.bronze;
     const { icon: Icon } = achievement;
     
     const confettiPieces = Array.from({ length: 50 }).map((_, i) => ({
@@ -112,10 +110,10 @@ export const AchievementToast = ({ achievement }: { achievement: Achievement }) 
                             transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.2 }}
                             className={cn(
                                 "mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/50",
-                                isGoodStart ? "bg-gradient-to-br from-slate-400 to-slate-600" : colors.bg
+                                isGoodStart ? specialSilverStyle.bg : colors.bg
                             )}
                         >
-                            <Icon className={cn("h-10 w-10", isGoodStart ? "text-white" : colors.icon)} />
+                            <Icon className={cn("h-10 w-10", isGoodStart ? specialSilverStyle.icon : colors.icon)} />
                         </motion.div>
                         <p className="text-sm font-semibold uppercase tracking-wider text-green-400">
                             Achievement Unlocked!

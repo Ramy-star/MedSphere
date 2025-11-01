@@ -144,13 +144,13 @@ export const allAchievements: Achievement[] = [
     condition: { stat: 'aiQueries', value: 500 },
     group: 'aiQueries',
   },
-  // --- Consistency & Perseverance ---
+  // --- Consistency & Perseverance (Reordered) ---
   {
     id: 'FIRST_LOGIN',
     name: 'A Good Start',
     description: 'Log in for the first time',
     icon: Sunrise,
-    tier: 'silver', 
+    tier: 'silver',
     category: 'Consistency & Perseverance',
     condition: { stat: 'consecutiveLoginDays', value: 1 },
     group: 'milestones',

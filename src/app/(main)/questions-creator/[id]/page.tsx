@@ -52,7 +52,7 @@ type EditingContentState = {
 };
 
 function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
-  const { id } = React.use(params);
+  const { id } = params;
   const router = useRouter();
   const { studentId, can } = useAuthStore();
   const { convertExistingTextToJson } = useQuestionGenerationStore();
