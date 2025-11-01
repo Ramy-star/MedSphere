@@ -51,7 +51,7 @@ type TimeOfDayTheme = {
 
 // Helper function to detect RTL text
 const isRtl = (text: string) => {
-  const rtlRegex = /[\u0590-\u07FF\uFB1D-\uFDFD\uFE70-\uFEFC]/;
+  const rtlRegex = /[\u0590-\u07FF\uFB1D-\uFEFC]/;
   return rtlRegex.test(text);
 };
 
@@ -83,14 +83,14 @@ const sectionVariants = {
 };
 
 
-export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: (e: React.MouseEvent) => void }) {
+export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen: isFloatingOpen }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: (e: React.MouseEvent) => void, isOpen?: boolean }) {
     const [initialInsight, setInitialInsight] = useState<InitialInsight | null>(null);
     const [loading, setLoading] = useState(true);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isResponding, setIsResponding] = useState(false);
     const [customQuestion, setCustomQuestion] = useState('');
     const [view, setView] = useState<'intro' | 'chat'>('intro');
-    const [isOpen, setIsOpen] = useState(!isFloating);
+    const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(!isFloating);
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -103,6 +103,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const [referencedFile, setReferencedFile] = useState<Content | null>(null);
 
     const { data: allFiles } = useCollection<Content>('content');
+    
+    const isOpen = isFloating ? isFloatingOpen : isCollapsibleOpen;
 
     const filteredFiles = useMemo(() => {
         if (!allFiles) return [];
@@ -390,7 +392,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     );
     
     const ContentSwitch = () => {
-        if (isFloating && !isOpen) return null; // Don't render content if floating and closed
+      if (!isOpen) return null;
         
         return (
             <div className="flex-1 min-h-0">
@@ -414,7 +416,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     return (
         <Collapsible.Root 
             open={isOpen} 
-            onOpenChange={isFloating ? undefined : setIsOpen} 
+            onOpenChange={isFloating ? undefined : setIsCollapsibleOpen} 
             className={cn("w-full transition-all duration-500 ease-in-out", isFloating ? "h-full" : "")}
         >
             <div 
