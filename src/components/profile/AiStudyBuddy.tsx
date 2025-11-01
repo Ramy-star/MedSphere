@@ -51,7 +51,7 @@ type TimeOfDayTheme = {
 
 // Helper function to detect RTL text
 const isRtl = (text: string) => {
-  const rtlRegex = /[\u0590-\u07FF\uFB1D-\uFDFF\uFE70-\uFEFC]/;
+  const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFEFC\uFE70-\uFEFC]/;
   return rtlRegex.test(text);
 };
 
@@ -83,7 +83,7 @@ const sectionVariants = {
 };
 
 
-export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen: isFloatingOpen }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: (e: React.MouseEvent) => void, isOpen?: boolean }) {
+export function AiStudyBuddy({ user, isFloating = false }: { user: UserProfile, isFloating?: boolean }) {
     const [initialInsight, setInitialInsight] = useState<InitialInsight | null>(null);
     const [loading, setLoading] = useState(true);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -104,7 +104,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen:
 
     const { data: allFiles } = useCollection<Content>('content');
     
-    const isOpen = isFloating ? isFloatingOpen : isCollapsibleOpen;
+    const isOpen = isFloating ? true : isCollapsibleOpen;
 
     const filteredFiles = useMemo(() => {
         if (!allFiles) return [];
@@ -337,11 +337,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen:
                 <div className="flex items-center gap-1">
                      <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.max(s - 1, 10))}><Minus size={16}/></Button>
                      <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
-                     {onToggleExpand && (
-                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={onToggleExpand}>
-                            {isFloating ? <Maximize size={16}/> : <Shrink size={16}/>}
-                        </Button>
-                     )}
                 </div>
             </div>
              <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
@@ -392,10 +387,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isOpen:
     );
     
     const ContentSwitch = () => {
-      // For floating assistant, content is always visible when it's open.
-      // For profile page, content visibility is handled by the collapsible.
-      if (!isOpen) return null;
-        
         return (
             <div className="flex-1 min-h-0 pt-4 flex flex-col">
                 <AnimatePresence mode="wait">
