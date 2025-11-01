@@ -400,7 +400,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
     const isInitialRender = useRef(true);
 
-    const { studentId, can } = useAuthStore();
+    const { studentId, can, awardSpecialAchievement } = useAuthStore();
     const canAdminister = can('canAdministerExams', fileItemId);
     const { db: firestore } = useFirebase();
     
@@ -464,6 +464,11 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
     const storageKey = useMemo(() => studentId ? `exam_progress_${lecture.id}_${studentId}` : null, [lecture.id, studentId]);
 
     const handleSubmit = useCallback(async (isSkip = false) => {
+        const hour = new Date().getHours();
+        if (hour >= 0 && hour < 4) { // Between midnight and 4 AM
+            awardSpecialAchievement('NIGHT_OWL');
+        }
+
         if (studentId && resultsCollectionRef && !isSkip) {
             try {
                 const userPreviousResultsQuery = query(resultsCollectionRef, where("lectureId", "==", lecture.id), where("userId", "==", studentId));
@@ -493,7 +498,7 @@ const ExamMode = ({ fileItemId, lecture, onExit, onSwitchLecture, allLectures, o
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, lecture.id, questions.length, studentId, resultsCollectionRef, score, percentage]);
+    }, [storageKey, lecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement]);
 
     useEffect(() => {
         if (isInitialRender.current || !storageKey) {

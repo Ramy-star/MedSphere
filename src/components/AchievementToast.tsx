@@ -5,6 +5,7 @@ import { allAchievements, Achievement } from '@/lib/achievements';
 import { Button } from './ui/button';
 import { X, Check } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
+import { cn } from '@/lib/utils';
 
 const tierColors = {
   bronze: { bg: 'bg-gradient-to-br from-orange-300 to-orange-600', text: 'text-white' },
@@ -109,9 +110,12 @@ export const AchievementToast = ({ achievement }: { achievement: Achievement }) 
                             initial={{ scale: 0.5, rotate: -15 }}
                             animate={{ scale: 1, rotate: 0 }}
                             transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.2 }}
-                            className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/50 ${colors.bg}`}
+                            className={cn(
+                                "mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/50",
+                                isGoodStart ? "bg-gradient-to-br from-slate-400 to-slate-600" : colors.bg
+                            )}
                         >
-                            <Icon className={`h-10 w-10 ${colors.icon}`} />
+                            <Icon className={cn("h-10 w-10", isGoodStart ? "text-white" : colors.icon)} />
                         </motion.div>
                         <p className="text-sm font-semibold uppercase tracking-wider text-green-400">
                             Achievement Unlocked!

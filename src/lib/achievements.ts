@@ -1,7 +1,7 @@
 'use client';
 import { 
     UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, 
-    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass, Wand2, ZoomIn
+    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -150,7 +150,7 @@ export const allAchievements: Achievement[] = [
     name: 'A Good Start',
     description: 'Log in for the first time',
     icon: Sunrise,
-    tier: 'silver', // Keep it silver as it's a significant first step
+    tier: 'silver', 
     category: 'Consistency & Perseverance',
     condition: { stat: 'consecutiveLoginDays', value: 1 },
     group: 'milestones',

@@ -50,6 +50,7 @@ export type UserProfile = {
     aiQueries?: number;
     consecutiveLoginDays?: number;
     lastLoginDate?: string; // Stored as 'yyyy-MM-dd'
+    accountAgeDays?: number;
   };
    achievements?: {
     badgeId: string;
@@ -86,6 +87,7 @@ type AuthState = {
   canAddContent: (parentId: string | null) => boolean;
   checkAndAwardAchievements: () => Promise<void>;
   clearNewlyEarnedAchievement: () => void;
+  awardSpecialAchievement: (badgeId: string) => Promise<void>;
 };
 
 type ItemHierarchy = { [id: string]: string[] };
@@ -227,13 +229,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
         if (userProfile) {
            localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
            listenToUserProfile(userProfile.id);
-           // This was the missing piece. We must update the state here.
            set({ authState: 'authenticated' });
         } else {
           throw new Error("Incorrect Secret Code.");
         }
       } else {
-        // User is new. Prompt them to create a secret code.
         set({ authState: 'awaiting_secret_creation', studentId, loading: false });
       }
     } catch (error: any) {
@@ -248,7 +248,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
           if (userProfile) {
               localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
               listenToUserProfile(userProfile.id);
-              // Explicitly set authenticated state after profile creation
               set({ authState: 'authenticated' });
           } else {
               throw new Error("Could not create user profile.");
@@ -297,25 +296,55 @@ const useAuthStore = create<AuthState>((set, get) => ({
       const addPermissions = ['canAddClass', 'canAddFolder', 'canUploadFile', 'canAddLink', 'canCreateFlashcard'];
       return addPermissions.some(p => can(p, parentId));
   },
+  awardSpecialAchievement: async (badgeId: string) => {
+        const { user } = get();
+        if (!user || !user.id) return;
+        const earnedIds = new Set(user.achievements?.map(a => a.badgeId) || []);
+        if (earnedIds.has(badgeId)) return;
+
+        const achievement = allAchievements.find(a => a.id === badgeId);
+        if (!achievement) return;
+
+        const userRef = doc(db, 'users', user.id);
+        await updateDoc(userRef, {
+            achievements: arrayUnion({ badgeId, earnedAt: new Date().toISOString() })
+        });
+
+        // Set this achievement to be displayed in the toast
+        set({ newlyEarnedAchievement: achievement });
+    },
   checkAndAwardAchievements: async () => {
     const { user } = get();
     if (!user || !user.stats) return;
+
+    // Calculate account age for 'ONE_YEAR_MEMBER'
+    if (user.createdAt) {
+        user.stats.accountAgeDays = differenceInCalendarDays(new Date(), parseISO(user.createdAt));
+    }
+
     const earnedIds = new Set(user.achievements?.map(a => a.badgeId) || []);
     let newAchievements: { badgeId: string; earnedAt: string }[] = [];
-    let achievementToShow: Achievement | null = null;
+    let achievementToShow: Achievement | null = get().newlyEarnedAchievement;
+
     allAchievements.forEach(achievement => {
+        if (achievement.condition.value === -1) return; // Skip special achievements
+
         if (!earnedIds.has(achievement.id)) {
-            const userStat = user.stats?.[achievement.condition.stat as keyof typeof user.stats] || 0;
-            if (typeof userStat === 'number' && userStat >= achievement.condition.value) {
+            const statValue = user.stats?.[achievement.condition.stat as keyof typeof user.stats] || 0;
+            if (typeof statValue === 'number' && statValue >= achievement.condition.value) {
                 newAchievements.push({ badgeId: achievement.id, earnedAt: new Date().toISOString() });
-                if (!achievementToShow) achievementToShow = achievement;
+                if (!achievementToShow) { // Only show the first new achievement
+                    achievementToShow = achievement;
+                }
             }
         }
     });
     if (newAchievements.length > 0) {
         const userRef = doc(db, 'users', user.id);
         await updateDoc(userRef, { achievements: arrayUnion(...newAchievements) });
-        if(achievementToShow) set({ newlyEarnedAchievement: achievementToShow });
+        if(achievementToShow && get().newlyEarnedAchievement?.id !== achievementToShow.id) {
+            set({ newlyEarnedAchievement: achievementToShow });
+        }
     }
   },
   clearNewlyEarnedAchievement: () => set({ newlyEarnedAchievement: null }),
