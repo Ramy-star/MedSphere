@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -13,17 +12,17 @@ export function VerificationScreen() {
   const [studentId, setStudentId] = useState('');
   const [secretCode, setSecretCode] = useState('');
   
-  const { authState, error, loading, handleVerification } = useAuthStore(state => ({
+  const { authState, error, loading, login } = useAuthStore(state => ({
     authState: state.authState,
     error: state.error,
     loading: state.loading,
-    handleVerification: state.handleVerification,
+    login: state.login,
   }));
 
   const handleAction = async () => {
     const trimmedId = studentId.trim();
     if (!trimmedId) return;
-    await handleVerification(trimmedId, secretCode.trim() || undefined);
+    await login(trimmedId, secretCode.trim() || undefined);
   };
   
   const showSecretCodeInput = authState === 'needs_secret_code_prompt';

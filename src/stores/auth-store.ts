@@ -1,8 +1,7 @@
-
 'use client';
 
 import { create } from 'zustand';
-import { verifyAndCreateUser, isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
+import { getStudentDetails, createUserProfile, verifySecretCode } from '@/lib/authService';
 import { db } from '@/firebase';
 import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, updateDoc, arrayUnion, getDoc, arrayRemove, setDoc, runTransaction } from 'firebase/firestore';
 import type { Content } from '@/lib/contentService';
@@ -10,6 +9,7 @@ import { nanoid } from 'nanoid';
 import { telegramInbox } from '@/lib/file-data';
 import { allAchievements, type Achievement } from '@/lib/achievements';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
+import { isSuperAdmin as checkSuperAdmin } from '@/lib/authService';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
@@ -62,22 +62,28 @@ export type UserProfile = {
     coverPhotoURL?: string;
     coverPhotoCloudinaryPublicId?: string;
   };
+  secretCodeHash: string;
 };
 
 type ItemHierarchy = { [id: string]: string[] }; // Maps item ID to its array of parent IDs
 
+type AuthFlowState = 'anonymous' | 'authenticated' | 'awaiting_secret_creation' | 'needs_secret_code_prompt';
+
 type AuthState = {
+  authState: AuthFlowState;
   isAuthenticated: boolean;
   isSuperAdmin: boolean;
   studentId: string | null;
   currentSessionId: string | null;
   user: UserProfile | null | undefined;
   loading: boolean;
+  error: string | null;
   itemHierarchy: ItemHierarchy;
   newlyEarnedAchievement: Achievement | null;
   buildHierarchy: () => (() => void); // Now returns an unsubscribe function
   checkAuth: () => Promise<void>;
-  login: (studentId: string) => Promise<boolean>;
+  login: (studentId: string, secretCode?: string) => Promise<void>;
+  createProfileAndLogin: (studentId: string, secretCode: string) => Promise<void>;
   logout: (localOnly?: boolean) => void;
   logoutSession: (sessionId: string) => Promise<void>;
   can: (permission: string, itemId: string | null) => boolean;
@@ -206,13 +212,12 @@ const listenToUserProfile = (studentId: string) => {
         if (doc.exists()) {
             const userProfile = { id: doc.id, ...doc.data() } as UserProfile;
             
-            // Real-time session check
             const currentSessionId = useAuthStore.getState().currentSessionId;
             const mySession = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
             
             if (mySession && mySession.status === 'logged_out') {
                 console.log("Remote logout signal received. Logging out.");
-                useAuthStore.getState().logout(true); // Force logout without DB update
+                useAuthStore.getState().logout(true);
                 return;
             }
             
@@ -223,23 +228,22 @@ const listenToUserProfile = (studentId: string) => {
             
             const isSuper = await checkSuperAdmin(userProfile.studentId);
             
-            // This is just to ensure consistency, the role should already be there
             if(isSuper && !userProfile.roles?.some(r => r.role === 'superAdmin')) {
                 userProfile.roles = [...(userProfile.roles || []), { role: 'superAdmin', scope: 'global' }];
             }
 
             useAuthStore.setState({
+                authState: 'authenticated',
                 isAuthenticated: true,
                 studentId: userProfile.studentId,
                 isSuperAdmin: isSuper,
                 user: userProfile,
                 loading: false,
+                error: null,
             });
-            // After user profile is set, check for achievements
             useAuthStore.getState().checkAndAwardAchievements();
 
         } else {
-            // User document was deleted, log them out.
             useAuthStore.getState().logout();
         }
     }, (error) => {
@@ -250,30 +254,27 @@ const listenToUserProfile = (studentId: string) => {
 
 
 const useAuthStore = create<AuthState>((set, get) => ({
+  authState: 'anonymous',
   isAuthenticated: false,
   isSuperAdmin: false,
   studentId: null,
   currentSessionId: typeof window !== 'undefined' ? localStorage.getItem(CURRENT_SESSION_ID_KEY) : null,
-  user: undefined, // undefined means we haven't checked yet
+  user: undefined,
   loading: true,
+  error: null,
   itemHierarchy: {},
   newlyEarnedAchievement: null,
 
   buildHierarchy: () => {
     if (!db) return () => {};
-    
-    // Stop any previous listener to avoid memory leaks
     if (hierarchyListenerUnsubscribe) {
         hierarchyListenerUnsubscribe();
     }
-
     const q = query(collection(db, 'content'));
-    
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const hierarchy: ItemHierarchy = {};
         const items = new Map<string, DocumentData>();
         snapshot.docs.forEach(d => items.set(d.id, d.data()));
-        
         for (const id of items.keys()) {
             const path: string[] = [];
             let currentItem = items.get(id);
@@ -286,125 +287,82 @@ const useAuthStore = create<AuthState>((set, get) => ({
             hierarchy[id] = path;
         }
         set({ itemHierarchy: hierarchy });
-        console.log("Real-time hierarchy updated.");
-
     }, (error) => {
         console.error("Error listening to content hierarchy:", error);
     });
-
     hierarchyListenerUnsubscribe = unsubscribe;
-    return unsubscribe; // Return the unsubscribe function for cleanup
+    return unsubscribe;
   },
   
   checkAuth: async () => {
     if (typeof window === 'undefined') {
-      set({ loading: false, user: null });
+      set({ authState: 'anonymous', loading: false, user: null });
       return;
     };
-
     set({ loading: true });
-    // Clean up previous listeners before starting new ones
     if (userListenerUnsubscribe) userListenerUnsubscribe();
     if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
 
     try {
         const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         if (storedId) {
-            // Start listening to the content hierarchy in real-time
             get().buildHierarchy();
-            // Start listening to the user profile
             listenToUserProfile(storedId);
-
-            // Ensure the Telegram Inbox exists for admins
-            const isSuper = await checkSuperAdmin(storedId);
-            if (isSuper && db) {
-                 const inboxRef = doc(db, 'content', telegramInbox.id);
-                 runTransaction(db, async transaction => {
-                    const inboxDoc = await transaction.get(inboxRef);
-                    if (!inboxDoc.exists()) {
-                         console.log("Telegram Inbox not found for admin. Creating it now.");
-                         transaction.set(inboxRef, { ...telegramInbox, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-                    }
-                }).catch(err => console.error("Failed to ensure Telegram Inbox exists:", err));
-            }
-
         } else {
-            set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
+            set({ authState: 'anonymous', isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
         }
     } catch (e) {
       console.error("Auth check failed:", e);
-      set({ isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
+      set({ authState: 'anonymous', isAuthenticated: false, studentId: null, user: null, isSuperAdmin: false, loading: false });
     }
   },
 
-  login: async (studentId: string): Promise<boolean> => {
+  login: async (studentId: string, secretCode?: string) => {
+    set({ loading: true, error: null });
     try {
-      const { userProfile, isNewUser } = await verifyAndCreateUser(studentId);
-      if (userProfile) {
-        localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
-        
-        let sessionId = get().currentSessionId;
-        if (!sessionId) {
-            sessionId = nanoid();
-            localStorage.setItem(CURRENT_SESSION_ID_KEY, sessionId);
-            set({ currentSessionId: sessionId });
-        }
-
-        const newSession: UserSession = {
-            sessionId,
-            device: getDeviceDescription(),
-            loggedIn: new Date().toISOString(),
-            lastActive: new Date().toISOString(),
-            status: 'active',
-        };
-        
-        const userDocRef = doc(db, 'users', userProfile.id);
-        
-        const docSnap = await getDoc(userDocRef);
-        const existingSessions = (docSnap.data()?.sessions as UserSession[] || []).filter(s => s.status !== 'logged_out');
-        const thisSessionExists = existingSessions.some(s => s.sessionId === sessionId);
-
-        let finalSessions = existingSessions;
-        if (!thisSessionExists) {
-            finalSessions = [...existingSessions, newSession];
-        } else {
-            finalSessions = existingSessions.map(s => s.sessionId === sessionId ? { ...s, lastActive: new Date().toISOString() } : s);
-        }
-
-        await updateDoc(userDocRef, { sessions: finalSessions });
-        
-        // Immediately update local state with the new session and stats for new users
-        const updatedProfile: UserProfile = {
-          ...userProfile,
-          sessions: finalSessions,
-        };
-
-        if (isNewUser) {
-          // This is the key fix: update the local state immediately so the achievement check works.
-          updatedProfile.stats = {
-            filesUploaded: 0,
-            foldersCreated: 0,
-            examsCompleted: 0,
-            aiQueries: 0,
-            consecutiveLoginDays: 1,
-            lastLoginDate: format(new Date(), 'yyyy-MM-dd'),
-          };
-          updatedProfile.achievements = [];
-        }
-
-        set({ user: updatedProfile }); // Update state BEFORE calling checkAuth
-
-        await get().checkAuth();
-        return true;
-      } else {
-        get().logout();
-        return false;
+      const details = await getStudentDetails(studentId);
+      if (!details.isValid) {
+        throw new Error("Invalid Student ID.");
       }
-    } catch (error) {
-      console.error("Login failed:", error);
-      return false;
+
+      if (details.isClaimed && details.userProfile) { // Existing user
+        if (!secretCode) {
+          set({ authState: 'needs_secret_code_prompt', loading: false });
+          return;
+        }
+        const userProfile = await verifySecretCode(studentId, secretCode);
+        if (userProfile) {
+           localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
+           await get().checkAuth(); // This will handle setting auth state and user
+        } else {
+          throw new Error("Incorrect Secret Code.");
+        }
+      } else { // New user
+        set({ studentId: studentId, authState: 'awaiting_secret_creation', loading: false });
+      }
+    } catch (error: any) {
+        console.error("Login/Verification error:", error);
+        set({ loading: false, error: error.message });
     }
   },
+  
+  createProfileAndLogin: async (studentId, secretCode) => {
+      set({ loading: true, error: null });
+      try {
+          const userProfile = await createUserProfile(studentId, secretCode);
+          if (userProfile) {
+              localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
+              await get().checkAuth();
+          } else {
+              throw new Error("Could not create user profile.");
+          }
+      } catch (error: any) {
+          console.error("Profile creation failed:", error);
+          set({ loading: false, error: error.message, authState: 'anonymous' });
+          localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
+      }
+  },
+
 
   logout: async (localOnly = false) => {
     if (userListenerUnsubscribe) userListenerUnsubscribe();
@@ -420,7 +378,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
                     const userProfile = userDoc.data() as UserProfile;
                     const sessionToLogout = userProfile.sessions?.find(s => s.sessionId === currentSessionId);
                     if (sessionToLogout) {
-                        // Mark as logged out instead of removing
                         const updatedSessions = userProfile.sessions?.map(s => s.sessionId === currentSessionId ? { ...s, status: 'logged_out' } : s);
                         await updateDoc(userDocRef, {
                             sessions: updatedSessions
@@ -440,11 +397,13 @@ const useAuthStore = create<AuthState>((set, get) => ({
       console.error("Could not remove item from localStorage:", e);
     }
     set({
+      authState: 'anonymous',
       isAuthenticated: false,
       studentId: null,
       isSuperAdmin: false,
       user: null,
       loading: false,
+      error: null,
       itemHierarchy: {},
       currentSessionId: null,
     });
@@ -462,7 +421,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
     const sessionToLogout = user.sessions.find(s => s.sessionId === sessionId);
     if (!sessionToLogout) return;
     
-    // To ensure immutability and trigger re-renders correctly, we create a new array
     const updatedSessions = user.sessions.map(s => s.sessionId === sessionId ? { ...s, status: 'logged_out' } : s);
 
     await updateDoc(userDocRef, {
@@ -495,13 +453,12 @@ const useAuthStore = create<AuthState>((set, get) => ({
     allAchievements.forEach(achievement => {
         if (!earnedIds.has(achievement.id)) {
             const userStat = user.stats?.[achievement.condition.stat as keyof typeof user.stats] || 0;
-            // The key fix: Ensure we only compare numbers to numbers.
             if (typeof userStat === 'number' && userStat >= achievement.condition.value) {
                 newAchievements.push({
                     badgeId: achievement.id,
                     earnedAt: new Date().toISOString(),
                 });
-                if (!achievementToShow) { // Only show the first new one
+                if (!achievementToShow) {
                     achievementToShow = achievement;
                 }
             }
@@ -525,7 +482,6 @@ const useAuthStore = create<AuthState>((set, get) => ({
 
 }));
 
-// Initialize auth check on load
 if (typeof window !== 'undefined') {
     useAuthStore.getState().checkAuth();
 }
