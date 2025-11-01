@@ -30,7 +30,7 @@ export type UserRole = {
 };
 
 export type UserProfile = {
-  id: string; // Document ID from Firestore, now mandatory
+  id: string; 
   uid: string;
   username: string;
   studentId: string;
@@ -88,7 +88,7 @@ type AuthState = {
   clearNewlyEarnedAchievement: () => void;
 };
 
-type ItemHierarchy = { [id: string]: string[] }; // Maps item ID to its array of parent IDs
+type ItemHierarchy = { [id: string]: string[] };
 
 let userListenerUnsubscribe: () => void = () => {};
 let hierarchyListenerUnsubscribe: () => void = () => {};
@@ -223,18 +223,18 @@ const useAuthStore = create<AuthState>((set, get) => ({
     try {
       const details = await getStudentDetails(studentId);
       if (!details.isValid) throw new Error("Invalid Student ID.");
-      if (details.isClaimed) {
+      if (details.isClaimed && details.userProfile) {
         if (!secretCode) throw new Error("This ID is registered. Please enter your secret code.");
         const userProfile = await verifySecretCode(studentId, secretCode);
         if (userProfile) {
            localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
-           set({ authState: 'authenticated' }); // This line was missing!
-           await get().checkAuth();
+           listenToUserProfile(userProfile.id);
+           set({ authState: 'authenticated' });
         } else {
           throw new Error("Incorrect Secret Code.");
         }
       } else {
-        set({ authState: 'awaiting_secret_creation', studentId: studentId, loading: false });
+        set({ authState: 'awaiting_secret_creation', studentId, loading: false });
       }
     } catch (error: any) {
         console.error("Login/Verification error:", error);
@@ -247,8 +247,8 @@ const useAuthStore = create<AuthState>((set, get) => ({
           const userProfile = await createUserProfile(studentId, secretCode);
           if (userProfile) {
               localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
+              listenToUserProfile(userProfile.id);
               set({ authState: 'authenticated' });
-              await get().checkAuth();
           } else {
               throw new Error("Could not create user profile.");
           }

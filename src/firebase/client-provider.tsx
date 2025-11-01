@@ -26,8 +26,6 @@ export function FirebaseClientProvider({
             const instances = await initializeFirebase(config);
             if (isMounted) {
               setFirebase(instances);
-              // Once Firebase is initialized, perform the auth check.
-              // This is the correct place to do it.
               checkAuth();
             }
         } catch (e: any) {
@@ -41,9 +39,9 @@ export function FirebaseClientProvider({
     return () => {
       isMounted = false;
     }
-  // We only want this to run once on mount.
+  // This should only run once on component mount.
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [checkAuth]);
+  }, []);
 
 
   if (!firebase) {

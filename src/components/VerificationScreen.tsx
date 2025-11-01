@@ -12,7 +12,6 @@ import { CreateSecretCodeScreen } from './CreateSecretCodeScreen';
 export function VerificationScreen() {
   const [studentId, setStudentId] = useState('');
   const [secretCode, setSecretCode] = useState('');
-  const [showCreateSecret, setShowCreateSecret] = useState(false);
   
   const { error, loading, authState, login, createProfileAndLogin } = useAuthStore(state => ({
     error: state.error,
@@ -21,6 +20,8 @@ export function VerificationScreen() {
     login: state.login,
     createProfileAndLogin: state.createProfileAndLogin
   }));
+
+  const [showCreateSecret, setShowCreateSecret] = useState(false);
   
   const handleAction = async () => {
     const trimmedId = studentId.trim();
@@ -29,8 +30,6 @@ export function VerificationScreen() {
   };
 
   const handleSecretCreated = (newSecret: string) => {
-    // This function will be called when a new user creates their secret code.
-    // It will then trigger the final profile creation and login step.
     const state = useAuthStore.getState();
     if (state.authState === 'awaiting_secret_creation' && state.studentId) {
         createProfileAndLogin(state.studentId, newSecret);
@@ -89,8 +88,7 @@ export function VerificationScreen() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.9 }}
           >
-            New user? Enter your ID and leave the secret code blank. <br/>
-            Returning user? Enter your ID and secret code.
+            Enter your ID. If you're a returning user, also enter your secret code.
           </motion.p>
           
           <motion.div
@@ -120,7 +118,7 @@ export function VerificationScreen() {
               />
 
               <button 
-                onClick={() => login(studentId)}
+                onClick={() => set({ authState: 'awaiting_secret_creation', studentId })}
                 className="text-blue-400 text-sm hover:underline text-center"
               >
                 Don't have a secret code?
@@ -146,10 +144,12 @@ export function VerificationScreen() {
       </motion.div>
       
       <AnimatePresence>
-        {showCreateSecret && (
+        {authState === 'awaiting_secret_creation' && (
             <CreateSecretCodeScreen
-                open={showCreateSecret}
-                onOpenChange={setShowCreateSecret}
+                open={true}
+                onOpenChange={(isOpen) => {
+                  if (!isOpen) set({ authState: 'anonymous', studentId: null });
+                }}
                 onSecretCreated={handleSecretCreated}
             />
         )}
