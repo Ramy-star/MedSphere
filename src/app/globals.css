@@ -178,10 +178,12 @@ button, a, input, select, textarea {
 
 .confetti {
   position: absolute;
-  width: 8px;
-  height: 8px;
+  width: 12px; /* Increased size */
+  height: 12px; /* Increased size */
   animation: confetti-fall 3s linear infinite;
+  animation-timing-function: cubic-bezier(0.3, 0.9, 0.8, 0.1); /* More dynamic fall */
 }
+
 
 /* --- Exam Component Styles --- */
 .exam-page-container {

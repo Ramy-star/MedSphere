@@ -40,33 +40,59 @@ export const AchievementToast = ({ achievement }: { achievement: Achievement }) 
         setTimeout(clearNewlyEarnedAchievement, 300); // Allow for exit animation
     };
     
-    const colors = tierColors[achievement.tier] || tierColors.bronze;
+    const isGoodStart = achievement.id === 'FIRST_LOGIN';
+    const silverOverride = {
+        bg: 'bg-slate-800/40',
+        border: 'border-slate-600/60',
+        icon: 'text-slate-200',
+        progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
+    }
+
+    const colors = isGoodStart ? silverOverride : tierColors[achievement.tier] || tierColors.bronze;
     const { icon: Icon } = achievement;
     
-    const confettiPieces = Array.from({ length: 30 }).map((_, i) => ({
+    const confettiPieces = Array.from({ length: 50 }).map((_, i) => ({
       id: i,
-      color: ['#fde68a', '#fca5a5', '#86efac', '#93c5fd'][Math.floor(Math.random() * 4)],
+      color: ['#a7f3d0', '#fecaca', '#bfdbfe', '#fef08a'][Math.floor(Math.random() * 4)],
       left: `${Math.random() * 100}%`,
-      delay: `${Math.random() * 2}s`,
-      duration: `${2 + Math.random() * 2}s`
+      delay: `${Math.random() * 3}s`,
+      duration: `${3 + Math.random() * 3}s`
     }));
 
     return (
         <AnimatePresence>
             {show && (
                 <motion.div
-                    initial={{ opacity: 0, y: 100, scale: 0.9 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 50, scale: 0.9 }}
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.9 }}
                     transition={{ type: 'spring', stiffness: 200, damping: 20 }}
                     className="fixed inset-0 z-[200] flex items-center justify-center p-4"
                 >
                     {/* Backdrop */}
-                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={handleClose} />
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} 
+                    />
 
                     {/* Confetti Container */}
                     <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                        {confettiPieces.map(p => <ConfettiPiece key={p.id} {...p} />)}
+                        {confettiPieces.map(p => (
+                             <div
+                                key={p.id}
+                                className="confetti"
+                                style={{
+                                    backgroundColor: p.color,
+                                    left: p.left,
+                                    animationDelay: p.delay,
+                                    animationDuration: p.duration,
+                                    width: '12px',
+                                    height: '12px'
+                                }}
+                            />
+                        ))}
                     </div>
 
                     {/* Toast Content */}
@@ -85,9 +111,9 @@ export const AchievementToast = ({ achievement }: { achievement: Achievement }) 
                             transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.2 }}
                             className={`mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full border-4 border-white/50 ${colors.bg}`}
                         >
-                            <Icon className={`h-10 w-10 ${colors.text}`} />
+                            <Icon className={`h-10 w-10 ${colors.icon}`} />
                         </motion.div>
-                        <p className="text-sm font-semibold uppercase tracking-wider text-yellow-400">
+                        <p className="text-sm font-semibold uppercase tracking-wider text-green-400">
                             Achievement Unlocked!
                         </p>
                         <h3 className="mt-2 text-2xl font-bold text-white">

@@ -1,4 +1,3 @@
-
 'use client';
 import React from 'react';
 import type { UserProfile } from '@/stores/auth-store';
@@ -18,10 +17,10 @@ const tierColors = {
     progressFill: 'bg-gradient-to-r from-orange-600 to-orange-400',
   },
   silver: {
-    bg: 'bg-blue-950/50',
-    border: 'border-blue-700/60',
-    icon: 'text-blue-400',
-    progressFill: 'bg-gradient-to-r from-blue-600 to-blue-400',
+    bg: 'bg-slate-800/40',
+    border: 'border-slate-600/60',
+    icon: 'text-slate-200',
+    progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
   },
   gold: {
     bg: 'bg-yellow-900/40',
@@ -37,19 +36,11 @@ const tierColors = {
   },
 };
 
-const silverOverride = {
-    bg: 'bg-slate-800/40',
-    border: 'border-slate-600/60',
-    icon: 'text-slate-200',
-    progressFill: 'bg-gradient-to-r from-slate-500 to-slate-300',
-}
-
 
 const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievement, userStats: any, earned: boolean }) => {
   const { id, icon: Icon, name, description, tier, condition } = achievement;
   
-  const isGoodStart = id === 'FIRST_LOGIN';
-  const colors = isGoodStart ? silverOverride : tierColors[tier];
+  const colors = tierColors[tier];
   
   const currentProgress = userStats[condition.stat] || 0;
   const goal = condition.value;
