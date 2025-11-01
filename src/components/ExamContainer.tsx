@@ -101,6 +101,7 @@ const AlertDialogContent = React.forwardRef<
       ref={ref}
       className={cn(
         "fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg",
+        "modal-card",
         className
       )}
       {...props}
@@ -1073,25 +1074,28 @@ const ExamMode = ({
         <div className='text-black bg-[#f5f7fa] font-["Segoe_UI"] text-[17px] w-full h-full exam-theme-wrapper'>
             <style>{`
                 .exam-theme-wrapper {
-                    --background: #f5f7fa; 
-                    --foreground: #1f2937;
-                    --card: #ffffff;
-                    --popover: #ffffff;
-                    --primary: #2563eb;
-                    --primary-foreground: #ffffff;
-                    --secondary: #f3f4f6;
-                    --secondary-foreground: #111827;
-                    --muted: #f3f4f6;
-                    --muted-foreground: #6b7280;
-                    --accent: #eff6ff;
-                    --accent-foreground: #1d4ed8;
-                    --destructive: #ef4444;
-                    --destructive-foreground: #ffffff;
-                    --border: #e5e7eb;
-                    --input: #e5e7eb;
-                    --ring: #3b82f6;
+                    --background: 220 24% 95%;
+                    --foreground: 222.2 84% 4.9%;
+                    --card: 210 40% 98%;
+                    --card-foreground: 222.2 84% 4.9%;
+                    --popover: 210 40% 98%;
+                    --popover-foreground: 222.2 84% 4.9%;
+                    --primary: 224 76% 48%;
+                    --primary-foreground: 210 40% 98%;
+                    --secondary: 210 40% 96.1%;
+                    --secondary-foreground: 217 91% 20%;
+                    --muted: 210 40% 96.1%;
+                    --muted-foreground: 215.4 16.3% 46.9%;
+                    --accent: 243 77% 59%;
+                    --accent-foreground: 210 40% 98%;
+                    --destructive: 0 84.2% 60.2%;
+                    --destructive-foreground: 210 40% 98%;
+                    --border: 214.3 31.8% 91.4%;
+                    --input: 214.3 31.8% 91.4%;
+                    --ring: 224 76% 48%;
                 }
                 .exam-theme-wrapper > div { color: hsl(var(--foreground)); }
+                .exam-page-container { background-color: hsl(var(--background)); }
                 .expanding-btn {
                     @apply bg-transparent font-semibold rounded-full cursor-pointer inline-flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out;
                     width: 44px;
@@ -1107,9 +1111,6 @@ const ExamMode = ({
                     padding: 0 16px;
                     @apply justify-start gap-2;
                 }
-                .expanding-btn:hover .expanding-text {
-                    @apply opacity-100 max-w-full;
-                }
                 .expanding-btn.primary { @apply border-2 border-primary text-primary; }
                 .expanding-btn.primary:hover { @apply bg-primary text-primary-foreground; }
                 .expanding-btn.primary .expanding-text { @apply text-primary; }
@@ -1122,6 +1123,15 @@ const ExamMode = ({
                 .expanding-btn.secondary:hover { @apply bg-gray-400 text-white; }
                 .expanding-btn.secondary .expanding-text { @apply text-gray-500; }
                 .expanding-btn.secondary:hover .expanding-text { @apply text-white; }
+                .modal-card {
+                    @apply bg-slate-900/70 text-white backdrop-blur-xl border-slate-700;
+                }
+                .modal-card .bg-background { @apply bg-slate-800/60; }
+                .modal-card .border-border { @apply border-slate-700; }
+                .modal-card .text-foreground { @apply text-white; }
+                .modal-card .text-muted-foreground { @apply text-slate-400; }
+                .modal-card .border-input { @apply border-slate-600; }
+                .modal-card .ring-ring { @apply ring-blue-500; }
             `}</style>
             <AlertDialog open={isExitAlertOpen} onOpenChange={setIsExitAlertOpen}>
                 <AlertDialogContent className="rounded-2xl">
@@ -1195,10 +1205,9 @@ const ExamMode = ({
                             <div>
                                 {canAdminister && (
                                     <div className="flex items-center gap-2">
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-600" onClick={() => setIsFullLectureEditorOpen(true)}><Edit size={14}/></Button>
                                         <AlertDialog>
                                             <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:text-red-600"><Trash2 size={14}/></Button>
+                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 size={14}/></Button>
                                             </AlertDialogTrigger>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
@@ -1207,10 +1216,11 @@ const ExamMode = ({
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
                                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleDeleteLecture} className="bg-red-500 hover:bg-red-600">Delete</AlertDialogAction>
+                                                    <AlertDialogAction onClick={handleDeleteLecture} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                                                 </AlertDialogFooter>
                                             </AlertDialogContent>
                                         </AlertDialog>
+                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground" onClick={() => setIsFullLectureEditorOpen(true)}><Edit size={14}/></Button>
                                     </div>
                                 )}
                             </div>
@@ -1248,11 +1258,15 @@ const ExamMode = ({
                     <TooltipProvider>
                         <div className="relative">
                              {canAdminister && (
-                                 <button onClick={() => setIsReportModalOpen(true)} className="expanding-btn primary absolute top-0 left-0">
+                                <button onClick={() => setIsReportModalOpen(true)} className="expanding-btn primary absolute top-0 left-0">
                                      <FileText size={20} />
                                      <span className="expanding-text">Report</span>
                                  </button>
                             )}
+                            <button onClick={() => handleSubmit(true)} className="expanding-btn secondary absolute top-0 left-[54px]">
+                                <SkipForward size={20} />
+                                <span className="expanding-text">Results</span>
+                            </button>
                             <div className="absolute top-0 right-0">
                                 <button onClick={handleExitClick} className="expanding-btn destructive">
                                     <LogOut size={20} />
@@ -1642,4 +1656,3 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
-
