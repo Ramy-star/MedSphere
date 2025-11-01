@@ -1,0 +1,26 @@
+
+import { cn } from "@/lib/utils";
+import type { LucideProps } from "lucide-react";
+import React from "react";
+
+export const FlashcardIcon = React.forwardRef<SVGSVGElement, LucideProps>(
+  ({ className, ...props }, ref) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14" id="Cards--Streamline-Core-Gradient" height="24" width="24"
+        ref={ref}
+        className={cn(className)}
+        {...props}
+    >
+        <g id="Free Gradient/Entertainment/cards">
+            <path id="Union" fill="url(#paint0_linear_14402_15202)" fillRule="evenodd" d="M7.93682.722532C7.79745.202686 7.26312-.10581 6.74324.0334209L.722771 1.64578c-.520066.13928-.828698.67385-.6892855 1.19388L2.34364 11.4569c.13937.5199.6737.8284 1.19358.6891l6.02047-1.6123c.52011-.1393.82871-.67388.68931-1.19391L7.93682.722532ZM11.4545 9.01601 9.71026 2.50964l3.56744.95637c.5198.13936.8283.67369.6891 1.19357l-2.308 8.61782c-.1393.5201-.6739.8287-1.1939.6893l-.0012-.0003-4.42167-1.1972 3.83921-1.0282c1.18706-.3179 1.89146-1.538 1.57326-2.72499Z" clipRule="evenodd"></path>
+        </g>
+        <defs>
+            <linearGradient id="paint0_linear_14402_15202" x1=".538" x2="16.494" y1="1.131" y2="10.125" gradientUnits="userSpaceOnUse">
+            <stop stopColor="#00d078"></stop>
+            <stop offset="1" stopColor="#007df0"></stop>
+            </linearGradient>
+        </defs>
+    </svg>
+  )
+);
+
+FlashcardIcon.displayName = 'FlashcardIcon';

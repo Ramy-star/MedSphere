@@ -1,0 +1,46 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /content/{contentId} {
+      allow read, list: if request.auth != null;
+      allow write: if request.auth != null; 
+    }
+
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId}/{allSubcollections=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /claimedStudentIds/{studentId} {
+        allow read: if request.auth != null;
+        allow create: if request.auth != null;
+        allow update, delete: if false;
+    }
+
+    match /auditLogs/{logId} {
+        allow read: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles[0].role == 'superAdmin';
+        allow write: if false;
+    }
+
+    match /examResults/{resultId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+      allow write: if false; // Prevent updates after creation
+    }
+
+    match /profileNotes/{noteId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+
+    match /pdfPageNotes/{noteId} {
+      allow read, write: if request.auth != null && resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+    }
+  }
+}

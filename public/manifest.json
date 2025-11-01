@@ -1,0 +1,17 @@
+{
+  "name": "MedSphere",
+  "short_name": "MedSphere",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B0F12",
+  "theme_color": "#2F6B5B",
+  "description": "Your Digital Study Companion for Medical Education",
+  "icons": [
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
