@@ -83,20 +83,19 @@ const sectionVariants = {
 };
 
 
-export function AiStudyBuddy({ user }: { user: UserProfile }) {
+export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: (e: React.MouseEvent) => void }) {
     const [initialInsight, setInitialInsight] = useState<InitialInsight | null>(null);
     const [loading, setLoading] = useState(true);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isResponding, setIsResponding] = useState(false);
     const [customQuestion, setCustomQuestion] = useState('');
     const [view, setView] = useState<'intro' | 'chat'>('intro');
-    const [isOpen, setIsOpen] = useState(false);
+    const [isOpen, setIsOpen] = useState(!isFloating);
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesRef = useRef<ChatMessage[]>([]);
     const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
-    const [isExpanded, setIsExpanded] = useState(false);
     const [fontSize, setFontSize] = useState(14); // Base font size
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
@@ -336,9 +335,11 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                 <div className="flex items-center gap-1">
                      <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.max(s - 1, 10))}><Minus size={16}/></Button>
                      <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
-                     <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setIsExpanded(!isExpanded)}>
-                        {isExpanded ? <Shrink size={16}/> : <Maximize size={16}/>}
-                    </Button>
+                     {onToggleExpand && (
+                        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={onToggleExpand}>
+                            {isFloating ? <Shrink size={16}/> : <Maximize size={16}/>}
+                        </Button>
+                     )}
                 </div>
             </div>
              <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
@@ -389,44 +390,34 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
     );
 
     return (
-      <AnimatePresence>
-        {isExpanded && (
-           <motion.div
-              key="backdrop"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-              onClick={() => setIsExpanded(false)}
-            />
-        )}
         <Collapsible.Root 
             open={isOpen} 
             onOpenChange={setIsOpen} 
-            className={cn(
-                "w-full transition-all duration-500 ease-in-out",
-                isExpanded && "fixed inset-0 sm:inset-5 z-50 m-auto max-w-5xl max-h-[80vh] flex"
-            )}
+            className={cn("w-full transition-all duration-500 ease-in-out", isFloating ? "h-full" : "")}
         >
             <div 
-                className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full", isExpanded ? "h-full" : "")}
+                className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full", isFloating ? "h-full" : "")}
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 170% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}
             >
-                <Collapsible.Trigger className="w-full">
-                    <div className="flex items-center gap-3 sm:gap-4">
-                        <div className="flex-shrink-0">
-                            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
-                                <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                            </div>
+                <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex-shrink-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
+                            <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
                         </div>
-                        <div className="flex-1 text-left">
-                             <h3 className="text-sm sm:text-base font-bold text-white">
-                                {theme.greeting}
-                            </h3>
-                        </div>
-                        <ChevronDown className={cn("h-5 w-5 transition-transform text-slate-400", isOpen && "rotate-180")} />
                     </div>
-                </Collapsible.Trigger>
+                    <div className="flex-1 text-left">
+                         <h3 className="text-sm sm:text-base font-bold text-white">
+                            {theme.greeting}
+                        </h3>
+                    </div>
+                    {!isFloating && (
+                        <Collapsible.Trigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full">
+                                <ChevronDown className={cn("h-5 w-5 transition-transform text-slate-400", isOpen && "rotate-180")} />
+                            </Button>
+                        </Collapsible.Trigger>
+                    )}
+                </div>
 
                  <AnimatePresence initial={false}>
                     {isOpen && (
@@ -522,6 +513,5 @@ export function AiStudyBuddy({ user }: { user: UserProfile }) {
                  </AnimatePresence>
             </div>
         </Collapsible.Root>
-      </AnimatePresence>
     );
 }
