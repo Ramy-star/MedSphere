@@ -26,7 +26,8 @@ const ChatInputSchema = z.object({
     userStats: UserStatsSchema,
     question: z.string().describe("The specific question the user asked the study buddy."),
     chatHistory: z.array(ChatHistoryMessage).optional().describe('The history of the conversation so far.'),
-    appDocumentation: z.string().optional().describe("The full content of the application's technical documentation to be used as the primary knowledge base.")
+    appDocumentation: z.string().optional().describe("The full content of the application's technical documentation to be used as the primary knowledge base."),
+    referencedFileContent: z.string().optional().describe("The text content of a PDF file the user has explicitly referenced in their question using the '@' symbol.")
 });
 
 const studyBuddyChatPrompt = ai.definePrompt({
@@ -37,7 +38,8 @@ const studyBuddyChatPrompt = ai.definePrompt({
 
         **Your Responsibilities:**
         1.  **Application Expert:** If the user asks a question about how the app works, where to find a feature, or how to use a button, you MUST use the **KNOWLEDGE BASE** provided below as your absolute source of truth to provide a precise and helpful answer, always from a user's perspective.
-        2.  **Study Buddy:** For all other conversational questions (greetings, motivation, study advice, summarizing stats), you should act as a friendly and supportive companion.
+        2.  **Document Expert:** If the user references a specific document in their question (indicated by the presence of 'REFERENCED DOCUMENT CONTENT'), your top priority is to answer based on the content of that document.
+        3.  **Study Buddy:** For all other conversational questions (greetings, motivation, study advice, summarizing stats), you should act as a friendly and supportive companion.
 
         **NEVER** say you are just a medical assistant or cannot answer technical questions. Use the documentation provided.
 
@@ -52,11 +54,22 @@ const studyBuddyChatPrompt = ai.definePrompt({
         ---
 
         **KNOWLEDGE BASE: APPLICATION DOCUMENTATION**
-        You have access to the application's internal documentation. If the user asks a technical question, you MUST use this as your primary source of truth, but you must translate the technical details into simple, user-friendly instructions as per the **User-First Perspective** rule above.
+        You have access to the application's internal documentation. If the user asks a technical question about the app, you MUST use this as your primary source of truth, but you must translate the technical details into simple, user-friendly instructions as per the **User-First Perspective** rule above.
 
         \`\`\`markdown
         {{{appDocumentation}}}
         \`\`\`
+
+        ---
+
+        **REFERENCED DOCUMENT CONTENT**
+        {{#if referencedFileContent}}
+        The user has attached a file to this question. Your answer MUST be based primarily on the content of this document.
+
+        \`\`\`
+        {{{referencedFileContent}}}
+        \`\`\`
+        {{/if}}
 
         ---
         
