@@ -1,16 +1,11 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, ChevronDown } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, ArrowDown, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as SelectPrimitive from "@radix-ui/react-select";
-import { Check } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { useCollection, useMemoFirebase } from '@/firebase/firestore/use-collection';
-import { collection, query, where, getDocs, getDoc, doc } from 'firebase/firestore';
-import type { Query, CollectionReference, DocumentData } from 'firebase/firestore';
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
 import type { Lecture, ExamResult, MCQ } from '@/lib/types';
@@ -24,9 +19,11 @@ import level4StudentData from '@/lib/student-ids/level-4-data.json';
 import level5StudentData from '@/lib/student-ids/level-5-data.json';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { contentService } from '@/lib/contentService';
-import { updateDoc } from 'firebase/firestore';
+import { updateDoc, collection, doc, query, where, getDocs } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Textarea } from './ui/textarea';
+import { cn } from '@/lib/utils';
+
 
 // === Types ===
 type ExamResultWithId = ExamResult & { id: string };
@@ -962,40 +959,26 @@ const ExamMode = ({
     return (
         <div className='text-black bg-[#f5f7fa] font-["Segoe_UI"] text-[17px] w-full h-full exam-theme-wrapper'>
             <style>{`
-                 /* --- Keyframes for Animations --- */
-                @keyframes accordion-down {
-                  from { height: 0; }
-                  to { height: var(--radix-accordion-content-height); }
-                }
-                @keyframes accordion-up {
-                  from { height: var(--radix-accordion-content-height); }
-                  to { height: 0; }
-                }
-                @keyframes staggerFadeIn {
-                    from { opacity: 0; transform: translateY(15px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-                
                 .exam-theme-wrapper {
-                    --background: #f5f7fa;
-                    --foreground: #333;
-                    --card: #ffffff;
-                    --popover: #ffffff;
-                    --primary: #3b82f6;
-                    --primary-foreground: #ffffff;
-                    --secondary: #f3f4f6;
-                    --secondary-foreground: #111827;
-                    --muted: #f3f4f6;
-                    --muted-foreground: #6b7280;
-                    --accent: #f9fafb;
-                    --accent-foreground: #111827;
-                    --destructive: #ef4444;
-                    --destructive-foreground: #ffffff;
-                    --border: #e5e7eb;
-                    --input: #e5e7eb;
-                    --ring: #3b82f6;
+                    --background: 220 24% 95%; /* light gray-blue */
+                    --foreground: 222.2 84% 4.9%; /* very dark blue, almost black */
+                    --card: 210 40% 98%; /* very light gray-blue, almost white */
+                    --popover: 210 40% 98%;
+                    --primary: 224 76% 48%; /* blue */
+                    --primary-foreground: 210 40% 98%;
+                    --secondary: 210 40% 96.1%; /* light gray */
+                    --secondary-foreground: 217 91% 20%;
+                    --muted: 210 40% 96.1%;
+                    --muted-foreground: 215.4 16.3% 46.9%; /* gray */
+                    --accent: 243 77% 59%; /* purple-blue */
+                    --accent-foreground: 210 40% 98%;
+                    --destructive: 0 84.2% 60.2%; /* red */
+                    --destructive-foreground: 210 40% 98%;
+                    --border: 214.3 31.8% 91.4%; /* light gray */
+                    --input: 214.3 31.8% 91.4%;
+                    --ring: 224 76% 48%;
                 }
-                .exam-theme-wrapper > div { color: var(--foreground); }
+                .exam-theme-wrapper > div { color: hsl(var(--foreground)); }
             `}</style>
             <AlertDialog open={isExitAlertOpen} onOpenChange={setIsExitAlertOpen}>
                 <AlertDialogContent className="rounded-2xl">
@@ -1400,7 +1383,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                         <p>Loading report...</p>
                     ) : reportData.length > 0 ? (
                         <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-400 uppercase bg-gray-700">
+                            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
                                 <tr>
                                     <th scope="col" className="px-6 py-3">Student Name</th>
                                     <th scope="col" className="px-6 py-3">Student ID</th>
@@ -1416,8 +1399,8 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                     const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
                                     
                                     return (
-                                        <tr key={index} className="border-b bg-gray-800 border-gray-700">
-                                            <td scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-white">
+                                        <tr key={index} className="border-b bg-white">
+                                            <td scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-gray-900">
                                                 <div className="flex items-center gap-3">
                                                     <Avatar className={cn("h-7 w-7 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
                                                         <AvatarImage 
@@ -1533,4 +1516,3 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
-
