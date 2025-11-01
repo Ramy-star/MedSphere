@@ -8,7 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { CreateSecretCodeScreen } from './CreateSecretCodeScreen';
-import { getStudentDetails } from '@/lib/verificationService'; // Corrected import
+import { isStudentIdValid, getClaimedStudentIdUser } from '@/lib/verificationService';
 
 export function VerificationScreen() {
   const [studentId, setStudentId] = useState('');
@@ -27,9 +27,11 @@ export function VerificationScreen() {
   useEffect(() => {
     let debounceTimer: NodeJS.Timeout;
     const checkId = async () => {
-      if (studentId.trim().length >= 8) { // Basic validation before checking
-        const details = await getStudentDetails(studentId.trim());
-        setIsNewUser(details.isValid && !details.isClaimed);
+      const trimmedId = studentId.trim();
+      if (trimmedId.length >= 8) { // Basic validation before checking
+        const isValid = await isStudentIdValid(trimmedId);
+        const claimedUserId = await getClaimedStudentIdUser(trimmedId);
+        setIsNewUser(isValid && !claimedUserId);
       } else {
         setIsNewUser(false);
       }
