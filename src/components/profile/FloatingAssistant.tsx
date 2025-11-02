@@ -22,8 +22,8 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
                         initial={{ opacity: 0, y: 50, scale: 0.9 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 25 }}
-                        className="fixed bottom-6 right-6 w-[90vw] max-w-md h-[70vh] max-h-[600px] z-50 shadow-2xl rounded-3xl glass-card overflow-hidden"
+                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                        className="fixed bottom-24 right-6 w-[90vw] max-w-md h-[70vh] max-h-[600px] z-50 shadow-2xl rounded-3xl glass-card overflow-hidden"
                      >
                          <AiStudyBuddy user={user} isFloating={true} />
                     </motion.div>
@@ -33,7 +33,7 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
             <div className="fixed bottom-6 right-6 z-50">
                  <motion.button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex items-center justify-center"
+                    className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex items-center justify-center"
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     aria-label={isOpen ? "Close Study Buddy" : "Open Study Buddy"}
@@ -48,9 +48,9 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
                             className="absolute"
                         >
                             {isOpen ? (
-                                <X className="w-7 h-7 text-white" />
+                                <X className="w-6 h-6 text-white" />
                             ) : (
-                                <AiAssistantIcon className="w-8 h-8" />
+                                <AiAssistantIcon className="w-7 h-7" />
                             )}
                         </motion.div>
                     </AnimatePresence>
