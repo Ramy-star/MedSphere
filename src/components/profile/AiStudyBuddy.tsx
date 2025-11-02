@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -94,8 +93,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const [fontSize, setFontSize] = useState(14);
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
-    const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
     const [fileSearchQuery, setFileSearchQuery] = useState('');
+    const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
 
     const { data: allFiles } = useCollection<Content>('content');
     
@@ -170,6 +169,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
         setChatHistory(newHistory);
         setIsResponding(true);
+        setReferencedFiles([]); // Clear after sending
         
         let fileContent = '';
         try {
@@ -337,18 +337,36 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         </div>
     );
     
-
-    if (loading || !theme) {
-        return (
-             <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl" style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 180% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 90%)`}}>
-                <div className="flex-shrink-0">
-                    <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full" />
+    const LoadingSkeleton = () => (
+        <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                    <Skeleton className="w-12 h-12 rounded-full" />
+                    <Skeleton className="h-4 w-32" />
                 </div>
-                <div className="space-y-2 flex-1">
-                    <Skeleton className="h-4 w-1/3" />
+                <div className="flex items-center gap-1">
+                    <Skeleton className="w-7 h-7 rounded-full" />
+                    <Skeleton className="w-7 h-7 rounded-full" />
+                    <Skeleton className="w-7 h-7 rounded-full" />
                 </div>
             </div>
-        );
+            <div className="p-4 space-y-2">
+                <Skeleton className="h-4 w-4/5" />
+                <Skeleton className="h-4 w-3/5" />
+            </div>
+            <div className="p-4 flex gap-2">
+                <Skeleton className="h-8 w-24 rounded-full" />
+                <Skeleton className="h-8 w-28 rounded-full" />
+            </div>
+            <div className="flex-1" />
+            <div className="p-2">
+                <Skeleton className="h-12 w-full rounded-xl" />
+            </div>
+        </div>
+    );
+
+    if (loading || !theme) {
+        return <LoadingSkeleton />;
     }
     
     if (!initialInsight) return null;
@@ -606,4 +624,3 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         </div>
     );
 }
-
