@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { AiStudyBuddy } from './AiStudyBuddy';
-import { X } from 'lucide-react';
+import { X, Maximize, Shrink } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthStore.getState>['user'] }) => {
@@ -17,6 +17,11 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
 
     const toggleExpand = () => setIsExpanded(prev => !prev);
     
+    const handleClose = () => {
+        setIsOpen(false);
+        setIsExpanded(false); // Make sure to reset expanded state as well
+    };
+
     const containerVariants = {
         closed: {
             width: '56px',
@@ -42,6 +47,18 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
 
     return (
         <>
+            <AnimatePresence>
+                {isExpanded && (
+                    <motion.div
+                        key="backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        onClick={handleClose}
+                    />
+                )}
+            </AnimatePresence>
             <div className="fixed bottom-6 right-6 z-50">
                 <motion.div
                     layout
@@ -62,7 +79,12 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
                                 exit={{ opacity: 0, scale: 0.95 }}
                                 className="w-full h-full"
                             >
-                                <AiStudyBuddy user={user} isFloating={true} onToggleExpand={toggleExpand} />
+                                <AiStudyBuddy 
+                                    user={user} 
+                                    isFloating={true} 
+                                    onToggleExpand={toggleExpand} 
+                                    isExpanded={isExpanded} 
+                                />
                             </motion.div>
                         )}
                     </AnimatePresence>

@@ -106,7 +106,7 @@ const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () =>
 );
 
 
-export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: () => void }) {
+export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpanded }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: () => void, isExpanded?: boolean }) {
     const { initialInsight, theme, setInitialData } = useAiBuddyStore();
     const [loading, setLoading] = useState(!initialInsight);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -133,9 +133,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
     const filteredFiles = useMemo(() => {
         if (!allFiles) return [];
-        // Search all files and folders, not just PDFs
-        if (!fileSearchQuery) return allFiles.filter(f => f.type === 'FILE' || f.type === 'FOLDER').slice(0, 10);
-        return allFiles.filter(file => (file.type === 'FILE' || file.type === 'FOLDER') && file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
+        const items = allFiles.filter(f => f.type === 'FILE' || f.type === 'FOLDER');
+        if (!fileSearchQuery) return items.slice(0, 10);
+        return items.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
     }, [allFiles, fileSearchQuery]);
 
 
@@ -220,12 +220,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
 
     const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[]) => {
-        if (!prompt && filesToSubmit.length === 0) return;
+        if (!prompt.trim() && filesToSubmit.length === 0) return;
         if (!theme) return;
     
         const isNewChat = view === 'intro' || !currentChatId;
-        let activeChatId = isNewChat ? null : currentChatId;
-
         const currentHistory = isNewChat ? [] : chatHistory;
         
         setView('chat');
@@ -233,7 +231,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         setChatHistory(newHistory);
         setIsResponding(true);
         setCustomQuestion('');
-        // We keep the referenced files until the user manually removes them.
         
         let fileContent = '';
         try {
@@ -276,7 +273,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             const finalHistory = [...newHistory, { role: 'model', text: response }];
             setChatHistory(finalHistory);
             
-            const newChatId = await saveChatSession(finalHistory, activeChatId);
+            const newChatId = await saveChatSession(finalHistory, isNewChat ? null : currentChatId);
             if(isNewChat) {
                 setCurrentChatId(newChatId);
             }
@@ -295,7 +292,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     }, [theme, user, toast, chatHistory, currentChatId, saveChatSession, view]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
-        startNewChat(); // Ensure suggestions start a new chat
+        startNewChat();
         submitQuery(suggestion.prompt, []);
     };
 
@@ -315,7 +312,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         });
         setShowFileSearch(false);
         setFileSearchQuery('');
-        // Remove the `@` trigger from the textarea
         setCustomQuestion(prev => prev.substring(0, prev.lastIndexOf('@')));
         textareaRef.current?.focus();
     };
@@ -374,7 +370,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
     const handleLoadChat = (session: AiBuddyChatSession) => {
         setChatHistory(session.messages);
-        setReferencedFiles([]); // Don't restore referenced files from history.
+        setReferencedFiles([]);
         setCurrentChatId(session.id);
         setView('chat');
     };
@@ -383,7 +379,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         if (!itemToDelete || !user) return;
         const noteId = itemToDelete.id;
         
-        // Prevent navigation by setting it to null before async operation
         setItemToDelete(null); 
         
         const docRef = doc(db, `users/${user.id}/aiBuddySessions`, noteId);
@@ -392,7 +387,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             await deleteDoc(docRef);
             toast({ title: "Chat deleted" });
             
-            // If the deleted chat was the active one, reset the view
             if (currentChatId === noteId) {
                 startNewChat();
             }
@@ -423,7 +417,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         </Button>
         {isFloating && onToggleExpand && (
           <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={onToggleExpand}>
-            {isFloating ? <Shrink size={16} /> : <Maximize size={16} />}
+            {isExpanded ? <Shrink size={16} /> : <Maximize size={16} />}
           </Button>
         )}
       </div>
