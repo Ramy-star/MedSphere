@@ -5,6 +5,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { AiStudyBuddy } from './AiStudyBuddy';
 import { X } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthStore.getState>['user'] }) => {
     const [isOpen, setIsOpen] = useState(false);
@@ -83,12 +84,12 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
                     onClick={() => setIsOpen(!isOpen)}
                     className={cn(
                         "w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex items-center justify-center absolute",
-                        "bottom-0 right-0"
+                         isOpen ? "bottom-[calc(100%_-_16px)] right-2" : "bottom-0 right-0"
                     )}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     aria-label={isOpen ? "Close Study Buddy" : "Open Study Buddy"}
-                    animate={isOpen ? { bottom: 'calc(100% + 8px)', right: 8, width: 40, height: 40 } : { bottom: 0, right: 0, width: 56, height: 56 } }
+                    animate={isOpen ? { width: 40, height: 40 } : { width: 56, height: 56 } }
                 >
                     <AnimatePresence mode="wait">
                         <motion.div
