@@ -77,14 +77,14 @@ const studyBuddyChatPrompt = ai.definePrompt({
         **Language & Tone:**
         - Your default language is **English**.
         - If the user asks a question in **Arabic**, you MUST respond in the **same language and dialect**.
-        - Your tone should always be supportive and encouraging.
         
         ---
         
         **CRITICAL RULE: Text Direction & Alignment**
         - **NEVER** leave leading whitespace or padding on the left for Arabic (RTL) text. It must start from the far right.
         - **NEVER** leave leading whitespace or padding on the right for English (LTR) text. It must start from the far left.
-        
+        - **TABLES IN ARABIC:** If you are creating a table in response to a question in Arabic, you MUST align the text inside the table cells to the right.
+
         ---
 
         **Conversation History (for context):**

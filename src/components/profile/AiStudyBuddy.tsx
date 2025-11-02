@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -584,11 +583,11 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      table: ({ node, ...props }) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
-                      thead: ({ node, ...props }) => <thead className="bg-slate-800/50" {...props} />,
-                      tr: ({ node, ...props }) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
-                      th: ({ node, ...props }) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
-                      td: ({ node, ...props }) => <td className="border-r border-slate-700 p-2 align-top" {...props} />,
+                        table: ({ node, ...props }) => <table className="w-full my-4 border-collapse border border-white/25 rounded-lg overflow-hidden" {...props} />,
+                        thead: ({ node, ...props }) => <thead className="bg-black/20 text-white" {...props} />,
+                        tr: ({ node, ...props }) => <tr className="border-b border-white/25 last:border-b-0" {...props} />,
+                        th: ({ node, ...props }) => <th className="border-r border-white/25 p-2 text-left font-semibold last:border-r-0" {...props} />,
+                        td: ({ node, ...props }) => <td className="border-r border-white/25 p-2 align-top last:border-r-0 text-neutral-100 bg-white/10" {...props} />,
                     }}
                   >
                     {message.text}
