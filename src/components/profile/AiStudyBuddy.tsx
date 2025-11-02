@@ -54,8 +54,8 @@ export type AiBuddyChatSession = {
   userId: string;
   title: string;
   messages: ChatMessage[];
-  createdAt: string;
-  updatedAt: string;
+  createdAt: { seconds: number, nanoseconds: number } | string;
+  updatedAt: { seconds: number, nanoseconds: number } | string;
 };
 
 type TimeOfDayTheme = {
@@ -190,19 +190,19 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         fetchInitialInsight();
     }, [fetchInitialInsight]);
 
-    const saveChatSession = async (history: ChatMessage[], chatId: string | null) => {
-        if (!user || history.length === 0) return chatId;
-    
+    const saveChatSession = useCallback(async (history: ChatMessage[], chatId: string | null): Promise<string> => {
+        if (!user || history.length === 0) return chatId || '';
+
         const firstUserMessage = history.find(m => m.role === 'user')?.text || 'New Chat';
         const title = firstUserMessage.substring(0, 40) + (firstUserMessage.length > 40 ? '...' : '');
-    
+
         const sessionData = {
             userId: user.id,
             title,
             messages: history,
             updatedAt: serverTimestamp(),
         };
-    
+
         const collectionRef = collection(db, `users/${user.id}/aiBuddySessions`);
         
         if (chatId) {
@@ -216,17 +216,22 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             });
             return newDocRef.id;
         }
-    };
+    }, [user]);
 
 
-    const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[]) => {
+    const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[], isNewChat: boolean) => {
         if (!prompt && filesToSubmit.length === 0) return;
         if (!theme) return;
     
+        const activeChatId = isNewChat ? null : currentChatId;
+        const historyForThisQuery = isNewChat ? [] : chatHistory;
+        
         setView('chat');
-        const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
+        const newHistory: ChatMessage[] = [...historyForThisQuery, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
         setChatHistory(newHistory);
         setIsResponding(true);
+        setReferencedFiles([]); // Clear referenced files after submission
+        setCustomQuestion(''); // Clear input after submission
         
         let fileContent = '';
         try {
@@ -262,17 +267,15 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             const response = await answerStudyBuddyQuery({
                 userStats,
                 question: fullPrompt,
-                chatHistory: newHistory.slice(0, -1),
+                chatHistory: historyForThisQuery,
                 referencedFileContent: fileContent,
             });
             
             const finalHistory = [...newHistory, { role: 'model', text: response }];
             setChatHistory(finalHistory);
             
-            const newChatId = await saveChatSession(finalHistory, currentChatId);
-            if (!currentChatId) {
-                setCurrentChatId(newChatId);
-            }
+            const newChatId = await saveChatSession(finalHistory, activeChatId);
+            setCurrentChatId(newChatId);
     
         } catch (e) {
             console.error("Failed to get answer from study buddy", e);
@@ -285,13 +288,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         } finally {
             setIsResponding(false);
         }
-    }, [theme, user, toast, chatHistory, currentChatId]);
+    }, [theme, user, toast, chatHistory, currentChatId, saveChatSession]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
-        if (view !== 'chat') {
-            startNewChat();
-        }
-        submitQuery(suggestion.prompt, []);
+        submitQuery(suggestion.prompt, [], true); // Always start a new chat from suggestion
     };
 
     const handleCustomQuestionSubmit = () => {
@@ -300,12 +300,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
         if (!questionToSend && filesToSend.length === 0) return;
         
-        if (view !== 'chat') {
-            startNewChat();
-        }
-    
-        submitQuery(questionToSend, filesToSend);
-        setCustomQuestion('');
+        // If we are in the intro view, or if we are in chat view but there's no currentChatId, it's a new chat.
+        const isNewChat = view !== 'chat' || !currentChatId;
+
+        submitQuery(questionToSend, filesToSend, isNewChat);
     };
     
     const handleFileSelect = (file: Content) => {
@@ -383,9 +381,22 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const handleDeleteSession = async () => {
         if (!itemToDelete || !user) return;
         const docRef = doc(db, `users/${user.id}/aiBuddySessions`, itemToDelete.id);
-        await deleteDoc(docRef);
-        setItemToDelete(null);
-        toast({ title: "Chat deleted" });
+        try {
+            await deleteDoc(docRef);
+            setItemToDelete(null);
+            toast({ title: "Chat deleted" });
+        } catch (error) {
+            console.error("Error deleting chat:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not delete chat." });
+        }
+    };
+
+    const formatDate = (date: { seconds: number, nanoseconds: number } | string) => {
+        if (typeof date === 'string') return new Date(date).toLocaleDateString();
+        if (date && typeof date.seconds === 'number') {
+            return new Date(date.seconds * 1000).toLocaleDateString();
+        }
+        return 'Invalid Date';
     };
 
     const renderHeaderControls = () => (
@@ -409,7 +420,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
     const renderChatHeader = () => (
          <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0 sticky top-0 z-10 bg-[rgba(30,41,59,0.5)] backdrop-blur-sm -mx-4 px-4 pt-3 pb-2">
-             <Button onClick={() => setView('intro')} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
+             <Button onClick={startNewChat} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                 <ArrowLeft className="w-4 h-4" />
             </Button>
             {renderHeaderControls()}
@@ -613,10 +624,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                     <div key={session.id} className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/60 cursor-pointer" onClick={() => handleLoadChat(session)}>
                         <div className="truncate">
                             <p className="text-sm text-white truncate">{session.title}</p>
-                            <p className="text-xs text-slate-400 mt-0.5">{new Date(session.createdAt).toLocaleDateString()}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{formatDate(session.createdAt)}</p>
                         </div>
                         <AlertDialog>
-                            <AlertDialogTrigger asChild>
+                             <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-500 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setItemToDelete(session); }}>
                                     <Trash2 size={16} />
                                 </Button>
