@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI flow to answer questions from the AI Study Buddy.
@@ -83,10 +84,7 @@ const studyBuddyChatPrompt = ai.definePrompt({
         **CRITICAL RULE: Text Direction & Alignment**
         - **NEVER** leave leading whitespace or padding on the left for Arabic (RTL) text. It must start from the far right.
         - **NEVER** leave leading whitespace or padding on the right for English (LTR) text. It must start from the far left.
-        - When creating a Markdown table for Arabic content, you MUST add \`dir="rtl"\` to the \`<table>\` tag.
-        - When creating a Markdown table for English or mixed content, you MUST add \`dir="ltr"\` to the \`<table>\` tag.
-        - For tables in Arabic, the header and content alignment must be to the right. Use the Markdown syntax \`|:---:|\` for centered columns or \`|---:|\` for right-aligned columns.
-
+        
         ---
 
         **Conversation History (for context):**
@@ -115,23 +113,28 @@ const studyBuddyChatPrompt = ai.definePrompt({
         3.  **Emphasis:** Use **bold markdown** for key terms and *italic markdown* for emphasis.
         4.  **Numbered Lists**: For steps or sequential items, use a numbered list (e.g., 1., 2., 3.).
         5.  **Separators**: Use a thin horizontal rule (\`---\`) to separate distinct sections or ideas for clarity.
-        6.  **Tables**: For comparisons, use well-formatted Markdown tables with clear headers and borders. The header should have a distinct background color using CSS variables passed to the component (\`--table-header-bg\`). For example:
+        6.  **Tables**: **YOU MUST USE HTML TABLE TAGS for tables.** This gives you full control over the presentation. Use the following structure with inline styles for borders and padding. **DO NOT use Markdown tables.**
             \`\`\`html
-            <table dir="rtl" style="width:100%; border-collapse: collapse;">
-                <thead style="background-color: var(--table-header-bg, #374151);">
-                    <tr>
-                        <th style="border: 1px solid #4b5563; padding: 8px; text-align: right;">ميزة</th>
-                        <th style="border: 1px solid #4b5563; padding: 8px; text-align: right;">تفاصيل</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style="border: 1px solid #4b5563; padding: 8px;">خاصية ١</td>
-                        <td style="border: 1px solid #4b5563; padding: 8px;">شرح الخاصية</td>
-                    </tr>
-                </tbody>
+            <table style="width: 100%; border-collapse: collapse; border: 1px solid #4A5568;">
+              <thead>
+                <tr style="background-color: #2D3748;">
+                  <th style="border: 1px solid #4A5568; padding: 8px; text-align: left;">Header 1</th>
+                  <th style="border: 1px solid #4A5568; padding: 8px; text-align: left;">Header 2</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style="border: 1px solid #4A5568; padding: 8px;">Data 1</td>
+                  <td style="border: 1px solid #4A5568; padding: 8px;">Data 2</td>
+                </tr>
+                <tr>
+                  <td style="border: 1px solid #4A5568; padding: 8px;">Data 3</td>
+                  <td style="border: 1px solid #4A5568; padding: 8px;">Data 4</td>
+                </tr>
+              </tbody>
             </table>
             \`\`\`
+            - For Arabic tables, add \`dir="rtl"\` to the \`<table>\` tag and set \`text-align: right;\` for \`<th>\` and \`<td>\`.
         7.  **Follow-up:** Always end your response with a concise, relevant follow-up question or suggestion to keep the conversation going.
     `,
 });

@@ -454,7 +454,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     );
 
     const renderChatHeader = () => (
-         <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0 sticky top-0 z-10 bg-[rgba(30,41,59,0.5)] backdrop-blur-sm -mx-4 px-4 pt-3 pb-2">
+        <div className="flex items-center justify-between mb-1 sm:mb-2 flex-shrink-0 px-4 py-1 bg-transparent">
              <Button onClick={() => setView('intro')} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                 <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -480,14 +480,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                 <Skeleton className="w-4/5 h-4" />
                 <Skeleton className="w-3/5 h-4" />
             </div>
-            <div className="flex-shrink-0 flex flex-wrap gap-2 mt-4">
+            <div className="flex-shrink-0 flex flex-wrap gap-2 mt-8">
                 <Skeleton className="w-24 h-8 rounded-full" />
                 <Skeleton className="w-28 h-8 rounded-full" />
                 <Skeleton className="w-20 h-8 rounded-full" />
-            </div>
-             <div className="flex items-end gap-2 bg-slate-800/60 border border-slate-700 rounded-xl p-1 mt-4">
-                <Skeleton className="w-full h-10 rounded-lg" />
-                <Skeleton className="w-9 h-9 rounded-full" />
             </div>
         </div>
     );
@@ -647,7 +643,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     const HistoryView = () => {
         return (
         <div className="flex flex-col h-full overflow-hidden">
-            <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0 sticky top-0 z-10 bg-[rgba(30,41,59,0.5)] backdrop-blur-sm -mx-4 px-4 pt-3 pb-2">
+            <div className="flex items-center justify-between mb-1 sm:mb-2 flex-shrink-0 px-4 py-1 bg-transparent">
                 <Button onClick={() => setView('intro')} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
@@ -797,7 +793,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                                         <Textarea
                                             ref={textareaRef}
                                             placeholder="Ask a question, or type '@' to reference a file."
-                                            className={cn("bg-transparent border-0 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
+                                            className={cn("bg-transparent border-0 rounded-2xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
                                             value={customQuestion}
                                             onChange={handleQuestionChange}
                                             onKeyDown={handleCustomQuestionKeyDown}

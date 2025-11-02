@@ -31,19 +31,19 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
             width: '56px',
             height: '56px',
             borderRadius: '50%',
-            transition: { type: 'spring', stiffness: 400, damping: 30 }
+            transition: { duration: 0.3, ease: 'easeInOut' }
         },
         open: {
             width: 'min(90vw, 440px)',
-            height: 'min(75vh, 650px)',
+            height: 'min(70vh, 650px)',
             borderRadius: '1.5rem',
-            transition: { type: 'spring', stiffness: 400, damping: 40 }
+            transition: { type: 'spring', stiffness: 220, damping: 28, mass: 0.9 }
         },
         expanded: {
-            width: '95vw',
-            height: '90vh',
+            width: '75vw',
+            height: '80vh',
             borderRadius: '1.5rem',
-            transition: { type: 'spring', stiffness: 400, damping: 40 }
+            transition: { type: 'spring', stiffness: 250, damping: 30, mass: 0.9 }
         }
     };
     
@@ -52,7 +52,7 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
     return (
         <>
             <AnimatePresence>
-                {isExpanded && (
+                {false && (
                     <motion.div
                         key="backdrop"
                         initial={{ opacity: 0 }}
