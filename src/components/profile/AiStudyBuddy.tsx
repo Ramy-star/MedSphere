@@ -21,6 +21,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { FileText } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { create } from 'zustand';
 
 
 if (typeof window !== 'undefined') {
@@ -51,6 +52,22 @@ type TimeOfDayTheme = {
     iconColor: string;
 };
 
+// Zustand store for caching
+interface AiBuddyStore {
+  initialInsight: InitialInsight | null;
+  theme: TimeOfDayTheme | null;
+  setInitialData: (insight: InitialInsight, theme: TimeOfDayTheme) => void;
+  clearInitialData: () => void;
+}
+
+const useAiBuddyStore = create<AiBuddyStore>((set) => ({
+    initialInsight: null,
+    theme: null,
+    setInitialData: (initialInsight, theme) => set({ initialInsight, theme }),
+    clearInitialData: () => set({ initialInsight: null, theme: null }),
+}));
+
+
 const isRtl = (text: string) => {
   const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFF\uFE70-\uFEFC]/;
   return rtlRegex.test(text);
@@ -77,8 +94,8 @@ const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () =>
 
 
 export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: () => void }) {
-    const [initialInsight, setInitialInsight] = useState<InitialInsight | null>(null);
-    const [loading, setLoading] = useState(true);
+    const { initialInsight, theme, setInitialData } = useAiBuddyStore();
+    const [loading, setLoading] = useState(!initialInsight);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isResponding, setIsResponding] = useState(false);
     const [customQuestion, setCustomQuestion] = useState('');
@@ -86,8 +103,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const messagesRef = useRef<ChatMessage[]>([]);
-    const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
     const [fontSize, setFontSize] = useState(14);
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
@@ -105,10 +120,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         return pdfFiles.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
     }, [allFiles, fileSearchQuery]);
 
-
-    useEffect(() => {
-        messagesRef.current = chatHistory;
-    }, [chatHistory]);
 
     useLayoutEffect(() => {
         if (chatContainerRef.current) {
@@ -131,8 +142,13 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         return { greeting: `Good night, ${firstName}! 🌙`, bgColor: 'rgba(11, 11, 86, 0.6)', textColor: '#FFFFFF', iconColor: '#FFFFFF' };
     }, [user.displayName, user.username]);
 
-    const fetchInitialInsight = useCallback(async (greeting: string) => {
+    const fetchInitialInsight = useCallback(async () => {
+        if (initialInsight) {
+            setLoading(false);
+            return;
+        }
         setLoading(true);
+        const currentTheme = getThemeForTime();
         const userStats = {
             displayName: user.displayName || user.username,
             username: user.username,
@@ -143,28 +159,26 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             favoritesCount: user.favorites?.length || 0,
         };
         try {
-            const result = await getStudyBuddyInsight({greeting, ...userStats});
-            setInitialInsight(result);
+            const result = await getStudyBuddyInsight({greeting: currentTheme.greeting, ...userStats});
+            setInitialData(result, currentTheme);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
-            setInitialInsight(null);
         } finally {
             setLoading(false);
         }
-    }, [user]);
+    }, [user, getThemeForTime, setInitialData, initialInsight]);
 
     useEffect(() => {
-        const currentTheme = getThemeForTime();
-        setTheme(currentTheme);
-        fetchInitialInsight(currentTheme.greeting);
-    }, [fetchInitialInsight, getThemeForTime]);
+        fetchInitialInsight();
+    }, [fetchInitialInsight]);
 
     const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[]) => {
         if (!prompt && filesToSubmit.length === 0) return;
         if (!theme) return;
 
         setView('chat');
-        const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
+        const currentHistory = get().chatHistory;
+        const newHistory: ChatMessage[] = [...currentHistory, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
         setChatHistory(newHistory);
         setIsResponding(true);
         
@@ -400,6 +414,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
           {chatHistory.map((message, index) => (
             <div
               key={`${message.text.slice(0, 10)}-${index}`}
+              dir="auto"
               className={cn(
                 'flex flex-col gap-2 group',
                 isRtl(message.text) ? 'font-plex-arabic' : 'font-inter'
@@ -407,7 +422,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             >
               {message.role === 'user' && (
                 <div
-                  dir="auto"
                   className="self-end bg-blue-600 text-white rounded-2xl px-3 py-2 max-w-[85%] whitespace-pre-wrap break-words"
                   style={{ fontSize: 'inherit' }}
                 >
@@ -426,7 +440,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
               )}
               {message.role === 'model' && (
                 <div
-                  dir="auto"
                   className={cn(
                     'text-slate-300 max-w-[95%] prose prose-sm prose-invert',
                     isRtl(message.text)
