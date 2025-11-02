@@ -8,35 +8,87 @@ import { X } from 'lucide-react';
 
 export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthStore.getState>['user'] }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isExpanded, setIsExpanded] = useState(false);
 
     if (!user) {
         return null;
     }
 
+    const toggleExpand = () => setIsExpanded(prev => !prev);
+    
+    const containerVariants = {
+        closed: {
+            width: '56px',
+            height: '56px',
+            borderRadius: '50%',
+            transition: { type: 'spring', stiffness: 400, damping: 30 }
+        },
+        open: {
+            width: 'min(90vw, 420px)',
+            height: 'min(75vh, 650px)',
+            borderRadius: '1.5rem',
+            transition: { type: 'spring', stiffness: 400, damping: 40 }
+        },
+        expanded: {
+            width: '95vw',
+            height: '90vh',
+            borderRadius: '1.5rem',
+            transition: { type: 'spring', stiffness: 400, damping: 40 }
+        }
+    };
+    
+    const currentVariant = isExpanded ? 'expanded' : isOpen ? 'open' : 'closed';
+
     return (
         <>
-            <AnimatePresence>
-                {isOpen && (
-                     <motion.div
-                        key="study-buddy-window"
-                        initial={{ opacity: 0, y: 50, scale: 0.9 }}
-                        animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 50, scale: 0.9 }}
-                        transition={{ type: 'spring', stiffness: 300, damping: 30 }}
-                        className="fixed bottom-24 right-6 w-[90vw] max-w-md h-[70vh] max-h-[600px] z-50 shadow-2xl rounded-3xl glass-card overflow-hidden"
-                     >
-                         <AiStudyBuddy user={user} isFloating={true} />
-                    </motion.div>
+             <AnimatePresence>
+                {isOpen && isExpanded && (
+                    <motion.div
+                        key="backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        onClick={toggleExpand}
+                    />
                 )}
             </AnimatePresence>
-
             <div className="fixed bottom-6 right-6 z-50">
+                <motion.div
+                    layout
+                    variants={containerVariants}
+                    initial="closed"
+                    animate={currentVariant}
+                    className="shadow-2xl glass-card flex flex-col overflow-hidden"
+                    style={{
+                        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                    }}
+                >
+                    <AnimatePresence>
+                        {isOpen && (
+                            <motion.div 
+                                key="buddy-content"
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1, transition: { delay: 0.1 } }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="w-full h-full"
+                            >
+                                <AiStudyBuddy user={user} isFloating={true} onToggleExpand={toggleExpand} />
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+                </motion.div>
+                
                  <motion.button
                     onClick={() => setIsOpen(!isOpen)}
-                    className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex items-center justify-center"
+                    className={cn(
+                        "w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex items-center justify-center absolute",
+                        "bottom-0 right-0"
+                    )}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     aria-label={isOpen ? "Close Study Buddy" : "Open Study Buddy"}
+                    animate={isOpen ? { bottom: 'calc(100% + 8px)', right: 8, width: 40, height: 40 } : { bottom: 0, right: 0, width: 56, height: 56 } }
                 >
                     <AnimatePresence mode="wait">
                         <motion.div
@@ -48,7 +100,7 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
                             className="absolute"
                         >
                             {isOpen ? (
-                                <X className="w-6 h-6 text-white" />
+                                <X className="w-5 h-5 text-white" />
                             ) : (
                                 <AiAssistantIcon className="w-7 h-7" />
                             )}

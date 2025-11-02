@@ -55,35 +55,7 @@ const isRtl = (text: string) => {
   return rtlRegex.test(text);
 };
 
-
-const sectionVariants = {
-    open: {
-        opacity: 1,
-        height: 'auto',
-        transition: {
-            type: 'spring',
-            stiffness: 300,
-            damping: 30,
-            when: "beforeChildren",
-            staggerChildren: 0.05,
-        }
-    },
-    collapsed: {
-        opacity: 0,
-        height: 0,
-        transition: {
-            type: 'spring',
-            stiffness: 400,
-            damping: 40,
-            when: "afterChildren",
-            staggerChildren: 0.05,
-            staggerDirection: -1
-        }
-    }
-};
-
-
-export function AiStudyBuddy({ user, isFloating = false }: { user: UserProfile, isFloating?: boolean }) {
+export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: () => void }) {
     const [initialInsight, setInitialInsight] = useState<InitialInsight | null>(null);
     const [loading, setLoading] = useState(true);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
@@ -286,16 +258,36 @@ export function AiStudyBuddy({ user, isFloating = false }: { user: UserProfile, 
         setChatHistory([]);
     };
 
-    const renderHeaderControls = () => {
-        if (!isFloating && view === 'intro') return null;
-        return (
-            <div className="flex items-center gap-1">
-                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.max(s - 1, 10))}><Minus size={16}/></Button>
-                 <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize(s => Math.min(s + 1, 20))}><Plus size={16}/></Button>
-                 {isFloating && <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => alert('Expand clicked')}><Maximize size={16}/></Button>}
-            </div>
-        );
-    };
+    const renderHeaderControls = () => (
+      <div className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-white"
+          onClick={() => setFontSize((s) => Math.max(s - 1, 10))}
+        >
+          <Minus size={16} />
+        </Button>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 text-white"
+          onClick={() => setFontSize((s) => Math.min(s + 1, 20))}
+        >
+          <Plus size={16} />
+        </Button>
+        {isFloating && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 text-white"
+            onClick={onToggleExpand}
+          >
+            <Maximize size={16} />
+          </Button>
+        )}
+      </div>
+    );
 
     const renderChatHeader = () => (
          <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0">
@@ -350,53 +342,99 @@ export function AiStudyBuddy({ user, isFloating = false }: { user: UserProfile, 
     );
 
     const ChatView = () => (
-        <div className="flex flex-col h-full overflow-hidden">
-             {renderChatHeader()}
-             <div ref={chatContainerRef} className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2" style={{fontSize: `${fontSize}px`}}>
-                {chatHistory.map((message, index) => (
-                    <div key={message.text + index} className={cn("flex flex-col gap-2 group", isRtl(message.text) ? 'font-plex-arabic' : 'font-inter')}>
-                        {message.role === 'user' && (
-                             <div dir="auto" className="self-end bg-blue-600 text-white rounded-2xl px-3 py-2 max-w-[85%] whitespace-pre-wrap break-words" style={{fontSize: 'inherit'}}>
-                                {message.text}
-                            </div>
-                        )}
-                        {message.role === 'model' && (
-                             <div dir="auto" className={cn(
-                                "text-slate-300 max-w-[95%] prose prose-sm prose-invert",
-                                isRtl(message.text) ? "self-end text-right" : "self-start text-left"
-                             )} style={{fontSize: 'inherit'}}>
-                                <ReactMarkdown 
-                                    remarkPlugins={[remarkGfm]}
-                                    components={{
-                                        table: ({node, ...props}) => <table className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden" {...props} />,
-                                        thead: ({node, ...props}) => <thead className="bg-slate-800/50" {...props} />,
-                                        tr: ({node, ...props}) => <tr className="border-b border-slate-700 last:border-b-0" {...props} />,
-                                        th: ({node, ...props}) => <th className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0" {...props} />,
-                                        td: ({node, ...props}) => <td className="border-r border-slate-700 p-2 align-top" {...props} />,
-                                    }}
-                                >
-                                    {message.text}
-                                </ReactMarkdown>
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7 rounded-full text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mt-2"
-                                    onClick={() => handleCopyMessage(message.text, index)}
-                                >
-                                    {copiedMessageIndex === index ? <Check className="w-4 h-4 text-green-400" /> : <Copy className="w-4 h-4" />}
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                ))}
-                {isResponding && (
-                     <div className="self-start flex items-center gap-2 text-slate-500 text-xs">
-                        <Loader2 className="w-3 h-3 animate-spin" />
-                        <span>Thinking...</span>
-                    </div>
-                )}
+      <div className="flex flex-col h-full overflow-hidden">
+        {renderChatHeader()}
+        <div
+          ref={chatContainerRef}
+          className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2"
+          style={{ fontSize: `${fontSize}px` }}
+        >
+          {chatHistory.map((message, index) => (
+            <div
+              key={message.text + index}
+              className={cn(
+                'flex flex-col gap-2 group',
+                isRtl(message.text) ? 'font-plex-arabic' : 'font-inter'
+              )}
+            >
+              {message.role === 'user' && (
+                <div
+                  dir="auto"
+                  className="self-end bg-blue-600 text-white rounded-2xl px-3 py-2 max-w-[85%] whitespace-pre-wrap break-words"
+                  style={{ fontSize: 'inherit' }}
+                >
+                  {message.text}
+                </div>
+              )}
+              {message.role === 'model' && (
+                <div
+                  dir="auto"
+                  className={cn(
+                    'text-slate-300 max-w-[95%] prose prose-sm prose-invert',
+                    isRtl(message.text)
+                      ? 'self-end text-right'
+                      : 'self-start text-left'
+                  )}
+                  style={{ fontSize: 'inherit' }}
+                >
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      table: ({ node, ...props }) => (
+                        <table
+                          className="w-full my-4 border-collapse border border-slate-700 rounded-lg overflow-hidden"
+                          {...props}
+                        />
+                      ),
+                      thead: ({ node, ...props }) => (
+                        <thead className="bg-slate-800/50" {...props} />
+                      ),
+                      tr: ({ node, ...props }) => (
+                        <tr
+                          className="border-b border-slate-700 last:border-b-0"
+                          {...props}
+                        />
+                      ),
+                      th: ({ node, ...props }) => (
+                        <th
+                          className="border-r border-slate-700 p-2 text-left text-white font-semibold last:border-r-0"
+                          {...props}
+                        />
+                      ),
+                      td: ({ node, ...props }) => (
+                        <td
+                          className="border-r border-slate-700 p-2 align-top"
+                          {...props}
+                        />
+                      ),
+                    }}
+                  >
+                    {message.text}
+                  </ReactMarkdown>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-7 w-7 rounded-full text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity mt-2"
+                    onClick={() => handleCopyMessage(message.text, index)}
+                  >
+                    {copiedMessageIndex === index ? (
+                      <Check className="w-4 h-4 text-green-400" />
+                    ) : (
+                      <Copy className="w-4 h-4" />
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
+          ))}
+          {isResponding && (
+            <div className="self-start flex items-center gap-2 text-slate-500 text-xs">
+              <Loader2 className="w-3 h-3 animate-spin" />
+              <span>Thinking...</span>
+            </div>
+          )}
         </div>
+      </div>
     );
     
     const ContentSwitch = () => {
@@ -425,7 +463,7 @@ export function AiStudyBuddy({ user, isFloating = false }: { user: UserProfile, 
                 className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full flex-1", isFloating ? "h-full" : "")}
                 style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 170% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}
             >
-                <div className="flex items-center justify-between gap-3 sm:gap-4">
+                <div className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0">
                     <div className="flex items-center gap-3 sm:gap-4 flex-1">
                         <div className="flex-shrink-0">
                             <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
