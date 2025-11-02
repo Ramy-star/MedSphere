@@ -288,7 +288,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     }, [theme, user, toast, chatHistory, currentChatId]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
-        setCustomQuestion(suggestion.prompt);
+        if (view !== 'chat') {
+            startNewChat();
+        }
+        submitQuery(suggestion.prompt, []);
     };
 
     const handleCustomQuestionSubmit = () => {
@@ -296,10 +299,13 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         const filesToSend = [...referencedFiles];
     
         if (!questionToSend && filesToSend.length === 0) return;
+        
+        if (view !== 'chat') {
+            startNewChat();
+        }
     
         submitQuery(questionToSend, filesToSend);
         setCustomQuestion('');
-        // We keep the referencedFiles until the user manually removes them
     };
     
     const handleFileSelect = (file: Content) => {
@@ -384,29 +390,17 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
     const renderHeaderControls = () => (
       <div className="flex items-center gap-1">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-white"
-          onClick={() => setFontSize((s) => Math.max(s - 1, 10))}
-        >
-          <Minus size={16} />
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setView('history')}>
+            <History size={16} />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-7 w-7 text-white"
-          onClick={() => setFontSize((s) => Math.min(s + 1, 20))}
-        >
-          <Plus size={16} />
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize((s) => Math.max(s - 1, 10))}>
+            <Minus size={16} />
+        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize((s) => Math.min(s + 1, 20))}>
+            <Plus size={16} />
         </Button>
         {isFloating && onToggleExpand && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-white"
-            onClick={onToggleExpand}
-          >
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={onToggleExpand}>
             <Maximize size={16} />
           </Button>
         )}
@@ -428,7 +422,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                 <div className="flex items-center gap-3 sm:gap-4 flex-1">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0" />
                     <div className="flex-1 space-y-2">
-                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-5 w-40" />
                     </div>
                 </div>
                 <div className="flex items-center gap-1">
@@ -495,12 +489,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                     </motion.div>
                 ))}
             </div>
-             <div className="flex items-end gap-2">
-                <Button onClick={() => setView('history')} variant="ghost" className="text-xs text-slate-400 hover:text-white mt-2">
-                    <History className="w-3 h-3 mr-1.5" />
-                    Chat History
-                </Button>
-            </div>
         </>
     );
 
@@ -509,6 +497,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         {renderChatHeader()}
         <div
           ref={chatContainerRef}
+          dir="auto"
           className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2"
           style={{ fontSize: `${fontSize}px` }}
         >
@@ -628,7 +617,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                         </div>
                         <AlertDialog>
                             <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-500 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); }}>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-500 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setItemToDelete(session); }}>
                                     <Trash2 size={16} />
                                 </Button>
                             </AlertDialogTrigger>
@@ -766,4 +755,3 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         </div>
     );
 }
-
