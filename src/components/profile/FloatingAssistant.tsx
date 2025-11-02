@@ -1,13 +1,14 @@
 'use client';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuthStore } from '@/stores/auth-store';
+import type { UserProfile } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { AiStudyBuddy } from './AiStudyBuddy';
 import { X, Maximize, Shrink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Button } from '../ui/button';
 
-export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthStore.getState>['user'] }) => {
+export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
     const [isOpen, setIsOpen] = useState(false);
     const [isExpanded, setIsExpanded] = useState(false);
 
@@ -17,9 +18,12 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
 
     const toggleExpand = () => setIsExpanded(prev => !prev);
     
-    const handleClose = () => {
-        setIsOpen(false);
-        setIsExpanded(false); // Make sure to reset expanded state as well
+    const handleToggleOpen = () => {
+        setIsOpen(prev => !prev);
+        if (isOpen) {
+            // If we are closing, make sure expanded is also false.
+            setIsExpanded(false);
+        }
     };
 
     const containerVariants = {
@@ -55,7 +59,7 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                        onClick={handleClose}
+                        onClick={handleToggleOpen}
                     />
                 )}
             </AnimatePresence>
@@ -91,15 +95,15 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
                 </motion.div>
                 
                  <motion.button
-                    onClick={() => setIsOpen(!isOpen)}
+                    onClick={handleToggleOpen}
                     className={cn(
-                        "w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex items-center justify-center absolute",
-                         isOpen ? "bottom-[calc(100%_-_24px)] right-0" : "bottom-0 right-0"
+                        "w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex items-center justify-center absolute",
+                         isOpen ? "bottom-[calc(100%_-_28px)] right-0" : "bottom-0 right-0"
                     )}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
                     aria-label={isOpen ? "Close Study Buddy" : "Open Study Buddy"}
-                    animate={isOpen ? { width: 40, height: 40 } : { width: 56, height: 56 } }
+                    animate={isOpen ? { width: 48, height: 48 } : { width: 56, height: 56 } }
                 >
                     <AnimatePresence mode="wait">
                         <motion.div
