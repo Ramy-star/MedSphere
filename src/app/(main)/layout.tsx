@@ -12,6 +12,9 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ImageIcon } from "lucide-react";
 import { Header } from "@/components/header";
 import { FloatingAssistant } from "@/components/profile/FloatingAssistant";
+import { useEffect, useState, useMemo } from 'react';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import type { Content } from '@/lib/contentService';
 
 
 export default function MainLayout({
@@ -26,6 +29,59 @@ export default function MainLayout({
   const isHomePage = pathname === '/';
   const isQuestionsCreatorPage = pathname.startsWith('/questions-creator');
   const isProfilePage = pathname === '/profile';
+
+  const [isLevel2Descendant, setIsLevel2Descendant] = useState(false);
+  const { data: allContent } = useCollection<Content>('content');
+
+  const itemMap = useMemo(() => {
+    if (!allContent) return new Map();
+    return new Map(allContent.map(item => [item.id, item]));
+  }, [allContent]);
+
+  useEffect(() => {
+    if (pathname === '/' || !allContent || allContent.length === 0) {
+      setIsLevel2Descendant(false);
+      return;
+    }
+
+    const pathSegments = pathname.split('/').filter(Boolean);
+    const firstSegment = pathSegments[0];
+    const secondSegment = pathSegments[1];
+    let currentItem: Content | undefined;
+
+    if (firstSegment === 'folder' && secondSegment) {
+      currentItem = itemMap.get(secondSegment);
+    } else if (firstSegment === 'level' && secondSegment) {
+      const levelName = decodeURIComponent(secondSegment);
+      currentItem = allContent.find(item => item.type === 'LEVEL' && item.name === levelName);
+    } else {
+      setIsLevel2Descendant(false);
+      return;
+    }
+
+    if (!currentItem) {
+      setIsLevel2Descendant(false);
+      return;
+    }
+
+    if (currentItem.type === 'LEVEL' && currentItem.name === 'Level 2') {
+      setIsLevel2Descendant(true);
+      return;
+    }
+
+    const findLevel2Parent = (itemId: string | null): boolean => {
+      if (!itemId) return false;
+      const item = itemMap.get(itemId);
+      if (!item) return false;
+      if (item.type === 'LEVEL' && item.name === 'Level 2') {
+        return true;
+      }
+      return findLevel2Parent(item.parentId);
+    };
+
+    setIsLevel2Descendant(findLevel2Parent(currentItem.id));
+
+  }, [pathname, allContent, itemMap]);
 
   return (
     <>
@@ -80,6 +136,11 @@ export default function MainLayout({
           )}>
             {children}
           </div>
+           {isLevel2Descendant && (
+            <div className="text-center py-3 text-sm text-slate-400 font-sans flex-shrink-0 mt-auto">
+                <em className="italic">Powered by</em> <strong className="font-bold text-yellow-400 text-base">Spark Lab</strong>
+            </div>
+        )}
         </motion.main>
       </div>
       {!isProfilePage && user && <FloatingAssistant user={user} />}

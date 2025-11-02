@@ -65,11 +65,6 @@ export default function LevelPage({ params }: { params: { levelName: string } })
                 </div>
             )}
         </div>
-         {decodedLevelName === 'Level 2' && (
-            <div className="text-center py-3 text-sm text-slate-400 font-sans flex-shrink-0">
-                <em className="italic">Powered by</em> <strong className="font-bold text-yellow-400">Spark Lab</strong>
-            </div>
-        )}
     </motion.div>
   );
 }
