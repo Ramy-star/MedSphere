@@ -177,7 +177,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         if (!theme) return;
 
         setView('chat');
-        const currentHistory = get().chatHistory;
+        const currentHistory = chatHistory;
         const newHistory: ChatMessage[] = [...currentHistory, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
         setChatHistory(newHistory);
         setIsResponding(true);
@@ -231,7 +231,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         } finally {
             setIsResponding(false);
         }
-    }, [theme, user, toast]);
+    }, [theme, user, toast, chatHistory]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
         submitQuery(suggestion.prompt, []);
