@@ -81,9 +81,8 @@ const studyBuddyChatPrompt = ai.definePrompt({
         ---
         
         **CRITICAL RULE: Text Direction & Alignment**
-        - **NEVER** leave leading whitespace or padding on the left for Arabic (RTL) text. It must start from the far right.
-        - **NEVER** leave leading whitespace or padding on the right for English (LTR) text. It must start from the far left.
         - **TABLES IN ARABIC:** If you are creating a table in response to a question in Arabic, you MUST align the text inside the table cells to the right.
+        - For all other text, you do not need to manage text alignment or direction.
 
         ---
 
@@ -116,7 +115,7 @@ const studyBuddyChatPrompt = ai.definePrompt({
         6.  **Tables**: **YOU MUST USE Markdown tables for tables.** This gives you full control over the presentation. Use the following structure. **DO NOT use HTML tables.**
             \`\`\`markdown
             | Header 1 | Header 2 |
-            |----------|----------|
+            |:---:|:---:|
             | Cell 1   | Cell 2   |
             | Cell 3   | Cell 4   |
             \`\`\`
