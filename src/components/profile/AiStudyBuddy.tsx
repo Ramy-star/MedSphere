@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy, Paperclip, X, History, Trash2 } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy, Paperclip, X, History, Trash2, StickyNote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
@@ -132,9 +132,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
     const filteredFiles = useMemo(() => {
         if (!allFiles) return [];
-        const pdfFiles = allFiles.filter(item => item.type === 'FILE' && item.metadata?.mime === 'application/pdf');
-        if (!fileSearchQuery) return pdfFiles.slice(0, 10);
-        return pdfFiles.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
+        // Search all files and folders, not just PDFs
+        if (!fileSearchQuery) return allFiles.slice(0, 10);
+        return allFiles.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
     }, [allFiles, fileSearchQuery]);
 
 
@@ -223,14 +223,19 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         if (!theme) return;
     
         const isNewChat = view === 'intro' || currentChatId === null;
-        const activeChatId = isNewChat ? null : currentChatId;
-        const historyForThisQuery = isNewChat ? [] : chatHistory;
+        let activeChatId = currentChatId;
+
+        if (isNewChat) {
+          activeChatId = null; // Ensure it's a new chat
+          setChatHistory([]); // Clear local history for new chat
+        }
         
         setView('chat');
-        const newHistory: ChatMessage[] = [...historyForThisQuery, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
-        setChatHistory(newHistory);
+        const newHistoryForThisTurn: ChatMessage[] = [...(isNewChat ? [] : chatHistory), { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
+        setChatHistory(newHistoryForThisTurn);
         setIsResponding(true);
         setCustomQuestion('');
+        setReferencedFiles([]); // Clear referenced files after sending
         
         let fileContent = '';
         try {
@@ -266,11 +271,11 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             const response = await answerStudyBuddyQuery({
                 userStats,
                 question: fullPrompt,
-                chatHistory: historyForThisQuery,
+                chatHistory: isNewChat ? [] : chatHistory,
                 referencedFileContent: fileContent,
             });
             
-            const finalHistory = [...newHistory, { role: 'model', text: response }];
+            const finalHistory = [...newHistoryForThisTurn, { role: 'model', text: response }];
             setChatHistory(finalHistory);
             
             const newChatId = await saveChatSession(finalHistory, activeChatId);
@@ -387,8 +392,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             
             if (currentChatId === itemToDelete.id) {
                 startNewChat();
-            } else {
-                setView('history');
             }
         } catch (error) {
             console.error("Error deleting chat:", error);
@@ -419,7 +422,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         </Button>
         {isFloating && onToggleExpand && (
           <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={onToggleExpand}>
-            <Maximize size={16} />
+            {isFloating ? <Shrink size={16} /> : <Maximize size={16} />}
           </Button>
         )}
       </div>
@@ -427,7 +430,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
     const renderChatHeader = () => (
          <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0 sticky top-0 z-10 bg-[rgba(30,41,59,0.5)] backdrop-blur-sm -mx-4 px-4 pt-3 pb-2">
-             <Button onClick={startNewChat} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
+             <Button onClick={() => setView('intro')} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                 <ArrowLeft className="w-4 h-4" />
             </Button>
             {renderHeaderControls()}
@@ -626,33 +629,40 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                 <div className="w-7"></div>
             </div>
             <div className="flex-1 space-y-2 overflow-y-auto no-scrollbar pr-2 -mr-2">
-                {savedSessions?.map(session => (
-                    <div key={session.id} className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/60 cursor-pointer" onClick={() => handleLoadChat(session)}>
-                        <div className="truncate">
-                            <p className="text-sm text-white truncate">{session.title}</p>
-                            <p className="text-xs text-slate-400 mt-0.5">{formatDate(session.createdAt)}</p>
-                        </div>
-                        <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-500 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setItemToDelete(session); }}>
-                                    <Trash2 size={16} />
-                                </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                                <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will permanently delete this chat history.
-                                    </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={handleDeleteSession} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-                                </AlertDialogFooter>
-                            </AlertDialogContent>
-                        </AlertDialog>
+                {!savedSessions || savedSessions.length === 0 ? (
+                    <div className="text-center text-slate-400 pt-10">
+                        <StickyNote className="mx-auto h-10 w-10 text-slate-500" />
+                        <p className="mt-4 text-sm">No saved chats yet.</p>
                     </div>
-                ))}
+                ) : (
+                    savedSessions?.map(session => (
+                        <div key={session.id} className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/60 cursor-pointer" onClick={() => handleLoadChat(session)}>
+                            <div className="truncate">
+                                <p className="text-sm text-white truncate">{session.title}</p>
+                                <p className="text-xs text-slate-400 mt-0.5">{formatDate(session.createdAt)}</p>
+                            </div>
+                            <AlertDialog open={itemToDelete?.id === session.id} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-500 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setItemToDelete(session); }}>
+                                        <Trash2 size={16} />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This will permanently delete this chat history.
+                                        </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                        <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={handleDeleteSession} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    ))
+                )}
             </div>
         </div>
     );
@@ -710,10 +720,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                                     <PopoverContent
                                         side="top"
                                         align="start"
-                                        className="w-full sm:w-[500px] p-2 bg-slate-900 border-slate-700"
+                                        className="w-full sm:w-[400px] p-2 bg-slate-900 border-slate-700"
                                         onOpenAutoFocus={(e) => e.preventDefault()}
                                     >
-                                        <div className="text-xs text-slate-400 p-2">Mention a PDF file...</div>
+                                        <div className="text-xs text-slate-400 p-2">Mention a file...</div>
                                         <div className="max-h-60 overflow-y-auto no-scrollbar">
                                             {filteredFiles.map(file => (
                                                 <button
