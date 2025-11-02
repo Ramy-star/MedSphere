@@ -1,8 +1,9 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy, Paperclip, X } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy, Paperclip, X, History, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
@@ -22,6 +23,9 @@ import { FileText } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { create } from 'zustand';
+import { db } from '@/firebase';
+import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc } from 'firebase/firestore';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 
 if (typeof window !== 'undefined') {
@@ -43,6 +47,15 @@ type ChatMessage = {
     role: 'user' | 'model';
     text: string;
     referencedFiles?: Content[];
+};
+
+export type AiBuddyChatSession = {
+  id: string;
+  userId: string;
+  title: string;
+  messages: ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 type TimeOfDayTheme = {
@@ -99,7 +112,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isResponding, setIsResponding] = useState(false);
     const [customQuestion, setCustomQuestion] = useState('');
-    const [view, setView] = useState<'intro' | 'chat'>('intro');
+    const [view, setView] = useState<'intro' | 'chat' | 'history'>('intro');
+    const [currentChatId, setCurrentChatId] = useState<string | null>(null);
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -108,8 +122,12 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const [showFileSearch, setShowFileSearch] = useState(false);
     const [fileSearchQuery, setFileSearchQuery] = useState('');
     const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
+    const [itemToDelete, setItemToDelete] = useState<AiBuddyChatSession | null>(null);
+
 
     const { data: allFiles } = useCollection<Content>('content');
+    const { data: savedSessions } = useCollection<AiBuddyChatSession>(`users/${user.id}/aiBuddySessions`, { orderBy: ['createdAt', 'desc'] });
+
     
     const isOpen = true; // Simplified for clarity, assuming it's always open when rendered
 
@@ -172,10 +190,39 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         fetchInitialInsight();
     }, [fetchInitialInsight]);
 
+    const saveChatSession = async (history: ChatMessage[], chatId: string | null) => {
+        if (!user || history.length === 0) return chatId;
+    
+        const firstUserMessage = history.find(m => m.role === 'user')?.text || 'New Chat';
+        const title = firstUserMessage.substring(0, 40) + (firstUserMessage.length > 40 ? '...' : '');
+    
+        const sessionData = {
+            userId: user.id,
+            title,
+            messages: history,
+            updatedAt: serverTimestamp(),
+        };
+    
+        const collectionRef = collection(db, `users/${user.id}/aiBuddySessions`);
+        
+        if (chatId) {
+            const docRef = doc(collectionRef, chatId);
+            await updateDoc(docRef, sessionData);
+            return chatId;
+        } else {
+            const newDocRef = await addDoc(collectionRef, {
+                ...sessionData,
+                createdAt: serverTimestamp(),
+            });
+            return newDocRef.id;
+        }
+    };
+
+
     const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[]) => {
         if (!prompt && filesToSubmit.length === 0) return;
         if (!theme) return;
-
+    
         setView('chat');
         const newHistory: ChatMessage[] = [...chatHistory, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
         setChatHistory(newHistory);
@@ -211,14 +258,22 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             const fullPrompt = filesToSubmit.length > 0
                 ? `Using the content of the attached file(s) (${filesToSubmit.map(f => `"${f.name}"`).join(', ')}) as context, answer the following: ${prompt}`
                 : prompt;
-
+    
             const response = await answerStudyBuddyQuery({
                 userStats,
                 question: fullPrompt,
                 chatHistory: newHistory.slice(0, -1),
                 referencedFileContent: fileContent,
             });
-            setChatHistory(prev => [...prev, { role: 'model', text: response }]);
+            
+            const finalHistory = [...newHistory, { role: 'model', text: response }];
+            setChatHistory(finalHistory);
+            
+            const newChatId = await saveChatSession(finalHistory, currentChatId);
+            if (!currentChatId) {
+                setCurrentChatId(newChatId);
+            }
+    
         } catch (e) {
             console.error("Failed to get answer from study buddy", e);
              toast({
@@ -230,21 +285,20 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         } finally {
             setIsResponding(false);
         }
-    }, [theme, user, toast, chatHistory]);
+    }, [theme, user, toast, chatHistory, currentChatId]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
-        submitQuery(suggestion.prompt, []);
+        setCustomQuestion(suggestion.prompt);
     };
 
     const handleCustomQuestionSubmit = () => {
         const questionToSend = customQuestion.trim();
         const filesToSend = [...referencedFiles];
-
+    
         if (!questionToSend && filesToSend.length === 0) return;
-
+    
         submitQuery(questionToSend, filesToSend);
         setCustomQuestion('');
-        setReferencedFiles([]);
     };
     
     const handleFileSelect = (file: Content) => {
@@ -303,9 +357,28 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         }
     };
     
-    const handleBackToIntro = () => {
-        setView('intro');
+    const startNewChat = () => {
         setChatHistory([]);
+        setReferencedFiles([]);
+        setCustomQuestion('');
+        setCurrentChatId(null);
+        setView('intro');
+    };
+    
+    const handleLoadChat = (session: AiBuddyChatSession) => {
+        setChatHistory(session.messages);
+        const lastUserMessage = session.messages.findLast(m => m.role === 'user');
+        setReferencedFiles(lastUserMessage?.referencedFiles || []);
+        setCurrentChatId(session.id);
+        setView('chat');
+    };
+    
+    const handleDeleteSession = async () => {
+        if (!itemToDelete || !user) return;
+        const docRef = doc(db, `users/${user.id}/aiBuddySessions`, itemToDelete.id);
+        await deleteDoc(docRef);
+        setItemToDelete(null);
+        toast({ title: "Chat deleted" });
     };
 
     const renderHeaderControls = () => (
@@ -341,7 +414,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
     const renderChatHeader = () => (
          <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0 sticky top-0 z-10 bg-[rgba(30,41,59,0.5)] backdrop-blur-sm -mx-4 px-4 pt-3 pb-2">
-             <Button onClick={handleBackToIntro} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
+             <Button onClick={() => setView('intro')} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                 <ArrowLeft className="w-4 h-4" />
             </Button>
             {renderHeaderControls()}
@@ -350,13 +423,13 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
     const LoadingSkeleton = () => (
         <div className="flex flex-col h-full">
-            <div className="p-4 space-y-2 flex-1">
-                <Skeleton className="h-4 w-4/5" />
-                <Skeleton className="h-4 w-3/5" />
+            <div className="flex-1 p-4 space-y-2">
+                <Skeleton className="w-4/5 h-4" />
+                <Skeleton className="w-3/5 h-4" />
             </div>
-            <div className="p-4 flex gap-2 flex-shrink-0">
-                <Skeleton className="h-8 w-24 rounded-full" />
-                <Skeleton className="h-8 w-28 rounded-full" />
+            <div className="flex-shrink-0 p-4 flex gap-2">
+                <Skeleton className="w-24 h-8 rounded-full" />
+                <Skeleton className="w-28 h-8 rounded-full" />
             </div>
         </div>
     );
@@ -364,7 +437,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const IntroView = () => (
         <>
             <div style={{color: theme!.textColor}}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight!.mainInsight}</ReactMarkdown>
+                 <div className="flex items-center justify-between">
+                     <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight!.mainInsight}</ReactMarkdown>
+                     <Button onClick={() => setView('history')} variant="ghost" size="icon" className="h-8 w-8 text-white"><History className="w-4 h-4" /></Button>
+                 </div>
             </div>
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
                 {initialInsight!.suggestedActions.map((suggestion, index) => (
@@ -494,12 +570,53 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
       </div>
     );
     
-    const ContentSwitch = () => {
-        return (
-            <div className="flex-1 min-h-0 pt-4 flex flex-col">
-                 {view === 'intro' ? <IntroView /> : <ChatView />}
+    const HistoryView = () => (
+        <div className="flex flex-col h-full overflow-hidden">
+            <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0 sticky top-0 z-10 bg-[rgba(30,41,59,0.5)] backdrop-blur-sm -mx-4 px-4 pt-3 pb-2">
+                <Button onClick={() => setView('intro')} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
+                    <ArrowLeft className="w-4 h-4" />
+                </Button>
+                <h4 className="text-white font-semibold">Chat History</h4>
+                <div className="w-7"></div>
             </div>
-        );
+            <div className="flex-1 space-y-2 overflow-y-auto no-scrollbar pr-2 -mr-2">
+                {savedSessions?.map(session => (
+                    <div key={session.id} className="group flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/60 cursor-pointer" onClick={() => handleLoadChat(session)}>
+                        <div className="truncate">
+                            <p className="text-sm text-white truncate">{session.title}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">{new Date(session.createdAt).toLocaleDateString()}</p>
+                        </div>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-500 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); }}>
+                                    <Trash2 size={16} />
+                                </Button>
+                            </AlertDialogTrigger>
+                             <AlertDialogContent>
+                                <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete this chat history.
+                                    </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteSession()} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+
+    const ContentSwitch = () => {
+        if (loading || !theme || !initialInsight) return <LoadingSkeleton />;
+        if (view === 'intro') return <IntroView />;
+        if (view === 'chat') return <ChatView />;
+        if (view === 'history') return <HistoryView />;
+        return null;
     };
 
     return (
@@ -520,113 +637,116 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1, transition: { delay: 0.1 } }}
                         exit={{ opacity: 0 }}
-                        className="flex flex-col h-full"
+                        className="flex flex-col flex-1 min-h-0"
                     >
-                        <motion.div
-                            key={isFloating ? "floating-header" : "static-header"}
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0"
-                          >
-                            <div className="flex items-center gap-3 sm:gap-4 flex-1">
-                                <div className="flex-shrink-0">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
-                                        <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                                    </div>
-                                </div>
-                                <div className="flex-1 text-left">
-                                    {loading || !theme ? (
-                                        <Skeleton className="h-5 w-40" />
-                                    ) : (
-                                     <h3 className="text-sm sm:text-base font-bold text-white">
-                                        {theme.greeting}
-                                    </h3>
-                                    )}
-                                </div>
-                            </div>
-                            {(!loading && theme) && view === 'intro' && renderHeaderControls()}
-                        </motion.div>
-
                         <div className="flex-1 flex flex-col min-h-0">
-                            {loading || !theme || !initialInsight ? (
-                                <LoadingSkeleton />
-                            ) : (
-                                <>
-                                    <ContentSwitch />
-                                    <motion.div 
-                                        className="flex flex-col gap-2 mt-2 flex-shrink-0"
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
-                                    >
-                                        <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
-                                            <PopoverTrigger asChild>
-                                                <div className="w-full"></div>
-                                            </PopoverTrigger>
-                                            <PopoverContent
-                                                side="top"
-                                                align="start"
-                                                className="w-full sm:w-[500px] p-2 bg-slate-900 border-slate-700"
-                                                onOpenAutoFocus={(e) => e.preventDefault()}
-                                            >
-                                                <div className="text-xs text-slate-400 p-2">Mention a PDF file...</div>
-                                                <div className="max-h-60 overflow-y-auto no-scrollbar">
-                                                    {filteredFiles.map(file => (
-                                                        <button
-                                                            key={file.id}
-                                                            onClick={() => handleFileSelect(file)}
-                                                            className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-red-400" />
-                                                            <span className="truncate">{file.name}</span>
-                                                        </button>
-                                                    ))}
+                           <motion.div
+                                key={view}
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                transition={{ duration: 0.2 }}
+                                className="flex flex-col h-full"
+                            >
+                                {view === 'intro' && (
+                                     <div className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0">
+                                        <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                                            <div className="flex-shrink-0">
+                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
+                                                    <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
                                                 </div>
-                                            </PopoverContent>
-                                        </Popover>
-                                        
-                                         <div className="flex items-end gap-2 bg-slate-800/60 border border-slate-700 rounded-xl p-1">
-                                            <div className="flex flex-col flex-1">
-                                                {referencedFiles.length > 0 && (
-                                                    <div className="flex flex-wrap gap-2 px-2 pt-2">
-                                                        {referencedFiles.map(file => (
-                                                            <ReferencedFilePill
-                                                                key={file.id}
-                                                                file={file}
-                                                                onRemove={() => setReferencedFiles(prev => prev.filter(f => f.id !== file.id))}
-                                                            />
-                                                        ))}
-                                                    </div>
-                                                )}
-                                                <Textarea
-                                                    ref={textareaRef}
-                                                    placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up, or type '@' to reference a file."}
-                                                    className={cn("bg-transparent border-0 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
-                                                    value={customQuestion}
-                                                    onChange={handleQuestionChange}
-                                                    onKeyDown={handleCustomQuestionKeyDown}
-                                                    disabled={isResponding}
-                                                    rows={1}
-                                                    dir="auto"
-                                                />
                                             </div>
-
-                                            <Button 
-                                                size="icon" 
-                                                className="rounded-full h-9 w-9 flex-shrink-0"
-                                                onClick={handleCustomQuestionSubmit}
-                                                disabled={isResponding || (!customQuestion.trim() && referencedFiles.length === 0)}
-                                            >
-                                                <ArrowUp className="w-4 h-4" />
-                                            </Button>
+                                            <div className="flex-1 text-left">
+                                                {loading || !theme ? (
+                                                    <Skeleton className="h-5 w-40" />
+                                                ) : (
+                                                 <h3 className="text-sm sm:text-base font-bold text-white">
+                                                    {theme.greeting}
+                                                </h3>
+                                                )}
+                                            </div>
                                         </div>
-                                    </motion.div>
-                                </>
-                            )}
+                                        {(!loading && theme) && renderHeaderControls()}
+                                    </div>
+                                )}
+                                <div className={cn("flex-1 flex flex-col min-h-0", view === 'intro' ? "mt-2 sm:mt-3" : "")}>
+                                    <ContentSwitch />
+                                </div>
+                            </motion.div>
                         </div>
+                        {view !== 'history' && (
+                            <motion.div 
+                                className="flex flex-col gap-2 mt-2 flex-shrink-0"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
+                            >
+                                <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
+                                    <PopoverTrigger asChild>
+                                        <div className="w-full"></div>
+                                    </PopoverTrigger>
+                                    <PopoverContent
+                                        side="top"
+                                        align="start"
+                                        className="w-full sm:w-[500px] p-2 bg-slate-900 border-slate-700"
+                                        onOpenAutoFocus={(e) => e.preventDefault()}
+                                    >
+                                        <div className="text-xs text-slate-400 p-2">Mention a PDF file...</div>
+                                        <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                            {filteredFiles.map(file => (
+                                                <button
+                                                    key={file.id}
+                                                    onClick={() => handleFileSelect(file)}
+                                                    className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
+                                                >
+                                                    <FileText className="w-4 h-4 text-red-400" />
+                                                    <span className="truncate">{file.name}</span>
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </PopoverContent>
+                                </Popover>
+                                
+                                 <div className="flex items-end gap-2 bg-slate-800/60 border border-slate-700 rounded-xl p-1">
+                                    <div className="flex flex-col flex-1">
+                                        {referencedFiles.length > 0 && (
+                                            <div className="flex flex-wrap gap-2 px-2 pt-2">
+                                                {referencedFiles.map(file => (
+                                                    <ReferencedFilePill
+                                                        key={file.id}
+                                                        file={file}
+                                                        onRemove={() => setReferencedFiles(prev => prev.filter(f => f.id !== file.id))}
+                                                    />
+                                                ))}
+                                            </div>
+                                        )}
+                                        <Textarea
+                                            ref={textareaRef}
+                                            placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up, or type '@' to reference a file."}
+                                            className={cn("bg-transparent border-0 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
+                                            value={customQuestion}
+                                            onChange={handleQuestionChange}
+                                            onKeyDown={handleCustomQuestionKeyDown}
+                                            disabled={isResponding}
+                                            rows={1}
+                                            dir="auto"
+                                        />
+                                    </div>
+
+                                    <Button 
+                                        size="icon" 
+                                        className="rounded-full h-9 w-9 flex-shrink-0"
+                                        onClick={handleCustomQuestionSubmit}
+                                        disabled={isResponding || (!customQuestion.trim() && referencedFiles.length === 0)}
+                                    >
+                                        <ArrowUp className="w-4 h-4" />
+                                    </Button>
+                                </div>
+                            </motion.div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>
         </div>
     );
 }
+
