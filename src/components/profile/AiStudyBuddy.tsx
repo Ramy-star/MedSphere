@@ -119,6 +119,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const [fontSize, setFontSize] = useState(14);
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
+    const [fileSearchQuery, setFileSearchQuery] = useState('');
     const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
     const [itemToDelete, setItemToDelete] = useState<AiBuddyChatSession | null>(null);
 
@@ -217,10 +218,11 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     }, [user]);
 
 
-    const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[], isNewChat: boolean) => {
+    const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[]) => {
         if (!prompt && filesToSubmit.length === 0) return;
         if (!theme) return;
     
+        const isNewChat = view === 'intro' || currentChatId === null;
         const activeChatId = isNewChat ? null : currentChatId;
         const historyForThisQuery = isNewChat ? [] : chatHistory;
         
@@ -228,7 +230,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         const newHistory: ChatMessage[] = [...historyForThisQuery, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
         setChatHistory(newHistory);
         setIsResponding(true);
-        // Do not clear referencedFiles here. Let the user clear it manually.
         setCustomQuestion('');
         
         let fileContent = '';
@@ -273,7 +274,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             setChatHistory(finalHistory);
             
             const newChatId = await saveChatSession(finalHistory, activeChatId);
-            setCurrentChatId(newChatId);
+            if(isNewChat) {
+                setCurrentChatId(newChatId);
+            }
     
         } catch (e) {
             console.error("Failed to get answer from study buddy", e);
@@ -286,10 +289,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         } finally {
             setIsResponding(false);
         }
-    }, [theme, user, toast, chatHistory, currentChatId, saveChatSession]);
+    }, [theme, user, toast, chatHistory, currentChatId, saveChatSession, view]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
-        submitQuery(suggestion.prompt, [], true); // Always start a new chat from suggestion
+        submitQuery(suggestion.prompt, []);
     };
 
     const handleCustomQuestionSubmit = () => {
@@ -298,11 +301,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
         if (!questionToSend && filesToSend.length === 0) return;
         
-        // If we are in the intro view, it's a new chat.
-        // If we are in the chat view, it's a follow-up to the current chat.
-        const isNewChat = view === 'intro';
-
-        submitQuery(questionToSend, filesToSend, isNewChat);
+        submitQuery(questionToSend, filesToSend);
     };
     
     const handleFileSelect = (file: Content) => {
@@ -371,8 +370,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
     const handleLoadChat = (session: AiBuddyChatSession) => {
         setChatHistory(session.messages);
-        // We don't restore referenced files from history automatically.
-        setReferencedFiles([]);
+        setReferencedFiles([]); // Don't restore referenced files from history.
         setCurrentChatId(session.id);
         setView('chat');
     };
@@ -387,15 +385,16 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             await deleteDoc(docRef);
             toast({ title: "Chat deleted" });
             
-            // If the deleted chat was the currently active one, reset the view.
             if (currentChatId === itemToDelete.id) {
                 startNewChat();
+            } else {
+                setView('history');
             }
         } catch (error) {
             console.error("Error deleting chat:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not delete chat." });
         } finally {
-            setItemToDelete(null); // Close the dialog
+            setItemToDelete(null); 
         }
     };
 
@@ -634,12 +633,12 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                             <p className="text-xs text-slate-400 mt-0.5">{formatDate(session.createdAt)}</p>
                         </div>
                         <AlertDialog>
-                             <AlertDialogTrigger asChild>
+                            <AlertDialogTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-500 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setItemToDelete(session); }}>
                                     <Trash2 size={16} />
                                 </Button>
                             </AlertDialogTrigger>
-                             <AlertDialogContent>
+                            <AlertDialogContent>
                                 <AlertDialogHeader>
                                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                     <AlertDialogDescription>
