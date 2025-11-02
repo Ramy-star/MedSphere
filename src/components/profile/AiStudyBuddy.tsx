@@ -92,7 +92,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const [fontSize, setFontSize] = useState(14);
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
-    const [fileSearchQuery, setFileSearchQuery] = useState('');
     const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
 
     const { data: allFiles } = useCollection<Content>('content');
@@ -160,8 +159,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         fetchInitialInsight(currentTheme.greeting);
     }, [fetchInitialInsight, getThemeForTime]);
 
-    const submitQuery = useCallback(async (prompt: string) => {
-        if (!prompt && referencedFiles.length === 0) return;
+    const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[]) => {
+        if (!prompt && filesToSubmit.length === 0) return;
         if (!theme) return;
 
         setView('chat');
@@ -171,9 +170,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         
         let fileContent = '';
         try {
-            if (referencedFiles.length > 0) {
+            if (filesToSubmit.length > 0) {
                 const fileContents = await Promise.all(
-                    referencedFiles.map(async file => {
+                    filesToSubmit.map(async file => {
                         if (file.metadata?.storagePath) {
                             const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
                             const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
@@ -196,8 +195,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                 favoritesCount: user.favorites?.length || 0,
             };
             
-            const fullPrompt = referencedFiles.length > 0
-                ? `Using the content of the attached file(s) (${referencedFiles.map(f => `"${f.name}"`).join(', ')}) as context, answer the following: ${prompt}`
+            const fullPrompt = filesToSubmit.length > 0
+                ? `Using the content of the attached file(s) (${filesToSubmit.map(f => `"${f.name}"`).join(', ')}) as context, answer the following: ${prompt}`
                 : prompt;
 
             const response = await answerStudyBuddyQuery({
@@ -217,19 +216,22 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             setChatHistory(prev => prev.slice(0, -1));
         } finally {
             setIsResponding(false);
-            setReferencedFiles([]);
         }
-    }, [theme, user, toast, referencedFiles]);
+    }, [theme, user, toast]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
-        submitQuery(suggestion.prompt);
+        submitQuery(suggestion.prompt, []);
     };
 
     const handleCustomQuestionSubmit = () => {
-        if (!customQuestion.trim() && referencedFiles.length === 0) return;
-        const questionToSend = customQuestion;
+        const questionToSend = customQuestion.trim();
+        const filesToSend = [...referencedFiles];
+
+        if (!questionToSend && filesToSend.length === 0) return;
+
         setCustomQuestion('');
-        submitQuery(questionToSend);
+        setReferencedFiles([]);
+        submitQuery(questionToSend, filesToSend);
     };
     
     const handleFileSelect = (file: Content) => {
@@ -386,7 +388,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         >
           {chatHistory.map((message, index) => (
             <div
-              key={message.text + index}
+              key={`${message.text.slice(0, 10)}-${index}`}
               className={cn(
                 'flex flex-col gap-2 group',
                 isRtl(message.text) ? 'font-plex-arabic' : 'font-inter'
@@ -475,18 +477,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const ContentSwitch = () => {
         return (
             <div className="flex-1 min-h-0 pt-4 flex flex-col">
-                <AnimatePresence mode="wait">
-                    <motion.div
-                        key={view}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                        transition={{ duration: 0.3 }}
-                        className="h-full flex flex-col"
-                    >
-                        {view === 'intro' ? <IntroView /> : <ChatView />}
-                    </motion.div>
-                </AnimatePresence>
+                 {view === 'intro' ? <IntroView /> : <ChatView />}
             </div>
         );
     };
