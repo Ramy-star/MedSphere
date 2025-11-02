@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, use } from 'react';
@@ -6,22 +7,49 @@ import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
 import { notFound } from 'next/navigation';
 import { useDoc } from '@/firebase/firestore/use-doc';
+import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
 export default function FolderPage({ params }: { params: { id: string } }) {
-  const { id } = use(params);
+  const { id } = params;
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { toast } = useToast();
-  
+  const [isLevel2Descendant, setIsLevel2Descendant] = useState(false);
+  const { data: allContent } = useCollection<Content>('content');
+
   useEffect(() => {
     if (!loadingCurrent && !current) {
         notFound();
     }
   }, [loadingCurrent, current]);
+
+  useEffect(() => {
+    if (current && allContent) {
+      let isDescendant = false;
+      const itemMap = new Map(allContent.map(item => [item.id, item]));
+
+      const findLevel2Parent = (itemId: string | null): boolean => {
+        if (!itemId) return false;
+        const item = itemMap.get(itemId);
+        if (!item) return false;
+        if (item.type === 'LEVEL' && item.name === 'Level 2') {
+          return true;
+        }
+        return findLevel2Parent(item.parentId);
+      };
+      
+      if (current.type === 'LEVEL' && current.name === 'Level 2') {
+          isDescendant = true;
+      } else {
+          isDescendant = findLevel2Parent(current.parentId);
+      }
+      setIsLevel2Descendant(isDescendant);
+    }
+  }, [current, allContent]);
 
   const processFileUpload = useCallback(async (file: File) => {
     if (!id) return;
@@ -154,6 +182,11 @@ export default function FolderPage({ params }: { params: { id: string } }) {
                 onRetry={handleRetryUpload}
                 onRemove={handleRemoveUpload}
             />
+            {isLevel2Descendant && (
+                <div className="text-center mt-4 text-xs text-slate-500 font-sans">
+                    Powered by Spark Lab
+                </div>
+            )}
         </div>
     </motion.div>
   );
