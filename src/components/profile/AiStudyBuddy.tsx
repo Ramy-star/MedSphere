@@ -21,6 +21,8 @@ import { Content, contentService } from '@/lib/contentService';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { FileText } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
+import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+
 
 if (typeof window !== 'undefined') {
     pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -49,11 +51,30 @@ type TimeOfDayTheme = {
     iconColor: string;
 };
 
-// Helper function to detect RTL text
 const isRtl = (text: string) => {
   const rtlRegex = /[\u0591-\u07FF\uFB1D-\uFDFF\uFE70-\uFEFC]/;
   return rtlRegex.test(text);
 };
+
+const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () => void }) => (
+    <TooltipProvider>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 bg-blue-900/70 text-blue-200 text-xs font-medium pl-2 pr-1 py-0.5 rounded-full shrink-0">
+                    <Paperclip className="w-3 h-3" />
+                    <span className="truncate max-w-[100px]">{file.name}</span>
+                    <button onClick={onRemove} className="p-0.5 rounded-full hover:bg-white/20 shrink-0">
+                        <X className="w-3 h-3" />
+                    </button>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="rounded-lg bg-black text-white">
+                <p>{file.name}</p>
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
+);
+
 
 export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: () => void }) {
     const [initialInsight, setInitialInsight] = useState<InitialInsight | null>(null);
@@ -68,11 +89,11 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const messagesRef = useRef<ChatMessage[]>([]);
     const [theme, setTheme] = useState<TimeOfDayTheme | null>(null);
-    const [fontSize, setFontSize] = useState(14); // Base font size
+    const [fontSize, setFontSize] = useState(14);
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
     const [fileSearchQuery, setFileSearchQuery] = useState('');
-    const [referencedFile, setReferencedFile] = useState<Content | null>(null);
+    const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
 
     const { data: allFiles } = useCollection<Content>('content');
     
@@ -140,21 +161,29 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     }, [fetchInitialInsight, getThemeForTime]);
 
     const submitQuery = useCallback(async (prompt: string) => {
-        if (!prompt && !referencedFile) return;
+        if (!prompt && referencedFiles.length === 0) return;
         if (!theme) return;
 
         setView('chat');
-        const userMessageText = referencedFile ? `${prompt}` : prompt;
-        const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: userMessageText }];
+        const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: prompt }];
         setChatHistory(newHistory);
         setIsResponding(true);
-        let fileContent: string | undefined;
-
+        
+        let fileContent = '';
         try {
-            if (referencedFile && referencedFile.metadata?.storagePath) {
-                 const fileBlob = await contentService.getFileContent(referencedFile.metadata.storagePath);
-                 const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
-                 fileContent = await contentService.extractTextFromPdf(pdf);
+            if (referencedFiles.length > 0) {
+                const fileContents = await Promise.all(
+                    referencedFiles.map(async file => {
+                        if (file.metadata?.storagePath) {
+                            const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
+                            const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
+                            const text = await contentService.extractTextFromPdf(pdf);
+                            return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
+                        }
+                        return '';
+                    })
+                );
+                fileContent = fileContents.join('\n\n');
             }
             
             const userStats = {
@@ -167,7 +196,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                 favoritesCount: user.favorites?.length || 0,
             };
             
-            const fullPrompt = referencedFile ? `Using the file "${referencedFile.name}" as context, answer the following: ${prompt}` : prompt;
+            const fullPrompt = referencedFiles.length > 0
+                ? `Using the content of the attached file(s) (${referencedFiles.map(f => `"${f.name}"`).join(', ')}) as context, answer the following: ${prompt}`
+                : prompt;
 
             const response = await answerStudyBuddyQuery({
                 userStats,
@@ -186,25 +217,29 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             setChatHistory(prev => prev.slice(0, -1));
         } finally {
             setIsResponding(false);
-            setReferencedFile(null);
+            setReferencedFiles([]);
         }
-    }, [theme, user, toast, referencedFile]);
+    }, [theme, user, toast, referencedFiles]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
         submitQuery(suggestion.prompt);
     };
 
     const handleCustomQuestionSubmit = () => {
-        if (!customQuestion.trim() && !referencedFile) return;
+        if (!customQuestion.trim() && referencedFiles.length === 0) return;
         const questionToSend = customQuestion;
         setCustomQuestion('');
         submitQuery(questionToSend);
     };
     
     const handleFileSelect = (file: Content) => {
-        setReferencedFile(file);
+        setReferencedFiles(prev => {
+            if(prev.some(f => f.id === file.id)) return prev; // Avoid duplicates
+            return [...prev, file];
+        });
         setShowFileSearch(false);
         setFileSearchQuery('');
+        // Remove the `@` trigger from the textarea
         setCustomQuestion(prev => prev.substring(0, prev.lastIndexOf('@')));
         textareaRef.current?.focus();
     };
@@ -214,16 +249,16 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         const value = e.target.value;
         const atIndex = value.lastIndexOf('@');
         
-        if (atIndex !== -1 && value.substring(atIndex + 1).trim() === '') {
-            setShowFileSearch(true);
-            setFileSearchQuery('');
+        if (atIndex !== -1 && (atIndex === value.length - 1 || value.substring(atIndex + 1).trim() === '')) {
+             setShowFileSearch(true);
+             setFileSearchQuery('');
         } else if (atIndex !== -1 && showFileSearch) {
-            setFileSearchQuery(value.substring(atIndex + 1));
+             setFileSearchQuery(value.substring(atIndex + 1));
         } else {
-            setShowFileSearch(false);
+             setShowFileSearch(false);
         }
         setCustomQuestion(value);
-    }
+    };
 
 
     useEffect(() => {
@@ -482,64 +517,68 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                 <div className="flex-1 flex flex-col min-h-0">
                     <ContentSwitch />
                     
-                    <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
-                        <PopoverTrigger asChild>
-                            <div className="w-full"></div>
-                        </PopoverTrigger>
-                        <PopoverContent
-                            side="top"
-                            align="start"
-                            className="w-[calc(100%-1rem)] sm:w-[500px] p-2 bg-slate-900 border-slate-700"
-                            onOpenAutoFocus={(e) => e.preventDefault()}
-                        >
-                            <div className="text-xs text-slate-400 p-2">Mention a PDF file...</div>
-                            <div className="max-h-60 overflow-y-auto no-scrollbar">
-                                {filteredFiles.map(file => (
-                                    <button
-                                        key={file.id}
-                                        onClick={() => handleFileSelect(file)}
-                                        className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
-                                    >
-                                        <FileText className="w-4 h-4 text-red-400" />
-                                        <span className="truncate">{file.name}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </PopoverContent>
-                    </Popover>
-                    
                     <motion.div 
                         className="flex flex-col gap-2 mt-2 flex-shrink-0"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
                     >
-                        {referencedFile && (
-                            <div className="flex items-center gap-2 p-2 bg-slate-800/60 rounded-lg text-sm text-slate-200">
-                                <Paperclip className="w-4 h-4 text-blue-400" />
-                                <span className="truncate flex-1">{referencedFile.name}</span>
-                                <button onClick={() => setReferencedFile(null)} className="p-1 hover:bg-slate-700 rounded-full">
-                                    <X className="w-4 h-4" />
-                                </button>
+                        <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
+                            <PopoverTrigger asChild>
+                                <div className="w-full"></div>
+                            </PopoverTrigger>
+                            <PopoverContent
+                                side="top"
+                                align="start"
+                                className="w-full sm:w-[500px] p-2 bg-slate-900 border-slate-700"
+                                onOpenAutoFocus={(e) => e.preventDefault()}
+                            >
+                                <div className="text-xs text-slate-400 p-2">Mention a PDF file...</div>
+                                <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                    {filteredFiles.map(file => (
+                                        <button
+                                            key={file.id}
+                                            onClick={() => handleFileSelect(file)}
+                                            className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
+                                        >
+                                            <FileText className="w-4 h-4 text-red-400" />
+                                            <span className="truncate">{file.name}</span>
+                                        </button>
+                                    ))}
+                                </div>
+                            </PopoverContent>
+                        </Popover>
+                        
+                         <div className="flex items-end gap-2 bg-slate-800/60 border border-slate-700 rounded-xl p-1">
+                            <div className="flex flex-col flex-1">
+                                {referencedFiles.length > 0 && (
+                                    <div className="flex flex-wrap gap-2 px-2 pt-2">
+                                        {referencedFiles.map(file => (
+                                            <ReferencedFilePill
+                                                key={file.id}
+                                                file={file}
+                                                onRemove={() => setReferencedFiles(prev => prev.filter(f => f.id !== file.id))}
+                                            />
+                                        ))}
+                                    </div>
+                                )}
+                                <Textarea
+                                    ref={textareaRef}
+                                    placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up, or type '@' to reference a file."}
+                                    className={cn("bg-transparent border-0 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
+                                    value={customQuestion}
+                                    onChange={handleQuestionChange}
+                                    onKeyDown={handleCustomQuestionKeyDown}
+                                    disabled={isResponding}
+                                    rows={1}
+                                    dir="auto"
+                                />
                             </div>
-                        )}
-                        <div className="flex items-end gap-2">
-                            <Textarea
-                                ref={textareaRef}
-                                placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up, or type '@' to reference a file."}
-                                className={cn("flex-1 bg-slate-800/60 border-slate-700 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
-                                value={customQuestion}
-                                onChange={handleQuestionChange}
-                                onKeyDown={handleCustomQuestionKeyDown}
-                                disabled={isResponding}
-                                rows={1}
-                                dir="auto"
-                            />
 
                             <Button 
                                 size="icon" 
                                 className="rounded-full h-9 w-9 flex-shrink-0"
                                 onClick={handleCustomQuestionSubmit}
-                                disabled={isResponding || (!customQuestion.trim() && !referencedFile)}
+                                disabled={isResponding || (!customQuestion.trim() && referencedFiles.length === 0)}
                             >
                                 <ArrowUp className="w-4 h-4" />
                             </Button>
