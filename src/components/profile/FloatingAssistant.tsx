@@ -42,18 +42,6 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
 
     return (
         <>
-             <AnimatePresence>
-                {isOpen && isExpanded && (
-                    <motion.div
-                        key="backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                        onClick={toggleExpand}
-                    />
-                )}
-            </AnimatePresence>
             <div className="fixed bottom-6 right-6 z-50">
                 <motion.div
                     layout
@@ -84,7 +72,7 @@ export const FloatingAssistant = ({ user }: { user: ReturnType<typeof useAuthSto
                     onClick={() => setIsOpen(!isOpen)}
                     className={cn(
                         "w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 shadow-lg flex items-center justify-center absolute",
-                         isOpen ? "bottom-[calc(100%_-_16px)] right-2" : "bottom-0 right-0"
+                         isOpen ? "bottom-[calc(100%_-_24px)] right-0" : "bottom-0 right-0"
                     )}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.9 }}
