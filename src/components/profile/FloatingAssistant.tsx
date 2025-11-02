@@ -34,7 +34,7 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
             transition: { type: 'spring', stiffness: 400, damping: 30 }
         },
         open: {
-            width: 'min(90vw, 420px)',
+            width: 'min(90vw, 440px)',
             height: 'min(75vh, 650px)',
             borderRadius: '1.5rem',
             transition: { type: 'spring', stiffness: 400, damping: 40 }
