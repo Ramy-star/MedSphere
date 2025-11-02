@@ -177,7 +177,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
             favoritesCount: user.favorites?.length || 0,
         };
         try {
-            const result = await getStudyBuddyInsight({greeting: currentTheme.greeting, ...userStats});
+            const result = await getStudyBuddyInsight({greeting: `Hello! I'm MedSphere Assistant`, ...userStats});
             setInitialData(result, currentTheme);
         } catch (e) {
             console.error("Failed to get study buddy insight", e);
@@ -239,9 +239,14 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                     filesToSubmit.map(async file => {
                         if (file.metadata?.storagePath) {
                             const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
-                            const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
-                            const text = await contentService.extractTextFromPdf(pdf);
-                            return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
+                            if (file.metadata.mime === 'application/pdf') {
+                                const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
+                                const text = await contentService.extractTextFromPdf(pdf);
+                                return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
+                            } else {
+                                const text = await fileBlob.text();
+                                return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
+                            }
                         }
                         return '';
                     })
@@ -288,6 +293,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
             setChatHistory(prev => prev.slice(0, -1));
         } finally {
             setIsResponding(false);
+            if (filesToSubmit.length > 0) {
+              setReferencedFiles([]);
+            }
         }
     }, [theme, user, toast, chatHistory, currentChatId, saveChatSession, view]);
 
@@ -302,6 +310,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     
         if (!questionToSend && filesToSend.length === 0) return;
         
+        if (!currentChatId) {
+            startNewChat();
+        }
         submitQuery(questionToSend, filesToSend);
     };
     
