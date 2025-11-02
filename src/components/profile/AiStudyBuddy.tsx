@@ -583,11 +583,11 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                      table: ({ node, ...props }) => <table className="w-full my-4 border-collapse border border-white/25 rounded-lg overflow-hidden" {...props} />,
-                      thead: ({ node, ...props }) => <thead style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)' }} {...props} />,
-                      tr: ({ node, ...props }) => <tr className="border-b border-white/25 last:border-b-0" {...props} />,
-                      th: ({ node, ...props }) => <th className="p-2 text-center align-middle font-semibold border-r border-white/25 last:border-r-0" style={{ color: '#fff' }} {...props} />,
-                      td: ({ node, ...props }) => <td className="p-2 text-center align-middle border-r border-white/25 last:border-r-0" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', color: '#f9f9f9' }} {...props} />,
+                        table: ({ node, ...props }) => <table className="w-full my-4 border-collapse border border-white/30 rounded-lg overflow-hidden" {...props} />,
+                        thead: ({ node, ...props }) => <thead className="bg-black/35 text-white" {...props} />,
+                        tr: ({ node, ...props }) => <tr className="border-b border-white/30 last:border-b-0" {...props} />,
+                        th: ({ node, ...props }) => <th className="border-r border-white/30 p-2 text-left font-semibold last:border-r-0" {...props} />,
+                        td: ({ node, ...props }) => <td className="border-r border-white/30 p-2 align-top last:border-r-0 text-neutral-100 bg-white/10" {...props} />,
                     }}
                   >
                     {message.text}
