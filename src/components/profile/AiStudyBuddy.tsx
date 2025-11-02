@@ -25,7 +25,7 @@ import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/comp
 import { create } from 'zustand';
 import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc } from 'firebase/firestore';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 
 if (typeof window !== 'undefined') {
@@ -299,6 +299,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
         submitQuery(questionToSend, filesToSend);
         setCustomQuestion('');
+        // We keep the referencedFiles until the user manually removes them
     };
     
     const handleFileSelect = (file: Content) => {
@@ -423,26 +424,59 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
     const LoadingSkeleton = () => (
         <div className="flex flex-col h-full">
-            <div className="flex-1 p-4 space-y-2">
+             <div className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0 mb-3 sm:mb-4">
+                <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0" />
+                    <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-40" />
+                    </div>
+                </div>
+                <div className="flex items-center gap-1">
+                    <Skeleton className="h-7 w-7 rounded-full" />
+                    <Skeleton className="h-7 w-7 rounded-full" />
+                </div>
+            </div>
+            <div className="flex-1 space-y-2">
                 <Skeleton className="w-4/5 h-4" />
                 <Skeleton className="w-3/5 h-4" />
             </div>
-            <div className="flex-shrink-0 p-4 flex gap-2">
+            <div className="flex-shrink-0 flex flex-wrap gap-2 mt-4">
                 <Skeleton className="w-24 h-8 rounded-full" />
                 <Skeleton className="w-28 h-8 rounded-full" />
+                <Skeleton className="w-20 h-8 rounded-full" />
+            </div>
+             <div className="flex items-end gap-2 bg-slate-800/60 border border-slate-700 rounded-xl p-1 mt-4">
+                <Skeleton className="w-full h-10 rounded-lg" />
+                <Skeleton className="w-9 h-9 rounded-full" />
             </div>
         </div>
     );
 
     const IntroView = () => (
         <>
-            <div style={{color: theme!.textColor}}>
-                 <div className="flex items-center justify-between">
-                     <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight!.mainInsight}</ReactMarkdown>
-                     <Button onClick={() => setView('history')} variant="ghost" size="icon" className="h-8 w-8 text-white"><History className="w-4 h-4" /></Button>
-                 </div>
+            <div className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0">
+                <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                    <div className="flex-shrink-0">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
+                            <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                        </div>
+                    </div>
+                    <div className="flex-1 text-left">
+                        {loading || !theme ? (
+                            <Skeleton className="h-5 w-40" />
+                        ) : (
+                         <h3 className="text-sm sm:text-base font-bold text-white">
+                            {theme.greeting}
+                        </h3>
+                        )}
+                    </div>
+                </div>
+                {(!loading && theme) && renderHeaderControls()}
             </div>
-            <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
+            <div className="mt-2 sm:mt-3 flex-1 overflow-y-auto no-scrollbar pr-2 -mr-2">
+                <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs sm:text-sm max-w-prose whitespace-pre-wrap">{initialInsight!.mainInsight}</ReactMarkdown>
+            </div>
+            <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 flex-shrink-0">
                 {initialInsight!.suggestedActions.map((suggestion, index) => (
                     <motion.div
                         key={index}
@@ -460,6 +494,12 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                         </Button>
                     </motion.div>
                 ))}
+            </div>
+             <div className="flex items-end gap-2">
+                <Button onClick={() => setView('history')} variant="ghost" className="text-xs text-slate-400 hover:text-white mt-2">
+                    <History className="w-3 h-3 mr-1.5" />
+                    Chat History
+                </Button>
             </div>
         </>
     );
@@ -601,7 +641,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                     <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteSession()} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                    <AlertDialogAction onClick={handleDeleteSession} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
                                 </AlertDialogFooter>
                             </AlertDialogContent>
                         </AlertDialog>
@@ -648,30 +688,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                                 transition={{ duration: 0.2 }}
                                 className="flex flex-col h-full"
                             >
-                                {view === 'intro' && (
-                                     <div className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0">
-                                        <div className="flex items-center gap-3 sm:gap-4 flex-1">
-                                            <div className="flex-shrink-0">
-                                                <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
-                                                    <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
-                                                </div>
-                                            </div>
-                                            <div className="flex-1 text-left">
-                                                {loading || !theme ? (
-                                                    <Skeleton className="h-5 w-40" />
-                                                ) : (
-                                                 <h3 className="text-sm sm:text-base font-bold text-white">
-                                                    {theme.greeting}
-                                                </h3>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {(!loading && theme) && renderHeaderControls()}
-                                    </div>
-                                )}
-                                <div className={cn("flex-1 flex flex-col min-h-0", view === 'intro' ? "mt-2 sm:mt-3" : "")}>
-                                    <ContentSwitch />
-                                </div>
+                                <ContentSwitch />
                             </motion.div>
                         </div>
                         {view !== 'history' && (
