@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -24,7 +23,7 @@ import * as pdfjs from 'pdfjs-dist';
 import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
 import { create } from 'zustand';
 import { db } from '@/firebase';
-import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc } from 'firebase/firestore';
+import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 
 
@@ -38,7 +37,6 @@ type Suggestion = {
 };
 
 type InitialInsight = {
-    greeting: string;
     mainInsight: string;
     suggestedActions: Suggestion[];
 };
@@ -123,20 +121,21 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     const [fileSearchQuery, setFileSearchQuery] = useState('');
     const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
     const [itemToDelete, setItemToDelete] = useState<AiBuddyChatSession | null>(null);
+    const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
 
 
-    const { data: allFiles } = useCollection<Content>('content');
+    const { data: allContent } = useCollection<Content>('content');
     const { data: savedSessions } = useCollection<AiBuddyChatSession>(`users/${user.id}/aiBuddySessions`, { orderBy: ['createdAt', 'desc'] });
 
     
-    const isOpen = true; // Simplified for clarity, assuming it's always open when rendered
+    const isOpen = true;
 
     const filteredFiles = useMemo(() => {
-        if (!allFiles) return [];
-        const items = allFiles.filter(f => f.type === 'FILE' || f.type === 'FOLDER');
+        if (!allContent) return [];
+        const items = allContent.filter(f => f.type !== 'LEVEL' && f.type !== 'SEMESTER' && f.type !== 'SUBJECT');
         if (!fileSearchQuery) return items.slice(0, 10);
         return items.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
-    }, [allFiles, fileSearchQuery]);
+    }, [allContent, fileSearchQuery]);
 
 
     useLayoutEffect(() => {
@@ -219,11 +218,10 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     }, [user]);
 
 
-    const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[]) => {
+    const submitQuery = useCallback(async (prompt: string, filesToSubmit: Content[], isNewChat: boolean) => {
         if (!prompt.trim() && filesToSubmit.length === 0) return;
         if (!theme) return;
     
-        const isNewChat = view === 'intro' || !currentChatId;
         const currentHistory = isNewChat ? [] : chatHistory;
         
         setView('chat');
@@ -293,15 +291,13 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
             setChatHistory(prev => prev.slice(0, -1));
         } finally {
             setIsResponding(false);
-            if (filesToSubmit.length > 0) {
-              setReferencedFiles([]);
-            }
+            if(isNewChat) setReferencedFiles([]);
         }
-    }, [theme, user, toast, chatHistory, currentChatId, saveChatSession, view]);
+    }, [theme, user, toast, chatHistory, currentChatId, saveChatSession]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
         startNewChat();
-        submitQuery(suggestion.prompt, []);
+        submitQuery(suggestion.prompt, [], true);
     };
 
     const handleCustomQuestionSubmit = () => {
@@ -310,15 +306,14 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     
         if (!questionToSend && filesToSend.length === 0) return;
         
-        if (!currentChatId) {
-            startNewChat();
-        }
-        submitQuery(questionToSend, filesToSend);
+        const isNewChat = view === 'intro' || !currentChatId;
+        
+        submitQuery(questionToSend, filesToSend, isNewChat);
     };
     
     const handleFileSelect = (file: Content) => {
         setReferencedFiles(prev => {
-            if(prev.some(f => f.id === file.id)) return prev; // Avoid duplicates
+            if(prev.some(f => f.id === file.id)) return prev;
             return [...prev, file];
         });
         setShowFileSearch(false);
@@ -381,16 +376,17 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     
     const handleLoadChat = (session: AiBuddyChatSession) => {
         setChatHistory(session.messages);
-        setReferencedFiles([]);
+        const lastUserMessage = [...session.messages].reverse().find(m => m.role === 'user');
+        setReferencedFiles(lastUserMessage?.referencedFiles || []);
         setCurrentChatId(session.id);
         setView('chat');
     };
     
     const handleDeleteSession = async () => {
         if (!itemToDelete || !user) return;
-        const noteId = itemToDelete.id;
         
-        setItemToDelete(null); 
+        const noteId = itemToDelete.id;
+        setItemToDelete(null); // Close dialog immediately
         
         const docRef = doc(db, `users/${user.id}/aiBuddySessions`, noteId);
         
@@ -404,6 +400,29 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         } catch (error) {
             console.error("Error deleting chat:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not delete chat." });
+        }
+    };
+
+    const handleClearAllHistory = async () => {
+        if (!user || !savedSessions || savedSessions.length === 0) return;
+        
+        setShowClearHistoryDialog(false);
+
+        const batch = writeBatch(db);
+        savedSessions.forEach(session => {
+            const docRef = doc(db, `users/${user.id}/aiBuddySessions`, session.id);
+            batch.delete(docRef);
+        });
+
+        try {
+            await batch.commit();
+            toast({ title: 'All chats deleted' });
+            if (savedSessions.some(s => s.id === currentChatId)) {
+                startNewChat();
+            }
+        } catch (error) {
+            console.error("Error clearing all chats:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete all chats.' });
         }
     };
 
@@ -625,14 +644,31 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
       </div>
     );
     
-    const HistoryView = () => (
+    const HistoryView = () => {
+        return (
         <div className="flex flex-col h-full overflow-hidden">
             <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0 sticky top-0 z-10 bg-[rgba(30,41,59,0.5)] backdrop-blur-sm -mx-4 px-4 pt-3 pb-2">
                 <Button onClick={() => setView('intro')} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                     <ArrowLeft className="w-4 h-4" />
                 </Button>
                 <h4 className="text-white font-semibold">Chat History</h4>
-                <div className="w-7"></div>
+                 <AlertDialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
+                    <AlertDialogTrigger asChild>
+                         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white disabled:opacity-50" disabled={!savedSessions || savedSessions.length === 0}>
+                            <Trash2 size={16} />
+                        </Button>
+                    </AlertDialogTrigger>
+                     <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>This will permanently delete all chat history. This action cannot be undone.</AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleClearAllHistory} className="bg-red-600 hover:bg-red-700">Delete All</AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
             </div>
             <div className="flex-1 space-y-2 overflow-y-auto no-scrollbar pr-2 -mr-2">
                 {!savedSessions || savedSessions.length === 0 ? (
@@ -647,7 +683,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                                 <p className="text-sm text-white truncate">{session.title}</p>
                                 <p className="text-xs text-slate-400 mt-0.5">{formatDate(session.createdAt)}</p>
                             </div>
-                            <AlertDialog open={itemToDelete?.id === session.id} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
+                            <AlertDialog>
                                 <AlertDialogTrigger asChild>
                                     <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-red-500 opacity-0 group-hover:opacity-100" onClick={(e) => { e.stopPropagation(); setItemToDelete(session); }}>
                                         <Trash2 size={16} />
@@ -656,13 +692,11 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                         <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                        <AlertDialogDescription>
-                                            This will permanently delete this chat history.
-                                        </AlertDialogDescription>
+                                        <AlertDialogDescription>This will permanently delete this chat history.</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={handleDeleteSession} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                        <AlertDialogAction onClick={(e) => { e.stopPropagation(); handleDeleteSession(); }} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
@@ -671,7 +705,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                 )}
             </div>
         </div>
-    );
+    )};
 
     const ContentSwitch = () => {
         if (loading || !theme || !initialInsight) return <LoadingSkeleton />;
@@ -753,7 +787,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                                                     <ReferencedFilePill
                                                         key={file.id}
                                                         file={file}
-                                                        onRemove={() => setReferencedFiles(prev => prev.filter(f => f.id !== file.id))}
+                                                        onRemove={() => {}}
                                                     />
                                                 ))}
                                             </div>
