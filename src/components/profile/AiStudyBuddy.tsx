@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy, Paperclip, X, History, Trash2, StickyNote } from 'lucide-react';
+import { Loader2, ArrowLeft, ChevronDown, Plus, Minus, Maximize, Shrink, ArrowUp, Copy, Paperclip, X, History, Trash, StickyNote } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getStudyBuddyInsight } from '@/ai/flows/study-buddy-flow';
 import { answerStudyBuddyQuery } from '@/ai/flows/study-buddy-chat-flow';
@@ -14,7 +14,7 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { Textarea } from '../ui/textarea';
-import { Check } from 'lucide-react';
+import { Check, Trash2 } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Content, contentService } from '@/lib/contentService';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
@@ -291,7 +291,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
             setChatHistory(prev => prev.slice(0, -1));
         } finally {
             setIsResponding(false);
-            if(isNewChat) setReferencedFiles([]);
+            // Don't clear referenced files on new chat submission anymore
         }
     }, [theme, user, toast, chatHistory, currentChatId, saveChatSession]);
 
@@ -655,7 +655,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                  <AlertDialog open={showClearHistoryDialog} onOpenChange={setShowClearHistoryDialog}>
                     <AlertDialogTrigger asChild>
                          <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white disabled:opacity-50" disabled={!savedSessions || savedSessions.length === 0}>
-                            <Trash2 size={16} />
+                            <Trash size={16} />
                         </Button>
                     </AlertDialogTrigger>
                      <AlertDialogContent>
@@ -783,11 +783,13 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                                     <div className="flex flex-col flex-1">
                                         {referencedFiles.length > 0 && (
                                             <div className="flex flex-wrap gap-2 px-2 pt-2">
-                                                {referencedFiles.map(file => (
+                                                {referencedFiles.map((file, index) => (
                                                     <ReferencedFilePill
                                                         key={file.id}
                                                         file={file}
-                                                        onRemove={() => {}}
+                                                        onRemove={() => {
+                                                            setReferencedFiles(prev => prev.filter((_, i) => i !== index));
+                                                        }}
                                                     />
                                                 ))}
                                             </div>
