@@ -25,7 +25,7 @@ const SuggestedActionSchema = z.object({
 });
 
 const StudyBuddyOutputSchema = z.object({
-    mainInsight: z.string().describe("A key insight or observation about the user's activity. Keep it concise and encouraging."),
+    mainInsight: z.string().describe("A key insight or observation about the user's activity. This text MUST always start with 'I'm MedSphere Assistant'. It should be concise and encouraging."),
     suggestedActions: z.array(SuggestedActionSchema).min(1).max(3).describe("A list of 1 to 3 relevant questions the user might want to ask next."),
 });
 
@@ -46,7 +46,7 @@ const studyBuddyPrompt = ai.definePrompt({
         - AI Queries: {{{aiQueries}}}
 
         Follow these rules precisely:
-        1.  **Main Insight:** Based on the stats, generate ONE key insight. Make it feel personal and observant.
+        1.  **Main Insight:** Based on the stats, generate ONE key insight. **This insight MUST start with the exact phrase "I'm MedSphere Assistant".** Make it feel personal and observant after the initial phrase.
             - If they have high activity, praise their hard work.
             - If activity is low, gently encourage them to get started.
         2.  **Suggested Actions:** Provide 2-3 relevant, actionable questions the user can ask you. The 'label' should be the button text, and the 'prompt' is the full question you will receive.
@@ -56,7 +56,7 @@ const studyBuddyPrompt = ai.definePrompt({
 
         Example Output:
         {
-          "mainInsight": "You've been busy organizing! I see you've created {{foldersCreated}} new folders.",
+          "mainInsight": "I'm MedSphere Assistant. You've been busy organizing! I see you've created {{foldersCreated}} new folders.",
           "suggestedActions": [
             { "label": "What should I study next?", "prompt": "Based on my recent activity, what subject do you recommend I study next?" },
             { "label": "Summarize my progress.", "prompt": "Can you give me a brief summary of my study progress so far?" }
@@ -80,7 +80,7 @@ async function getStudyBuddyInsightFlow(stats: z.infer<typeof UserStatsSchema>) 
         // Return a default, safe response on error
         return {
             greeting: stats.greeting,
-            mainInsight: "Ready to dive into your studies? Let's make today productive. You can ask me to summarize your progress or suggest what to study next.",
+            mainInsight: "I'm MedSphere Assistant. Ready to dive into your studies? Let's make today productive. You can ask me to summarize your progress or suggest what to study next.",
             suggestedActions: [
                 { label: "Summarize my progress", prompt: "Can you give me a brief summary of my study progress so far?" },
                 { label: "What should I study next?", prompt: "Based on my recent activity, what subject do you recommend I study next?" }

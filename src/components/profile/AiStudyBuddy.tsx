@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -133,8 +134,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const filteredFiles = useMemo(() => {
         if (!allFiles) return [];
         // Search all files and folders, not just PDFs
-        if (!fileSearchQuery) return allFiles.slice(0, 10);
-        return allFiles.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
+        if (!fileSearchQuery) return allFiles.filter(f => f.type === 'FILE' || f.type === 'FOLDER').slice(0, 10);
+        return allFiles.filter(file => (file.type === 'FILE' || file.type === 'FOLDER') && file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
     }, [allFiles, fileSearchQuery]);
 
 
@@ -222,20 +223,17 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         if (!prompt && filesToSubmit.length === 0) return;
         if (!theme) return;
     
-        const isNewChat = view === 'intro' || currentChatId === null;
-        let activeChatId = currentChatId;
+        const isNewChat = view === 'intro' || !currentChatId;
+        let activeChatId = isNewChat ? null : currentChatId;
 
-        if (isNewChat) {
-          activeChatId = null; // Ensure it's a new chat
-          setChatHistory([]); // Clear local history for new chat
-        }
+        const currentHistory = isNewChat ? [] : chatHistory;
         
         setView('chat');
-        const newHistoryForThisTurn: ChatMessage[] = [...(isNewChat ? [] : chatHistory), { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
-        setChatHistory(newHistoryForThisTurn);
+        const newHistory: ChatMessage[] = [...currentHistory, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
+        setChatHistory(newHistory);
         setIsResponding(true);
         setCustomQuestion('');
-        setReferencedFiles([]); // Clear referenced files after sending
+        // We keep the referenced files until the user manually removes them.
         
         let fileContent = '';
         try {
@@ -271,11 +269,11 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
             const response = await answerStudyBuddyQuery({
                 userStats,
                 question: fullPrompt,
-                chatHistory: isNewChat ? [] : chatHistory,
+                chatHistory: currentHistory,
                 referencedFileContent: fileContent,
             });
             
-            const finalHistory = [...newHistoryForThisTurn, { role: 'model', text: response }];
+            const finalHistory = [...newHistory, { role: 'model', text: response }];
             setChatHistory(finalHistory);
             
             const newChatId = await saveChatSession(finalHistory, activeChatId);
@@ -297,6 +295,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     }, [theme, user, toast, chatHistory, currentChatId, saveChatSession, view]);
 
     const handleSuggestionClick = (suggestion: Suggestion) => {
+        startNewChat(); // Ensure suggestions start a new chat
         submitQuery(suggestion.prompt, []);
     };
 
@@ -380,24 +379,26 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         setView('chat');
     };
     
-    const handleDeleteSession = async (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const handleDeleteSession = async () => {
         if (!itemToDelete || !user) return;
+        const noteId = itemToDelete.id;
         
-        const docRef = doc(db, `users/${user.id}/aiBuddySessions`, itemToDelete.id);
+        // Prevent navigation by setting it to null before async operation
+        setItemToDelete(null); 
+        
+        const docRef = doc(db, `users/${user.id}/aiBuddySessions`, noteId);
         
         try {
             await deleteDoc(docRef);
             toast({ title: "Chat deleted" });
             
-            if (currentChatId === itemToDelete.id) {
+            // If the deleted chat was the active one, reset the view
+            if (currentChatId === noteId) {
                 startNewChat();
             }
         } catch (error) {
             console.error("Error deleting chat:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not delete chat." });
-        } finally {
-            setItemToDelete(null); 
         }
     };
 
