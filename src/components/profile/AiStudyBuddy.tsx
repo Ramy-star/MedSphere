@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -120,7 +119,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const [fontSize, setFontSize] = useState(14);
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
-    const [fileSearchQuery, setFileSearchQuery] = useState('');
     const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
     const [itemToDelete, setItemToDelete] = useState<AiBuddyChatSession | null>(null);
 
@@ -230,8 +228,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         const newHistory: ChatMessage[] = [...historyForThisQuery, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
         setChatHistory(newHistory);
         setIsResponding(true);
-        setReferencedFiles([]); // Clear referenced files after submission
-        setCustomQuestion(''); // Clear input after submission
+        // Do not clear referencedFiles here. Let the user clear it manually.
+        setCustomQuestion('');
         
         let fileContent = '';
         try {
@@ -300,8 +298,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
         if (!questionToSend && filesToSend.length === 0) return;
         
-        // If we are in the intro view, or if we are in chat view but there's no currentChatId, it's a new chat.
-        const isNewChat = view !== 'chat' || !currentChatId;
+        // If we are in the intro view, it's a new chat.
+        // If we are in the chat view, it's a follow-up to the current chat.
+        const isNewChat = view === 'intro';
 
         submitQuery(questionToSend, filesToSend, isNewChat);
     };
@@ -372,22 +371,31 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
     const handleLoadChat = (session: AiBuddyChatSession) => {
         setChatHistory(session.messages);
-        const lastUserMessage = session.messages.findLast(m => m.role === 'user');
-        setReferencedFiles(lastUserMessage?.referencedFiles || []);
+        // We don't restore referenced files from history automatically.
+        setReferencedFiles([]);
         setCurrentChatId(session.id);
         setView('chat');
     };
     
-    const handleDeleteSession = async () => {
+    const handleDeleteSession = async (e: React.MouseEvent) => {
+        e.stopPropagation();
         if (!itemToDelete || !user) return;
+        
         const docRef = doc(db, `users/${user.id}/aiBuddySessions`, itemToDelete.id);
+        
         try {
             await deleteDoc(docRef);
-            setItemToDelete(null);
             toast({ title: "Chat deleted" });
+            
+            // If the deleted chat was the currently active one, reset the view.
+            if (currentChatId === itemToDelete.id) {
+                startNewChat();
+            }
         } catch (error) {
             console.error("Error deleting chat:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not delete chat." });
+        } finally {
+            setItemToDelete(null); // Close the dialog
         }
     };
 
@@ -429,7 +437,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
     const LoadingSkeleton = () => (
         <div className="flex flex-col h-full">
-             <div className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0 mb-3 sm:mb-4">
+             <div className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0">
                 <div className="flex items-center gap-3 sm:gap-4 flex-1">
                     <Skeleton className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex-shrink-0" />
                     <div className="flex-1 space-y-2">
@@ -441,7 +449,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                     <Skeleton className="h-7 w-7 rounded-full" />
                 </div>
             </div>
-            <div className="flex-1 space-y-2">
+            <div className="flex-1 overflow-y-auto no-scrollbar pr-2 -mr-2 mt-3 sm:mt-4 space-y-2">
                 <Skeleton className="w-4/5 h-4" />
                 <Skeleton className="w-3/5 h-4" />
             </div>
@@ -508,7 +516,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         {renderChatHeader()}
         <div
           ref={chatContainerRef}
-          dir="auto"
           className="flex-1 space-y-3 overflow-y-auto no-scrollbar pr-2 -mr-2"
           style={{ fontSize: `${fontSize}px` }}
         >
@@ -738,7 +745,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                                         )}
                                         <Textarea
                                             ref={textareaRef}
-                                            placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up, or type '@' to reference a file."}
+                                            placeholder="Ask a question, or type '@' to reference a file."
                                             className={cn("bg-transparent border-0 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
                                             value={customQuestion}
                                             onChange={handleQuestionChange}
