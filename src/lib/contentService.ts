@@ -950,5 +950,28 @@ export const contentService = {
         }
         throw e;
     }
-  }
+  },
+  async createNote(userId: string) {
+    if (!db) throw new Error("Database not initialized");
+    const notesCollection = collection(db, `users/${userId}/notes`);
+    const newNote = {
+      content: '## New Note\n\nStart writing here...',
+      color: '#333333',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await addDoc(notesCollection, newNote);
+  },
+
+  async updateNote(userId: string, noteId: string, updates: Partial<Note>) {
+    if (!db) throw new Error("Database not initialized");
+    const noteRef = doc(db, `users/${userId}/notes`, noteId);
+    await updateDoc(noteRef, { ...updates, updatedAt: new Date().toISOString() });
+  },
+
+  async deleteNote(userId: string, noteId: string) {
+    if (!db) throw new Error("Database not initialized");
+    const noteRef = doc(db, `users/${userId}/notes`, noteId);
+    await deleteFirestoreDoc(noteRef);
+  },
 };
