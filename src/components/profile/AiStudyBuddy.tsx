@@ -11,7 +11,6 @@ import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { useToast } from '@/hooks/use-toast';
-import * as Collapsible from '@radix-ui/react-collapsible';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '../ui/skeleton';
 import { Textarea } from '../ui/textarea';
@@ -84,7 +83,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     const [isResponding, setIsResponding] = useState(false);
     const [customQuestion, setCustomQuestion] = useState('');
     const [view, setView] = useState<'intro' | 'chat'>('intro');
-    const [isCollapsibleOpen, setIsCollapsibleOpen] = useState(!isFloating);
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -98,7 +96,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
     const { data: allFiles } = useCollection<Content>('content');
     
-    const isOpen = isFloating ? true : isCollapsibleOpen;
+    const isOpen = true; // Simplified for clarity, assuming it's always open when rendered
 
     const filteredFiles = useMemo(() => {
         if (!allFiles) return [];
@@ -169,7 +167,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         const newHistory: ChatMessage[] = [...messagesRef.current, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
         setChatHistory(newHistory);
         setIsResponding(true);
-        setReferencedFiles([]); // Clear after sending
         
         let fileContent = '';
         try {
@@ -234,6 +231,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
 
         submitQuery(questionToSend, filesToSend);
         setCustomQuestion('');
+        setReferencedFiles([]);
     };
     
     const handleFileSelect = (file: Content) => {
@@ -315,7 +313,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         >
           <Plus size={16} />
         </Button>
-        {isFloating && (
+        {isFloating && onToggleExpand && (
           <Button
             variant="ghost"
             size="icon"
@@ -329,7 +327,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     );
 
     const renderChatHeader = () => (
-         <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0">
+         <div className="flex items-center justify-between mb-2 sm:mb-3 flex-shrink-0 sticky top-0 z-10 bg-[rgba(30,41,59,0.5)] backdrop-blur-sm -mx-4 px-4 pt-3 pb-2">
              <Button onClick={handleBackToIntro} variant="ghost" size="icon" className="h-7 w-7 rounded-full text-white">
                 <ArrowLeft className="w-4 h-4" />
             </Button>
@@ -339,7 +337,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
     
     const LoadingSkeleton = () => (
         <div className="flex flex-col h-full">
-            <div className="flex items-center justify-between p-4">
+            <div className="flex items-center justify-between p-4 flex-shrink-0">
                 <div className="flex items-center gap-3">
                     <Skeleton className="w-12 h-12 rounded-full" />
                     <Skeleton className="h-4 w-32" />
@@ -350,34 +348,27 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
                     <Skeleton className="w-7 h-7 rounded-full" />
                 </div>
             </div>
-            <div className="p-4 space-y-2">
+            <div className="p-4 space-y-2 flex-1">
                 <Skeleton className="h-4 w-4/5" />
                 <Skeleton className="h-4 w-3/5" />
             </div>
-            <div className="p-4 flex gap-2">
+            <div className="p-4 flex gap-2 flex-shrink-0">
                 <Skeleton className="h-8 w-24 rounded-full" />
                 <Skeleton className="h-8 w-28 rounded-full" />
             </div>
-            <div className="flex-1" />
-            <div className="p-2">
+            <div className="p-2 flex-shrink-0">
                 <Skeleton className="h-12 w-full rounded-xl" />
             </div>
         </div>
     );
 
-    if (loading || !theme) {
-        return <LoadingSkeleton />;
-    }
-    
-    if (!initialInsight) return null;
-
     const IntroView = () => (
         <>
-            <div style={{color: theme.textColor}}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight.mainInsight}</ReactMarkdown>
+            <div style={{color: theme!.textColor}}>
+                <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs mt-1 sm:mt-2 max-w-prose whitespace-pre-wrap">{initialInsight!.mainInsight}</ReactMarkdown>
             </div>
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2">
-                {initialInsight.suggestedActions.map((suggestion, index) => (
+                {initialInsight!.suggestedActions.map((suggestion, index) => (
                     <motion.div
                         key={index}
                         initial={{ opacity: 0, x: -10 }}
@@ -512,115 +503,124 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand }: { use
         );
     };
 
-
     return (
-        <div className="w-full h-full flex flex-col">
-            <div 
-                className={cn("glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full flex-1", isFloating ? "h-full" : "")}
-                style={{ backgroundColor: 'rgba(255, 255, 255, 0.05)', backgroundImage: `radial-gradient(ellipse 180% 170% at 0% 0%, ${theme.bgColor}, transparent 90%)`}}
-            >
-                <AnimatePresence mode="wait">
-                    {isOpen && (
-                         <motion.div
-                            key={isFloating ? "floating-header" : "static-header"}
-                            initial={{ opacity: 0, y: -10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0"
-                          >
-                            <div className="flex items-center gap-3 sm:gap-4 flex-1">
-                                <div className="flex-shrink-0">
-                                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
-                                        <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+        <div
+            className={cn(
+                "glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full",
+                isFloating ? "h-full" : "flex-1"
+            )}
+            style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                backgroundImage: `radial-gradient(ellipse 180% 170% at 0% 0%, ${theme?.bgColor || 'transparent'}, transparent 90%)`
+            }}
+        >
+            {loading || !theme || !initialInsight ? (
+                <LoadingSkeleton />
+            ) : (
+                <>
+                    <AnimatePresence mode="wait">
+                        {isOpen && (
+                             <motion.div
+                                key={isFloating ? "floating-header" : "static-header"}
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                                className="flex items-center justify-between gap-3 sm:gap-4 flex-shrink-0"
+                              >
+                                <div className="flex items-center gap-3 sm:gap-4 flex-1">
+                                    <div className="flex-shrink-0">
+                                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center border-2 border-blue-500/50 shadow-lg relative overflow-hidden" style={{ backgroundColor: 'rgba(0, 0, 0, 0.2)'}}>
+                                            <AiAssistantIcon className="w-6 h-6 sm:w-7 sm:h-7" />
+                                        </div>
+                                    </div>
+                                    <div className="flex-1 text-left">
+                                         <h3 className="text-sm sm:text-base font-bold text-white">
+                                            {theme.greeting}
+                                        </h3>
                                     </div>
                                 </div>
-                                <div className="flex-1 text-left">
-                                     <h3 className="text-sm sm:text-base font-bold text-white">
-                                        {theme.greeting}
-                                    </h3>
-                                </div>
-                            </div>
-                            {view === 'intro' && renderHeaderControls()}
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                                {view === 'intro' && renderHeaderControls()}
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
 
-                <div className="flex-1 flex flex-col min-h-0">
-                    {isOpen && (
-                        <>
-                            <ContentSwitch />
-                            
-                            <motion.div 
-                                className="flex flex-col gap-2 mt-2 flex-shrink-0"
-                                initial={{ opacity: 0, y: 10 }}
-                                animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
-                            >
-                                <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
-                                    <PopoverTrigger asChild>
-                                        <div className="w-full"></div>
-                                    </PopoverTrigger>
-                                    <PopoverContent
-                                        side="top"
-                                        align="start"
-                                        className="w-full sm:w-[500px] p-2 bg-slate-900 border-slate-700"
-                                        onOpenAutoFocus={(e) => e.preventDefault()}
-                                    >
-                                        <div className="text-xs text-slate-400 p-2">Mention a PDF file...</div>
-                                        <div className="max-h-60 overflow-y-auto no-scrollbar">
-                                            {filteredFiles.map(file => (
-                                                <button
-                                                    key={file.id}
-                                                    onClick={() => handleFileSelect(file)}
-                                                    className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
-                                                >
-                                                    <FileText className="w-4 h-4 text-red-400" />
-                                                    <span className="truncate">{file.name}</span>
-                                                </button>
-                                            ))}
-                                        </div>
-                                    </PopoverContent>
-                                </Popover>
+                    <div className="flex-1 flex flex-col min-h-0">
+                        {isOpen && (
+                            <>
+                                <ContentSwitch />
                                 
-                                 <div className="flex items-end gap-2 bg-slate-800/60 border border-slate-700 rounded-xl p-1">
-                                    <div className="flex flex-col flex-1">
-                                        {referencedFiles.length > 0 && (
-                                            <div className="flex flex-wrap gap-2 px-2 pt-2">
-                                                {referencedFiles.map(file => (
-                                                    <ReferencedFilePill
+                                <motion.div 
+                                    className="flex flex-col gap-2 mt-2 flex-shrink-0"
+                                    initial={{ opacity: 0, y: 10 }}
+                                    animate={{ opacity: 1, y: 0, transition: { delay: 0.1 } }}
+                                >
+                                    <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
+                                        <PopoverTrigger asChild>
+                                            <div className="w-full"></div>
+                                        </PopoverTrigger>
+                                        <PopoverContent
+                                            side="top"
+                                            align="start"
+                                            className="w-full sm:w-[500px] p-2 bg-slate-900 border-slate-700"
+                                            onOpenAutoFocus={(e) => e.preventDefault()}
+                                        >
+                                            <div className="text-xs text-slate-400 p-2">Mention a PDF file...</div>
+                                            <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                                {filteredFiles.map(file => (
+                                                    <button
                                                         key={file.id}
-                                                        file={file}
-                                                        onRemove={() => setReferencedFiles(prev => prev.filter(f => f.id !== file.id))}
-                                                    />
+                                                        onClick={() => handleFileSelect(file)}
+                                                        className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
+                                                    >
+                                                        <FileText className="w-4 h-4 text-red-400" />
+                                                        <span className="truncate">{file.name}</span>
+                                                    </button>
                                                 ))}
                                             </div>
-                                        )}
-                                        <Textarea
-                                            ref={textareaRef}
-                                            placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up, or type '@' to reference a file."}
-                                            className={cn("bg-transparent border-0 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
-                                            value={customQuestion}
-                                            onChange={handleQuestionChange}
-                                            onKeyDown={handleCustomQuestionKeyDown}
-                                            disabled={isResponding}
-                                            rows={1}
-                                            dir="auto"
-                                        />
-                                    </div>
+                                        </PopoverContent>
+                                    </Popover>
+                                    
+                                     <div className="flex items-end gap-2 bg-slate-800/60 border border-slate-700 rounded-xl p-1">
+                                        <div className="flex flex-col flex-1">
+                                            {referencedFiles.length > 0 && (
+                                                <div className="flex flex-wrap gap-2 px-2 pt-2">
+                                                    {referencedFiles.map(file => (
+                                                        <ReferencedFilePill
+                                                            key={file.id}
+                                                            file={file}
+                                                            onRemove={() => setReferencedFiles(prev => prev.filter(f => f.id !== file.id))}
+                                                        />
+                                                    ))}
+                                                </div>
+                                            )}
+                                            <Textarea
+                                                ref={textareaRef}
+                                                placeholder={view === 'intro' ? "Ask something else..." : "Ask a follow-up, or type '@' to reference a file."}
+                                                className={cn("bg-transparent border-0 rounded-xl text-sm resize-none overflow-y-auto no-scrollbar min-h-[38px] focus-visible:ring-0 focus-visible:ring-offset-0", isRtl(customQuestion) ? 'font-plex-arabic' : 'font-inter')}
+                                                value={customQuestion}
+                                                onChange={handleQuestionChange}
+                                                onKeyDown={handleCustomQuestionKeyDown}
+                                                disabled={isResponding}
+                                                rows={1}
+                                                dir="auto"
+                                            />
+                                        </div>
 
-                                    <Button 
-                                        size="icon" 
-                                        className="rounded-full h-9 w-9 flex-shrink-0"
-                                        onClick={handleCustomQuestionSubmit}
-                                        disabled={isResponding || (!customQuestion.trim() && referencedFiles.length === 0)}
-                                    >
-                                        <ArrowUp className="w-4 h-4" />
-                                    </Button>
-                                </div>
-                            </motion.div>
-                        </>
-                    )}
-                </div>
-            </div>
+                                        <Button 
+                                            size="icon" 
+                                            className="rounded-full h-9 w-9 flex-shrink-0"
+                                            onClick={handleCustomQuestionSubmit}
+                                            disabled={isResponding || (!customQuestion.trim() && referencedFiles.length === 0)}
+                                        >
+                                            <ArrowUp className="w-4 h-4" />
+                                        </Button>
+                                    </div>
+                                </motion.div>
+                            </>
+                        )}
+                    </div>
+                </>
+            )}
         </div>
     );
 }
