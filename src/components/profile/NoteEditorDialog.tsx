@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Smile, TextQuote
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Smile, TextQuote, Image as ImageIcon
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -61,7 +61,7 @@ const HIGHLIGHT_COLORS = [
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false,
+    history: false, // We are using the separate History extension
     horizontalRule: {
       HTMLAttributes: {
         class: 'border-white my-4',
@@ -80,7 +80,7 @@ const editorExtensions = [
   Highlight.configure({ 
       multicolor: true,
       HTMLAttributes: {
-          class: 'text-black',
+          class: 'text-black', // Ensure text is readable on highlight
       },
   }),
   TextStyle,
@@ -90,7 +90,6 @@ const editorExtensions = [
   }),
   Placeholder.configure({
     placeholder: 'Write something amazing...',
-    emptyEditorClass: 'is-editor-empty',
   }),
   FontFamily,
   ImageExtension.configure({
