@@ -9,7 +9,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import * as SelectPrimitive from "@radix-ui/react-select";
 import { cva, type VariantProps } from "class-variance-authority";
 import { Slot } from "@radix-ui/react-slot";
-import type { Lecture, MCQ, WrittenCase } from '@/lib/types';
+import type { Lecture, MCQ, WrittenCase, ExamResult } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
 import { useFirebase } from '@/firebase/provider';
 import { useAuthStore } from '@/stores/auth-store';
@@ -1263,10 +1263,6 @@ const ExamMode = ({
                                      <span className="expanding-text">Report</span>
                                  </button>
                             )}
-                            <button onClick={() => handleSubmit(true)} className="expanding-btn secondary absolute top-0 left-[54px]">
-                                <SkipForward size={20} />
-                                <span className="expanding-text">Results</span>
-                            </button>
                             <div className="absolute top-0 right-0">
                                 <button onClick={handleExitClick} className="expanding-btn destructive">
                                     <LogOut size={20} />
@@ -1656,3 +1652,5 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
+
+    
