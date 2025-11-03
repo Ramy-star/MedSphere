@@ -69,7 +69,6 @@ const TiptapEditor = ({ editor }: { editor: Editor | null }) => {
 
 export default function NewsComposerPage() {
     const canvasRef = useRef<HTMLDivElement>(null);
-    const downloadButtonRef = useRef<HTMLButtonElement>(null);
 
     const editor = useEditor({
         extensions: [
@@ -110,10 +109,6 @@ export default function NewsComposerPage() {
         const node = canvasRef.current;
         if (!node) return;
         
-        // Temporarily hide the button itself so it's not in the screenshot
-        const button = downloadButtonRef.current;
-        if (button) button.style.visibility = 'hidden';
-
         toPng(node, { cacheBust: true, pixelRatio: 2.5, backgroundColor: '#0c1118' })
             .then((dataUrl) => {
                 const link = document.createElement('a');
@@ -123,37 +118,33 @@ export default function NewsComposerPage() {
             })
             .catch((err) => {
                 console.error('oops, something went wrong!', err);
-            })
-            .finally(() => {
-                // Show the button again
-                if (button) button.style.visibility = 'visible';
             });
     };
 
   return (
-    <div className="flex h-full w-full flex-col items-center">
+    <div className="flex h-full w-full flex-col items-center justify-start overflow-y-auto">
         <div className="flex-shrink-0 flex items-center gap-4 py-4 z-20 sticky top-0 w-full justify-center">
             <TiptapToolbar editor={editor} />
-            <Button ref={downloadButtonRef} onClick={handleDownload} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
+            <Button onClick={handleDownload} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
                 <Download className="mr-2 h-4 w-4" />
                 Download PNG
             </Button>
         </div>
 
-        <div className="flex-1 overflow-y-auto w-full flex justify-center py-4">
+        <div className="w-full flex-grow flex justify-center py-4">
             <div
                 ref={canvasRef}
                 className={cn(
                     "relative flex flex-col items-center text-center",
                     "bg-transparent text-white", // Transparent background
-                    "p-8 md:p-12 w-[550px] min-h-[700px]",
+                    "p-8 w-[550px]", // Removed min-height
                     "shadow-2xl"
                 )}>
-                <header className="flex-shrink-0 flex items-center justify-center gap-3 w-full mb-6 pb-6 border-b border-slate-700">
-                    <Logo className="h-16 w-16 md:h-20 md:w-20" />
-                     <h1 className="text-4xl md:text-5xl font-bold"
+                <header className="flex-shrink-0 flex items-center justify-center gap-2 w-full mb-4 pb-4 border-b border-slate-700">
+                    <Logo className="h-12 w-12 md:h-16 md:w-16" />
+                     <h1 className="text-3xl md:text-4xl font-bold"
                     >
-                      <span className="font-extrabold text-white">Med</span><span className="font-normal text-[#00D309]">Sphere</span>
+                      <span className="font-extrabold text-white">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
                     </h1>
                 </header>
 
@@ -161,7 +152,7 @@ export default function NewsComposerPage() {
                      <TiptapEditor editor={editor} />
                 </div>
 
-                <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-6 border-t border-slate-700">
+                <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-4 border-t border-slate-700">
                     © 2025 MedSphere. All rights reserved.
                 </footer>
             </div>
