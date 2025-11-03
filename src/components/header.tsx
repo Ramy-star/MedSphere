@@ -79,6 +79,12 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       permission: () => !!user,
     },
     {
+      label: 'My Notes',
+      icon: NotebookPen,
+      action: () => router.push('/notes'),
+      permission: () => !!user,
+    },
+    {
       label: 'Community',
       icon: Users,
       action: handleCommunityClick,
@@ -149,6 +155,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
                         <p>Telegram Inbox</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+            {!!user && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/notes')}>
+                            <NotebookPen className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>My Notes</p>
                     </TooltipContent>
                 </Tooltip>
             )}

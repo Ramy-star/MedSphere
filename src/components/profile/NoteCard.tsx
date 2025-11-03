@@ -1,8 +1,7 @@
-
 'use client';
 import { Note } from './ProfileNotesSection';
 import { Button } from '@/components/ui/button';
-import { Edit, Trash2 } from 'lucide-react';
+import { Edit, Trash2, Star } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import {
@@ -23,6 +22,7 @@ type NoteCardProps = {
   note: Note;
   onEdit: () => void;
   onDelete: () => void;
+  onTogglePin?: () => void;
   attributes?: React.HTMLAttributes<HTMLDivElement>;
   listeners?: React.HTMLAttributes<HTMLDivElement>;
 };
@@ -41,7 +41,7 @@ const hexToRgba = (hex: string, alpha: number): string => {
 };
 
 
-export const NoteCard = ({ note, onEdit, onDelete, attributes, listeners }: NoteCardProps) => {
+export const NoteCard = ({ note, onEdit, onDelete, onTogglePin, attributes, listeners }: NoteCardProps) => {
   
   const isValidDate = (date: any): boolean => {
     if (!date) return false;
@@ -71,6 +71,11 @@ export const NoteCard = ({ note, onEdit, onDelete, attributes, listeners }: Note
       {...listeners}
     >
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
+        {onTogglePin && (
+           <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/20 text-white" onClick={(e) => { e.stopPropagation(); onTogglePin(); }}>
+             <Star className={cn("h-4 w-4", note.pinned ? "text-yellow-400 fill-yellow-400" : "text-white")} />
+           </Button>
+        )}
         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/20 text-white" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
           <Edit className="h-4 w-4" />
         </Button>
