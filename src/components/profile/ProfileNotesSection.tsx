@@ -3,18 +3,13 @@ import { useState, useMemo } from 'react';
 import type { UserProfile } from '@/stores/auth-store';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, StickyNote, Star } from 'lucide-react';
+import { PlusCircle, Loader2, StickyNote, Star, Eye } from 'lucide-react';
 import { NoteCard } from './NoteCard';
-import { NoteEditorDialog } from './NoteEditorDialog';
-import { nanoid } from 'nanoid';
 import { db } from '@/firebase';
-import { doc, setDoc, serverTimestamp, deleteDoc, writeBatch, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { doc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
+import { FilePreviewModal } from '../FilePreviewModal';
 
 export type NotePage = {
   id: string;
@@ -33,39 +28,45 @@ export type Note = {
   pinned?: boolean;
 };
 
-const SortableNoteCard = ({ note, onEdit, onDelete, onTogglePin }: { note: Note, onEdit: () => void, onDelete: () => void, onTogglePin: () => void }) => {
-    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: note.id });
-
-    const style = {
-        transform: CSS.Transform.toString(transform),
-        transition,
-        zIndex: isDragging ? 1 : 'auto',
-    };
-
-    return (
-        <div ref={setNodeRef} style={style}>
-            <NoteCard
-                note={note}
-                onEdit={onEdit}
-                onDelete={onDelete}
-                attributes={attributes}
-                listeners={listeners}
-                onTogglePin={onTogglePin}
-            />
-        </div>
-    );
-};
-
-
 export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const router = useRouter();
   const { toast } = useToast();
   
-  // Fetch only pinned notes for the profile view
   const { data: pinnedNotes, loading } = useCollection<Note>(`users/${user.id}/profileNotes`, {
     where: ['pinned', '==', true],
     orderBy: ['order', 'asc'],
   });
+
+  const [viewingNote, setViewingNote] = useState<Note | null>(null);
+
+  const handleTogglePin = async (note: Note) => {
+    const noteRef = doc(db, `users/${user.id}/profileNotes`, note.id);
+    await updateDoc(noteRef, { pinned: !note.pinned });
+
+    toast({
+        title: 'Note Unpinned',
+        description: `"${note.title}" has been unpinned from your profile.`,
+    });
+  };
+
+  const handleViewNote = (note: Note) => {
+    const contentToView = {
+        id: note.id,
+        name: note.title,
+        type: 'INTERACTIVE_QUIZ', // Use a type that triggers the special preview
+        parentId: user?.id || null,
+        metadata: {
+            // Adapt NotePage[] to what FilePreviewModal expects for quizData
+            quizData: JSON.stringify(note.pages.map(p => ({
+                id: p.id,
+                name: p.title,
+                written: [{ case: "", subqs: [{ q: "", a: p.content }] }]
+            })))
+        }
+    };
+    setViewingNote(contentToView as any);
+  };
+
 
   if (loading) {
     return (
@@ -91,16 +92,26 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {pinnedNotes.map(note => (
-            <NoteCard
-                key={note.id}
-                note={note}
-                onEdit={() => router.push('/notes')} // Redirect to edit
-                onDelete={() => {}} // No delete from profile
-                onTogglePin={() => {}} // No unpin from here to keep it simple
-            />
-        ))}
-    </div>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {pinnedNotes.map(note => (
+              <NoteCard
+                  key={note.id}
+                  note={note}
+                  onEdit={() => router.push(`/notes?edit=${note.id}`)}
+                  onTogglePin={() => handleTogglePin(note)}
+                  onView={() => handleViewNote(note)}
+                  showPin
+                  showView
+              />
+          ))}
+      </div>
+      {viewingNote && (
+          <FilePreviewModal 
+              item={viewingNote as any}
+              onOpenChange={(isOpen) => !isOpen && setViewingNote(null)}
+          />
+      )}
+    </>
   );
 };

@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, StickyNote } from 'lucide-react';
+import { PlusCircle, Loader2, StickyNote, Star } from 'lucide-react';
 import { NoteCard } from '@/components/profile/NoteCard';
 import { NoteEditorDialog } from '@/components/profile/NoteEditorDialog';
 import { nanoid } from 'nanoid';
@@ -15,6 +15,9 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { FilePreviewModal } from '@/components/FilePreviewModal';
 
 export type NotePage = {
   id: string;
@@ -33,7 +36,7 @@ export type Note = {
   pinned?: boolean;
 };
 
-const SortableNoteCard = ({ note, onEdit, onDelete, onTogglePin }: { note: Note, onEdit: () => void, onDelete: () => void, onTogglePin: () => void }) => {
+const SortableNoteCard = ({ note, onEdit, onDelete, onTogglePin, onView }: { note: Note, onEdit: () => void, onDelete: () => void, onTogglePin: () => void, onView: () => void }) => {
     const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: note.id });
 
     const style = {
@@ -49,8 +52,11 @@ const SortableNoteCard = ({ note, onEdit, onDelete, onTogglePin }: { note: Note,
                 onEdit={onEdit}
                 onDelete={onDelete}
                 onTogglePin={onTogglePin}
+                onView={onView}
                 attributes={attributes}
                 listeners={listeners}
+                showDelete
+                showPin
             />
         </div>
     );
@@ -60,16 +66,32 @@ const SortableNoteCard = ({ note, onEdit, onDelete, onTogglePin }: { note: Note,
 export default function NotesPage() {
   const { user } = useAuthStore();
   const { toast } = useToast();
-  
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const { data: notes, loading } = useCollection<Note>(user ? `users/${user.id}/profileNotes` : '', {
     orderBy: ['order', 'asc'],
     disabled: !user
   });
 
   const [editingNote, setEditingNote] = useState<Note | null>(null);
+  const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
   const sortedNotes = useMemo(() => notes || [], [notes]);
+
+  useEffect(() => {
+    const noteIdToEdit = searchParams.get('edit');
+    if (noteIdToEdit && notes) {
+      const note = notes.find(n => n.id === noteIdToEdit);
+      if (note) {
+        setEditingNote(note);
+        setIsEditorOpen(true);
+        // Clean up URL
+        router.replace('/notes', { scroll: false });
+      }
+    }
+  }, [searchParams, notes, router]);
 
   const handleNewNote = () => {
     const newPageId = nanoid();
@@ -90,6 +112,26 @@ export default function NotesPage() {
     setEditingNote(note);
     setIsEditorOpen(true);
   };
+
+  const handleViewNote = (note: Note) => {
+    const contentToView = {
+        id: note.id,
+        name: note.title,
+        type: 'INTERACTIVE_QUIZ', // Using this type to trigger the correct preview logic
+        parentId: user?.id || null,
+        metadata: {
+            quizData: JSON.stringify(note.pages.map(p => ({
+                id: p.id,
+                name: p.title,
+                mcqs_level_1: [],
+                mcqs_level_2: [],
+                written: [{ case: "", subqs: [{ q: "", a: p.content }] }]
+            })))
+        }
+    };
+    setViewingNote(contentToView as any);
+  };
+
 
   const handleSaveNote = async (noteToSave: Note) => {
     if (!user) return;
@@ -201,6 +243,7 @@ export default function NotesPage() {
                       onEdit={() => handleEditNote(note)}
                       onDelete={() => handleDeleteNote(note.id)}
                       onTogglePin={() => handleTogglePin(note.id)}
+                      onView={() => handleViewNote(note)}
                     />
                   ))}
                 </div>
@@ -217,6 +260,12 @@ export default function NotesPage() {
         note={editingNote}
         onSave={handleSaveNote}
       />
+      {viewingNote && (
+          <FilePreviewModal 
+              item={viewingNote as any}
+              onOpenChange={(isOpen) => !isOpen && setViewingNote(null)}
+          />
+      )}
     </motion.div>
   );
 };
