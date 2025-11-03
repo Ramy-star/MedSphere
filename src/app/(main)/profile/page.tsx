@@ -373,13 +373,15 @@ export default function ProfilePage() {
             onDrop={(e) => handleDrop(e, 'avatar')}
         >
           <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400")}>
-            <AvatarImage 
-                src={user.photoURL ?? ''} 
-                alt={user.displayName ?? ''}
-                className="pointer-events-none select-none"
-                onDragStart={(e) => e.preventDefault()}
-                onContextMenu={(e) => e.preventDefault()}
-            />
+            {user.photoURL && (
+              <AvatarImage 
+                  src={user.photoURL} 
+                  alt={user.displayName ?? ''}
+                  className="pointer-events-none select-none"
+                  onDragStart={(e) => e.preventDefault()}
+                  onContextMenu={(e) => e.preventDefault()}
+              />
+            )}
             <AvatarFallback className="text-3xl sm:text-4xl">
               {user.displayName?.[0] || <UserIcon />}
             </AvatarFallback>
@@ -472,11 +474,18 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start mx-auto w-full px-4 sm:px-8">
-        {/* Left Column */}
+      <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start max-w-7xl mx-auto w-full px-4 sm:px-8">
         <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
              <AiStudyBuddy user={user} />
-             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
+             <CollapsibleSection title="My Notes" icon={StickyNote} defaultOpen={false}>
+                <ProfileNotesSection user={user} />
+            </CollapsibleSection>
+        </div>
+
+        <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
+
+        <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
+            <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                     <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
@@ -486,18 +495,8 @@ export default function ProfilePage() {
             <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
                 <ActiveSessions user={user} />
             </CollapsibleSection>
-        </div>
-
-        {/* Vertical Separator */}
-        <div className="hidden lg:block self-stretch w-px bg-white" />
-
-        {/* Right Column */}
-        <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
-            </CollapsibleSection>
-            <CollapsibleSection title="My Notes" icon={StickyNote} defaultOpen={false}>
-                <ProfileNotesSection user={user} />
             </CollapsibleSection>
             <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
                <AchievementsSection user={user} />
@@ -522,13 +521,15 @@ export default function ProfilePage() {
                 </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="flex justify-center my-4">
-                <Image
-                    src={confirmationImagePreview || ''}
-                    alt="Image preview"
-                    width={imageToConfirm?.type === 'avatar' ? 128 : 256}
-                    height={imageToConfirm?.type === 'avatar' ? 128 : 128}
-                    className={cn("object-cover rounded-lg", imageToConfirm?.type === 'avatar' && "rounded-full h-32 w-32")}
-                />
+                {confirmationImagePreview && (
+                    <Image
+                        src={confirmationImagePreview}
+                        alt="Image preview"
+                        width={imageToConfirm?.type === 'avatar' ? 128 : 256}
+                        height={imageToConfirm?.type === 'avatar' ? 128 : 128}
+                        className={cn("object-cover rounded-lg", imageToConfirm?.type === 'avatar' && "rounded-full h-32 w-32")}
+                    />
+                )}
             </div>
             <AlertDialogFooter>
                 <AlertDialogCancel onClick={() => setImageToConfirm(null)}>Cancel</AlertDialogCancel>
@@ -585,5 +586,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
