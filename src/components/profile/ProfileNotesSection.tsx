@@ -8,7 +8,7 @@ import { NoteCard } from './NoteCard';
 import { NoteEditorDialog } from './NoteEditorDialog';
 import { nanoid } from 'nanoid';
 import { db } from '@/firebase';
-import { doc, writeBatch, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 
 export type Note = {
   id: string;
@@ -20,7 +20,7 @@ export type Note = {
 
 export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const { data: notes, loading } = useCollection<Note>(`users/${user.id}/notes`, {
-    orderBy: ['createdAt', 'desc'],
+    orderBy: ['updatedAt', 'desc'],
   });
 
   const [editingNote, setEditingNote] = useState<Note | null>(null);
@@ -29,7 +29,7 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const handleNewNote = () => {
     setEditingNote({
       id: `temp_${nanoid()}`, // Temporary ID for new notes
-      content: '## New Note\n\nStart writing here...',
+      content: '<h2>New Note</h2><p>Start writing here...</p>',
       color: '#282828', // Default color
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -44,16 +44,17 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
 
   const handleSaveNote = async (noteToSave: Note) => {
     if (!user) return;
-    const finalId = noteToSave.id.startsWith('temp_') ? nanoid() : noteToSave.id;
+    const isNewNote = noteToSave.id.startsWith('temp_');
+    const finalId = isNewNote ? nanoid() : noteToSave.id;
     const noteRef = doc(db, `users/${user.id}/notes`, finalId);
     
     const saveData = {
         ...noteToSave,
         id: finalId, // ensure the final ID is set
         updatedAt: serverTimestamp(),
-        createdAt: noteToSave.createdAt || serverTimestamp(), // only set createdAt if it's a new note
     };
-    if (noteToSave.id.startsWith('temp_')) {
+
+    if (isNewNote) {
         (saveData as any).createdAt = serverTimestamp();
     }
     
@@ -93,7 +94,7 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
       )}
 
       {!loading && notes && notes.length > 0 && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {notes.map(note => (
             <NoteCard
               key={note.id}
@@ -107,7 +108,10 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
 
       <NoteEditorDialog
         open={isEditorOpen}
-        onOpenChange={setIsEditorOpen}
+        onOpenChange={(isOpen) => {
+            if (!isOpen) setEditingNote(null);
+            setIsEditorOpen(isOpen);
+        }}
         note={editingNote}
         onSave={handleSaveNote}
       />

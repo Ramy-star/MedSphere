@@ -9,10 +9,16 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { Bold, Italic, Underline, Link, Image, List, ListOrdered, Palette } from 'lucide-react';
+import { 
+    Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
+    MessageSquareQuote, Minus, Palette, Heading1, Heading2, Heading3
+} from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
+import { useEditor, EditorContent, FloatingMenu, BubbleMenu } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import UnderlineExtension from '@tiptap/extension-underline';
+import LinkExtension from '@tiptap/extension-link';
 
 type NoteEditorDialogProps = {
   open: boolean;
@@ -32,97 +38,78 @@ const NOTE_COLORS = [
   '#382a44', // Dark Purple
 ];
 
-const EditorToolbarButton = ({ icon: Icon, onClick, tip }: { icon: React.ElementType, onClick: () => void, tip: string }) => (
-    <Button variant="ghost" size="icon" onMouseDown={(e) => { e.preventDefault(); onClick(); }} title={tip}>
+const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { icon: React.ElementType, onClick: (e: React.MouseEvent) => void, tip: string, isActive?: boolean }) => (
+    <Button 
+      variant="ghost" 
+      size="icon" 
+      onMouseDown={(e) => { e.preventDefault(); onClick(e); }} 
+      title={tip}
+      className={cn("h-8 w-8", isActive ? "bg-slate-700 text-white" : "text-slate-400")}
+    >
         <Icon className="h-4 w-4" />
     </Button>
 );
 
 export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEditorDialogProps) => {
-  const [content, setContent] = useState('');
   const [color, setColor] = useState('#282828');
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      UnderlineExtension,
+      LinkExtension.configure({
+        openOnClick: false,
+        autolink: true,
+      }),
+    ],
+    content: '',
+    editorProps: {
+      attributes: {
+        class: 'prose prose-sm prose-invert focus:outline-none max-w-full p-2 h-full',
+      },
+    },
+  });
 
   useEffect(() => {
-    if (open && note) {
-      setContent(note.content);
-      setColor(note.color || '#282828');
+    if (open && note && editor) {
+        if (!editor.isDestroyed) {
+          editor.commands.setContent(note.content);
+        }
+        setColor(note.color || '#282828');
     } else if (!open) {
-      // Reset when dialog closes
-      setContent('');
-      setColor('#282828');
+        editor?.commands.clearContent();
+        setColor('#282828');
     }
-  }, [note, open]);
-  
+  }, [note, open, editor]);
+
   const handleSave = () => {
-    if (note) {
-      onSave({ ...note, content, color });
+    if (note && editor) {
+      onSave({ ...note, content: editor.getHTML(), color });
     }
   };
 
-  const applyFormat = (format: 'bold' | 'italic' | 'underline' | 'link' | 'image' | 'ul' | 'ol') => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
+  const setLink = useCallback(() => {
+    if (!editor) return;
+    const previousUrl = editor.getAttributes('link').href;
+    const url = window.prompt('URL', previousUrl);
 
-    const start = textarea.selectionStart;
-    const end = textarea.selectionEnd;
-    const selectedText = textarea.value.substring(start, end);
-
-    let prefix = '', suffix = '', newText = '';
-    
-    switch (format) {
-      case 'bold': prefix = '**'; suffix = '**'; break;
-      case 'italic': prefix = '*'; suffix = '*'; break;
-      case 'underline': prefix = '<u>'; suffix = '</u>'; break;
-      case 'link': prefix = `[${selectedText || 'link text'}]`; suffix = '(https://)'; break;
-      case 'image': prefix = '![alt text]'; suffix = '(https://)'; break;
-      case 'ul': 
-        const ulLines = selectedText.split('\n').map(line => `- ${line}`).join('\n');
-        newText = textarea.value.substring(0, start) + ulLines + textarea.value.substring(end);
-        break;
-      case 'ol':
-        const olLines = selectedText.split('\n').map((line, i) => `${i + 1}. ${line}`).join('\n');
-        newText = textarea.value.substring(0, start) + olLines + textarea.value.substring(end);
-        break;
-      default:
-        break;
+    if (url === null) return;
+    if (url === '') {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+      return;
     }
-    
-    if (format !== 'ul' && format !== 'ol') {
-        newText = textarea.value.substring(0, start) + prefix + (format === 'link' || format === 'image' ? '' : selectedText) + suffix + textarea.value.substring(end);
-    }
-    
-    setContent(newText);
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+  }, [editor]);
 
-    // Adjust cursor position after inserting format
-    setTimeout(() => {
-        textarea.focus();
-        if (format === 'link') textarea.setSelectionRange(start + prefix.length + suffix.length, start + prefix.length + suffix.length);
-        else if (format === 'image') textarea.setSelectionRange(start + prefix.length + suffix.length, start + prefix.length + suffix.length);
-        else textarea.setSelectionRange(start + prefix.length, end + prefix.length);
-    }, 0);
-  };
-  
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
-        className="max-w-2xl w-[90vw] h-[80vh] flex flex-col glass-card p-0"
+        className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0"
         style={{ backgroundColor: color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
-        <DialogHeader className="p-6 pb-2">
+        <DialogHeader className="p-4 pb-2 flex-row items-center justify-between border-b border-white/10">
           <DialogTitle>{note?.id.startsWith('temp_') ? 'New Note' : 'Edit Note'}</DialogTitle>
-        </DialogHeader>
-
-        <div className="flex-1 flex flex-col gap-2 overflow-hidden px-6 pb-2">
-          <div className="flex-shrink-0 flex items-center gap-1 border-b border-white/20 pb-2">
-            <EditorToolbarButton icon={Bold} onClick={() => applyFormat('bold')} tip="Bold" />
-            <EditorToolbarButton icon={Italic} onClick={() => applyFormat('italic')} tip="Italic" />
-            <EditorToolbarButton icon={Underline} onClick={() => applyFormat('underline')} tip="Underline" />
-            <EditorToolbarButton icon={Link} onClick={() => applyFormat('link')} tip="Insert Link" />
-            <EditorToolbarButton icon={Image} onClick={() => applyFormat('image')} tip="Insert Image" />
-            <EditorToolbarButton icon={List} onClick={() => applyFormat('ul')} tip="Unordered List" />
-            <EditorToolbarButton icon={ListOrdered} onClick={() => applyFormat('ol')} tip="Ordered List" />
-             <Popover>
+           <Popover>
                 <PopoverTrigger asChild>
                    <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
                 </PopoverTrigger>
@@ -139,16 +126,34 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
                     </div>
                 </PopoverContent>
             </Popover>
-          </div>
-          <Textarea
-            ref={textareaRef}
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            className="flex-1 w-full h-full resize-none bg-transparent border-0 focus-visible:ring-0 focus-visible:ring-offset-0 no-scrollbar p-2 text-base text-white/90"
-            placeholder="Start writing your note..."
-          />
+        </DialogHeader>
+
+        <div className="flex-1 relative overflow-hidden">
+          {editor && (
+            <>
+              <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
+                <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
+                <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
+                <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
+                <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
+              </BubbleMenu>
+
+              <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
+                 <EditorToolbarButton icon={Heading1} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive('heading', { level: 1 })} tip="Heading 1" />
+                 <EditorToolbarButton icon={Heading2} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })} tip="Heading 2" />
+                 <EditorToolbarButton icon={Heading3} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} isActive={editor.isActive('heading', { level: 3 })} tip="Heading 3" />
+                 <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
+                 <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
+                 <EditorToolbarButton icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
+                 <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
+                 <EditorToolbarButton icon={Link} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
+              </FloatingMenu>
+            </>
+          )}
+          <EditorContent editor={editor} className="h-full overflow-y-auto p-4" />
         </div>
-        <DialogFooter className="p-6 pt-4 border-t border-white/20">
+        
+        <DialogFooter className="p-4 border-t border-white/10">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSave}>Save Note</Button>
         </DialogFooter>
