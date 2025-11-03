@@ -69,6 +69,7 @@ const TiptapEditor = ({ editor }: { editor: Editor | null }) => {
 
 export default function NewsComposerPage() {
     const canvasRef = useRef<HTMLDivElement>(null);
+    const downloadButtonRef = useRef<HTMLButtonElement>(null);
 
     const editor = useEditor({
         extensions: [
@@ -109,6 +110,10 @@ export default function NewsComposerPage() {
         const node = canvasRef.current;
         if (!node) return;
         
+        // Temporarily hide the button itself so it's not in the screenshot
+        const button = downloadButtonRef.current;
+        if (button) button.style.visibility = 'hidden';
+
         toPng(node, { cacheBust: true, pixelRatio: 2.5 })
             .then((dataUrl) => {
                 const link = document.createElement('a');
@@ -118,29 +123,33 @@ export default function NewsComposerPage() {
             })
             .catch((err) => {
                 console.error('oops, something went wrong!', err);
+            })
+            .finally(() => {
+                // Show the button again
+                if (button) button.style.visibility = 'visible';
             });
     };
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-start bg-background p-4 overflow-auto">
+    <div className="flex h-full w-full flex-col items-center bg-background">
         <div className="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-96 h-96 bg-green-500/20 rounded-full blur-3xl opacity-50"></div>
 
-        <div className="flex items-center gap-4 mb-4 z-20">
+        <div className="flex-shrink-0 flex items-center gap-4 py-4 z-20 sticky top-0 w-full justify-center">
             <TiptapToolbar editor={editor} />
-            <Button onClick={handleDownload} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
+            <Button ref={downloadButtonRef} onClick={handleDownload} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
                 <Download className="mr-2 h-4 w-4" />
                 Download PNG
             </Button>
         </div>
 
-        <div className="relative z-10 my-4">
+        <div className="flex-1 overflow-y-auto w-full flex justify-center py-4">
             <div
                 ref={canvasRef}
                 className={cn(
                     "relative flex flex-col items-center text-center",
                     "bg-slate-900 text-white", // Dark background
-                    "p-8 md:p-12 rounded-[1.75rem] w-[550px]",
+                    "p-8 md:p-12 w-[550px] min-h-[700px]",
                     "border border-slate-700 shadow-2xl"
                 )}>
                 <header className="flex-shrink-0 flex items-center justify-center gap-3 w-full mb-6 pb-6 border-b border-slate-700">
