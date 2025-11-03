@@ -28,14 +28,20 @@ export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
   
   const isValidDate = (date: any): boolean => {
     if (!date) return false;
-    // Firestore Timestamps have toDate(), ISO strings are parsed by new Date()
-    return typeof date.toDate === 'function' || !isNaN(new Date(date).getTime());
+    if (typeof date.toDate === 'function') return true;
+    if (typeof date === 'string' && !isNaN(new Date(date).getTime())) return true;
+    if (date.seconds && typeof date.seconds === 'number') return true;
+    return false;
   };
 
-  const formattedDate = isValidDate(note.updatedAt)
-    ? format(typeof note.updatedAt.toDate === 'function' ? note.updatedAt.toDate() : new Date(note.updatedAt), 'MMM dd, yyyy')
-    : 'Saving...';
+  const formatDateSafe = (date: any) => {
+    if (!isValidDate(date)) return '...';
+    const d = typeof date.toDate === 'function' ? date.toDate() : new Date(date.seconds ? date.seconds * 1000 : date);
+    return format(d, 'MMM dd, yyyy');
+  }
 
+  const formattedDate = formatDateSafe(note.updatedAt);
+  const firstPage = note.pages && note.pages.length > 0 ? note.pages[0] : null;
 
   return (
     <div
@@ -59,7 +65,7 @@ export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
             <AlertDialogHeader>
               <AlertDialogTitle>Are you sure?</AlertDialogTitle>
               <AlertDialogDescription>
-                This will permanently delete this note. This action cannot be undone.
+                This will permanently delete this note and all its pages. This action cannot be undone.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
@@ -72,8 +78,10 @@ export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
 
       <div 
         className="prose prose-sm prose-invert max-w-none flex-1 overflow-hidden h-40"
-        dangerouslySetInnerHTML={{ __html: note.content }} 
-      />
+      >
+        <h3 className="font-bold text-lg text-white/90 truncate">{firstPage?.title || 'Untitled Note'}</h3>
+        <div className="text-white/70 line-clamp-4" dangerouslySetInnerHTML={{ __html: firstPage?.content || '' }} />
+      </div>
 
       <div className="text-right text-xs text-white/50 mt-2 flex-shrink-0">
         {formattedDate}

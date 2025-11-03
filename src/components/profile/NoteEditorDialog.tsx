@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Note } from './ProfileNotesSection';
+import { Note, NotePage } from './ProfileNotesSection';
 import {
   Dialog,
   DialogContent,
@@ -10,8 +10,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { 
-    Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, PilcrowRight
+    Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered, 
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, PilcrowRight, X, Plus
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -31,6 +31,19 @@ import ImageExtension from '@tiptap/extension-image';
 import { contentService } from '@/lib/contentService';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { Smile } from 'lucide-react';
+import { nanoid } from 'nanoid';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+
 
 const NOTE_COLORS = [
     '#282828', // dark grey
@@ -79,11 +92,9 @@ const FONT_SIZES = [
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false,
+    history: false, // Use the dedicated History extension
     horizontalRule: {
-      HTMLAttributes: {
-        class: 'border-white my-4',
-      },
+      HTMLAttributes: { class: 'border-white my-4' },
     },
     blockquote: {
       HTMLAttributes: {
@@ -93,37 +104,20 @@ const editorExtensions = [
   }),
   UnderlineExtension,
   LinkExtension.configure({
-    openOnClick: false,
-    autolink: true,
-    linkOnPaste: true,
-    HTMLAttributes: {
-        class: 'text-blue-400 hover:text-blue-300 underline',
-    }
+    openOnClick: false, autolink: true, linkOnPaste: true,
+    HTMLAttributes: { class: 'text-blue-400 hover:text-blue-300 underline' }
   }),
-  TextAlign.configure({
-    types: ['heading', 'paragraph'],
-    alignments: ['left', 'center', 'right'],
-  }),
-  Highlight.configure({ 
-      multicolor: true,
-      HTMLAttributes: {
-          class: 'text-black rounded-sm px-1 py-0.5',
-      },
-  }),
+  TextAlign.configure({ types: ['heading', 'paragraph'] }),
+  Highlight.configure({ multicolor: true, HTMLAttributes: { class: 'text-black rounded-sm px-1 py-0.5' } }),
   TextStyle,
   Color,
-  History.configure({
-    depth: 20,
-  }),
+  History.configure({ depth: 20 }),
   Placeholder.configure({
     placeholder: 'Write something amazing...',
     emptyEditorClass: 'is-editor-empty',
   }),
   FontFamily,
-  ImageExtension.configure({
-    inline: false,
-    allowBase64: true,
-  }),
+  ImageExtension.configure({ inline: false, allowBase64: true }),
 ];
 
 
@@ -196,7 +190,7 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
                 <ChevronDown className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700 max-h-60 overflow-y-auto">
+        <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700 max-h-60 overflow-y-auto no-scrollbar">
             {FONT_FAMILIES.map(({ name, value }) => (
                 <button
                     key={name}
@@ -267,55 +261,111 @@ type NoteEditorDialogProps = {
 };
 
 
-export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEditorDialogProps) => {
-  const [color, setColor] = useState('#282828');
+export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave }: NoteEditorDialogProps) => {
+  const [note, setNote] = useState<Note | null>(initialNote);
+  const [activePageId, setActivePageId] = useState<string | null>(null);
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
+  const [pageToDelete, setPageToDelete] = useState<NotePage | null>(null);
+  const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  
 
   const editor = useEditor({
     extensions: editorExtensions,
     content: '',
     editorProps: {
-      attributes: {
-        class: 'prose prose-sm prose-invert focus:outline-none max-w-full p-2 h-full',
-      },
-      handleDrop: function(view, event, slice, moved) {
-        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
-          const file = event.dataTransfer.files[0];
-          if (file.type.startsWith("image/")) {
-            event.preventDefault();
-            contentService.uploadNoteImage(file).then(url => {
-              const { schema } = view.state;
-              const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
-              if (!coordinates) return;
-              const node = schema.nodes.image.create({ src: url });
-              const transaction = view.state.tr.insert(coordinates.pos, node);
-              view.dispatch(transaction);
-            }).catch(err => {
-                console.error(err);
-            });
-            return true;
-          }
-        }
-        return false;
-      }
+      attributes: { class: 'prose prose-sm prose-invert focus:outline-none max-w-full p-2 h-full' },
     },
   });
 
+  // Effect to update internal state when dialog is opened or note prop changes
   useEffect(() => {
-    if (open && note && editor) {
-        if (!editor.isDestroyed) {
-          editor.commands.setContent(note.content);
-        }
-        setColor(note.color || '#282828');
+    if (open && initialNote) {
+      setNote(initialNote);
+      if (initialNote.pages && initialNote.pages.length > 0) {
+        setActivePageId(initialNote.pages[0].id);
+      } else { // Handle case for notes created before pages
+        const newPageId = nanoid();
+        const newPages = [{ id: newPageId, title: 'Page 1', content: (initialNote as any).content || '' }];
+        setNote({ ...initialNote, pages: newPages });
+        setActivePageId(newPageId);
+      }
     } else if (!open) {
-        editor?.commands.clearContent();
-        setColor('#282828');
+      setNote(null);
+      setActivePageId(null);
     }
-  }, [note, open, editor]);
+  }, [initialNote, open]);
+
+  // Effect to update editor content when active page changes
+  useEffect(() => {
+    if (editor && note && activePageId) {
+      const activePage = note.pages.find(p => p.id === activePageId);
+      if (activePage && !editor.isDestroyed && editor.getHTML() !== activePage.content) {
+        editor.commands.setContent(activePage.content);
+      }
+    }
+  }, [activePageId, note, editor]);
 
   const handleSave = () => {
     if (note && editor) {
-      onSave({ ...note, content: editor.getHTML(), color });
+      // Save current editor content to the active page
+      const finalNote = saveCurrentPageContent();
+      onSave(finalNote);
+    }
+  };
+
+  const saveCurrentPageContent = (): Note => {
+    if (!note || !activePageId || !editor) return note!;
+    
+    const updatedPages = note.pages.map(page => 
+      page.id === activePageId ? { ...page, content: editor.getHTML() } : page
+    );
+    const updatedNote = { ...note, pages: updatedPages };
+    setNote(updatedNote);
+    return updatedNote;
+  }
+
+  const addPage = () => {
+    if (!note) return;
+    const newPage: NotePage = {
+      id: nanoid(),
+      title: `Page ${note.pages.length + 1}`,
+      content: ''
+    };
+    const updatedPages = [...note.pages, newPage];
+    setNote({ ...note, pages: updatedPages });
+    setActivePageId(newPage.id);
+  };
+
+  const deletePage = () => {
+    if (!note || !pageToDelete || note.pages.length <= 1) {
+      setPageToDelete(null);
+      return;
+    }
+
+    const updatedPages = note.pages.filter(p => p.id !== pageToDelete.id);
+    let newActivePageId = activePageId;
+    if (activePageId === pageToDelete.id) {
+        const deletedIndex = note.pages.findIndex(p => p.id === pageToDelete.id);
+        newActivePageId = updatedPages[Math.max(0, deletedIndex - 1)]?.id || updatedPages[0]?.id;
+    }
+    
+    setNote({ ...note, pages: updatedPages });
+    setActivePageId(newActivePageId);
+    setPageToDelete(null);
+  };
+
+  const renamePage = (pageId: string, newTitle: string) => {
+    if (!note) return;
+    const updatedPages = note.pages.map(p => p.id === pageId ? { ...p, title: newTitle } : p);
+    setNote({ ...note, pages: updatedPages });
+    setEditingTabId(null);
+  }
+
+  const handleTabTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, page: NotePage) => {
+    if (e.key === 'Enter') {
+      renamePage(page.id, e.currentTarget.value);
+    } else if (e.key === 'Escape') {
+      setEditingTabId(null);
     }
   };
 
@@ -323,36 +373,12 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('URL', previousUrl);
-
     if (url === null) return;
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      return;
-    }
+    if (url === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
   
-  if (!editor) {
-    return null;
-  }
-  
-  const handleImageUpload = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async (e) => {
-        const file = (e.target as HTMLInputElement).files?.[0];
-        if (file) {
-            try {
-              const url = await contentService.uploadNoteImage(file);
-              editor.chain().focus().setImage({ src: url }).run();
-            } catch(error) {
-              console.error(error);
-            }
-        }
-    };
-    input.click();
-  };
+  if (!editor || !note) return null;
 
   const ToolbarContent = () => (
       <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-900/50 rounded-lg border border-slate-700">
@@ -382,8 +408,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <EditorToolbarButton icon={TextQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
         <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
-        <EditorToolbarButton icon={Link} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
-        <EditorToolbarButton icon={ImageIcon} onClick={handleImageUpload} tip="Insert Image" />
+        <EditorToolbarButton icon={LinkIcon} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
         <EmojiSelector editor={editor} />
       </div>
   );
@@ -392,14 +417,49 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent 
         className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0"
-        style={{ backgroundColor: color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
+        style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
         <div className="p-4 flex-shrink-0">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <DialogTitle>{note?.id.startsWith('temp_') ? 'New Note' : 'Edit Note'}</DialogTitle>
-              <div className="flex items-center gap-1">
-                 <Popover>
+              <div className="flex items-center gap-1 border-b border-white/10 flex-grow">
+                  {note.pages.map(page => (
+                      <div key={page.id} onDoubleClick={() => setEditingTabId(page.id)} className={cn("flex items-center gap-1 py-2 px-3 border-b-2 transition-colors", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}>
+                          {editingTabId === page.id ? (
+                              <input
+                                  type="text"
+                                  defaultValue={page.title}
+                                  onBlur={(e) => renamePage(page.id, e.target.value)}
+                                  onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
+                                  autoFocus
+                                  className="bg-transparent outline-none w-24 text-sm"
+                              />
+                          ) : (
+                            <span className="text-sm cursor-pointer truncate">{page.title}</span>
+                          )}
+                          {note.pages.length > 1 && (
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Delete Page?</AlertDialogTitle>
+                                      <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                      </div>
+                  ))}
+                  <button onClick={addPage} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-t-lg"><Plus size={16} /></button>
+              </div>
+              <div className="flex items-center gap-1 pl-4">
+                  <Popover>
                       <PopoverTrigger asChild>
                          <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
                       </PopoverTrigger>
@@ -409,8 +469,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
                                   <button
                                       key={c}
                                       className="h-8 w-8 rounded-full border-2 transition-transform transform hover:scale-110"
-                                      style={{ backgroundColor: c, borderColor: color === c ? 'white' : 'transparent' }}
-                                      onClick={() => setColor(c)}
+                                      style={{ backgroundColor: c, borderColor: note.color === c ? 'white' : 'transparent' }}
+                                      onClick={() => setNote({ ...note, color: c })}
                                   />
                               ))}
                           </div>

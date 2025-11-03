@@ -10,12 +10,18 @@ import { nanoid } from 'nanoid';
 import { db } from '@/firebase';
 import { doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
 
+export type NotePage = {
+  id: string;
+  title: string;
+  content: string;
+}
+
 export type Note = {
   id: string;
-  content: string;
+  pages: NotePage[];
   color: string;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: any; // Can be string or Firestore timestamp
+  updatedAt: any; // Can be string or Firestore timestamp
 };
 
 export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
@@ -27,10 +33,11 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const [isEditorOpen, setIsEditorOpen] = useState(false);
 
   const handleNewNote = () => {
+    const newPageId = nanoid();
     setEditingNote({
-      id: `temp_${nanoid()}`, // Temporary ID for new notes
-      content: '<h2>New Note</h2><p>Start writing here...</p>',
-      color: '#282828', // Default color
+      id: `temp_${nanoid()}`,
+      pages: [{ id: newPageId, title: 'Page 1', content: '<h2>New Note</h2><p>Start writing here...</p>' }],
+      color: '#282828',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
