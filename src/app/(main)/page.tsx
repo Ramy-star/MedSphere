@@ -139,7 +139,7 @@ export default function HomePage() {
                 </div>
             </div>
         </div>
-        <div className="mt-auto mb-8 mx-4">
+        <div className="mt-auto mb-4 mx-4">
             <div className="border border-blue-400/30 bg-blue-900/10 rounded-[1.25rem] p-6 max-w-3xl mx-auto">
                 <blockquote className="text-center">
                     <p className="text-lg text-slate-300 italic max-w-2xl">
@@ -149,6 +149,9 @@ export default function HomePage() {
                 </blockquote>
             </div>
         </div>
+         <footer className="text-center text-xs text-slate-500 pb-4">
+            © 2025 MedSphere. All rights reserved.
+        </footer>
     </div>
   );
 }
