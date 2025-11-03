@@ -144,7 +144,7 @@ export default function RootLayout({
           <title>MedSphere</title>
           <meta name="description" content="Organize your medical education journey" />
           <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
-          <meta name="viewport" content={`width=device-width, initial-scale=1, interactive-widget=resizes-content${authState !== 'authenticated' ? ', maximum-scale=1, user-scalable=no' : ''}`} />
+          <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
           <link rel="manifest" href="/manifest.json" />
           <meta name="theme-color" content="#0B0F12" />
           <link rel="apple-touch-icon" href="/logo.svg" />
