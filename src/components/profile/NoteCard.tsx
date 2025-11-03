@@ -1,3 +1,4 @@
+
 'use client';
 import { Note } from './ProfileNotesSection';
 import { Button } from '@/components/ui/button';
@@ -28,8 +29,8 @@ type NoteCardProps = {
 
 // Helper function to convert hex to rgba
 const hexToRgba = (hex: string, alpha: number): string => {
-  if (!/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
-    return hex; // return original color if not a valid hex
+  if (!hex || !/^#([A-Fa-f0-9]{3}){1,2}$/.test(hex)) {
+    return `rgba(40, 40, 40, ${alpha})`; // Default color if hex is invalid
   }
   let c: any = hex.substring(1).split('');
   if (c.length === 3) {
