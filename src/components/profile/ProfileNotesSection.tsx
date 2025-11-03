@@ -8,7 +8,7 @@ import { NoteCard } from './NoteCard';
 import { NoteEditorDialog } from './NoteEditorDialog';
 import { nanoid } from 'nanoid';
 import { db } from '@/firebase';
-import { doc, writeBatch } from 'firebase/firestore';
+import { doc, writeBatch, serverTimestamp, deleteDoc } from 'firebase/firestore';
 
 export type Note = {
   id: string;
@@ -28,9 +28,9 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
 
   const handleNewNote = () => {
     setEditingNote({
-      id: nanoid(),
-      content: '',
-      color: '#333333', // Default color
+      id: `temp_${nanoid()}`, // Temporary ID for new notes
+      content: '## New Note\n\nStart writing here...',
+      color: '#282828', // Default color
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     });
@@ -44,10 +44,21 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
 
   const handleSaveNote = async (noteToSave: Note) => {
     if (!user) return;
-    const noteRef = doc(db, `users/${user.id}/notes`, noteToSave.id);
-    const batch = writeBatch(db);
-    batch.set(noteRef, { ...noteToSave, updatedAt: new Date().toISOString() });
-    await batch.commit();
+    const finalId = noteToSave.id.startsWith('temp_') ? nanoid() : noteToSave.id;
+    const noteRef = doc(db, `users/${user.id}/notes`, finalId);
+    
+    const saveData = {
+        ...noteToSave,
+        id: finalId, // ensure the final ID is set
+        updatedAt: serverTimestamp(),
+        createdAt: noteToSave.createdAt || serverTimestamp(), // only set createdAt if it's a new note
+    };
+    if (noteToSave.id.startsWith('temp_')) {
+        (saveData as any).createdAt = serverTimestamp();
+    }
+    
+    await setDoc(noteRef, saveData, { merge: true });
+
     setIsEditorOpen(false);
     setEditingNote(null);
   };
@@ -55,9 +66,7 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const handleDeleteNote = async (noteId: string) => {
     if (!user) return;
     const noteRef = doc(db, `users/${user.id}/notes`, noteId);
-    const batch = writeBatch(db);
-    batch.delete(noteRef);
-    await batch.commit();
+    await deleteDoc(noteRef);
   };
 
   return (
