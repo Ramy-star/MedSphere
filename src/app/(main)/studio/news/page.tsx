@@ -6,12 +6,31 @@ import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
-import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Download, Pilcrow } from 'lucide-react';
+import FontFamily from '@tiptap/extension-font-family';
+import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Download, Pilcrow, ChevronDown } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { toPng } from 'html-to-image';
 import { cn } from '@/lib/utils';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+
+const FONT_FAMILIES = [
+    { name: 'Default', value: '' },
+    { name: 'Inter', value: 'Inter, sans-serif' },
+    { name: 'Poppins', value: 'Poppins, sans-serif' },
+    { name: 'Roboto', value: 'Roboto, sans-serif' },
+    { name: 'Lato', value: 'Lato, sans-serif' },
+    { name: 'Montserrat', value: 'Montserrat, sans-serif' },
+    { name: 'Impact', value: 'Impact, sans-serif' },
+    { name: 'Comic Sans MS', value: 'Comic Sans MS, cursive' },
+    { name: 'Amasis', value: 'Amasis, serif' },
+    { name: 'Cairo', value: 'Cairo, sans-serif' },
+    { name: 'Tajawal', value: 'Tajawal, sans-serif' },
+    { name: 'Amiri', value: 'Amiri, serif' },
+    { name: 'Almarai', value: 'Almarai, sans-serif' },
+    { name: 'Noto Kufi Arabic', value: 'Noto Kufi Arabic, sans-serif' },
+    { name: 'IBM Plex Sans Arabic', value: 'IBM Plex Sans Arabic, sans-serif' },
+];
 
 const TiptapToolbar = ({ editor }: { editor: Editor | null }) => {
     if (!editor) return null;
@@ -39,8 +58,37 @@ const TiptapToolbar = ({ editor }: { editor: Editor | null }) => {
       </Popover>
     );
 
+    const FontPicker = () => {
+        const currentFont = editor.getAttributes('textStyle').fontFamily || '';
+        const currentFontName = FONT_FAMILIES.find(f => f.value === currentFont)?.name || 'Default';
+        return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" className="h-8 w-40 justify-between text-slate-300">
+                    <span className="truncate">{currentFontName}</span>
+                    <ChevronDown className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700 max-h-60 overflow-y-auto no-scrollbar">
+                {FONT_FAMILIES.map(({ name, value }) => (
+                    <button
+                        key={name}
+                        onClick={() => value ? editor.chain().focus().setFontFamily(value).run() : editor.chain().focus().unsetFontFamily().run()}
+                        className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white", {
+                            'bg-slate-700': editor.isActive('textStyle', { fontFamily: value }) || (!value && !editor.getAttributes('textStyle').fontFamily)
+                        })}
+                    >
+                        <span style={{ fontFamily: value || 'inherit' }}>{name}</span>
+                    </button>
+                ))}
+            </PopoverContent>
+        </Popover>
+    )};
+
     return (
         <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700">
+            <FontPicker />
+            <div className="w-px h-6 bg-slate-700 mx-1" />
             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().toggleBold().run()} data-active={editor.isActive('bold')}><Bold size={16}/></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().toggleItalic().run()} data-active={editor.isActive('italic')}><Italic size={16}/></Button>
             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().toggleUnderline().run()} data-active={editor.isActive('underline')}><UnderlineIcon size={16}/></Button>
@@ -82,6 +130,7 @@ export default function NewsComposerPage() {
           Underline,
           TextStyle,
           Color,
+          FontFamily,
           TextAlign.configure({
             types: ['heading', 'paragraph'],
             defaultAlignment: 'center',
@@ -141,8 +190,8 @@ export default function NewsComposerPage() {
                     "shadow-2xl"
                 )}>
                 <header className="flex-shrink-0 flex items-center justify-center gap-2 w-full mb-2 pb-2 border-b border-slate-700">
-                    <Logo className="h-8 w-8 md:h-10 md:w-10" />
-                     <h1 className="text-xl md:text-2xl font-bold"
+                    <Logo className="h-10 w-10 md:h-12 md:w-12" />
+                     <h1 className="text-2xl md:text-3xl font-bold"
                     >
                       <span className="font-extrabold text-white">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
                     </h1>
