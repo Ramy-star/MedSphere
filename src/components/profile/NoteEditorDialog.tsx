@@ -44,6 +44,7 @@ import {
   AlertDialogDescription,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '../ui/scroll-area';
 import { Input } from '../ui/input';
@@ -142,21 +143,19 @@ const ColorPicker = ({ editor }: { editor: Editor }) => (
         <Palette className="h-4 w-4" />
       </Button>
     </PopoverTrigger>
-    <Popover.Portal>
-        <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
-        <div className="flex gap-1">
-            {['#ffffff', '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'].map(color => (
-            <button
-                key={color}
-                onClick={() => editor.chain().focus().setColor(color).run()}
-                className="w-6 h-6 rounded-full border-2"
-                style={{ backgroundColor: color, borderColor: editor.isActive('textStyle', { color }) ? 'white' : 'transparent' }}
-            />
-            ))}
-            <button onClick={() => editor.chain().focus().unsetColor().run()} className="text-xs px-2 text-white">Reset</button>
-        </div>
-        </PopoverContent>
-    </Popover.Portal>
+    <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+    <div className="flex gap-1">
+        {['#ffffff', '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'].map(color => (
+        <button
+            key={color}
+            onClick={() => editor.chain().focus().setColor(color).run()}
+            className="w-6 h-6 rounded-full border-2"
+            style={{ backgroundColor: color, borderColor: editor.isActive('textStyle', { color }) ? 'white' : 'transparent' }}
+        />
+        ))}
+        <button onClick={() => editor.chain().focus().unsetColor().run()} className="text-xs px-2 text-white">Reset</button>
+    </div>
+    </PopoverContent>
   </Popover>
 );
 
@@ -167,21 +166,19 @@ const HighlightPicker = ({ editor }: { editor: Editor }) => (
             <Highlighter className="h-4 w-4" />
         </Button>
     </PopoverTrigger>
-    <Popover.Portal>
-        <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
-            <div className="flex gap-1">
-                {HIGHLIGHT_COLORS.map(({ color }) => (
-                    <button
-                        key={color}
-                        onClick={() => editor.chain().focus().toggleHighlight({ color }).run()}
-                        className="w-6 h-6 rounded-full border-2"
-                        style={{ backgroundColor: color, borderColor: editor.isActive('highlight', { color }) ? '#3b82f6' : 'transparent' }}
-                    />
-                ))}
-                <button onClick={() => editor.chain().focus().unsetHighlight().run()} className="text-xs px-2 text-white">None</button>
-            </div>
-        </PopoverContent>
-    </Popover.Portal>
+    <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+        <div className="flex gap-1">
+            {HIGHLIGHT_COLORS.map(({ color }) => (
+                <button
+                    key={color}
+                    onClick={() => editor.chain().focus().toggleHighlight({ color }).run()}
+                    className="w-6 h-6 rounded-full border-2"
+                    style={{ backgroundColor: color, borderColor: editor.isActive('highlight', { color }) ? '#3b82f6' : 'transparent' }}
+                />
+            ))}
+            <button onClick={() => editor.chain().focus().unsetHighlight().run()} className="text-xs px-2 text-white">None</button>
+        </div>
+    </PopoverContent>
   </Popover>
 );
 
@@ -196,23 +193,21 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
                 <ChevronDown className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <Popover.Portal>
-            <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700">
-                <ScrollArea className="h-60">
-                    {FONT_FAMILIES.map(({ name, value }) => (
-                        <button
-                            key={name}
-                            onClick={() => value ? editor.chain().focus().setFontFamily(value).run() : editor.chain().focus().unsetFontFamily().run()}
-                            className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800", {
-                                'bg-slate-700': editor.isActive('textStyle', { fontFamily: value }) || (!value && !editor.getAttributes('textStyle').fontFamily)
-                            })}
-                        >
-                            <span style={{ fontFamily: value || 'inherit' }} className="text-white">{name}</span>
-                        </button>
-                    ))}
-                </ScrollArea>
-            </PopoverContent>
-        </Popover.Portal>
+        <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700">
+            <ScrollArea className="h-60">
+                {FONT_FAMILIES.map(({ name, value }) => (
+                    <button
+                        key={name}
+                        onClick={() => value ? editor.chain().focus().setFontFamily(value).run() : editor.chain().focus().unsetFontFamily().run()}
+                        className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800", {
+                            'bg-slate-700': editor.isActive('textStyle', { fontFamily: value }) || (!value && !editor.getAttributes('textStyle').fontFamily)
+                        })}
+                    >
+                        <span style={{ fontFamily: value || 'inherit' }} className="text-white">{name}</span>
+                    </button>
+                ))}
+            </ScrollArea>
+        </PopoverContent>
     </Popover>
 )};
 
@@ -260,18 +255,16 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
                 <Smile className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <Popover.Portal>
-            <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
-                <ScrollArea className="h-[300px]">
-                    <EmojiPicker 
-                        onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
-                        theme="dark"
-                        lazyLoadEmojis={true}
-                        skinTonesDisabled
-                    />
-                </ScrollArea>
-            </PopoverContent>
-        </Popover.Portal>
+        <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
+            <ScrollArea className="h-[300px]">
+                <EmojiPicker 
+                    onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
+                    theme="dark"
+                    lazyLoadEmojis={true}
+                    skinTonesDisabled
+                />
+            </ScrollArea>
+        </PopoverContent>
     </Popover>
 );
 
@@ -521,6 +514,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
         <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
+            <DialogTitle className="sr-only">Note Editor: {note.title}</DialogTitle>
           <Input 
               ref={titleInputRef}
               defaultValue={note.title}
@@ -566,18 +560,16 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                       <AlertDialogTrigger asChild>
                                         <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
                                       </AlertDialogTrigger>
-                                      <AlertDialogPortal>
-                                        <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Delete Page?</AlertDialogTitle>
-                                                <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                      </AlertDialogPortal>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Page?</AlertDialogTitle>
+                                          <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                          <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                      </AlertDialogContent>
                                     </AlertDialog>
                                   )}
                               </div>
@@ -596,20 +588,18 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                       <PopoverTrigger asChild>
                           <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
                       </PopoverTrigger>
-                       <Popover.Portal>
-                          <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
-                              <div className="flex gap-2">
-                                  {NOTE_COLORS.map(c => (
-                                      <button
-                                          key={c}
-                                          className="h-8 w-8 rounded-full border-2 transition-transform transform hover:scale-110"
-                                          style={{ backgroundColor: c, borderColor: note.color === c ? 'white' : 'transparent' }}
-                                          onClick={() => setNote({ ...note, color: c })}
-                                      />
-                                  ))}
-                              </div>
-                          </PopoverContent>
-                      </Popover.Portal>
+                      <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+                          <div className="flex gap-2">
+                              {NOTE_COLORS.map(c => (
+                                  <button
+                                      key={c}
+                                      className="h-8 w-8 rounded-full border-2 transition-transform transform hover:scale-110"
+                                      style={{ backgroundColor: c, borderColor: note.color === c ? 'white' : 'transparent' }}
+                                      onClick={() => setNote({ ...note, color: c })}
+                                  />
+                              ))}
+                          </div>
+                      </PopoverContent>
                   </Popover>
                   <Button variant="ghost" size="icon" onClick={() => setIsToolbarOpen(prev => !prev)} title="Toggle Toolbar">
                       <ChevronDown className={cn("transition-transform", isToolbarOpen && "rotate-180")} />
