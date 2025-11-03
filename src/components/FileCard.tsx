@@ -1,7 +1,7 @@
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw, Star, StarOff,
-    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, SquareArrowOutUpRight, Lightbulb, HelpCircle, FileCheck, Copy, Move, EyeOff,
+    File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, FileCode, GripVertical, Wand2, Eye, Lightbulb, HelpCircle, FileCheck, Copy, Move, EyeOff,
     MousePointerSquareDashed
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -246,7 +246,7 @@ export const FileCard = React.memo(function FileCard({
         )
     }
 
-    const VisibilityIcon = item.metadata?.isHidden ? SquareArrowOutUpRight : EyeOff;
+    const VisibilityIcon = item.metadata?.isHidden ? Eye : EyeOff;
     const FavoriteIcon = isFavorited ? StarOff : Star;
 
     const hasAnyPermission = 

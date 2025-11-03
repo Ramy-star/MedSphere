@@ -1,5 +1,5 @@
 'use client';
-import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, SquareArrowOutUpRight, EyeOff, Star, StarOff } from 'lucide-react';
+import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, Eye, EyeOff, Star, StarOff } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
 import {
   DropdownMenu,
@@ -89,7 +89,7 @@ export const FolderCard = React.memo(function FolderCard({
         }
     };
 
-    const VisibilityIcon = item.metadata?.isHidden ? SquareArrowOutUpRight : EyeOff;
+    const VisibilityIcon = item.metadata?.isHidden ? Eye : EyeOff;
     const FavoriteIcon = isFavorited ? StarOff : Star;
 
     const hasAnyPermission = 
