@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { Note } from './ProfileNotesSection';
@@ -12,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Smile, TextQuote, Image as ImageIcon
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Smile, TextQuote, Pilcrow, Image as ImageIcon
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -30,7 +29,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import FontFamily from '@tiptap/extension-font-family';
 import ImageExtension from '@tiptap/extension-image';
 import { contentService } from '@/lib/contentService';
-import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import EmojiPicker, { EmojiClickData, SkinTones } from 'emoji-picker-react';
 
 
 type NoteEditorDialogProps = {
@@ -41,14 +40,14 @@ type NoteEditorDialogProps = {
 };
 
 const NOTE_COLORS = [
-  '#282828',
-  '#5C2B29',
-  '#614A19',
-  '#635D19',
-  '#345920',
-  '#16504B',
-  '#204250',
-  '#42275E',
+    '#282828', // dark grey
+    '#5C2B29', // dark red
+    '#614A19', // dark orange
+    '#635D19', // dark yellow
+    '#345920', // dark green
+    '#16504B', // dark teal
+    '#204250', // dark blue
+    '#42275E', // dark purple
 ];
 
 const HIGHLIGHT_COLORS = [
@@ -59,14 +58,38 @@ const HIGHLIGHT_COLORS = [
     { name: 'Purple', color: '#e9d5ff' },
 ];
 
+const FONT_FAMILIES = [
+    { name: 'Default', value: '' },
+    { name: 'Inter', value: 'Inter, sans-serif' },
+    { name: 'Poppins', value: 'Poppins, sans-serif' },
+    { name: 'Roboto', value: 'Roboto, sans-serif' },
+    { name: 'Lato', value: 'Lato, sans-serif' },
+    { name: 'Montserrat', value: 'Montserrat, sans-serif' },
+    { name: 'Impact', value: 'Impact, sans-serif' },
+    { name: 'Comic Sans MS', value: 'Comic Sans MS, cursive' },
+    { name: 'Amasis', value: 'Amasis, serif' },
+    { name: 'Cairo', value: 'Cairo, sans-serif' },
+    { name: 'Tajawal', value: 'Tajawal, sans-serif' },
+    { name: 'Amiri', value: 'Amiri, serif' },
+    { name: 'Almarai', value: 'Almarai, sans-serif' },
+    { name: 'Noto Kufi Arabic', value: 'Noto Kufi Arabic, sans-serif' },
+    { name: 'IBM Plex Sans Arabic', value: 'IBM Plex Sans Arabic, sans-serif' },
+];
+
+
 const editorExtensions = [
   StarterKit.configure({
-    history: false, // We are using the separate History extension
+    history: false,
     horizontalRule: {
       HTMLAttributes: {
         class: 'border-white my-4',
       },
     },
+    blockquote: {
+      HTMLAttributes: {
+        class: 'border-l-4 border-slate-500 pl-4',
+      }
+    }
   }),
   UnderlineExtension,
   LinkExtension.configure({
@@ -76,11 +99,12 @@ const editorExtensions = [
   }),
   TextAlign.configure({
     types: ['heading', 'paragraph'],
+    alignments: ['left', 'center', 'right'],
   }),
   Highlight.configure({ 
       multicolor: true,
       HTMLAttributes: {
-          class: 'text-black', // Ensure text is readable on highlight
+          class: 'text-black rounded-sm px-1 py-0.5',
       },
   }),
   TextStyle,
@@ -156,32 +180,32 @@ const HighlightPicker = ({ editor }: { editor: Editor }) => (
   </Popover>
 );
 
-const FontPicker = ({ editor }: { editor: Editor }) => (
+const FontPicker = ({ editor }: { editor: Editor }) => {
+    const currentFont = editor.getAttributes('textStyle').fontFamily || 'Default';
+    const currentFontName = FONT_FAMILIES.find(f => f.value === currentFont)?.name || 'Default';
+    return (
     <Popover>
         <PopoverTrigger asChild>
             <Button variant="ghost" className="h-8 w-40 justify-between text-slate-300">
-                <span>{editor.getAttributes('textStyle').fontFamily || 'Default'}</span>
+                <span className="truncate">{currentFontName}</span>
                 <ChevronDown className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700">
-            {['Inter', 'Arial', 'Georgia', 'Courier New', 'serif', 'sans-serif', 'monospace', '"IBM Plex Sans Arabic"'].map(font => (
+        <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700 max-h-60 overflow-y-auto">
+            {FONT_FAMILIES.map(({ name, value }) => (
                 <button
-                    key={font}
-                    onClick={() => editor.chain().focus().setFontFamily(font).run()}
+                    key={name}
+                    onClick={() => value ? editor.chain().focus().setFontFamily(value).run() : editor.chain().focus().unsetFontFamily().run()}
                     className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800", {
-                        'bg-slate-700': editor.isActive('textStyle', { fontFamily: font })
+                        'bg-slate-700': editor.isActive('textStyle', { fontFamily: value }) || (!value && !editor.getAttributes('textStyle').fontFamily)
                     })}
                 >
-                    <span style={{ fontFamily: font }}>{font.replace(/"/g, '')}</span>
+                    <span style={{ fontFamily: value || 'inherit' }}>{name}</span>
                 </button>
             ))}
-            <button onClick={() => editor.chain().focus().unsetFontFamily().run()} className="w-full text-left p-2 text-sm text-red-400 rounded-md hover:bg-slate-800">
-                Reset
-            </button>
         </PopoverContent>
     </Popover>
-);
+)};
 
 const EmojiSelector = ({ editor }: { editor: Editor }) => (
     <Popover>
@@ -190,12 +214,15 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
                 <Smile className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 max-h-80 overflow-y-auto no-scrollbar">
-            <EmojiPicker 
-                onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
-                theme="dark"
-                lazyLoadEmojis={true}
-            />
+        <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
+            <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+                <EmojiPicker 
+                    onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
+                    theme="dark"
+                    lazyLoadEmojis={true}
+                    skinTonesDisabled={true}
+                />
+            </div>
         </PopoverContent>
     </Popover>
 );
@@ -379,7 +406,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
             <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
           </BubbleMenu>
           
-          <EditorContent editor={editor} className="h-full overflow-y-auto p-2 rounded-lg bg-black/10" />
+          <EditorContent editor={editor} className="h-full overflow-y-auto p-2 rounded-lg bg-black/10" dir="auto" />
         </div>
         
         <DialogFooter className="p-4 border-t border-white/10 flex-shrink-0">

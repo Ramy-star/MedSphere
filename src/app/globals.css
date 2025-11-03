@@ -67,7 +67,15 @@
   }
   
   .prose hr {
-    @apply !w-full border-slate-700 my-6;
+    @apply !w-full border-white my-6;
+  }
+
+  .prose blockquote {
+    @apply border-slate-500 pl-4;
+  }
+  
+  .prose[dir="rtl"] blockquote {
+    @apply border-l-0 border-r-4 border-slate-500 pr-4 pl-0;
   }
 }
 
