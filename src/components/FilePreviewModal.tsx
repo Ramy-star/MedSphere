@@ -22,7 +22,7 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription as AlertDialogDesc,
+  AlertDialogDescription as AlertDialogDesc, // Renamed to avoid conflict
   AlertDialogFooter,
   AlertDialogHeader as AlertDialogHeader2,
   AlertDialogTitle as AlertDialogTitle2,
@@ -31,7 +31,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 import { Link2Icon } from './icons/Link2Icon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
@@ -40,7 +40,7 @@ import { FlashcardIcon } from './icons/FlashcardIcon';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import * as pdfjs from 'pdfjs-dist';
-import type { Note } from './profile/NotesSection';
+import type { Note } from './profile/ProfileNotesSection';
 import { NoteViewer } from './profile/NoteViewer';
 
 
@@ -199,6 +199,10 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, 
     if (item.type === 'INTERACTIVE_FLASHCARD') {
         return { Icon: FlashcardIcon, color: '' };
     }
+    if (item.type === 'NOTE') {
+        return { Icon: StickyNote, color: 'text-yellow-300' };
+    }
+
     const mimeType = item.metadata?.mime;
 
     if(mimeType === 'text/markdown') return { Icon: HelpCircle, color: 'text-red-400' };
@@ -848,3 +852,5 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
+
+    

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useRef, useEffect, ReactNode } from 'react';
@@ -34,10 +33,9 @@ import Image from 'next/image';
 import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
 import { FilePreviewModal } from '@/components/FilePreviewModal';
-import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
