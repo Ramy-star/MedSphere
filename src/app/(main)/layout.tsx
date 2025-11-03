@@ -143,9 +143,7 @@ export default function MainLayout({
         )}
         </motion.main>
       </div>
-      <div className="fixed bottom-8 right-6 sm:bottom-6 z-50">
-        {user && <FloatingAssistant user={user} />}
-      </div>
+      <FloatingAssistant user={user} />
     </>
   );
 }

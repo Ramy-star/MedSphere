@@ -8,11 +8,13 @@ import {
   DialogTitle,
   DialogFooter,
   DialogDescription,
+  DialogClose,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered, 
-    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight,
+    Maximize, Shrink
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -40,7 +42,7 @@ import {
   AlertDialogContent,
   AlertDialogDescription as AlertDialogDesc, // Renamed to avoid conflict
   AlertDialogHeader,
-  AlertDialogTitle,
+  AlertDialogTitle as AlertDialogTitle2,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '../ui/scroll-area';
@@ -277,9 +279,10 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const newTabInputRef = useRef<HTMLInputElement | null>(null);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
-  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const tabsContainerRef = useRef<HTMLDivElement | null>(null);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
-  
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const dialogContentRef = useRef<HTMLDivElement | null>(null);
 
   const editor = useEditor({
     extensions: editorExtensions,
@@ -311,6 +314,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     } else if (!open) {
       setNote(null);
       setActivePageId(null);
+      setIsFullscreen(false);
     }
   }, [initialNote, open]);
 
@@ -338,6 +342,23 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
       }
       return () => resizeObserver.disconnect();
   }, [note?.pages.length, checkScroll]);
+  
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!dialogContentRef.current) return;
+    if (isFullscreen) {
+      document.exitFullscreen();
+    } else {
+      dialogContentRef.current.requestFullscreen();
+    }
+  };
 
   const scrollTabs = (direction: 'left' | 'right') => {
     if (tabsContainerRef.current) {
@@ -478,22 +499,31 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent 
-        className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0"
+      <DialogContent
+        ref={dialogContentRef}
+        hideCloseButton={true}
+        className={cn(
+            "max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0",
+            isFullscreen && "max-w-full w-screen h-screen rounded-none max-h-screen"
+        )}
         style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
-        <DialogHeader className="p-4 flex-shrink-0">
+        <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
           <Input 
             ref={titleInputRef}
             defaultValue={note.title}
             onChange={(e) => setNote({ ...note, title: e.target.value })}
-            className="text-lg font-bold bg-transparent border-0 text-white focus-visible:ring-1 focus-visible:ring-blue-500"
+            className="text-lg font-bold bg-transparent border-0 text-white focus-visible:ring-1 focus-visible:ring-blue-500 w-auto flex-grow"
             placeholder="Note Title"
           />
-          <span className="sr-only">
-              <DialogTitle>Note Editor</DialogTitle>
-              <DialogDescription>Edit your note with multiple pages and rich text formatting.</DialogDescription>
-          </span>
+          <div className="flex items-center">
+            <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="h-9 w-9 text-white">
+              {isFullscreen ? <Shrink size={18} /> : <Maximize size={18} />}
+            </Button>
+            <DialogClose asChild>
+                <Button variant="ghost" size="icon" className="h-9 w-9 text-white"><X size={20}/></Button>
+            </DialogClose>
+          </div>
         </DialogHeader>
         <div className="p-4 pt-0 flex-shrink-0">
           <div className="flex flex-col gap-2">
@@ -526,7 +556,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
                                           <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Page?</AlertDialogTitle>
+                                            <AlertDialogTitle2>Delete Page?</AlertDialogTitle2>
                                             <AlertDialogDesc>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDesc>
                                           </AlertDialogHeader>
                                           <AlertDialogFooter>

@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, NotebookPen, Award } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, StickyNote } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -321,7 +321,7 @@ export default function ProfilePage() {
   const DesktopLayout = () => (
     <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
       <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-           <CollapsibleSection title="My Pinned Notes" icon={NotebookPen} defaultOpen={false}>
+          <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
               <ProfileNotesSection user={user} />
           </CollapsibleSection>
            <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
@@ -342,7 +342,7 @@ export default function ProfilePage() {
           <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
               <ActiveSessions user={user} />
           </CollapsibleSection>
-          <CollapsibleSection title="Achievements" icon={Award} defaultOpen={true}>
+          <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
              <AchievementsSection user={user} />
           </CollapsibleSection>
       </div>
@@ -361,10 +361,10 @@ export default function ProfilePage() {
           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={false}>
               <FavoritesSection user={user} onFileClick={handleFileClick} />
           </CollapsibleSection>
-          <CollapsibleSection title="My Pinned Notes" icon={NotebookPen} defaultOpen={false}>
+          <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
               <ProfileNotesSection user={user} />
           </CollapsibleSection>
-          <CollapsibleSection title="Achievements" icon={Award} defaultOpen={false}>
+          <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={false}>
              <AchievementsSection user={user} />
           </CollapsibleSection>
            <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={false}>
