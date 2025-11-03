@@ -1,9 +1,8 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox, Users, Home, NotebookPen } from 'lucide-react';
+import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox, Users, Home, NotebookPen, Palette } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -98,6 +97,12 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       permission: () => can('canAccessTelegramInbox', null),
     },
     {
+      label: 'Studio',
+      icon: Palette,
+      action: () => router.push('/studio/news'),
+      permission: () => can('canAccessAdminPanel', null),
+    },
+    {
       label: 'Admin Panel',
       icon: Shield,
       action: () => router.push('/admin'),
@@ -111,6 +116,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const DesktopNav = () => (
     <div className="hidden md:flex items-center gap-1">
         <TooltipProvider>
+             {can('canAccessAdminPanel', null) && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-orange-400" onClick={() => router.push('/studio/news')}>
+                            <Palette className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>News Studio</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
             {can('canAccessAdminPanel', null) && (
                  <Tooltip>
                     <TooltipTrigger asChild>
