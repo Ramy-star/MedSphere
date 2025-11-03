@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -110,7 +109,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     const { initialInsight, theme, setInitialData } = useAiBuddyStore();
     const [loading, setLoading] = useState(!initialInsight);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const [isResponding, setIsResponding] = useState(isResponding || false);
+    const [isResponding, setIsResponding] = useState(false);
     const [customQuestion, setCustomQuestion] = useState('');
     const [view, setView] = useState<'intro' | 'chat' | 'history'>('intro');
     const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -583,18 +582,20 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                   )}
                   style={{ fontSize: 'inherit' }}
                 >
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                        table: ({ node, ...props }) => <div className="overflow-x-auto"><table className="my-4 border-collapse border border-white/30 rounded-lg overflow-hidden" {...props} /></div>,
-                        thead: ({ node, ...props }) => <thead className="bg-black/35 text-white" {...props} />,
-                        tr: ({ node, ...props }) => <tr className="border-b border-white/30 last:border-b-0" {...props} />,
-                        th: ({ node, ...props }) => <th className="border-r border-white/30 p-2 text-left font-semibold last:border-r-0" {...props} />,
-                        td: ({ node, ...props }) => <td className="border-r border-white/30 p-2 align-top last:border-r-0 text-neutral-100 bg-white/10" {...props} />,
-                    }}
-                  >
-                    {message.text}
-                  </ReactMarkdown>
+                  <div className="overflow-x-auto">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                          table: ({ node, ...props }) => <div className="overflow-x-auto"><table className="my-4 border-collapse border border-white/30 rounded-lg overflow-hidden" {...props} /></div>,
+                          thead: ({ node, ...props }) => <thead className="bg-black/35 text-white" {...props} />,
+                          tr: ({ node, ...props }) => <tr className="border-b border-white/30 last:border-b-0" {...props} />,
+                          th: ({ node, ...props }) => <th className="border-r border-white/30 p-2 text-left font-semibold last:border-r-0" {...props} />,
+                          td: ({ node, ...props }) => <td className="border-r border-white/30 p-2 align-top last:border-r-0 text-neutral-100 bg-white/10" {...props} />,
+                      }}
+                    >
+                      {message.text}
+                    </ReactMarkdown>
+                  </div>
                   <Button
                     variant="ghost"
                     size="icon"
