@@ -150,7 +150,7 @@ export default function RootLayout({
           <link rel="apple-touch-icon" href="/logo.svg" />
           <link rel="preconnect" href="https://res.cloudinary.com" />
       </head>
-      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background`}>
+      <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
           <FirebaseClientProvider config={firebaseConfig}>
             <div className="flex flex-col h-full w-full">
                 {renderContent()}
