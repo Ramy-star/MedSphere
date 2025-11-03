@@ -99,7 +99,15 @@ export const contentService = {
         return blob;
     },
     
-    async extractTextFromPdf(pdf: PDFDocumentProxy): Promise<string> {
+    async extractTextFromPdf(pdfOrBlob: PDFDocumentProxy | Blob): Promise<string> {
+        let pdf: PDFDocumentProxy;
+        if (pdfOrBlob instanceof Blob) {
+            const loadingTask = pdfjs.getDocument(await pdfOrBlob.arrayBuffer());
+            pdf = await loadingTask.promise;
+        } else {
+            pdf = pdfOrBlob;
+        }
+    
         const maxPages = pdf.numPages;
         const textPromises: Promise<string>[] = [];
 
@@ -978,4 +986,38 @@ export const contentService = {
     const noteRef = doc(db, `users/${userId}/notes`, noteId);
     await deleteFirestoreDoc(noteRef);
   },
+    
+  async uploadNoteImage(file: File): Promise<string> {
+      const folder = `notes_images`;
+      const public_id = `${folder}/${nanoid()}`;
+      const paramsToSign = { public_id, folder };
+      const sigResponse = await fetch('/api/sign-cloudinary-params', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ paramsToSign })
+      });
+      if (!sigResponse.ok) throw new Error('Failed to get signature.');
+      const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
+
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', apiKey);
+      formData.append('timestamp', String(timestamp));
+      formData.append('signature', signature);
+      formData.append('public_id', public_id);
+      formData.append('folder', folder);
+      
+      const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+          method: 'POST',
+          body: formData,
+      });
+
+      if (!uploadResponse.ok) {
+          throw new Error('Cloudinary image upload failed.');
+      }
+      const data = await uploadResponse.json();
+      return createProxiedUrl(data.secure_url);
+  },
 };
+
+    
