@@ -9,6 +9,7 @@ import { ArrowRight, Loader2 } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { CreateSecretCodeScreen } from './CreateSecretCodeScreen';
 import { isStudentIdValid, getClaimedStudentIdUser } from '@/lib/verificationService';
+import { cn } from '@/lib/utils';
 
 export function VerificationScreen() {
   const [studentId, setStudentId] = useState('');
@@ -156,7 +157,10 @@ export function VerificationScreen() {
               <button 
                 onClick={handleOpenSecretCreation}
                 disabled={!isNewUser || loading}
-                className="text-sm hover:underline text-center disabled:text-slate-500 disabled:no-underline disabled:cursor-not-allowed text-blue-400"
+                className={cn(
+                  "text-sm text-center",
+                  isNewUser ? "text-blue-400 hover:underline cursor-pointer" : "text-slate-500 cursor-not-allowed"
+                )}
               >
                 Don't have a secret code?
               </button>
@@ -179,7 +183,7 @@ export function VerificationScreen() {
           </motion.div>
         </motion.div>
         
-        <footer className="absolute bottom-4 text-center text-xs text-slate-500 z-10">
+        <footer className="absolute bottom-4 text-center text-xs text-slate-500 z-10 w-full">
           © 2025 MedSphere. All rights reserved.
         </footer>
       </motion.div>
