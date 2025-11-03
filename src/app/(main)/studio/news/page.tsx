@@ -1,103 +1,136 @@
 'use client';
 import React, { useRef } from 'react';
-import { EditorContent, useEditor } from '@tiptap/react';
+import { Editor, EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
-import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Download } from 'lucide-react';
+import { Bold, Italic, Underline as UnderlineIcon, List, ListOrdered, AlignLeft, AlignCenter, AlignRight, Download, Pilcrow } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { toPng } from 'html-to-image';
 import { cn } from '@/lib/utils';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
-const Tiptap = () => {
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Underline,
-      TextStyle,
-      Color,
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-    ],
-    content: `
-      <h2>Major Update!</h2>
-      <p>We're excited to announce a new feature that will revolutionize your study workflow.</p>
-      <ul>
-        <li>Feature A</li>
-        <li>Feature B</li>
-        <li>Feature C</li>
-      </ul>
-      <p>Stay tuned for more details!</p>
-    `,
-    editorProps: {
-      attributes: {
-        class: 'prose prose-lg dark:prose-invert focus:outline-none max-w-none text-center',
-      },
-    },
-  });
+const TiptapToolbar = ({ editor }: { editor: Editor | null }) => {
+    if (!editor) return null;
 
-  const floatingMenu = editor && (
-    <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700">
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleBold().run()}><Bold size={16}/></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleItalic().run()}><Italic size={16}/></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleUnderline().run()}><UnderlineIcon size={16}/></Button>
-        <div className="w-px h-6 bg-slate-700 mx-1" />
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('left').run()}><AlignLeft size={16}/></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('center').run()}><AlignCenter size={16}/></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('right').run()}><AlignRight size={16}/></Button>
-        <div className="w-px h-6 bg-slate-700 mx-1" />
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleBulletList().run()}><List size={16}/></Button>
-        <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleOrderedList().run()}><ListOrdered size={16}/></Button>
-        <input
-            type="color"
-            onInput={(event: React.ChangeEvent<HTMLInputElement>) => editor.chain().focus().setColor(event.target.value).run()}
-            value={editor.getAttributes('textStyle').color || '#ffffff'}
-            className="w-8 h-8 bg-transparent border-none cursor-pointer"
-            title="Text color"
-        />
-    </div>
-  );
+    const ColorPicker = () => (
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" title="Text Color">
+             <div className="w-4 h-4 rounded-full border" style={{ backgroundColor: editor.getAttributes('textStyle').color || 'white' }} />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+          <div className="flex gap-1">
+            {['#FFFFFF', '#000000', '#EF4444', '#F97316', '#84CC16', '#22C55E', '#14B8A6', '#0EA5E9', '#6366F1', '#EC4899'].map(color => (
+              <button
+                key={color}
+                onClick={() => editor.chain().focus().setColor(color).run()}
+                className="w-6 h-6 rounded-full border-2"
+                style={{ backgroundColor: color, borderColor: editor.isActive('textStyle', { color }) ? 'white' : 'transparent' }}
+              />
+            ))}
+            <button onClick={() => editor.chain().focus().unsetColor().run()} className="text-xs px-2 text-white">Reset</button>
+          </div>
+        </PopoverContent>
+      </Popover>
+    );
 
+    return (
+        <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-700">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleBold().run()} data-active={editor.isActive('bold')}><Bold size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleItalic().run()} data-active={editor.isActive('italic')}><Italic size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleUnderline().run()} data-active={editor.isActive('underline')}><UnderlineIcon size={16}/></Button>
+            <div className="w-px h-6 bg-slate-700 mx-1" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('left').run()} data-active={editor.isActive({ textAlign: 'left' })}><AlignLeft size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('center').run()} data-active={editor.isActive({ textAlign: 'center' })}><AlignCenter size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('right').run()} data-active={editor.isActive({ textAlign: 'right' })}><AlignRight size={16}/></Button>
+            <div className="w-px h-6 bg-slate-700 mx-1" />
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleBulletList().run()} data-active={editor.isActive('bulletList')}><List size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleOrderedList().run()} data-active={editor.isActive('orderedList')}><ListOrdered size={16}/></Button>
+             <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setHorizontalRule().run()}><Pilcrow size={16}/></Button>
+            <ColorPicker />
+        </div>
+    );
+};
+
+const TiptapEditor = ({ editor }: { editor: Editor | null }) => {
   return (
-    <>
-      <div className="absolute top-4 left-1/2 -translate-x-1/2 z-10">
-        {floatingMenu}
-      </div>
-      <EditorContent editor={editor} />
-    </>
+    <EditorContent 
+        editor={editor} 
+        className="w-full h-full overflow-y-auto no-scrollbar p-4"
+    />
   );
 };
 
 
 export default function NewsComposerPage() {
     const canvasRef = useRef<HTMLDivElement>(null);
-    const downloadButtonRef = useRef<HTMLButtonElement>(null);
+
+    const editor = useEditor({
+        extensions: [
+          StarterKit.configure({
+            horizontalRule: {
+              HTMLAttributes: {
+                class: 'my-4 border-slate-600',
+              },
+            },
+          }),
+          Underline,
+          TextStyle,
+          Color,
+          TextAlign.configure({
+            types: ['heading', 'paragraph'],
+            defaultAlignment: 'center',
+          }),
+        ],
+        content: `
+          <h2>Major Update!</h2>
+          <p>We're excited to announce a new feature that will revolutionize your study workflow.</p>
+          <ul>
+            <li>Feature A</li>
+            <li>Feature B</li>
+            <li>Feature C</li>
+          </ul>
+          <p>Stay tuned for more details!</p>
+        `,
+        editorProps: {
+          attributes: {
+            class: 'prose prose-lg dark:prose-invert focus:outline-none max-w-none text-center',
+          },
+        },
+    });
+
 
     const handleDownload = () => {
         if (!canvasRef.current) return;
+        
+        // Temporarily set overflow to hidden to capture all content
+        const editorContentElement = canvasRef.current.querySelector('.tiptap.ProseMirror') as HTMLElement;
+        if(editorContentElement) {
+            editorContentElement.parentElement!.style.overflow = 'hidden';
+            editorContentElement.style.overflow = 'hidden';
+        }
 
-        const downloadButton = downloadButtonRef.current;
-
-        // Hide button before capturing
-        if (downloadButton) downloadButton.style.display = 'none';
-
-        toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2 })
+        toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2.5 })
             .then((dataUrl) => {
                 const link = document.createElement('a');
                 link.download = 'medsphere-announcement.png';
                 link.href = dataUrl;
                 link.click();
-                 // Show button again after capture
-                if (downloadButton) downloadButton.style.display = 'flex';
             })
             .catch((err) => {
                 console.error('oops, something went wrong!', err);
-                 // Show button again if there's an error
-                if (downloadButton) downloadButton.style.display = 'flex';
+            })
+            .finally(() => {
+                // Restore overflow for scrolling after capture
+                if(editorContentElement) {
+                    editorContentElement.parentElement!.style.overflow = 'auto';
+                    editorContentElement.style.overflow = 'auto';
+                }
             });
     };
 
@@ -106,32 +139,36 @@ export default function NewsComposerPage() {
         <div className="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-96 h-96 bg-green-500/20 rounded-full blur-3xl opacity-50"></div>
 
-        <div className="relative z-10 group" ref={canvasRef}>
-            <div className="relative flex flex-col items-center text-center glass-card p-8 md:p-12 rounded-[1.75rem] w-[500px] h-[700px]">
-                <div className="flex-shrink-0">
-                    <Logo className="h-20 w-20 md:h-24 md:w-24 mb-6" />
-                     <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-white to-slate-300 text-transparent bg-clip-text"
+        <div className="flex items-center gap-4 mb-4">
+            <TiptapToolbar editor={editor} />
+            <Button onClick={handleDownload} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
+                <Download className="mr-2 h-4 w-4" />
+                Download PNG
+            </Button>
+        </div>
+
+        <div className="relative z-10" ref={canvasRef}>
+            <div className={cn(
+                "relative flex flex-col items-center text-center",
+                "bg-gradient-to-br from-slate-50 to-gray-200 text-slate-800",
+                "p-8 md:p-12 rounded-[1.75rem] w-[550px] h-[750px]",
+                "border border-slate-300 shadow-2xl"
+            )}>
+                <header className="flex-shrink-0 flex items-center justify-center gap-3 w-full mb-6 pb-6 border-b border-slate-300">
+                    <Logo className="h-16 w-16 md:h-20 md:w-20" />
+                     <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 text-transparent bg-clip-text"
                     >
                       <span className="font-extrabold">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
                     </h1>
+                </header>
+
+                <div className="flex-1 w-full flex items-center justify-center my-4 relative overflow-hidden">
+                     <TiptapEditor editor={editor} />
                 </div>
 
-                <div className="flex-1 w-full flex items-center justify-center my-8 relative">
-                    <Tiptap />
-                </div>
-
-                <footer className="flex-shrink-0 text-center text-xs text-slate-500 z-10 w-full">
+                <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-6 border-t border-slate-300">
                     © 2025 MedSphere. All rights reserved.
                 </footer>
-
-                 <Button 
-                    ref={downloadButtonRef}
-                    onClick={handleDownload}
-                    className="absolute bottom-6 right-6 h-12 w-12 rounded-full opacity-0 group-hover:opacity-100 transition-opacity bg-blue-600 hover:bg-blue-700"
-                    size="icon"
-                >
-                    <Download />
-                </Button>
             </div>
         </div>
     </div>
