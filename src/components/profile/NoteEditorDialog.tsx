@@ -42,8 +42,8 @@ import {
   AlertDialogContent,
   AlertDialogDescription,
   AlertDialogHeader,
+  AlertDialogFooter as AlertDialogFooterComponent,
   AlertDialogTitle,
-  AlertDialogFooter,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '../ui/scroll-area';
 import { Input } from '../ui/input';
@@ -564,10 +564,10 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                           <AlertDialogTitle>Delete Page?</AlertDialogTitle>
                                           <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
                                         </AlertDialogHeader>
-                                        <AlertDialogFooter>
+                                        <AlertDialogFooterComponent>
                                           <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
                                           <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-                                        </AlertDialogFooter>
+                                        </AlertDialogFooterComponent>
                                       </AlertDialogContent>
                                     </AlertDialog>
                                   )}
