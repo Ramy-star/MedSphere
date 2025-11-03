@@ -119,10 +119,6 @@
     padding: 0 16px;
     @apply justify-start gap-2;
   }
-
-  .expanding-btn:hover .expanding-text {
-    @apply opacity-100 max-w-full;
-  }
   
   .expanding-btn.primary {
     @apply border-2 border-primary text-primary;
@@ -143,6 +139,17 @@
   }
   .expanding-btn.warning:hover {
     @apply bg-yellow-500 text-black;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
   }
 }
 

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note, NotePage } from './ProfileNotesSection';
 import {
   Dialog,
@@ -43,6 +43,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import { ScrollArea } from '../ui/scroll-area';
 
 
 const NOTE_COLORS = [
@@ -241,14 +242,14 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
             </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
-            <div className="max-h-[300px] overflow-y-auto no-scrollbar">
+            <ScrollArea className="max-h-[300px] overflow-y-auto no-scrollbar">
                 <EmojiPicker 
                     onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
                     theme="dark"
                     lazyLoadEmojis={true}
                     skinTonesDisabled
                 />
-            </div>
+            </ScrollArea>
         </PopoverContent>
     </Popover>
 );
@@ -267,6 +268,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
   const [pageToDelete, setPageToDelete] = useState<NotePage | null>(null);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
+  const newTabInputRef = useRef<HTMLInputElement | null>(null);
   
 
   const editor = useEditor({
@@ -305,6 +307,13 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     }
   }, [activePageId, note, editor]);
 
+  useEffect(() => {
+      if (editingTabId && newTabInputRef.current) {
+          newTabInputRef.current.focus();
+          newTabInputRef.current.select();
+      }
+  }, [editingTabId])
+
   const handleSave = () => {
     if (note && editor) {
       // Save current editor content to the active page
@@ -334,6 +343,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     const updatedPages = [...note.pages, newPage];
     setNote({ ...note, pages: updatedPages });
     setActivePageId(newPage.id);
+    // Set this new tab to be in edit mode immediately
+    setEditingTabId(newPage.id);
   };
 
   const deletePage = () => {
@@ -368,6 +379,13 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
       setEditingTabId(null);
     }
   };
+  
+  const handleTabClick = (pageId: string) => {
+    if (activePageId !== pageId) {
+        saveCurrentPageContent();
+        setActivePageId(pageId);
+    }
+  }
 
   const setLink = useCallback(() => {
     if (!editor) return;
@@ -406,9 +424,10 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
         <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
         <EditorToolbarButton icon={TextQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
-        <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
+        <EditorToolbarButton icon={PilcrowRight} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={LinkIcon} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
+        <EditorToolbarButton icon={ImageIcon} onClick={() => {}} tip="Insert Image" />
         <EmojiSelector editor={editor} />
       </div>
   );
@@ -419,19 +438,28 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0"
         style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
+        <DialogHeader className="sr-only">
+          <DialogTitle>Note Editor</DialogTitle>
+          <DialogDescription>Edit your note with multiple pages and rich text formatting.</DialogDescription>
+        </DialogHeader>
         <div className="p-4 flex-shrink-0">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1 border-b border-white/10 flex-grow">
                   {note.pages.map(page => (
-                      <div key={page.id} onDoubleClick={() => setEditingTabId(page.id)} className={cn("flex items-center gap-1 py-2 px-3 border-b-2 transition-colors", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}>
+                      <div 
+                        key={page.id} 
+                        onDoubleClick={() => setEditingTabId(page.id)}
+                        onClick={() => handleTabClick(page.id)}
+                        className={cn("flex items-center gap-1 py-2 px-3 border-b-2 transition-colors", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
+                      >
                           {editingTabId === page.id ? (
                               <input
+                                  ref={newTabInputRef}
                                   type="text"
                                   defaultValue={page.title}
                                   onBlur={(e) => renamePage(page.id, e.target.value)}
                                   onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
-                                  autoFocus
                                   className="bg-transparent outline-none w-24 text-sm"
                               />
                           ) : (
