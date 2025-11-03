@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    MessageSquareQuote, Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Droplets
+    MessageSquareQuote, Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Droplets, Pilcrow, Image as ImageIcon
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -26,6 +26,12 @@ import { Color } from '@tiptap/extension-color';
 import History from '@tiptap/extension-history';
 import { motion, AnimatePresence } from 'framer-motion';
 import Placeholder from '@tiptap/extension-placeholder';
+import FontFamily from '@tiptap/extension-font-family';
+import ImageExtension from '@tiptap/extension-image';
+import { contentService } from '@/lib/contentService';
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { Smile } from 'lucide-react';
+
 
 type NoteEditorDialogProps = {
   open: boolean;
@@ -35,14 +41,14 @@ type NoteEditorDialogProps = {
 };
 
 const NOTE_COLORS = [
-  '#282828', // Dark Gray
-  '#402323', // Dark Red
-  '#433422', // Dark Orange
-  '#444026', // Dark Yellow
-  '#2a3b2c', // Dark Green
-  '#243a3a', // Dark Teal
-  '#253342', // Dark Blue
-  '#382a44', // Dark Purple
+  '#282828',
+  '#5C2B29',
+  '#614A19',
+  '#635D19',
+  '#345920',
+  '#16504B',
+  '#204250',
+  '#42275E',
 ];
 
 const HIGHLIGHT_COLORS = [
@@ -55,10 +61,10 @@ const HIGHLIGHT_COLORS = [
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false,
+    history: false, // Use the separate History extension
     horizontalRule: {
         HTMLAttributes: {
-            class: 'border-white',
+            class: 'border-white my-4', // Apply Tailwind classes
         },
     },
   }),
@@ -72,15 +78,19 @@ const editorExtensions = [
   }),
   Highlight.configure({ 
       multicolor: true,
-      HTMLAttributes: {
-          style: 'background-color: var(--highlight-color); color: inherit;',
-      },
   }),
   TextStyle,
   Color,
-  History,
-  Placeholder.configure({
+  History.configure({
+    depth: 20,
+  }),
+   Placeholder.configure({
     placeholder: 'Write something amazing...',
+  }),
+  FontFamily,
+  ImageExtension.configure({
+    inline: true,
+    allowBase64: true,
   }),
 ];
 
@@ -212,6 +222,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <EditorToolbarButton icon={Heading1} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive('heading', { level: 1 })} tip="Heading 1" />
         <EditorToolbarButton icon={Heading2} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })} tip="Heading 2" />
         <EditorToolbarButton icon={Heading3} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} isActive={editor.isActive('heading', { level: 3 })} tip="Heading 3" />
+        <EditorToolbarButton icon={Pilcrow} onClick={() => editor.chain().focus().setParagraph().run()} isActive={editor.isActive('paragraph')} tip="Paragraph" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
         <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
