@@ -1544,12 +1544,13 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                 <TableBody>
                                     {reportData.map((data, index) => {
                                         const { userProfile, result } = data;
+                                        const isAdmin = userProfile.roles?.some(r => r.role === 'superAdmin' || r.role === 'subAdmin');
                                         return (
                                             <TableRow key={index} className="border-slate-800 hover:bg-slate-800/50">
                                                 <TableCell className="text-center font-medium text-slate-400">{index + 1}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
-                                                        <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-slate-900", getRingColor(userProfile))}>
+                                                        <Avatar className={cn("h-8 w-8 ring-offset-2 ring-offset-slate-900", isAdmin && 'ring-2', getRingColor(userProfile))}>
                                                             <AvatarImage src={userProfile.photoURL} alt={userProfile.displayName} />
                                                             <AvatarFallback><UserIcon size={14}/></AvatarFallback>
                                                         </Avatar>
