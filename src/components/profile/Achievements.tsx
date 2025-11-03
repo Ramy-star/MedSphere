@@ -84,7 +84,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <div className="w-[140px] h-[180px] sm:w-[150px] sm:h-[190px] flex-shrink-0">
+          <div className="w-[150px] h-[190px] flex-shrink-0">
             {cardContent}
           </div>
         </TooltipTrigger>
@@ -162,3 +162,5 @@ export const AchievementsSection = ({ user }: { user: UserProfile }) => {
     </div>
   );
 };
+
+    

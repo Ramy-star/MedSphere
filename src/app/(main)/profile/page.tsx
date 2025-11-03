@@ -472,10 +472,10 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start max-w-7xl mx-auto w-full px-4 sm:px-8">
+      <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start mx-auto w-full px-4 sm:px-8">
         {/* Left Column */}
         <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
-            <AiStudyBuddy user={user} />
+             <AiStudyBuddy user={user} />
              <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
@@ -489,7 +489,7 @@ export default function ProfilePage() {
         </div>
 
         {/* Vertical Separator */}
-        <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
+        <div className="hidden lg:block self-stretch w-px bg-white" />
 
         {/* Right Column */}
         <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
@@ -585,3 +585,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
