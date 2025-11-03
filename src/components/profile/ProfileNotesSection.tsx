@@ -8,7 +8,11 @@ import { NoteCard } from './NoteCard';
 import { NoteEditorDialog } from './NoteEditorDialog';
 import { nanoid } from 'nanoid';
 import { db } from '@/firebase';
-import { doc, setDoc, serverTimestamp, deleteDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp, deleteDoc, writeBatch } from 'firebase/firestore';
+import { DndContext, DragEndEvent, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export type NotePage = {
   id: string;
@@ -18,28 +22,57 @@ export type NotePage = {
 
 export type Note = {
   id: string;
+  title: string;
   pages: NotePage[];
   color: string;
-  createdAt: any; // Can be string or Firestore timestamp
-  updatedAt: any; // Can be string or Firestore timestamp
+  createdAt: any; 
+  updatedAt: any; 
+  order: number;
 };
+
+const SortableNoteCard = ({ note, onEdit, onDelete }: { note: Note, onEdit: () => void, onDelete: () => void }) => {
+    const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: note.id });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 1 : 'auto',
+    };
+
+    return (
+        <div ref={setNodeRef} style={style}>
+            <NoteCard
+                note={note}
+                onEdit={onEdit}
+                onDelete={onDelete}
+                attributes={attributes}
+                listeners={listeners}
+            />
+        </div>
+    );
+};
+
 
 export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const { data: notes, loading } = useCollection<Note>(`users/${user.id}/notes`, {
-    orderBy: ['updatedAt', 'desc'],
+    orderBy: ['order', 'asc'],
   });
 
   const [editingNote, setEditingNote] = useState<Note | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
+  
+  const sortedNotes = useMemo(() => notes || [], [notes]);
 
   const handleNewNote = () => {
     const newPageId = nanoid();
     setEditingNote({
       id: `temp_${nanoid()}`,
-      pages: [{ id: newPageId, title: 'Page 1', content: '<h2>New Note</h2><p>Start writing here...</p>' }],
+      title: 'Untitled Note',
+      pages: [{ id: newPageId, title: 'Page 1', content: '' }],
       color: '#282828',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      order: sortedNotes.length,
     });
     setIsEditorOpen(true);
   };
@@ -55,14 +88,16 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
     const finalId = isNewNote ? nanoid() : noteToSave.id;
     const noteRef = doc(db, `users/${user.id}/notes`, finalId);
     
-    const saveData = {
+    const saveData: Omit<Note, 'id'> & { id?: string } = {
         ...noteToSave,
-        id: finalId, // ensure the final ID is set
         updatedAt: serverTimestamp(),
     };
-
+    
     if (isNewNote) {
+        saveData.id = finalId;
         (saveData as any).createdAt = serverTimestamp();
+    } else {
+        delete saveData.id; // Don't write the ID inside the document
     }
     
     await setDoc(noteRef, saveData, { merge: true });
@@ -75,6 +110,28 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
     if (!user) return;
     const noteRef = doc(db, `users/${user.id}/notes`, noteId);
     await deleteDoc(noteRef);
+  };
+  
+  const sensors = useSensors(useSensor(PointerSensor, {
+      activationConstraint: {
+          distance: 10,
+      },
+  }));
+  
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (over && active.id !== over.id) {
+        const oldIndex = sortedNotes.findIndex((n) => n.id === active.id);
+        const newIndex = sortedNotes.findIndex((n) => n.id === over.id);
+        const newOrder = arrayMove(sortedNotes, oldIndex, newIndex);
+
+        const batch = writeBatch(db);
+        newOrder.forEach((note, index) => {
+            const docRef = doc(db, `users/${user.id}/notes`, note.id);
+            batch.update(docRef, { order: index });
+        });
+        await batch.commit();
+    }
   };
 
   return (
@@ -92,7 +149,7 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
         </div>
       )}
 
-      {!loading && notes?.length === 0 && (
+      {!loading && sortedNotes.length === 0 && (
         <div className="text-center py-10 border-2 border-dashed border-slate-800 rounded-2xl">
           <StickyNote className="mx-auto h-12 w-12 text-slate-600" />
           <h3 className="mt-4 text-lg font-semibold text-white">No Notes Yet</h3>
@@ -100,17 +157,21 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
         </div>
       )}
 
-      {!loading && notes && notes.length > 0 && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {notes.map(note => (
-            <NoteCard
-              key={note.id}
-              note={note}
-              onEdit={() => handleEditNote(note)}
-              onDelete={() => handleDeleteNote(note.id)}
-            />
-          ))}
-        </div>
+      {!loading && sortedNotes.length > 0 && (
+        <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+            <SortableContext items={sortedNotes.map(n => n.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {sortedNotes.map(note => (
+                    <SortableNoteCard
+                      key={note.id}
+                      note={note}
+                      onEdit={() => handleEditNote(note)}
+                      onDelete={() => handleDeleteNote(note.id)}
+                    />
+                  ))}
+                </div>
+            </SortableContext>
+        </DndContext>
       )}
 
       <NoteEditorDialog

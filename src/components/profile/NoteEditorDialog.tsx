@@ -7,11 +7,12 @@ import {
   DialogHeader,
   DialogTitle,
   DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered, 
-    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, PilcrowRight, X, Plus
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -37,14 +38,14 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription,
+  AlertDialogDescription as AlertDialogDesc, // Renamed to avoid conflict
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '../ui/scroll-area';
-
+import { Input } from '../ui/input';
 
 const NOTE_COLORS = [
     '#282828', // dark grey
@@ -84,16 +85,17 @@ const FONT_FAMILIES = [
 ];
 
 const FONT_SIZES = [
-    { name: 'Very Small', value: '10px' },
+    { name: 'Smallest', value: '10px' },
     { name: 'Small', value: '12px' },
     { name: 'Normal', value: '14px' },
     { name: 'Large', value: '18px' },
-    { name: 'Very Large', value: '24px' },
+    { name: 'Largest', value: '24px' },
 ];
+
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false, // Use the dedicated History extension
+    history: false,
     horizontalRule: {
       HTMLAttributes: { class: 'border-white my-4' },
     },
@@ -108,13 +110,18 @@ const editorExtensions = [
     openOnClick: false, autolink: true, linkOnPaste: true,
     HTMLAttributes: { class: 'text-blue-400 hover:text-blue-300 underline' }
   }),
-  TextAlign.configure({ types: ['heading', 'paragraph'] }),
+  TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'] }),
   Highlight.configure({ multicolor: true, HTMLAttributes: { class: 'text-black rounded-sm px-1 py-0.5' } }),
   TextStyle,
   Color,
   History.configure({ depth: 20 }),
   Placeholder.configure({
-    placeholder: 'Write something amazing...',
+    placeholder: ({ node }) => {
+      if (node.type.name === 'heading') {
+        return 'What’s the title?';
+      }
+      return 'Write something amazing...';
+    },
     emptyEditorClass: 'is-editor-empty',
   }),
   FontFamily,
@@ -229,6 +236,7 @@ const FontSizePicker = ({ editor }: { editor: Editor }) => {
                         {name}
                     </button>
                 ))}
+                 <button onClick={() => editor.chain().focus().unsetMark('textStyle', { fontSize: FONT_SIZES.map(f => f.value) }).run()} className="w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white">Reset</button>
             </PopoverContent>
         </Popover>
     );
@@ -242,7 +250,7 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
             </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
-            <ScrollArea className="max-h-[300px] overflow-y-auto no-scrollbar">
+            <ScrollArea className="h-[300px] no-scrollbar">
                 <EmojiPicker 
                     onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
                     theme="dark"
@@ -269,6 +277,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [pageToDelete, setPageToDelete] = useState<NotePage | null>(null);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const newTabInputRef = useRef<HTMLInputElement | null>(null);
+  const titleInputRef = useRef<HTMLInputElement | null>(null);
   
 
   const editor = useEditor({
@@ -312,7 +321,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           newTabInputRef.current.focus();
           newTabInputRef.current.select();
       }
-  }, [editingTabId])
+  }, [editingTabId]);
 
   const handleSave = () => {
     if (note && editor) {
@@ -343,7 +352,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     const updatedPages = [...note.pages, newPage];
     setNote({ ...note, pages: updatedPages });
     setActivePageId(newPage.id);
-    // Set this new tab to be in edit mode immediately
     setEditingTabId(newPage.id);
   };
 
@@ -395,6 +403,16 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     if (url === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
+
+  const handleImageUpload = useCallback(async (file: File) => {
+    if (!editor) return;
+    try {
+        const url = await contentService.uploadNoteImage(file);
+        editor.chain().focus().setImage({ src: url }).run();
+    } catch (error) {
+        console.error("Image upload failed:", error);
+    }
+  }, [editor]);
   
   if (!editor || !note) return null;
 
@@ -424,10 +442,19 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
         <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
         <EditorToolbarButton icon={TextQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
-        <EditorToolbarButton icon={PilcrowRight} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
+        <EditorToolbarButton icon={Pilcrow} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={LinkIcon} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
-        <EditorToolbarButton icon={ImageIcon} onClick={() => {}} tip="Insert Image" />
+        <EditorToolbarButton icon={ImageIcon} onClick={() => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = (e) => {
+                const file = (e.target as HTMLInputElement).files?.[0];
+                if (file) handleImageUpload(file);
+            };
+            input.click();
+        }} tip="Insert Image" />
         <EmojiSelector editor={editor} />
       </div>
   );
@@ -438,11 +465,20 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0"
         style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
-        <DialogHeader className="sr-only">
-          <DialogTitle>Note Editor</DialogTitle>
-          <DialogDescription>Edit your note with multiple pages and rich text formatting.</DialogDescription>
+        <DialogHeader className="p-4 flex-shrink-0">
+          <Input 
+            ref={titleInputRef}
+            defaultValue={note.title}
+            onChange={(e) => setNote({ ...note, title: e.target.value })}
+            className="text-lg font-bold bg-transparent border-0 text-white focus-visible:ring-1 focus-visible:ring-blue-500"
+            placeholder="Note Title"
+          />
+          <span className="sr-only">
+              <DialogTitle>Note Editor</DialogTitle>
+              <DialogDescription>Edit your note with multiple pages and rich text formatting.</DialogDescription>
+          </span>
         </DialogHeader>
-        <div className="p-4 flex-shrink-0">
+        <div className="p-4 pt-0 flex-shrink-0">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-1 border-b border-white/10 flex-grow">
@@ -473,7 +509,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                 <AlertDialogContent>
                                     <AlertDialogHeader>
                                       <AlertDialogTitle>Delete Page?</AlertDialogTitle>
-                                      <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
+                                      <AlertDialogDesc>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDesc>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                       <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>

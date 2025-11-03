@@ -22,9 +22,11 @@ type NoteCardProps = {
   note: Note;
   onEdit: () => void;
   onDelete: () => void;
+  attributes?: React.HTMLAttributes<HTMLDivElement>;
+  listeners?: React.HTMLAttributes<HTMLDivElement>;
 };
 
-export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
+export const NoteCard = ({ note, onEdit, onDelete, attributes, listeners }: NoteCardProps) => {
   
   const isValidDate = (date: any): boolean => {
     if (!date) return false;
@@ -50,6 +52,8 @@ export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
       )}
       style={{ backgroundColor: note.color }}
       onClick={onEdit}
+      {...attributes} 
+      {...listeners}
     >
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-10">
         <Button variant="ghost" size="icon" className="h-7 w-7 rounded-full bg-black/20 text-white" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
@@ -79,7 +83,7 @@ export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
       <div 
         className="prose prose-sm prose-invert max-w-none flex-1 overflow-hidden h-40"
       >
-        <h3 className="font-bold text-lg text-white/90 truncate">{firstPage?.title || 'Untitled Note'}</h3>
+        <h3 className="font-bold text-lg text-white/90 truncate">{note.title}</h3>
         <div className="text-white/70 line-clamp-4" dangerouslySetInnerHTML={{ __html: firstPage?.content || '' }} />
       </div>
 
