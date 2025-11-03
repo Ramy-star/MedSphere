@@ -1,7 +1,7 @@
 
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown, GripVertical, Pencil, Settings2, PlusSquare, Tag, ImageIcon, Upload, Save } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown, GripVertical, Pencil, Settings2, PlusSquare, Tag, ImageIcon, Upload, Save, GraduationCap } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -27,6 +27,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Icon } from './icon';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
+import { ScrollArea } from './ui/scroll-area';
 
 
 // === Types ===
@@ -1453,8 +1455,10 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
     const { db } = useFirebase();
     const [reportData, setReportData] = useState<{ userProfile: any, result: ExamResult }[]>([]);
     const [loading, setLoading] = useState(true);
-    const reportContentRef = useRef<HTMLDivElement>(null);
 
+    const formatPercentage = (percentage: number) => {
+        return Number.isInteger(percentage) ? `${percentage}%` : `${percentage.toFixed(2)}%`;
+    };
 
     useEffect(() => {
         if (isOpen && db) {
@@ -1510,59 +1514,53 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-3xl">
-                <DialogHeader>
-                    <DialogTitle>Exam Report</DialogTitle>
+            <DialogContent className="max-w-4xl p-0 modal-card">
+                <DialogHeader className="p-6 pb-4 border-b border-slate-700">
+                    <DialogTitle className="text-xl">Exam Report</DialogTitle>
                 </DialogHeader>
-                <div ref={reportContentRef} className="max-h-[60vh] overflow-y-auto">
-                    {loading ? (
-                        <p>Loading report...</p>
-                    ) : reportData.length > 0 ? (
-                        <table className="w-full text-sm text-left">
-                            <thead className="text-xs text-gray-700 uppercase bg-gray-50">
-                                <tr>
-                                    <th scope="col" className="px-6 py-3">Student Name</th>
-                                    <th scope="col" className="px-6 py-3">Student ID</th>
-                                    <th scope="col" className="px-6 py-3">Score</th>
-                                    <th scope="col" className="px-6 py-3">Percentage</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {reportData.map((data, index) => {
-                                    const { userProfile, result } = data;
-                                    const isSuperAdmin = userProfile.roles?.some((r: any) => r.role === 'superAdmin');
-                                    const isSubAdmin = userProfile.roles?.some((r: any) => r.role === 'subAdmin') && !isSuperAdmin;
-                                    const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
-                                    
-                                    return (
-                                        <tr key={index} className="border-b bg-white">
-                                            <td scope="row" className="px-6 py-4 font-medium whitespace-nowrap text-gray-900">
-                                                <div className="flex items-center gap-3">
-                                                    <Avatar className={cn("h-7 w-7 ring-2 ring-offset-2 ring-offset-background transition-all", avatarRingClass)}>
-                                                        <AvatarImage 
-                                                            src={userProfile.photoURL} 
-                                                            alt={userProfile.displayName} 
-                                                            className="pointer-events-none select-none"
-                                                            onDragStart={(e) => e.preventDefault()}
-                                                            onContextMenu={(e) => e.preventDefault()}
-                                                        />
-                                                        <AvatarFallback><UserIcon size={14}/></AvatarFallback>
-                                                    </Avatar>
-                                                    {userProfile.displayName}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4">{userProfile.studentId}</td>
-                                            <td className="px-6 py-4">{`${result.score} / ${result.totalQuestions}`}</td>
-                                            <td className="px-6 py-4">{result.percentage.toFixed(2)}%</td>
-                                        </tr>
-                                    )
-                                })}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <p>No results found for this exam yet.</p>
-                    )}
-                </div>
+                <ScrollArea className="max-h-[60vh]">
+                    <div className="p-6">
+                        {loading ? (
+                            <p>Loading report...</p>
+                        ) : reportData.length > 0 ? (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="border-slate-700 hover:bg-slate-800/50">
+                                        <TableHead>Student Name</TableHead>
+                                        <TableHead>Student ID</TableHead>
+                                        <TableHead>Level</TableHead>
+                                        <TableHead className="text-center">Score</TableHead>
+                                        <TableHead className="text-right">Percentage</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {reportData.map((data, index) => {
+                                        const { userProfile, result } = data;
+                                        return (
+                                            <TableRow key={index} className="border-slate-800 hover:bg-slate-800/50">
+                                                <TableCell>
+                                                    <div className="flex items-center gap-3">
+                                                        <Avatar className="h-8 w-8">
+                                                            <AvatarImage src={userProfile.photoURL} alt={userProfile.displayName} />
+                                                            <AvatarFallback><UserIcon size={14}/></AvatarFallback>
+                                                        </Avatar>
+                                                        <span className="font-medium">{userProfile.displayName}</span>
+                                                    </div>
+                                                </TableCell>
+                                                <TableCell>{userProfile.studentId}</TableCell>
+                                                <TableCell>{userProfile.level || 'N/A'}</TableCell>
+                                                <TableCell className="text-center">{`${result.score}/${result.totalQuestions}`}</TableCell>
+                                                <TableCell className="text-right font-semibold">{formatPercentage(result.percentage)}</TableCell>
+                                            </TableRow>
+                                        )
+                                    })}
+                                </TableBody>
+                            </Table>
+                        ) : (
+                            <p className="text-center py-8 text-muted-foreground">No results found for this exam yet.</p>
+                        )}
+                    </div>
+                </ScrollArea>
             </DialogContent>
         </Dialog>
     );
@@ -1603,7 +1601,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
                 link.rel = linkInfo.rel;
                 link.href = linkInfo.href;
                 if (linkInfo.crossOrigin) {
-                    link.crossOrigin = linkInfo.crossOrigin;
+                    (link as HTMLLinkElement).crossOrigin = linkInfo.crossOrigin;
                 }
                 document.head.appendChild(link);
             }
@@ -1652,5 +1650,3 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         </main>
     );
 }
-
-    
