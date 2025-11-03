@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Note } from './ProfileNotesSection';
 import {
   Dialog,
@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
-import { useEditor, EditorContent, FloatingMenu, BubbleMenu, Editor } from '@tiptap/react';
+import { useEditor, EditorContent, BubbleMenu, Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExtension from '@tiptap/extension-underline';
 import LinkExtension from '@tiptap/extension-link';
@@ -25,6 +25,7 @@ import TextStyle from '@tiptap/extension-text-style';
 import { Color } from '@tiptap/extension-color';
 import History from '@tiptap/extension-history';
 import { motion, AnimatePresence } from 'framer-motion';
+import Placeholder from '@tiptap/extension-placeholder';
 
 type NoteEditorDialogProps = {
   open: boolean;
@@ -44,9 +45,22 @@ const NOTE_COLORS = [
   '#382a44', // Dark Purple
 ];
 
+const HIGHLIGHT_COLORS = [
+    { name: 'Yellow', color: '#fef08a' },
+    { name: 'Green', color: '#a7f3d0' },
+    { name: 'Blue', color: '#bfdbfe' },
+    { name: 'Red', color: '#fecaca' },
+    { name: 'Purple', color: '#e9d5ff' },
+];
+
 const editorExtensions = [
   StarterKit.configure({
-    history: false, // We will add history extension separately for more control
+    history: false,
+    horizontalRule: {
+        HTMLAttributes: {
+            class: 'border-white',
+        },
+    },
   }),
   UnderlineExtension,
   LinkExtension.configure({
@@ -56,10 +70,18 @@ const editorExtensions = [
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
-  Highlight.configure({ multicolor: true }),
+  Highlight.configure({ 
+      multicolor: true,
+      HTMLAttributes: {
+          style: 'background-color: var(--highlight-color); color: inherit;',
+      },
+  }),
   TextStyle,
   Color,
   History,
+  Placeholder.configure({
+    placeholder: 'Write something amazing...',
+  }),
 ];
 
 const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { icon: React.ElementType, onClick: (e: React.MouseEvent) => void, tip: string, isActive?: boolean }) => (
@@ -93,6 +115,29 @@ const ColorPicker = ({ editor }: { editor: Editor }) => (
         ))}
         <button onClick={() => editor.chain().focus().unsetColor().run()} className="text-xs px-2">Reset</button>
       </div>
+    </PopoverContent>
+  </Popover>
+);
+
+const HighlightPicker = ({ editor }: { editor: Editor }) => (
+  <Popover>
+    <PopoverTrigger asChild>
+        <Button variant="ghost" size="icon" title="Highlight Color" className="h-8 w-8 text-slate-400">
+            <Highlighter className="h-4 w-4" />
+        </Button>
+    </PopoverTrigger>
+    <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+        <div className="flex gap-1">
+            {HIGHLIGHT_COLORS.map(({ color }) => (
+                <button
+                    key={color}
+                    onClick={() => editor.chain().focus().toggleHighlight({ color }).run()}
+                    className="w-6 h-6 rounded-full border-2"
+                    style={{ backgroundColor: color, borderColor: editor.isActive('highlight', { color }) ? '#3b82f6' : 'transparent' }}
+                />
+            ))}
+            <button onClick={() => editor.chain().focus().unsetHighlight().run()} className="text-xs px-2">None</button>
+        </div>
     </PopoverContent>
   </Popover>
 );
@@ -157,7 +202,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
         <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
         <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
-        <EditorToolbarButton icon={Highlighter} onClick={() => editor.chain().focus().toggleHighlight().run()} isActive={editor.isActive('highlight')} tip="Highlight" />
+        <HighlightPicker editor={editor} />
         <ColorPicker editor={editor} />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={AlignLeft} onClick={() => editor.chain().focus().setTextAlign('left').run()} isActive={editor.isActive({ textAlign: 'left' })} tip="Align Left" />
