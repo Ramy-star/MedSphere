@@ -61,10 +61,10 @@ const HIGHLIGHT_COLORS = [
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false, // Use the separate History extension
+    history: false,
     horizontalRule: {
         HTMLAttributes: {
-            class: 'border-white my-4', // Apply Tailwind classes
+            class: 'border-white my-4',
         },
     },
   }),
@@ -152,6 +152,49 @@ const HighlightPicker = ({ editor }: { editor: Editor }) => (
   </Popover>
 );
 
+const FontPicker = ({ editor }: { editor: Editor }) => (
+    <Popover>
+        <PopoverTrigger asChild>
+            <Button variant="ghost" className="h-8 w-40 justify-between text-slate-300">
+                <span>{editor.getAttributes('textStyle').fontFamily || 'Default'}</span>
+                <ChevronDown className="h-4 w-4" />
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700">
+            {['Inter', 'Arial', 'Georgia', 'Courier New', 'serif', 'sans-serif', 'monospace'].map(font => (
+                <button
+                    key={font}
+                    onClick={() => editor.chain().focus().setFontFamily(font).run()}
+                    className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800", {
+                        'bg-slate-700': editor.isActive('textStyle', { fontFamily: font })
+                    })}
+                >
+                    <span style={{ fontFamily: font }}>{font}</span>
+                </button>
+            ))}
+            <button onClick={() => editor.chain().focus().unsetFontFamily().run()} className="w-full text-left p-2 text-sm text-red-400 rounded-md hover:bg-slate-800">
+                Reset
+            </button>
+        </PopoverContent>
+    </Popover>
+);
+
+const EmojiSelector = ({ editor }: { editor: Editor }) => (
+    <Popover>
+        <PopoverTrigger asChild>
+            <Button variant="ghost" size="icon" title="Insert Emoji" className="h-8 w-8 text-slate-400">
+                <Smile className="h-4 w-4" />
+            </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700">
+            <EmojiPicker 
+                onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
+                theme="dark"
+            />
+        </PopoverContent>
+    </Popover>
+);
+
 
 export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEditorDialogProps) => {
   const [color, setColor] = useState('#282828');
@@ -164,6 +207,23 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
       attributes: {
         class: 'prose prose-sm prose-invert focus:outline-none max-w-full p-2 h-full',
       },
+      handleDrop: function(view, event, slice, moved) {
+        if (!moved && event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0]) {
+          const file = event.dataTransfer.files[0];
+          if (file.type.startsWith("image/")) {
+            event.preventDefault();
+            contentService.uploadNoteImage(file).then(url => {
+              const { schema } = view.state;
+              const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+              const node = schema.nodes.image.create({ src: url });
+              const transaction = view.state.tr.insert(coordinates?.pos || 0, node);
+              view.dispatch(transaction);
+            });
+            return true;
+          }
+        }
+        return false;
+      }
     },
   });
 
@@ -202,11 +262,27 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
   if (!editor) {
     return null;
   }
+  
+  const handleImageUpload = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async (e) => {
+        const file = (e.target as HTMLInputElement).files?.[0];
+        if (file) {
+            const url = await contentService.uploadNoteImage(file);
+            editor.chain().focus().setImage({ src: url }).run();
+        }
+    };
+    input.click();
+  };
 
   const ToolbarContent = () => (
       <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-900/50 rounded-lg border border-slate-700">
         <EditorToolbarButton icon={Undo} onClick={() => editor.chain().focus().undo().run()} tip="Undo" />
         <EditorToolbarButton icon={Redo} onClick={() => editor.chain().focus().redo().run()} tip="Redo" />
+        <div className="w-px h-6 bg-slate-700 mx-1" />
+        <FontPicker editor={editor} />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
         <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
@@ -228,7 +304,10 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
         <EditorToolbarButton icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
         <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
+        <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Link} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
+        <EditorToolbarButton icon={ImageIcon} onClick={handleImageUpload} tip="Insert Image" />
+        <EmojiSelector editor={editor} />
       </div>
   );
 
