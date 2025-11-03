@@ -26,6 +26,7 @@ import { create } from 'zustand';
 import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 if (typeof window !== 'undefined') {
@@ -116,13 +117,14 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     const { toast } = useToast();
     const chatContainerRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
-    const [fontSize, setFontSize] = useState(14);
+    const [fontSize, setFontSize] = useState(13); // Reduced default font size slightly
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
     const [fileSearchQuery, setFileSearchQuery] = useState('');
     const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
     const [itemToDelete, setItemToDelete] = useState<AiBuddyChatSession | null>(null);
     const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
+    const isMobile = useIsMobile();
 
 
     const { data: allContent } = useCollection<Content>('content');
@@ -446,7 +448,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={() => setFontSize((s) => Math.min(s + 1, 20))}>
             <Plus size={16} />
         </Button>
-        {isFloating && onToggleExpand && (
+        {isFloating && onToggleExpand && !isMobile && (
           <Button variant="ghost" size="icon" className="h-7 w-7 text-white" onClick={onToggleExpand}>
             {isExpanded ? <Shrink size={16} /> : <Maximize size={16} />}
           </Button>
@@ -502,7 +504,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                         {loading || !theme ? (
                             <Skeleton className="h-5 w-40" />
                         ) : (
-                         <h3 className="text-sm sm:text-base font-bold text-white">
+                         <h3 className="text-xs sm:text-base font-bold text-white">
                             {theme.greeting}
                         </h3>
                         )}
@@ -671,7 +673,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
                                         <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={(e) => { e.stopPropagation(); handleDeleteSession(); }} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                        <AlertDialogAction onClick={(e) => {e.stopPropagation(); handleDeleteSession(); }} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
