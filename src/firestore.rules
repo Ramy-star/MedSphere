@@ -24,7 +24,7 @@ service cloud.firestore {
     }
 
     match /auditLogs/{logId} {
-        allow read, list: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.hasAny(['superAdmin']);
+        allow read, list: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.roles.exists(r, r.role == 'superAdmin');
         allow write: if false;
     }
 
