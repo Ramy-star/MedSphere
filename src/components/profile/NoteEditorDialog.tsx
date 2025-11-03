@@ -42,13 +42,13 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription,
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '../ui/scroll-area';
 import { Input } from '../ui/input';
+import { Slider } from '../ui/slider';
 
 const NOTE_COLORS = [
     '#282828', // dark grey
@@ -85,14 +85,6 @@ const FONT_FAMILIES = [
     { name: 'Almarai', value: 'Almarai, sans-serif' },
     { name: 'Noto Kufi Arabic', value: 'Noto Kufi Arabic, sans-serif' },
     { name: 'IBM Plex Sans Arabic', value: 'IBM Plex Sans Arabic, sans-serif' },
-];
-
-const FONT_SIZES = [
-    { name: 'Smallest', value: '10px' },
-    { name: 'Small', value: '12px' },
-    { name: 'Normal', value: '14px' },
-    { name: 'Large', value: '18px' },
-    { name: 'Largest', value: '24px' },
 ];
 
 
@@ -225,35 +217,42 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
     </Popover>
 )};
 
-const FontSizePicker = ({ editor }: { editor: Editor }) => {
-    const currentSize = FONT_SIZES.find(fs => editor.isActive('textStyle', { fontSize: fs.value }))?.name || 'Normal';
+const FontSizeSlider = ({ editor }: { editor: Editor }) => {
+    const [size, setSize] = useState(() => {
+        const currentSize = editor.getAttributes('textStyle').fontSize;
+        if (currentSize && typeof currentSize === 'string') {
+            return parseInt(currentSize, 10) || 14;
+        }
+        return 14;
+    });
+
+    const handleSizeChange = (newSize: number[]) => {
+        const clampedSize = Math.max(1, Math.min(newSize[0], 200));
+        setSize(clampedSize);
+        editor.chain().focus().setMark('textStyle', { fontSize: `${clampedSize}pt` }).run();
+    };
+    
     return (
-        <Popover>
-            <PopoverTrigger asChild>
-                <Button variant="ghost" className="h-8 w-24 justify-between text-slate-300">
-                    <span className="truncate">{currentSize}</span>
-                    <ChevronDown className="h-4 w-4" />
-                </Button>
-            </PopoverTrigger>
-            <DialogPortal>
-                <PopoverContent className="w-40 p-1 bg-slate-900 border-slate-700">
-                    {FONT_SIZES.map(({ name, value }) => (
-                        <button
-                            key={name}
-                            onClick={() => editor.chain().focus().setMark('textStyle', { fontSize: value }).run()}
-                            className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white", {
-                                'bg-slate-700': editor.isActive('textStyle', { fontSize: value })
-                            })}
-                        >
-                            {name}
-                        </button>
-                    ))}
-                    <button onClick={() => editor.chain().focus().unsetMark('textStyle', { fontSize: FONT_SIZES.map(f => f.value) }).run()} className="w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white">Reset</button>
-                </PopoverContent>
-            </DialogPortal>
-        </Popover>
+        <div className="flex items-center gap-2 w-64">
+            <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
+                {size} pt
+            </div>
+            <Slider
+                min={1}
+                max={200}
+                step={1}
+                value={[size]}
+                onValueChange={handleSizeChange}
+                className="flex-1"
+            />
+             <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange([size - 1])}><Minus size={14} /></Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange([size + 1])}><Plus size={14} /></Button>
+            </div>
+        </div>
     );
 };
+
 
 const EmojiSelector = ({ editor }: { editor: Editor }) => (
     <Popover>
@@ -474,7 +473,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         <EditorToolbarButton icon={Redo} onClick={() => editor.chain().focus().redo().run()} tip="Redo" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <FontPicker editor={editor} />
-        <FontSizePicker editor={editor} />
+        <FontSizeSlider editor={editor} />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
         <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
@@ -523,7 +522,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
             )}
             style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
         >
-            <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
+          <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
             <Input 
                 ref={titleInputRef}
                 defaultValue={note.title}
@@ -539,7 +538,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                     <Button variant="ghost" size="icon" className="h-9 w-9 text-white"><X size={20}/></Button>
                 </DialogClose>
             </div>
-            </DialogHeader>
+          </DialogHeader>
             <div className="p-4 pt-0 flex-shrink-0">
             <div className="flex flex-col gap-2">
                 <div className="flex justify-between items-center">
@@ -572,7 +571,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                         <DialogPortal>
                                             <AlertDialogContent>
                                                 <AlertDialogHeader>
-                                                    <AlertDialogTitle>Delete Page?</AlertDialogTitle>
+                                                    <DialogTitle>Delete Page?</DialogTitle>
                                                     <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
                                                 </AlertDialogHeader>
                                                 <AlertDialogFooter>
