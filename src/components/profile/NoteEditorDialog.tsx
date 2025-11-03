@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    MessageSquareQuote, Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Droplets, Pilcrow, Image as ImageIcon, TextQuote
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Smile, TextQuote
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ import FontFamily from '@tiptap/extension-font-family';
 import ImageExtension from '@tiptap/extension-image';
 import { contentService } from '@/lib/contentService';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
-import { Smile } from 'lucide-react';
+
 
 type NoteEditorDialogProps = {
   open: boolean;
@@ -61,7 +61,7 @@ const HIGHLIGHT_COLORS = [
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false, // We're using the standalone history extension
+    history: false,
     horizontalRule: {
       HTMLAttributes: {
         class: 'border-white my-4',
@@ -94,11 +94,10 @@ const editorExtensions = [
   }),
   FontFamily,
   ImageExtension.configure({
-    inline: false, // Allows images to be on their own line
+    inline: false,
     allowBase64: true,
   }),
 ];
-
 
 const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { icon: React.ElementType, onClick: (e: React.MouseEvent) => void, tip: string, isActive?: boolean }) => (
     <Button 
@@ -116,7 +115,7 @@ const ColorPicker = ({ editor }: { editor: Editor }) => (
   <Popover>
     <PopoverTrigger asChild>
       <Button variant="ghost" size="icon" title="Text Color" className="h-8 w-8 text-slate-400">
-        <Droplets className="h-4 w-4" />
+        <Palette className="h-4 w-4" />
       </Button>
     </PopoverTrigger>
     <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
@@ -312,7 +311,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <EditorToolbarButton icon={Heading1} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive('heading', { level: 1 })} tip="Heading 1" />
         <EditorToolbarButton icon={Heading2} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })} tip="Heading 2" />
         <EditorToolbarButton icon={Heading3} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} isActive={editor.isActive('heading', { level: 3 })} tip="Heading 3" />
-        <EditorToolbarButton icon={Pilcrow} onClick={() => editor.chain().focus().setParagraph().run()} isActive={editor.isActive('paragraph')} tip="Paragraph" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
         <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
