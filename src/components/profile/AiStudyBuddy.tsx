@@ -510,7 +510,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                 </div>
                 {(!loading && theme) && renderHeaderControls()}
             </div>
-            <div className="mt-2 sm:mt-3 flex-1 overflow-y-auto no-scrollbar pr-2 -mr-2">
+            <div className="flex-1 overflow-y-auto no-scrollbar pr-2 -mr-2 mt-3 sm:mt-4">
                 <ReactMarkdown remarkPlugins={[remarkGfm]} className="text-slate-400 text-xs sm:text-sm max-w-prose whitespace-pre-wrap">{initialInsight!.mainInsight}</ReactMarkdown>
             </div>
             <div className="mt-3 sm:mt-4 flex flex-wrap gap-2 flex-shrink-0">
@@ -693,8 +693,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     return (
         <div
             className={cn(
-                "glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full max-h-[70vh]",
-                isFloating ? "h-full" : "flex-1"
+                "glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full min-h-0",
+                isFloating ? "h-full" : "h-[450px]"
             )}
             style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
