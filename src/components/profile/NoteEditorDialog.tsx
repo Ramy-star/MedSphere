@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { Note } from './ProfileNotesSection';
@@ -11,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    MessageSquareQuote, Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Droplets, Pilcrow, Image as ImageIcon
+    MessageSquareQuote, Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Droplets, Pilcrow, Image as ImageIcon, TextQuote
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -31,7 +32,6 @@ import ImageExtension from '@tiptap/extension-image';
 import { contentService } from '@/lib/contentService';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { Smile } from 'lucide-react';
-
 
 type NoteEditorDialogProps = {
   open: boolean;
@@ -61,38 +61,44 @@ const HIGHLIGHT_COLORS = [
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false,
+    history: false, // We're using the standalone history extension
     horizontalRule: {
-        HTMLAttributes: {
-            class: 'border-white my-4',
-        },
+      HTMLAttributes: {
+        class: 'border-white my-4',
+      },
     },
   }),
   UnderlineExtension,
   LinkExtension.configure({
     openOnClick: false,
     autolink: true,
+    linkOnPaste: true,
   }),
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
   Highlight.configure({ 
       multicolor: true,
+      HTMLAttributes: {
+          class: 'text-black',
+      },
   }),
   TextStyle,
   Color,
   History.configure({
     depth: 20,
   }),
-   Placeholder.configure({
+  Placeholder.configure({
     placeholder: 'Write something amazing...',
+    emptyEditorClass: 'is-editor-empty',
   }),
   FontFamily,
   ImageExtension.configure({
-    inline: true,
+    inline: false, // Allows images to be on their own line
     allowBase64: true,
   }),
 ];
+
 
 const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { icon: React.ElementType, onClick: (e: React.MouseEvent) => void, tip: string, isActive?: boolean }) => (
     <Button 
@@ -161,7 +167,7 @@ const FontPicker = ({ editor }: { editor: Editor }) => (
             </Button>
         </PopoverTrigger>
         <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700">
-            {['Inter', 'Arial', 'Georgia', 'Courier New', 'serif', 'sans-serif', 'monospace'].map(font => (
+            {['Inter', 'Arial', 'Georgia', 'Courier New', 'serif', 'sans-serif', 'monospace', '"IBM Plex Sans Arabic"'].map(font => (
                 <button
                     key={font}
                     onClick={() => editor.chain().focus().setFontFamily(font).run()}
@@ -169,7 +175,7 @@ const FontPicker = ({ editor }: { editor: Editor }) => (
                         'bg-slate-700': editor.isActive('textStyle', { fontFamily: font })
                     })}
                 >
-                    <span style={{ fontFamily: font }}>{font}</span>
+                    <span style={{ fontFamily: font }}>{font.replace(/"/g, '')}</span>
                 </button>
             ))}
             <button onClick={() => editor.chain().focus().unsetFontFamily().run()} className="w-full text-left p-2 text-sm text-red-400 rounded-md hover:bg-slate-800">
@@ -186,10 +192,11 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
                 <Smile className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700">
+        <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 max-h-80 overflow-y-auto no-scrollbar">
             <EmojiPicker 
                 onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
                 theme="dark"
+                lazyLoadEmojis={true}
             />
         </PopoverContent>
     </Popover>
@@ -215,9 +222,12 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
             contentService.uploadNoteImage(file).then(url => {
               const { schema } = view.state;
               const coordinates = view.posAtCoords({ left: event.clientX, top: event.clientY });
+              if (!coordinates) return;
               const node = schema.nodes.image.create({ src: url });
-              const transaction = view.state.tr.insert(coordinates?.pos || 0, node);
+              const transaction = view.state.tr.insert(coordinates.pos, node);
               view.dispatch(transaction);
+            }).catch(err => {
+                console.error(err);
             });
             return true;
           }
@@ -270,8 +280,12 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
     input.onchange = async (e) => {
         const file = (e.target as HTMLInputElement).files?.[0];
         if (file) {
-            const url = await contentService.uploadNoteImage(file);
-            editor.chain().focus().setImage({ src: url }).run();
+            try {
+              const url = await contentService.uploadNoteImage(file);
+              editor.chain().focus().setImage({ src: url }).run();
+            } catch(error) {
+              console.error(error);
+            }
         }
     };
     input.click();
@@ -302,7 +316,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
         <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
-        <EditorToolbarButton icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
+        <EditorToolbarButton icon={TextQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
         <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Link} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
