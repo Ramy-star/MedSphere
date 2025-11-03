@@ -175,7 +175,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
           color: ""
       }
   ].sort((a, b) => {
-    const order = ['Create Quiz', 'Create Flashcard', 'Create Exam', 'New Class', 'New Folder', 'Upload File', 'Add Link'];
+    const order = ['New Class', 'New Folder', 'Upload File', 'Add Link', 'Create Quiz', 'Create Flashcard', 'Create Exam'];
     return order.indexOf(a.label) - order.indexOf(b.label);
   });
 
