@@ -151,19 +151,21 @@ const ColorPicker = ({ editor }: { editor: Editor }) => (
         <Palette className="h-4 w-4" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
-      <div className="flex gap-1">
-        {['#ffffff', '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'].map(color => (
-          <button
-            key={color}
-            onClick={() => editor.chain().focus().setColor(color).run()}
-            className="w-6 h-6 rounded-full border-2"
-            style={{ backgroundColor: color, borderColor: editor.isActive('textStyle', { color }) ? 'white' : 'transparent' }}
-          />
-        ))}
-        <button onClick={() => editor.chain().focus().unsetColor().run()} className="text-xs px-2 text-white">Reset</button>
-      </div>
-    </PopoverContent>
+    <DialogPortal>
+        <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+        <div className="flex gap-1">
+            {['#ffffff', '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'].map(color => (
+            <button
+                key={color}
+                onClick={() => editor.chain().focus().setColor(color).run()}
+                className="w-6 h-6 rounded-full border-2"
+                style={{ backgroundColor: color, borderColor: editor.isActive('textStyle', { color }) ? 'white' : 'transparent' }}
+            />
+            ))}
+            <button onClick={() => editor.chain().focus().unsetColor().run()} className="text-xs px-2 text-white">Reset</button>
+        </div>
+        </PopoverContent>
+    </DialogPortal>
   </Popover>
 );
 
@@ -174,19 +176,21 @@ const HighlightPicker = ({ editor }: { editor: Editor }) => (
             <Highlighter className="h-4 w-4" />
         </Button>
     </PopoverTrigger>
-    <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
-        <div className="flex gap-1">
-            {HIGHLIGHT_COLORS.map(({ color }) => (
-                <button
-                    key={color}
-                    onClick={() => editor.chain().focus().toggleHighlight({ color }).run()}
-                    className="w-6 h-6 rounded-full border-2"
-                    style={{ backgroundColor: color, borderColor: editor.isActive('highlight', { color }) ? '#3b82f6' : 'transparent' }}
-                />
-            ))}
-            <button onClick={() => editor.chain().focus().unsetHighlight().run()} className="text-xs px-2 text-white">None</button>
-        </div>
-    </PopoverContent>
+    <DialogPortal>
+        <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+            <div className="flex gap-1">
+                {HIGHLIGHT_COLORS.map(({ color }) => (
+                    <button
+                        key={color}
+                        onClick={() => editor.chain().focus().toggleHighlight({ color }).run()}
+                        className="w-6 h-6 rounded-full border-2"
+                        style={{ backgroundColor: color, borderColor: editor.isActive('highlight', { color }) ? '#3b82f6' : 'transparent' }}
+                    />
+                ))}
+                <button onClick={() => editor.chain().focus().unsetHighlight().run()} className="text-xs px-2 text-white">None</button>
+            </div>
+        </PopoverContent>
+    </DialogPortal>
   </Popover>
 );
 
@@ -196,24 +200,28 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
     return (
     <Popover>
         <PopoverTrigger asChild>
-            <Button variant="ghost" className="h-8 w-24 justify-between text-slate-300">
+            <Button variant="ghost" className="h-8 w-28 justify-between text-slate-300">
                 <span className="truncate">{currentFontName}</span>
                 <ChevronDown className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700 max-h-60 overflow-y-auto no-scrollbar">
-            {FONT_FAMILIES.map(({ name, value }) => (
-                <button
-                    key={name}
-                    onClick={() => value ? editor.chain().focus().setFontFamily(value).run() : editor.chain().focus().unsetFontFamily().run()}
-                    className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800", {
-                        'bg-slate-700': editor.isActive('textStyle', { fontFamily: value }) || (!value && !editor.getAttributes('textStyle').fontFamily)
-                    })}
-                >
-                    <span style={{ fontFamily: value || 'inherit' }} className="text-white">{name}</span>
-                </button>
-            ))}
-        </PopoverContent>
+        <DialogPortal>
+            <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700">
+                <ScrollArea className="h-60">
+                    {FONT_FAMILIES.map(({ name, value }) => (
+                        <button
+                            key={name}
+                            onClick={() => value ? editor.chain().focus().setFontFamily(value).run() : editor.chain().focus().unsetFontFamily().run()}
+                            className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800", {
+                                'bg-slate-700': editor.isActive('textStyle', { fontFamily: value }) || (!value && !editor.getAttributes('textStyle').fontFamily)
+                            })}
+                        >
+                            <span style={{ fontFamily: value || 'inherit' }} className="text-white">{name}</span>
+                        </button>
+                    ))}
+                </ScrollArea>
+            </PopoverContent>
+        </DialogPortal>
     </Popover>
 )};
 
@@ -227,20 +235,22 @@ const FontSizePicker = ({ editor }: { editor: Editor }) => {
                     <ChevronDown className="h-4 w-4" />
                 </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-40 p-1 bg-slate-900 border-slate-700">
-                {FONT_SIZES.map(({ name, value }) => (
-                    <button
-                        key={name}
-                        onClick={() => editor.chain().focus().setMark('textStyle', { fontSize: value }).run()}
-                        className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white", {
-                            'bg-slate-700': editor.isActive('textStyle', { fontSize: value })
-                        })}
-                    >
-                        {name}
-                    </button>
-                ))}
-                 <button onClick={() => editor.chain().focus().unsetMark('textStyle', { fontSize: FONT_SIZES.map(f => f.value) }).run()} className="w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white">Reset</button>
-            </PopoverContent>
+            <DialogPortal>
+                <PopoverContent className="w-40 p-1 bg-slate-900 border-slate-700">
+                    {FONT_SIZES.map(({ name, value }) => (
+                        <button
+                            key={name}
+                            onClick={() => editor.chain().focus().setMark('textStyle', { fontSize: value }).run()}
+                            className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white", {
+                                'bg-slate-700': editor.isActive('textStyle', { fontSize: value })
+                            })}
+                        >
+                            {name}
+                        </button>
+                    ))}
+                    <button onClick={() => editor.chain().focus().unsetMark('textStyle', { fontSize: FONT_SIZES.map(f => f.value) }).run()} className="w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white">Reset</button>
+                </PopoverContent>
+            </DialogPortal>
         </Popover>
     );
 };
@@ -252,16 +262,18 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
                 <Smile className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
-            <ScrollArea className="h-[300px] no-scrollbar">
-                <EmojiPicker 
-                    onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
-                    theme="dark"
-                    lazyLoadEmojis={true}
-                    skinTonesDisabled
-                />
-            </ScrollArea>
-        </PopoverContent>
+        <DialogPortal>
+            <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
+                <ScrollArea className="h-[300px]">
+                    <EmojiPicker 
+                        onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
+                        theme="dark"
+                        lazyLoadEmojis={true}
+                        skinTonesDisabled
+                    />
+                </ScrollArea>
+            </PopoverContent>
+        </DialogPortal>
     </Popover>
 );
 
@@ -452,7 +464,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     } catch (error) {
         console.error("Image upload failed:", error);
     }
-  }, [editor, contentService]);
+  }, [editor]);
   
   if (!editor || !note) return null;
 
@@ -501,139 +513,145 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        ref={dialogContentRef}
-        hideCloseButton={true}
-        className={cn(
-            "max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0 z-[60]",
-            isFullscreen && "max-w-full w-screen h-screen rounded-none max-h-screen z-[60]"
-        )}
-        style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
-      >
-        <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
-          <Input 
-            ref={titleInputRef}
-            defaultValue={note.title}
-            onChange={(e) => setNote({ ...note, title: e.target.value })}
-            className="text-lg font-bold bg-transparent border-0 text-white focus-visible:ring-1 focus-visible:ring-blue-500 w-auto flex-grow"
-            placeholder="Note Title"
-          />
-          <div className="flex items-center">
-            <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="h-9 w-9 text-white">
-              {isFullscreen ? <Shrink size={18} /> : <Maximize size={18} />}
-            </Button>
-            <DialogClose asChild>
-                <Button variant="ghost" size="icon" className="h-9 w-9 text-white"><X size={20}/></Button>
-            </DialogClose>
-          </div>
-        </DialogHeader>
-        <div className="p-4 pt-0 flex-shrink-0">
-          <div className="flex flex-col gap-2">
-            <div className="flex justify-between items-center">
-                <div className="flex-1 flex items-center gap-1 border-b border-white/10 overflow-hidden">
-                    <div ref={tabsContainerRef} className="flex items-center gap-1 flex-grow overflow-x-auto no-scrollbar">
-                        {note.pages.map(page => (
-                            <div 
-                              key={page.id} 
-                              onDoubleClick={() => setEditingTabId(page.id)}
-                              onClick={() => handleTabClick(page.id)}
-                              className={cn("flex items-center gap-1 py-2 px-3 border-b-2 transition-colors flex-shrink-0", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
-                            >
-                                {editingTabId === page.id ? (
-                                    <input
-                                        ref={newTabInputRef}
-                                        type="text"
-                                        defaultValue={page.title}
-                                        onBlur={(e) => renamePage(page.id, e.target.value)}
-                                        onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
-                                        className="bg-transparent outline-none w-24 text-sm"
-                                    />
-                                ) : (
-                                  <span className="text-sm cursor-pointer truncate">{page.title}</span>
-                                )}
-                                {note.pages.length > 1 && (
-                                  <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                          <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                          <AlertDialogHeader>
-                                            <AlertDialogTitle>Delete Page?</AlertDialogTitle>
-                                            <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
-                                          </AlertDialogHeader>
-                                          <AlertDialogFooter>
-                                            <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-                                          </AlertDialogFooter>
-                                      </AlertDialogContent>
-                                  </AlertDialog>
-                                )}
-                            </div>
-                        ))}
-                    </div>
-                    <button onClick={addPage} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-t-lg flex-shrink-0"><Plus size={16} /></button>
-                    {showScrollButtons && (
-                        <>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" onClick={() => scrollTabs('left')}><ChevronLeft size={16}/></Button>
-                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => scrollTabs('right')}><ChevronRight size={16}/></Button>
-                        </>
-                    )}
-                </div>
-              <div className="flex items-center gap-1 pl-4 flex-shrink-0">
-                  <Popover>
-                      <PopoverTrigger asChild>
-                         <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
-                      </PopoverTrigger>
-                      <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
-                          <div className="flex gap-2">
-                              {NOTE_COLORS.map(c => (
-                                  <button
-                                      key={c}
-                                      className="h-8 w-8 rounded-full border-2 transition-transform transform hover:scale-110"
-                                      style={{ backgroundColor: c, borderColor: note.color === c ? 'white' : 'transparent' }}
-                                      onClick={() => setNote({ ...note, color: c })}
-                                  />
-                              ))}
-                          </div>
-                      </PopoverContent>
-                  </Popover>
-                  <Button variant="ghost" size="icon" onClick={() => setIsToolbarOpen(prev => !prev)} title="Toggle Toolbar">
-                      <ChevronDown className={cn("transition-transform", isToolbarOpen && "rotate-180")} />
-                  </Button>
-              </div>
+      <DialogPortal>
+        <DialogContent
+            ref={dialogContentRef}
+            hideCloseButton={true}
+            className={cn(
+                "max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0",
+                isFullscreen && "max-w-full w-screen h-screen rounded-none max-h-screen"
+            )}
+            style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
+        >
+            <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
+            <Input 
+                ref={titleInputRef}
+                defaultValue={note.title}
+                onChange={(e) => setNote({ ...note, title: e.target.value })}
+                className="text-lg font-bold bg-transparent border-0 text-white focus-visible:ring-1 focus-visible:ring-blue-500 w-auto flex-grow"
+                placeholder="Note Title"
+            />
+            <div className="flex items-center">
+                <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="h-9 w-9 text-white">
+                {isFullscreen ? <Shrink size={18} /> : <Maximize size={18} />}
+                </Button>
+                <DialogClose asChild>
+                    <Button variant="ghost" size="icon" className="h-9 w-9 text-white"><X size={20}/></Button>
+                </DialogClose>
             </div>
-            <AnimatePresence>
-              {isToolbarOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.2, ease: 'easeInOut' }}
-                  className="overflow-hidden"
-                >
-                  <ToolbarContent />
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
+            </DialogHeader>
+            <div className="p-4 pt-0 flex-shrink-0">
+            <div className="flex flex-col gap-2">
+                <div className="flex justify-between items-center">
+                    <div className="flex-1 flex items-center gap-1 border-b border-white/10 overflow-hidden">
+                        <div ref={tabsContainerRef} className="flex items-center gap-1 flex-grow overflow-x-auto no-scrollbar">
+                            {note.pages.map(page => (
+                                <div 
+                                key={page.id} 
+                                onDoubleClick={() => setEditingTabId(page.id)}
+                                onClick={() => handleTabClick(page.id)}
+                                className={cn("flex items-center gap-1 py-2 px-3 border-b-2 transition-colors flex-shrink-0", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
+                                >
+                                    {editingTabId === page.id ? (
+                                        <input
+                                            ref={newTabInputRef}
+                                            type="text"
+                                            defaultValue={page.title}
+                                            onBlur={(e) => renamePage(page.id, e.target.value)}
+                                            onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
+                                            className="bg-transparent outline-none w-24 text-sm"
+                                        />
+                                    ) : (
+                                    <span className="text-sm cursor-pointer truncate">{page.title}</span>
+                                    )}
+                                    {note.pages.length > 1 && (
+                                    <AlertDialog>
+                                        <AlertDialogTrigger asChild>
+                                            <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
+                                        </AlertDialogTrigger>
+                                        <DialogPortal>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Delete Page?</AlertDialogTitle>
+                                                    <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </DialogPortal>
+                                    </AlertDialog>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                        <button onClick={addPage} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-t-lg flex-shrink-0"><Plus size={16} /></button>
+                        {showScrollButtons && (
+                            <>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" onClick={() => scrollTabs('left')}><ChevronLeft size={16}/></Button>
+                                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => scrollTabs('right')}><ChevronRight size={16}/></Button>
+                            </>
+                        )}
+                    </div>
+                <div className="flex items-center gap-1 pl-4 flex-shrink-0">
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
+                        </PopoverTrigger>
+                         <DialogPortal>
+                            <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+                                <div className="flex gap-2">
+                                    {NOTE_COLORS.map(c => (
+                                        <button
+                                            key={c}
+                                            className="h-8 w-8 rounded-full border-2 transition-transform transform hover:scale-110"
+                                            style={{ backgroundColor: c, borderColor: note.color === c ? 'white' : 'transparent' }}
+                                            onClick={() => setNote({ ...note, color: c })}
+                                        />
+                                    ))}
+                                </div>
+                            </PopoverContent>
+                        </DialogPortal>
+                    </Popover>
+                    <Button variant="ghost" size="icon" onClick={() => setIsToolbarOpen(prev => !prev)} title="Toggle Toolbar">
+                        <ChevronDown className={cn("transition-transform", isToolbarOpen && "rotate-180")} />
+                    </Button>
+                </div>
+                </div>
+                <AnimatePresence>
+                {isToolbarOpen && (
+                    <motion.div
+                    initial={{ height: 0, opacity: 0 }}
+                    animate={{ height: 'auto', opacity: 1 }}
+                    exit={{ height: 0, opacity: 0 }}
+                    transition={{ duration: 0.2, ease: 'easeInOut' }}
+                    className="overflow-hidden"
+                    >
+                    <ToolbarContent />
+                    </motion.div>
+                )}
+                </AnimatePresence>
+            </div>
+            </div>
 
-        <div className="flex-1 relative overflow-hidden px-4">
-          <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
-            <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
-            <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
-            <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
-            <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
-          </BubbleMenu>
-          
-          <EditorContent editor={editor} className="h-full overflow-y-auto p-2 rounded-lg bg-black/10" dir="auto" />
-        </div>
-        
-        <DialogFooter className="p-4 border-t border-white/10 flex-shrink-0">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button onClick={handleSave}>Save Note</Button>
-        </DialogFooter>
-      </DialogContent>
+            <div className="flex-1 relative overflow-hidden px-4">
+            <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
+                <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
+                <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
+                <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
+                <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
+            </BubbleMenu>
+            
+            <EditorContent editor={editor} className="h-full overflow-y-auto p-2 rounded-lg bg-black/10" dir="auto" />
+            </div>
+            
+            <DialogFooter className="p-4 border-t border-white/10 flex-shrink-0">
+            <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+            <Button onClick={handleSave}>Save Note</Button>
+            </DialogFooter>
+        </DialogContent>
+      </DialogPortal>
     </Dialog>
   );
 };
