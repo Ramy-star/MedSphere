@@ -9,13 +9,12 @@ import {
   DialogFooter,
   DialogDescription,
   DialogClose,
-  DialogPortal,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered, 
     Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight,
-    Maximize, Shrink
+    Maximize, Shrink, Trash2
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -508,7 +507,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           ref={dialogContentRef}
           hideCloseButton={true}
           className={cn(
-              "max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0 z-[60]",
+              "max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0",
               isFullscreen && "max-w-full w-screen h-screen rounded-none max-h-screen"
           )}
           style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
