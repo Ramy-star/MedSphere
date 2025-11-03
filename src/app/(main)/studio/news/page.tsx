@@ -136,13 +136,13 @@ export default function NewsComposerPage() {
                 ref={canvasRef}
                 className={cn(
                     "relative flex flex-col items-center text-center",
-                    "bg-slate-900 text-white",
+                    "bg-gradient-to-br from-slate-800 to-emerald-950 text-white",
                     "py-6 px-8 w-[550px]",
                     "shadow-2xl"
                 )}>
-                <header className="flex-shrink-0 flex items-center justify-center gap-2 w-full mb-4 pb-4 border-b border-slate-700">
-                    <Logo className="h-10 w-10 md:h-12 md:w-12" />
-                     <h1 className="text-2xl md:text-3xl font-bold"
+                <header className="flex-shrink-0 flex items-center justify-center gap-2 w-full mb-2 pb-2 border-b border-slate-700">
+                    <Logo className="h-8 w-8 md:h-10 md:w-10" />
+                     <h1 className="text-xl md:text-2xl font-bold"
                     >
                       <span className="font-extrabold text-white">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
                     </h1>
@@ -152,7 +152,7 @@ export default function NewsComposerPage() {
                      <TiptapEditor editor={editor} />
                 </div>
 
-                <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-4 border-t border-slate-700">
+                <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-2 border-t border-slate-700">
                     © 2025 MedSphere. All rights reserved.
                 </footer>
             </div>
