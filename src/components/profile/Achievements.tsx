@@ -1,3 +1,4 @@
+
 'use client';
 import React from 'react';
 import type { UserProfile } from '@/stores/auth-store';
@@ -51,7 +52,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
   const cardContent = (
     <div
       className={cn(
-        "relative flex h-[160px] w-[140px] sm:h-[180px] sm:w-[150px] flex-col justify-between rounded-2xl border p-3 sm:p-4 text-center transition-all duration-300",
+        "relative flex flex-col justify-between rounded-2xl border p-3 sm:p-4 text-center transition-all duration-300 w-[140px] h-[160px] sm:w-[150px] sm:h-[180px]",
         earned ? `${colors.bg} ${colors.border}` : "border-slate-800 bg-slate-900/50",
         !earned && "group-hover:border-slate-700 group-hover:bg-slate-800/40"
       )}

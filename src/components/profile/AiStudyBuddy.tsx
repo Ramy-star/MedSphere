@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -692,7 +693,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     return (
         <div
             className={cn(
-                "glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full",
+                "glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full max-h-[70vh]",
                 isFloating ? "h-full" : "flex-1"
             )}
             style={{
