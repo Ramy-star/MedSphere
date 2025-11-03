@@ -40,6 +40,18 @@ const NOTE_COLORS = [
   '#382a44', // Dark Purple
 ];
 
+// Define extensions outside the component to ensure they are stable
+const editorExtensions = [
+  StarterKit.configure({
+    // History is part of StarterKit by default
+  }),
+  UnderlineExtension,
+  LinkExtension.configure({
+    openOnClick: false,
+    autolink: true,
+  }),
+];
+
 const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { icon: React.ElementType, onClick: (e: React.MouseEvent) => void, tip: string, isActive?: boolean }) => (
     <Button 
       variant="ghost" 
@@ -57,15 +69,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
 
   const editor = useEditor({
-    extensions: [
-      StarterKit,
-      UnderlineExtension,
-      LinkExtension.configure({
-        openOnClick: false,
-        autolink: true,
-      }),
-      History,
-    ],
+    extensions: editorExtensions,
     content: '',
     editorProps: {
       attributes: {
