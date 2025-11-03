@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -9,6 +10,8 @@ import {
   Folder as FolderIcon,
   Book,
   Inbox,
+  PanelLeftOpen,
+  PanelLeftClose,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useState, useEffect, useCallback, useMemo } from 'react';
@@ -404,7 +407,7 @@ function SidebarContent({ open, onOpenChange }: { open: boolean, onOpenChange: (
                         onClick={() => onOpenChange(!open)} 
                         className="text-white hover:bg-slate-700 hidden sm:flex w-8 h-8 rounded-full -mr-1"
                     >
-                        <Menu size={20} />
+                        {open ? <PanelLeftClose size={20} /> : <PanelLeftOpen size={20} />}
                     </Button>
                 </TooltipTrigger>
                 <TooltipContent side="right">
