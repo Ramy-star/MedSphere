@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -40,7 +39,7 @@ import { FlashcardIcon } from './icons/FlashcardIcon';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import * as pdfjs from 'pdfjs-dist';
-import type { Note } from './profile/ProfileNotesSection';
+import { Note } from './profile/ProfileNotesSection';
 import { NoteViewer } from './profile/NoteViewer';
 
 
@@ -200,7 +199,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, 
         return { Icon: FlashcardIcon, color: '' };
     }
     if (item.type === 'NOTE') {
-        return { Icon: StickyNote, color: 'text-yellow-300' };
+        return { Icon: FileText, color: 'text-yellow-300' };
     }
 
     const mimeType = item.metadata?.mime;
@@ -807,12 +806,6 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         )}
         hideCloseButton={true}
       >
-        <style>{`
-            .fullscreen-pdf-container > div {
-                width: 100% !important;
-                height: 100% !important;
-            }
-        `}</style>
         <DialogHeader className="sr-only">
           <DialogTitle>File Preview: {displayName}</DialogTitle>
           <DialogDescription>
@@ -852,5 +845,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    

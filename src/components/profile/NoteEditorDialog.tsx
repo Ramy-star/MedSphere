@@ -40,8 +40,9 @@ import {
   AlertDialogAction,
   AlertDialogCancel,
   AlertDialogContent,
-  AlertDialogDescription as AlertDialogDesc, // Renamed to avoid conflict
-  AlertDialogHeader,
+  AlertDialogDescription as AlertDialogDesc,
+  AlertDialogHeader as AlertDialogHeader2,
+  AlertDialogFooter,
   AlertDialogTitle as AlertDialogTitle2,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
@@ -509,6 +510,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
         <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
+          <DialogTitle className="sr-only">Edit Note: {note.title}</DialogTitle>
           <Input 
             ref={titleInputRef}
             defaultValue={note.title}
@@ -555,10 +557,10 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                           <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
                                       </AlertDialogTrigger>
                                       <AlertDialogContent>
-                                          <AlertDialogHeader>
+                                          <AlertDialogHeader2>
                                             <AlertDialogTitle2>Delete Page?</AlertDialogTitle2>
                                             <AlertDialogDesc>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDesc>
-                                          </AlertDialogHeader>
+                                          </AlertDialogHeader2>
                                           <AlertDialogFooter>
                                             <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
                                             <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
