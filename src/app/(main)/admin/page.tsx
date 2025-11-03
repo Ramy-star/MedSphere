@@ -67,14 +67,14 @@ type AuditLog = {
 type SortOption = 'name' | 'createdAt' | 'level';
 
 async function logAdminAction(actor: UserProfile | null, action: string, target: UserProfile, details?: object) {
-    if (!db || !actor || !actor.id) return;
+    if (!db || !actor || !actor.studentId) return;
     try {
         await addDoc(collection(db, 'auditLogs'), {
             timestamp: new Date().toISOString(),
-            actorId: actor.id,
+            actorId: actor.studentId,
             actorName: actor.displayName || actor.username,
             action: action,
-            targetId: target.id,
+            targetId: target.studentId,
             targetName: target.displayName || target.username,
             details: details || {}
         });
@@ -106,7 +106,7 @@ function AdminPageContent() {
         orderBy: ['timestamp', 'desc'],
         limit: 100
     });
-    const { user: currentUser, isSuperAdmin } = useAuthStore();
+    const { studentId: currentStudentId, user: currentUser, isSuperAdmin } = useAuthStore();
     const { toast } = useToast();
 
     const studentIdToLevelMap = useMemo(() => {
@@ -268,7 +268,7 @@ function AdminPageContent() {
     const UserCard = React.memo(({ user }: { user: UserProfile }) => {
         const userIsSuperAdmin = isUserSuperAdmin(user);
         const userIsSubAdmin = isSubAdmin(user);
-        const isCurrentUser = currentUser?.id === user.id;
+        const isCurrentUser = user.studentId === currentStudentId;
         const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
         const joinDate = user.createdAt ? format(new Date(user.createdAt), 'MMM dd, yyyy') : null;
         const avatarRingClass = userIsSuperAdmin ? "border-yellow-400" : userIsSubAdmin ? "border-blue-400" : "border-transparent";
@@ -293,16 +293,18 @@ function AdminPageContent() {
                 className={cn("p-4 flex items-center justify-between", user.isBlocked && "opacity-50")}
             >
                 <div className="flex items-center gap-4 overflow-hidden">
-                    <Avatar className={cn("relative h-9 w-9 rounded-full flex items-center justify-center border-2", avatarRingClass)}>
-                        <AvatarImage 
-                            src={user.photoURL ?? ''} 
-                            alt={user.displayName ?? ''}
-                            className="pointer-events-none select-none"
-                            onDragStart={(e) => e.preventDefault()}
-                            onContextMenu={(e) => e.preventDefault()}
-                         />
-                        <AvatarFallback>{user.displayName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
-                    </Avatar>
+                    <div className={cn("relative h-9 w-9 rounded-full flex items-center justify-center border-2", avatarRingClass)}>
+                        <Avatar className={cn("h-full w-full")}>
+                            <AvatarImage 
+                                src={user.photoURL ?? ''} 
+                                alt={user.displayName ?? ''}
+                                className="pointer-events-none select-none"
+                                onDragStart={(e) => e.preventDefault()}
+                                onContextMenu={(e) => e.preventDefault()}
+                             />
+                            <AvatarFallback>{user.displayName?.[0] || user.username?.[0] || 'U'}</AvatarFallback>
+                        </Avatar>
+                    </div>
                     <div className="overflow-hidden">
                         <div className="flex items-center gap-2">
                            <p className="text-sm font-semibold text-white truncate sm:text-base">{user.displayName || user.username} {isCurrentUser && '(You)'}</p>
@@ -538,7 +540,7 @@ function AdminPageContent() {
                                             <History className="w-4 h-4 text-slate-400 mt-1 shrink-0"/>
                                             <div>
                                                 <p className='text-slate-100'>
-                                                   User <span className='font-mono text-amber-300'>{log.actorName}</span> performed action <span className='font-mono text-blue-300'>{log.action}</span> on user <span className='font-mono text-amber-300'>{log.targetName}</span>
+                                                   User <span className='font-mono text-amber-300'>{log.actorName} ({log.actorId})</span> performed action <span className='font-mono text-blue-300'>{log.action}</span> on user <span className='font-mono text-amber-300'>{log.targetName} ({log.targetId})</span>
                                                 </p>
                                                 <p className='text-xs text-slate-500 mt-0.5'>{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
                                             </div>
@@ -623,5 +625,3 @@ const AdminPageWithSuspense = () => (
 );
 
 export default AdminPageWithSuspense;
-
-    
