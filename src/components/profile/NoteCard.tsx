@@ -25,6 +25,17 @@ type NoteCardProps = {
 };
 
 export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
+  
+  const isValidDate = (date: any) => {
+    if (!date) return false;
+    // Firestore Timestamps have toDate(), ISO strings are parsed by new Date()
+    return typeof date.toDate === 'function' || !isNaN(new Date(date).getTime());
+  }
+
+  const formattedDate = isValidDate(note.updatedAt)
+    ? format(typeof note.updatedAt.toDate === 'function' ? note.updatedAt.toDate() : new Date(note.updatedAt), 'MMM dd, yyyy')
+    : 'Saving...';
+
   return (
     <div
       className={cn(
@@ -65,7 +76,7 @@ export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
         />
       </div>
       <div className="text-right text-xs text-white/50 mt-2 flex-shrink-0">
-        {format(new Date(note.updatedAt), 'MMM dd, yyyy')}
+        {formattedDate}
       </div>
     </div>
   );
