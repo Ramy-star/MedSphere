@@ -39,7 +39,6 @@ import {
   AlertDialogCancel,
   AlertDialogContent,
   AlertDialogDescription as AlertDialogDesc, // Renamed to avoid conflict
-  AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
@@ -193,7 +192,7 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
     return (
     <Popover>
         <PopoverTrigger asChild>
-            <Button variant="ghost" className="h-8 w-40 justify-between text-slate-300">
+            <Button variant="ghost" className="h-8 w-28 justify-between text-slate-300">
                 <span className="truncate">{currentFontName}</span>
                 <ChevronDown className="h-4 w-4" />
             </Button>
@@ -219,7 +218,7 @@ const FontSizePicker = ({ editor }: { editor: Editor }) => {
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" className="h-8 w-32 justify-between text-slate-300">
+                <Button variant="ghost" className="h-8 w-24 justify-between text-slate-300">
                     <span className="truncate">{currentSize}</span>
                     <ChevronDown className="h-4 w-4" />
                 </Button>
