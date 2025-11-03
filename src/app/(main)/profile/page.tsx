@@ -37,6 +37,7 @@ import { FilePreviewModal } from '@/components/FilePreviewModal';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -107,6 +108,7 @@ const CollapsibleSection = ({ title, icon: Icon, children, defaultOpen = true }:
 export default function ProfilePage() {
   const { user, logout } = useAuthStore();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const [editingName, setEditingName] = useState(false);
   const [isSavingName, setIsSavingName] = useState(false);
@@ -318,6 +320,62 @@ export default function ProfilePage() {
   const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
   const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
 
+  const DesktopLayout = () => (
+    <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
+      <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
+          {!isMobile && <AiStudyBuddy user={user} />}
+          <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
+              <ProfileNotesSection user={user} />
+          </CollapsibleSection>
+      </div>
+
+      <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
+
+      <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
+           <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
+              <div className="space-y-3 sm:space-y-4">
+                  <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
+                  <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
+                  <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
+              </div>
+          </CollapsibleSection>
+          <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
+              <ActiveSessions user={user} />
+          </CollapsibleSection>
+          <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
+              <FavoritesSection user={user} onFileClick={handleFileClick} />
+          </CollapsibleSection>
+          <CollapsibleSection title="Achievements" icon={Award} defaultOpen={true}>
+             <AchievementsSection user={user} />
+          </CollapsibleSection>
+      </div>
+    </div>
+  );
+
+  const MobileLayout = () => (
+      <div className="mt-8 sm:mt-12 flex flex-col gap-y-8 items-start w-full px-4 sm:px-8">
+          <CollapsibleSection title="User Information" icon={Info} defaultOpen={false}>
+              <div className="space-y-3 sm:space-y-4">
+                  <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
+                  <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
+                  <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
+              </div>
+          </CollapsibleSection>
+          <CollapsibleSection title="Favorites" icon={Star} defaultOpen={false}>
+              <FavoritesSection user={user} onFileClick={handleFileClick} />
+          </CollapsibleSection>
+          <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
+              <ProfileNotesSection user={user} />
+          </CollapsibleSection>
+          <CollapsibleSection title="Achievements" icon={Award} defaultOpen={false}>
+             <AchievementsSection user={user} />
+          </CollapsibleSection>
+           <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={false}>
+              <ActiveSessions user={user} />
+          </CollapsibleSection>
+      </div>
+  );
+
   return (
     <>
     <motion.div
@@ -373,19 +431,16 @@ export default function ProfilePage() {
             onDrop={(e) => handleDrop(e, 'avatar')}
         >
           <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400")}>
-            {user.photoURL ? (
-              <AvatarImage 
-                  src={user.photoURL ?? undefined}
-                  alt={user.displayName ?? ''}
-                  className="pointer-events-none select-none"
-                  onDragStart={(e) => e.preventDefault()}
-                  onContextMenu={(e) => e.preventDefault()}
-              />
-            ) : (
-              <AvatarFallback className="text-3xl sm:text-4xl">
-                {user.displayName?.[0] || <UserIcon />}
-              </AvatarFallback>
-            )}
+            <AvatarImage 
+                src={user.photoURL ?? ''} 
+                alt={user.displayName ?? ''}
+                className="pointer-events-none select-none"
+                onDragStart={(e) => e.preventDefault()}
+                onContextMenu={(e) => e.preventDefault()}
+            />
+            <AvatarFallback className="text-3xl sm:text-4xl">
+              {user.displayName?.[0] || <UserIcon />}
+            </AvatarFallback>
           </Avatar>
            {isAvatarDragging && (
                 <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-xs font-bold text-center p-2 pointer-events-none">
@@ -475,35 +530,7 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
-        <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-            <AiStudyBuddy user={user} />
-            <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
-                <div className="space-y-3 sm:space-y-4">
-                    <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
-                    <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
-                    <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
-                </div>
-            </CollapsibleSection>
-            <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
-                <ActiveSessions user={user} />
-            </CollapsibleSection>
-        </div>
-
-        <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
-
-        <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-            <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
-                <FavoritesSection user={user} onFileClick={handleFileClick} />
-            </CollapsibleSection>
-             <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
-                <ProfileNotesSection user={user} />
-            </CollapsibleSection>
-            <CollapsibleSection title="Achievements" icon={Award} defaultOpen={true}>
-               <AchievementsSection user={user} />
-            </CollapsibleSection>
-        </div>
-      </div>
+      {isMobile ? <MobileLayout /> : <DesktopLayout />}
       
       <div className="mt-12 sm:mt-16 flex justify-center">
           <button onClick={() => setShowLogoutConfirm(true)} className="expanding-btn destructive">
@@ -587,5 +614,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
