@@ -109,7 +109,7 @@ export default function NewsComposerPage() {
         const node = canvasRef.current;
         if (!node) return;
         
-        toPng(node, { cacheBust: true, pixelRatio: 2.5, backgroundColor: '#0c1118' })
+        toPng(node, { cacheBust: true, pixelRatio: 2.5 })
             .then((dataUrl) => {
                 const link = document.createElement('a');
                 link.download = 'medsphere-announcement.png';
@@ -122,7 +122,7 @@ export default function NewsComposerPage() {
     };
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-start overflow-y-auto">
+    <div className="flex h-full w-full flex-col items-center justify-start overflow-y-auto no-scrollbar">
         <div className="flex-shrink-0 flex items-center gap-4 py-4 z-20 sticky top-0 w-full justify-center">
             <TiptapToolbar editor={editor} />
             <Button onClick={handleDownload} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
@@ -136,19 +136,19 @@ export default function NewsComposerPage() {
                 ref={canvasRef}
                 className={cn(
                     "relative flex flex-col items-center text-center",
-                    "bg-transparent text-white", // Transparent background
-                    "p-8 w-[550px]", // Removed min-height
+                    "bg-slate-900 text-white",
+                    "py-6 px-8 w-[550px]",
                     "shadow-2xl"
                 )}>
                 <header className="flex-shrink-0 flex items-center justify-center gap-2 w-full mb-4 pb-4 border-b border-slate-700">
-                    <Logo className="h-12 w-12 md:h-16 md:w-16" />
-                     <h1 className="text-3xl md:text-4xl font-bold"
+                    <Logo className="h-10 w-10 md:h-12 md:w-12" />
+                     <h1 className="text-2xl md:text-3xl font-bold"
                     >
                       <span className="font-extrabold text-white">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
                     </h1>
                 </header>
 
-                <div className="flex-1 w-full flex items-center justify-center my-4 relative overflow-y-auto no-scrollbar">
+                <div className="flex-1 w-full flex items-center justify-center my-4 relative overflow-y-auto no-scrollbar min-h-[400px]">
                      <TiptapEditor editor={editor} />
                 </div>
 
