@@ -13,7 +13,8 @@ import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 
 export default function FolderPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+  const resolvedParams = use(params);
+  const { id } = resolvedParams;
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { toast } = useToast();
