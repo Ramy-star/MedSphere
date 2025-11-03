@@ -138,7 +138,8 @@
                     "canAdministerFlashcards",
                     "canAccessTelegramInbox",
                     "canCreateQuiz",
-                    "canCreateExam"
+                    "canCreateExam",
+                    "canAccessCommunityPage"
                   ]
                 }
               }
@@ -261,5 +262,3 @@
     }
   }
 }
-
-    

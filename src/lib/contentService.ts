@@ -535,7 +535,6 @@ export const contentService = {
         });
         if (!sigResponse.ok) throw new Error('Failed to get signature.');
         const { signature, apiKey, cloudName, timestamp: signedTimestamp } = await sigResponse.json();
-        
         if (user.metadata?.coverPhotoCloudinaryPublicId) {
             await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
         }
@@ -642,43 +641,6 @@ export const contentService = {
         callbacks.onError(e);
         throw e;
     }
-  },
-  async uploadNoteImage(file: File): Promise<string> {
-    const folder = 'notes_images';
-    const public_id = `${folder}/${uuidv4()}`;
-    const paramsToSign = { public_id, folder, timestamp: Math.floor(Date.now() / 1000) };
-    const sigResponse = await fetch('/api/sign-cloudinary-params', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paramsToSign })
-    });
-    if (!sigResponse.ok) throw new Error('Failed to get signature for note image.');
-    const { signature, apiKey, cloudName, timestamp: signedTimestamp } = await sigResponse.json();
-
-    return new Promise((resolve, reject) => {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('api_key', apiKey);
-        formData.append('signature', signature);
-        formData.append('timestamp', String(signedTimestamp));
-        formData.append('public_id', public_id);
-        formData.append('folder', folder);
-
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
-        
-        xhr.onload = () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                const data = JSON.parse(xhr.responseText);
-                const finalUrl = createProxiedUrl(data.secure_url);
-                resolve(finalUrl);
-            } else {
-                reject(new Error(`Image upload failed: ${xhr.statusText}`));
-            }
-        };
-        xhr.onerror = () => reject(new Error('Network error during image upload.'));
-        xhr.send(formData);
-    });
   },
   async updateFile(itemToUpdate: Content, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest | undefined> {
     try {
@@ -1010,5 +972,3 @@ export const contentService = {
     await deleteFirestoreDoc(noteRef);
   },
 };
-
-    
