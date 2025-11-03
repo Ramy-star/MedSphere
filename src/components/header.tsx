@@ -111,26 +111,15 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const DesktopNav = () => (
     <div className="hidden md:flex items-center gap-1">
         <TooltipProvider>
-            <AuthButton />
-             <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-purple-400" onClick={handleCommunityClick}>
-                        <Users className="h-5 w-5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                    <p>Community</p>
-                </TooltipContent>
-            </Tooltip>
-            {can('canAccessQuestionCreator', null) && (
-                <Tooltip>
+            {can('canAccessAdminPanel', null) && (
+                 <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
-                            <Wand2 className="h-5 w-5" />
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
+                            <Shield className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Questions Creator</p>
+                        <p>Admin Panel</p>
                     </TooltipContent>
                 </Tooltip>
             )}
@@ -146,18 +135,29 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     </TooltipContent>
                 </Tooltip>
             )}
-            {can('canAccessAdminPanel', null) && (
-                 <Tooltip>
+            {can('canAccessQuestionCreator', null) && (
+                <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
-                            <Shield className="h-5 w-5" />
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
+                            <Wand2 className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Admin Panel</p>
+                        <p>Questions Creator</p>
                     </TooltipContent>
                 </Tooltip>
             )}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-purple-400" onClick={handleCommunityClick}>
+                        <Users className="h-5 w-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                    <p>Community</p>
+                </TooltipContent>
+            </Tooltip>
+            <AuthButton />
         </TooltipProvider>
     </div>
   );
@@ -169,15 +169,6 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                 <div><AuthButton /></div>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-56 p-2" align="end">
-                 <DropdownMenuLabel className="font-normal">
-                      <div className="flex flex-col space-y-1">
-                        <p className="text-sm font-medium leading-none">{user?.displayName}</p>
-                        <p className="text-xs leading-none text-muted-foreground">
-                          {user?.email}
-                        </p>
-                      </div>
-                  </DropdownMenuLabel>
-                <DropdownMenuSeparator />
                 {visibleNavItems.map(item => (
                     <DropdownMenuItem key={item.label} onSelect={item.action}>
                         <item.icon className="mr-2 h-4 w-4" />
