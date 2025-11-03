@@ -123,13 +123,16 @@ export default function RootLayout({
                 <title>Welcome to MedSphere</title>
                 <meta name="description" content="Organize your medical education journey" />
                 <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
-                <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
+                <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, interactive-widget=resizes-content" />
                 <link rel="manifest" href="/manifest.json" />
                 <meta name="theme-color" content="#0B0F12" />
                 <link rel="apple-touch-icon" href="/logo.svg" />
             </head>
             <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
                  <WelcomeScreen onGetStarted={handleGetStarted} />
+                 <footer className="absolute bottom-4 text-center text-xs text-slate-500 z-10 w-full">
+                    © 2025 MedSphere. All rights reserved.
+                </footer>
             </body>
         </html>
     );
@@ -141,7 +144,7 @@ export default function RootLayout({
           <title>MedSphere</title>
           <meta name="description" content="Organize your medical education journey" />
           <link rel="icon" href="/logo.svg" type="image/svg+xml" sizes="any" />
-          <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
+          <meta name="viewport" content={`width=device-width, initial-scale=1, interactive-widget=resizes-content${authState !== 'authenticated' ? ', maximum-scale=1, user-scalable=no' : ''}`} />
           <link rel="manifest" href="/manifest.json" />
           <meta name="theme-color" content="#0B0F12" />
           <link rel="apple-touch-icon" href="/logo.svg" />
@@ -151,6 +154,11 @@ export default function RootLayout({
           <FirebaseClientProvider config={firebaseConfig}>
             <div className="flex flex-col h-full w-full">
                 {renderContent()}
+                 {authState !== 'authenticated' && authState !== 'loading' && (
+                     <footer className="absolute bottom-4 text-center text-xs text-slate-500 z-10 w-full">
+                        © 2025 MedSphere. All rights reserved.
+                    </footer>
+                )}
             </div>
             <Toaster />
             {newlyEarnedAchievement && <AchievementToast achievement={newlyEarnedAchievement} />}
