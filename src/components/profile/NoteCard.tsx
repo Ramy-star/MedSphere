@@ -40,7 +40,7 @@ export const NoteCard = ({ note, onEdit, onDelete }: NoteCardProps) => {
   return (
     <div
       className={cn(
-        "group relative flex flex-col rounded-2xl p-4 border border-white/10 transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer",
+        "group relative flex flex-col rounded-2xl p-4 border border-white/10 transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer bg-opacity-80"
       )}
       style={{ backgroundColor: note.color }}
       onClick={onEdit}

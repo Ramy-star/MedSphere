@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, Smile, TextQuote, Pilcrow, Image as ImageIcon
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -29,15 +29,8 @@ import Placeholder from '@tiptap/extension-placeholder';
 import FontFamily from '@tiptap/extension-font-family';
 import ImageExtension from '@tiptap/extension-image';
 import { contentService } from '@/lib/contentService';
-import EmojiPicker, { EmojiClickData, SkinTones } from 'emoji-picker-react';
-
-
-type NoteEditorDialogProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  note: Note | null;
-  onSave: (note: Note) => void;
-};
+import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
+import { Smile } from 'lucide-react';
 
 const NOTE_COLORS = [
     '#282828', // dark grey
@@ -76,10 +69,17 @@ const FONT_FAMILIES = [
     { name: 'IBM Plex Sans Arabic', value: 'IBM Plex Sans Arabic, sans-serif' },
 ];
 
+const FONT_SIZES = [
+    { name: 'Very Small', value: '10px' },
+    { name: 'Small', value: '12px' },
+    { name: 'Normal', value: '14px' },
+    { name: 'Large', value: '18px' },
+    { name: 'Very Large', value: '24px' },
+];
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false,
+    history: false, // Use the separate History extension
     horizontalRule: {
       HTMLAttributes: {
         class: 'border-white my-4',
@@ -87,7 +87,7 @@ const editorExtensions = [
     },
     blockquote: {
       HTMLAttributes: {
-        class: 'border-l-4 border-slate-500 pl-4',
+        class: 'border-l-4 border-slate-500 pl-4 text-slate-400',
       }
     }
   }),
@@ -96,10 +96,13 @@ const editorExtensions = [
     openOnClick: false,
     autolink: true,
     linkOnPaste: true,
+    HTMLAttributes: {
+        class: 'text-blue-400 hover:text-blue-300 underline',
+    }
   }),
   TextAlign.configure({
     types: ['heading', 'paragraph'],
-    alignments: ['left', 'center', 'right'],
+    alignments: ['left', 'center', 'right', 'justify'],
   }),
   Highlight.configure({ 
       multicolor: true,
@@ -114,6 +117,7 @@ const editorExtensions = [
   }),
   Placeholder.configure({
     placeholder: 'Write something amazing...',
+    emptyEditorClass: 'is-editor-empty',
   }),
   FontFamily,
   ImageExtension.configure({
@@ -121,6 +125,7 @@ const editorExtensions = [
     allowBase64: true,
   }),
 ];
+
 
 const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { icon: React.ElementType, onClick: (e: React.MouseEvent) => void, tip: string, isActive?: boolean }) => (
     <Button 
@@ -151,7 +156,7 @@ const ColorPicker = ({ editor }: { editor: Editor }) => (
             style={{ backgroundColor: color, borderColor: editor.isActive('textStyle', { color }) ? 'white' : 'transparent' }}
           />
         ))}
-        <button onClick={() => editor.chain().focus().unsetColor().run()} className="text-xs px-2">Reset</button>
+        <button onClick={() => editor.chain().focus().unsetColor().run()} className="text-xs px-2 text-white">Reset</button>
       </div>
     </PopoverContent>
   </Popover>
@@ -174,14 +179,14 @@ const HighlightPicker = ({ editor }: { editor: Editor }) => (
                     style={{ backgroundColor: color, borderColor: editor.isActive('highlight', { color }) ? '#3b82f6' : 'transparent' }}
                 />
             ))}
-            <button onClick={() => editor.chain().focus().unsetHighlight().run()} className="text-xs px-2">None</button>
+            <button onClick={() => editor.chain().focus().unsetHighlight().run()} className="text-xs px-2 text-white">None</button>
         </div>
     </PopoverContent>
   </Popover>
 );
 
 const FontPicker = ({ editor }: { editor: Editor }) => {
-    const currentFont = editor.getAttributes('textStyle').fontFamily || 'Default';
+    const currentFont = editor.getAttributes('textStyle').fontFamily || '';
     const currentFontName = FONT_FAMILIES.find(f => f.value === currentFont)?.name || 'Default';
     return (
     <Popover>
@@ -200,12 +205,39 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
                         'bg-slate-700': editor.isActive('textStyle', { fontFamily: value }) || (!value && !editor.getAttributes('textStyle').fontFamily)
                     })}
                 >
-                    <span style={{ fontFamily: value || 'inherit' }}>{name}</span>
+                    <span style={{ fontFamily: value || 'inherit' }} className="text-white">{name}</span>
                 </button>
             ))}
         </PopoverContent>
     </Popover>
 )};
+
+const FontSizePicker = ({ editor }: { editor: Editor }) => {
+    const currentSize = FONT_SIZES.find(fs => editor.isActive('textStyle', { fontSize: fs.value }))?.name || 'Normal';
+    return (
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="ghost" className="h-8 w-32 justify-between text-slate-300">
+                    <span className="truncate">{currentSize}</span>
+                    <ChevronDown className="h-4 w-4" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-40 p-1 bg-slate-900 border-slate-700">
+                {FONT_SIZES.map(({ name, value }) => (
+                    <button
+                        key={name}
+                        onClick={() => editor.chain().focus().setMark('textStyle', { fontSize: value }).run()}
+                        className={cn("w-full text-left p-2 text-sm rounded-md hover:bg-slate-800 text-white", {
+                            'bg-slate-700': editor.isActive('textStyle', { fontSize: value })
+                        })}
+                    >
+                        {name}
+                    </button>
+                ))}
+            </PopoverContent>
+        </Popover>
+    );
+};
 
 const EmojiSelector = ({ editor }: { editor: Editor }) => (
     <Popover>
@@ -220,13 +252,12 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
                     onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
                     theme="dark"
                     lazyLoadEmojis={true}
-                    skinTonesDisabled={true}
+                    skinTonesDisabled
                 />
             </div>
         </PopoverContent>
     </Popover>
 );
-
 
 export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEditorDialogProps) => {
   const [color, setColor] = useState('#282828');
@@ -268,7 +299,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
           editor.commands.setContent(note.content);
         }
         setColor(note.color || '#282828');
-        setIsToolbarOpen(false); // Reset toolbar state on open
     } else if (!open) {
         editor?.commands.clearContent();
         setColor('#282828');
@@ -322,6 +352,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <EditorToolbarButton icon={Redo} onClick={() => editor.chain().focus().redo().run()} tip="Redo" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <FontPicker editor={editor} />
+        <FontSizePicker editor={editor} />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
         <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
@@ -341,7 +372,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
         <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
         <EditorToolbarButton icon={TextQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
-        <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
+        <EditorToolbarButton icon={Pilcrow} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Link} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
         <EditorToolbarButton icon={ImageIcon} onClick={handleImageUpload} tip="Insert Image" />
