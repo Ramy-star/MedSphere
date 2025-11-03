@@ -375,7 +375,7 @@ export default function ProfilePage() {
           <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400")}>
             {user.photoURL ? (
               <AvatarImage 
-                  src={user.photoURL} 
+                  src={user.photoURL ?? undefined}
                   alt={user.displayName ?? ''}
                   className="pointer-events-none select-none"
                   onDragStart={(e) => e.preventDefault()}
@@ -475,9 +475,9 @@ export default function ProfilePage() {
         </div>
       </div>
       
-      <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start max-w-7xl mx-auto w-full px-4 sm:px-8">
-        <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
-             <AiStudyBuddy user={user} />
+      <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
+        <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
+            <AiStudyBuddy user={user} />
             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
@@ -492,7 +492,7 @@ export default function ProfilePage() {
 
         <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
 
-        <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
+        <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
@@ -587,3 +587,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
