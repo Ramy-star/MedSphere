@@ -37,7 +37,7 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
     orderBy: ['order', 'asc'],
   });
 
-  const [viewingNote, setViewingNote] = useState<Note | null>(null);
+  const [viewingNote, setViewingNote] = useState<any | null>(null);
 
   const handleTogglePin = async (note: Note) => {
     const noteRef = doc(db, `users/${user.id}/profileNotes`, note.id);
@@ -50,21 +50,20 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   };
 
   const handleViewNote = (note: Note) => {
+    // We now create an object that mimics the `Content` type but has a specific 'NOTE' type
+    // and puts the full note data into `quizData`.
     const contentToView = {
         id: note.id,
-        name: note.title,
-        type: 'INTERACTIVE_QUIZ', // Use a type that triggers the special preview
+        name: `${note.title} (Note)`, // Add a suffix to differentiate in the modal title
+        type: 'NOTE', // Use a custom type to identify this as a note
         parentId: user?.id || null,
         metadata: {
-            // Adapt NotePage[] to what FilePreviewModal expects for quizData
-            quizData: JSON.stringify(note.pages.map(p => ({
-                id: p.id,
-                name: p.title,
-                written: [{ case: "", subqs: [{ q: "", a: p.content }] }]
-            })))
+            // Store the full note object as a JSON string.
+            // FilePreviewModal will parse this.
+            quizData: JSON.stringify(note) 
         }
     };
-    setViewingNote(contentToView as any);
+    setViewingNote(contentToView);
   };
 
 

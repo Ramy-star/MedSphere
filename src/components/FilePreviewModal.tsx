@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -40,7 +39,8 @@ import { FlashcardIcon } from './icons/FlashcardIcon';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import * as pdfjs from 'pdfjs-dist';
-import { Note } from './profile/ProfileNotesSection';
+import type { Note } from './profile/ProfileNotesSection';
+import { NoteViewer } from './profile/NoteViewer';
 
 
 const ChatPanel = dynamic(() => import('./ChatPanel'), {
@@ -230,44 +230,6 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, 
             return { Icon: FileIcon, color: 'text-gray-400' };
     }
 };
-
-// Simplified Note Viewer for Read-only display
-const NoteViewer = ({ note }: { note: Note }) => {
-    const [activePageId, setActivePageId] = useState(note.pages[0]?.id);
-
-    return (
-        <div className="flex flex-col h-full bg-slate-900 rounded-lg overflow-hidden">
-            <div className="flex items-center border-b border-white/10 px-2 flex-shrink-0">
-                {note.pages.map(page => (
-                    <button
-                        key={page.id}
-                        onClick={() => setActivePageId(page.id)}
-                        className={cn("py-2 px-3 border-b-2 text-sm", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
-                    >
-                        {page.title}
-                    </button>
-                ))}
-            </div>
-            <div className="flex-1 overflow-y-auto p-4">
-                <AnimatePresence mode="wait">
-                    {note.pages.map(page =>
-                        activePageId === page.id && (
-                            <motion.div
-                                key={page.id}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
-                                transition={{ duration: 0.2 }}
-                                className="prose prose-sm prose-invert max-w-none"
-                                dangerouslySetInnerHTML={{ __html: page.content }}
-                            />
-                        )
-                    )}
-                </AnimatePresence>
-            </div>
-        </div>
-    )
-}
 
 export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
@@ -610,9 +572,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const isPdf = item?.metadata?.mime === 'application/pdf';
   const isMarkdown = item?.metadata?.mime === 'text/markdown';
   const isTextFile = item?.metadata?.mime?.startsWith('text/');
+  const isNote = item.type === 'NOTE';
   const isQuiz = item?.type === 'INTERACTIVE_QUIZ' || item?.type === 'INTERACTIVE_EXAM' || item?.type === 'INTERACTIVE_FLASHCARD';
-  const isChatAvailable = (isPdf || isMarkdown || isTextFile || isQuiz) && !isExamInProgress;
-  const isQuoteAvailable = (isPdf || isMarkdown || isTextFile || isQuiz) && !isExamInProgress;
+  const isChatAvailable = (isPdf || isMarkdown || isTextFile || isQuiz || isNote) && !isExamInProgress;
+  const isQuoteAvailable = (isPdf || isMarkdown || isTextFile || isNote) && !isExamInProgress;
   const displayName = item.name;
   const canEditInteractive = can('canAdministerExams', item.id) && (item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM');
   
@@ -635,9 +598,9 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   
   const renderFilePreview = () => {
     // Special handling for note viewing
-    if (item.type === 'INTERACTIVE_QUIZ' && item.metadata?.quizData && item.name.endsWith(' (Note)')) {
+    if (isNote) {
         try {
-            const noteData: Note = JSON.parse(item.metadata.quizData);
+            const noteData: Note = JSON.parse(item.metadata!.quizData!);
             return <NoteViewer note={noteData} />
         } catch (e) {
             return <div>Error displaying note.</div>
