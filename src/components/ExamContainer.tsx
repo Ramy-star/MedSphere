@@ -14,7 +14,7 @@ import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-update
 import { useFirebase } from '@/firebase/provider';
 import { useAuthStore } from '@/stores/auth-store';
 import { contentService } from '@/lib/contentService';
-import { updateDoc, collection, doc, query, where, getDocs, CollectionReference, DocumentData, Query } from 'firebase/firestore';
+import { updateDoc, collection, doc, query, where, getDocs, CollectionReference, DocumentData, Query, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useCollection } from '@/firebase/firestore/use-collection';
