@@ -373,7 +373,7 @@ export default function ProfilePage() {
             onDrop={(e) => handleDrop(e, 'avatar')}
         >
           <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4 transition-all", avatarRingClass, isAvatarDragging && "ring-blue-400")}>
-            {user.photoURL && (
+            {user.photoURL ? (
               <AvatarImage 
                   src={user.photoURL} 
                   alt={user.displayName ?? ''}
@@ -381,10 +381,11 @@ export default function ProfilePage() {
                   onDragStart={(e) => e.preventDefault()}
                   onContextMenu={(e) => e.preventDefault()}
               />
+            ) : (
+              <AvatarFallback className="text-3xl sm:text-4xl">
+                {user.displayName?.[0] || <UserIcon />}
+              </AvatarFallback>
             )}
-            <AvatarFallback className="text-3xl sm:text-4xl">
-              {user.displayName?.[0] || <UserIcon />}
-            </AvatarFallback>
           </Avatar>
            {isAvatarDragging && (
                 <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center text-white text-xs font-bold text-center p-2 pointer-events-none">
@@ -477,15 +478,7 @@ export default function ProfilePage() {
       <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start max-w-7xl mx-auto w-full px-4 sm:px-8">
         <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
              <AiStudyBuddy user={user} />
-             <CollapsibleSection title="My Notes" icon={StickyNote} defaultOpen={false}>
-                <ProfileNotesSection user={user} />
-            </CollapsibleSection>
-        </div>
-
-        <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
-
-        <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
-            <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
+             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                     <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
@@ -495,8 +488,16 @@ export default function ProfilePage() {
             <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
                 <ActiveSessions user={user} />
             </CollapsibleSection>
+        </div>
+
+        <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
+
+        <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
+            </CollapsibleSection>
+            <CollapsibleSection title="My Notes" icon={StickyNote} defaultOpen={false}>
+                <ProfileNotesSection user={user} />
             </CollapsibleSection>
             <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
                <AchievementsSection user={user} />
@@ -586,3 +587,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    

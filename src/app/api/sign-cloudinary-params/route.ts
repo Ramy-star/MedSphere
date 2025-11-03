@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
     // Return the signature and other useful data to the client
     return NextResponse.json({ 
         signature,
-        timestamp: paramsToSign.timestamp,
+        timestamp: paramsToSign.timestamp, // Return the exact timestamp that was signed
         apiKey: process.env.CLOUDINARY_API_KEY,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });
@@ -50,3 +50,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
   }
 }
+
+    
