@@ -61,7 +61,7 @@ const TiptapEditor = ({ editor }: { editor: Editor | null }) => {
   return (
     <EditorContent 
         editor={editor} 
-        className="w-full h-full p-4"
+        className="w-full p-4"
     />
   );
 };
@@ -122,7 +122,7 @@ export default function NewsComposerPage() {
     };
 
   return (
-    <div className="flex h-full w-full flex-col items-center justify-center bg-background p-4 overflow-hidden">
+    <div className="flex h-full w-full flex-col items-center justify-start bg-background p-4 overflow-auto">
         <div className="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-96 h-96 bg-green-500/20 rounded-full blur-3xl opacity-50"></div>
 
@@ -134,13 +134,13 @@ export default function NewsComposerPage() {
             </Button>
         </div>
 
-        <div className="relative z-10">
+        <div className="relative z-10 my-4">
             <div
                 ref={canvasRef}
                 className={cn(
                     "relative flex flex-col items-center text-center",
                     "bg-slate-900 text-white", // Dark background
-                    "p-8 md:p-12 rounded-[1.75rem] w-[550px] h-[750px]",
+                    "p-8 md:p-12 rounded-[1.75rem] w-[550px]",
                     "border border-slate-700 shadow-2xl"
                 )}>
                 <header className="flex-shrink-0 flex items-center justify-center gap-3 w-full mb-6 pb-6 border-b border-slate-700">
