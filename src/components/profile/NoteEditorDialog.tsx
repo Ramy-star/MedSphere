@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    MessageSquareQuote, Minus, Palette, Heading1, Heading2, Heading3
+    MessageSquareQuote, Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -19,6 +19,8 @@ import { useEditor, EditorContent, FloatingMenu, BubbleMenu } from '@tiptap/reac
 import StarterKit from '@tiptap/starter-kit';
 import UnderlineExtension from '@tiptap/extension-underline';
 import LinkExtension from '@tiptap/extension-link';
+import { motion, AnimatePresence } from 'framer-motion';
+import History from '@tiptap/extension-history';
 
 type NoteEditorDialogProps = {
   open: boolean;
@@ -52,6 +54,7 @@ const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { i
 
 export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEditorDialogProps) => {
   const [color, setColor] = useState('#282828');
+  const [isToolbarOpen, setIsToolbarOpen] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -61,6 +64,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         openOnClick: false,
         autolink: true,
       }),
+      History,
     ],
     content: '',
     editorProps: {
@@ -76,6 +80,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
           editor.commands.setContent(note.content);
         }
         setColor(note.color || '#282828');
+        setIsToolbarOpen(false); // Reset toolbar state on open
     } else if (!open) {
         editor?.commands.clearContent();
         setColor('#282828');
@@ -100,6 +105,32 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
     }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
+  
+  if (!editor) {
+    return null;
+  }
+
+  const ToolbarContent = () => (
+      <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-900/50 rounded-lg border border-slate-700">
+        <EditorToolbarButton icon={Undo} onClick={() => editor.chain().focus().undo().run()} tip="Undo" />
+        <EditorToolbarButton icon={Redo} onClick={() => editor.chain().focus().redo().run()} tip="Redo" />
+        <div className="w-px h-6 bg-slate-700 mx-1" />
+        <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
+        <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
+        <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
+        <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
+        <div className="w-px h-6 bg-slate-700 mx-1" />
+        <EditorToolbarButton icon={Heading1} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive('heading', { level: 1 })} tip="Heading 1" />
+        <EditorToolbarButton icon={Heading2} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })} tip="Heading 2" />
+        <EditorToolbarButton icon={Heading3} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} isActive={editor.isActive('heading', { level: 3 })} tip="Heading 3" />
+        <div className="w-px h-6 bg-slate-700 mx-1" />
+        <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
+        <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
+        <EditorToolbarButton icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
+        <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
+        <EditorToolbarButton icon={Link} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
+      </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -107,53 +138,61 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         className="max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0"
         style={{ backgroundColor: color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
-        <DialogHeader className="p-4 pb-2 flex-row items-center justify-between border-b border-white/10">
-          <DialogTitle>{note?.id.startsWith('temp_') ? 'New Note' : 'Edit Note'}</DialogTitle>
-           <Popover>
-                <PopoverTrigger asChild>
-                   <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
-                    <div className="flex gap-2">
-                        {NOTE_COLORS.map(c => (
-                            <button
-                                key={c}
-                                className="h-8 w-8 rounded-full border-2 transition-transform transform hover:scale-110"
-                                style={{ backgroundColor: c, borderColor: color === c ? 'white' : 'transparent' }}
-                                onClick={() => setColor(c)}
-                            />
-                        ))}
-                    </div>
-                </PopoverContent>
-            </Popover>
-        </DialogHeader>
+        <div className="p-4 flex-shrink-0">
+          <div className="flex flex-col gap-2">
+            <div className="flex justify-between items-center">
+              <DialogTitle>{note?.id.startsWith('temp_') ? 'New Note' : 'Edit Note'}</DialogTitle>
+              <div className="flex items-center gap-1">
+                 <Popover>
+                      <PopoverTrigger asChild>
+                         <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
+                      </PopoverTrigger>
+                      <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+                          <div className="flex gap-2">
+                              {NOTE_COLORS.map(c => (
+                                  <button
+                                      key={c}
+                                      className="h-8 w-8 rounded-full border-2 transition-transform transform hover:scale-110"
+                                      style={{ backgroundColor: c, borderColor: color === c ? 'white' : 'transparent' }}
+                                      onClick={() => setColor(c)}
+                                  />
+                              ))}
+                          </div>
+                      </PopoverContent>
+                  </Popover>
+                  <Button variant="ghost" size="icon" onClick={() => setIsToolbarOpen(prev => !prev)} title="Toggle Toolbar">
+                      <ChevronDown className={cn("transition-transform", isToolbarOpen && "rotate-180")} />
+                  </Button>
+              </div>
+            </div>
+            <AnimatePresence>
+              {isToolbarOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.2, ease: 'easeInOut' }}
+                  className="overflow-hidden"
+                >
+                  <ToolbarContent />
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+        </div>
 
-        <div className="flex-1 relative overflow-hidden">
-          {editor && (
-            <>
-              <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
-                <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
-                <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
-                <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
-                <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
-              </BubbleMenu>
-
-              <FloatingMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
-                 <EditorToolbarButton icon={Heading1} onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()} isActive={editor.isActive('heading', { level: 1 })} tip="Heading 1" />
-                 <EditorToolbarButton icon={Heading2} onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()} isActive={editor.isActive('heading', { level: 2 })} tip="Heading 2" />
-                 <EditorToolbarButton icon={Heading3} onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()} isActive={editor.isActive('heading', { level: 3 })} tip="Heading 3" />
-                 <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
-                 <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
-                 <EditorToolbarButton icon={MessageSquareQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
-                 <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
-                 <EditorToolbarButton icon={Link} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
-              </FloatingMenu>
-            </>
-          )}
-          <EditorContent editor={editor} className="h-full overflow-y-auto p-4" />
+        <div className="flex-1 relative overflow-hidden px-4">
+          <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
+            <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
+            <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
+            <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
+            <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
+          </BubbleMenu>
+          
+          <EditorContent editor={editor} className="h-full overflow-y-auto p-2 rounded-lg bg-black/10" />
         </div>
         
-        <DialogFooter className="p-4 border-t border-white/10">
+        <DialogFooter className="p-4 border-t border-white/10 flex-shrink-0">
           <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
           <Button onClick={handleSave}>Save Note</Button>
         </DialogFooter>
