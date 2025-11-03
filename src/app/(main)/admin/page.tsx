@@ -43,6 +43,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { formatDistanceToNow, format } from 'date-fns';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -68,19 +70,32 @@ type SortOption = 'name' | 'createdAt' | 'level';
 
 async function logAdminAction(actor: UserProfile | null, action: string, target: UserProfile, details?: object) {
     if (!db || !actor || !actor.studentId) return;
-    try {
-        await addDoc(collection(db, 'auditLogs'), {
-            timestamp: new Date().toISOString(),
-            actorId: actor.studentId,
-            actorName: actor.displayName || actor.username,
-            action: action,
-            targetId: target.studentId,
-            targetName: target.displayName || target.username,
-            details: details || {}
+
+    const logData = {
+        timestamp: new Date().toISOString(),
+        actorId: actor.studentId, // Correctly use studentId
+        actorName: actor.displayName || actor.username,
+        action: action,
+        targetId: target.studentId, // Correctly use studentId
+        targetName: target.displayName || target.username,
+        details: details || {}
+    };
+
+    const auditLogsCollection = collection(db, 'auditLogs');
+    
+    addDoc(auditLogsCollection, logData)
+        .catch(error => {
+            if (error.code === 'permission-denied') {
+                const permissionError = new FirestorePermissionError({
+                    path: auditLogsCollection.path,
+                    operation: 'create',
+                    requestResourceData: logData
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            } else {
+                console.error("Failed to log admin action:", error);
+            }
         });
-    } catch(error) {
-        console.error("Failed to log admin action:", error);
-    }
 }
 
 
@@ -219,7 +234,7 @@ function AdminPageContent() {
     }, [userToDemote, toast, currentUser]);
     
     const handleToggleBlock = useCallback(async (user: UserProfile) => {
-        if (!currentUser) return;
+        if (!currentUser || isUserSuperAdmin(user) || (user.id === currentUser.id)) return;
         const userRef = doc(db, 'users', user.id);
         const newBlockState = !user.isBlocked;
         try {
@@ -233,10 +248,10 @@ function AdminPageContent() {
             console.error("Error toggling user block state:", error);
             toast({ variant: "destructive", title: "Error", description: "Could not update user status." });
         }
-    }, [toast, currentUser]);
+    }, [toast, currentUser, isUserSuperAdmin]);
 
     const handleDeleteUser = useCallback(async () => {
-        if (!userToDelete || !currentUser) return;
+        if (!userToDelete || !currentUser || isUserSuperAdmin(userToDelete) || userToDelete.id === currentUser.id) return;
         const batch = writeBatch(db);
         const userRef = doc(db, 'users', userToDelete.id);
         batch.delete(userRef);
@@ -244,7 +259,7 @@ function AdminPageContent() {
         await logAdminAction(currentUser, 'user.delete', userToDelete);
         toast({ title: "User Deleted", description: `${userToDelete.displayName} has been deleted.` });
         setUserToDelete(null);
-    }, [userToDelete, toast, currentUser]);
+    }, [userToDelete, toast, currentUser, isUserSuperAdmin]);
     
     const handleClearHistory = useCallback(async () => {
         if (!db || !isSuperAdmin) return;
@@ -358,7 +373,7 @@ function AdminPageContent() {
                            {/* Button removed as requested */}
                         </div>
                     )}
-                    {!isCurrentUser && (activeTab === 'management' || (activeTab === 'admins' && userIsSubAdmin)) && !userIsSuperAdmin && (
+                    {(activeTab === 'management' || (activeTab === 'admins' && userIsSubAdmin)) && !userIsSuperAdmin && !isCurrentUser && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
