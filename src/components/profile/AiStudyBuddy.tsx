@@ -110,7 +110,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     const { initialInsight, theme, setInitialData } = useAiBuddyStore();
     const [loading, setLoading] = useState(!initialInsight);
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
-    const [isResponding, setIsResponding] = useState(false);
+    const [isResponding, setIsResponding] = useState(isResponding || false);
     const [customQuestion, setCustomQuestion] = useState('');
     const [view, setView] = useState<'intro' | 'chat' | 'history'>('intro');
     const [currentChatId, setCurrentChatId] = useState<string | null>(null);
@@ -504,7 +504,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                         {loading || !theme ? (
                             <Skeleton className="h-5 w-40" />
                         ) : (
-                         <h3 className="text-xs sm:text-base font-bold text-white">
+                         <h3 className={cn("font-bold text-white", isMobile ? "text-[14px]" : "text-base")}>
                             {theme.greeting}
                         </h3>
                         )}
@@ -586,7 +586,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                   <ReactMarkdown
                     remarkPlugins={[remarkGfm]}
                     components={{
-                        table: ({ node, ...props }) => <table className="w-full my-4 border-collapse border border-white/30 rounded-lg overflow-hidden" {...props} />,
+                        table: ({ node, ...props }) => <div className="overflow-x-auto"><table className="my-4 border-collapse border border-white/30 rounded-lg overflow-hidden" {...props} /></div>,
                         thead: ({ node, ...props }) => <thead className="bg-black/35 text-white" {...props} />,
                         tr: ({ node, ...props }) => <tr className="border-b border-white/30 last:border-b-0" {...props} />,
                         th: ({ node, ...props }) => <th className="border-r border-white/30 p-2 text-left font-semibold last:border-r-0" {...props} />,
@@ -696,7 +696,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         <div
             className={cn(
                 "glass-card p-3 sm:p-4 rounded-2xl flex flex-col w-full min-h-0",
-                isFloating ? "h-full" : "h-[450px]"
+                isFloating ? "h-full" : isMobile ? "h-full" : "h-[450px]"
             )}
             style={{
                 backgroundColor: 'rgba(255, 255, 255, 0.05)',
