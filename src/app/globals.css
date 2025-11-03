@@ -120,6 +120,10 @@
     @apply justify-start gap-2;
   }
   
+  .expanding-btn:hover .expanding-text {
+    @apply opacity-100 max-w-xs;
+  }
+
   .expanding-btn.primary {
     @apply border-2 border-primary text-primary;
   }
