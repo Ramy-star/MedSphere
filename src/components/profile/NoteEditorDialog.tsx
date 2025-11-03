@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link, List, ListOrdered, 
-    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, PilcrowRight
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -79,7 +79,7 @@ const FONT_SIZES = [
 
 const editorExtensions = [
   StarterKit.configure({
-    history: false, // Use the separate History extension
+    history: false,
     horizontalRule: {
       HTMLAttributes: {
         class: 'border-white my-4',
@@ -102,7 +102,7 @@ const editorExtensions = [
   }),
   TextAlign.configure({
     types: ['heading', 'paragraph'],
-    alignments: ['left', 'center', 'right', 'justify'],
+    alignments: ['left', 'center', 'right'],
   }),
   Highlight.configure({ 
       multicolor: true,
@@ -259,6 +259,14 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
     </Popover>
 );
 
+type NoteEditorDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  note: Note | null;
+  onSave: (note: Note) => void;
+};
+
+
 export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEditorDialogProps) => {
   const [color, setColor] = useState('#282828');
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
@@ -372,7 +380,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note, onSave }: NoteEdito
         <EditorToolbarButton icon={List} onClick={() => editor.chain().focus().toggleBulletList().run()} isActive={editor.isActive('bulletList')} tip="Bullet List" />
         <EditorToolbarButton icon={ListOrdered} onClick={() => editor.chain().focus().toggleOrderedList().run()} isActive={editor.isActive('orderedList')} tip="Ordered List" />
         <EditorToolbarButton icon={TextQuote} onClick={() => editor.chain().focus().toggleBlockquote().run()} isActive={editor.isActive('blockquote')} tip="Quote" />
-        <EditorToolbarButton icon={Pilcrow} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
+        <EditorToolbarButton icon={Minus} onClick={() => editor.chain().focus().setHorizontalRule().run()} tip="Horizontal Rule" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Link} onClick={setLink} isActive={editor.isActive('link')} tip="Insert Link" />
         <EditorToolbarButton icon={ImageIcon} onClick={handleImageUpload} tip="Insert Image" />
