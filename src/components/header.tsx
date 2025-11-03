@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox, Users } from 'lucide-react';
+import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox, Users, Home, NotebookPen } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -21,6 +21,15 @@ import {
   AlertDialogCancel,
   AlertDialogFooter
 } from "@/components/ui/alert-dialog";
+import { useIsMobile } from '@/hooks/use-mobile';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -31,7 +40,8 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [debouncedQuery] = useDebounce(query, 1000);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
-  const { can } = useAuthStore();
+  const { can, user } = useAuthStore();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (debouncedQuery) {
@@ -61,6 +71,123 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       setShowComingSoon(true);
     }
   };
+
+  const navItems = [
+    {
+      label: 'My Profile',
+      icon: UserIcon,
+      action: () => router.push('/profile'),
+      permission: () => !!user,
+    },
+    {
+      label: 'Community',
+      icon: Users,
+      action: handleCommunityClick,
+      permission: () => true, // Logic is handled in the action
+    },
+    {
+      label: 'Questions Creator',
+      icon: Wand2,
+      action: () => router.push('/questions-creator'),
+      permission: () => can('canAccessQuestionCreator', null),
+    },
+    {
+      label: 'Telegram Inbox',
+      icon: Inbox,
+      action: () => router.push('/folder/telegram-inbox-folder'),
+      permission: () => can('canAccessTelegramInbox', null),
+    },
+    {
+      label: 'Admin Panel',
+      icon: Shield,
+      action: () => router.push('/admin'),
+      permission: () => can('canAccessAdminPanel', null),
+    },
+  ];
+
+  const visibleNavItems = navItems.filter(item => item.permission());
+
+
+  const DesktopNav = () => (
+    <div className="hidden md:flex items-center gap-1">
+        <TooltipProvider>
+            <AuthButton />
+             <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-purple-400" onClick={handleCommunityClick}>
+                        <Users className="h-5 w-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                    <p>Community</p>
+                </TooltipContent>
+            </Tooltip>
+            {can('canAccessQuestionCreator', null) && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
+                            <Wand2 className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Questions Creator</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+            {can('canAccessTelegramInbox', null) && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-blue-400" onClick={() => router.push('/folder/telegram-inbox-folder')}>
+                            <Inbox className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Telegram Inbox</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+            {can('canAccessAdminPanel', null) && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
+                            <Shield className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Admin Panel</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+        </TooltipProvider>
+    </div>
+  );
+
+  const MobileNav = () => (
+      <div className="md:hidden">
+        <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+                <div><AuthButton /></div>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-56 p-2" align="end">
+                 <DropdownMenuLabel className="font-normal">
+                      <div className="flex flex-col space-y-1">
+                        <p className="text-sm font-medium leading-none">{user?.displayName}</p>
+                        <p className="text-xs leading-none text-muted-foreground">
+                          {user?.email}
+                        </p>
+                      </div>
+                  </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {visibleNavItems.map(item => (
+                    <DropdownMenuItem key={item.label} onSelect={item.action}>
+                        <item.icon className="mr-2 h-4 w-4" />
+                        <span>{item.label}</span>
+                    </DropdownMenuItem>
+                ))}
+            </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+  );
 
 
   return (
@@ -103,55 +230,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
           )}
         </div>
         
-        <TooltipProvider>
-            {can('canAccessTelegramInbox', null) && (
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-blue-400" onClick={() => router.push('/folder/telegram-inbox-folder')}>
-                            <Inbox className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Telegram Inbox</p>
-                    </TooltipContent>
-                </Tooltip>
-            )}
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-purple-400" onClick={handleCommunityClick}>
-                        <Users className="h-5 w-5" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                    <p>Community</p>
-                </TooltipContent>
-            </Tooltip>
-            {can('canAccessQuestionCreator', null) && (
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/questions-creator')}>
-                            <Wand2 className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Questions Creator</p>
-                    </TooltipContent>
-                </Tooltip>
-            )}
-            {can('canAccessAdminPanel', null) && (
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
-                            <Shield className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Admin Panel</p>
-                    </TooltipContent>
-                </Tooltip>
-            )}
-        </TooltipProvider>
-        <AuthButton />
+        {isMobile ? <MobileNav /> : <DesktopNav />}
       </div>
     </header>
 
