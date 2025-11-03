@@ -12,7 +12,7 @@ import { Slot } from "@radix-ui/react-slot";
 import type { Lecture, MCQ, WrittenCase, ExamResult } from '@/lib/types';
 import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-updates';
 import { useFirebase } from '@/firebase/provider';
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { contentService } from '@/lib/contentService';
 import { updateDoc, collection, doc, query, where, getDocs, CollectionReference, DocumentData, Query, getDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -1453,7 +1453,7 @@ interface AdminReportModalProps {
 
 const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps) => {
     const { db } = useFirebase();
-    const [reportData, setReportData] = useState<{ userProfile: any, result: ExamResult }[]>([]);
+    const [reportData, setReportData] = useState<{ userProfile: UserProfile, result: ExamResult }[]>([]);
     const [loading, setLoading] = useState(true);
 
     const formatPercentage = (percentage: number) => {
@@ -1494,11 +1494,11 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                 
                 const userProfilesPromises = userIds.map(id => getDoc(doc(db, 'users', id)));
                 const userProfilesSnapshots = await Promise.all(userProfilesPromises);
-                const userProfilesMap = new Map(userProfilesSnapshots.map(snap => [snap.id, snap.data()]));
+                const userProfilesMap = new Map(userProfilesSnapshots.map(snap => [snap.id, snap.data() as UserProfile]));
 
                 const finalData = Object.values(resultsByUser).map(result => {
                     return {
-                        userProfile: userProfilesMap.get(result.userId) || { displayName: `Student ${result.userId}`, studentId: result.userId },
+                        userProfile: userProfilesMap.get(result.userId) || { displayName: `Student ${result.userId}`, studentId: result.userId, id: result.userId, uid: result.userId, username: `student_${result.userId}`, secretCodeHash: '' },
                         result: result,
                     };
                 }).sort((a, b) => b.result.percentage - a.result.percentage);
@@ -1511,6 +1511,13 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
         }
     }, [isOpen, db, lectureId]);
 
+    const getRingColor = (userProfile: UserProfile): string => {
+        const isSuperAdmin = userProfile.roles?.some(r => r.role === 'superAdmin');
+        const isSubAdmin = userProfile.roles?.some(r => r.role === 'subAdmin');
+        if (isSuperAdmin) return "ring-yellow-400";
+        if (isSubAdmin) return "ring-blue-400";
+        return "ring-transparent";
+    };
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -1526,6 +1533,7 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                             <Table>
                                 <TableHeader>
                                     <TableRow className="border-slate-700 hover:bg-slate-800/50">
+                                        <TableHead className="w-[50px] text-center">#</TableHead>
                                         <TableHead>Student Name</TableHead>
                                         <TableHead>Student ID</TableHead>
                                         <TableHead>Level</TableHead>
@@ -1538,9 +1546,10 @@ const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps)
                                         const { userProfile, result } = data;
                                         return (
                                             <TableRow key={index} className="border-slate-800 hover:bg-slate-800/50">
+                                                <TableCell className="text-center font-medium text-slate-400">{index + 1}</TableCell>
                                                 <TableCell>
                                                     <div className="flex items-center gap-3">
-                                                        <Avatar className="h-8 w-8">
+                                                        <Avatar className={cn("h-8 w-8 ring-2 ring-offset-2 ring-offset-slate-900", getRingColor(userProfile))}>
                                                             <AvatarImage src={userProfile.photoURL} alt={userProfile.displayName} />
                                                             <AvatarFallback><UserIcon size={14}/></AvatarFallback>
                                                         </Avatar>
