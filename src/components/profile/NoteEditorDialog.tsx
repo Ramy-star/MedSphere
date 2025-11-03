@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered, 
-    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus
+    Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -110,7 +110,7 @@ const editorExtensions = [
     openOnClick: false, autolink: true, linkOnPaste: true,
     HTMLAttributes: { class: 'text-blue-400 hover:text-blue-300 underline' }
   }),
-  TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'] }),
+  TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'], alignments: ['left', 'center', 'right', 'justify'] }),
   Highlight.configure({ multicolor: true, HTMLAttributes: { class: 'text-black rounded-sm px-1 py-0.5' } }),
   TextStyle,
   Color,
@@ -278,6 +278,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const newTabInputRef = useRef<HTMLInputElement | null>(null);
   const titleInputRef = useRef<HTMLInputElement | null>(null);
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollButtons, setShowScrollButtons] = useState(false);
   
 
   const editor = useEditor({
@@ -286,15 +288,22 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     editorProps: {
       attributes: { class: 'prose prose-sm prose-invert focus:outline-none max-w-full p-2 h-full' },
     },
+    onUpdate: ({ editor }) => {
+        if (!note || !activePageId) return;
+        const updatedContent = editor.getHTML();
+        const updatedPages = note.pages.map(page => 
+            page.id === activePageId ? { ...page, content: updatedContent } : page
+        );
+        setNote(prevNote => prevNote ? { ...prevNote, pages: updatedPages } : null);
+    }
   });
 
-  // Effect to update internal state when dialog is opened or note prop changes
   useEffect(() => {
     if (open && initialNote) {
       setNote(initialNote);
       if (initialNote.pages && initialNote.pages.length > 0) {
         setActivePageId(initialNote.pages[0].id);
-      } else { // Handle case for notes created before pages
+      } else { 
         const newPageId = nanoid();
         const newPages = [{ id: newPageId, title: 'Page 1', content: (initialNote as any).content || '' }];
         setNote({ ...initialNote, pages: newPages });
@@ -306,15 +315,38 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     }
   }, [initialNote, open]);
 
-  // Effect to update editor content when active page changes
   useEffect(() => {
     if (editor && note && activePageId) {
       const activePage = note.pages.find(p => p.id === activePageId);
       if (activePage && !editor.isDestroyed && editor.getHTML() !== activePage.content) {
-        editor.commands.setContent(activePage.content);
+        editor.commands.setContent(activePage.content, false);
       }
     }
   }, [activePageId, note, editor]);
+  
+  const checkScroll = useCallback(() => {
+    if (tabsContainerRef.current) {
+        const { scrollWidth, clientWidth } = tabsContainerRef.current;
+        setShowScrollButtons(scrollWidth > clientWidth);
+    }
+  }, []);
+
+  useEffect(() => {
+      checkScroll();
+      const resizeObserver = new ResizeObserver(checkScroll);
+      if (tabsContainerRef.current) {
+          resizeObserver.observe(tabsContainerRef.current);
+      }
+      return () => resizeObserver.disconnect();
+  }, [note?.pages.length, checkScroll]);
+
+  const scrollTabs = (direction: 'left' | 'right') => {
+    if (tabsContainerRef.current) {
+        const scrollAmount = direction === 'left' ? -150 : 150;
+        tabsContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
 
   useEffect(() => {
       if (editingTabId && newTabInputRef.current) {
@@ -325,22 +357,9 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
 
   const handleSave = () => {
     if (note && editor) {
-      // Save current editor content to the active page
-      const finalNote = saveCurrentPageContent();
-      onSave(finalNote);
+      onSave(note);
     }
   };
-
-  const saveCurrentPageContent = (): Note => {
-    if (!note || !activePageId || !editor) return note!;
-    
-    const updatedPages = note.pages.map(page => 
-      page.id === activePageId ? { ...page, content: editor.getHTML() } : page
-    );
-    const updatedNote = { ...note, pages: updatedPages };
-    setNote(updatedNote);
-    return updatedNote;
-  }
 
   const addPage = () => {
     if (!note) return;
@@ -374,8 +393,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   };
 
   const renamePage = (pageId: string, newTitle: string) => {
-    if (!note) return;
-    const updatedPages = note.pages.map(p => p.id === pageId ? { ...p, title: newTitle } : p);
+    if (!note || !newTitle.trim()) { setEditingTabId(null); return; }
+    const updatedPages = note.pages.map(p => p.id === pageId ? { ...p, title: newTitle.trim() } : p);
     setNote({ ...note, pages: updatedPages });
     setEditingTabId(null);
   }
@@ -390,7 +409,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   
   const handleTabClick = (pageId: string) => {
     if (activePageId !== pageId) {
-        saveCurrentPageContent();
         setActivePageId(pageId);
     }
   }
@@ -481,48 +499,56 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         <div className="p-4 pt-0 flex-shrink-0">
           <div className="flex flex-col gap-2">
             <div className="flex justify-between items-center">
-              <div className="flex items-center gap-1 border-b border-white/10 flex-grow">
-                  {note.pages.map(page => (
-                      <div 
-                        key={page.id} 
-                        onDoubleClick={() => setEditingTabId(page.id)}
-                        onClick={() => handleTabClick(page.id)}
-                        className={cn("flex items-center gap-1 py-2 px-3 border-b-2 transition-colors", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
-                      >
-                          {editingTabId === page.id ? (
-                              <input
-                                  ref={newTabInputRef}
-                                  type="text"
-                                  defaultValue={page.title}
-                                  onBlur={(e) => renamePage(page.id, e.target.value)}
-                                  onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
-                                  className="bg-transparent outline-none w-24 text-sm"
-                              />
-                          ) : (
-                            <span className="text-sm cursor-pointer truncate">{page.title}</span>
-                          )}
-                          {note.pages.length > 1 && (
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Delete Page?</AlertDialogTitle>
-                                      <AlertDialogDesc>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDesc>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                          )}
-                      </div>
-                  ))}
-                  <button onClick={addPage} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-t-lg"><Plus size={16} /></button>
-              </div>
-              <div className="flex items-center gap-1 pl-4">
+                <div className="flex-1 flex items-center gap-1 border-b border-white/10 overflow-hidden">
+                    <div ref={tabsContainerRef} className="flex items-center gap-1 flex-grow overflow-x-auto no-scrollbar">
+                        {note.pages.map(page => (
+                            <div 
+                              key={page.id} 
+                              onDoubleClick={() => setEditingTabId(page.id)}
+                              onClick={() => handleTabClick(page.id)}
+                              className={cn("flex items-center gap-1 py-2 px-3 border-b-2 transition-colors flex-shrink-0", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
+                            >
+                                {editingTabId === page.id ? (
+                                    <input
+                                        ref={newTabInputRef}
+                                        type="text"
+                                        defaultValue={page.title}
+                                        onBlur={(e) => renamePage(page.id, e.target.value)}
+                                        onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
+                                        className="bg-transparent outline-none w-24 text-sm"
+                                    />
+                                ) : (
+                                  <span className="text-sm cursor-pointer truncate">{page.title}</span>
+                                )}
+                                {note.pages.length > 1 && (
+                                  <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                          <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                          <AlertDialogHeader>
+                                            <AlertDialogTitle>Delete Page?</AlertDialogTitle>
+                                            <AlertDialogDesc>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDesc>
+                                          </AlertDialogHeader>
+                                          <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                          </AlertDialogFooter>
+                                      </AlertDialogContent>
+                                  </AlertDialog>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                    <button onClick={addPage} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-t-lg flex-shrink-0"><Plus size={16} /></button>
+                    {showScrollButtons && (
+                        <>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 ml-1" onClick={() => scrollTabs('left')}><ChevronLeft size={16}/></Button>
+                            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => scrollTabs('right')}><ChevronRight size={16}/></Button>
+                        </>
+                    )}
+                </div>
+              <div className="flex items-center gap-1 pl-4 flex-shrink-0">
                   <Popover>
                       <PopoverTrigger asChild>
                          <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
