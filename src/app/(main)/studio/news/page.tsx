@@ -40,17 +40,17 @@ const TiptapToolbar = ({ editor }: { editor: Editor | null }) => {
     );
 
     return (
-        <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-900/80 backdrop-blur-sm rounded-lg border border-slate-700">
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleBold().run()} data-active={editor.isActive('bold')}><Bold size={16}/></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleItalic().run()} data-active={editor.isActive('italic')}><Italic size={16}/></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleUnderline().run()} data-active={editor.isActive('underline')}><UnderlineIcon size={16}/></Button>
+        <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-800/80 backdrop-blur-sm rounded-lg border border-slate-700">
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().toggleBold().run()} data-active={editor.isActive('bold')}><Bold size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().toggleItalic().run()} data-active={editor.isActive('italic')}><Italic size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().toggleUnderline().run()} data-active={editor.isActive('underline')}><UnderlineIcon size={16}/></Button>
             <div className="w-px h-6 bg-slate-700 mx-1" />
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('left').run()} data-active={editor.isActive({ textAlign: 'left' })}><AlignLeft size={16}/></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('center').run()} data-active={editor.isActive({ textAlign: 'center' })}><AlignCenter size={16}/></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setTextAlign('right').run()} data-active={editor.isActive({ textAlign: 'right' })}><AlignRight size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().setTextAlign('left').run()} data-active={editor.isActive({ textAlign: 'left' })}><AlignLeft size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().setTextAlign('center').run()} data-active={editor.isActive({ textAlign: 'center' })}><AlignCenter size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().setTextAlign('right').run()} data-active={editor.isActive({ textAlign: 'right' })}><AlignRight size={16}/></Button>
             <div className="w-px h-6 bg-slate-700 mx-1" />
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleBulletList().run()} data-active={editor.isActive('bulletList')}><List size={16}/></Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().toggleOrderedList().run()} data-active={editor.isActive('orderedList')}><ListOrdered size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().toggleBulletList().run()} data-active={editor.isActive('bulletList')}><List size={16}/></Button>
+            <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300 data-[active=true]:bg-slate-700" onClick={() => editor.chain().focus().toggleOrderedList().run()} data-active={editor.isActive('orderedList')}><ListOrdered size={16}/></Button>
              <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-300" onClick={() => editor.chain().focus().setHorizontalRule().run()}><Pilcrow size={16}/></Button>
             <ColorPicker />
         </div>
@@ -61,7 +61,7 @@ const TiptapEditor = ({ editor }: { editor: Editor | null }) => {
   return (
     <EditorContent 
         editor={editor} 
-        className="w-full h-full overflow-y-auto no-scrollbar p-4"
+        className="w-full h-full p-4"
     />
   );
 };
@@ -106,16 +106,10 @@ export default function NewsComposerPage() {
 
 
     const handleDownload = () => {
-        if (!canvasRef.current) return;
+        const node = canvasRef.current;
+        if (!node) return;
         
-        // Temporarily set overflow to hidden to capture all content
-        const editorContentElement = canvasRef.current.querySelector('.tiptap.ProseMirror') as HTMLElement;
-        if(editorContentElement) {
-            editorContentElement.parentElement!.style.overflow = 'hidden';
-            editorContentElement.style.overflow = 'hidden';
-        }
-
-        toPng(canvasRef.current, { cacheBust: true, pixelRatio: 2.5 })
+        toPng(node, { cacheBust: true, pixelRatio: 2.5 })
             .then((dataUrl) => {
                 const link = document.createElement('a');
                 link.download = 'medsphere-announcement.png';
@@ -124,13 +118,6 @@ export default function NewsComposerPage() {
             })
             .catch((err) => {
                 console.error('oops, something went wrong!', err);
-            })
-            .finally(() => {
-                // Restore overflow for scrolling after capture
-                if(editorContentElement) {
-                    editorContentElement.parentElement!.style.overflow = 'auto';
-                    editorContentElement.style.overflow = 'auto';
-                }
             });
     };
 
@@ -139,7 +126,7 @@ export default function NewsComposerPage() {
         <div className="absolute top-0 left-0 -translate-x-1/3 -translate-y-1/3 w-96 h-96 bg-blue-500/20 rounded-full blur-3xl opacity-50"></div>
         <div className="absolute bottom-0 right-0 translate-x-1/3 translate-y-1/3 w-96 h-96 bg-green-500/20 rounded-full blur-3xl opacity-50"></div>
 
-        <div className="flex items-center gap-4 mb-4">
+        <div className="flex items-center gap-4 mb-4 z-20">
             <TiptapToolbar editor={editor} />
             <Button onClick={handleDownload} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
                 <Download className="mr-2 h-4 w-4" />
@@ -147,26 +134,28 @@ export default function NewsComposerPage() {
             </Button>
         </div>
 
-        <div className="relative z-10" ref={canvasRef}>
-            <div className={cn(
-                "relative flex flex-col items-center text-center",
-                "bg-gradient-to-br from-slate-50 to-gray-200 text-slate-800",
-                "p-8 md:p-12 rounded-[1.75rem] w-[550px] h-[750px]",
-                "border border-slate-300 shadow-2xl"
-            )}>
-                <header className="flex-shrink-0 flex items-center justify-center gap-3 w-full mb-6 pb-6 border-b border-slate-300">
+        <div className="relative z-10">
+            <div
+                ref={canvasRef}
+                className={cn(
+                    "relative flex flex-col items-center text-center",
+                    "bg-slate-900 text-white", // Dark background
+                    "p-8 md:p-12 rounded-[1.75rem] w-[550px] h-[750px]",
+                    "border border-slate-700 shadow-2xl"
+                )}>
+                <header className="flex-shrink-0 flex items-center justify-center gap-3 w-full mb-6 pb-6 border-b border-slate-700">
                     <Logo className="h-16 w-16 md:h-20 md:w-20" />
-                     <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 text-transparent bg-clip-text"
+                     <h1 className="text-4xl md:text-5xl font-bold"
                     >
-                      <span className="font-extrabold">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
+                      <span className="font-extrabold text-white">Med</span><span className="font-normal text-[#00D309]">Sphere</span>
                     </h1>
                 </header>
 
-                <div className="flex-1 w-full flex items-center justify-center my-4 relative overflow-hidden">
+                <div className="flex-1 w-full flex items-center justify-center my-4 relative overflow-y-auto no-scrollbar">
                      <TiptapEditor editor={editor} />
                 </div>
 
-                <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-6 border-t border-slate-300">
+                <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-6 border-t border-slate-700">
                     © 2025 MedSphere. All rights reserved.
                 </footer>
             </div>
