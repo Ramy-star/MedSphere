@@ -52,7 +52,7 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
   const cardContent = (
     <div
       className={cn(
-        "relative flex flex-col justify-between rounded-2xl border p-3 sm:p-4 text-center transition-all duration-300 w-[140px] h-[160px] sm:w-[150px] sm:h-[180px]",
+        "relative flex flex-col justify-between rounded-2xl border p-3 sm:p-4 text-center transition-all duration-300 w-full h-full",
         earned ? `${colors.bg} ${colors.border}` : "border-slate-800 bg-slate-900/50",
         !earned && "group-hover:border-slate-700 group-hover:bg-slate-800/40"
       )}
@@ -84,7 +84,9 @@ const BadgeCard = ({ achievement, userStats, earned }: { achievement: Achievemen
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          {cardContent}
+          <div className="w-[140px] h-[180px] sm:w-[150px] sm:h-[190px] flex-shrink-0">
+            {cardContent}
+          </div>
         </TooltipTrigger>
         <TooltipContent className="rounded-lg bg-black text-white">
           {earned ? (
