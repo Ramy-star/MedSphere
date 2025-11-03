@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, NotebookPen } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, NotebookPen, Award } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -478,7 +478,7 @@ export default function ProfilePage() {
       <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start max-w-7xl mx-auto w-full px-4 sm:px-8">
         <div className="flex flex-col space-y-6 sm:space-y-8 w-full min-w-0">
              <AiStudyBuddy user={user} />
-             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
+            <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                     <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
@@ -496,10 +496,10 @@ export default function ProfilePage() {
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
-            <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
+             <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
                 <ProfileNotesSection user={user} />
             </CollapsibleSection>
-            <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
+            <CollapsibleSection title="Achievements" icon={Award} defaultOpen={true}>
                <AchievementsSection user={user} />
             </CollapsibleSection>
         </div>
@@ -587,4 +587,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
