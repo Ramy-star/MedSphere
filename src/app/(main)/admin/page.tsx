@@ -66,7 +66,7 @@ type AuditLog = {
 
 type SortOption = 'name' | 'createdAt' | 'level';
 
-async function logAdminAction(actor: UserProfile, action: string, target: UserProfile, details?: object) {
+async function logAdminAction(actor: UserProfile | null, action: string, target: UserProfile, details?: object) {
     if (!db || !actor || !actor.id) return;
     try {
         await addDoc(collection(db, 'auditLogs'), {
@@ -106,7 +106,7 @@ function AdminPageContent() {
         orderBy: ['timestamp', 'desc'],
         limit: 100
     });
-    const { studentId: currentStudentId, user: currentUser, isSuperAdmin } = useAuthStore();
+    const { user: currentUser, isSuperAdmin } = useAuthStore();
     const { toast } = useToast();
 
     const studentIdToLevelMap = useMemo(() => {
@@ -268,7 +268,7 @@ function AdminPageContent() {
     const UserCard = React.memo(({ user }: { user: UserProfile }) => {
         const userIsSuperAdmin = isUserSuperAdmin(user);
         const userIsSubAdmin = isSubAdmin(user);
-        const isCurrentUser = user.studentId === currentStudentId;
+        const isCurrentUser = currentUser?.id === user.id;
         const userLevel = user.level || studentIdToLevelMap.get(user.studentId);
         const joinDate = user.createdAt ? format(new Date(user.createdAt), 'MMM dd, yyyy') : null;
         const avatarRingClass = userIsSuperAdmin ? "border-yellow-400" : userIsSubAdmin ? "border-blue-400" : "border-transparent";
@@ -356,7 +356,7 @@ function AdminPageContent() {
                            {/* Button removed as requested */}
                         </div>
                     )}
-                    {(activeTab === 'management' || (activeTab === 'admins' && userIsSubAdmin)) && !userIsSuperAdmin && (
+                    {!isCurrentUser && (activeTab === 'management' || (activeTab === 'admins' && userIsSubAdmin)) && !userIsSuperAdmin && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-400">
@@ -538,7 +538,7 @@ function AdminPageContent() {
                                             <History className="w-4 h-4 text-slate-400 mt-1 shrink-0"/>
                                             <div>
                                                 <p className='text-slate-100'>
-                                                   User <span className='font-mono text-amber-300'>{log.actorId}</span> performed action <span className='font-mono text-blue-300'>{log.action}</span> on user <span className='font-mono text-amber-300'>{log.targetId}</span>
+                                                   User <span className='font-mono text-amber-300'>{log.actorName}</span> performed action <span className='font-mono text-blue-300'>{log.action}</span> on user <span className='font-mono text-amber-300'>{log.targetName}</span>
                                                 </p>
                                                 <p className='text-xs text-slate-500 mt-0.5'>{formatDistanceToNow(new Date(log.timestamp), { addSuffix: true })}</p>
                                             </div>

@@ -73,7 +73,7 @@
                     "sessionId": { "type": "string", "description": "Unique identifier for the session." },
                     "device": { "type": "string", "description": "Description of the device/browser." },
                     "lastActive": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity." },
-                    "loggedIn": { "type": "string", "format": "date-time", "description": "Timestamp of when the session was created." },
+                    "loggedIn": { "type": "string", "format": "date-time", "description": "Timestamp when the session was created." },
                     "status": { "type": "string", "enum": ["active", "logged_out"], "description": "The status of the session." }
                 },
                 "required": ["sessionId", "device", "lastActive", "loggedIn"]
@@ -135,7 +135,10 @@
                     "canAccessAdminPanel",
                     "canReorder",
                     "canAdministerExams",
-                    "canAdministerFlashcards"
+                    "canAdministerFlashcards",
+                    "canAccessTelegramInbox",
+                    "canCreateQuiz",
+                    "canCreateExam"
                   ]
                 }
               }
@@ -146,35 +149,33 @@
       },
       "required": ["id", "uid", "studentId", "createdAt"]
     },
-    "ProfileNote": {
-        "title": "Profile Note",
-        "description": "A sticky note on a user's profile.",
+    "AiBuddyChatSession": {
+        "title": "AI Study Buddy Chat Session",
+        "description": "Represents a single chat conversation with the AI study buddy.",
         "type": "object",
         "properties": {
             "id": { "type": "string" },
             "userId": { "type": "string" },
-            "content": { "type": "string", "description": "The rich text (HTML) content of the note." },
-            "color": { "type": "string", "description": "Hex color code for the note background." },
-            "createdAt": { "type": "string", "format": "date-time" },
-            "updatedAt": { "type": "string", "format": "date-time" },
-            "order": { "type": "number" }
-        },
-        "required": ["id", "userId", "content", "createdAt", "updatedAt", "order"]
-    },
-    "PdfPageNote": {
-        "title": "PDF Page Note",
-        "description": "A note attached to a specific page of a PDF file.",
-        "type": "object",
-        "properties": {
-            "id": { "type": "string" },
-            "userId": { "type": "string" },
-            "fileId": { "type": "string" },
-            "pageNumber": { "type": "number" },
-            "content": { "type": "string", "description": "The rich text (HTML) content of the note." },
+            "title": { "type": "string", "description": "A short, auto-generated title from the first user message." },
+            "messages": {
+                "type": "array",
+                "description": "The full list of messages in the conversation.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "role": { "type": "string", "enum": ["user", "model"] },
+                        "text": { "type": "string" },
+                        "referencedFiles": {
+                            "type": "array",
+                            "items": { "type": "object" }
+                        }
+                    }
+                }
+            },
             "createdAt": { "type": "string", "format": "date-time" },
             "updatedAt": { "type": "string", "format": "date-time" }
         },
-        "required": ["id", "userId", "fileId", "pageNumber", "content"]
+        "required": ["id", "userId", "title", "messages", "createdAt", "updatedAt"]
     },
     "QuestionSet": {
       "title": "Question Set",
@@ -246,13 +247,9 @@
         "schema": { "$ref": "#/entities/QuestionSet" },
         "description": "Stores user-specific generated question sets."
     },
-    "/users/{userId}/profileNotes/{noteId}": {
-      "schema": { "$ref": "#/entities/ProfileNote" },
-      "description": "Stores sticky notes for a user's profile."
-    },
-    "/pdfPageNotes/{noteId}": {
-        "schema": { "$ref": "#/entities/PdfPageNote" },
-        "description": "Stores notes linked to specific pages in PDF files."
+    "/users/{userId}/aiBuddySessions/{sessionId}": {
+        "schema": { "$ref": "#/entities/AiBuddyChatSession" },
+        "description": "Stores chat history sessions for the AI Study Buddy."
     },
     "/claimedStudentIds/{studentId}": {
         "schema": { "$ref": "#/entities/ClaimedStudentId" },
@@ -264,3 +261,5 @@
     }
   }
 }
+
+    
