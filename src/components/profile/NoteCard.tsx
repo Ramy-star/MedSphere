@@ -48,7 +48,7 @@ export const NoteCard = ({ note, onEdit, onDelete, attributes, listeners }: Note
   return (
     <div
       className={cn(
-        "group relative flex flex-col rounded-2xl p-4 border border-white/10 transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer bg-opacity-80"
+        "group relative flex flex-col rounded-2xl p-4 border border-white/10 transition-all hover:shadow-lg hover:-translate-y-1 cursor-pointer bg-opacity-95"
       )}
       style={{ backgroundColor: note.color }}
       onClick={onEdit}
@@ -84,7 +84,7 @@ export const NoteCard = ({ note, onEdit, onDelete, attributes, listeners }: Note
         className="prose prose-sm prose-invert max-w-none flex-1 overflow-hidden h-40"
       >
         <h3 className="font-bold text-lg text-white/90 truncate">{note.title}</h3>
-        <div className="text-white/70 line-clamp-4" dangerouslySetInnerHTML={{ __html: firstPage?.content || '' }} />
+        <div className={cn("text-white/70 line-clamp-4")} dir="auto" dangerouslySetInnerHTML={{ __html: firstPage?.content || '' }} />
       </div>
 
       <div className="text-right text-xs text-white/50 mt-2 flex-shrink-0">
