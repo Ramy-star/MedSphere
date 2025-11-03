@@ -135,7 +135,11 @@
                     "canAccessAdminPanel",
                     "canReorder",
                     "canAdministerExams",
-                    "canAdministerFlashcards"
+                    "canAdministerFlashcards",
+                    "canAccessTelegramInbox",
+                    "canCreateQuiz",
+                    "canCreateExam",
+                    "canAccessCommunityPage"
                   ]
                 }
               }

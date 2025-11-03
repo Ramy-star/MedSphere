@@ -12,6 +12,15 @@ import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useAuthStore } from '@/stores/auth-store';
 import { AuthButton } from './auth-button';
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogCancel,
+  AlertDialogFooter
+} from "@/components/ui/alert-dialog";
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -21,6 +30,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [query, setQuery] = useState(searchParams.get('q') || '');
   const [debouncedQuery] = useDebounce(query, 1000);
   const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showComingSoon, setShowComingSoon] = useState(false);
   const { can } = useAuthStore();
 
   useEffect(() => {
@@ -44,7 +54,17 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       setQuery('');
   }
 
+  const handleCommunityClick = () => {
+    if (can('canAccessAdminPanel', null)) {
+      router.push('/community');
+    } else {
+      setShowComingSoon(true);
+    }
+  };
+
+
   return (
+    <>
     <header className="w-full border-b border-white/10 bg-white/5 backdrop-blur-sm shadow-sm px-4 sm:px-6 py-3 min-h-[68px] flex items-center gap-4">
       <div className="flex items-center gap-2 cursor-default select-none">
           <Logo className="h-8 sm:h-10 w-auto shrink-0" />
@@ -96,6 +116,16 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     </TooltipContent>
                 </Tooltip>
             )}
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-purple-400" onClick={handleCommunityClick}>
+                        <Users className="h-5 w-5" />
+                    </Button>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                    <p>Community</p>
+                </TooltipContent>
+            </Tooltip>
             {can('canAccessQuestionCreator', null) && (
                 <Tooltip>
                     <TooltipTrigger asChild>
@@ -124,5 +154,23 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
         <AuthButton />
       </div>
     </header>
+
+    <AlertDialog open={showComingSoon} onOpenChange={setShowComingSoon}>
+      <AlertDialogContent>
+        <AlertDialogHeader className="items-center">
+            <div className="p-4 bg-purple-500/20 rounded-full mb-4">
+                <Users className="w-10 h-10 text-purple-400" />
+            </div>
+            <AlertDialogTitle className="text-2xl">Community Coming Soon!</AlertDialogTitle>
+            <AlertDialogDescription className="text-center pt-2">
+                We're building an exciting new space for students to connect, share, and learn together. Stay tuned for updates!
+            </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+            <AlertDialogCancel>Close</AlertDialogCancel>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 };
