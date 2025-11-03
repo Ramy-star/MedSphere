@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -30,7 +31,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/t
 import { Link2Icon } from './icons/Link2Icon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { Input } from './ui/input';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
@@ -39,7 +40,7 @@ import { FlashcardIcon } from './icons/FlashcardIcon';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import * as pdfjs from 'pdfjs-dist';
-import type { Note } from './profile/ProfileNotesSection';
+import type { Note } from './profile/NotesSection';
 import { NoteViewer } from './profile/NoteViewer';
 
 
@@ -798,7 +799,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
       <DialogContent 
         className={cn(
             "max-w-none w-screen p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0 gap-0",
-            "h-full md:h-[var(--1dvh,100vh)]"
+            "h-full md:h-[var(--1dvh,100vh)] z-[60]" // z-index is higher than main layout's floating assistant
         )}
         hideCloseButton={true}
       >

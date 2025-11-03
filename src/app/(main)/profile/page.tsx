@@ -37,7 +37,7 @@ import { FilePreviewModal } from '@/components/FilePreviewModal';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -323,9 +323,11 @@ export default function ProfilePage() {
   const DesktopLayout = () => (
     <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
       <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-          {!isMobile && <AiStudyBuddy user={user} />}
-          <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
+           <CollapsibleSection title="My Pinned Notes" icon={NotebookPen} defaultOpen={false}>
               <ProfileNotesSection user={user} />
+          </CollapsibleSection>
+           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
+              <FavoritesSection user={user} onFileClick={handleFileClick} />
           </CollapsibleSection>
       </div>
 
@@ -341,9 +343,6 @@ export default function ProfilePage() {
           </CollapsibleSection>
           <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
               <ActiveSessions user={user} />
-          </CollapsibleSection>
-          <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
-              <FavoritesSection user={user} onFileClick={handleFileClick} />
           </CollapsibleSection>
           <CollapsibleSection title="Achievements" icon={Award} defaultOpen={true}>
              <AchievementsSection user={user} />
@@ -364,7 +363,7 @@ export default function ProfilePage() {
           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={false}>
               <FavoritesSection user={user} onFileClick={handleFileClick} />
           </CollapsibleSection>
-          <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
+          <CollapsibleSection title="My Pinned Notes" icon={NotebookPen} defaultOpen={false}>
               <ProfileNotesSection user={user} />
           </CollapsibleSection>
           <CollapsibleSection title="Achievements" icon={Award} defaultOpen={false}>
