@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, StickyNote } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, NotebookPen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -496,7 +496,7 @@ export default function ProfilePage() {
             <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
                 <FavoritesSection user={user} onFileClick={handleFileClick} />
             </CollapsibleSection>
-            <CollapsibleSection title="My Notes" icon={StickyNote} defaultOpen={false}>
+            <CollapsibleSection title="My Notes" icon={NotebookPen} defaultOpen={false}>
                 <ProfileNotesSection user={user} />
             </CollapsibleSection>
             <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
@@ -588,4 +588,3 @@ export default function ProfilePage() {
   );
 }
 
-    
