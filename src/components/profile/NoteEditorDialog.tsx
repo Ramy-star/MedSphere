@@ -49,6 +49,7 @@ import { ScrollArea } from '../ui/scroll-area';
 import { Input } from '../ui/input';
 import { Slider } from '../ui/slider';
 
+
 const NOTE_COLORS = [
     '#282828', // dark grey
     '#5C2B29', // dark red
@@ -212,56 +213,58 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
 
 const FontSizeSlider = ({ editor }: { editor: Editor }) => {
     const [sliderValue, setSliderValue] = useState(14);
-    
-    const applySize = (size: number) => {
-        editor.chain().focus().setMark('textStyle', { fontSize: `${size}pt` }).run();
-    };
 
-    const handleSliderChange = (newVal: number[]) => {
-        const newSize = newVal[0];
+    const handleSizeChange = (newSize: number) => {
         setSliderValue(newSize);
-        applySize(newSize);
+        editor.chain().focus().setFontSize(`${newSize}pt`).run();
     };
 
+    const handleValueCommit = (newSize: number) => {
+      // This function gets called when the user stops dragging
+      // which is where we'll commit the final size
+      editor.chain().focus().setFontSize(`${newSize}pt`).run();
+    }
+
+    // Effect to update slider when text selection changes
     useEffect(() => {
         const updateSliderFromEditor = () => {
             const currentSize = editor.getAttributes('textStyle').fontSize;
             if (currentSize && typeof currentSize === 'string') {
-                const parsedSize = parseInt(currentSize, 10);
-                if (!isNaN(parsedSize) && parsedSize !== sliderValue) {
-                    setSliderValue(parsedSize);
+                const sizeNumber = parseInt(currentSize, 10);
+                if (!isNaN(sizeNumber)) {
+                    setSliderValue(sizeNumber);
+                    return;
                 }
-            } else if (sliderValue !== 14) {
-                 setSliderValue(14); // Default size
             }
+            setSliderValue(14); // Default size
         };
         editor.on('selectionUpdate', updateSliderFromEditor);
-        updateSliderFromEditor(); // Initial sync
-        return () => { editor.off('selectionUpdate', updateSliderFromEditor); };
-    }, [editor, sliderValue]);
-    
+        return () => editor.off('selectionUpdate', updateSliderFromEditor);
+    }, [editor]);
+
     return (
-      <div className="flex items-center gap-2 w-64">
-        <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
-          {sliderValue} pt
+        <div className="flex items-center gap-2 w-64">
+            <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
+                {sliderValue} pt
+            </div>
+            <Slider
+                min={8}
+                max={96}
+                step={1}
+                value={[sliderValue]}
+                onValueChange={([val]) => setSliderValue(val)}
+                onValueCommit={([val]) => handleValueCommit(val)}
+                className="flex-1"
+            />
+            <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange(sliderValue - 1)} disabled={sliderValue <= 8}>
+                    <Minus size={14} />
+                </Button>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange(sliderValue + 1)} disabled={sliderValue >= 96}>
+                    <Plus size={14} />
+                </Button>
+            </div>
         </div>
-        <Slider
-          min={1}
-          max={200}
-          step={1}
-          value={[sliderValue]}
-          onValueChange={handleSliderChange}
-          className="flex-1"
-        />
-        <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSliderChange([sliderValue - 1])}>
-            <Minus size={14} />
-          </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSliderChange([sliderValue + 1])}>
-            <Plus size={14} />
-          </Button>
-        </div>
-      </div>
     );
 };
 
@@ -641,7 +644,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           </div>
         </div>
 
-        <div className="flex-1 relative overflow-hidden px-4">
+        <div className="relative flex-1 overflow-hidden px-4">
           <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
               <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
               <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
@@ -649,7 +652,9 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
           </BubbleMenu>
           
-          <EditorContent editor={editor} className="h-full overflow-y-auto p-2 rounded-lg bg-black/10 relative" dir="auto" />
+          <div className="h-full overflow-y-auto p-2 rounded-lg bg-black/10 relative">
+            <EditorContent editor={editor} className="h-full" dir="auto" />
+          </div>
         </div>
         
         <DialogFooter className="p-4 border-t border-white/10 flex-shrink-0">
