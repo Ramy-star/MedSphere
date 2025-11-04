@@ -209,7 +209,7 @@ export const FileCard = React.memo(function FileCard({
         }
     }, [onUpdate]);
 
-    const handleUpdateClick = useCallback((e: React.MouseEvent<Element, MouseEvent>) => {
+    const handleUpdateClick = useCallback((e: React.SyntheticEvent) => {
         if (!can('canUpdateFile', item.id)) return;
         e.stopPropagation();
         e.preventDefault();
@@ -263,7 +263,7 @@ export const FileCard = React.memo(function FileCard({
 
     return (
         <div 
-            className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-all duration-200 md:rounded-2xl cursor-pointer my-1.5 hover:scale-[1.01]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+            className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
             onClick={handleClick}
         >
              <input
@@ -276,7 +276,7 @@ export const FileCard = React.memo(function FileCard({
                 {showDragHandle && !isMobile && can('canReorder', item.id) && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
             </div>
 
-            <div className="flex items-center gap-3 overflow-hidden flex-1">
+            <div className="flex items-center gap-3 overflow-hidden flex-1 transition-transform duration-200 group-hover:scale-[1.01]">
                 <Icon className={`w-6 h-6 ${color} shrink-0`} />
                 <div className="flex-1 overflow-hidden">
                     <h3 className={cn("text-sm font-medium text-white/90 break-words", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
@@ -290,7 +290,7 @@ export const FileCard = React.memo(function FileCard({
                 </div>
             </div>
             
-            <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
+            <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4 transition-transform duration-200 group-hover:scale-[1.01]">
                 <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-ubuntu">
                     {createdAt}
                 </p>

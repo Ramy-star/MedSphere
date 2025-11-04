@@ -187,10 +187,10 @@ export const FolderCard = React.memo(function FolderCard({
         return (
              <div 
                 onClick={() => onClick(item)}
-                className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-all duration-200 md:rounded-2xl cursor-pointer my-1.5 hover:scale-[1.01]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+                className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
-                <div className="flex items-center gap-3 overflow-hidden flex-1">
+                <div className="flex items-center gap-3 overflow-hidden flex-1 transition-transform duration-200 group-hover:scale-[1.01]">
                     {item.metadata?.iconURL ? (
                        <Image 
                           src={item.metadata.iconURL} 
@@ -206,7 +206,7 @@ export const FolderCard = React.memo(function FolderCard({
                     <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
                 </div>
                 
-                 <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4">
+                 <div className="flex items-center gap-2 sm:gap-4 shrink-0 ml-2 sm:ml-4 transition-transform duration-200 group-hover:scale-[1.01]">
                     <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-ubuntu">
                         {createdAt}
                     </p>
@@ -246,8 +246,9 @@ export const FolderCard = React.memo(function FolderCard({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerMove={handleDragStart}
-        className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 cursor-pointer hover:scale-[1.01]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+        className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 cursor-pointer", item.metadata?.isHidden && "opacity-60 bg-white/5")}
       >
+        <div className="transition-transform duration-200 group-hover:scale-[1.01]">
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
               {hasAnyPermission && (
@@ -276,6 +277,7 @@ export const FolderCard = React.memo(function FolderCard({
               )}
           </div>
           <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+        </div>
       </div>
     );
 });
