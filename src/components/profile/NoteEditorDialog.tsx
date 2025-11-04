@@ -1,5 +1,3 @@
-
-      
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note, NotePage } from './ProfileNotesSection';
@@ -16,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered, 
     Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight,
-    Maximize, Shrink, Trash2
+    Maximize, Shrink, Trash2, Check
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -32,6 +30,7 @@ import History from '@tiptap/extension-history';
 import { motion, AnimatePresence } from 'framer-motion';
 import Placeholder from '@tiptap/extension-placeholder';
 import FontFamily from '@tiptap/extension-font-family';
+// import FontSize from '@tiptap/extension-font-size';
 import ImageExtension from '@tiptap/extension-image';
 import { contentService } from '@/lib/contentService';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -46,6 +45,7 @@ import {
   AlertDialogHeader,
   AlertDialogFooter as AlertDialogFooterComponent,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { ScrollArea } from '../ui/scroll-area';
 import { Input } from '../ui/input';
@@ -122,6 +122,9 @@ const editorExtensions = [
     emptyEditorClass: 'is-editor-empty',
   }),
   FontFamily,
+  // FontSize.configure({
+  //   types: ['textStyle'],
+  // }),
   ImageExtension.configure({ inline: false, allowBase64: true }),
 ];
 
@@ -213,95 +216,92 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
     </Popover>
 )};
 
-const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
-    const [sliderValue, setSliderValue] = useState(14); // Default font size
+// const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
+//     const [sliderValue, setSliderValue] = useState(14); // Default to a reasonable number
+//     const [interactiveSliderValue, setInteractiveSliderValue] = useState<number | null>(null);
+
+//     // Effect to sync slider with editor's state when selection changes
+//     useEffect(() => {
+//         if (!editor || editor.isDestroyed) return;
+
+//         const handleUpdate = () => {
+//             if (editor.isDestroyed) return;
+//             const attrs = editor.getAttributes('textStyle');
+//             const currentSize = attrs.fontSize;
+//             if (typeof currentSize === 'string') {
+//                 const sizeNumber = parseInt(currentSize, 10);
+//                 if (!isNaN(sizeNumber)) {
+//                     setSliderValue(sizeNumber);
+//                     return;
+//                 }
+//             }
+//             // If no font size is set on the selection, default to a sensible value
+//             setSliderValue(14);
+//         };
+
+//         editor.on('transaction', handleUpdate);
+//         editor.on('selectionUpdate', handleUpdate);
+
+//         handleUpdate(); // Initial check
+
+//         return () => {
+//             if (!editor.isDestroyed) {
+//                 editor.off('transaction', handleUpdate);
+//                 editor.off('selectionUpdate', handleUpdate);
+//             }
+//         };
+//     }, [editor]);
     
-    // This state tracks the value during interaction
-    const [interactiveSliderValue, setInteractiveSliderValue] = useState<number | null>(null);
+//     const handleSizeChange = (size: number) => {
+//         if (editor) {
+//             editor.chain().focus().setMark('textStyle', { fontSize: `${size}pt` }).run();
+//         }
+//     };
 
-    // Update slider when selection or active page changes
-    useEffect(() => {
-        if (!editor || editor.isDestroyed) return;
-        
-        const updateSliderFromSelection = () => {
-            if (editor.isDestroyed) return;
-            const attrs = editor.getAttributes('textStyle');
-            const currentSize = attrs.fontSize;
-            if (typeof currentSize === 'string') {
-                const sizeNumber = parseInt(currentSize, 10);
-                if (!isNaN(sizeNumber)) {
-                    setSliderValue(sizeNumber);
-                    return;
-                }
-            }
-            // If no font size is set on the selection, default to 14
-            setSliderValue(14);
-        };
-        
-        editor.on('transaction', updateSliderFromSelection);
-        editor.on('selectionUpdate', updateSliderFromSelection);
+//     const handleSliderChange = (value: number[]) => {
+//         const newSize = value[0];
+//         setInteractiveSliderValue(newSize);
+//         handleSizeChange(newSize);
+//     };
 
-        updateSliderFromSelection();
-        
-        return () => {
-            if (editor && !editor.isDestroyed) {
-                editor.off('transaction', updateSliderFromSelection);
-                editor.off('selectionUpdate', updateSliderFromSelection);
-            }
-        };
-    }, [editor]);
+//     const handleValueCommit = (value: number[]) => {
+//         setInteractiveSliderValue(null);
+//         setSliderValue(value[0]);
+//     };
     
-    const applyFontSize = (size: number) => {
-        if (editor) {
-            editor.chain().focus().setMark('textStyle', { fontSize: `${size}pt` }).run();
-        }
-    };
+//     const handleButtonClick = (increment: number) => {
+//         const newSize = Math.max(8, Math.min(96, sliderValue + increment));
+//         setSliderValue(newSize);
+//         handleSizeChange(newSize);
+//     };
 
-    const handleSliderChange = (value: number[]) => {
-        // Only update the interactive value for smooth dragging
-        setInteractiveSliderValue(value[0]);
-    };
-
-    const handleValueCommit = (value: number[]) => {
-        const newSize = value[0];
-        setSliderValue(newSize);
-        applyFontSize(newSize);
-        setInteractiveSliderValue(null); // Reset interactive value
-    };
-
-    const handleButtonClick = (increment: number) => {
-        const newSize = Math.max(8, Math.min(96, sliderValue + increment));
-        setSliderValue(newSize);
-        applyFontSize(newSize);
-    };
-
-    const displayValue = interactiveSliderValue ?? sliderValue;
-
-    return (
-        <div className="flex items-center gap-2 w-64">
-            <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
-                {displayValue} pt
-            </div>
-            <Slider
-                min={8}
-                max={96}
-                step={1}
-                value={[displayValue]}
-                onValueChange={handleSliderChange}
-                onValueCommit={handleValueCommit} // Apply change on release
-                className="flex-1"
-            />
-            <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleButtonClick(-1)} disabled={sliderValue <= 8}>
-                    <Minus size={14} />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleButtonClick(1)} disabled={sliderValue >= 96}>
-                    <Plus size={14} />
-                </Button>
-            </div>
-        </div>
-    );
-};
+//     const displayValue = interactiveSliderValue ?? sliderValue;
+    
+//     return (
+//         <div className="flex items-center gap-2 w-64">
+//             <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
+//                 {displayValue} pt
+//             </div>
+//             <Slider
+//                 min={8}
+//                 max={96}
+//                 step={1}
+//                 value={[displayValue]}
+//                 onValueChange={handleSliderChange}
+//                 onValueCommit={handleValueCommit}
+//                 className="flex-1"
+//             />
+//             <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
+//                 <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleButtonClick(-1)} disabled={sliderValue <= 8}>
+//                     <Minus size={14} />
+//                 </Button>
+//                 <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleButtonClick(1)} disabled={sliderValue >= 96}>
+//                     <Plus size={14} />
+//                 </Button>
+//             </div>
+//         </div>
+//     );
+// };
 
 
 const EmojiSelector = ({ editor }: { editor: Editor }) => (
@@ -521,7 +521,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         <EditorToolbarButton icon={Redo} onClick={() => editor.chain().focus().redo().run()} tip="Redo" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <FontPicker editor={editor} />
-        <FontSizeSlider editor={editor} />
+        {/* <FontSizeSlider editor={editor} /> */}
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
         <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
@@ -584,6 +584,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                   <Button variant="ghost" size="icon" className="h-9 w-9 text-white"><X size={20}/></Button>
               </DialogClose>
           </div>
+          {/* This title is for accessibility only and is visually hidden */}
           <DialogTitle className="sr-only">Edit Note: {note.title}</DialogTitle>
         </DialogHeader>
         <div className="p-4 pt-0 flex-shrink-0">
