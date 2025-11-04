@@ -568,7 +568,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
       metadata: {
         quizData: JSON.stringify({
           ...note,
-          pages: [activePage]
+          pages: [activePage] // Only send the active page context
         })
       }
     };
@@ -691,10 +691,9 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                             return (
                               <div 
                                   key={page.id} 
-                                  onClick={() => handleTabClick(page.id)}
                                   className={cn("flex flex-col py-2 border-b-2 transition-colors flex-shrink-0", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
                               >
-                                <div className="flex items-center gap-1 px-3">
+                                <div className="flex items-center gap-1 px-3" onClick={() => handleTabClick(page.id)} >
                                   {editingTabId === page.id ? (
                                       <input
                                           ref={newTabInputRef}
@@ -703,6 +702,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                           onBlur={(e) => renamePage(page.id, e.target.value)}
                                           onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
                                           className="bg-transparent outline-none w-24 text-sm"
+                                          onClick={(e) => e.stopPropagation()}
                                       />
                                   ) : (
                                     <span className="text-sm cursor-pointer truncate" onDoubleClick={() => setEditingTabId(page.id)}>{page.title}</span>
@@ -728,13 +728,13 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                 <div className="flex items-center gap-1.5 px-3 mt-1.5 h-5">
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                             <button className="flex items-center gap-1 text-slate-500 hover:text-white transition-colors">
+                                            <button className="flex items-center gap-1 text-slate-500 hover:text-white transition-colors">
                                                 <Paperclip size={14} />
                                             </button>
                                         </PopoverTrigger>
                                         <PopoverContent container={dialogContentRef.current} className="w-64 p-1 bg-slate-800/80 border-slate-700 backdrop-blur-md">
                                             <div className="flex flex-col">
-                                                <Popover>
+                                                <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
                                                     <PopoverTrigger asChild>
                                                         <Button variant="ghost" className="w-full justify-start text-sm p-2 h-auto">
                                                             <Plus className="mr-2 h-4 w-4" /> Add Reference
@@ -855,5 +855,3 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
    </>
   );
 };
-
-    
