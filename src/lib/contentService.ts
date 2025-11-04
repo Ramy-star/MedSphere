@@ -391,13 +391,15 @@ export const contentService = {
     const xhr = new XMLHttpRequest();
    
     try {
-        const folder = 'content';
+        const folder = 'content'; // Or derive a more specific folder if needed
         const public_id = `${folder}/${nanoid()}`;
         
+        // The parameters to be signed MUST include everything you'll send in the upload form,
+        // except for the 'file', 'api_key', and 'signature' itself.
         const paramsToSign = {
             folder,
             public_id,
-            timestamp: Math.round(new Date().getTime() / 1000)
+            timestamp: Math.round(new Date().getTime() / 1000),
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
@@ -417,6 +419,7 @@ export const contentService = {
         formData.append('file', file);
         formData.append('api_key', apiKey);
         formData.append('signature', signature);
+        // Append all the signed parameters to the form data
         formData.append('folder', paramsToSign.folder);
         formData.append('public_id', paramsToSign.public_id);
         formData.append('timestamp', String(paramsToSign.timestamp));

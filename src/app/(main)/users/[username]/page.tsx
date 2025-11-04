@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { UserProfile } from '@/stores/auth-store';
 import { notFound } from 'next/navigation';
@@ -19,7 +19,8 @@ const studentIdToLevelMap = new Map<string, string>();
 // level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
 
 export default function PublicProfilePage({ params }: { params: { username: string } }) {
-  const { username } = params;
+  const resolvedParams = use(params);
+  const { username } = resolvedParams;
   const { data: users, loading } = useCollection<UserProfile>('users', {
     where: ['username', '==', username],
     limit: 1,

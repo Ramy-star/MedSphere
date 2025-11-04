@@ -21,7 +21,12 @@ cloudinary.config({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    // The client now sends all parameters that need to be signed.
     const { paramsToSign } = body;
+
+    if (!paramsToSign || typeof paramsToSign !== 'object') {
+        return NextResponse.json({ error: 'Missing parameters to sign.' }, { status: 400 });
+    }
 
     if (!process.env.CLOUDINARY_API_SECRET) {
       console.error("Missing Cloudinary API secret");
