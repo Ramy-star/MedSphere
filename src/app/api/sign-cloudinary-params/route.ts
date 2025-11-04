@@ -21,7 +21,6 @@ cloudinary.config({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    // The client now sends other parameters like folder, public_id, etc.
     const { paramsToSign } = body;
 
     if (!process.env.CLOUDINARY_API_SECRET) {
@@ -31,22 +30,13 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
-    
-    // Generate timestamp on the server
-    const timestamp = Math.round(new Date().getTime() / 1000);
-
-    const fullParamsToSign = {
-      ...paramsToSign,
-      timestamp,
-    };
 
     // Generate the signature using Cloudinary's utility function
-    const signature = cloudinary.utils.api_sign_request(fullParamsToSign, process.env.CLOUDINARY_API_SECRET!);
+    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
 
-    // Return the signature and the exact timestamp that was signed
+    // Return the signature and other useful data to the client
     return NextResponse.json({ 
         signature,
-        timestamp: timestamp,
         apiKey: process.env.CLOUDINARY_API_KEY,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });
@@ -57,5 +47,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
   }
 }
-
-    
