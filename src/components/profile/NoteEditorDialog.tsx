@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { Note, NotePage } from './ProfileNotesSection';
 import {
   Dialog,
@@ -52,7 +52,7 @@ import { Slider } from '../ui/slider';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { FilePreviewModal } from '../FilePreviewModal';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 
 const NOTE_COLORS = [
