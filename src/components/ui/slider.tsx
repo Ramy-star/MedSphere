@@ -9,11 +9,15 @@ const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
 >(({ className, ...props }, ref) => {
+    // Separate onValueCommit from the rest of the props to avoid passing it to the DOM element
+    const { onValueCommit, ...restProps } = props;
+    
     return (
         <SliderPrimitive.Root
             ref={ref}
             className={cn("relative flex w-full touch-none select-none items-center", className)}
-            {...props}
+            onValueCommit={onValueCommit}
+            {...restProps}
         >
             <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-slate-800">
                 <SliderPrimitive.Range className="absolute h-full bg-primary" />
