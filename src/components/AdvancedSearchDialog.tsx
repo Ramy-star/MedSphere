@@ -186,7 +186,10 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                     </DialogHeader>
 
                     <div className="p-3 border-b border-white/10 flex flex-wrap items-center gap-2">
-                         <Select value={filters.level} onValueChange={(value) => setFilters(f => ({ ...f, level: value }))}>
+                         <Select value={filters.level} onValueChange={(value) => {
+                            setFilters(f => ({ ...f, level: value }));
+                            if (query.trim()) performSearch();
+                         }}>
                             <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                                 <Layers className="h-4 w-4 text-blue-400"/>
                                 <SelectValue asChild>
@@ -199,7 +202,10 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                             </SelectContent>
                         </Select>
 
-                        <Select value={filters.type} onValueChange={(value) => setFilters(f => ({ ...f, type: value as SearchFilters['type'] }))}>
+                        <Select value={filters.type} onValueChange={(value) => {
+                            setFilters(f => ({ ...f, type: value as SearchFilters['type'] }));
+                            if (query.trim()) performSearch();
+                        }}>
                             <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                                 <FileType className="h-4 w-4 text-green-400"/>
                                 <SelectValue asChild>
