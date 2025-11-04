@@ -328,7 +328,7 @@ const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () =>
     <TooltipProvider>
         <Tooltip>
             <TooltipTrigger asChild>
-                <div className="flex w-full items-center justify-between gap-2 p-2 rounded-md hover:bg-slate-700/50">
+                 <div className="flex w-full items-center justify-between gap-2 p-2 rounded-md hover:bg-white/10">
                     <div className="flex items-center gap-2 overflow-hidden">
                         <FileText className="w-4 h-4 text-slate-400 shrink-0" />
                         <span className="truncate text-sm text-slate-200">{file.name}</span>
@@ -732,19 +732,19 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                                 <Paperclip size={14} />
                                             </button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-64 p-2 bg-slate-950 border-slate-700">
+                                        <PopoverContent className="w-64 p-2 bg-slate-900/80 border-slate-700 backdrop-blur-md">
                                             <Popover>
                                                 <PopoverTrigger asChild>
                                                     <Button variant="ghost" className="w-full justify-start text-sm">
                                                         <Plus className="mr-2 h-4 w-4" /> Add Reference
                                                     </Button>
                                                 </PopoverTrigger>
-                                                <PopoverContent className="w-[300px] p-1" side="right" align="start">
+                                                <PopoverContent className="w-[300px] p-1 bg-slate-900/80 border-slate-700 backdrop-blur-md" side="right" align="start">
                                                     <Input 
                                                         placeholder="Search files..."
                                                         value={fileSearchQuery}
                                                         onChange={(e) => setFileSearchQuery(e.target.value)}
-                                                        className="mb-1 h-8"
+                                                        className="mb-1 h-8 bg-slate-800/60 border-slate-600 text-white"
                                                     />
                                                     <ScrollArea className="max-h-60">
                                                         {filteredFiles.map(file => (
