@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Search, X, Loader2, Folder as FolderIcon, File as FileIcon, Wand2 } from 'lucide-react';
+import { Search, X, Loader2, Folder as FolderIcon, File as FileIcon, Wand2, Layers, FileType } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
 import { search as searchFlow } from '@/ai/flows/search-flow';
@@ -70,6 +70,16 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
         if (!allItems) return [];
         return allItems.filter(item => item.type === 'LEVEL').sort((a,b) => (a.order || 0) - (b.order || 0));
     }, [allItems]);
+    
+    const selectedLevelName = useMemo(() => {
+        if (filters.level === 'all') return 'All Levels';
+        return levels.find(l => l.id === filters.level)?.name || 'All Levels';
+    }, [filters.level, levels]);
+
+    const selectedTypeName = useMemo(() => {
+        return FileTypeOptions.find(opt => opt.value === filters.type)?.label || 'All Types';
+    }, [filters.type]);
+
 
     const performSearch = useCallback(async () => {
         if (!debouncedQuery && filters.type === 'all' && filters.level === 'all') {
@@ -160,7 +170,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
             <Dialog open={open} onOpenChange={handleClose}>
                 <DialogContent 
                     ref={dialogContentRef}
-                    className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white"
+                    className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white border-0"
                 >
                     <DialogHeader className="p-4 border-b border-white/10 flex-row items-center">
                         <Search className="h-5 w-5 text-slate-400" />
@@ -176,9 +186,12 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                     </DialogHeader>
 
                     <div className="p-3 border-b border-white/10 flex flex-wrap items-center gap-2">
-                        <Select value={filters.level} onValueChange={(value) => setFilters(f => ({ ...f, level: value }))}>
-                            <SelectTrigger className="w-[180px] h-8 rounded-full">
-                                <SelectValue placeholder="Level" />
+                         <Select value={filters.level} onValueChange={(value) => setFilters(f => ({ ...f, level: value }))}>
+                            <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2">
+                                <Layers className="h-4 w-4 text-blue-400"/>
+                                <SelectValue asChild>
+                                    <span className="truncate">{selectedLevelName}</span>
+                                </SelectValue>
                             </SelectTrigger>
                             <SelectContent container={dialogContentRef.current ?? undefined}>
                                 <SelectItem value="all">All Levels</SelectItem>
@@ -187,8 +200,11 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                         </Select>
 
                         <Select value={filters.type} onValueChange={(value) => setFilters(f => ({ ...f, type: value as SearchFilters['type'] }))}>
-                            <SelectTrigger className="w-[150px] h-8 rounded-full">
-                                <SelectValue placeholder="Type" />
+                            <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2">
+                                <FileType className="h-4 w-4 text-green-400"/>
+                                <SelectValue asChild>
+                                    <span className="truncate">{selectedTypeName}</span>
+                                </SelectValue>
                             </SelectTrigger>
                              <SelectContent container={dialogContentRef.current ?? undefined}>
                                 {FileTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
