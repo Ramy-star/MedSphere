@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -73,15 +74,9 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
 
   const navItems = [
     {
-      label: 'My Profile',
+      label: 'Profile',
       icon: UserIcon,
       action: () => router.push('/profile'),
-      permission: () => !!user,
-    },
-    {
-      label: 'My Notes',
-      icon: NotebookPen,
-      action: () => router.push('/notes'),
       permission: () => !!user,
     },
     {
@@ -97,16 +92,22 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       permission: () => can('canAccessQuestionCreator', null),
     },
     {
+      label: 'My Notes',
+      icon: NotebookPen,
+      action: () => router.push('/notes'),
+      permission: () => !!user,
+    },
+    {
+      label: 'News Studio',
+      icon: Palette,
+      action: () => router.push('/studio/news'),
+      permission: () => can('canAccessAdminPanel', null),
+    },
+    {
       label: 'Telegram Inbox',
       icon: Inbox,
       action: () => router.push('/folder/telegram-inbox-folder'),
       permission: () => can('canAccessTelegramInbox', null),
-    },
-    {
-      label: 'Studio',
-      icon: Palette,
-      action: () => router.push('/studio/news'),
-      permission: () => can('canAccessAdminPanel', null),
     },
     {
       label: 'Admin Panel',
@@ -122,6 +123,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const DesktopNav = () => (
     <div className="hidden md:flex items-center gap-1">
         <TooltipProvider>
+            {!!user && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/notes')}>
+                            <NotebookPen className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>My Notes</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
              {can('canAccessAdminPanel', null) && (
                  <Tooltip>
                     <TooltipTrigger asChild>
@@ -134,18 +147,6 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     </TooltipContent>
                 </Tooltip>
             )}
-            {can('canAccessAdminPanel', null) && (
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
-                            <Shield className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Admin Panel</p>
-                    </TooltipContent>
-                </Tooltip>
-            )}
             {can('canAccessTelegramInbox', null) && (
                  <Tooltip>
                     <TooltipTrigger asChild>
@@ -155,18 +156,6 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
                         <p>Telegram Inbox</p>
-                    </TooltipContent>
-                </Tooltip>
-            )}
-            {!!user && (
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/notes')}>
-                            <NotebookPen className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>My Notes</p>
                     </TooltipContent>
                 </Tooltip>
             )}
@@ -192,6 +181,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     <p>Community</p>
                 </TooltipContent>
             </Tooltip>
+            {can('canAccessAdminPanel', null) && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
+                            <Shield className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Admin Panel</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
             <AuthButton />
         </TooltipProvider>
     </div>
