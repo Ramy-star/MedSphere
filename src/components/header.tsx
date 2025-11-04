@@ -115,7 +115,10 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       action: () => router.push('/admin'),
       permission: () => can('canAccessAdminPanel', null),
     },
-  ];
+  ].sort((a, b) => {
+    const order = ['Profile', 'Community', 'Questions Creator', 'My Notes', 'News Studio', 'Telegram Inbox', 'Admin Panel'];
+    return order.indexOf(a.label) - order.indexOf(b.label);
+  });
 
   const visibleNavItems = navItems.filter(item => item.permission());
 
@@ -123,15 +126,27 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const DesktopNav = () => (
     <div className="hidden md:flex items-center gap-1">
         <TooltipProvider>
-            {!!user && (
+            {can('canAccessAdminPanel', null) && (
                  <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/notes')}>
-                            <NotebookPen className="h-5 w-5" />
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
+                            <Shield className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>My Notes</p>
+                        <p>Admin Panel</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+            {can('canAccessTelegramInbox', null) && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-blue-400" onClick={() => router.push('/folder/telegram-inbox-folder')}>
+                            <Inbox className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Telegram Inbox</p>
                     </TooltipContent>
                 </Tooltip>
             )}
@@ -147,15 +162,15 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     </TooltipContent>
                 </Tooltip>
             )}
-            {can('canAccessTelegramInbox', null) && (
+            {!!user && (
                  <Tooltip>
                     <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-blue-400" onClick={() => router.push('/folder/telegram-inbox-folder')}>
-                            <Inbox className="h-5 w-5" />
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-yellow-300" onClick={() => router.push('/notes')}>
+                            <NotebookPen className="h-5 w-5" />
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Telegram Inbox</p>
+                        <p>My Notes</p>
                     </TooltipContent>
                 </Tooltip>
             )}
@@ -181,18 +196,6 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     <p>Community</p>
                 </TooltipContent>
             </Tooltip>
-            {can('canAccessAdminPanel', null) && (
-                 <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-teal-300" onClick={() => router.push('/admin')}>
-                            <Shield className="h-5 w-5" />
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Admin Panel</p>
-                    </TooltipContent>
-                </Tooltip>
-            )}
             <AuthButton />
         </TooltipProvider>
     </div>
