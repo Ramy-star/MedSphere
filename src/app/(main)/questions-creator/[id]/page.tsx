@@ -212,15 +212,17 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
     if (!questionSet || !studentId) return;
 
     setCurrentAction(action);
-    const conversionType = action === 'create_quiz' ? 'questions' : action === 'create_exam' ? 'exam' : 'flashcards';
+    const conversionType = action === 'create_quiz' ? 'questions' 
+        : action === 'create_exam' ? 'exam' 
+        : 'flashcards';
+        
     const textToConvert = conversionType === 'questions' ? editingContent.text
-                       : conversionType === 'exam' ? editingContent.examText
-                       : editingContent.flashcardText;
+        : conversionType === 'exam' ? editingContent.examText
+        : editingContent.flashcardText;
     
     setIsConverting(conversionType);
     
     try {
-        // This function now handles converting and updating the document in Firestore
         await convertExistingTextToJson(id, textToConvert, conversionType);
         setShowFolderSelector(true);
     } catch (e: any) {
@@ -296,9 +298,7 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
                     {icon}
-                    <div>
-                        <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
-                    </div>
+                    <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
                 </div>
                 <TooltipProvider>
                     <div className="flex items-center gap-1">
@@ -455,19 +455,19 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <OutputCard
                 title="Quiz"
-                icon={<FileText className="text-yellow-400 h-8 w-8 mb-4 shrink-0" />}
+                icon={<FileText className="text-yellow-400 h-8 w-8 shrink-0" />}
                 content={editingContent.text}
                 type="text"
             />
              <OutputCard
                 title="Flashcard"
-                icon={<FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
+                icon={<FileText className="text-green-400 h-8 w-8 shrink-0" />}
                 content={editingContent.flashcardText}
                 type="flashcardText"
             />
              <OutputCard
                 title="Exam"
-                icon={<FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
+                icon={<FileText className="text-red-400 h-8 w-8 shrink-0" />}
                 content={editingContent.examText}
                 type="examText"
             />

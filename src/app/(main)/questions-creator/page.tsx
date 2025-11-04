@@ -440,11 +440,9 @@ function QuestionsCreatorContent() {
   
     return (
       <div className={cn("relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out")}>
-        <div className="flex items-start gap-4">
+        <div className="flex items-center gap-4">
           {icon}
-          <div>
-            <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
-          </div>
+          <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
         </div>
         <div className="mt-4 flex-grow flex flex-col">
           <div className="relative flex-grow min-h-[96px]">
@@ -630,11 +628,9 @@ function QuestionsCreatorContent() {
       return (
         <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
             <div className="flex items-center justify-between">
-                <div className="flex items-start gap-4">
+                <div className="flex items-center gap-4">
                     {iconMap[type]}
-                    <div>
-                        <h3 className="text-lg font-semibold text-white break-words">{titleMap[type]}</h3>
-                    </div>
+                    <h3 className="text-lg font-semibold text-white break-words">{titleMap[type]}</h3>
                 </div>
                 <TooltipProvider>
                     <div className="flex items-center gap-0">
