@@ -219,8 +219,8 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
     setIsConverting(conversionType);
     
     try {
+        // This function now handles converting and updating the document in Firestore
         await convertExistingTextToJson(id, textToConvert, conversionType);
-        // After conversion, the store will be updated, so we can proceed
         setShowFolderSelector(true);
     } catch (e: any) {
         toast({ variant: 'destructive', title: 'Conversion Failed', description: e.message || 'Could not convert text to a structured format.'});
@@ -230,22 +230,17 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
   };
 
   const handleSaveToFile = async (destination: Content) => {
-    if (!questionSet || !currentAction || !studentId) return;
+    if (!currentAction || !studentId) return;
 
     setShowFolderSelector(false);
     
-    // Get the latest state of the questionSet from the database
-    // as it would have been updated by convertExistingTextToJson
-    const updatedQuestionSetDoc = await getDoc(doc(db, `users/${studentId!}/questionSets`, id));
-    if (!updatedQuestionSetDoc.exists()) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Could not find the updated question set.' });
-        setCurrentAction(null);
-        return;
-    }
-    const updatedQuestionSet = updatedQuestionSetDoc.data() as SavedQuestionSet;
-
-
     try {
+        const updatedQuestionSetDoc = await getDoc(doc(db, `users/${studentId}/questionSets`, id));
+        if (!updatedQuestionSetDoc.exists()) {
+            throw new Error('Could not find the updated question set.');
+        }
+        const updatedQuestionSet = updatedQuestionSetDoc.data() as SavedQuestionSet;
+
         const dataToSave = 
             currentAction === 'create_quiz' ? updatedQuestionSet.jsonQuestions 
           : currentAction === 'create_exam' ? updatedQuestionSet.jsonExam

@@ -392,11 +392,11 @@ export const contentService = {
    
     try {
         const folder = 'content';
+        const public_id = `${folder}/${nanoid()}`; // Use a shorter, random ID for the public_id
        
-        // The client only sends the parameters it knows about.
-        // The server will generate the timestamp.
         const paramsToSign = {
-            folder: folder
+            folder,
+            public_id,
         };
 
         const sigResponse = await fetch('/api/sign-cloudinary-params', {
@@ -410,15 +410,15 @@ export const contentService = {
             throw new Error(`Failed to get Cloudinary signature: ${errorBody.error || sigResponse.statusText}`);
         }
         
-        // The server now returns the timestamp it used for signing.
         const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
 
         const formData = new FormData();
         formData.append('file', file);
         formData.append('api_key', apiKey);
-        formData.append('timestamp', String(timestamp)); // Use the server-provided timestamp
+        formData.append('timestamp', String(timestamp));
         formData.append('signature', signature);
         formData.append('folder', folder);
+        formData.append('public_id', public_id);
 
         xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
         xhr.upload.onprogress = (event) => {
@@ -1019,5 +1019,3 @@ export const contentService = {
       return createProxiedUrl(data.secure_url);
   },
 };
-
-    
