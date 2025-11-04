@@ -15,6 +15,7 @@ import { FloatingAssistant } from "@/components/profile/FloatingAssistant";
 import { useEffect, useState, useMemo } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Content } from '@/lib/contentService';
+import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 
 
 export default function MainLayout({
@@ -29,6 +30,9 @@ export default function MainLayout({
   const isHomePage = pathname === '/';
   const isQuestionsCreatorPage = pathname.startsWith('/questions-creator');
   const isProfilePage = pathname === '/profile';
+
+  // Global shortcuts
+  useKeyboardShortcuts();
 
   const [isLevel2Descendant, setIsLevel2Descendant] = useState(false);
   const { data: allContent } = useCollection<Content>('content');

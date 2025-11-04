@@ -33,14 +33,16 @@ import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import dynamic from 'next/dynamic';
-import { Skeleton } from './ui/skeleton';
+import { SkeletonCard } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 
 const FilePreviewModal = dynamic(() => import('./FilePreviewModal').then(mod => mod.FilePreviewModal), {
-    loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4" /></div>,
+    loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><SkeletonCard /></div>,
     ssr: false
 });
+
+const RenameDialog = dynamic(() => import('./RenameDialog').then(mod => mod.RenameDialog), { ssr: false });
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -66,16 +68,17 @@ const listVariants = {
 };
 
 const itemVariants = {
-  hidden: { opacity: 0, y: -5 },
-  visible: {
+  hidden: { opacity: 0, y: 20 },
+  visible: (i: number) => ({
     opacity: 1,
     y: 0,
     transition: {
+      delay: i * 0.05,
       type: 'spring',
       stiffness: 400,
       damping: 40,
     },
-  },
+  }),
   exit: {
     opacity: 0,
     y: 5,
@@ -237,7 +240,6 @@ export function FolderGrid({
 
             const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
             
-            // Persist order change, but do it in the background
             contentService.updateOrder(parentId, newOrderedItems.map(item => item.id));
 
             return newOrderedItems;
@@ -312,6 +314,18 @@ export function FolderGrid({
 
   const newUploads = useMemo(() => uploadingFiles.filter(f => !f.isUpdate), [uploadingFiles]);
 
+  if (loading && itemsToRender.length === 0 && newUploads.length === 0) {
+      const skeletonCount = isSubjectView ? 8 : 10;
+      return (
+          <div className={cn(isSubjectView ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2")}>
+              {Array.from({ length: skeletonCount }).map((_, i) => (
+                  isSubjectView ? <SkeletonCard key={i} /> : <Skeleton key={i} className="h-14 w-full" />
+              ))}
+          </div>
+      );
+  }
+
+
   return (
     <div
         ref={dropZoneRef}
@@ -327,20 +341,13 @@ export function FolderGrid({
          <div className="flex flex-col">
              <AnimatePresence>
                  {newUploads.map(file => (
-                     <motion.div key={file.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit">
+                     <motion.div key={file.id} variants={itemVariants} initial="hidden" animate="visible" exit="exit" custom={0}>
                          <UploadProgress file={file} onRetry={onRetry} onRemove={onRemove} />
                      </motion.div>
                  ))}
              </AnimatePresence>
          </div>
        )}
-
-      {(loading || (offline && !fetchedItems)) && itemsToRender.length === 0 && newUploads.length === 0 && (
-         <div className="text-center py-16">
-            <Loader2 className="mx-auto h-8 w-8 animate-spin text-slate-500" />
-            <p className="mt-2 text-slate-400">Loading content...</p>
-        </div>
-      )}
 
       {!loading && itemsToRender.length === 0 && newUploads.length === 0 && (
          <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
@@ -367,7 +374,13 @@ export function FolderGrid({
       <div ref={parentRef} className="h-full overflow-y-auto no-scrollbar">
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!canReorder}>
-            <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }} className={cn(isSubjectView && "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4")}>
+            <motion.div 
+              style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }} 
+              className={cn(isSubjectView && "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4")}
+              variants={listVariants}
+              initial="hidden"
+              animate="visible"
+            >
               <AnimatePresence>
                 {virtualItems.map((virtualItem) => {
                     const { item, uploadingFile } = itemsToRender[virtualItem.index];
@@ -401,11 +414,7 @@ export function FolderGrid({
                                         displayAs={item.metadata?.isClassContainer || isSubjectView ? 'grid' : 'list'}
                                     />
                                 );
-                            case 'FILE':
-                            case 'LINK':
-                            case 'INTERACTIVE_QUIZ':
-                            case 'INTERACTIVE_EXAM':
-                            case 'INTERACTIVE_FLASHCARD':
+                            default:
                                 return (
                                     <FileCard
                                         item={item}
@@ -421,13 +430,11 @@ export function FolderGrid({
                                         onRemoveUpload={onRemove}
                                     />
                                 );
-                            default:
-                                return null;
                         }
                     };
                     
                      return (
-                        <div
+                        <motion.div
                           key={itemKey}
                           style={{
                             position: 'absolute',
@@ -438,26 +445,31 @@ export function FolderGrid({
                             transform: `translateY(${virtualItem.start}px)`,
                           }}
                            className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
+                           variants={itemVariants}
+                           custom={virtualItem.index}
                         >
                           <SortableItemWrapper id={item.id} isSubjectView={isSubjectView}>
                             {renderedContent()}
                           </SortableItemWrapper>
-                        </div>
+                        </motion.div>
                       );
                 })}
               </AnimatePresence>
-            </div>
+            </motion.div>
           </SortableContext>
         </DndContext>
       </div>
 
       <Suspense fallback={null}>
-        {previewFile && (
-            <FilePreviewModal
-                item={previewFile}
-                onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
-            />
-        )}
+        <FilePreviewModal
+            item={previewFile}
+            onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+        />
+        <RenameDialog 
+            item={itemToRename} 
+            onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
+            onRename={handleRename}
+        />
       </Suspense>
       
       <FolderSelectorDialog
@@ -469,12 +481,6 @@ export function FolderGrid({
       />
 
       
-      <RenameDialog
-        item={itemToRename}
-        onOpenChange={(isOpen) => !isOpen && setItemToRename(null)}
-        onRename={handleRename}
-      />
-
       <ChangeIconDialog 
         item={itemForIconChange}
         onOpenChange={(isOpen) => !isOpen && setItemForIconChange(null)}

@@ -1,76 +1,129 @@
 
-'use server';
-/**
- * @fileOverview A client-side utility for searching files using Fuse.js for fuzzy search.
- */
+'use client';
 import type { Content } from '@/lib/contentService';
 import Fuse from 'fuse.js';
+import { DateRange } from 'react-day-picker';
+
+type SearchFilters = {
+    type: 'all' | 'file' | 'folder' | 'link' | 'quiz' | 'exam' | 'flashcard';
+    subject: string | 'all';
+    dateRange?: DateRange;
+};
 
 let fuse: Fuse<Content> | null = null;
 let allItemsCache: Content[] = [];
 
 /**
  * Initializes the Fuse.js instance with the provided items.
- * This should be called whenever the master list of items changes.
- * @param items The array of Content items to build the search index from.
  */
 function initializeFuse(items: Content[]) {
-  // Only re-initialize if the items have actually changed.
-  if (items === allItemsCache) {
+  if (items === allItemsCache && fuse) {
     return;
   }
   
   allItemsCache = items;
   fuse = new Fuse(items, {
     keys: [
-      { name: 'name', weight: 0.7 }, // Give more weight to the name
-      { name: 'type', weight: 0.3 }  // Less weight to the type
+      { name: 'name', weight: 0.7 },
+      { name: 'type', weight: 0.3 },
+      { name: 'metadata.mime', weight: 0.2 },
     ],
     includeScore: true,
-    threshold: 0.2, // Keep a reasonably strict threshold for the fuzzy search
+    threshold: 0.3,
     ignoreLocation: true,
   });
 }
 
+const itemTypeMap: Record<SearchFilters['type'], Content['type'] | null> = {
+    all: null,
+    file: 'FILE',
+    folder: 'FOLDER',
+    link: 'LINK',
+    quiz: 'INTERACTIVE_QUIZ',
+    exam: 'INTERACTIVE_EXAM',
+    flashcard: 'INTERACTIVE_FLASHCARD',
+};
+
 /**
- * Performs a fuzzy search on an array of content items using Fuse.js.
- * It now prioritizes fuzzy matches over direct "includes" matches.
+ * Performs a filtered and fuzzy search on content items.
  * @param query The search query string.
  * @param items The array of Content items to search through.
- * @returns A promise that resolves to an array of matching Content items, sorted by relevance.
+ * @param filters The filters to apply to the search.
+ * @returns A promise that resolves to an array of matching Content items.
  */
-async function searchFlow(query: string, items: Content[]): Promise<Content[]> {
-  if (!query) {
-    return [];
-  }
-
-  // Ensure Fuse is initialized with the latest items
+async function searchFlow(query: string, items: Content[], filters: SearchFilters): Promise<Content[]> {
   initializeFuse(items);
-  
-  if (!fuse) {
-      return [];
+  if (!fuse) return [];
+
+  let filteredItems = items;
+
+  // 1. Apply hard filters (type, subject, date)
+  if (filters.type !== 'all') {
+    const targetType = itemTypeMap[filters.type];
+    if (targetType) {
+        if (targetType === 'FOLDER') {
+            // Include all folder-like types
+            filteredItems = filteredItems.filter(item => ['FOLDER', 'SUBJECT', 'SEMESTER', 'LEVEL'].includes(item.type));
+        } else {
+            filteredItems = filteredItems.filter(item => item.type === targetType);
+        }
+    }
   }
-  
-  const lowerCaseQuery = query.toLowerCase();
 
-  // Step 1: Perform fuzzy search first.
-  const fuzzyResults = fuse.search(query);
-  const fuzzyMatches = fuzzyResults.map(result => result.item);
-  
-  // Step 2: If there are fuzzy matches, return them as the primary result.
-  if (fuzzyMatches.length > 0) {
-    return fuzzyMatches;
+  if (filters.dateRange?.from) {
+      filteredItems = filteredItems.filter(item => {
+          if (!item.createdAt) return false;
+          const itemDate = new Date(item.createdAt);
+          const fromDate = filters.dateRange!.from!;
+          const toDate = filters.dateRange!.to;
+          if (toDate) {
+              return itemDate >= fromDate && itemDate <= toDate;
+          }
+          return itemDate.toDateString() === fromDate.toDateString();
+      });
   }
 
-  // Step 3: If no fuzzy matches, fall back to simple substring matching as a last resort.
-  const directMatches = items.filter(item => 
-    item.name.toLowerCase().includes(lowerCaseQuery)
-  );
+  // If a subject is selected, we need to find all descendants of that subject folder
+  if (filters.subject !== 'all') {
+    const subjectId = filters.subject;
+    const descendantIds = new Set<string>();
+    const queue: string[] = [subjectId];
+    descendantIds.add(subjectId);
 
-  return directMatches;
+    while (queue.length > 0) {
+        const currentId = queue.shift()!;
+        const children = items.filter(item => item.parentId === currentId);
+        for (const child of children) {
+            if (!descendantIds.has(child.id)) {
+                descendantIds.add(child.id);
+                queue.push(child.id);
+            }
+        }
+    }
+    filteredItems = filteredItems.filter(item => descendantIds.has(item.id));
+  }
+
+
+  // 2. If there's a search query, perform fuzzy search on the already filtered items.
+  if (query.trim()) {
+    const fuseForFiltered = new Fuse(filteredItems, {
+      keys: fuse.options.keys,
+      includeScore: true,
+      threshold: 0.3,
+      ignoreLocation: true,
+    });
+    return fuseForFiltered.search(query).map(result => result.item);
+  }
+
+  // 3. If no query, return the hard-filtered results, sorted by date.
+  return filteredItems.sort((a, b) => {
+    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+    return dateB - dateA;
+  });
 }
 
 
-export async function search(query: string, items: Content[]): Promise<Content[]> {
-    return await searchFlow(query, items);
+export async function search(query: string, items: Content[], filters: SearchFilters): Promise<Content[]> {
+    return await searchFlow(query, items, filters);
 }

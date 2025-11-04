@@ -30,39 +30,23 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AdvancedSearchDialog } from './AdvancedSearchDialog';
+import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [query, setQuery] = useState(searchParams.get('q') || '');
-  const [debouncedQuery] = useDebounce(query, 1000);
-  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [showAdvancedSearch, setShowAdvancedSearch] = useState(false);
   const [showComingSoon, setShowComingSoon] = useState(false);
   const { can, user } = useAuthStore();
   const isMobile = useIsMobile();
-
-  useEffect(() => {
-    if (debouncedQuery) {
-      router.push(`/search?q=${debouncedQuery}`);
-    } 
-    else if (!query && pathname === '/search') {
-      router.push('/');
-    }
-  }, [debouncedQuery, query, router, pathname]);
   
-  useEffect(() => {
-    const currentQuery = searchParams.get('q');
-    if (currentQuery !== query) {
-        setQuery(currentQuery || '');
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams]);
-
-  const handleClearSearch = () => {
-      setQuery('');
-  }
+  useKeyboardShortcuts({
+    onSearch: () => setShowAdvancedSearch(true),
+    // other shortcuts are handled globally in layout
+  });
 
   const handleCommunityClick = () => {
     if (can('canAccessAdminPanel', null)) {
@@ -232,37 +216,28 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       </div>
 
       <div className="flex items-center justify-end flex-grow gap-2">
-        <div className="relative w-full max-w-[180px] sm:max-w-sm">
+        <div 
+          className="relative w-full max-w-[180px] sm:max-w-sm cursor-pointer"
+          onClick={() => setShowAdvancedSearch(true)}
+        >
           <Search
             className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-all duration-300",
-              (isSearchFocused || query) ? 'text-white' : 'text-slate-400',
-              isSearchFocused && "transform rotate-90"
+              "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-all duration-300 text-slate-400"
             )}
           />
-          <Input
-            placeholder="Search files..."
-            className="pl-9 sm:pl-10 pr-10 bg-black/20 border-white/10 rounded-full h-9 sm:h-10"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={() => setIsSearchFocused(false)}
-          />
-          {query && (
-              <Button 
-                  variant="ghost" 
-                  size="icon"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full text-slate-400 hover:text-white"
-                  onClick={handleClearSearch}
-              >
-                  <X className="w-5 h-5" />
-              </Button>
-          )}
+          <div className="pl-9 sm:pl-10 pr-10 bg-black/20 border border-white/10 rounded-full h-9 sm:h-10 flex items-center text-slate-400 text-sm">
+            Search...
+          </div>
+           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 border border-slate-600 rounded-md px-1.5 py-0.5 pointer-events-none">
+              ⌘K
+            </div>
         </div>
         
         {isMobile ? <MobileNav /> : <DesktopNav />}
       </div>
     </header>
+
+    <AdvancedSearchDialog open={showAdvancedSearch} onOpenChange={setShowAdvancedSearch} />
 
     <AlertDialog open={showComingSoon} onOpenChange={setShowComingSoon}>
       <AlertDialogContent>
