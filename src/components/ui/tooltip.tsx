@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -11,18 +10,7 @@ const TooltipProvider = TooltipPrimitive.Provider
 
 const Tooltip = TooltipPrimitive.Root
 
-const TooltipTrigger = React.forwardRef<
-  React.ElementRef<typeof TooltipPrimitive.Trigger>,
-  React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Trigger>
->(({ ...props }, ref) => (
-  <TooltipPrimitive.Trigger
-    ref={ref}
-    onFocus={(e) => e.preventDefault()} // Prevent tooltip from showing on focus
-    {...props}
-  />
-));
-TooltipTrigger.displayName = TooltipPrimitive.Trigger.displayName
-
+const TooltipTrigger = TooltipPrimitive.Trigger
 
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
