@@ -213,24 +213,15 @@ export const FolderCard = React.memo(function FolderCard({
                     
                     {hasAnyPermission && (
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                            <TooltipProvider>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <DropdownMenuTrigger asChild>
-                                            <Button 
-                                                variant="ghost" 
-                                                size="icon" 
-                                                className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                            >
-                                                <MoreVertical className="w-5 h-5" />
-                                            </Button>
-                                        </DropdownMenuTrigger>
-                                    </TooltipTrigger>
-                                    <TooltipContent>
-                                        <p>More options</p>
-                                    </TooltipContent>
-                                </Tooltip>
-                            </TooltipProvider>
+                            <DropdownMenuTrigger asChild>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                >
+                                    <MoreVertical className="w-5 h-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
                             <DropdownContent />
                         </DropdownMenu>
                     )}
@@ -253,25 +244,16 @@ export const FolderCard = React.memo(function FolderCard({
               {renderIcon()}
               {hasAnyPermission && (
                   <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                       <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
-                                            onPointerDown={(e) => e.stopPropagation()} // Prevent card's onPointerDown
-                                        >
-                                            <MoreVertical className="w-5 h-5" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>More options</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                       <DropdownMenuTrigger asChild>
+                            <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
+                                onPointerDown={(e) => e.stopPropagation()} // Prevent card's onPointerDown
+                            >
+                                <MoreVertical className="w-5 h-5" />
+                            </Button>
+                        </DropdownMenuTrigger>
                       <DropdownContent />
                   </DropdownMenu>
               )}

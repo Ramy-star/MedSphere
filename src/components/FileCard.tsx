@@ -300,25 +300,16 @@ export const FileCard = React.memo(function FileCard({
                 
                 {hasAnyPermission && (
                     <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
-                        <TooltipProvider>
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button 
-                                            ref={dropdownTriggerRef}
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                        >
-                                            <MoreVertical className="w-5 h-5" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>More options</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        </TooltipProvider>
+                        <DropdownMenuTrigger asChild>
+                            <Button 
+                                ref={dropdownTriggerRef}
+                                variant="ghost" 
+                                size="icon" 
+                                className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            >
+                                <MoreVertical className="w-5 h-5" />
+                            </Button>
+                        </DropdownMenuTrigger>
                         <DropdownMenuContent 
                             className="w-48 p-2"
                             align="end"
