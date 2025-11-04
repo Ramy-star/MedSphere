@@ -1,3 +1,4 @@
+
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
@@ -7,7 +8,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { nanoid } from 'nanoid';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { cacheService } from '@/lib/cacheService';
+import { offlineStorage } from './offline';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
 import * as pdfjs from 'pdfjs-dist';
@@ -79,23 +80,48 @@ function createProxiedUrl(secureUrl: string): string {
 }
 
 export const contentService = {
-    async getFileContent(url: string): Promise<Blob> {
-        const cachedFile = await cacheService.getFile(url);
-        if (cachedFile) {
-            return cachedFile;
+    async getFileContent(url: string, fileId?: string): Promise<Blob> {
+        const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
+
+        if (fileId) {
+            const cached = await offlineStorage.getFile(fileId);
+            if (cached) {
+                console.log('📦 Loading from offline cache');
+                return cached.content;
+            }
         }
-        
-        const response = await fetch(url);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch file from network: ${response.statusText}`);
+    
+        if (!isOnline) {
+            throw new Error("You are offline and the file is not available in the cache.");
         }
-        const blob = await response.blob();
-       
-        // Don't wait for caching to complete to return the blob
-        cacheService.saveFile(url, blob).catch(err => {
-            console.error("Failed to cache file in IndexedDB:", err);
-        });
-        return blob;
+    
+        try {
+            const response = await fetch(url);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch file from network: ${response.statusText}`);
+            }
+            const blob = await response.blob();
+           
+            if (fileId) {
+                await offlineStorage.saveFile(fileId, {
+                  name: url.split('/').pop() || 'file',
+                  content: blob,
+                  mime: blob.type
+                });
+                // Run cleaning process in the background
+                offlineStorage.cleanOldFiles().catch(console.error);
+            }
+            return blob;
+        } catch (error) {
+            if (fileId) {
+              const cached = await offlineStorage.getFile(fileId);
+              if (cached) {
+                  console.log('📦 Network failed, falling back to offline cache');
+                  return cached.content;
+              }
+            }
+            throw error;
+        }
     },
     
     async extractTextFromPdf(pdfOrBlob: PDFDocumentProxy | Blob): Promise<string> {
@@ -941,7 +967,7 @@ export const contentService = {
        
         if (filesToDeleteFromCache.length > 0) {
             for (const url of filesToDeleteFromCache) {
-                await cacheService.deleteFile(url);
+                await offlineStorage.deleteFile(url);
             }
         }
         await batch.commit();

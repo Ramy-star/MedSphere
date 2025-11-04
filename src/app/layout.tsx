@@ -18,6 +18,7 @@ import { getFirebaseConfig } from "@/firebase/config";
 import { AchievementToast } from "@/components/AchievementToast";
 import { Loader2 } from "lucide-react";
 import { Logo } from "@/components/logo";
+import { OfflineIndicator } from "@/components/OfflineIndicator";
 
 
 const nunitoSans = Nunito_Sans({ 
@@ -153,6 +154,7 @@ export default function RootLayout({
       <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
           <FirebaseClientProvider config={firebaseConfig}>
             <div className="flex flex-col h-full w-full">
+                <OfflineIndicator />
                 {renderContent()}
                  {authState !== 'authenticated' && authState !== 'loading' && (
                      <footer className="absolute bottom-4 text-center text-xs text-slate-500 z-10 w-full">
