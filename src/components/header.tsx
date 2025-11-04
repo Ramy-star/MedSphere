@@ -216,22 +216,15 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       </div>
 
       <div className="flex items-center justify-end flex-grow gap-2">
-        <div 
-          className="relative w-full max-w-[180px] sm:max-w-sm cursor-pointer"
-          onClick={() => setShowAdvancedSearch(true)}
+        <Button
+            variant="outline"
+            onClick={() => setShowAdvancedSearch(true)}
+            className="h-9 sm:h-10 rounded-full bg-black/20 border-white/10 hover:bg-black/30 text-slate-400 hover:text-white transition-colors"
         >
-          <Search
-            className={cn(
-              "absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 sm:w-5 sm:h-5 transition-all duration-300 text-slate-400"
-            )}
-          />
-          <div className="pl-9 sm:pl-10 pr-10 bg-black/20 border border-white/10 rounded-full h-9 sm:h-10 flex items-center text-slate-400 text-sm">
-            Search...
-          </div>
-           <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-slate-500 border border-slate-600 rounded-md px-1.5 py-0.5 pointer-events-none">
-              ⌘K
-            </div>
-        </div>
+            <Search className="h-4 w-4 sm:h-5 sm:w-5" />
+            <span className="ml-2 text-sm hidden sm:inline">Search</span>
+            <span className="hidden sm:inline ml-auto pl-4 text-xs text-slate-500 border-l border-slate-600">⌘K</span>
+        </Button>
         
         {isMobile ? <MobileNav /> : <DesktopNav />}
       </div>
