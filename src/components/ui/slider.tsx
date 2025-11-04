@@ -8,34 +8,15 @@ import { cn } from "@/lib/utils"
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, value, onValueCommit, ...props }, ref) => {
-  const [internalValue, setInternalValue] = React.useState(value);
-
-  React.useEffect(() => {
-    setInternalValue(value);
-  }, [value]);
-  
-  const handleValueChange = (newValue: number[]) => {
-      setInternalValue(newValue);
-      // Immediately call onValueChange if it exists, for live updates
-      if (props.onValueChange) {
-        props.onValueChange(newValue);
-      }
-  };
-
-  const handleValueCommit = (newValue: number[]) => {
-    if (onValueCommit) {
-      onValueCommit(newValue);
-    }
-  };
-
-
+>(({ className, value, onValueCommit, onValueChange, ...props }, ref) => {
+  // The component is now fully controlled by the parent through `value` and `onValueChange`.
+  // `onValueCommit` is used to signal the end of a drag/interaction.
   return (
     <SliderPrimitive.Root
       ref={ref}
-      value={internalValue}
-      onValueChange={handleValueChange}
-      onValueCommit={handleValueCommit}
+      value={value}
+      onValueChange={onValueChange}
+      onValueCommit={onValueCommit}
       className={cn(
         "relative flex w-full touch-none select-none items-center",
         className

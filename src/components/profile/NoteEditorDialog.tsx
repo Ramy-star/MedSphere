@@ -212,43 +212,30 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
 
 const FontSizeSlider = ({ editor }: { editor: Editor }) => {
     const [sliderValue, setSliderValue] = useState(14);
-  
-    // Update slider when selection changes in editor
+
+    const handleSizeChange = (newSize: number) => {
+        const clampedSize = Math.max(1, Math.min(newSize, 200));
+        setSliderValue(clampedSize);
+        editor.chain().focus().setMark('textStyle', { fontSize: `${clampedSize}pt` }).run();
+    };
+
     useEffect(() => {
-      const updateSliderFromEditor = () => {
-        const currentSize = editor.getAttributes('textStyle').fontSize;
-        if (currentSize && typeof currentSize === 'string') {
-          setSliderValue(parseInt(currentSize, 10) || 14);
-        } else {
-          setSliderValue(14); // Default size
-        }
-      };
-      editor.on('selectionUpdate', updateSliderFromEditor);
-      updateSliderFromEditor(); // Initial check
-  
-      return () => {
-        editor.off('selectionUpdate', updateSliderFromEditor);
-      };
+        const updateSliderFromEditor = () => {
+            const currentSize = editor.getAttributes('textStyle').fontSize;
+            if (currentSize && typeof currentSize === 'string') {
+                const parsedSize = parseInt(currentSize, 10);
+                if (!isNaN(parsedSize)) {
+                    setSliderValue(parsedSize);
+                }
+            } else {
+                setSliderValue(14); // Default size
+            }
+        };
+        editor.on('selectionUpdate', updateSliderFromEditor);
+        updateSliderFromEditor();
+        return () => { editor.off('selectionUpdate', updateSliderFromEditor); };
     }, [editor]);
-  
-    const handleValueChange = (newSize: number[]) => {
-      setSliderValue(newSize[0]);
-      // Apply size immediately while sliding for better UX
-      editor.chain().focus().setMark('textStyle', { fontSize: `${newSize[0]}pt` }).run();
-    };
-  
-    const handleValueCommit = (newSize: number[]) => {
-      // This is now redundant as we apply on change, but kept for potential future use
-      // (e.g., debouncing updates)
-      editor.chain().focus().setMark('textStyle', { fontSize: `${newSize[0]}pt` }).run();
-    };
-  
-    const handleButtonClick = (increment: number) => {
-        const newSize = Math.max(1, Math.min(sliderValue + increment, 200));
-        setSliderValue(newSize);
-        editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
-    };
-  
+    
     return (
       <div className="flex items-center gap-2 w-64">
         <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
@@ -259,21 +246,21 @@ const FontSizeSlider = ({ editor }: { editor: Editor }) => {
           max={200}
           step={1}
           value={[sliderValue]}
-          onValueChange={handleValueChange}
-          onValueCommit={handleValueCommit} // Apply on commit
+          onValueChange={(newVal) => handleSizeChange(newVal[0])}
           className="flex-1"
         />
         <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleButtonClick(-1)}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange(sliderValue - 1)}>
             <Minus size={14} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleButtonClick(1)}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange(sliderValue + 1)}>
             <Plus size={14} />
           </Button>
         </div>
       </div>
     );
 };
+
 
 
 const EmojiSelector = ({ editor }: { editor: Editor }) => (
