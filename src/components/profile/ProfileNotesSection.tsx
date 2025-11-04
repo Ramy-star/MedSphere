@@ -15,7 +15,7 @@ export type NotePage = {
   id: string;
   title: string;
   content: string;
-  referencedFileIds?: string[]; // Added this line
+  referencedFileIds?: string[];
 }
 
 export type Note = {

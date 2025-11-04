@@ -290,6 +290,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   useEffect(() => {
     if (item) {
       resetState();
+      // If the item is a note, immediately open chat
+      if (item.type === 'NOTE') {
+          setShowChat(true);
+      }
     }
   }, [item, resetState]);
 
@@ -301,13 +305,20 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         
         let lectureText: string | null = null;
         let questionText: string | null = null;
-        let notePage: NotePage | null = null;
+        let referencedFiles: Content[] = [];
         
         if (currentItem.type === 'NOTE') {
             try {
                 const noteData: Note = JSON.parse(currentItem.metadata?.quizData || '{}');
-                notePage = noteData.pages.find(p => p.id === (noteData.pages[0]?.id || '')) || null;
-                lectureText = notePage?.content || '';
+                const activePage = noteData.pages[0]; // Assuming only one page is passed for context
+                lectureText = `# ${noteData.title}\n\n**Page: ${activePage.title}**\n\n${activePage.content}`;
+                
+                if (activePage.referencedFileIds) {
+                    for (const fileId of activePage.referencedFileIds) {
+                        const file = await contentService.getById(fileId);
+                        if(file) referencedFiles.push(file);
+                    }
+                }
             } catch (e) {
                 console.error("Failed to parse note data for AI chat", e);
                 lectureText = 'Error: Could not load note content.';
@@ -318,7 +329,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             const isQuizFile = currentItem.type === 'INTERACTIVE_QUIZ' || currentItem.type === 'INTERACTIVE_EXAM' || currentItem.type === 'INTERACTIVE_FLASHCARD';
             const isQuestionFile = currentItem.metadata?.sourceFileId && currentItem.metadata?.mime === 'text/markdown';
 
-            let filesToProcess: Content[] = [];
+            let filesToProcess: Content[] = [...referencedFiles];
 
             if (isQuizFile) {
                 questionText = JSON.stringify(JSON.parse(currentItem.metadata?.quizData || '{}'), null, 2);
@@ -334,14 +345,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             } else if (currentItem.type === 'FILE') {
                 filesToProcess.push(currentItem);
             }
-
-            if (notePage && Array.isArray(notePage.referencedFileIds)) {
-                for (const fileId of notePage.referencedFileIds) {
-                    const file = await contentService.getById(fileId);
-                    if (file) filesToProcess.push(file);
-                }
-            }
-
+            
             if (filesToProcess.length > 0) {
                 const fileContents = await Promise.all(
                     filesToProcess.map(async file => {
@@ -840,20 +844,33 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             "h-full transition-all duration-300 ease-in-out overflow-hidden",
             isMobile ? 'fixed top-0 left-0 w-full z-20' : 'relative',
             isMobile && (showChat ? 'translate-x-0' : 'translate-x-full'),
-            !isMobile && (showChat ? 'w-[512px]' : 'w-0')
+            !isMobile && (showChat ? 'w-0' : 'w-0') // Always start as 0 width on desktop
         )}>
-          {(isChatAvailable || showChat) && (
-             <ChatPanel
-                  showChat={showChat}
-                  isMobile={isMobile}
-                  documentText={documentContext.lectureText}
-                  isExtracting={isExtracting}
-                  onClose={() => setShowChat(false)}
-                  initialQuotedText={initialQuotedText}
-                  onInitialQuotedTextConsumed={() => setInitialQuotedText(null)}
-                  questionsText={documentContext.questionText}
-              />
-          )}
+            <AnimatePresence>
+            {showChat && (
+                <motion.div
+                    key="chat-panel"
+                    className="w-[512px] h-full"
+                    initial={{ x: isMobile ? '100%' : 0, width: isMobile ? '100%' : 0 }}
+                    animate={{ x: 0, width: isMobile ? '100%' : '512px' }}
+                    exit={{ x: isMobile ? '100%' : 0, width: isMobile ? '100%' : 0 }}
+                    transition={{ type: "spring", stiffness: 350, damping: 35 }}
+                >
+                    {(isChatAvailable || showChat) && (
+                        <ChatPanel
+                            showChat={showChat}
+                            isMobile={isMobile}
+                            documentText={documentContext.lectureText}
+                            isExtracting={isExtracting}
+                            onClose={() => setShowChat(false)}
+                            initialQuotedText={initialQuotedText}
+                            onInitialQuotedTextConsumed={() => setInitialQuotedText(null)}
+                            questionsText={documentContext.questionText}
+                        />
+                    )}
+                </motion.div>
+            )}
+            </AnimatePresence>
         </div>
 
       </DialogContent>

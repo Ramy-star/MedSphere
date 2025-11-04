@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { 
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered, 
     Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight,
-    Maximize, Shrink, Trash2, Check
+    Maximize, Shrink, Trash2, Check, Paperclip, FileText
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -31,7 +31,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Placeholder from '@tiptap/extension-placeholder';
 import FontFamily from '@tiptap/extension-font-family';
 import ImageExtension from '@tiptap/extension-image';
-import { contentService } from '@/lib/contentService';
+import { contentService, Content } from '@/lib/contentService';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
 import { Smile } from 'lucide-react';
 import { nanoid } from 'nanoid';
@@ -49,6 +49,10 @@ import {
 import { ScrollArea } from '../ui/scroll-area';
 import { Input } from '../ui/input';
 import { Slider } from '../ui/slider';
+import { AiAssistantIcon } from '../icons/AiAssistantIcon';
+import { FilePreviewModal } from '../FilePreviewModal';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
 
 const NOTE_COLORS = [
@@ -320,6 +324,26 @@ const EmojiSelector = ({ editor }: { editor: Editor }) => (
     </Popover>
 );
 
+const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () => void }) => (
+    <TooltipProvider>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 bg-blue-900/70 text-blue-200 text-xs font-medium pl-2 pr-1 py-0.5 rounded-full shrink-0">
+                    <Paperclip className="w-3 h-3" />
+                    <span className="truncate max-w-[100px]">{file.name}</span>
+                    <button onClick={onRemove} className="p-0.5 rounded-full hover:bg-white/20 shrink-0">
+                        <X className="w-3 h-3" />
+                    </button>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="rounded-lg bg-black text-white">
+                <p>{file.name}</p>
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
+);
+
+
 type NoteEditorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -340,6 +364,25 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dialogContentRef = useRef<HTMLDivElement | null>(null);
+  const [showAiChat, setShowAiChat] = useState(false);
+  const [chatContext, setChatContext] = useState<any>(null);
+  const [showFileSearch, setShowFileSearch] = useState(false);
+  const [fileSearchQuery, setFileSearchQuery] = useState('');
+
+  const { data: allContent } = useCollection<Content>('content');
+  
+  const fileMap = useMemo(() => {
+    if (!allContent) return new Map();
+    return new Map(allContent.map(item => [item.id, item]));
+  }, [allContent]);
+
+  const filteredFiles = useMemo(() => {
+    if (!allContent) return [];
+    const items = allContent.filter(f => f.type === 'FILE' || f.type === 'LINK');
+    if (!fileSearchQuery) return items.slice(0, 10);
+    return items.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
+  }, [allContent, fileSearchQuery]);
+
 
   const editor = useEditor({
     extensions: editorExtensions,
@@ -443,7 +486,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     const newPage: NotePage = {
       id: nanoid(),
       title: `Page ${note.pages.length + 1}`,
-      content: ''
+      content: '',
+      referencedFileIds: []
     };
     const updatedPages = [...note.pages, newPage];
     setNote({ ...note, pages: updatedPages });
@@ -508,6 +552,58 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         console.error("Image upload failed:", error);
     }
   }, [editor]);
+
+  const handleOpenAiChat = () => {
+    if (!note || !activePageId) return;
+    
+    const activePage = note.pages.find(p => p.id === activePageId);
+    if (!activePage) return;
+
+    const syntheticContentItem: Content = {
+      id: note.id,
+      name: note.title,
+      type: 'NOTE', // Custom type to be handled by FilePreviewModal
+      parentId: null,
+      metadata: {
+        quizData: JSON.stringify({
+          ...note,
+          pages: [activePage] // Pass only the active page
+        })
+      }
+    };
+    
+    setChatContext(syntheticContentItem);
+    setShowAiChat(true);
+  };
+
+  const handleFileSelect = (file: Content) => {
+    if (!note || !activePageId) return;
+
+    const updatedPages = note.pages.map(page => {
+        if (page.id === activePageId) {
+            const newRefs = [...(page.referencedFileIds || [])];
+            if (!newRefs.includes(file.id)) {
+                newRefs.push(file.id);
+            }
+            return { ...page, referencedFileIds: newRefs };
+        }
+        return page;
+    });
+
+    setNote({ ...note, pages: updatedPages });
+    setShowFileSearch(false);
+  };
+  
+  const handleRemoveFileRef = (pageId: string, fileId: string) => {
+      if (!note) return;
+      const updatedPages = note.pages.map(page => {
+          if (page.id === pageId) {
+              return { ...page, referencedFileIds: (page.referencedFileIds || []).filter(id => id !== fileId) };
+          }
+          return page;
+      });
+      setNote({ ...note, pages: updatedPages });
+  };
   
   if (!editor || !note) return null;
 
@@ -555,6 +651,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   );
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
           ref={dialogContentRef}
@@ -574,6 +671,9 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               placeholder="Note Title"
           />
           <div className="flex items-center">
+              <Button variant="ghost" size="icon" onClick={handleOpenAiChat} className="h-9 w-9 text-white">
+                <AiAssistantIcon className="w-5 h-5" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={toggleFullscreen} className="h-9 w-9 text-white">
                 {isFullscreen ? <Shrink size={18} /> : <Maximize size={18} />}
               </Button>
@@ -586,44 +686,74 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               <div className="flex justify-between items-center">
                   <div className="flex-1 flex items-center gap-1 border-b border-white/10 overflow-hidden">
                       <div ref={tabsContainerRef} className="flex items-center gap-1 flex-grow overflow-x-auto no-scrollbar">
-                          {note.pages.map(page => (
+                          {note.pages.map(page => {
+                            const refs = page.referencedFileIds?.map(id => fileMap.get(id)).filter(Boolean) as Content[] || [];
+                            return (
                               <div 
                               key={page.id} 
-                              onDoubleClick={() => setEditingTabId(page.id)}
                               onClick={() => handleTabClick(page.id)}
-                              className={cn("flex items-center gap-1 py-2 px-3 border-b-2 transition-colors flex-shrink-0", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
+                              className={cn("flex flex-col py-2 border-b-2 transition-colors flex-shrink-0", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
                               >
-                                  {editingTabId === page.id ? (
-                                      <input
-                                          ref={newTabInputRef}
-                                          type="text"
-                                          defaultValue={page.title}
-                                          onBlur={(e) => renamePage(page.id, e.target.value)}
-                                          onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
-                                          className="bg-transparent outline-none w-24 text-sm"
-                                      />
-                                  ) : (
-                                  <span className="text-sm cursor-pointer truncate">{page.title}</span>
-                                  )}
-                                  {note.pages.length > 1 && (
-                                    <AlertDialog>
-                                      <AlertDialogTrigger asChild>
-                                        <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
-                                      </AlertDialogTrigger>
-                                      <AlertDialogContent>
-                                        <AlertDialogHeader>
-                                          <AlertDialogTitle>Delete Page?</AlertDialogTitle>
-                                          <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooterComponent>
-                                          <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                          <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-                                        </AlertDialogFooterComponent>
-                                      </AlertDialogContent>
-                                    </AlertDialog>
-                                  )}
+                                  <div className="flex items-center gap-1 px-3">
+                                      {editingTabId === page.id ? (
+                                          <input
+                                              ref={newTabInputRef}
+                                              type="text"
+                                              defaultValue={page.title}
+                                              onBlur={(e) => renamePage(page.id, e.target.value)}
+                                              onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
+                                              className="bg-transparent outline-none w-24 text-sm"
+                                          />
+                                      ) : (
+                                      <span className="text-sm cursor-pointer truncate" onDoubleClick={() => setEditingTabId(page.id)}>{page.title}</span>
+                                      )}
+                                      {note.pages.length > 1 && (
+                                        <AlertDialog>
+                                          <AlertDialogTrigger asChild>
+                                            <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
+                                          </AlertDialogTrigger>
+                                          <AlertDialogContent>
+                                            <AlertDialogHeader>
+                                              <AlertDialogTitle>Delete Page?</AlertDialogTitle>
+                                              <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
+                                            </AlertDialogHeader>
+                                            <AlertDialogFooterComponent>
+                                              <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                              <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                            </AlertDialogFooterComponent>
+                                          </AlertDialogContent>
+                                        </AlertDialog>
+                                      )}
+                                  </div>
+                                  <div className="flex items-center gap-1.5 px-3 mt-1.5 h-5">
+                                      {refs.map(file => (
+                                          <ReferencedFilePill key={file.id} file={file} onRemove={() => handleRemoveFileRef(page.id, file.id)} />
+                                      ))}
+                                      <Popover open={showFileSearch && activePageId === page.id} onOpenChange={setShowFileSearch}>
+                                          <PopoverTrigger asChild>
+                                             <button className="flex items-center gap-1 text-slate-500 hover:text-white transition-colors" onClick={() => setShowFileSearch(true)}>
+                                                  <Plus size={14} />
+                                                  <span className="text-xs">Ref</span>
+                                              </button>
+                                          </PopoverTrigger>
+                                          <PopoverContent className="w-[300px] p-1">
+                                                <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                                    {filteredFiles.map(file => (
+                                                        <button
+                                                            key={file.id}
+                                                            onClick={() => handleFileSelect(file)}
+                                                            className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
+                                                        >
+                                                            <FileText className="w-4 h-4 text-red-400" />
+                                                            <span className="truncate">{file.name}</span>
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                          </PopoverContent>
+                                      </Popover>
+                                  </div>
                               </div>
-                          ))}
+                          )})}
                       </div>
                       <button onClick={addPage} className="p-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-t-lg flex-shrink-0"><Plus size={16} /></button>
                       {showScrollButtons && (
@@ -691,5 +821,17 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    {showAiChat && chatContext && (
+      <FilePreviewModal
+        item={chatContext}
+        onOpenChange={(isOpen) => {
+          if (!isOpen) {
+            setShowAiChat(false);
+            setChatContext(null);
+          }
+        }}
+      />
+    )}
+   </>
   );
 };
