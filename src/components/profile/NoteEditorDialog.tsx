@@ -328,11 +328,13 @@ const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () =>
     <TooltipProvider>
         <Tooltip>
             <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 bg-blue-900/70 text-blue-200 text-xs font-medium pl-2 pr-1 py-0.5 rounded-full shrink-0">
-                    <Paperclip className="w-3 h-3" />
-                    <span className="truncate max-w-[100px]">{file.name}</span>
-                    <button onClick={onRemove} className="p-0.5 rounded-full hover:bg-white/20 shrink-0">
-                        <X className="w-3 h-3" />
+                <div className="flex w-full items-center justify-between gap-2 p-2 rounded-md hover:bg-slate-700/50">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                        <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                        <span className="truncate text-sm text-slate-200">{file.name}</span>
+                    </div>
+                    <button onClick={onRemove} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400 shrink-0">
+                        <X className="w-3.5 h-3.5" />
                     </button>
                 </div>
             </TooltipTrigger>
@@ -367,7 +369,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [chatContext, setChatContext] = useState<Content | null>(null);
   const [showFileSearch, setShowFileSearch] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
-
+  
   const { data: allContent } = useCollection<Content>('content');
   
   const fileMap = useMemo(() => {
@@ -561,12 +563,12 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     const syntheticContentItem: Content = {
       id: note.id,
       name: note.title,
-      type: 'NOTE', // Custom type to be handled by FilePreviewModal
+      type: 'NOTE',
       parentId: null,
       metadata: {
         quizData: JSON.stringify({
           ...note,
-          pages: [activePage] // Pass only the active page
+          pages: [activePage]
         })
       }
     };
@@ -688,74 +690,88 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                             const refs = page.referencedFileIds?.map(id => fileMap.get(id)).filter(Boolean) as Content[] || [];
                             return (
                               <div 
-                              key={page.id} 
-                              onClick={() => handleTabClick(page.id)}
-                              className={cn("flex flex-col py-2 border-b-2 transition-colors flex-shrink-0", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
+                                  key={page.id} 
+                                  onClick={() => handleTabClick(page.id)}
+                                  className={cn("flex flex-col py-2 border-b-2 transition-colors flex-shrink-0", activePageId === page.id ? "border-blue-400 text-white" : "border-transparent text-slate-400 hover:bg-white/5")}
                               >
-                                  <div className="flex items-center gap-1 px-3">
-                                      {editingTabId === page.id ? (
-                                          <input
-                                              ref={newTabInputRef}
-                                              type="text"
-                                              defaultValue={page.title}
-                                              onBlur={(e) => renamePage(page.id, e.target.value)}
-                                              onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
-                                              className="bg-transparent outline-none w-24 text-sm"
-                                          />
-                                      ) : (
-                                      <span className="text-sm cursor-pointer truncate" onDoubleClick={() => setEditingTabId(page.id)}>{page.title}</span>
-                                      )}
-                                      {note.pages.length > 1 && (
-                                        <AlertDialog>
-                                          <AlertDialogTrigger asChild>
-                                            <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
-                                          </AlertDialogTrigger>
-                                          <AlertDialogContent>
-                                            <AlertDialogHeader>
-                                              <AlertDialogTitle>Delete Page?</AlertDialogTitle>
-                                              <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooterComponent>
-                                              <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                              <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
-                                            </AlertDialogFooterComponent>
-                                          </AlertDialogContent>
-                                        </AlertDialog>
-                                      )}
-                                  </div>
-                                  <div className="flex items-center gap-1.5 px-3 mt-1.5 h-5">
-                                      {refs.map(file => (
-                                          <ReferencedFilePill key={file.id} file={file} onRemove={() => handleRemoveFileRef(page.id, file.id)} />
-                                      ))}
-                                      <Popover open={showFileSearch && activePageId === page.id} onOpenChange={setShowFileSearch}>
-                                          <PopoverTrigger asChild>
-                                             <button className="flex items-center gap-1 text-slate-500 hover:text-white transition-colors" onClick={() => setShowFileSearch(true)}>
-                                                  <Paperclip size={14} />
-                                                  <span className="text-xs">Ref</span>
-                                              </button>
-                                          </PopoverTrigger>
-                                          <PopoverContent className="w-[300px] p-1">
-                                                <Input 
-                                                  placeholder="Search files..."
-                                                  value={fileSearchQuery}
-                                                  onChange={(e) => setFileSearchQuery(e.target.value)}
-                                                  className="mb-1 h-8"
-                                                />
-                                                <ScrollArea className="max-h-60">
-                                                    {filteredFiles.map(file => (
-                                                        <button
-                                                            key={file.id}
-                                                            onClick={() => handleFileSelect(file)}
-                                                            className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
-                                                        >
-                                                            <FileText className="w-4 h-4 text-red-400" />
-                                                            <span className="truncate">{file.name}</span>
-                                                        </button>
+                                <div className="flex items-center gap-1 px-3">
+                                  {editingTabId === page.id ? (
+                                      <input
+                                          ref={newTabInputRef}
+                                          type="text"
+                                          defaultValue={page.title}
+                                          onBlur={(e) => renamePage(page.id, e.target.value)}
+                                          onKeyDown={(e) => handleTabTitleKeyDown(e, page)}
+                                          className="bg-transparent outline-none w-24 text-sm"
+                                      />
+                                  ) : (
+                                    <span className="text-sm cursor-pointer truncate" onDoubleClick={() => setEditingTabId(page.id)}>{page.title}</span>
+                                  )}
+                                  {note.pages.length > 1 && (
+                                    <AlertDialog>
+                                      <AlertDialogTrigger asChild>
+                                        <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
+                                      </AlertDialogTrigger>
+                                      <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                          <AlertDialogTitle>Delete Page?</AlertDialogTitle>
+                                          <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooterComponent>
+                                          <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                          <AlertDialogAction onClick={(e)=>{e.stopPropagation(); deletePage()}} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                        </AlertDialogFooterComponent>
+                                      </AlertDialogContent>
+                                    </AlertDialog>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5 px-3 mt-1.5 h-5">
+                                    <Popover>
+                                        <PopoverTrigger asChild>
+                                            <button className="flex items-center gap-1 text-slate-500 hover:text-white transition-colors">
+                                                <Paperclip size={14} />
+                                            </button>
+                                        </PopoverTrigger>
+                                        <PopoverContent className="w-64 p-2 bg-slate-950 border-slate-700">
+                                            <Popover>
+                                                <PopoverTrigger asChild>
+                                                    <Button variant="ghost" className="w-full justify-start text-sm">
+                                                        <Plus className="mr-2 h-4 w-4" /> Add Reference
+                                                    </Button>
+                                                </PopoverTrigger>
+                                                <PopoverContent className="w-[300px] p-1" side="right" align="start">
+                                                    <Input 
+                                                        placeholder="Search files..."
+                                                        value={fileSearchQuery}
+                                                        onChange={(e) => setFileSearchQuery(e.target.value)}
+                                                        className="mb-1 h-8"
+                                                    />
+                                                    <ScrollArea className="max-h-60">
+                                                        {filteredFiles.map(file => (
+                                                            <button
+                                                                key={file.id}
+                                                                onClick={() => handleFileSelect(file)}
+                                                                className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
+                                                            >
+                                                                <FileText className="w-4 h-4 text-slate-400" />
+                                                                <span className="truncate">{file.name}</span>
+                                                            </button>
+                                                        ))}
+                                                    </ScrollArea>
+                                                </PopoverContent>
+                                            </Popover>
+                                            
+                                            {refs.length > 0 && <hr className="border-slate-700 my-1" />}
+                                            <ScrollArea className="max-h-40">
+                                                <div className="space-y-1 p-1">
+                                                    {refs.map(file => (
+                                                        <ReferencedFilePill key={file.id} file={file} onRemove={() => handleRemoveFileRef(page.id, file.id)} />
                                                     ))}
-                                                </ScrollArea>
-                                          </PopoverContent>
-                                      </Popover>
-                                  </div>
+                                                </div>
+                                            </ScrollArea>
+                                        </PopoverContent>
+                                    </Popover>
+                                </div>
                               </div>
                           )})}
                       </div>
