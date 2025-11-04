@@ -11,7 +11,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { FilePreviewModal } from '../FilePreviewModal';
-import { useFloatingAssistantStore } from '@/stores/floating-assistant-store';
+
 
 export type NotePage = {
   id: string;
@@ -34,7 +34,8 @@ export type Note = {
 export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const router = useRouter();
   const { toast } = useToast();
-  const openAssistantWithContext = useFloatingAssistantStore(state => state.openWithContext);
+  const [viewingNote, setViewingNote] = useState<Note | null>(null);
+
   
   const { data: pinnedNotes, loading } = useCollection<Note>(`users/${user.id}/profileNotes`, {
     where: ['pinned', '==', true],
@@ -52,7 +53,17 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   };
 
   const handleViewNote = (note: Note) => {
-    openAssistantWithContext('note', note);
+    // Since the floating assistant logic was reverted, we'll use the standard FilePreviewModal
+    const syntheticContentItem = {
+        id: note.id,
+        name: note.title,
+        type: 'NOTE', // Custom type to signal special handling in FilePreviewModal
+        parentId: user?.id || null,
+        metadata: {
+            quizData: JSON.stringify(note) // Pass the full note data
+        }
+    };
+    setViewingNote(syntheticContentItem as any);
   };
 
 
@@ -94,6 +105,12 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
               />
           ))}
       </div>
+      {viewingNote && (
+          <FilePreviewModal 
+              item={viewingNote as any}
+              onOpenChange={(isOpen) => !isOpen && setViewingNote(null)}
+          />
+      )}
     </>
   );
 };
