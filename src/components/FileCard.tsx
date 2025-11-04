@@ -209,7 +209,7 @@ export const FileCard = React.memo(function FileCard({
         }
     }, [onUpdate]);
 
-    const handleUpdateClick = useCallback((e: React.MouseEvent) => {
+    const handleUpdateClick = useCallback((e: React.MouseEvent<Element, MouseEvent>) => {
         if (!can('canUpdateFile', item.id)) return;
         e.stopPropagation();
         e.preventDefault();
@@ -263,7 +263,7 @@ export const FileCard = React.memo(function FileCard({
 
     return (
         <div 
-            className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-all duration-200 md:rounded-2xl cursor-pointer my-1.5 hover:scale-[1.02]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+            className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-all duration-200 md:rounded-2xl cursor-pointer my-1.5 hover:scale-[1.01]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
             onClick={handleClick}
         >
              <input

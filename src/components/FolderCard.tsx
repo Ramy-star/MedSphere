@@ -187,7 +187,7 @@ export const FolderCard = React.memo(function FolderCard({
         return (
              <div 
                 onClick={() => onClick(item)}
-                className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-all duration-200 md:rounded-2xl cursor-pointer my-1.5 hover:scale-[1.02]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+                className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-all duration-200 md:rounded-2xl cursor-pointer my-1.5 hover:scale-[1.01]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
                 <div className="flex items-center gap-3 overflow-hidden flex-1">
@@ -246,7 +246,7 @@ export const FolderCard = React.memo(function FolderCard({
         onPointerDown={handlePointerDown}
         onPointerUp={handlePointerUp}
         onPointerMove={handleDragStart}
-        className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 cursor-pointer hover:scale-[1.02]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+        className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 cursor-pointer hover:scale-[1.01]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
       >
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
