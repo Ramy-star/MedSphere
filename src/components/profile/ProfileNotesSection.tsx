@@ -15,6 +15,7 @@ export type NotePage = {
   id: string;
   title: string;
   content: string;
+  referencedFileIds?: string[]; // Added this line
 }
 
 export type Note = {
@@ -51,7 +52,7 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
 
   const handleViewNote = (note: Note) => {
     // We now create an object that mimics the `Content` type but has a specific 'NOTE' type
-    // and puts the full note data into `quizData`.
+    // and puts the full note object into `quizData`.
     const contentToView = {
         id: note.id,
         name: `${note.title} (Note)`, // Add a suffix to differentiate in the modal title

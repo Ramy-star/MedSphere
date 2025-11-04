@@ -39,7 +39,7 @@ import { FlashcardIcon } from './icons/FlashcardIcon';
 import { useAuthStore } from '@/stores/auth-store';
 import { useRouter } from 'next/navigation';
 import * as pdfjs from 'pdfjs-dist';
-import { Note } from './profile/ProfileNotesSection';
+import { Note, NotePage } from './profile/ProfileNotesSection';
 import { NoteViewer } from './profile/NoteViewer';
 
 
@@ -256,7 +256,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const pdfViewerRef = useRef<FilePreviewRef>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
-  const fileContentRef = useRef<HTMLDivElement>(null);
+  const fileContentRef = useRef<HTMLDivElement | null>(null);
   const scaleBeforeFullscreen = useRef<number>(1);
   const manualPageInputInProgress = useRef(false);
   const [selection, setSelection] = useState<{ text: string; position: { top: number; left: number } } | null>(null);
@@ -298,57 +298,72 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     
         setIsExtracting(true);
         setError(null);
+        
         let lectureText: string | null = null;
         let questionText: string | null = null;
+        let notePage: NotePage | null = null;
+        
+        if (currentItem.type === 'NOTE') {
+            try {
+                const noteData: Note = JSON.parse(currentItem.metadata?.quizData || '{}');
+                notePage = noteData.pages.find(p => p.id === (noteData.pages[0]?.id || '')) || null;
+                lectureText = notePage?.content || '';
+            } catch (e) {
+                console.error("Failed to parse note data for AI chat", e);
+                lectureText = 'Error: Could not load note content.';
+            }
+        }
     
         try {
             const isQuizFile = currentItem.type === 'INTERACTIVE_QUIZ' || currentItem.type === 'INTERACTIVE_EXAM' || currentItem.type === 'INTERACTIVE_FLASHCARD';
             const isQuestionFile = currentItem.metadata?.sourceFileId && currentItem.metadata?.mime === 'text/markdown';
 
-            let lectureFile: Content | null = null;
-    
+            let filesToProcess: Content[] = [];
+
             if (isQuizFile) {
                 questionText = JSON.stringify(JSON.parse(currentItem.metadata?.quizData || '{}'), null, 2);
             } else if (isQuestionFile) {
-                // It's a question file, so its content is the questionText
                 const questionBlob = await contentService.getFileContent(currentItem.metadata!.storagePath!);
                 questionText = await questionBlob.text();
             }
 
-            // Determine the source file for lecture text
             const sourceFileId = currentItem.metadata?.sourceFileId;
             if (sourceFileId) {
                 const sourceFile = await contentService.getById(sourceFileId);
-                 if (sourceFile) {
-                    lectureFile = sourceFile;
-                    if (isQuizFile || isQuestionFile) {
-                        toast({
-                            title: "Context Loaded",
-                            description: `Answering based on "${sourceFile.name}".`,
-                        });
-                    }
-                } else {
-                     throw new Error("Could not find the original source document for context.");
-                }
-            } else {
-                lectureFile = currentItem;
+                if (sourceFile) filesToProcess.push(sourceFile);
+            } else if (currentItem.type === 'FILE') {
+                filesToProcess.push(currentItem);
             }
-    
-            // Now, extract text from the determined lectureFile
-            if (lectureFile && lectureFile.metadata?.storagePath) {
-                 const lectureBlob = await contentService.getFileContent(lectureFile.metadata.storagePath);
-                if (lectureFile.metadata.mime === 'application/pdf') {
-                    const pdf = await pdfjs.getDocument(await lectureBlob.arrayBuffer()).promise;
-                    lectureText = await contentService.extractTextFromPdf(pdf);
-                } else if (lectureFile.metadata.mime?.startsWith('text/')) {
-                    lectureText = await lectureBlob.text();
-                } else {
-                    if(!isQuizFile) throw new Error("Cannot extract text from this file type for AI chat.");
+
+            if (notePage && Array.isArray(notePage.referencedFileIds)) {
+                for (const fileId of notePage.referencedFileIds) {
+                    const file = await contentService.getById(fileId);
+                    if (file) filesToProcess.push(file);
                 }
-            } else {
-                if (!isQuestionFile && !isQuizFile) { // only throw if it wasn't a question file without a lecture
-                    throw new Error("File has no content to analyze.");
-                }
+            }
+
+            if (filesToProcess.length > 0) {
+                const fileContents = await Promise.all(
+                    filesToProcess.map(async file => {
+                        if (file.metadata?.storagePath) {
+                            try {
+                                const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
+                                if (file.metadata.mime === 'application/pdf') {
+                                    const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
+                                    return await contentService.extractTextFromPdf(pdf);
+                                } else if (file.metadata.mime?.startsWith('text/')) {
+                                    return await fileBlob.text();
+                                }
+                            } catch (e) {
+                                console.error(`Failed to process file ${file.name}:`, e);
+                                return `[Error processing file: ${file.name}]`;
+                            }
+                        }
+                        return '';
+                    })
+                );
+                const combinedContent = fileContents.filter(Boolean).join('\n\n---\n\n');
+                lectureText = lectureText ? `${lectureText}\n\n===\n\n${combinedContent}` : combinedContent;
             }
             
             setDocumentContext({ lectureText, questionText });
