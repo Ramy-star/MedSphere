@@ -26,6 +26,7 @@ import { RenameDialog } from './RenameDialog';
 import { ChangeIconDialog } from './ChangeIconDialog';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter as AlertDialogFooterComponent } from './ui/alert-dialog';
+import { cn } from '@/lib/utils';
 
 
 type SearchFilters = {
@@ -82,21 +83,13 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
 
 
     const performSearch = useCallback(async () => {
-        if (!debouncedQuery && filters.type === 'all' && filters.level === 'all') {
-            setResults([]);
-            return;
-        }
-
-        setIsSearching(true);
-        if (!allItems) {
-            setIsSearching(false);
-            return;
-        }
+        if (!allItems || loadingAllItems) return;
         
+        setIsSearching(true);
         const searchResults = await searchFlow(debouncedQuery, allItems, filters);
         setResults(searchResults);
         setIsSearching(false);
-    }, [debouncedQuery, allItems, filters]);
+    }, [debouncedQuery, allItems, filters, loadingAllItems]);
 
     useEffect(() => {
         performSearch();
@@ -170,7 +163,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
             <Dialog open={open} onOpenChange={handleClose}>
                 <DialogContent 
                     ref={dialogContentRef}
-                    className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white border-0"
+                    className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 rounded-2xl bg-gradient-to-br from-slate-900/70 to-green-950/70 backdrop-blur-xl shadow-lg text-white border-0"
                 >
                     <DialogHeader className="p-4 border-b border-white/10 flex-row items-center">
                         <Search className="h-5 w-5 text-slate-400" />
@@ -187,7 +180,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
 
                     <div className="p-3 border-b border-white/10 flex flex-wrap items-center gap-2">
                          <Select value={filters.level} onValueChange={(value) => setFilters(f => ({ ...f, level: value }))}>
-                            <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2">
+                            <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                                 <Layers className="h-4 w-4 text-blue-400"/>
                                 <SelectValue asChild>
                                     <span className="truncate">{selectedLevelName}</span>
@@ -200,7 +193,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                         </Select>
 
                         <Select value={filters.type} onValueChange={(value) => setFilters(f => ({ ...f, type: value as SearchFilters['type'] }))}>
-                            <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2">
+                            <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2 focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                                 <FileType className="h-4 w-4 text-green-400"/>
                                 <SelectValue asChild>
                                     <span className="truncate">{selectedTypeName}</span>
