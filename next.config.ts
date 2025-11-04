@@ -43,14 +43,6 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns,
   },
-  devIndicators: {
-    buildActivity: false,
-  },
-  experimental: {
-    allowedDevOrigins: [
-        'https://9000-firebase-studio-1762035954488.cluster-lu4mup47g5gm4rtyvhzpwbfadi.cloudworkstations.dev'
-    ],
-  },
   webpack: (config: Configuration, { isServer, dev }) => {
     config.module = config.module || {};
     config.module.rules = config.module.rules || [];
