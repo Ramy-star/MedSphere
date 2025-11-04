@@ -52,6 +52,7 @@ import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { FilePreviewModal } from '../FilePreviewModal';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+
 const NOTE_COLORS = [
     '#282828', // dark grey
     '#5C2B29', // dark red
@@ -62,6 +63,7 @@ const NOTE_COLORS = [
     '#204250', // dark blue
     '#42275E', // dark purple
 ];
+
 const HIGHLIGHT_COLORS = [
     { name: 'Yellow', color: '#fef08a' },
     { name: 'Green', color: '#a7f3d0' },
@@ -69,6 +71,7 @@ const HIGHLIGHT_COLORS = [
     { name: 'Red', color: '#fecaca' },
     { name: 'Purple', color: '#e9d5ff' },
 ];
+
 const FONT_FAMILIES = [
     { name: 'Default', value: '' },
     { name: 'Inter', value: 'Inter, sans-serif' },
@@ -86,9 +89,10 @@ const FONT_FAMILIES = [
     { name: 'Noto Kufi Arabic', value: 'Noto Kufi Arabic, sans-serif' },
     { name: 'IBM Plex Sans Arabic', value: 'IBM Plex Sans Arabic, sans-serif' },
 ];
+
 const editorExtensions = [
   StarterKit.configure({
-    history: false,
+    history: false, // We're using a separate History extension
     horizontalRule: {
       HTMLAttributes: { class: 'border-white my-4' },
     },
@@ -120,6 +124,8 @@ const editorExtensions = [
   FontFamily,
   ImageExtension.configure({ inline: false, allowBase64: true }),
 ];
+
+
 const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { icon: React.ElementType, onClick: (e: React.MouseEvent) => void, tip: string, isActive?: boolean }) => (
     <Button
       variant="ghost"
@@ -131,14 +137,16 @@ const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { i
         <Icon className="h-4 w-4" />
     </Button>
 );
-const ColorPicker = ({ editor, isFullscreen }: { editor: Editor, isFullscreen: boolean }) => (
+
+
+const ColorPicker = ({ editor, container }: { editor: Editor, container: HTMLElement | null }) => (
   <Popover>
     <PopoverTrigger asChild>
       <Button variant="ghost" size="icon" title="Text Color" className="h-8 w-8 text-slate-400">
         <Palette className="h-4 w-4" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent className={cn("w-auto p-2 bg-slate-900 border-slate-700", isFullscreen && "z-[9999]")}>
+    <PopoverContent container={container} className="w-auto p-2 bg-slate-900 border-slate-700">
     <div className="flex gap-1">
         {['#ffffff', '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'].map(color => (
         <button
@@ -153,14 +161,15 @@ const ColorPicker = ({ editor, isFullscreen }: { editor: Editor, isFullscreen: b
     </PopoverContent>
   </Popover>
 );
-const HighlightPicker = ({ editor, isFullscreen }: { editor: Editor, isFullscreen: boolean }) => (
+
+const HighlightPicker = ({ editor, container }: { editor: Editor, container: HTMLElement | null }) => (
   <Popover>
     <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" title="Highlight Color" className="h-8 w-8 text-slate-400">
             <Highlighter className="h-4 w-4" />
         </Button>
     </PopoverTrigger>
-    <PopoverContent className={cn("w-auto p-2 bg-slate-900 border-slate-700", isFullscreen && "z-[9999]")}>
+    <PopoverContent container={container} className="w-auto p-2 bg-slate-900 border-slate-700">
         <div className="flex gap-1">
             {HIGHLIGHT_COLORS.map(({ color }) => (
                 <button
@@ -175,9 +184,11 @@ const HighlightPicker = ({ editor, isFullscreen }: { editor: Editor, isFullscree
     </PopoverContent>
   </Popover>
 );
-const FontPicker = ({ editor, isFullscreen }: { editor: Editor, isFullscreen: boolean }) => {
+
+const FontPicker = ({ editor, container }: { editor: Editor, container: HTMLElement | null }) => {
     const currentFont = editor.getAttributes('textStyle').fontFamily || '';
     const currentFontName = FONT_FAMILIES.find(f => f.value === currentFont)?.name || 'Default';
+
     return (
     <Popover>
         <PopoverTrigger asChild>
@@ -186,7 +197,7 @@ const FontPicker = ({ editor, isFullscreen }: { editor: Editor, isFullscreen: bo
                 <ChevronDown className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className={cn("w-56 p-1 bg-slate-900 border-slate-700", isFullscreen && "z-[9999]")}>
+        <PopoverContent container={container} className="w-56 p-1 bg-slate-900 border-slate-700">
             <ScrollArea className="h-60">
                 {FONT_FAMILIES.map(({ name, value }) => (
                     <button
@@ -203,10 +214,12 @@ const FontPicker = ({ editor, isFullscreen }: { editor: Editor, isFullscreen: bo
         </PopoverContent>
     </Popover>
 )};
+
+
 const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
-    const [sliderValue, setSliderValue] = useState(14); // Default font size
+    const [sliderValue, setSliderValue] = useState(14);
     const [interactiveSliderValue, setInteractiveSliderValue] = useState<number | null>(null);
-    // Sync slider with editor's state when selection changes
+
     useEffect(() => {
         if (!editor || editor.isDestroyed) return;
         const handleUpdate = () => {
@@ -220,12 +233,11 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
                     return;
                 }
             }
-             // If no font size is set, default the slider to a reasonable value without applying it
-            setSliderValue(14);
+            setSliderValue(14); // Default if no size is set
         };
         editor.on('transaction', handleUpdate);
         editor.on('selectionUpdate', handleUpdate);
-        handleUpdate(); // Initial check
+        handleUpdate();
         return () => {
             if (!editor.isDestroyed) {
                 editor.off('transaction', handleUpdate);
@@ -234,7 +246,6 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
         };
     }, [editor]);
    
-    // Apply font size change only on commit (when user stops sliding)
     const handleSizeCommit = (value: number[]) => {
         const newSize = value[0];
         if (editor) {
@@ -242,7 +253,7 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
         }
         setInteractiveSliderValue(null);
     };
-    // Update the interactive value for immediate visual feedback of the slider handle
+
     const handleSliderChange = (value: number[]) => {
         const newSize = value[0];
         setInteractiveSliderValue(newSize);
@@ -255,6 +266,7 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
             editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
         }
     };
+    
     const displayValue = interactiveSliderValue ?? sliderValue;
    
     return (
@@ -282,14 +294,15 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
         </div>
     );
 };
-const EmojiSelector = ({ editor, isFullscreen }: { editor: Editor, isFullscreen: boolean }) => (
+
+const EmojiSelector = ({ editor, container }: { editor: Editor, container: HTMLElement | null }) => (
     <Popover>
         <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" title="Insert Emoji" className="h-8 w-8 text-slate-400">
                 <Smile className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className={cn("w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl", isFullscreen && "z-[9999]")}>
+        <PopoverContent container={container} className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
             <ScrollArea className="h-[300px]">
                 <EmojiPicker
                     onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
@@ -301,6 +314,7 @@ const EmojiSelector = ({ editor, isFullscreen }: { editor: Editor, isFullscreen:
         </PopoverContent>
     </Popover>
 );
+
 const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () => void }) => (
     <TooltipProvider>
         <Tooltip>
@@ -321,12 +335,15 @@ const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () =>
         </Tooltip>
     </TooltipProvider>
 );
+
+
 type NoteEditorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   note: Note | null;
   onSave: (note: Note) => void;
 };
+
 export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave }: NoteEditorDialogProps) => {
   const [note, setNote] = useState<Note | null>(initialNote);
   const [activePageId, setActivePageId] = useState<string | null>(null);
@@ -349,12 +366,15 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     if (!allContent) return new Map();
     return new Map(allContent.map(item => [item.id, item]));
   }, [allContent]);
+
   const filteredFiles = useMemo(() => {
     if (!allContent) return [];
     const items = allContent.filter(f => f.type === 'FILE' || f.type === 'LINK');
     if (!fileSearchQuery) return items.slice(0, 10);
     return items.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
   }, [allContent, fileSearchQuery]);
+
+
   const editor = useEditor({
     extensions: editorExtensions,
     content: '',
@@ -369,7 +389,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         );
         setNote(prevNote => prevNote ? { ...prevNote, pages: updatedPages } : null);
     }
-  });
+  }, []);
+
   useEffect(() => {
     if (open && initialNote) {
       setNote(initialNote);
@@ -387,6 +408,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
       setIsFullscreen(false);
     }
   }, [initialNote, open]);
+
   useEffect(() => {
     if (editor && note && activePageId) {
       const activePage = note.pages.find(p => p.id === activePageId);
@@ -402,6 +424,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         setShowScrollButtons(scrollWidth > clientWidth);
     }
   }, []);
+
   useEffect(() => {
       checkScroll();
       const resizeObserver = new ResizeObserver(checkScroll);
@@ -418,10 +441,11 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
   const toggleFullscreen = async () => {
     if (!dialogContentRef.current) return;
     try {
-      if (isFullscreen) {
+      if (document.fullscreenElement) {
         await document.exitFullscreen();
       } else {
         await dialogContentRef.current.requestFullscreen();
@@ -430,23 +454,28 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
       console.error('Fullscreen toggle failed:', error);
     }
   };
+
+
   const scrollTabs = (direction: 'left' | 'right') => {
     if (tabsContainerRef.current) {
         const scrollAmount = direction === 'left' ? -150 : 150;
         tabsContainerRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
     }
   };
+
   useEffect(() => {
       if (editingTabId && newTabInputRef.current) {
           newTabInputRef.current.focus();
           newTabInputRef.current.select();
       }
   }, [editingTabId]);
+
   const handleSave = () => {
     if (note && editor) {
       onSave(note);
     }
   };
+
   const addPage = () => {
     if (!note) return;
     const newPage: NotePage = {
@@ -460,6 +489,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     setActivePageId(newPage.id);
     setEditingTabId(newPage.id);
   };
+
   const deletePage = () => {
     if (!note || !pageToDelete || note.pages.length <= 1) {
       setPageToDelete(null);
@@ -476,12 +506,14 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     setActivePageId(newActivePageId);
     setPageToDelete(null);
   };
+
   const renamePage = (pageId: string, newTitle: string) => {
     if (!note || !newTitle.trim()) { setEditingTabId(null); return; }
     const updatedPages = note.pages.map(p => p.id === pageId ? { ...p, title: newTitle.trim() } : p);
     setNote({ ...note, pages: updatedPages });
     setEditingTabId(null);
   }
+
   const handleTabTitleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>, page: NotePage) => {
     if (e.key === 'Enter') {
       renamePage(page.id, e.currentTarget.value);
@@ -495,6 +527,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         setActivePageId(pageId);
     }
   }
+
   const setLink = useCallback(() => {
     if (!editor) return;
     const previousUrl = editor.getAttributes('link').href;
@@ -503,6 +536,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     if (url === '') { editor.chain().focus().extendMarkRange('link').unsetLink().run(); return; }
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   }, [editor]);
+
   const handleImageUpload = useCallback(async (file: File) => {
     if (!editor) return;
     try {
@@ -512,26 +546,32 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         console.error("Image upload failed:", error);
     }
   }, [editor]);
+
   const handleOpenAiChat = () => {
     if (!note || !activePageId) return;
    
     const activePage = note.pages.find(p => p.id === activePageId);
     if (!activePage) return;
+
+    // Create a synthetic Content item to pass to the modal
     const syntheticContentItem: Content = {
       id: note.id,
       name: note.title,
-      type: 'FOLDER',
+      type: 'NOTE', // Custom type to signal special handling
       parentId: null,
       metadata: {
+        // We serialize the entire note object here for simplicity.
+        // The chat panel will receive this and can reconstruct the context.
         quizData: JSON.stringify({
           ...note,
-          pages: [activePage] // Only send the active page context
+          pages: [activePage] // Only send the active page context for focus
         })
       }
     };
    
     setChatContext(syntheticContentItem);
   };
+
   const handleFileSelect = (file: Content) => {
     if (!note || !activePageId) return;
     const updatedPages = note.pages.map(page => {
@@ -560,20 +600,21 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   };
  
   if (!editor || !note) return null;
-  const ToolbarContent = ({ isFullscreen }: { isFullscreen: boolean }) => (
+
+  const ToolbarContent = ({ container }: { container: HTMLElement | null }) => (
       <div className="flex flex-wrap items-center gap-1 p-2 bg-slate-900/50 rounded-lg border border-slate-700">
         <EditorToolbarButton icon={Undo} onClick={() => editor.chain().focus().undo().run()} tip="Undo" />
         <EditorToolbarButton icon={Redo} onClick={() => editor.chain().focus().redo().run()} tip="Redo" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
-        <FontPicker editor={editor} isFullscreen={isFullscreen} />
+        <FontPicker editor={editor} container={container} />
         <FontSizeSlider editor={editor} />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
         <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
         <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
         <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
-        <HighlightPicker editor={editor} isFullscreen={isFullscreen} />
-        <ColorPicker editor={editor} isFullscreen={isFullscreen} />
+        <HighlightPicker editor={editor} container={container} />
+        <ColorPicker editor={editor} container={container} />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={AlignLeft} onClick={() => editor.chain().focus().setTextAlign('left').run()} isActive={editor.isActive({ textAlign: 'left' })} tip="Align Left" />
         <EditorToolbarButton icon={AlignCenter} onClick={() => editor.chain().focus().setTextAlign('center').run()} isActive={editor.isActive({ textAlign: 'center' })} tip="Align Center" />
@@ -599,9 +640,10 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
             };
             input.click();
         }} tip="Insert Image" />
-        <EmojiSelector editor={editor} isFullscreen={isFullscreen} />
+        <EmojiSelector editor={editor} container={container} />
       </div>
   );
+
   return (
     <>
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -612,6 +654,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               isFullscreen && "max-w-full w-screen h-screen rounded-none max-h-screen z-[9999]"
           )}
           style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
+          hideCloseButton={true}
       >
         <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
             <Input
@@ -664,7 +707,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                       <AlertDialogTrigger asChild>
                                         <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
                                       </AlertDialogTrigger>
-                                      <AlertDialogContent className={cn(isFullscreen && "z-[9999]")}>
+                                      <AlertDialogContent container={dialogContentRef.current}>
                                         <AlertDialogHeader>
                                           <AlertDialogTitle>Delete Page?</AlertDialogTitle>
                                           <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
@@ -684,7 +727,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                                 <Paperclip size={14} />
                                             </button>
                                         </PopoverTrigger>
-                                        <PopoverContent className={cn("w-64 p-1 bg-slate-800/80 border-slate-700 backdrop-blur-md", isFullscreen && "z-[9999]")}>
+                                        <PopoverContent container={dialogContentRef.current} className="w-64 p-1 bg-slate-800/80 border-slate-700 backdrop-blur-md">
                                             <div className="flex flex-col">
                                                 <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
                                                     <PopoverTrigger asChild>
@@ -692,7 +735,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                                             <Plus className="mr-2 h-4 w-4" /> Add Reference
                                                         </Button>
                                                     </PopoverTrigger>
-                                                     <PopoverContent className={cn("w-[300px] p-1 bg-slate-900/80 border-slate-700 backdrop-blur-md", isFullscreen && "z-[9999]")} side="right" align="start">
+                                                     <PopoverContent container={dialogContentRef.current} className="w-[300px] p-1 bg-slate-900/80 border-slate-700 backdrop-blur-md" side="right" align="start">
                                                         <Input
                                                             placeholder="Search files..."
                                                             value={fileSearchQuery}
@@ -741,7 +784,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                       <PopoverTrigger asChild>
                           <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
                       </PopoverTrigger>
-                      <PopoverContent className={cn("w-auto p-2 bg-slate-900 border-slate-700", isFullscreen && "z-[9999]")}>
+                      <PopoverContent container={dialogContentRef.current} className="w-auto p-2 bg-slate-900 border-slate-700">
                           <div className="flex gap-2">
                               {NOTE_COLORS.map(c => (
                                   <button
@@ -768,7 +811,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                   transition={{ duration: 0.2, ease: 'easeInOut' }}
                   className="overflow-hidden"
                   >
-                  <ToolbarContent isFullscreen={isFullscreen} />
+                  <ToolbarContent container={dialogContentRef.current} />
                   </motion.div>
               )}
               </AnimatePresence>
@@ -777,11 +820,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         <div className="relative flex-1 overflow-hidden px-4">
           <BubbleMenu 
             editor={editor} 
-            tippyOptions={{ 
-              duration: 100, 
-              appendTo: () => dialogContentRef.current ?? document.body 
-            }} 
-            className={cn("bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1", isFullscreen && "z-[9999]")}
+            tippyOptions={{ duration: 100, appendTo: () => dialogContentRef.current ?? document.body }} 
+            className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1"
           >
               <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
               <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
