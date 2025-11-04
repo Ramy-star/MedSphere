@@ -52,7 +52,7 @@ export const SubjectCard = React.memo(function SubjectCard({
 
   return (
     <Link href={subjectPath} className="block h-full" onClick={handleCardClick}>
-        <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-colors h-full flex flex-col justify-between">
+        <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 h-full flex flex-col justify-between hover:scale-[1.02]">
             <div>
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />

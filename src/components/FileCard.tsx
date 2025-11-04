@@ -1,4 +1,3 @@
-
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw, Star, StarOff,
@@ -264,7 +263,7 @@ export const FileCard = React.memo(function FileCard({
 
     return (
         <div 
-            className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+            className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-all duration-200 md:rounded-2xl cursor-pointer my-1.5 hover:scale-[1.02]", item.metadata?.isHidden && "opacity-60 bg-white/5")}
             onClick={handleClick}
         >
              <input
