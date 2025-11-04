@@ -300,7 +300,7 @@ export default function NewsComposerPage() {
                 <TabsTrigger value="saved">Saved Images</TabsTrigger>
             </TabsList>
             <TabsContent value="editor" className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex h-full w-full flex-col items-center justify-start overflow-y-auto no-scrollbar">
+                <div className="flex h-full w-full flex-col items-center justify-start">
                     <div className="flex-shrink-0 flex items-center gap-4 py-4 z-20 sticky top-0 w-full justify-center">
                         <TiptapToolbar editor={editor} />
                         <Button onClick={handleDownload} disabled={isLoading} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
@@ -309,7 +309,7 @@ export default function NewsComposerPage() {
                         </Button>
                     </div>
 
-                    <div className="w-full flex-grow flex justify-center py-4">
+                    <div className="w-full flex-grow flex justify-center py-4 overflow-y-auto no-scrollbar">
                         <div
                             ref={canvasRef}
                             className={cn(
@@ -325,7 +325,7 @@ export default function NewsComposerPage() {
                                 </h1>
                             </header>
 
-                            <div className="flex-1 w-full flex items-center justify-center my-4 relative overflow-y-auto no-scrollbar min-h-[400px]">
+                            <div className="flex-1 w-full flex items-center justify-center my-4 relative min-h-[400px]">
                                  <TiptapEditor editor={editor} />
                             </div>
 
