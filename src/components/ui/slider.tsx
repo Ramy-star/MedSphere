@@ -9,29 +9,11 @@ import { cn } from "@/lib/utils"
 const Slider = React.forwardRef<
   React.ElementRef<typeof SliderPrimitive.Root>,
   React.ComponentPropsWithoutRef<typeof SliderPrimitive.Root>
->(({ className, value, onValueChange, onValueCommit, ...props }, ref) => {
-    
-    const internalValue = value !== undefined ? value : [0];
-
-    const handleValueChange = (newValue: number[]) => {
-        if (onValueChange) {
-            onValueChange(newValue);
-        }
-    };
-    
-    const handleValueCommit = (newValue: number[]) => {
-        if (onValueCommit) {
-            onValueCommit(newValue);
-        }
-    };
-
+>(({ className, ...props }, ref) => {
     return (
         <SliderPrimitive.Root
             ref={ref}
             className={cn("relative flex w-full touch-none select-none items-center", className)}
-            value={internalValue}
-            onValueChange={handleValueChange}
-            onValueCommit={handleValueCommit}
             {...props}
         >
             <SliderPrimitive.Track className="relative h-1.5 w-full grow overflow-hidden rounded-full bg-slate-800">

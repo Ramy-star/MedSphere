@@ -212,34 +212,30 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
 )};
 
 const FontSizeSlider = ({ editor }: { editor: Editor }) => {
-    const [sliderValue, setSliderValue] = useState(14);
+    const [sliderValue, setSliderValue] = useState<number>(14);
 
-    const handleSizeChange = (newSize: number) => {
-        setSliderValue(newSize);
-        editor.chain().focus().setFontSize(`${newSize}pt`).run();
-    };
-
-    const handleValueCommit = (newSize: number) => {
-      // This function gets called when the user stops dragging
-      // which is where we'll commit the final size
-      editor.chain().focus().setFontSize(`${newSize}pt`).run();
-    }
-
-    // Effect to update slider when text selection changes
+    const applyFontSize = useCallback((size: number) => {
+        editor.chain().focus().setMark('textStyle', { fontSize: `${size}pt` }).run();
+    }, [editor]);
+    
+    // Update slider when selection changes
     useEffect(() => {
-        const updateSliderFromEditor = () => {
+        const handleSelectionUpdate = () => {
             const currentSize = editor.getAttributes('textStyle').fontSize;
-            if (currentSize && typeof currentSize === 'string') {
+            if (typeof currentSize === 'string') {
                 const sizeNumber = parseInt(currentSize, 10);
                 if (!isNaN(sizeNumber)) {
                     setSliderValue(sizeNumber);
                     return;
                 }
             }
-            setSliderValue(14); // Default size
+            // If no size is set on the selection, default or keep current
         };
-        editor.on('selectionUpdate', updateSliderFromEditor);
-        return () => editor.off('selectionUpdate', updateSliderFromEditor);
+        editor.on('selectionUpdate', handleSelectionUpdate);
+        handleSelectionUpdate(); // Initial check
+        return () => {
+            editor.off('selectionUpdate', handleSelectionUpdate);
+        };
     }, [editor]);
 
     return (
@@ -253,14 +249,14 @@ const FontSizeSlider = ({ editor }: { editor: Editor }) => {
                 step={1}
                 value={[sliderValue]}
                 onValueChange={([val]) => setSliderValue(val)}
-                onValueCommit={([val]) => handleValueCommit(val)}
+                onValueCommit={([val]) => applyFontSize(val)}
                 className="flex-1"
             />
             <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange(sliderValue - 1)} disabled={sliderValue <= 8}>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => { const newVal = sliderValue - 1; setSliderValue(newVal); applyFontSize(newVal); }} disabled={sliderValue <= 8}>
                     <Minus size={14} />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange(sliderValue + 1)} disabled={sliderValue >= 96}>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => { const newVal = sliderValue + 1; setSliderValue(newVal); applyFontSize(newVal); }} disabled={sliderValue >= 96}>
                     <Plus size={14} />
                 </Button>
             </div>
@@ -652,7 +648,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
           </BubbleMenu>
           
-          <div className="h-full overflow-y-auto p-2 rounded-lg bg-black/10 relative">
+          <div className="h-full overflow-y-auto p-2 rounded-lg bg-black/10">
             <EditorContent editor={editor} className="h-full" dir="auto" />
           </div>
         </div>
