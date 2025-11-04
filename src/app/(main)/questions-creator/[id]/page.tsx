@@ -454,19 +454,19 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
          
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
             <OutputCard
-                title="Text Questions"
-                icon={<FileText className="text-blue-400 h-8 w-8 mb-4 shrink-0" />}
+                title="Quiz"
+                icon={<FileText className="text-yellow-400 h-8 w-8 mb-4 shrink-0" />}
                 content={editingContent.text}
                 type="text"
             />
              <OutputCard
-                title="Text Flashcards"
+                title="Flashcard"
                 icon={<FileText className="text-green-400 h-8 w-8 mb-4 shrink-0" />}
                 content={editingContent.flashcardText}
                 type="flashcardText"
             />
              <OutputCard
-                title="Text Exam"
+                title="Exam"
                 icon={<FileText className="text-red-400 h-8 w-8 mb-4 shrink-0" />}
                 content={editingContent.examText}
                 type="examText"

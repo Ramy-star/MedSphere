@@ -278,9 +278,9 @@ function QuestionsCreatorContent() {
         flashcardGen: flashcardGenerationPrompt,
     };
     const titleMap = {
-        gen: 'Question Generation Prompt',
-        examGen: 'Exam Generation Prompt',
-        flashcardGen: 'Flashcard Generation Prompt'
+        gen: 'Quiz Prompt',
+        examGen: 'Exam Prompt',
+        flashcardGen: 'Flashcard Prompt'
     }
 
     localStorage.setItem(keyMap[type], promptMap[type]);
@@ -524,7 +524,7 @@ function QuestionsCreatorContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl">
                     {genOpts.generateQuestions && (
                         <OutputCard
-                            title="Text Questions"
+                            title="Quiz"
                             icon={<FileText className="w-8 h-8 text-yellow-400 shrink-0" />}
                             content={task?.status.questions.text ?? null}
                             isLoading={task?.status.questions.status === 'processing'}
@@ -535,8 +535,8 @@ function QuestionsCreatorContent() {
                     )}
                      {genOpts.generateFlashcards && (
                         <OutputCard
-                            title="Text Flashcards"
-                            icon={<FileText className="w-8 h-8 text-indigo-400 shrink-0" />}
+                            title="Flashcard"
+                            icon={<FileText className="w-8 h-8 text-green-400 shrink-0" />}
                             content={task?.status.flashcards.text ?? null}
                             isLoading={task?.status.flashcards.status === 'processing'}
                             loadingText="Generating..."
@@ -546,7 +546,7 @@ function QuestionsCreatorContent() {
                     )}
                     {genOpts.generateExam && (
                         <OutputCard
-                            title="Text Exam"
+                            title="Exam"
                             icon={<FileText className="w-8 h-8 text-rose-400 shrink-0" />}
                             content={task?.status.exam.text ?? null}
                             isLoading={task?.status.exam.status === 'processing'}
@@ -607,14 +607,14 @@ function QuestionsCreatorContent() {
 
   const renderPromptCard = (type: 'gen' | 'examGen' | 'flashcardGen') => {
       const titleMap = {
-          gen: "Question Generation Prompt",
-          examGen: "Exam Generation Prompt",
-          flashcardGen: "Flashcard Generation Prompt"
+          gen: "Quiz Prompt",
+          examGen: "Exam Prompt",
+          flashcardGen: "Flashcard Prompt"
       }
       const iconMap = {
           gen: <FileText className="w-8 h-8 text-yellow-400 shrink-0" />,
           examGen: <FileText className="w-8 h-8 text-rose-400 shrink-0" />,
-          flashcardGen: <FileText className="w-8 h-8 text-indigo-400 shrink-0" />,
+          flashcardGen: <FileText className="w-8 h-8 text-green-400 shrink-0" />,
       }
       const promptMap = {
           gen: generationPrompt,
