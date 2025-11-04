@@ -209,7 +209,7 @@ export const FileCard = React.memo(function FileCard({
         }
     }, [onUpdate]);
 
-    const handleUpdateClick = useCallback((e: Event) => {
+    const handleUpdateClick = useCallback((e: React.MouseEvent) => {
         if (!can('canUpdateFile', item.id)) return;
         e.stopPropagation();
         e.preventDefault();
@@ -360,7 +360,7 @@ export const FileCard = React.memo(function FileCard({
                                 </DropdownMenuItem>
                             )}
                             {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', item.id) && (
-                                <DropdownMenuItem onSelect={handleUpdateClick}>
+                                <DropdownMenuItem onSelect={(e) => handleUpdateClick(e as unknown as React.MouseEvent)}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 <span>Update</span>
                                 </DropdownMenuItem>
