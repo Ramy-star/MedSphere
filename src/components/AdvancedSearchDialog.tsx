@@ -1,4 +1,3 @@
-
 'use client';
 import {
   Dialog,
@@ -10,34 +9,33 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Search, X } from 'lucide-react';
+import { Search, X, Loader2, Folder as FolderIcon, File as FileIcon } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDebounce } from 'use-debounce';
 import { search as searchFlow } from '@/ai/flows/search-flow';
 import { Content, contentService } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { FileCard } from './FileCard';
-import { FolderCard } from './FolderCard';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
-import { Badge } from './ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
-import { DateRangePicker } from './ui/date-range-picker';
-import { DateRange } from 'react-day-picker';
-import { addDays } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { FilePreviewModal } from './FilePreviewModal';
+import { RenameDialog } from './RenameDialog';
+import { ChangeIconDialog } from './ChangeIconDialog';
+import { FolderSelectorDialog } from './FolderSelectorDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter as AlertDialogFooterComponent } from './ui/alert-dialog';
+
 
 type SearchFilters = {
-    type: 'all' | 'file' | 'folder' | 'link' | 'quiz' | 'exam' | 'flashcard';
-    subject: string | 'all';
-    dateRange?: DateRange;
+    type: 'all' | 'lecture' | 'quiz' | 'exam' | 'flashcard';
+    level: string | 'all';
 };
 
 const FileTypeOptions = [
     { value: 'all', label: 'All Types' },
-    { value: 'file', label: 'File' },
-    { value: 'folder', label: 'Folder' },
-    { value: 'link', label: 'Link' },
+    { value: 'lecture', label: 'Lecture' },
     { value: 'quiz', label: 'Quiz' },
     { value: 'exam', label: 'Exam' },
     { value: 'flashcard', label: 'Flashcard' },
@@ -50,19 +48,29 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
     const [isSearching, setIsSearching] = useState(false);
     const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
     const router = useRouter();
+    const { toast } = useToast();
+
+    // State for actions
+    const [previewFile, setPreviewFile] = useState<Content | null>(null);
+    const [itemToRename, setItemToRename] = useState<Content | null>(null);
+    const [itemToMove, setItemToMove] = useState<Content | null>(null);
+    const [itemToCopy, setItemToCopy] = useState<Content | null>(null);
+    const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
+    const [showFolderSelector, setShowFolderSelector] = useState(false);
+    const [currentAction, setCurrentAction] = useState<'move' | 'copy' | null>(null);
 
     const [filters, setFilters] = useState<SearchFilters>({
         type: 'all',
-        subject: 'all',
+        level: 'all',
     });
 
-    const subjects = useMemo(() => {
+    const levels = useMemo(() => {
         if (!allItems) return [];
-        return allItems.filter(item => item.type === 'SUBJECT');
+        return allItems.filter(item => item.type === 'LEVEL').sort((a,b) => (a.order || 0) - (b.order || 0));
     }, [allItems]);
 
     const performSearch = useCallback(async () => {
-        if (!debouncedQuery && filters.type === 'all' && filters.subject === 'all' && !filters.dateRange) {
+        if (!debouncedQuery && filters.type === 'all' && filters.level === 'all') {
             setResults([]);
             return;
         }
@@ -72,7 +80,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
             setIsSearching(false);
             return;
         }
-
+        
         const searchResults = await searchFlow(debouncedQuery, allItems, filters);
         setResults(searchResults);
         setIsSearching(false);
@@ -84,95 +92,169 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
 
     const handleClose = () => {
         onOpenChange(false);
-        // Reset state after a delay to allow for exit animation
         setTimeout(() => {
             setQuery('');
             setResults([]);
-            setFilters({ type: 'all', subject: 'all' });
+            setFilters({ type: 'all', level: 'all' });
         }, 300);
     };
 
-    const handleItemClick = (item: Content) => {
-        const path = item.type === 'FOLDER' || item.type === 'SUBJECT' || item.type === 'SEMESTER' || item.type === 'LEVEL'
-            ? `/folder/${item.id}`
-            : `/`; // Files will open in preview, but we need a background route
-        router.push(path);
-        handleClose();
-        // You would typically have a global state to open the file preview modal here
+    const handleFileClick = (item: Content) => {
+        setPreviewFile(item);
     };
 
+    const handleRename = useCallback(async (newName: string) => {
+        if (!itemToRename) return;
+        await contentService.rename(itemToRename.id, newName);
+        toast({ title: "Renamed", description: `"${itemToRename.name}" was renamed to "${newName}".` });
+        setItemToRename(null);
+    }, [itemToRename, toast]);
+
+    const handleDelete = useCallback(async () => {
+        if (!itemToDelete) return;
+        await contentService.delete(itemToDelete.id);
+        toast({ title: "Deleted", description: `"${itemToDelete.name}" has been deleted.` });
+        setItemToDelete(null);
+    }, [itemToDelete, toast]);
+
+    const handleToggleVisibility = useCallback(async (item: Content) => {
+        await contentService.toggleVisibility(item.id);
+        const isHidden = !item.metadata?.isHidden;
+        toast({
+            title: `Item ${isHidden ? 'Hidden' : 'Visible'}`,
+            description: `"${item.name}" is now ${isHidden ? 'hidden from other users' : 'visible to everyone'}.`
+        });
+    }, [toast]);
+
+    const handleFolderSelect = useCallback(async (folder: Content) => {
+        const itemToProcess = currentAction === 'move' ? itemToMove : itemToCopy;
+        if (!itemToProcess || !currentAction) return;
+
+        try {
+            if (currentAction === 'move') {
+                await contentService.move(itemToProcess.id, folder.id);
+                toast({ title: "Item Moved", description: `Moved "${itemToProcess.name}" successfully.` });
+            } else {
+                await contentService.copy(itemToProcess, folder.id);
+                toast({ title: "Item Copied", description: `Copied "${itemToProcess.name}" successfully.` });
+            }
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: `Error ${currentAction === 'move' ? 'Moving' : 'Copying'} Item`,
+                description: error.message || 'An unknown error occurred.',
+            });
+        } finally {
+            setShowFolderSelector(false);
+            setItemToMove(null);
+            setItemToCopy(null);
+            setCurrentAction(null);
+        }
+    }, [currentAction, itemToCopy, itemToMove, toast]);
+
+
     return (
-        <Dialog open={open} onOpenChange={handleClose}>
-            <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0">
-                <DialogHeader className="p-4 border-b border-white/10 flex-row items-center">
-                    <DialogTitle className="sr-only">Advanced Search</DialogTitle>
-                    <DialogDescription className="sr-only">Search for files and folders with advanced filters.</DialogDescription>
-                    <Search className="h-5 w-5 text-slate-400" />
-                    <Input
-                        placeholder="Type a command or search..."
-                        className="bg-transparent border-0 text-base h-auto p-0 pl-2 focus-visible:ring-0 focus-visible:ring-offset-0"
-                        value={query}
-                        onChange={(e) => setQuery(e.target.value)}
-                        autoFocus
-                    />
-                </DialogHeader>
+        <>
+            <Dialog open={open} onOpenChange={handleClose}>
+                <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
+                    <DialogHeader className="p-4 border-b border-white/10 flex-row items-center">
+                        <Search className="h-5 w-5 text-slate-400" />
+                        <Input
+                            placeholder="Search content..."
+                            className="bg-transparent border-0 text-base h-auto p-0 pl-2 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            autoFocus
+                        />
+                        <DialogTitle className="sr-only">Advanced Search</DialogTitle>
+                        <DialogDescription className="sr-only">Search for files and folders with advanced filters.</DialogDescription>
+                    </DialogHeader>
 
-                <div className="p-4 border-b border-white/10 flex flex-wrap items-center gap-3">
-                    <Select value={filters.type} onValueChange={(value) => setFilters(f => ({ ...f, type: value as SearchFilters['type'] }))}>
-                        <SelectTrigger className="w-[150px] h-8 rounded-full">
-                            <SelectValue placeholder="Type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {FileTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
+                    <div className="p-3 border-b border-white/10 flex flex-wrap items-center gap-2">
+                        <Select value={filters.level} onValueChange={(value) => setFilters(f => ({ ...f, level: value }))}>
+                            <SelectTrigger className="w-[180px] h-8 rounded-full">
+                                <SelectValue placeholder="Level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Levels</SelectItem>
+                                {levels.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
 
-                    <Select value={filters.subject} onValueChange={(value) => setFilters(f => ({ ...f, subject: value }))}>
-                        <SelectTrigger className="w-[180px] h-8 rounded-full">
-                            <SelectValue placeholder="Subject" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Subjects</SelectItem>
-                            {subjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                    
-                    <DateRangePicker 
-                      date={filters.dateRange}
-                      onDateChange={(range) => setFilters(f => ({...f, dateRange: range}))}
-                    />
-
-                </div>
-
-                <ScrollArea className="flex-1 overflow-y-auto">
-                    <div className="p-4 space-y-2">
-                        {isSearching && (
-                            <div className="space-y-2">
-                                <Skeleton className="h-12 w-full" />
-                                <Skeleton className="h-12 w-full" />
-                                <Skeleton className="h-12 w-full" />
-                            </div>
-                        )}
-                        {!isSearching && results.length === 0 && (
-                            <div className="text-center text-slate-400 py-10">
-                                <p>{debouncedQuery ? 'No results found.' : 'Start typing to search.'}</p>
-                            </div>
-                        )}
-                        {!isSearching && results.map(item => (
-                            <div key={item.id} onClick={() => handleItemClick(item)} className="cursor-pointer">
-                                {item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM' || item.type === 'INTERACTIVE_FLASHCARD' ? (
-                                    <FileCard item={item} onFileClick={() => {}} onRename={() => {}} onDelete={() => {}} onMove={()=>{}} onCopy={()=>{}} onToggleVisibility={()=>{}} showDragHandle={false} />
-                                ) : (
-                                    <FolderCard item={item} displayAs="list" onClick={() => {}} onRename={() => {}} onDelete={() => {}} onIconChange={()=>{}} onMove={()=>{}} onCopy={()=>{}} onToggleVisibility={()=>{}} />
-                                )}
-                            </div>
-                        ))}
+                        <Select value={filters.type} onValueChange={(value) => setFilters(f => ({ ...f, type: value as SearchFilters['type'] }))}>
+                            <SelectTrigger className="w-[150px] h-8 rounded-full">
+                                <SelectValue placeholder="Type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {FileTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
                     </div>
-                </ScrollArea>
-                <DialogFooter className="p-2 border-t border-white/10 text-xs text-slate-500 justify-start">
-                    <p>Powered by MedSphere Search</p>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+
+                    <ScrollArea className="flex-1 overflow-y-auto">
+                        <div className="p-2 space-y-0.5">
+                            {(isSearching || loadingAllItems) && results.length === 0 ? (
+                                <div className="space-y-2 p-2">
+                                    <Skeleton className="h-12 w-full" />
+                                    <Skeleton className="h-12 w-full" />
+                                    <Skeleton className="h-12 w-full" />
+                                </div>
+                            ) : !isSearching && results.length === 0 ? (
+                                <div className="text-center text-slate-400 py-10">
+                                    <p>{debouncedQuery || filters.level !== 'all' || filters.type !== 'all' ? 'No results found.' : 'Start typing to search.'}</p>
+                                </div>
+                            ) : (
+                                results.map(item => (
+                                    <FileCard
+                                        key={item.id}
+                                        item={item}
+                                        onFileClick={() => handleFileClick(item)}
+                                        onRename={() => setItemToRename(item)}
+                                        onDelete={() => setItemToDelete(item)}
+                                        onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
+                                        onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
+                                        onToggleVisibility={() => handleToggleVisibility(item)}
+                                        showDragHandle={false}
+                                    />
+                                ))
+                            )}
+                        </div>
+                    </ScrollArea>
+                    <DialogFooter className="p-2 border-t border-white/10 text-xs text-slate-500 justify-start">
+                        <p>{results.length} result(s)</p>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+            <FilePreviewModal
+                item={previewFile}
+                onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+            />
+            <RenameDialog
+                item={itemToRename}
+                onOpenChange={(isOpen) => !isOpen && setItemToRename(null)}
+                onRename={handleRename}
+            />
+             <AlertDialog open={!!itemToDelete} onOpenChange={(isOpen) => !isOpen && setItemToDelete(null)}>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      This will permanently delete "{itemToDelete?.name}". This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooterComponent>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                  </AlertDialogFooterComponent>
+                </AlertDialogContent>
+            </AlertDialog>
+            <FolderSelectorDialog
+              open={showFolderSelector}
+              onOpenChange={setShowFolderSelector}
+              onSelect={handleFolderSelect}
+              actionType={currentAction}
+              currentItemId={itemToMove?.id || itemToCopy?.id}
+            />
+        </>
     );
 }

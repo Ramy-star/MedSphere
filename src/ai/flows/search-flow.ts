@@ -2,12 +2,10 @@
 'use client';
 import type { Content } from '@/lib/contentService';
 import Fuse from 'fuse.js';
-import { DateRange } from 'react-day-picker';
 
 type SearchFilters = {
-    type: 'all' | 'file' | 'folder' | 'link' | 'quiz' | 'exam' | 'flashcard';
-    subject: string | 'all';
-    dateRange?: DateRange;
+    type: 'all' | 'lecture' | 'quiz' | 'exam' | 'flashcard';
+    level: string | 'all';
 };
 
 let fuse: Fuse<Content> | null = null;
@@ -25,7 +23,7 @@ function initializeFuse(items: Content[]) {
   fuse = new Fuse(items, {
     keys: [
       { name: 'name', weight: 0.7 },
-      { name: 'type', weight: 0.3 },
+      { name: 'type', weight: 0.1 },
       { name: 'metadata.mime', weight: 0.2 },
     ],
     includeScore: true,
@@ -36,9 +34,7 @@ function initializeFuse(items: Content[]) {
 
 const itemTypeMap: Record<SearchFilters['type'], Content['type'] | null> = {
     all: null,
-    file: 'FILE',
-    folder: 'FOLDER',
-    link: 'LINK',
+    lecture: 'FILE',
     quiz: 'INTERACTIVE_QUIZ',
     exam: 'INTERACTIVE_EXAM',
     flashcard: 'INTERACTIVE_FLASHCARD',
@@ -57,45 +53,28 @@ async function searchFlow(query: string, items: Content[], filters: SearchFilter
 
   let filteredItems = items;
 
-  // 1. Apply hard filters (type, subject, date)
+  // 1. Filter by Type first
   if (filters.type !== 'all') {
     const targetType = itemTypeMap[filters.type];
     if (targetType) {
-        if (targetType === 'FOLDER') {
-            // Include all folder-like types
-            filteredItems = filteredItems.filter(item => ['FOLDER', 'SUBJECT', 'SEMESTER', 'LEVEL'].includes(item.type));
-        } else {
-            filteredItems = filteredItems.filter(item => item.type === targetType);
-        }
+        filteredItems = filteredItems.filter(item => item.type === targetType);
     }
   }
 
-  if (filters.dateRange?.from) {
-      filteredItems = filteredItems.filter(item => {
-          if (!item.createdAt) return false;
-          const itemDate = new Date(item.createdAt);
-          const fromDate = filters.dateRange!.from!;
-          const toDate = filters.dateRange!.to;
-          if (toDate) {
-              return itemDate >= fromDate && itemDate <= toDate;
-          }
-          return itemDate.toDateString() === fromDate.toDateString();
-      });
-  }
-
-  // If a subject is selected, we need to find all descendants of that subject folder
-  if (filters.subject !== 'all') {
-    const subjectId = filters.subject;
+  // 2. Filter by Level (if a level is selected)
+  if (filters.level !== 'all') {
+    const levelId = filters.level;
     const descendantIds = new Set<string>();
-    const queue: string[] = [subjectId];
-    descendantIds.add(subjectId);
-
-    while (queue.length > 0) {
+    
+    // Find all children and grandchildren of the selected level
+    const queue: string[] = [levelId];
+    
+    while(queue.length > 0) {
         const currentId = queue.shift()!;
         const children = items.filter(item => item.parentId === currentId);
         for (const child of children) {
-            if (!descendantIds.has(child.id)) {
-                descendantIds.add(child.id);
+            descendantIds.add(child.id);
+            if (child.type !== 'FILE') { // Don't traverse into files
                 queue.push(child.id);
             }
         }
@@ -103,10 +82,18 @@ async function searchFlow(query: string, items: Content[], filters: SearchFilter
     filteredItems = filteredItems.filter(item => descendantIds.has(item.id));
   }
 
+  // 3. Filter out all folders
+  let fileResults = filteredItems.filter(item => 
+      item.type === 'FILE' || 
+      item.type === 'LINK' || 
+      item.type === 'INTERACTIVE_QUIZ' || 
+      item.type === 'INTERACTIVE_EXAM' || 
+      item.type === 'INTERACTIVE_FLASHCARD'
+  );
 
-  // 2. If there's a search query, perform fuzzy search on the already filtered items.
+  // 4. If there's a search query, perform fuzzy search on the final filtered items.
   if (query.trim()) {
-    const fuseForFiltered = new Fuse(filteredItems, {
+    const fuseForFiltered = new Fuse(fileResults, {
       keys: fuse.options.keys,
       includeScore: true,
       threshold: 0.3,
@@ -115,8 +102,8 @@ async function searchFlow(query: string, items: Content[], filters: SearchFilter
     return fuseForFiltered.search(query).map(result => result.item);
   }
 
-  // 3. If no query, return the hard-filtered results, sorted by date.
-  return filteredItems.sort((a, b) => {
+  // 5. If no query, return the hard-filtered results, sorted by date.
+  return fileResults.sort((a, b) => {
     const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
     const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
     return dateB - dateA;
