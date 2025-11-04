@@ -216,13 +216,17 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
 const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
     const [sliderValue, setSliderValue] = useState(14); // Default font size
     
-    // Update slider when selection changes in the editor
+    // This state tracks the value during interaction
+    const [interactiveSliderValue, setInteractiveSliderValue] = useState<number | null>(null);
+
+    // Update slider when selection or active page changes
     useEffect(() => {
-        if (!editor) return;
+        if (!editor || editor.isDestroyed) return;
         
         const updateSliderFromSelection = () => {
             if (editor.isDestroyed) return;
-            const currentSize = editor.getAttributes('textStyle').fontSize;
+            const attrs = editor.getAttributes('textStyle');
+            const currentSize = attrs.fontSize;
             if (typeof currentSize === 'string') {
                 const sizeNumber = parseInt(currentSize, 10);
                 if (!isNaN(sizeNumber)) {
@@ -237,7 +241,6 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
         editor.on('transaction', updateSliderFromSelection);
         editor.on('selectionUpdate', updateSliderFromSelection);
 
-        // Initial check
         updateSliderFromSelection();
         
         return () => {
@@ -247,36 +250,45 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
             }
         };
     }, [editor]);
-
-    // Apply font size to the editor from the slider in real-time
-    const handleSliderChange = useCallback((value: number[]) => {
-        const newSize = value[0];
-        setSliderValue(newSize); // Update visual state immediately
-        if (editor) {
-            editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
-        }
-    }, [editor]);
     
-    // Handle button clicks
+    const applyFontSize = (size: number) => {
+        if (editor) {
+            editor.chain().focus().setMark('textStyle', { fontSize: `${size}pt` }).run();
+        }
+    };
+
+    const handleSliderChange = (value: number[]) => {
+        // Only update the interactive value for smooth dragging
+        setInteractiveSliderValue(value[0]);
+    };
+
+    const handleValueCommit = (value: number[]) => {
+        const newSize = value[0];
+        setSliderValue(newSize);
+        applyFontSize(newSize);
+        setInteractiveSliderValue(null); // Reset interactive value
+    };
+
     const handleButtonClick = (increment: number) => {
         const newSize = Math.max(8, Math.min(96, sliderValue + increment));
         setSliderValue(newSize);
-        if (editor) {
-            editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
-        }
+        applyFontSize(newSize);
     };
+
+    const displayValue = interactiveSliderValue ?? sliderValue;
 
     return (
         <div className="flex items-center gap-2 w-64">
             <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
-                {sliderValue} pt
+                {displayValue} pt
             </div>
             <Slider
                 min={8}
                 max={96}
                 step={1}
-                value={[sliderValue]}
-                onValueChange={handleSliderChange} // Changed to onValueChange for real-time updates
+                value={[displayValue]}
+                onValueChange={handleSliderChange}
+                onValueCommit={handleValueCommit} // Apply change on release
                 className="flex-1"
             />
             <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
@@ -572,7 +584,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                   <Button variant="ghost" size="icon" className="h-9 w-9 text-white"><X size={20}/></Button>
               </DialogClose>
           </div>
-           {/* Screen reader only title */}
           <DialogTitle className="sr-only">Edit Note: {note.title}</DialogTitle>
         </DialogHeader>
         <div className="p-4 pt-0 flex-shrink-0">
@@ -687,5 +698,3 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     </Dialog>
   );
 };
-
-    
