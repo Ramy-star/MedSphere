@@ -53,6 +53,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
     const router = useRouter();
     const { toast } = useToast();
     const dialogContentRef = useRef<HTMLDivElement>(null);
+    const [isFocused, setIsFocused] = useState(false);
 
 
     // State for actions
@@ -174,12 +175,14 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                     className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 rounded-2xl bg-gradient-to-br from-slate-900/80 to-green-950/80 backdrop-blur-xl text-white border-0"
                 >
                     <DialogHeader className="p-4 border-b border-white/10 flex-row items-center">
-                        <Search className="h-5 w-5 text-slate-400" />
+                        <Search className={cn("h-5 w-5 transition-all duration-300", (isFocused || query) ? 'text-white -rotate-90' : 'text-slate-400')} />
                         <Input
                             placeholder="Search content..."
                             className="bg-transparent border-0 text-base h-auto p-0 pl-2 focus-visible:ring-0 focus-visible:ring-offset-0"
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
+                            onFocus={() => setIsFocused(true)}
+                            onBlur={() => setIsFocused(false)}
                             autoFocus
                         />
                          <DialogTitle className="sr-only">Advanced Search</DialogTitle>
