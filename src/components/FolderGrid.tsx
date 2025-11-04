@@ -359,7 +359,7 @@ export function FolderGrid({
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!canReorder}>
           <motion.div 
-            className={cn(isSubjectView ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-1")}
+            className={cn(isSubjectView ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "flex flex-col")}
             variants={listVariants}
             initial="hidden"
             animate="visible"
@@ -370,6 +370,7 @@ export function FolderGrid({
                   key={item.id}
                   variants={itemVariants}
                   custom={index}
+                   className={cn(!isSubjectView && "border-b border-white/10 last:border-b-0")}
                 >
                   <SortableItemWrapper id={item.id} isSubjectView={isSubjectView}>
                     {(() => {
