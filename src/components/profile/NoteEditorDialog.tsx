@@ -1,3 +1,5 @@
+
+      
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note, NotePage } from './ProfileNotesSection';
@@ -213,17 +215,8 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
 
 const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
     const [sliderValue, setSliderValue] = useState(14); // Default font size
-
-    const handleSizeChange = useCallback((size: number) => {
-        if (!editor) return;
-        const clampedSize = Math.max(8, Math.min(96, size));
-        editor.chain().focus().setMark('textStyle', { fontSize: `${clampedSize}pt` }).run();
-    }, [editor]);
     
-    const handleValueCommit = useCallback((value: number[]) => {
-        handleSizeChange(value[0]);
-    }, [handleSizeChange]);
-
+    // Update slider when selection changes in the editor
     useEffect(() => {
         if (!editor) return;
         
@@ -237,18 +230,41 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
                     return;
                 }
             }
-            setSliderValue(14); // Default size if none is set
+            // If no font size is set on the selection, default to 14
+            setSliderValue(14);
         };
-
+        
+        editor.on('transaction', updateSliderFromSelection);
         editor.on('selectionUpdate', updateSliderFromSelection);
+
+        // Initial check
         updateSliderFromSelection();
         
         return () => {
             if (editor && !editor.isDestroyed) {
+                editor.off('transaction', updateSliderFromSelection);
                 editor.off('selectionUpdate', updateSliderFromSelection);
             }
         };
     }, [editor]);
+
+    // Apply font size to the editor from the slider in real-time
+    const handleSliderChange = useCallback((value: number[]) => {
+        const newSize = value[0];
+        setSliderValue(newSize); // Update visual state immediately
+        if (editor) {
+            editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
+        }
+    }, [editor]);
+    
+    // Handle button clicks
+    const handleButtonClick = (increment: number) => {
+        const newSize = Math.max(8, Math.min(96, sliderValue + increment));
+        setSliderValue(newSize);
+        if (editor) {
+            editor.chain().focus().setMark('textStyle', { fontSize: `${newSize}pt` }).run();
+        }
+    };
 
     return (
         <div className="flex items-center gap-2 w-64">
@@ -260,21 +276,21 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
                 max={96}
                 step={1}
                 value={[sliderValue]}
-                onValueChange={([val]) => setSliderValue(val)}
-                onValueCommit={handleValueCommit}
+                onValueChange={handleSliderChange} // Changed to onValueChange for real-time updates
                 className="flex-1"
             />
-             <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleSizeChange(sliderValue - 1)} disabled={sliderValue <= 8}>
+            <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleButtonClick(-1)} disabled={sliderValue <= 8}>
                     <Minus size={14} />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleSizeChange(sliderValue + 1)} disabled={sliderValue >= 96}>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleButtonClick(1)} disabled={sliderValue >= 96}>
                     <Plus size={14} />
                 </Button>
             </div>
         </div>
     );
 };
+
 
 const EmojiSelector = ({ editor }: { editor: Editor }) => (
     <Popover>
@@ -534,7 +550,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
           ref={dialogContentRef}
-          hideCloseButton={true}
           className={cn(
               "max-w-3xl w-[90vw] h-[80vh] flex flex-col glass-card p-0",
               isFullscreen && "max-w-full w-screen h-screen rounded-none max-h-screen"
@@ -542,8 +557,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
         <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
-            {/* Visually hidden title for accessibility */}
-            <DialogTitle className="sr-only">Edit Note: {note.title}</DialogTitle>
             <Input 
               ref={titleInputRef}
               defaultValue={note.title}
@@ -559,6 +572,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                   <Button variant="ghost" size="icon" className="h-9 w-9 text-white"><X size={20}/></Button>
               </DialogClose>
           </div>
+           {/* Screen reader only title */}
+          <DialogTitle className="sr-only">Edit Note: {note.title}</DialogTitle>
         </DialogHeader>
         <div className="p-4 pt-0 flex-shrink-0">
           <div className="flex flex-col gap-2">
@@ -672,3 +687,5 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     </Dialog>
   );
 };
+
+    
