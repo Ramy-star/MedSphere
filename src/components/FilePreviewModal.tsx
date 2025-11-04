@@ -707,11 +707,28 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     {isPdf && (
                         <Tooltip>
                             <TooltipTrigger asChild>
-                                <Button variant="ghost" size="icon" onClick={() => { if(isFullscreen) { document.exitFullscreen(); } else { fileContentRef.current?.requestFullscreen(); } }} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
-                                    {isFullscreen ? <Shrink className="w-5 h-5" /> : <Presentation className="w-5 h-5" />}
+                                <Button variant="ghost" size="icon" onClick={async () => {
+                                    try {
+                                        if(isFullscreen) {
+                                            await document.exitFullscreen();
+                                        } else {
+                                            if (fileContentRef.current) {
+                                                await fileContentRef.current.requestFullscreen();
+                                            }
+                                        }
+                                    } catch (error) {
+                                        console.error('Fullscreen toggle failed:', error);
+                                        toast({
+                                            variant: 'destructive',
+                                            title: 'Fullscreen Not Available',
+                                            description: 'Your browser or device does not support fullscreen mode.',
+                                        });
+                                    }
+                                }} className="text-slate-200 hover:text-white hover:bg-white/20 rounded-full h-9 w-9">
+                                    {isFullscreen ? <Shrink className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent side="bottom" sideOffset={8}><p>{isFullscreen ? 'Exit Presentation' : 'Present'}</p></TooltipContent>
+                            <TooltipContent side="bottom" sideOffset={8}><p>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</p></TooltipContent>
                         </Tooltip>
                     )}
                 </div>

@@ -317,7 +317,16 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
     const [quotedText, setQuotedText] = useState<string | null>(null);
     const [showScrollToBottom, setShowScrollToBottom] = useState(false);
     const fontSizes = ['text-xs', 'text-sm', 'text-base', 'text-lg', 'text-xl'];
-    const [fontSizeIndex, setFontSizeIndex] = useState(1);
+
+    // Load saved font size from localStorage, default to 1 (text-sm)
+    const [fontSizeIndex, setFontSizeIndex] = useState(() => {
+        try {
+            const saved = localStorage.getItem('chatFontSizeIndex');
+            return saved ? parseInt(saved, 10) : 1;
+        } catch {
+            return 1;
+        }
+    });
     
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const abortControllerRef = useRef<AbortController | null>(null);
@@ -475,8 +484,25 @@ export default function ChatPanel({ showChat, isMobile, documentText, isExtracti
         await submitChat(lastUserMessage.text, historyBeforeLastInteraction, lastUserMessage.quotedText);
     }, [isAiThinking, chatHistory, submitChat]);
 
-    const increaseFontSize = () => setFontSizeIndex(prev => Math.min(prev + 1, fontSizes.length - 1));
-    const decreaseFontSize = () => setFontSizeIndex(prev => Math.max(prev - 1, 0));
+    const increaseFontSize = () => setFontSizeIndex(prev => {
+        const newValue = Math.min(prev + 1, fontSizes.length - 1);
+        try {
+            localStorage.setItem('chatFontSizeIndex', String(newValue));
+        } catch (error) {
+            console.error('Failed to save font size:', error);
+        }
+        return newValue;
+    });
+
+    const decreaseFontSize = () => setFontSizeIndex(prev => {
+        const newValue = Math.max(prev - 1, 0);
+        try {
+            localStorage.setItem('chatFontSizeIndex', String(newValue));
+        } catch (error) {
+            console.error('Failed to save font size:', error);
+        }
+        return newValue;
+    });
       
     useEffect(() => {
         if (messagesEndRef.current) {
