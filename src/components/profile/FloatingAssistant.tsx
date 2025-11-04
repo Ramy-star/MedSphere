@@ -1,29 +1,23 @@
 'use client';
-import React, { useState } from 'react';
+import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UserProfile } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { AiStudyBuddy } from './AiStudyBuddy';
-import { X, Maximize, Shrink } from 'lucide-react';
+import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { Button } from '../ui/button';
+import { useFloatingAssistantStore } from '@/stores/floating-assistant-store';
 
 export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [isExpanded, setIsExpanded] = useState(false);
+    const { isOpen, isExpanded, toggle, toggleExpand } = useFloatingAssistantStore();
 
     if (!user) {
         return null;
     }
 
-    const toggleExpand = () => setIsExpanded(prev => !prev);
-    
-    const handleToggleOpen = () => {
-        setIsOpen(prev => !prev);
-        if (isOpen) {
-            // If we are closing, make sure expanded is also false.
-            setIsExpanded(false);
-        }
+    const handleToggleOpen = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        toggle();
     };
 
     const containerVariants = {
@@ -52,14 +46,14 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
     return (
         <>
             <AnimatePresence>
-                {false && (
+                {isOpen && (
                     <motion.div
                         key="backdrop"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                        onClick={handleToggleOpen}
+                        onClick={() => toggle()}
                     />
                 )}
             </AnimatePresence>
@@ -73,6 +67,7 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
                     style={{
                         backgroundColor: 'rgba(30, 41, 59, 0.5)',
                     }}
+                    onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
                 >
                     <AnimatePresence>
                         {isOpen && (
