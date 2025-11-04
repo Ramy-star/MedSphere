@@ -364,8 +364,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const dialogContentRef = useRef<HTMLDivElement | null>(null);
-  const [showAiChat, setShowAiChat] = useState(false);
-  const [chatContext, setChatContext] = useState<any>(null);
+  const [chatContext, setChatContext] = useState<Content | null>(null);
   const [showFileSearch, setShowFileSearch] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
 
@@ -573,7 +572,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     };
     
     setChatContext(syntheticContentItem);
-    setShowAiChat(true);
   };
 
   const handleFileSelect = (file: Content) => {
@@ -732,12 +730,18 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                       <Popover open={showFileSearch && activePageId === page.id} onOpenChange={setShowFileSearch}>
                                           <PopoverTrigger asChild>
                                              <button className="flex items-center gap-1 text-slate-500 hover:text-white transition-colors" onClick={() => setShowFileSearch(true)}>
-                                                  <Plus size={14} />
+                                                  <Paperclip size={14} />
                                                   <span className="text-xs">Ref</span>
                                               </button>
                                           </PopoverTrigger>
                                           <PopoverContent className="w-[300px] p-1">
-                                                <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                                <Input 
+                                                  placeholder="Search files..."
+                                                  value={fileSearchQuery}
+                                                  onChange={(e) => setFileSearchQuery(e.target.value)}
+                                                  className="mb-1 h-8"
+                                                />
+                                                <ScrollArea className="max-h-60">
                                                     {filteredFiles.map(file => (
                                                         <button
                                                             key={file.id}
@@ -748,7 +752,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                                             <span className="truncate">{file.name}</span>
                                                         </button>
                                                     ))}
-                                                </div>
+                                                </ScrollArea>
                                           </PopoverContent>
                                       </Popover>
                                   </div>
@@ -821,12 +825,11 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         </DialogFooter>
       </DialogContent>
     </Dialog>
-    {showAiChat && chatContext && (
+    {chatContext && (
       <FilePreviewModal
         item={chatContext}
         onOpenChange={(isOpen) => {
           if (!isOpen) {
-            setShowAiChat(false);
             setChatContext(null);
           }
         }}
