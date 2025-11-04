@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useMemo, useState, lazy, Suspense } from 'react';
@@ -155,7 +156,7 @@ export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onF
                 />
               );
             }
-            if (item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM' || item.type === 'INTERACTIVE_FLASHCARD') {
+            if (item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM' || item.type === 'INTERACTIVE_FLASHCARD' || item.type === 'NOTE') {
               return (
                 <FileCard
                   key={item.id}

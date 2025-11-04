@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useMemo } from 'react';
 import type { UserProfile } from '@/stores/auth-store';
@@ -10,6 +11,7 @@ import { doc, updateDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { FilePreviewModal } from '../FilePreviewModal';
+import { useFloatingAssistantStore } from '@/stores/floating-assistant-store';
 
 export type NotePage = {
   id: string;
@@ -32,13 +34,12 @@ export type Note = {
 export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const router = useRouter();
   const { toast } = useToast();
+  const openAssistantWithContext = useFloatingAssistantStore(state => state.openWithContext);
   
   const { data: pinnedNotes, loading } = useCollection<Note>(`users/${user.id}/profileNotes`, {
     where: ['pinned', '==', true],
     orderBy: ['order', 'asc'],
   });
-
-  const [viewingNote, setViewingNote] = useState<any | null>(null);
 
   const handleTogglePin = async (note: Note) => {
     const noteRef = doc(db, `users/${user.id}/profileNotes`, note.id);
@@ -51,20 +52,7 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   };
 
   const handleViewNote = (note: Note) => {
-    // We now create an object that mimics the `Content` type but has a specific 'NOTE' type
-    // and puts the full note object into `quizData`.
-    const contentToView = {
-        id: note.id,
-        name: `${note.title} (Note)`, // Add a suffix to differentiate in the modal title
-        type: 'NOTE', // Use a custom type to identify this as a note
-        parentId: user?.id || null,
-        metadata: {
-            // Store the full note object as a JSON string.
-            // FilePreviewModal will parse this.
-            quizData: JSON.stringify(note) 
-        }
-    };
-    setViewingNote(contentToView);
+    openAssistantWithContext('note', note);
   };
 
 
@@ -106,12 +94,6 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
               />
           ))}
       </div>
-      {viewingNote && (
-          <FilePreviewModal 
-              item={viewingNote as any}
-              onOpenChange={(isOpen) => !isOpen && setViewingNote(null)}
-          />
-      )}
     </>
   );
 };
