@@ -33,7 +33,7 @@ import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import dynamic from 'next/dynamic';
-import { SkeletonCard } from './ui/skeleton';
+import { Skeleton, SkeletonCard } from './ui/skeleton';
 import { useVirtualizer } from '@tanstack/react-virtual';
 
 
@@ -401,6 +401,8 @@ export function FolderGrid({
                                     />
                                 );
                             case 'FOLDER':
+                            case 'SEMESTER':
+                            case 'LEVEL':
                                  return (
                                     <FolderCard
                                         item={item}
