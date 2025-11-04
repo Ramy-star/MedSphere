@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, ReactNode } from 'react';
+import { useState, useRef, useEffect, ReactNode, Suspense, lazy } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,7 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-
+import dynamic from 'next/dynamic';
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
 import level3Ids from '@/lib/student-ids/level-3.json';
@@ -32,11 +32,16 @@ import { AchievementsSection } from '@/components/profile/Achievements';
 import Image from 'next/image';
 import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
-import { FilePreviewModal } from '@/components/FilePreviewModal';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from './ProfileNotesSection';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Skeleton } from '../ui/skeleton';
+
+const FilePreviewModal = dynamic(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal), {
+    loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4" /></div>,
+    ssr: false
+});
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -606,10 +611,14 @@ export default function ProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <FilePreviewModal
-        item={previewFile}
-        onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
-      />
+      <Suspense fallback={null}>
+        {previewFile && (
+            <FilePreviewModal
+                item={previewFile}
+                onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+            />
+        )}
+      </Suspense>
     </>
   );
 }

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { allSubjectIcons } from '@/lib/file-data';
 import type { Content } from '@/lib/contentService';
 import { Folder } from 'lucide-react';
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,19 +35,19 @@ export const SubjectCard = React.memo(function SubjectCard({
   const { can } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
-  const handleCardClick = (e: React.MouseEvent) => {
+  const handleCardClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
         return;
     }
-  };
+  }, []);
   
-  const handleAction = (e: Event, action: () => void) => {
+  const handleAction = useCallback((e: Event, action: () => void) => {
     e.preventDefault();
     e.stopPropagation();
     action();
     setDropdownOpen(false);
-  };
+  }, []);
 
 
   return (
@@ -110,4 +110,4 @@ export const SubjectCard = React.memo(function SubjectCard({
         </div>
     </Link>
   );
-});
+}, (prevProps, nextProps) => prevProps.subject.id === nextProps.subject.id && prevProps.subject.name === nextProps.subject.name && prevProps.subject.iconName === nextProps.subject.iconName && prevProps.subject.color === nextProps.subject.color);

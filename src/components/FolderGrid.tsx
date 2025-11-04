@@ -1,12 +1,10 @@
 'use client';
-import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo } from 'react';
+import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
 import { FileCard } from './FileCard';
 import { SubjectCard } from './subject-card';
-import { FilePreviewModal } from './FilePreviewModal';
-import { RenameDialog } from './RenameDialog';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -28,11 +26,18 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
+import dynamic from 'next/dynamic';
+import { Skeleton } from './ui/skeleton';
+
+const FilePreviewModal = dynamic(() => import('./FilePreviewModal').then(mod => mod.FilePreviewModal), {
+    loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4" /></div>,
+    ssr: false
+});
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -153,11 +158,11 @@ export function FolderGrid({
       }
   }, [fetchedItems]);
 
-  const handleFolderClick = (folder: Content) => {
+  const handleFolderClick = useCallback((folder: Content) => {
     router.push(`/folder/${folder.id}`);
-  };
+  }, [router]);
 
-  const handleFileClick = (file: Content) => {
+  const handleFileClick = useCallback((file: Content) => {
     if (file.type === 'LINK') {
         if(file.metadata?.url) {
             window.open(file.metadata.url, '_blank');
@@ -165,32 +170,32 @@ export function FolderGrid({
         return;
     }
     setPreviewFile(file);
-  };
+  }, []);
 
-  const handleRename = async (newName: string) => {
+  const handleRename = useCallback(async (newName: string) => {
     if (!itemToRename) return;
     await contentService.rename(itemToRename.id, newName);
     toast({ title: "Renamed", description: `"${itemToRename.name}" was renamed to "${newName}".` });
     setItemToRename(null);
-  };
+  }, [itemToRename, toast]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!itemToDelete) return;
     await contentService.delete(itemToDelete.id);
     toast({ title: "Deleted", description: `"${itemToDelete.name}" has been deleted.` });
     setItemToDelete(null);
-  };
+  }, [itemToDelete, toast]);
 
-  const handleDragEnter = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragEnter = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     if (!can('canUploadFile', parentId)) return;
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
       setIsDraggingOver(true);
     }
-  };
+  }, [can, parentId]);
 
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragLeave = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     if (!can('canUploadFile', parentId)) return;
     e.preventDefault();
     e.stopPropagation();
@@ -198,16 +203,16 @@ export function FolderGrid({
     if (dropZoneNode && !dropZoneNode.contains(e.relatedTarget as Node)) {
         setIsDraggingOver(false);
     }
-  };
+  }, [can, parentId]);
 
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     if (!can('canUploadFile', parentId)) return;
     e.preventDefault();
     e.stopPropagation();
     e.dataTransfer.dropEffect = 'copy';
-  };
+  }, [can, parentId]);
 
-  const handleDrop = async (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>) => {
     if (!can('canUploadFile', parentId)) return;
     e.preventDefault();
     e.stopPropagation();
@@ -219,9 +224,9 @@ export function FolderGrid({
         onFileSelected(file);
       }
     }
-  };
+  }, [can, onFileSelected, parentId]);
 
-  const handleDragEnd = async (event: DragEndEvent) => {
+  const handleDragEnd = useCallback(async (event: DragEndEvent) => {
     if (!canReorder) return;
     const { active, over } = event;
     if (over && active.id !== over.id) {
@@ -238,9 +243,9 @@ export function FolderGrid({
             return newOrderedItems;
         });
     }
-  };
+  }, [canReorder, parentId]);
 
-  const handleFolderSelect = async (folder: Content) => {
+  const handleFolderSelect = useCallback(async (folder: Content) => {
     const itemToProcess = currentAction === 'move' ? itemToMove : itemToCopy;
     if (!itemToProcess || !currentAction) return;
 
@@ -265,24 +270,24 @@ export function FolderGrid({
         setItemToCopy(null);
         setCurrentAction(null);
     }
-  };
+  }, [currentAction, itemToCopy, itemToMove, toast]);
 
-  const handleToggleVisibility = async (item: Content) => {
+  const handleToggleVisibility = useCallback(async (item: Content) => {
       await contentService.toggleVisibility(item.id);
       const isHidden = !item.metadata?.isHidden;
       toast({
           title: `Item ${isHidden ? 'Hidden' : 'Visible'}`,
           description: `"${item.name}" is now ${isHidden ? 'hidden from other users' : 'visible to everyone'}.`
       });
-  };
+  }, [toast]);
   
-  const isSubjectView = sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT' || (it.type === 'FOLDER' && it.metadata?.isClassContainer));
+  const isSubjectView = useMemo(() => sortedItems.length > 0 && sortedItems.every(it => it.type === 'SUBJECT' || (it.type === 'FOLDER' && it.metadata?.isClassContainer)), [sortedItems]);
   
   const sensors = useSensors(
     canReorder
       ? useSensor(PointerSensor, { activationConstraint: { distance: 10 } })
       : undefined
-  ) as ReturnType<typeof useSensors>; // Note: useSensors([]) would be ideal, but to match type, we use conditional sensor or adjust
+  ) as ReturnType<typeof useSensors>;
 
   const containerClasses = isSubjectView
     ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"
@@ -300,7 +305,7 @@ export function FolderGrid({
     });
   }, [sortedItems, uploadingFiles, can]);
 
-  const newUploads = uploadingFiles.filter(f => !f.isUpdate);
+  const newUploads = useMemo(() => uploadingFiles.filter(f => !f.isUpdate), [uploadingFiles]);
 
   return (
     <div
@@ -313,7 +318,6 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
        
-       {/* Render new uploads at the top */}
        {newUploads.length > 0 && (
          <div className="flex flex-col">
              <AnimatePresence>
@@ -328,7 +332,6 @@ export function FolderGrid({
 
       {loading && itemsToRender.length === 0 && newUploads.length === 0 && (
          <div className="text-center py-16">
-            {/* No skeletons, just empty space while loading, content will pop in. */}
         </div>
       )}
 
@@ -445,10 +448,14 @@ export function FolderGrid({
         </SortableContext>
       </DndContext>
 
-      <FilePreviewModal
-        item={previewFile}
-        onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
-      />
+      <Suspense fallback={null}>
+        {previewFile && (
+            <FilePreviewModal
+                item={previewFile}
+                onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+            />
+        )}
+      </Suspense>
       
       <FolderSelectorDialog
           open={showFolderSelector}

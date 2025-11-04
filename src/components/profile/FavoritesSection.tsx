@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, lazy, Suspense } from 'react';
 import type { UserProfile } from '@/stores/auth-store';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Content } from '@/lib/contentService';
@@ -24,6 +24,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Button } from '../ui/button';
+import { useCallback } from 'react';
+import dynamic from 'next/dynamic';
+import { Skeleton } from '../ui/skeleton';
+
+const FilePreviewModal = dynamic(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal), {
+    loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4" /></div>,
+    ssr: false
+});
 
 export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onFileClick: (item: Content) => void }) => {
   const router = useRouter();
@@ -56,35 +64,35 @@ export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onF
     return sortedFavorites;
   }, [allContent, favoriteIds]);
 
-  const handleFolderClick = (item: Content) => {
+  const handleFolderClick = useCallback((item: Content) => {
     const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
     router.push(path);
-  };
+  }, [router]);
 
-  const handleRename = async (newName: string) => {
+  const handleRename = useCallback(async (newName: string) => {
     if (!itemToRename) return;
     await contentService.rename(itemToRename.id, newName);
     toast({ title: "Renamed", description: `"${itemToRename.name}" was renamed to "${newName}".` });
     setItemToRename(null);
-  };
+  }, [itemToRename, toast]);
 
-  const handleDelete = async () => {
+  const handleDelete = useCallback(async () => {
     if (!itemToDelete) return;
     await contentService.delete(itemToDelete.id);
     toast({ title: "Deleted", description: `"${itemToDelete.name}" has been deleted.` });
     setItemToDelete(null);
-  };
+  }, [itemToDelete, toast]);
   
-  const handleToggleVisibility = async (item: Content) => {
+  const handleToggleVisibility = useCallback(async (item: Content) => {
       await contentService.toggleVisibility(item.id);
       const isHidden = !item.metadata?.isHidden;
       toast({
           title: `Item ${isHidden ? 'Hidden' : 'Visible'}`,
           description: `"${item.name}" is now ${isHidden ? 'hidden from other users' : 'visible to everyone'}.`
       });
-  };
+  }, [toast]);
 
-  const handleFolderSelect = async (folder: Content) => {
+  const handleFolderSelect = useCallback(async (folder: Content) => {
     const itemToProcess = currentAction === 'move' ? itemToMove : itemToCopy;
     if (!itemToProcess || !currentAction) return;
 
@@ -108,7 +116,7 @@ export const FavoritesSection = ({ user, onFileClick }: { user: UserProfile, onF
         setItemToCopy(null);
         setCurrentAction(null);
     }
-  };
+  }, [currentAction, itemToCopy, itemToMove, toast]);
 
 
   return (

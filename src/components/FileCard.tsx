@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Button } from './ui/button';
 import { format } from 'date-fns';
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useCallback } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
@@ -176,16 +176,16 @@ export const FileCard = React.memo(function FileCard({
     const storagePath = item.metadata?.storagePath;
     const browserUrl = isLink ? linkUrl : storagePath;
 
-    const handleClick = (e: React.MouseEvent) => {
+    const handleClick = useCallback((e: React.MouseEvent) => {
       if (uploadingFile) return; // Prevent clicks during update
       // Ignore clicks on interactive elements within the card
       if (e.target instanceof HTMLElement && e.target.closest('button, a, input, [role="menuitem"], [data-radix-dropdown-menu-trigger]')) {
           return;
       }
       onFileClick(item);
-    };
+    }, [item, onFileClick, uploadingFile]);
 
-    const handleCreateQuestions = () => {
+    const handleCreateQuestions = useCallback(() => {
         if (item.metadata?.storagePath) {
             initiateGeneration({
                 id: item.id,
@@ -194,9 +194,9 @@ export const FileCard = React.memo(function FileCard({
             });
             router.push('/questions-creator');
         }
-    };
+    }, [initiateGeneration, item, router]);
     
-    const handleFileUpdate = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const handleFileUpdate = useCallback((event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (file && onUpdate) {
             onUpdate(file);
@@ -205,16 +205,16 @@ export const FileCard = React.memo(function FileCard({
         if(event.target) {
             event.target.value = '';
         }
-    };
+    }, [onUpdate]);
 
-    const handleUpdateClick = (e: Event) => {
+    const handleUpdateClick = useCallback((e: Event) => {
         if (!can('canUpdateFile', item.id)) return;
         e.stopPropagation();
         e.preventDefault();
         updateFileInputRef.current?.click();
-    };
+    }, [can, item.id]);
     
-    const handleToggleFavorite = async () => {
+    const handleToggleFavorite = useCallback(async () => {
         if (!user) return;
         try {
             await contentService.toggleFavorite(user.id, item.id);
@@ -225,14 +225,14 @@ export const FileCard = React.memo(function FileCard({
         } catch(error: any) {
             toast({ variant: 'destructive', title: 'Error', description: error.message });
         }
-    };
+    }, [user, item.id, item.name, isFavorited, toast]);
     
-    const handleAction = (e: Event, action: () => void) => {
+    const handleAction = useCallback((e: Event, action: () => void) => {
         e.preventDefault();
         e.stopPropagation();
         action();
         setDropdownOpen(false);
-    };
+    }, []);
 
     if (uploadingFile) {
         return (
@@ -401,4 +401,11 @@ export const FileCard = React.memo(function FileCard({
             </div>
         </div>
     )
-});
+}, (prevProps, nextProps) => {
+    // Only re-render if essential props change.
+    return prevProps.item.id === nextProps.item.id &&
+           prevProps.item.name === nextProps.item.name &&
+           prevProps.item.metadata?.isHidden === nextProps.item.metadata?.isHidden &&
+           (prevProps.user?.favorites?.includes(prevProps.item.id)) === (nextProps.user?.favorites?.includes(nextProps.item.id)) &&
+           prevProps.uploadingFile === nextProps.uploadingFile;
+}));
