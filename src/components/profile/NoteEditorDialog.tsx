@@ -30,6 +30,7 @@ import History from '@tiptap/extension-history';
 import { motion, AnimatePresence } from 'framer-motion';
 import Placeholder from '@tiptap/extension-placeholder';
 import FontFamily from '@tiptap/extension-font-family';
+// import FontSize from '@tiptap/extension-font-size';
 import ImageExtension from '@tiptap/extension-image';
 import { contentService } from '@/lib/contentService';
 import EmojiPicker, { EmojiClickData } from 'emoji-picker-react';
@@ -108,6 +109,7 @@ const editorExtensions = [
   TextAlign.configure({ types: ['heading', 'paragraph', 'listItem'], alignments: ['left', 'center', 'right', 'justify'] }),
   Highlight.configure({ multicolor: true, HTMLAttributes: { class: 'text-black rounded-sm px-1 py-0.5' } }),
   TextStyle,
+  // FontSize,
   Color,
   History.configure({ depth: 20 }),
   Placeholder.configure({
@@ -211,71 +213,71 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
     </Popover>
 )};
 
-const FontSizeSlider = ({ editor }: { editor: Editor }) => {
-    const [sliderValue, setSliderValue] = useState<number>(14);
+// const FontSizeSlider = ({ editor }: { editor: Editor }) => {
+//     const [sliderValue, setSliderValue] = useState(14);
 
-    const handleSizeChange = useCallback((size: number) => {
-        const clampedSize = Math.max(8, Math.min(96, size));
-        setSliderValue(clampedSize);
-        if (editor) {
-            editor.chain().focus().setMark('textStyle', { fontSize: `${clampedSize}pt` }).run();
-        }
-    }, [editor]);
+//     const handleSizeChange = useCallback((size: number) => {
+//         const clampedSize = Math.max(8, Math.min(96, size));
+//         if (editor) {
+//             editor.chain().focus().setMark('textStyle', { fontSize: `${clampedSize}pt` }).run();
+//         }
+//     }, [editor]);
     
-    useEffect(() => {
-        if (!editor) return;
+//     const handleValueCommit = useCallback((size: number) => {
+//         handleSizeChange(size);
+//     }, [handleSizeChange]);
 
-        const updateSliderFromEditor = () => {
-            const currentSize = editor.getAttributes('textStyle').fontSize;
-            if (typeof currentSize === 'string') {
-                const sizeNumber = parseInt(currentSize, 10);
-                if (!isNaN(sizeNumber)) {
-                    setSliderValue(sizeNumber);
-                    return;
-                }
-            }
-            // If no font size is set on the current selection, maybe default to 14
-            // Or just leave it as is. Let's try leaving it.
-        };
+//     useEffect(() => {
+//         if (!editor) return;
 
-        editor.on('transaction', updateSliderFromEditor);
-        // Initial sync
-        updateSliderFromEditor();
+//         const updateSliderFromSelection = () => {
+//             if (editor.isDestroyed) return;
+//             const currentSize = editor.getAttributes('textStyle').fontSize;
+//             if (typeof currentSize === 'string') {
+//                 const sizeNumber = parseInt(currentSize, 10);
+//                 if (!isNaN(sizeNumber)) {
+//                     setSliderValue(sizeNumber);
+//                     return;
+//                 }
+//             }
+//             setSliderValue(14); // Default size if none is set
+//         };
+
+//         editor.on('transaction', updateSliderFromSelection);
+//         updateSliderFromSelection();
         
-        return () => {
-            editor.off('transaction', updateSliderFromEditor);
-        };
-    }, [editor]);
+//         return () => {
+//             if (editor && !editor.isDestroyed) {
+//                 editor.off('transaction', updateSliderFromSelection);
+//             }
+//         };
+//     }, [editor]);
 
-
-    if (!editor) return null;
-
-    return (
-        <div className="flex items-center gap-2 w-64">
-            <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
-                {sliderValue} pt
-            </div>
-            <Slider
-                min={8}
-                max={96}
-                step={1}
-                value={[sliderValue]}
-                onValueChange={([val]) => handleSizeChange(val)}
-                className="flex-1"
-            />
-             <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleSizeChange(sliderValue - 1)} disabled={sliderValue <= 8}>
-                    <Minus size={14} />
-                </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleSizeChange(sliderValue + 1)} disabled={sliderValue >= 96}>
-                    <Plus size={14} />
-                </Button>
-            </div>
-        </div>
-    );
-};
-
-
+//     return (
+//         <div className="flex items-center gap-2 w-64">
+//             <div className="text-xs font-medium bg-slate-800/80 text-white rounded-md px-2 py-1 w-[60px] text-center">
+//                 {sliderValue} pt
+//             </div>
+//             <Slider
+//                 min={8}
+//                 max={96}
+//                 step={1}
+//                 value={[sliderValue]}
+//                 onValueChange={([val]) => setSliderValue(val)}
+//                 onValueCommit={([val]) => handleValueCommit(val)}
+//                 className="flex-1"
+//             />
+//              <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
+//                 <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleSizeChange(sliderValue - 1)} disabled={sliderValue <= 8}>
+//                     <Minus size={14} />
+//                 </Button>
+//                 <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleSizeChange(sliderValue + 1)} disabled={sliderValue >= 96}>
+//                     <Plus size={14} />
+//                 </Button>
+//             </div>
+//         </div>
+//     );
+// };
 
 const EmojiSelector = ({ editor }: { editor: Editor }) => (
     <Popover>
@@ -494,7 +496,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         <EditorToolbarButton icon={Redo} onClick={() => editor.chain().focus().redo().run()} tip="Redo" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <FontPicker editor={editor} />
-        <FontSizeSlider editor={editor} />
+        {/* <FontSizeSlider editor={editor} /> */}
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
         <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
@@ -543,8 +545,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           style={{ backgroundColor: note.color, borderColor: 'rgba(255, 255, 255, 0.1)' }}
       >
         <DialogHeader className="p-4 flex-shrink-0 flex-row items-center justify-between">
-            <DialogTitle className="sr-only">Note Editor: {note.title}</DialogTitle>
-          <Input 
+            <Input 
               ref={titleInputRef}
               defaultValue={note.title}
               onChange={(e) => setNote({ ...note, title: e.target.value })}
@@ -659,10 +660,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
           </BubbleMenu>
           
-          <div className="h-full overflow-y-auto p-2 rounded-lg bg-black/10">
-            <div className="relative h-full">
+          <div className="relative h-full overflow-y-auto p-2 rounded-lg bg-black/10">
                  <EditorContent editor={editor} className="h-full" dir="auto" />
-            </div>
           </div>
         </div>
         
