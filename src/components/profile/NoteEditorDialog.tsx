@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note, NotePage } from './ProfileNotesSection';
@@ -213,28 +214,28 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
 const FontSizeSlider = ({ editor }: { editor: Editor }) => {
     const [sliderValue, setSliderValue] = useState(14);
 
-    const handleSizeChange = (newSize: number) => {
+    const handleSizeChange = useCallback((newSize: number) => {
         const clampedSize = Math.max(1, Math.min(newSize, 200));
         setSliderValue(clampedSize);
         editor.chain().focus().setMark('textStyle', { fontSize: `${clampedSize}pt` }).run();
-    };
-
+    }, [editor]);
+    
     useEffect(() => {
         const updateSliderFromEditor = () => {
             const currentSize = editor.getAttributes('textStyle').fontSize;
             if (currentSize && typeof currentSize === 'string') {
                 const parsedSize = parseInt(currentSize, 10);
-                if (!isNaN(parsedSize)) {
+                if (!isNaN(parsedSize) && parsedSize !== sliderValue) {
                     setSliderValue(parsedSize);
                 }
-            } else {
-                setSliderValue(14); // Default size
+            } else if (sliderValue !== 14) {
+                 setSliderValue(14); // Default size
             }
         };
         editor.on('selectionUpdate', updateSliderFromEditor);
-        updateSliderFromEditor();
+        updateSliderFromEditor(); // Initial sync
         return () => { editor.off('selectionUpdate', updateSliderFromEditor); };
-    }, [editor]);
+    }, [editor, sliderValue]);
     
     return (
       <div className="flex items-center gap-2 w-64">
