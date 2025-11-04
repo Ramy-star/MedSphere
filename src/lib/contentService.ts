@@ -20,7 +20,7 @@ if (typeof window !== 'undefined') {
 export type Content = {
   id: string;
   name: string;
-  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK' | 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD';
+  type: 'LEVEL' | 'SEMESTER' | 'SUBJECT' | 'FOLDER' | 'FILE' | 'LINK' | 'INTERACTIVE_QUIZ' | 'INTERACTIVE_EXAM' | 'INTERACTIVE_FLASHCARD' | 'NOTE';
   parentId: string | null;
   metadata?: {
     size?: number;
@@ -82,10 +82,9 @@ export const contentService = {
     async getFileContent(url: string): Promise<Blob> {
         const cachedFile = await cacheService.getFile(url);
         if (cachedFile) {
-            console.log("Serving file from IndexedDB cache:", url);
             return cachedFile;
         }
-        console.log("Fetching file from network and caching:", url);
+        
         const response = await fetch(url);
         if (!response.ok) {
             throw new Error(`Failed to fetch file from network: ${response.statusText}`);
