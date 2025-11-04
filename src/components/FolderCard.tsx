@@ -1,3 +1,4 @@
+
 'use client';
 import { MoreVertical, Edit, Trash2, GripVertical, Image as ImageIcon, Folder, Copy, Move, Eye, EyeOff, Star, StarOff } from 'lucide-react';
 import type { Content } from '@/lib/contentService';
@@ -190,7 +191,6 @@ export const FolderCard = React.memo(function FolderCard({
                 className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
-                {!isMobile && can('canMove', item.id) && <GripVertical className="h-5 w-5 text-slate-500 mr-2 shrink-0 cursor-grab touch-none" />}
                 <div className="flex items-center gap-3 overflow-hidden flex-1">
                     {item.metadata?.iconURL ? (
                        <Image 
