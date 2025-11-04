@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Dialog,
@@ -186,33 +187,27 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                     </DialogHeader>
 
                     <div className="p-3 border-b border-white/10 flex flex-wrap items-center gap-2">
-                         <Select value={filters.level} onValueChange={(value) => {
-                            setFilters(f => ({ ...f, level: value }));
-                            if (query.trim()) performSearch();
-                         }}>
+                         <Select value={filters.level} onValueChange={(value) => setFilters(f => ({ ...f, level: value }))}>
                             <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
-                                <Layers className="h-4 w-4 text-blue-400"/>
+                                <LayersIcon className="h-4 w-4 text-blue-400"/>
                                 <SelectValue asChild>
                                     <span className="truncate">{selectedLevelName}</span>
                                 </SelectValue>
                             </SelectTrigger>
-                            <SelectContent container={dialogContentRef.current ?? undefined}>
+                            <SelectContent container={dialogContentRef.current}>
                                 <SelectItem value="all">All Levels</SelectItem>
                                 {levels.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                             </SelectContent>
                         </Select>
 
-                        <Select value={filters.type} onValueChange={(value) => {
-                            setFilters(f => ({ ...f, type: value as SearchFilters['type'] }));
-                            if (query.trim()) performSearch();
-                        }}>
+                        <Select value={filters.type} onValueChange={(value) => setFilters(f => ({ ...f, type: value as SearchFilters['type'] }))}>
                             <SelectTrigger className="w-auto h-8 rounded-full border-white/10 bg-black/20 hover:bg-white/10 text-slate-300 gap-2 focus:ring-0 focus:ring-offset-0 focus-visible:ring-0 focus-visible:ring-offset-0">
                                 <FileType className="h-4 w-4 text-green-400"/>
                                 <SelectValue asChild>
                                     <span className="truncate">{selectedTypeName}</span>
                                 </SelectValue>
                             </SelectTrigger>
-                             <SelectContent container={dialogContentRef.current ?? undefined}>
+                             <SelectContent container={dialogContentRef.current}>
                                 {FileTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -220,7 +215,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
 
                     <ScrollArea className="flex-1 overflow-y-auto no-scrollbar">
                         <div className="p-2 space-y-0.5">
-                            {(isSearching || loadingAllItems) && !results.length && debouncedQuery.trim() ? (
+                            {(isSearching || loadingAllItems) && !results.length && (debouncedQuery.trim() || filters.level !== 'all' || filters.type !== 'all') ? (
                                 <div className="space-y-2 p-2">
                                     <Skeleton className="h-12 w-full" />
                                     <Skeleton className="h-12 w-full" />
@@ -289,3 +284,5 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
         </>
     );
 }
+
+    
