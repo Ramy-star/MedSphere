@@ -1,3 +1,4 @@
+
 'use client';
 import { 
     MoreVertical, Edit, Trash2, Download, ExternalLink, RefreshCw, Star, StarOff,
@@ -148,6 +149,8 @@ export const FileCard = React.memo(function FileCard({
     const updateFileInputRef = useRef<HTMLInputElement>(null);
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { toast } = useToast();
+    const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
+
 
     const isFavorited = user?.favorites?.includes(item.id) || false;
 
@@ -303,6 +306,7 @@ export const FileCard = React.memo(function FileCard({
                                 <TooltipTrigger asChild>
                                     <DropdownMenuTrigger asChild>
                                         <Button 
+                                            ref={dropdownTriggerRef}
                                             variant="ghost" 
                                             size="icon" 
                                             className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -319,6 +323,7 @@ export const FileCard = React.memo(function FileCard({
                         <DropdownMenuContent 
                             className="w-48 p-2"
                             align="end"
+                            container={dropdownTriggerRef.current?.closest('.fixed')}
                         >
                             <DropdownMenuItem onSelect={(e) => handleAction(e, () => onFileClick(item))}>
                                 <MousePointerSquareDashed className="mr-2 h-4 w-4" />
@@ -408,4 +413,4 @@ export const FileCard = React.memo(function FileCard({
            prevProps.item.metadata?.isHidden === nextProps.item.metadata?.isHidden &&
            (prevProps.user?.favorites?.includes(prevProps.item.id)) === (nextProps.user?.favorites?.includes(nextProps.item.id)) &&
            prevProps.uploadingFile === nextProps.uploadingFile;
-})
+});

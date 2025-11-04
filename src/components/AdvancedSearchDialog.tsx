@@ -9,8 +9,8 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Search, X, Loader2, Folder as FolderIcon, File as FileIcon } from 'lucide-react';
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { Search, X, Loader2, Folder as FolderIcon, File as FileIcon, Wand2 } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
 import { search as searchFlow } from '@/ai/flows/search-flow';
 import { Content, contentService } from '@/lib/contentService';
@@ -49,6 +49,8 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
     const { data: allItems, loading: loadingAllItems } = useCollection<Content>('content');
     const router = useRouter();
     const { toast } = useToast();
+    const dialogContentRef = useRef<HTMLDivElement>(null);
+
 
     // State for actions
     const [previewFile, setPreviewFile] = useState<Content | null>(null);
@@ -156,7 +158,10 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
     return (
         <>
             <Dialog open={open} onOpenChange={handleClose}>
-                <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white">
+                <DialogContent 
+                    ref={dialogContentRef}
+                    className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 border-slate-700 rounded-2xl bg-slate-900/70 backdrop-blur-xl shadow-lg text-white"
+                >
                     <DialogHeader className="p-4 border-b border-white/10 flex-row items-center">
                         <Search className="h-5 w-5 text-slate-400" />
                         <Input
@@ -175,7 +180,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                             <SelectTrigger className="w-[180px] h-8 rounded-full">
                                 <SelectValue placeholder="Level" />
                             </SelectTrigger>
-                            <SelectContent>
+                            <SelectContent container={dialogContentRef.current ?? undefined}>
                                 <SelectItem value="all">All Levels</SelectItem>
                                 {levels.map(l => <SelectItem key={l.id} value={l.id}>{l.name}</SelectItem>)}
                             </SelectContent>
@@ -185,7 +190,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                             <SelectTrigger className="w-[150px] h-8 rounded-full">
                                 <SelectValue placeholder="Type" />
                             </SelectTrigger>
-                            <SelectContent>
+                             <SelectContent container={dialogContentRef.current ?? undefined}>
                                 {FileTypeOptions.map(opt => <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>)}
                             </SelectContent>
                         </Select>
@@ -220,8 +225,12 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                             )}
                         </div>
                     </ScrollArea>
-                    <DialogFooter className="p-2 border-t border-white/10 text-xs text-slate-500 justify-start">
+                    <DialogFooter className="p-2 border-t border-white/10 flex-row justify-between items-center text-xs text-slate-500">
                         <p>{results.length} result(s)</p>
+                        <div className='flex items-center gap-1.5'>
+                            <Wand2 className='w-3 h-3 text-slate-400' />
+                            <span>Powered by MedSphere Advanced Search</span>
+                        </div>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
