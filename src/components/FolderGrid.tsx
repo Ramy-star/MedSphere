@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,8 +32,8 @@ import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import dynamic from 'next/dynamic';
-import { Skeleton, SkeletonCard } from './ui/skeleton';
-import { useVirtualizer } from '@tanstack/react-virtual';
+import { SkeletonCard } from './ui/skeleton';
+import { Skeleton } from './ui/skeleton';
 
 
 const FilePreviewModal = dynamic(() => import('./FilePreviewModal').then(mod => mod.FilePreviewModal), {
@@ -91,13 +90,10 @@ const itemVariants = {
 const SortableItemWrapper = ({ id, children, isSubjectView }: { id: string, children: React.ReactNode, isSubjectView: boolean }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id });
   
-  const style = isSubjectView ? {
+  const style = {
       transform: CSS.Transform.toString(transform),
       transition,
       zIndex: isDragging ? 1 : 'auto',
-  } : {
-      transform: CSS.Transform.toString(transform),
-      transition,
   };
 
   const { can } = useAuthStore();
@@ -147,7 +143,6 @@ export function FolderGrid({
   const [currentAction, setCurrentAction] = useState<'move' | 'copy' | null>(null);
 
   const dropZoneRef = useRef<HTMLDivElement>(null);
-  const parentRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { toast } = useToast();
   
@@ -290,16 +285,7 @@ export function FolderGrid({
       ? useSensor(PointerSensor, { activationConstraint: { distance: 10 } })
       : undefined
   ) as ReturnType<typeof useSensors>;
-
-  const rowVirtualizer = useVirtualizer({
-    count: sortedItems.length,
-    getScrollElement: () => parentRef.current,
-    estimateSize: () => isSubjectView ? 160 : 60, // Estimate row height
-    overscan: 10,
-  });
-
-  const virtualItems = rowVirtualizer.getVirtualItems();
-
+  
   const itemsToRender = useMemo(() => {
     const updatingMap = new Map(uploadingFiles.filter(f => f.isUpdate).map(f => [f.originalId, f]));
     const visibleItems = sortedItems.filter(item => !item.metadata?.isHidden || can('canToggleVisibility', item.id));
@@ -371,96 +357,75 @@ export function FolderGrid({
          </div>
       )}
       
-      <div ref={parentRef} className="h-full overflow-y-auto no-scrollbar">
-        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!canReorder}>
-            <motion.div 
-              style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }} 
-              className={cn(isSubjectView && "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4")}
-              variants={listVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              <AnimatePresence>
-                {virtualItems.map((virtualItem) => {
-                    const { item, uploadingFile } = itemsToRender[virtualItem.index];
-                    if (!item) return null;
-                    
-                    const isLastItem = virtualItem.index === itemsToRender.length - 1;
-                    const itemKey = item.id;
-                    
-                    const renderedContent = () => {
-                        switch (item.type) {
-                            case 'SUBJECT':
-                                return (
-                                    <SubjectCard 
-                                        subject={item}
-                                        onRename={() => setItemToRename(item)}
-                                        onDelete={() => setItemToDelete(item)}
-                                        onIconChange={() => setItemForIconChange(item)}
-                                    />
-                                );
-                            case 'FOLDER':
-                            case 'SEMESTER':
-                            case 'LEVEL':
-                                 return (
-                                    <FolderCard
-                                        item={item}
-                                        onRename={() => setItemToRename(item)}
-                                        onDelete={() => setItemToDelete(item)}
-                                        onIconChange={() => setItemForIconChange(item)}
-                                        onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
-                                        onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
-                                        onToggleVisibility={() => handleToggleVisibility(item)}
-                                        onClick={handleFolderClick}
-                                        displayAs={item.metadata?.isClassContainer || isSubjectView ? 'grid' : 'list'}
-                                    />
-                                );
-                            default:
-                                return (
-                                    <FileCard
-                                        item={item}
-                                        uploadingFile={uploadingFile}
-                                        onFileClick={handleFileClick}
-                                        onRename={() => setItemToRename(item)}
-                                        onDelete={() => setItemToDelete(item)}
-                                        onUpdate={(file) => onUpdateFile(item, file)}
-                                        onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
-                                        onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
-                                        onToggleVisibility={() => handleToggleVisibility(item)}
-                                        onRetryUpload={onRetry}
-                                        onRemoveUpload={onRemove}
-                                    />
-                                );
-                        }
-                    };
-                    
-                     return (
-                        <motion.div
-                          key={itemKey}
-                          style={{
-                            position: 'absolute',
-                            top: 0,
-                            left: 0,
-                            width: '100%',
-                            height: `${virtualItem.size}px`,
-                            transform: `translateY(${virtualItem.start}px)`,
-                          }}
-                           className={cn(!isSubjectView && "border-white/10", !isSubjectView && !isLastItem && "border-b")}
-                           variants={itemVariants}
-                           custom={virtualItem.index}
-                        >
-                          <SortableItemWrapper id={item.id} isSubjectView={isSubjectView}>
-                            {renderedContent()}
-                          </SortableItemWrapper>
-                        </motion.div>
-                      );
-                })}
-              </AnimatePresence>
-            </motion.div>
-          </SortableContext>
-        </DndContext>
-      </div>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!canReorder}>
+          <motion.div 
+            className={cn(isSubjectView ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-1")}
+            variants={listVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <AnimatePresence>
+              {itemsToRender.map(({ item, uploadingFile }, index) => (
+                <motion.div
+                  key={item.id}
+                  variants={itemVariants}
+                  custom={index}
+                  className={cn(!isSubjectView && "border-white/10", !isSubjectView && index !== itemsToRender.length - 1 && "border-b")}
+                >
+                  <SortableItemWrapper id={item.id} isSubjectView={isSubjectView}>
+                    {(() => {
+                      switch (item.type) {
+                        case 'SUBJECT':
+                            return (
+                                <SubjectCard 
+                                    subject={item}
+                                    onRename={() => setItemToRename(item)}
+                                    onDelete={() => setItemToDelete(item)}
+                                    onIconChange={() => setItemForIconChange(item)}
+                                />
+                            );
+                        case 'FOLDER':
+                        case 'SEMESTER':
+                        case 'LEVEL':
+                              return (
+                                <FolderCard
+                                    item={item}
+                                    onRename={() => setItemToRename(item)}
+                                    onDelete={() => setItemToDelete(item)}
+                                    onIconChange={() => setItemForIconChange(item)}
+                                    onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
+                                    onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
+                                    onToggleVisibility={() => handleToggleVisibility(item)}
+                                    onClick={handleFolderClick}
+                                    displayAs={item.metadata?.isClassContainer || isSubjectView ? 'grid' : 'list'}
+                                />
+                            );
+                        default:
+                            return (
+                                <FileCard
+                                    item={item}
+                                    uploadingFile={uploadingFile}
+                                    onFileClick={handleFileClick}
+                                    onRename={() => setItemToRename(item)}
+                                    onDelete={() => setItemToDelete(item)}
+                                    onUpdate={(file) => onUpdateFile(item, file)}
+                                    onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
+                                    onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
+                                    onToggleVisibility={() => handleToggleVisibility(item)}
+                                    onRetryUpload={onRetry}
+                                    onRemoveUpload={onRemove}
+                                />
+                            );
+                      }
+                    })()}
+                  </SortableItemWrapper>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </motion.div>
+        </SortableContext>
+      </DndContext>
 
       <Suspense fallback={null}>
         <FilePreviewModal
