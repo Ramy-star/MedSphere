@@ -32,12 +32,11 @@ import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import dynamic from 'next/dynamic';
-import { SkeletonCard } from './ui/skeleton';
 import { Skeleton } from './ui/skeleton';
 
 
 const FilePreviewModal = dynamic(() => import('./FilePreviewModal').then(mod => mod.FilePreviewModal), {
-    loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><SkeletonCard /></div>,
+    loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4 rounded-lg bg-slate-800" /></div>,
     ssr: false
 });
 
@@ -301,11 +300,11 @@ export function FolderGrid({
   const newUploads = useMemo(() => uploadingFiles.filter(f => !f.isUpdate), [uploadingFiles]);
 
   if (loading && itemsToRender.length === 0 && newUploads.length === 0) {
-      const skeletonCount = isSubjectView ? 8 : 10;
+      const skeletonCount = 10;
       return (
-          <div className={cn(isSubjectView ? "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" : "space-y-2")}>
+          <div className="space-y-1">
               {Array.from({ length: skeletonCount }).map((_, i) => (
-                  isSubjectView ? <SkeletonCard key={i} /> : <Skeleton key={i} className="h-14 w-full" />
+                  <div key={i} className="my-1.5"><Skeleton className="h-14 w-full" /></div>
               ))}
           </div>
       );
@@ -371,7 +370,6 @@ export function FolderGrid({
                   key={item.id}
                   variants={itemVariants}
                   custom={index}
-                  className={cn(!isSubjectView && "border-white/10", !isSubjectView && index !== itemsToRender.length - 1 && "border-b")}
                 >
                   <SortableItemWrapper id={item.id} isSubjectView={isSubjectView}>
                     {(() => {
