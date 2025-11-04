@@ -214,13 +214,18 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
 const FontSizeSlider = ({ editor }: { editor: Editor }) => {
     const [sliderValue, setSliderValue] = useState<number>(14);
 
-    const applyFontSize = useCallback((size: number) => {
-        editor.chain().focus().setMark('textStyle', { fontSize: `${size}pt` }).run();
+    const handleSizeChange = useCallback((size: number) => {
+        const clampedSize = Math.max(8, Math.min(96, size));
+        setSliderValue(clampedSize);
+        if (editor) {
+            editor.chain().focus().setMark('textStyle', { fontSize: `${clampedSize}pt` }).run();
+        }
     }, [editor]);
     
-    // Update slider when selection changes
     useEffect(() => {
-        const handleSelectionUpdate = () => {
+        if (!editor) return;
+
+        const updateSliderFromEditor = () => {
             const currentSize = editor.getAttributes('textStyle').fontSize;
             if (typeof currentSize === 'string') {
                 const sizeNumber = parseInt(currentSize, 10);
@@ -229,14 +234,21 @@ const FontSizeSlider = ({ editor }: { editor: Editor }) => {
                     return;
                 }
             }
-            // If no size is set on the selection, default or keep current
+            // If no font size is set on the current selection, maybe default to 14
+            // Or just leave it as is. Let's try leaving it.
         };
-        editor.on('selectionUpdate', handleSelectionUpdate);
-        handleSelectionUpdate(); // Initial check
+
+        editor.on('transaction', updateSliderFromEditor);
+        // Initial sync
+        updateSliderFromEditor();
+        
         return () => {
-            editor.off('selectionUpdate', handleSelectionUpdate);
+            editor.off('transaction', updateSliderFromEditor);
         };
     }, [editor]);
+
+
+    if (!editor) return null;
 
     return (
         <div className="flex items-center gap-2 w-64">
@@ -248,15 +260,14 @@ const FontSizeSlider = ({ editor }: { editor: Editor }) => {
                 max={96}
                 step={1}
                 value={[sliderValue]}
-                onValueChange={([val]) => setSliderValue(val)}
-                onValueCommit={([val]) => applyFontSize(val)}
+                onValueChange={([val]) => handleSizeChange(val)}
                 className="flex-1"
             />
-            <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => { const newVal = sliderValue - 1; setSliderValue(newVal); applyFontSize(newVal); }} disabled={sliderValue <= 8}>
+             <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleSizeChange(sliderValue - 1)} disabled={sliderValue <= 8}>
                     <Minus size={14} />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => { const newVal = sliderValue + 1; setSliderValue(newVal); applyFontSize(newVal); }} disabled={sliderValue >= 96}>
+                <Button variant="ghost" size="icon" className="h-6 w-6 text-white active:scale-95" onClick={() => handleSizeChange(sliderValue + 1)} disabled={sliderValue >= 96}>
                     <Plus size={14} />
                 </Button>
             </div>
@@ -649,7 +660,9 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           </BubbleMenu>
           
           <div className="h-full overflow-y-auto p-2 rounded-lg bg-black/10">
-            <EditorContent editor={editor} className="h-full" dir="auto" />
+            <div className="relative h-full">
+                 <EditorContent editor={editor} className="h-full" dir="auto" />
+            </div>
           </div>
         </div>
         
