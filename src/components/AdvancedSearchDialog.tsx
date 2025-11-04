@@ -9,7 +9,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Search, X, Loader2, Folder as FolderIcon, File as FileIcon, Layers, FileType } from 'lucide-react';
+import { Search, X, Loader2, Folder as FolderIcon, File as FileIcon, Layers, FileType, Telescope } from 'lucide-react';
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useDebounce } from 'use-debounce';
 import { search as searchFlow } from '@/ai/flows/search-flow';
@@ -84,7 +84,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
 
 
     const performSearch = useCallback(async () => {
-        if (!debouncedQuery.trim()) {
+        if (!debouncedQuery.trim() && filters.type === 'all' && filters.level === 'all') {
             setResults([]);
             setIsSearching(false);
             return;
@@ -170,7 +170,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
             <Dialog open={open} onOpenChange={handleClose}>
                 <DialogContent 
                     ref={dialogContentRef}
-                    className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 rounded-2xl bg-gradient-to-br from-slate-900/50 to-green-950/50 backdrop-blur-xl shadow-lg text-white border-0"
+                    className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 rounded-2xl bg-gradient-to-br from-slate-900/80 to-green-950/80 backdrop-blur-xl text-white border-0"
                 >
                     <DialogHeader className="p-4 border-b border-white/10 flex-row items-center">
                         <Search className="h-5 w-5 text-slate-400" />
@@ -214,7 +214,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
 
                     <ScrollArea className="flex-1 overflow-y-auto no-scrollbar">
                         <div className="p-2 space-y-0.5">
-                            {(isSearching || loadingAllItems) && !results.length ? (
+                            {(isSearching || loadingAllItems) && !results.length && debouncedQuery.trim() ? (
                                 <div className="space-y-2 p-2">
                                     <Skeleton className="h-12 w-full" />
                                     <Skeleton className="h-12 w-full" />
@@ -236,7 +236,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                                 ))
                             ) : (
                                 <div className="text-center text-slate-400 py-10">
-                                    <p>{debouncedQuery ? 'No results found.' : 'Start typing to search.'}</p>
+                                    <p>{debouncedQuery || filters.type !== 'all' || filters.level !== 'all' ? 'No results found.' : 'Start typing to search.'}</p>
                                 </div>
                             )}
                         </div>
@@ -244,7 +244,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                     <DialogFooter className="p-2 border-t border-white/10 flex-row justify-between items-center text-xs text-slate-500">
                         <p className="pl-1 mb-0.5">{results.length} result(s)</p>
                         <div className='flex items-center gap-1.5 mb-0.5'>
-                            <LayersIcon className='w-3 h-3 text-slate-400' />
+                            <Telescope className='w-3 h-3 text-slate-400' />
                             <span>Powered by MedSphere Advanced Search</span>
                         </div>
                     </DialogFooter>
