@@ -219,11 +219,10 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
         <Button
             variant="outline"
             onClick={() => setShowAdvancedSearch(true)}
-            className="h-9 sm:h-10 rounded-full bg-black/20 border-white/10 hover:bg-black/30 text-slate-400 hover:text-white transition-colors"
+            className="h-9 sm:h-10 rounded-full bg-black/20 border-white/10 hover:bg-black/30 text-slate-400 hover:text-white transition-colors px-4"
         >
             <Search className="h-4 w-4 sm:h-5 sm:w-5" />
             <span className="ml-2 text-sm hidden sm:inline">Search</span>
-            <span className="hidden sm:inline ml-auto pl-4 text-xs text-slate-500 border-l border-slate-600">⌘K</span>
         </Button>
         
         {isMobile ? <MobileNav /> : <DesktopNav />}
