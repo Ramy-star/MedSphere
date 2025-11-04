@@ -408,4 +408,4 @@ export const FileCard = React.memo(function FileCard({
            prevProps.item.metadata?.isHidden === nextProps.item.metadata?.isHidden &&
            (prevProps.user?.favorites?.includes(prevProps.item.id)) === (nextProps.user?.favorites?.includes(nextProps.item.id)) &&
            prevProps.uploadingFile === nextProps.uploadingFile;
-}));
+})
