@@ -5,13 +5,13 @@ import {
   collection,
   query,
   where,
-  orderBy,
-  limit,
   onSnapshot,
   Query,
   DocumentData,
   QueryConstraint,
   FirestoreError,
+  orderBy,
+  limit,
 } from 'firebase/firestore';
 import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
@@ -52,7 +52,7 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
     try {
         if (typeof pathOrQuery === 'string') {
           queryStringPath = pathOrQuery;
-          let constraints: QueryConstraint[] = [];
+          const constraints: QueryConstraint[] = [];
           if (memoizedOptions.where) {
               if (Array.isArray(memoizedOptions.where[0])) {
                   (memoizedOptions.where as [string, any, any][]).forEach(w => {
