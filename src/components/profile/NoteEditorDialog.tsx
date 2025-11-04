@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note, NotePage } from './ProfileNotesSection';
@@ -213,13 +212,17 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
 
 const FontSizeSlider = ({ editor }: { editor: Editor }) => {
     const [sliderValue, setSliderValue] = useState(14);
-
-    const handleSizeChange = useCallback((newSize: number) => {
-        const clampedSize = Math.max(1, Math.min(newSize, 200));
-        setSliderValue(clampedSize);
-        editor.chain().focus().setMark('textStyle', { fontSize: `${clampedSize}pt` }).run();
-    }, [editor]);
     
+    const applySize = (size: number) => {
+        editor.chain().focus().setMark('textStyle', { fontSize: `${size}pt` }).run();
+    };
+
+    const handleSliderChange = (newVal: number[]) => {
+        const newSize = newVal[0];
+        setSliderValue(newSize);
+        applySize(newSize);
+    };
+
     useEffect(() => {
         const updateSliderFromEditor = () => {
             const currentSize = editor.getAttributes('textStyle').fontSize;
@@ -247,14 +250,14 @@ const FontSizeSlider = ({ editor }: { editor: Editor }) => {
           max={200}
           step={1}
           value={[sliderValue]}
-          onValueChange={(newVal) => handleSizeChange(newVal[0])}
+          onValueChange={handleSliderChange}
           className="flex-1"
         />
         <div className="flex items-center gap-0.5 bg-slate-800/80 rounded-md p-0.5">
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange(sliderValue - 1)}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSliderChange([sliderValue - 1])}>
             <Minus size={14} />
           </Button>
-          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSizeChange(sliderValue + 1)}>
+          <Button variant="ghost" size="icon" className="h-6 w-6 text-white" onClick={() => handleSliderChange([sliderValue + 1])}>
             <Plus size={14} />
           </Button>
         </div>
@@ -646,7 +649,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
           </BubbleMenu>
           
-          <EditorContent editor={editor} className="h-full overflow-y-auto p-2 rounded-lg bg-black/10" dir="auto" />
+          <EditorContent editor={editor} className="h-full overflow-y-auto p-2 rounded-lg bg-black/10 relative" dir="auto" />
         </div>
         
         <DialogFooter className="p-4 border-t border-white/10 flex-shrink-0">
