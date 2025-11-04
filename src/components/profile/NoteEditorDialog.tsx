@@ -141,14 +141,14 @@ const EditorToolbarButton = ({ icon: Icon, onClick, tip, isActive = false }: { i
     </Button>
 );
 
-const ColorPicker = ({ editor }: { editor: Editor }) => (
+const ColorPicker = ({ editor, container }: { editor: Editor, container?: HTMLElement | null }) => (
   <Popover>
     <PopoverTrigger asChild>
       <Button variant="ghost" size="icon" title="Text Color" className="h-8 w-8 text-slate-400">
         <Palette className="h-4 w-4" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+    <PopoverContent container={container} className="w-auto p-2 bg-slate-900 border-slate-700">
     <div className="flex gap-1">
         {['#ffffff', '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'].map(color => (
         <button
@@ -164,14 +164,14 @@ const ColorPicker = ({ editor }: { editor: Editor }) => (
   </Popover>
 );
 
-const HighlightPicker = ({ editor }: { editor: Editor }) => (
+const HighlightPicker = ({ editor, container }: { editor: Editor, container?: HTMLElement | null }) => (
   <Popover>
     <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" title="Highlight Color" className="h-8 w-8 text-slate-400">
             <Highlighter className="h-4 w-4" />
         </Button>
     </PopoverTrigger>
-    <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+    <PopoverContent container={container} className="w-auto p-2 bg-slate-900 border-slate-700">
         <div className="flex gap-1">
             {HIGHLIGHT_COLORS.map(({ color }) => (
                 <button
@@ -187,7 +187,7 @@ const HighlightPicker = ({ editor }: { editor: Editor }) => (
   </Popover>
 );
 
-const FontPicker = ({ editor }: { editor: Editor }) => {
+const FontPicker = ({ editor, container }: { editor: Editor, container?: HTMLElement | null }) => {
     const currentFont = editor.getAttributes('textStyle').fontFamily || '';
     const currentFontName = FONT_FAMILIES.find(f => f.value === currentFont)?.name || 'Default';
     return (
@@ -198,7 +198,7 @@ const FontPicker = ({ editor }: { editor: Editor }) => {
                 <ChevronDown className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-56 p-1 bg-slate-900 border-slate-700">
+        <PopoverContent container={container} className="w-56 p-1 bg-slate-900 border-slate-700">
             <ScrollArea className="h-60">
                 {FONT_FAMILIES.map(({ name, value }) => (
                     <button
@@ -304,14 +304,14 @@ const FontSizeSlider = ({ editor }: { editor: Editor | null }) => {
 };
 
 
-const EmojiSelector = ({ editor }: { editor: Editor }) => (
+const EmojiSelector = ({ editor, container }: { editor: Editor, container?: HTMLElement | null }) => (
     <Popover>
         <PopoverTrigger asChild>
             <Button variant="ghost" size="icon" title="Insert Emoji" className="h-8 w-8 text-slate-400">
                 <Smile className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
+        <PopoverContent container={container} className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
             <ScrollArea className="h-[300px]">
                 <EmojiPicker 
                     onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
@@ -612,15 +612,15 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         <EditorToolbarButton icon={Undo} onClick={() => editor.chain().focus().undo().run()} tip="Undo" />
         <EditorToolbarButton icon={Redo} onClick={() => editor.chain().focus().redo().run()} tip="Redo" />
         <div className="w-px h-6 bg-slate-700 mx-1" />
-        <FontPicker editor={editor} />
+        <FontPicker editor={editor} container={dialogContentRef.current} />
         <FontSizeSlider editor={editor} />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
         <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
         <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
         <EditorToolbarButton icon={Strikethrough} onClick={() => editor.chain().focus().toggleStrike().run()} isActive={editor.isActive('strike')} tip="Strikethrough" />
-        <HighlightPicker editor={editor} />
-        <ColorPicker editor={editor} />
+        <HighlightPicker editor={editor} container={dialogContentRef.current} />
+        <ColorPicker editor={editor} container={dialogContentRef.current} />
         <div className="w-px h-6 bg-slate-700 mx-1" />
         <EditorToolbarButton icon={AlignLeft} onClick={() => editor.chain().focus().setTextAlign('left').run()} isActive={editor.isActive({ textAlign: 'left' })} tip="Align Left" />
         <EditorToolbarButton icon={AlignCenter} onClick={() => editor.chain().focus().setTextAlign('center').run()} isActive={editor.isActive({ textAlign: 'center' })} tip="Align Center" />
@@ -646,7 +646,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
             };
             input.click();
         }} tip="Insert Image" />
-        <EmojiSelector editor={editor} />
+        <EmojiSelector editor={editor} container={dialogContentRef.current} />
       </div>
   );
 
@@ -712,7 +712,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                       <AlertDialogTrigger asChild>
                                         <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
                                       </AlertDialogTrigger>
-                                      <AlertDialogContent>
+                                      <AlertDialogContent container={dialogContentRef.current}>
                                         <AlertDialogHeader>
                                           <AlertDialogTitle>Delete Page?</AlertDialogTitle>
                                           <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
@@ -728,47 +728,48 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                 <div className="flex items-center gap-1.5 px-3 mt-1.5 h-5">
                                     <Popover>
                                         <PopoverTrigger asChild>
-                                            <button className="flex items-center gap-1 text-slate-500 hover:text-white transition-colors">
+                                             <button className="flex items-center gap-1 text-slate-500 hover:text-white transition-colors">
                                                 <Paperclip size={14} />
                                             </button>
                                         </PopoverTrigger>
-                                        <PopoverContent className="w-64 p-2 bg-slate-900/80 border-slate-700 backdrop-blur-md">
-                                            <Popover>
-                                                <PopoverTrigger asChild>
-                                                    <Button variant="ghost" className="w-full justify-start text-sm">
-                                                        <Plus className="mr-2 h-4 w-4" /> Add Reference
-                                                    </Button>
-                                                </PopoverTrigger>
-                                                <PopoverContent className="w-[300px] p-1 bg-slate-900/80 border-slate-700 backdrop-blur-md" side="right" align="start">
-                                                    <Input 
-                                                        placeholder="Search files..."
-                                                        value={fileSearchQuery}
-                                                        onChange={(e) => setFileSearchQuery(e.target.value)}
-                                                        className="mb-1 h-8 bg-slate-800/60 border-slate-600 text-white"
-                                                    />
-                                                    <ScrollArea className="max-h-60">
-                                                        {filteredFiles.map(file => (
-                                                            <button
-                                                                key={file.id}
-                                                                onClick={() => handleFileSelect(file)}
-                                                                className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
-                                                            >
-                                                                <FileText className="w-4 h-4 text-slate-400" />
-                                                                <span className="truncate">{file.name}</span>
-                                                            </button>
+                                        <PopoverContent container={dialogContentRef.current} className="w-64 p-1 bg-slate-800/80 border-slate-700 backdrop-blur-md">
+                                            <div className="flex flex-col">
+                                                <Popover>
+                                                    <PopoverTrigger asChild>
+                                                        <Button variant="ghost" className="w-full justify-start text-sm p-2 h-auto">
+                                                            <Plus className="mr-2 h-4 w-4" /> Add Reference
+                                                        </Button>
+                                                    </PopoverTrigger>
+                                                     <PopoverContent container={dialogContentRef.current} className="w-[300px] p-1 bg-slate-900/80 border-slate-700 backdrop-blur-md" side="right" align="start">
+                                                        <Input 
+                                                            placeholder="Search files..."
+                                                            value={fileSearchQuery}
+                                                            onChange={(e) => setFileSearchQuery(e.target.value)}
+                                                            className="mb-1 h-8 bg-slate-800/60 border-slate-600 text-white"
+                                                        />
+                                                        <ScrollArea className="max-h-60">
+                                                            {filteredFiles.map(file => (
+                                                                <button
+                                                                    key={file.id}
+                                                                    onClick={() => handleFileSelect(file)}
+                                                                    className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
+                                                                >
+                                                                    <FileText className="w-4 h-4 text-slate-400" />
+                                                                    <span className="truncate">{file.name}</span>
+                                                                </button>
+                                                            ))}
+                                                        </ScrollArea>
+                                                    </PopoverContent>
+                                                </Popover>
+                                                {refs.length > 0 && <hr className="border-slate-700 my-1" />}
+                                                <ScrollArea className="max-h-40">
+                                                    <div className="space-y-1 p-1">
+                                                        {refs.map(file => (
+                                                            <ReferencedFilePill key={file.id} file={file} onRemove={() => handleRemoveFileRef(page.id, file.id)} />
                                                         ))}
-                                                    </ScrollArea>
-                                                </PopoverContent>
-                                            </Popover>
-                                            
-                                            {refs.length > 0 && <hr className="border-slate-700 my-1" />}
-                                            <ScrollArea className="max-h-40">
-                                                <div className="space-y-1 p-1">
-                                                    {refs.map(file => (
-                                                        <ReferencedFilePill key={file.id} file={file} onRemove={() => handleRemoveFileRef(page.id, file.id)} />
-                                                    ))}
-                                                </div>
-                                            </ScrollArea>
+                                                    </div>
+                                                </ScrollArea>
+                                            </div>
                                         </PopoverContent>
                                     </Popover>
                                 </div>
@@ -788,7 +789,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                       <PopoverTrigger asChild>
                           <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
                       </PopoverTrigger>
-                      <PopoverContent className="w-auto p-2 bg-slate-900 border-slate-700">
+                      <PopoverContent container={dialogContentRef.current} className="w-auto p-2 bg-slate-900 border-slate-700">
                           <div className="flex gap-2">
                               {NOTE_COLORS.map(c => (
                                   <button
@@ -823,7 +824,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         </div>
 
         <div className="relative flex-1 overflow-hidden px-4">
-          <BubbleMenu editor={editor} tippyOptions={{ duration: 100 }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
+          <BubbleMenu editor={editor} tippyOptions={{ duration: 100, container: dialogContentRef.current }} className="bg-slate-800 border border-slate-700 rounded-lg shadow-xl flex gap-1 p-1">
               <EditorToolbarButton icon={Bold} onClick={() => editor.chain().focus().toggleBold().run()} isActive={editor.isActive('bold')} tip="Bold" />
               <EditorToolbarButton icon={Italic} onClick={() => editor.chain().focus().toggleItalic().run()} isActive={editor.isActive('italic')} tip="Italic" />
               <EditorToolbarButton icon={Underline} onClick={() => editor.chain().focus().toggleUnderline().run()} isActive={editor.isActive('underline')} tip="Underline" />
@@ -854,3 +855,5 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
    </>
   );
 };
+
+    
