@@ -5,6 +5,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from './ui/button';
@@ -72,8 +73,6 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
             return;
         }
 
-        // The search flow is client-side, so we can pass all items to it.
-        // For a server-side search, this would be an API call.
         const searchResults = await searchFlow(debouncedQuery, allItems, filters);
         setResults(searchResults);
         setIsSearching(false);
@@ -106,6 +105,8 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
         <Dialog open={open} onOpenChange={handleClose}>
             <DialogContent className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0">
                 <DialogHeader className="p-4 border-b border-white/10 flex-row items-center">
+                    <DialogTitle className="sr-only">Advanced Search</DialogTitle>
+                    <DialogDescription className="sr-only">Search for files and folders with advanced filters.</DialogDescription>
                     <Search className="h-5 w-5 text-slate-400" />
                     <Input
                         placeholder="Type a command or search..."

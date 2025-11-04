@@ -74,17 +74,15 @@ if (isServer) {
     if (!config.externals) {
         config.externals = [];
     }
-    if (Array.isArray(config.externals)) {
-        config.externals.push({
-          'http': 'http',
-          'https': 'https',
-          'url': 'url',
-          'zlib': 'zlib',
-          'stream': 'stream',
-          'fs': 'fs',
-          'crypto': 'crypto',
-        });
-    }
+    config.externals.push({
+      'http': 'http',
+      'https': 'https',
+      'url': 'url',
+      'zlib': 'zlib',
+      'stream': 'stream',
+      'fs': 'fs',
+      'crypto': 'crypto',
+    });
     
     return config;
   },
