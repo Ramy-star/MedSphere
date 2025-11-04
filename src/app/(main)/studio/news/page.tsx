@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { Editor, EditorContent, useEditor } from '@tiptap/react';
@@ -299,40 +300,37 @@ export default function NewsComposerPage() {
                 <TabsTrigger value="editor">Editor</TabsTrigger>
                 <TabsTrigger value="saved">Saved Images</TabsTrigger>
             </TabsList>
-            <TabsContent value="editor" className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex h-full w-full flex-col items-center justify-start">
-                    <div className="flex-shrink-0 flex items-center gap-4 py-4 z-20 sticky top-0 w-full justify-center">
-                        <TiptapToolbar editor={editor} />
-                        <Button onClick={handleDownload} disabled={isLoading} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
-                            {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
-                            Download PNG
-                        </Button>
-                    </div>
+            <TabsContent value="editor" className="flex-1 flex flex-col items-center overflow-y-auto no-scrollbar">
+                <div className="flex-shrink-0 flex items-center gap-4 py-4 z-20 sticky top-0 w-full justify-center">
+                    <TiptapToolbar editor={editor} />
+                    <Button onClick={handleDownload} disabled={isLoading} className="h-12 rounded-lg bg-blue-600 hover:bg-blue-700">
+                        {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Download className="mr-2 h-4 w-4" />}
+                        Download PNG
+                    </Button>
+                </div>
+                <div className="w-full flex-grow flex justify-center py-4">
+                    <div
+                        ref={canvasRef}
+                        className={cn(
+                            "relative flex flex-col items-center text-center",
+                            "bg-gradient-to-br from-slate-900 to-emerald-950 text-white",
+                            "py-2 px-3 w-[550px]",
+                            "shadow-2xl"
+                        )}>
+                        <header className="flex-shrink-0 flex items-center justify-center gap-2 w-full mb-2 pb-2 border-b border-slate-700">
+                            <Logo className="h-10 w-10 md:h-12 md:w-12" />
+                             <h1 className="text-2xl md:text-3xl font-bold">
+                              <span className="font-extrabold text-white">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
+                            </h1>
+                        </header>
 
-                    <div className="w-full flex-grow flex justify-center py-4 overflow-y-auto no-scrollbar">
-                        <div
-                            ref={canvasRef}
-                            className={cn(
-                                "relative flex flex-col items-center text-center",
-                                "bg-gradient-to-br from-slate-900 to-emerald-950 text-white",
-                                "py-2 px-3 w-[550px]",
-                                "shadow-2xl"
-                            )}>
-                            <header className="flex-shrink-0 flex items-center justify-center gap-2 w-full mb-2 pb-2 border-b border-slate-700">
-                                <Logo className="h-10 w-10 md:h-12 md:w-12" />
-                                 <h1 className="text-2xl md:text-3xl font-bold">
-                                  <span className="font-extrabold text-white">Med</span><span className="text-[#00D309] font-normal">Sphere</span>
-                                </h1>
-                            </header>
-
-                            <div className="flex-1 w-full flex items-center justify-center my-4 relative min-h-[400px]">
-                                 <TiptapEditor editor={editor} />
-                            </div>
-
-                            <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-2 border-t border-slate-700">
-                                © 2025 MedSphere. All rights reserved.
-                            </footer>
+                        <div className="flex-1 w-full flex items-center justify-center my-4 relative min-h-[400px]">
+                             <TiptapEditor editor={editor} />
                         </div>
+
+                        <footer className="flex-shrink-0 text-center text-xs text-slate-500/80 z-10 w-full mt-auto pt-2 border-t border-slate-700">
+                            © 2025 MedSphere. All rights reserved.
+                        </footer>
                     </div>
                 </div>
             </TabsContent>
