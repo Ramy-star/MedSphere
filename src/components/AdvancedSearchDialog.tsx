@@ -287,5 +287,3 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
         </>
     );
 }
-
-    
