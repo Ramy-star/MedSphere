@@ -99,9 +99,8 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   }
 
   const onRenderError = useCallback((error: Error) => {
-    if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled')) {
-        // This is a harmless warning that can be ignored.
-        // It happens when scrolling quickly or unmounting the component.
+    // These are harmless warnings that can be ignored when scrolling fast.
+    if (error.name === 'AbortException' || error.message.includes('TextLayer task cancelled') || error.message.includes('AnnotationLayer task cancelled')) {
         return;
     }
     console.error('Failed to render PDF page:', error);
