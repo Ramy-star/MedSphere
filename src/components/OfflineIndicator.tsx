@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useOnlineStatus } from '@/hooks/use-online-status';
@@ -12,9 +11,11 @@ export function OfflineIndicator() {
 
   return (
     <motion.div
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      className="fixed top-0 left-0 right-0 z-[9999] bg-amber-600 text-white px-4 py-2 text-center text-sm font-semibold flex items-center justify-center gap-2"
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.3, ease: 'easeInOut' }}
+      className="relative z-[100] bg-amber-600 text-white px-4 py-2 text-center text-sm font-semibold flex items-center justify-center gap-2 overflow-hidden"
     >
       <WifiOff className="w-4 h-4" />
       <span>You're offline. Some content may be unavailable.</span>

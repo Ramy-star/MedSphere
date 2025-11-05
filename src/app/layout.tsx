@@ -155,7 +155,9 @@ export default function RootLayout({
           <FirebaseClientProvider config={firebaseConfig}>
             <div className="flex flex-col h-full w-full">
                 <OfflineIndicator />
-                {renderContent()}
+                <div className="flex-1 flex flex-col min-h-0">
+                  {renderContent()}
+                </div>
                  {authState !== 'authenticated' && authState !== 'loading' && (
                      <footer className="absolute bottom-4 text-center text-xs text-slate-500 z-10 w-full">
                         © 2025 MedSphere. All rights reserved.
