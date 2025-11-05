@@ -134,7 +134,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
 
     const filteredFiles = useMemo(() => {
         if (!allContent) return [];
-        const items = allContent.filter(f => f.type !== 'LEVEL' && f.type !== 'SEMESTER' && f.type !== 'SUBJECT');
+        const items = allContent.filter(f => f.type === 'FILE' || f.type === 'LINK');
         if (!fileSearchQuery) return items.slice(0, 10);
         return items.filter(file => file.name.toLowerCase().includes(fileSearchQuery.toLowerCase())).slice(0, 10);
     }, [allContent, fileSearchQuery]);
@@ -197,10 +197,25 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         const firstUserMessage = history.find(m => m.role === 'user')?.text || 'New Chat';
         const title = firstUserMessage.substring(0, 40) + (firstUserMessage.length > 40 ? '...' : '');
 
+        // Make sure to serialize referencedFiles correctly, only keeping essential data
+        const serializableHistory = history.map(message => {
+            if (message.referencedFiles) {
+                return {
+                    ...message,
+                    referencedFiles: message.referencedFiles.map(file => ({
+                        id: file.id,
+                        name: file.name,
+                        type: file.type,
+                    })),
+                };
+            }
+            return message;
+        });
+
         const sessionData = {
             userId: user.id,
             title,
-            messages: history,
+            messages: serializableHistory,
             updatedAt: serverTimestamp(),
         };
 
@@ -227,10 +242,12 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         const currentHistory = isNewChat ? [] : chatHistory;
         
         setView('chat');
-        const newHistory: ChatMessage[] = [...currentHistory, { role: 'user', text: prompt, referencedFiles: filesToSubmit }];
+        const newUserMessage: ChatMessage = { role: 'user', text: prompt, referencedFiles: filesToSubmit };
+        const newHistory: ChatMessage[] = [...currentHistory, newUserMessage];
         setChatHistory(newHistory);
         setIsResponding(true);
         setCustomQuestion('');
+        setReferencedFiles([]); // Clear referenced files from the input area after submission
         
         let fileContent = '';
         try {
@@ -238,14 +255,19 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                 const fileContents = await Promise.all(
                     filesToSubmit.map(async file => {
                         if (file.metadata?.storagePath) {
-                            const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
-                            if (file.metadata.mime === 'application/pdf') {
-                                const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
-                                const text = await contentService.extractTextFromPdf(pdf);
-                                return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
-                            } else {
-                                const text = await fileBlob.text();
-                                return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
+                            try {
+                                const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
+                                if (file.metadata.mime === 'application/pdf') {
+                                    const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
+                                    const text = await contentService.extractTextFromPdf(pdf);
+                                    return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
+                                } else {
+                                    const text = await fileBlob.text();
+                                    return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
+                                }
+                            } catch (e) {
+                                console.error(`Failed to process file ${file.name}:`, e);
+                                return `[Error processing file: ${file.name}]`;
                             }
                         }
                         return '';
@@ -293,7 +315,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
             setChatHistory(prev => prev.slice(0, -1));
         } finally {
             setIsResponding(false);
-            // Don't clear referenced files on new chat submission anymore
         }
     }, [theme, user, toast, chatHistory, currentChatId, saveChatSession]);
 
@@ -316,6 +337,14 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     const handleFileSelect = (file: Content) => {
         setReferencedFiles(prev => {
             if(prev.some(f => f.id === file.id)) return prev;
+            if(prev.length >= 2) {
+                toast({
+                    title: 'Limit Reached',
+                    description: 'You can reference a maximum of 2 files at a time.',
+                    variant: 'destructive'
+                });
+                return prev;
+            }
             return [...prev, file];
         });
         setShowFileSearch(false);
@@ -558,16 +587,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                   className="self-end bg-blue-600 text-white rounded-2xl px-3 py-2 max-w-[85%] whitespace-pre-wrap break-words"
                   style={{ fontSize: 'inherit' }}
                 >
-                  {message.referencedFiles && message.referencedFiles.length > 0 && (
-                      <div className="flex flex-wrap gap-2 mb-2">
-                          {message.referencedFiles.map(file => (
-                              <div key={file.id} className="flex items-center gap-1.5 bg-blue-900/70 text-blue-200 text-xs font-medium pl-2 pr-1 py-0.5 rounded-full shrink-0">
-                                <Paperclip className="w-3 h-3" />
-                                <span className="truncate max-w-[100px]">{file.name}</span>
-                              </div>
-                          ))}
-                      </div>
-                  )}
+                  {/* DO NOT RENDER referencedFiles here to keep the UI clean */}
                   {message.text}
                 </div>
               )}
@@ -673,8 +693,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                                         <AlertDialogDescription>This will permanently delete this chat history.</AlertDialogDescription>
                                     </AlertDialogHeader>
                                     <AlertDialogFooter>
-                                        <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                                        <AlertDialogAction onClick={(e) => {e.stopPropagation(); handleDeleteSession(); }} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                                        <AlertDialogCancel onClick={(e)=>e.stopPropagation()}>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction onClick={(e)=>{e.stopPropagation(); handleDeleteSession(); }} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
                                     </AlertDialogFooter>
                                 </AlertDialogContent>
                             </AlertDialog>
