@@ -93,6 +93,10 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   }));
 
   function onDocumentLoadError(error: Error) {
+    if (error.name === 'AbortException') {
+      console.log('PDF load aborted, likely due to fast navigation. This is expected.');
+      return;
+    }
     if (error.message.includes('API version') && error.message.includes('Worker version')) return;
     console.error('Error loading PDF:', error);
     toast({ variant: 'destructive', title: 'Error loading PDF', description: 'The file could not be loaded.' });
