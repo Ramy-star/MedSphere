@@ -844,36 +844,25 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             "h-full transition-all duration-300 ease-in-out overflow-hidden",
             isMobile ? 'fixed top-0 left-0 w-full z-20' : 'relative',
             isMobile && (showChat ? 'translate-x-0' : 'translate-x-full'),
-            !isMobile && (showChat ? 'w-0' : 'w-0') // Always start as 0 width on desktop
+            !isMobile && (showChat ? 'w-[512px]' : 'w-0')
         )}>
-            <AnimatePresence>
-            {showChat && (
-                <motion.div
-                    key="chat-panel"
-                    className="w-[512px] h-full"
-                    initial={{ x: isMobile ? '100%' : 0, width: isMobile ? '100%' : 0 }}
-                    animate={{ x: 0, width: isMobile ? '100%' : '512px' }}
-                    exit={{ x: isMobile ? '100%' : 0, width: isMobile ? '100%' : 0 }}
-                    transition={{ type: "spring", stiffness: 350, damping: 35 }}
-                >
-                    {(isChatAvailable || showChat) && (
-                        <ChatPanel
-                            showChat={showChat}
-                            isMobile={isMobile}
-                            documentText={documentContext.lectureText}
-                            isExtracting={isExtracting}
-                            onClose={() => setShowChat(false)}
-                            initialQuotedText={initialQuotedText}
-                            onInitialQuotedTextConsumed={() => setInitialQuotedText(null)}
-                            questionsText={documentContext.questionText}
-                        />
-                    )}
-                </motion.div>
+             {(isChatAvailable || showChat) && (
+                <ChatPanel
+                    showChat={showChat}
+                    isMobile={isMobile}
+                    documentText={documentContext.lectureText}
+                    isExtracting={isExtracting}
+                    onClose={() => setShowChat(false)}
+                    initialQuotedText={initialQuotedText}
+                    onInitialQuotedTextConsumed={() => setInitialQuotedText(null)}
+                    questionsText={documentContext.questionText}
+                />
             )}
-            </AnimatePresence>
         </div>
 
       </DialogContent>
     </Dialog>
   );
 }
+
+    
