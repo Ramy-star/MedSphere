@@ -45,18 +45,6 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
 
     return (
         <>
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        key="backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                        onClick={() => toggle()}
-                    />
-                )}
-            </AnimatePresence>
             <div className="fixed bottom-6 right-6 z-[100]">
                 <motion.div
                     layout
@@ -65,7 +53,7 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
                     animate={currentVariant}
                     className="shadow-2xl glass-card flex flex-col overflow-hidden"
                     style={{
-                        backgroundColor: 'rgba(30, 41, 59, 0.5)',
+                        backgroundColor: 'rgba(30, 41, 59, 0.8)',
                     }}
                     onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
                 >
