@@ -81,6 +81,8 @@ const FONT_FAMILIES = [
     { name: 'Montserrat', value: 'Montserrat, sans-serif' },
     { name: 'Impact', value: 'Impact, sans-serif' },
     { name: 'Comic Sans MS', value: 'Comic Sans MS, cursive' },
+    { name: 'Forte', value: 'Forte, cursive' },
+    { name: 'Cooper Black', value: 'Cooper Black, serif' },
     { name: 'Amasis', value: 'Amasis, serif' },
     { name: 'Cairo', value: 'Cairo, sans-serif' },
     { name: 'Tajawal', value: 'Tajawal, sans-serif' },
