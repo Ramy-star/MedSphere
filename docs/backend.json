@@ -150,6 +150,88 @@
       },
       "required": ["id", "uid", "studentId", "createdAt"]
     },
+    "Channel": {
+      "title": "Channel",
+      "description": "Represents a discussion channel in the community.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["public", "private", "level"] },
+        "levelId": { "type": "string" },
+        "members": { "type": "array", "items": { "type": "string" } },
+        "admins": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastMessage": {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "userId": { "type": "string" },
+            "userName": { "type": "string" }
+          }
+        }
+      },
+      "required": ["id", "name", "type", "members", "admins", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Represents a single message within a channel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "channelId": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "isAnonymous": { "type": "boolean" }
+      },
+      "required": ["id", "channelId", "userId", "content", "timestamp"]
+    },
+    "DirectMessage": {
+      "title": "Direct Message",
+      "description": "Represents a private conversation between two users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite ID of participants." },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "userId": { "type": "string" }
+          }
+        },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "participants", "lastUpdated"]
+    },
+    "QuizDuel": {
+      "title": "Quiz Duel",
+      "description": "Represents a real-time quiz challenge between two players.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "playerOneId": { "type": "string" },
+        "playerTwoId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "finished", "cancelled"] },
+        "questions": { "type": "array", "items": { "type": "object" } },
+        "currentQuestionIndex": { "type": "number" },
+        "scores": {
+          "type": "object",
+          "properties": {
+            "playerOne": { "type": "number" },
+            "playerTwo": { "type": "number" }
+          }
+        },
+        "answers": { "type": "array", "items": { "type": "object" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "finishedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "playerOneId", "status", "questions", "createdAt"]
+    },
     "AiBuddyChatSession": {
         "title": "AI Study Buddy Chat Session",
         "description": "Represents a single chat conversation with the AI study buddy.",
@@ -259,6 +341,26 @@
     "/auditLogs/{logId}": {
         "schema": { "$ref": "#/entities/AuditLog" },
         "description": "Stores a log of all administrative actions."
+    },
+    "/channels/{channelId}": {
+        "schema": { "$ref": "#/entities/Channel" },
+        "description": "Stores community channels/groups."
+    },
+    "/messages/{messageId}": {
+        "schema": { "$ref": "#/entities/Message" },
+        "description": "Stores messages for all community channels."
+    },
+    "/directMessages/{chatId}": {
+        "schema": { "$ref": "#/entities/DirectMessage" },
+        "description": "Stores metadata for private one-to-one chats."
+    },
+    "/directMessages/{chatId}/messages/{messageId}": {
+        "schema": { "$ref": "#/entities/Message" },
+        "description": "Stores messages for a specific private chat."
+    },
+    "/duels/{duelId}": {
+        "schema": { "$ref": "#/entities/QuizDuel" },
+        "description": "Stores real-time quiz duel sessions."
     }
   }
 }
