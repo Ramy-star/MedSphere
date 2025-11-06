@@ -2,7 +2,7 @@
 import { useMemo } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
-import { Channel } from '@/docs/backend.json';
+import type { Channel } from '@/lib/communityService';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, PlusCircle, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -12,22 +12,24 @@ import Link from 'next/link';
 const ChannelCard = ({ channel }: { channel: Channel }) => {
   const memberCount = Array.isArray(channel.members) ? channel.members.length : 0;
   return (
-    <motion.div 
-      className="glass-card p-5 rounded-xl flex flex-col justify-between"
-      whileHover={{ y: -5, transition: { type: 'spring', stiffness: 300 } }}
-    >
-      <div>
-        <h3 className="text-lg font-bold text-white">{channel.name}</h3>
-        <p className="text-sm text-slate-400 mt-1 h-10 line-clamp-2">{channel.description}</p>
-      </div>
-      <div className="flex justify-between items-center mt-4">
-        <div className="flex items-center text-xs text-slate-500 gap-2">
-          <Users className="w-4 h-4" />
-          <span>{memberCount} {memberCount === 1 ? 'member' : 'members'}</span>
+    <Link href={`/community/chat/${channel.id}`}>
+        <motion.div 
+        className="glass-card p-5 rounded-xl flex flex-col justify-between"
+        whileHover={{ y: -5, transition: { type: 'spring', stiffness: 300 } }}
+        >
+        <div>
+            <h3 className="text-lg font-bold text-white">{channel.name}</h3>
+            <p className="text-sm text-slate-400 mt-1 h-10 line-clamp-2">{channel.description}</p>
         </div>
-        <Button size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 h-8 text-xs">View</Button>
-      </div>
-    </motion.div>
+        <div className="flex justify-between items-center mt-4">
+            <div className="flex items-center text-xs text-slate-500 gap-2">
+            <Users className="w-4 h-4" />
+            <span>{memberCount} {memberCount === 1 ? 'member' : 'members'}</span>
+            </div>
+            <Button size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 h-8 text-xs">View</Button>
+        </div>
+        </motion.div>
+    </Link>
   );
 };
 
