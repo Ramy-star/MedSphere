@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEffect } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, notFound } from 'next/navigation';
 
 export default function CommunityLayout({
   children,
@@ -13,12 +13,12 @@ export default function CommunityLayout({
   const { can } = useAuthStore();
   const pathname = usePathname();
   // We reuse the admin panel permission for now, but could use 'canAccessCommunityPage' in the future.
-  const canAccess = can('canAccessAdminPanel', pathname);
+  const canAccess = can('canAccessCommunityPage', pathname);
 
   useEffect(() => {
     // If user doesn't have access, redirect to home page.
     if (canAccess === false) { // Check for explicit false, as it might be null initially
-      window.location.href = '/';
+      notFound();
     }
   }, [canAccess]);
 
