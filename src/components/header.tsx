@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -49,6 +48,8 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   });
 
   const handleCommunityClick = () => {
+    // For now, let's assume only admins can access the new community page
+    // We can change this logic later to a specific permission if needed
     if (can('canAccessAdminPanel', null)) {
       router.push('/community');
     } else {
@@ -67,7 +68,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       label: 'Community',
       icon: Users,
       action: handleCommunityClick,
-      permission: () => true, // Logic is handled in the action
+      permission: () => true, // Permission logic is in the action itself
     },
     {
       label: 'Questions Creator',
