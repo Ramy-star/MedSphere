@@ -28,6 +28,7 @@ export function WaveformAudioPlayer({ src, className, isCurrentUser }: WaveformA
   const [currentTime, setCurrentTime] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [waveform, setWaveform] = useState<number[]>([]);
+  const [isSeeking, setIsSeeking] = useState(false);
 
   const drawWaveform = useCallback((normalizedData: number[], progress: number) => {
     const canvas = canvasRef.current;
@@ -147,7 +148,7 @@ export function WaveformAudioPlayer({ src, className, isCurrentUser }: WaveformA
     setIsPlaying(!isPlaying);
   };
 
-  const handleSeek = (event: React.MouseEvent<HTMLCanvasElement>) => {
+  const handleSeek = useCallback((event: React.MouseEvent<HTMLCanvasElement>) => {
     const audio = audioRef.current;
     if (!audio || duration === 0 || isLoading) return;
     const canvas = event.currentTarget;
@@ -156,12 +157,32 @@ export function WaveformAudioPlayer({ src, className, isCurrentUser }: WaveformA
     const newTime = (x / rect.width) * duration;
     audio.currentTime = newTime;
     setCurrentTime(newTime);
+  }, [duration, isLoading]);
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    e.stopPropagation();
+    setIsSeeking(true);
+    handleSeek(e);
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (isSeeking) {
+      handleSeek(e);
+    }
+  };
+
+  const handleMouseUp = () => {
+    setIsSeeking(false);
   };
   
+  const handleMouseLeave = () => {
+    setIsSeeking(false);
+  }
+
   const playButtonColor = isCurrentUser ? 'bg-white text-blue-600' : 'bg-blue-500 text-white';
 
   return (
-    <div className={cn("flex items-center gap-3 w-full max-w-[250px]", className)}>
+    <div className={cn("flex items-center gap-3 w-full max-w-xs", className)}>
       <audio ref={audioRef} src={src} preload="metadata" />
       <button
         onClick={togglePlayPause}
@@ -178,7 +199,10 @@ export function WaveformAudioPlayer({ src, className, isCurrentUser }: WaveformA
         <canvas
           ref={canvasRef}
           className="w-full h-10 cursor-pointer"
-          onMouseDown={handleSeek}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
         />
         <div className={cn("text-xs font-mono", isCurrentUser ? "text-slate-200/80" : "text-slate-400")}>
           {formatTime(currentTime)} / {formatTime(duration)}
