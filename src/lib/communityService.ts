@@ -191,6 +191,7 @@ export async function createPost(userId: string, content: string, imageFile: Fil
     let imageCloudinaryPublicId: string | undefined;
 
     if (imageFile) {
+        // Use a generic uploader function that is not tied to user avatars
         const uploadResult = await contentService.uploadUserAvatar({ id: userId } as any, imageFile, () => {}, 'posts');
         imageUrl = uploadResult.url;
         imageCloudinaryPublicId = uploadResult.publicId;

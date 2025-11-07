@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit, Globe } from 'lucide-react';
+import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit, Globe, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -23,6 +23,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
 
 const getTruncatedName = (name: string | undefined, count = 2) => {
     if (!name) return 'User';
@@ -141,10 +143,66 @@ const PostAuthor = ({ userId }: { userId: string }) => {
     );
 };
 
+const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Post | null, open: boolean, onOpenChange: (open: boolean) => void, onPostUpdated: () => void }) => {
+    const [content, setContent] = useState('');
+    const [isSaving, setIsSaving] = useState(false);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        if (post) {
+            setContent(post.content);
+        }
+    }, [post]);
+
+    const handleSave = async () => {
+        if (!post) return;
+        setIsSaving(true);
+        try {
+            await updatePost(post.id, content);
+            toast({ title: 'Post updated successfully!' });
+            onPostUpdated();
+            onOpenChange(false);
+        } catch (e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not update post.' });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
+    if (!post) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent>
+                <DialogHeader>
+                    <DialogTitle>Edit Post</DialogTitle>
+                </DialogHeader>
+                <Textarea
+                    value={content}
+                    onChange={(e) => setContent(e.target.value)}
+                    className="w-full bg-slate-800 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-lg"
+                    rows={5}
+                />
+                {post.imageUrl && (
+                     <img src={post.imageUrl} alt="Post image" className="mt-4 rounded-lg object-contain max-h-[200px] w-full" />
+                )}
+                <DialogFooter>
+                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+                    <Button onClick={handleSave} disabled={isSaving}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save'}
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
 const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void }) => {
     const { user: currentUser } = useAuthStore();
     const { toast } = useToast();
     const [itemToDelete, setItemToDelete] = useState<Post | null>(null);
+    const [itemToEdit, setItemToEdit] = useState<Post | null>(null);
 
     const hasLiked = useMemo(() => {
         if (!currentUser || !post.reactions) return false;
@@ -167,7 +225,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             await deletePost(itemToDelete);
             toast({ title: 'Post deleted successfully.' });
             setItemToDelete(null);
-            refetchPosts();
+            refetchPosts(); // This is correct, no need to call it inside the service
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not delete post.' });
         }
@@ -192,7 +250,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                                <DropdownMenuItem>
+                                <DropdownMenuItem onSelect={() => setItemToEdit(post)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Edit</span>
                                 </DropdownMenuItem>
@@ -210,7 +268,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden max-h-[500px] flex items-center justify-center bg-black">
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[400px] flex items-center justify-center bg-black">
                     <img src={post.imageUrl} alt="Post image" className="w-full h-auto object-contain" />
                 </div>
             )}
@@ -239,6 +297,12 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
               </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
+        <EditPostDialog 
+            post={itemToEdit} 
+            open={!!itemToEdit} 
+            onOpenChange={(open) => !open && setItemToEdit(null)}
+            onPostUpdated={refetchPosts}
+        />
       </>
     )
 }
