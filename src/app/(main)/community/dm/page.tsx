@@ -47,11 +47,12 @@ const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
             <h3 className="font-bold text-white truncate">{otherUser.displayName}</h3>
             {chat.lastMessage?.timestamp && (
               <p className="text-xs text-slate-500 shrink-0 ml-2">
-                {formatDistanceToNow(new Date(chat.lastMessage.timestamp.seconds * 1000), { addSuffix: true })}
+                {formatDistanceToNow(new Date(chat.lastMessage.timestamp), { addSuffix: true })}
               </p>
             )}
           </div>
           <p className="text-sm text-slate-400 truncate">
+            {chat.lastMessage?.userId === currentUser?.uid && 'You: '}
             {chat.lastMessage?.text || 'No messages yet...'}
           </p>
         </div>

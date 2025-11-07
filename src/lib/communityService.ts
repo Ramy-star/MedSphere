@@ -149,7 +149,7 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
     await updateDoc(chatRef, {
         lastMessage: {
             text: content,
-            timestamp: serverTimestamp(),
+            timestamp: new Date().toISOString(),
             userId: userId,
         },
         lastUpdated: serverTimestamp()

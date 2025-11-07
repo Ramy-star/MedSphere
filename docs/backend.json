@@ -346,9 +346,9 @@
         "schema": { "$ref": "#/entities/Channel" },
         "description": "Stores community channels/groups."
     },
-    "/messages/{messageId}": {
+    "/channels/{channelId}/messages/{messageId}": {
         "schema": { "$ref": "#/entities/Message" },
-        "description": "Stores messages for all community channels."
+        "description": "Stores messages for a specific channel."
     },
     "/directMessages/{chatId}": {
         "schema": { "$ref": "#/entities/DirectMessage" },
