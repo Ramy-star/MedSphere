@@ -211,28 +211,27 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-card sm:max-w-xl">
-                <DialogHeader>
-                    <DialogTitle>Edit Post</DialogTitle>
+            <DialogContent className="glass-card sm:max-w-2xl p-0">
+                 <DialogHeader className="p-6 pb-4">
+                    <DialogTitle className="text-xl">Edit Post</DialogTitle>
                 </DialogHeader>
-                <div className="flex flex-col gap-4 max-h-[70vh]">
+                <div className="flex flex-col gap-4 px-6 max-h-[70vh]">
                   <Textarea
                       ref={textareaRef}
                       value={content}
                       onChange={(e) => setContent(e.target.value)}
-                      className="w-full bg-slate-800/60 border-slate-700 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[120px] max-h-[300px]"
+                      className="w-full bg-slate-800/60 border-slate-700 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[150px] max-h-[300px] rounded-xl"
                   />
                   {post.imageUrl && (
-                      <div className="overflow-y-auto no-scrollbar flex-shrink">
-                        <img src={post.imageUrl} alt="Post image" className="rounded-lg object-contain w-full mx-auto" style={{ maxHeight: '300px' }} />
+                      <div className="overflow-y-auto no-scrollbar flex-shrink-0 bg-black/20 rounded-xl p-2">
+                        <img src={post.imageUrl} alt="Post image" className="rounded-lg object-contain w-full mx-auto" style={{ maxHeight: '250px' }} />
                       </div>
                   )}
                 </div>
-                <DialogFooter>
-                    <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
-                    <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Save
+                <DialogFooter className="p-6 pt-4">
+                    <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">Cancel</Button>
+                    <Button onClick={handleSave} disabled={isSaving} className="rounded-xl w-24">
+                        {isSaving ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Save'}
                     </Button>
                 </DialogFooter>
             </DialogContent>
