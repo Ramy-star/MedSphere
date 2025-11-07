@@ -221,12 +221,12 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
                             ref={textareaRef}
                             value={content}
                             onChange={(e) => setContent(e.target.value)}
-                            className="w-full bg-transparent border-0 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[120px] max-h-[250px]"
+                            className="w-full bg-transparent border-0 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[90px] max-h-[200px]"
                         />
                     </div>
                     {post.imageUrl && (
-                        <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[250px] w-full">
-                            <img src={post.imageUrl} alt="Post image" className="rounded-lg w-full h-full object-cover max-h-[250px]" />
+                        <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[200px] w-full">
+                            <img src={post.imageUrl} alt="Post image" className="rounded-lg w-full h-full object-cover max-h-[200px]" />
                         </div>
                     )}
                 </div>
@@ -356,8 +356,8 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden max-h-[350px] w-full mx-auto flex items-center justify-center bg-black">
-                    <img src={post.imageUrl} alt="Post image" className="w-full h-full object-cover max-h-[350px]" />
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-full mx-auto flex items-center justify-center bg-black">
+                    <img src={post.imageUrl} alt="Post image" className="w-full h-full object-cover max-h-[300px]" />
                 </div>
             )}
 
