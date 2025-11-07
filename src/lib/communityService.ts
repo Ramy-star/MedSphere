@@ -76,7 +76,7 @@ export async function sendMessage(channelId: string, userId: string, content: st
             text: content,
             timestamp: serverTimestamp(),
             userId: userId,
-            userName: isAnonymous ? 'Anonymous' : userName,
+            userName: isAnonymous ? 'Anonymous User' : userName,
         }
     });
 }
@@ -149,7 +149,7 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
     await updateDoc(chatRef, {
         lastMessage: {
             text: content,
-            timestamp: new Date().toISOString(),
+            timestamp: serverTimestamp(),
             userId: userId,
         },
         lastUpdated: serverTimestamp()

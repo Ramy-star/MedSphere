@@ -11,7 +11,7 @@ import Link from 'next/link';
 import { CreateChannelDialog } from '@/components/community/CreateChannelDialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
-
+import { formatDistanceToNow } from 'date-fns';
 
 const ChannelCard = ({ channel }: { channel: Channel }) => {
   const memberCount = Array.isArray(channel.members) ? channel.members.length : 0;
@@ -44,13 +44,28 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
     }
   };
 
+  const handleCardClick = () => {
+      router.push(`/community/chat/${channel.id}`);
+  }
+
   return (
     <div 
-        className="glass-card p-5 rounded-xl flex flex-col justify-between group"
+        className="glass-card p-5 rounded-xl flex flex-col justify-between group cursor-pointer transition-all hover:-translate-y-1 hover:shadow-lg"
+        onClick={handleCardClick}
     >
         <div>
             <h3 className="text-lg font-bold text-white">{channel.name}</h3>
             <p className="text-sm text-slate-400 mt-1 h-10 line-clamp-2">{channel.description}</p>
+             {channel.lastMessage && (
+                <div className="mt-3 pt-3 border-t border-white/10 text-xs">
+                    <p className="text-slate-300 truncate">
+                        <span className="font-semibold">{channel.lastMessage.userName || 'User'}:</span> {channel.lastMessage.text}
+                    </p>
+                    <p className="text-slate-500 mt-1">
+                        {channel.lastMessage.timestamp && formatDistanceToNow(new Date(channel.lastMessage.timestamp.seconds * 1000), { addSuffix: true })}
+                    </p>
+                </div>
+            )}
         </div>
         <div className="flex justify-between items-center mt-4">
             <div className="flex items-center text-xs text-slate-500 gap-2">
@@ -84,13 +99,13 @@ export default function ChannelsPage({ params }: { params: { category: string } 
     const type = category as Channel['type'];
     if (type === 'level') {
         const userLevel = user?.level || 'Unknown';
-        return { where: ['levelId', '==', userLevel], orderBy: ['createdAt', 'desc'] };
+        return { where: ['levelId', '==', userLevel], orderBy: ['lastMessage.timestamp', 'desc'] };
     }
     if (type === 'private' && user?.uid) {
-      return { where: ['members', 'array-contains', user.uid], orderBy: ['createdAt', 'desc'] };
+      return { where: ['members', 'array-contains', user.uid], orderBy: ['lastMessage.timestamp', 'desc'] };
     }
     // For 'public' and any other case
-    return { where: ['type', '==', 'public'], orderBy: ['createdAt', 'desc'] };
+    return { where: ['type', '==', 'public'], orderBy: ['lastMessage.timestamp', 'desc'] };
   }, [category, user]);
 
   const { data: channels, loading } = useCollection<Channel>('channels', queryOptions);
@@ -150,7 +165,7 @@ export default function ChannelsPage({ params }: { params: { category: string } 
       {loading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[...Array(6)].map((_, i) => (
-            <div key={i} className="glass-card p-5 rounded-xl h-[150px] animate-pulse" />
+            <div key={i} className="glass-card p-5 rounded-xl h-[180px] animate-pulse" />
           ))}
         </div>
       ) : channels && channels.length > 0 ? (
