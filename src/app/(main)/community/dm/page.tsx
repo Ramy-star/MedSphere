@@ -76,13 +76,11 @@ export default function DirectMessagesPage() {
   const router = useRouter();
   const { data: chatsData, loading } = useCollection<DirectMessage>('directMessages', {
     where: ['participants', 'array-contains', user?.uid],
-    // orderBy: ['lastUpdated', 'desc'], // This was causing the error. Sorting will be done on the client.
     disabled: !user?.uid,
   });
 
   const chats = useMemo(() => {
     if (!chatsData) return [];
-    // Sort chats on the client-side to avoid needing a composite index in Firestore.
     return [...chatsData].sort((a, b) => {
         const timeA = a.lastUpdated?.seconds || 0;
         const timeB = b.lastUpdated?.seconds || 0;
@@ -97,7 +95,7 @@ export default function DirectMessagesPage() {
                 <ArrowLeft className="w-5 h-5" />
             </Button>
             <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-500 text-transparent bg-clip-text">
-                Direct Messages
+                ChatSphere
             </h1>
         </div>
         <div className="flex-1 overflow-hidden">

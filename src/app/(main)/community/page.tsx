@@ -68,7 +68,7 @@ export default function CommunityPage() {
                     link="/community/channels/private"
                 />
                 <SectionCard 
-                    title="Direct Messages"
+                    title="ChatSphere"
                     description="Engage in one-on-one private conversations with your friends and colleagues."
                     icon={MessageSquare}
                     color="from-purple-500 to-indigo-500"
