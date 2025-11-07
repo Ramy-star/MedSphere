@@ -1,13 +1,15 @@
 'use client';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
-import type { Channel } from '@/lib/communityService';
+import { type Channel, createChannel } from '@/lib/communityService';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, PlusCircle, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
+import { CreateChannelDialog } from '@/components/community/CreateChannelDialog';
+import { useToast } from '@/hooks/use-toast';
 
 const ChannelCard = ({ channel }: { channel: Channel }) => {
   const memberCount = Array.isArray(channel.members) ? channel.members.length : 0;
@@ -37,16 +39,19 @@ export default function ChannelsPage({ params }: { params: { category: string } 
   const { category } = params;
   const { user } = useAuthStore();
   const router = useRouter();
+  const { toast } = useToast();
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const queryOptions = useMemo(() => {
-    if (category === 'level') {
-      return { where: ['levelId', '==', user?.level] };
+    const type = category as Channel['type'];
+    if (type === 'level' && user?.level) {
+      return { where: ['levelId', '==', user.level], orderBy: ['createdAt', 'desc'] };
     }
-    if (category === 'private') {
-      return { where: ['members', 'array-contains', user?.uid] };
+    if (type === 'private' && user?.uid) {
+      return { where: ['members', 'array-contains', user.uid], orderBy: ['createdAt', 'desc'] };
     }
-    // For 'public'
-    return { where: ['type', '==', 'public'] };
+    // For 'public' and any other case
+    return { where: ['type', '==', 'public'], orderBy: ['createdAt', 'desc'] };
   }, [category, user]);
 
   const { data: channels, loading } = useCollection<Channel>('channels', queryOptions);
@@ -59,7 +64,34 @@ export default function ChannelsPage({ params }: { params: { category: string } 
 
   const title = categoryTitles[category] || 'Channels';
 
+  const handleCreateChannel = async (name: string, description: string) => {
+    if (!user) {
+        toast({
+            variant: "destructive",
+            title: "Authentication Error",
+            description: "You must be logged in to create a channel.",
+        });
+        return;
+    }
+    try {
+        const newChannelId = await createChannel(name, description, category as Channel['type'], user.uid, category === 'level' ? user.level : undefined);
+        toast({
+            title: "Channel Created!",
+            description: `"${name}" has been successfully created.`,
+        });
+        setIsCreateDialogOpen(false);
+        router.push(`/community/chat/${newChannelId}`);
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Error Creating Channel",
+            description: error.message || "An unknown error occurred.",
+        });
+    }
+  };
+
   return (
+    <>
     <div className="p-4 sm:p-6 flex flex-col h-full">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
@@ -70,7 +102,7 @@ export default function ChannelsPage({ params }: { params: { category: string } 
                 {title}
             </h1>
         </div>
-        <Button className="rounded-full">
+        <Button className="rounded-full" onClick={() => setIsCreateDialogOpen(true)}>
           <PlusCircle className="mr-2 h-4 w-4"/>
           Create Group
         </Button>
@@ -97,5 +129,11 @@ export default function ChannelsPage({ params }: { params: { category: string } 
         </div>
       )}
     </div>
+    <CreateChannelDialog
+        open={isCreateDialogOpen}
+        onOpenChange={setIsCreateDialogOpen}
+        onCreate={handleCreateChannel}
+    />
+    </>
   );
 }

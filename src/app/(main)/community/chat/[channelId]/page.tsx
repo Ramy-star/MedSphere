@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
@@ -17,6 +17,7 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
   const { channelId } = params;
   const { user } = useAuthStore();
   const router = useRouter();
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   const { data: channel, loading: loadingChannel } = useDoc<Channel>('channels', channelId);
   const { data: messages, loading: loadingMessages } = useCollection<Message>(`channels/${channelId}/messages`, {
@@ -39,10 +40,22 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
     return map;
   }, [profiles]);
 
+  useEffect(() => {
+    // Scroll to the bottom when messages load or a new message is added
+    if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages, loadingMessages]);
+
 
   const handleSendMessage = async (content: string, isAnonymous: boolean) => {
     if (!user || !channelId) return;
-    await sendMessage(channelId, user.uid, content, isAnonymous);
+    try {
+        await sendMessage(channelId, user.uid, content, isAnonymous);
+    } catch (error) {
+        console.error("Failed to send message:", error);
+        // Optionally, show a toast to the user
+    }
   };
 
   const LoadingSkeleton = () => (
@@ -77,7 +90,7 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
         )}
       </header>
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
         {(loadingMessages || loadingProfiles) && (!messages || !profiles) ? (
           <LoadingSkeleton />
         ) : (
