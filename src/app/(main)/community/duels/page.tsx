@@ -1,90 +1,121 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Swords, User, Loader2 } from 'lucide-react';
+import { ArrowLeft, Swords, User, Users, Shield, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import type { UserProfile } from '@/stores/auth-store';
-import { useAuthStore } from '@/stores/auth-store';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { useMemo } from 'react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip"
 
-const PlayerCard = ({ player }: { player: UserProfile }) => {
-    const isSuperAdmin = player.roles?.some(r => r.role === 'superAdmin');
-    const isSubAdmin = player.roles?.some(r => r.role === 'subAdmin') && !isSuperAdmin;
-    const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
+const GameModeCard = ({ title, description, icon: Icon, link, comingSoon }: { title: string, description: string, icon: React.ElementType, link?: string, comingSoon?: boolean }) => {
     
-    return (
-        <div className="glass-card p-4 rounded-xl flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                <Avatar className={cn("h-10 w-10 ring-2", avatarRingClass)}>
-                    <AvatarImage src={player.photoURL || ''} alt={player.displayName} />
-                    <AvatarFallback>{player.displayName?.[0] || 'U'}</AvatarFallback>
-                </Avatar>
-                <div>
-                    <p className="font-semibold text-white">{player.displayName}</p>
-                    <p className="text-xs text-slate-400">@{player.username}</p>
+    const CardContent = () => (
+         <div className={cn(
+            "glass-card p-6 rounded-2xl h-full flex flex-col justify-between transition-all duration-300",
+            comingSoon ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10 hover:shadow-lg hover:-translate-y-1"
+        )}>
+            <div>
+                <div className="mb-4 inline-block p-3 rounded-full bg-slate-800">
+                    <Icon className="w-8 h-8 text-red-400" />
                 </div>
+                <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
+                <p className="text-sm text-slate-400">{description}</p>
             </div>
-            <Button size="sm" className="rounded-full bg-red-600 hover:bg-red-700">
-                <Swords className="mr-2 h-4 w-4"/>
-                Challenge
-            </Button>
+             {comingSoon && (
+                <div className="mt-4 text-center">
+                    <span className="text-xs font-bold text-yellow-400 bg-yellow-900/50 px-3 py-1 rounded-full">Coming Soon</span>
+                </div>
+            )}
         </div>
-    )
+    );
+    
+    if (comingSoon || !link) {
+        return <div className="relative group"><CardContent /></div>;
+    }
+
+    return (
+        <Link href={link} className="block group">
+            <CardContent />
+        </Link>
+    );
 }
 
-export default function DuelsLobbyPage() {
-  const router = useRouter();
-  const { user: currentUser } = useAuthStore();
-  const { data: users, loading } = useCollection<UserProfile>('users');
 
-  const availablePlayers = useMemo(() => {
-    if (!users || !currentUser) return [];
-    // For now, list all users except the current one.
-    // Later, this could be filtered by online status.
-    return users.filter(user => user.id !== currentUser.id);
-  }, [users, currentUser]);
+export default function DuelsModeSelectionPage() {
+  const router = useRouter();
 
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full">
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2 mb-10">
             <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => router.push('/community')}>
                 <ArrowLeft className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-red-500 to-rose-500 text-transparent bg-clip-text">
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-red-500 to-rose-500 text-transparent bg-clip-text">
                 Quiz Duels
             </h1>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div className="space-y-4">
-                <h2 className="text-lg font-bold text-white">Challenge a Player</h2>
-                {loading ? (
-                    <div className="flex justify-center items-center h-40">
-                        <Loader2 className="w-8 h-8 animate-spin text-slate-500" />
-                    </div>
-                ) : availablePlayers.length > 0 ? (
-                    <div className="space-y-3">
-                        {availablePlayers.map(player => (
-                            <PlayerCard key={player.id} player={player} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="text-center py-10 text-slate-500">
-                        <User className="w-12 h-12 mx-auto mb-2" />
-                        <p>No other players available right now.</p>
-                    </div>
-                )}
-            </div>
-
-            <div className="space-y-4">
-                 <h2 className="text-lg font-bold text-white">Your Challenges</h2>
-                  <div className="text-center py-10 text-slate-500 glass-card rounded-xl">
-                    <p>Incoming challenges will appear here.</p>
-                </div>
-            </div>
-        </div>
+        <motion.div 
+            className="grid grid-cols-1 md:grid-cols-3 gap-6"
+            initial="hidden"
+            animate="visible"
+            variants={{
+                hidden: {},
+                visible: {
+                    transition: {
+                        staggerChildren: 0.1,
+                    },
+                },
+            }}
+        >
+            <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+                <GameModeCard 
+                    title="One-on-One Duel"
+                    description="Challenge another student to a head-to-head quiz battle. Quickest correct answer wins the point!"
+                    icon={Swords}
+                    link="/community/duels/lobby"
+                />
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger>
+                            <GameModeCard 
+                                title="Battle Royale"
+                                description="A free-for-all quiz where many compete but only one emerges victorious. Last student standing wins."
+                                icon={Users}
+                                comingSoon
+                            />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>This mode is under development. Stay tuned!</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </motion.div>
+            <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
+                 <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger>
+                            <GameModeCard 
+                                title="Team vs. Team"
+                                description="Form a squad and face off against another team. The highest-scoring team wins bragging rights."
+                                icon={Shield}
+                                comingSoon
+                            />
+                        </TooltipTrigger>
+                         <TooltipContent>
+                            <p>This mode is under development. Stay tuned!</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+            </motion.div>
+        </motion.div>
     </div>
   );
 }

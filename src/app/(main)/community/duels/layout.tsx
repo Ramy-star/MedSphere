@@ -13,7 +13,9 @@ export default function DuelsLayout({
       transition={{ type: "spring", stiffness: 300, damping: 30 }}
       className="flex-1 flex flex-col overflow-hidden"
     >
-      {children}
+        <div className="flex-1 overflow-y-auto no-scrollbar">
+            {children}
+        </div>
     </motion.main>
   );
 }
