@@ -29,6 +29,12 @@ export const Comment = ({ comment, onReply }: { comment: CommentData; onReply: (
     );
   }
 
+  const getTruncatedName = (name: string | undefined) => {
+    if (!name) return 'User';
+    const nameParts = name.split(' ');
+    return nameParts.slice(0, 2).join(' ');
+  };
+
   return (
     <div className="flex items-start gap-3">
       <Link href={`/users/${userProfile?.username || ''}`}>
@@ -40,7 +46,7 @@ export const Comment = ({ comment, onReply }: { comment: CommentData; onReply: (
       <div className="flex-1">
         <div className="bg-slate-700/50 rounded-xl px-3 py-2">
           <Link href={`/users/${userProfile?.username || ''}`}>
-            <p className="font-bold text-sm text-white hover:underline">{userProfile?.displayName}</p>
+            <p className="font-bold text-sm text-white hover:underline">{getTruncatedName(userProfile?.displayName)}</p>
           </Link>
           <p className="text-sm text-slate-200 whitespace-pre-wrap">{comment.content}</p>
         </div>

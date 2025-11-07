@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image as ImageIcon, Send, X, ThumbsUp, MessageSquare, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare as MessageSquareIcon, EyeOff, Angry, Sparkles } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Send, X, ThumbsUp, MessageSquare, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare as MessageSquareIcon, EyeOff, Angry, Sparkles, Frown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -157,7 +157,13 @@ const PostAuthor = ({ userId, isAnonymous }: { userId: string, isAnonymous?: boo
     return (
       <Link href={`/users/${userProfile.username}`} className="flex items-center gap-3 group/author">
           <Avatar>
-              <AvatarImage src={userProfile.photoURL ?? undefined} alt={userProfile.displayName || 'User'} />
+              <AvatarImage 
+                  src={userProfile.photoURL ?? undefined} 
+                  alt={userProfile.displayName || 'User'} 
+                  className="pointer-events-none select-none"
+                  onDragStart={(e) => e.preventDefault()}
+                  onContextMenu={(e) => e.preventDefault()}
+                />
               <AvatarFallback>{userProfile.displayName?.[0]}</AvatarFallback>
           </Avatar>
           <div>
@@ -218,7 +224,7 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
                   />
                   {post.imageUrl && (
                       <div className="overflow-y-auto no-scrollbar flex-shrink">
-                        <img src={post.imageUrl} alt="Post image" className="rounded-lg object-contain w-full" />
+                        <img src={post.imageUrl} alt="Post image" className="rounded-lg object-contain w-full mx-auto" style={{ maxHeight: '300px' }} />
                       </div>
                   )}
                 </div>
@@ -287,7 +293,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
         love: Heart,
         haha: Laugh,
         wow: Sparkles,
-        sad: Annoyed,
+        sad: Frown,
         angry: Angry
     };
 
@@ -335,7 +341,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-full mx-auto flex items-center justify-center bg-black">
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-[95%] mx-auto flex items-center justify-center bg-black">
                     <img src={post.imageUrl} alt="Post image" className="w-full h-auto object-contain" />
                 </div>
             )}
