@@ -47,9 +47,9 @@ export default function CommunityPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  <SectionCard 
-                    title="Community Feed"
+                    title="FaceSphere"
                     description="Share your thoughts, ask questions, and see what's happening in the MedSphere community."
-                    icon={Newspaper}
+                    icon={Globe}
                     color="from-blue-500 to-cyan-500"
                     link="/community/feed"
                 />
