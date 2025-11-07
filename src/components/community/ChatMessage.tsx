@@ -23,6 +23,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -155,7 +156,9 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                             <DropdownMenuItem onSelect={() => onEdit(message)}><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
                             <AlertDialog onOpenChange={setIsDeleteAlertOpen} open={isDeleteAlertOpen}>
                               <AlertDialogTrigger asChild>
-                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-400"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                                 <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                    <Trash2 className="mr-2 h-4 w-4"/>Delete
+                                </DropdownMenuItem>
                               </AlertDialogTrigger>
                               <AlertDialogContent>
                                 <AlertDialogHeader>
