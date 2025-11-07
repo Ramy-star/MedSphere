@@ -162,7 +162,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
             </button>
         )}
 
-      <div className="p-4 border-t border-white/10">
+      <div className="p-4 border-t border-white/10 flex-shrink-0">
         <ChatInput 
             onSendMessage={handleSendMessage} 
             showAnonymousOption={false}
