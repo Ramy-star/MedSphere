@@ -9,9 +9,10 @@ import { Label } from '../ui/label';
 
 interface ChatInputProps {
   onSendMessage: (content: string, isAnonymous: boolean) => void;
+  showAnonymousOption?: boolean;
 }
 
-export function ChatInput({ onSendMessage }: ChatInputProps) {
+export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInputProps) {
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
 
@@ -46,17 +47,19 @@ export function ChatInput({ onSendMessage }: ChatInputProps) {
           <Send className="w-5 h-5" />
         </Button>
       </div>
-       <div className="flex items-center space-x-2 self-start">
-        <Checkbox 
-            id="anonymous" 
-            checked={isAnonymous} 
-            onCheckedChange={(checked) => setIsAnonymous(!!checked)}
-        />
-        <Label htmlFor="anonymous" className="text-xs text-slate-400 flex items-center gap-1.5 cursor-pointer">
-            <EyeOff className="w-3.5 h-3.5" />
-            Send anonymously
-        </Label>
-      </div>
+       {showAnonymousOption && (
+        <div className="flex items-center space-x-2 self-start">
+            <Checkbox 
+                id="anonymous" 
+                checked={isAnonymous} 
+                onCheckedChange={(checked) => setIsAnonymous(!!checked)}
+            />
+            <Label htmlFor="anonymous" className="text-xs text-slate-400 flex items-center gap-1.5 cursor-pointer">
+                <EyeOff className="w-3.5 h-3.5" />
+                Send anonymously
+            </Label>
+        </div>
+       )}
     </form>
   );
 }

@@ -146,7 +146,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
         )}
 
       <div className="p-4 border-t border-white/10">
-        <ChatInput onSendMessage={handleSendMessage} />
+        <ChatInput onSendMessage={handleSendMessage} showAnonymousOption={false} />
       </div>
     </div>
   );
