@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, ReactNode } from 'react';
+import { useState, useRef, useEffect, ReactNode, Suspense, lazy } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import dynamic from 'next/dynamic';
 
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
@@ -35,7 +36,7 @@ import { ActiveSessions } from '@/components/profile/ActiveSessions';
 import { FilePreviewModal } from '@/components/FilePreviewModal';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 
 
@@ -327,7 +328,7 @@ export default function ProfilePage() {
           <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
               <ProfileNotesSection user={user} />
           </CollapsibleSection>
-           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
+          <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
               <FavoritesSection user={user} onFileClick={handleFileClick} />
           </CollapsibleSection>
       </div>
@@ -608,7 +609,7 @@ export default function ProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-       <Suspense fallback={null}>
+      <Suspense fallback={null}>
         {previewFile && (
             <FilePreviewModal
                 item={previewFile}

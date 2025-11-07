@@ -130,10 +130,6 @@ export default function PublicProfilePage({ params }: { params: { username: stri
                 {userLevel && <InfoCard icon={School} label="Academic Level" value={userLevel} />}
             </div>
             <div className="lg:col-span-2 space-y-6">
-                <div>
-                    <h2 className="text-xl font-bold mb-4">Favorites</h2>
-                    <FavoritesSection user={user} onFileClick={handleFileClick} />
-                </div>
                  <div>
                     <h2 className="text-xl font-bold mb-4">Achievements</h2>
                     <AchievementsSection user={user} />
