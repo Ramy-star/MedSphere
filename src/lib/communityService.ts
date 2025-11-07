@@ -1,6 +1,6 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc as deleteFirestoreDoc, writeBatch, increment } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc as deleteFirestoreDoc, writeBatch, increment, runTransaction } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { useAuthStore } from '@/stores/auth-store';
 import { contentService } from './contentService';
@@ -44,6 +44,7 @@ export interface Comment {
     content: string;
     createdAt: any;
     reactions: { [key: string]: string };
+    replyCount?: number;
 }
 
 
@@ -248,27 +249,45 @@ export async function deletePost(post: Post) {
     await deleteFirestoreDoc(postRef);
 }
 
-export async function togglePostReaction(itemId: string, userId: string, reactionType: string, isComment = false) {
+export async function togglePostReaction(postId: string, userId: string, reactionType: string) {
     if (!db) throw new Error("Firestore is not initialized.");
-    const collectionName = isComment ? 'comments' : 'posts';
-    const itemRef = isComment 
-        ? doc(collection(db, 'posts'), new URLSearchParams(window.location.search).get('postId') || '', 'comments', itemId) 
-        : doc(db, collectionName, itemId);
+    const postRef = doc(db, 'posts', postId);
     
-    const itemSnap = await getDoc(itemRef);
-    if(!itemSnap.exists()) throw new Error("Item not found.");
+    await runTransaction(db, async (transaction) => {
+        const postSnap = await transaction.get(postRef);
+        if (!postSnap.exists()) throw new Error("Post not found.");
+        
+        const postData = postSnap.data() as Post;
+        const newReactions = { ...postData.reactions };
 
-    const itemData = itemSnap.data() as Post | Comment;
-    const newReactions = { ...itemData.reactions };
+        if (newReactions[userId] === reactionType) {
+            delete newReactions[userId];
+        } else {
+            newReactions[userId] = reactionType;
+        }
 
-    if (newReactions[userId] === reactionType) {
-        delete newReactions[userId];
-    } else {
-        newReactions[userId] = reactionType;
-    }
+        transaction.update(postRef, { reactions: newReactions });
+    });
+}
 
-    await updateDoc(itemRef, {
-        reactions: newReactions,
+export async function toggleCommentReaction(postId: string, commentId: string, userId: string, reactionType: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+    
+     await runTransaction(db, async (transaction) => {
+        const commentSnap = await transaction.get(commentRef);
+        if (!commentSnap.exists()) throw new Error("Comment not found.");
+        
+        const commentData = commentSnap.data() as Comment;
+        const newReactions = { ...commentData.reactions };
+
+        if (newReactions[userId] === reactionType) {
+            delete newReactions[userId];
+        } else {
+            newReactions[userId] = reactionType;
+        }
+
+        transaction.update(commentRef, { reactions: newReactions });
     });
 }
 
@@ -296,12 +315,18 @@ export async function addComment(postId: string, userId: string, content: string
         content,
         createdAt: serverTimestamp(),
         reactions: {},
+        replyCount: 0,
     };
     
-    const batch = writeBatch(db);
-    batch.set(newDocRef, newComment);
-    batch.update(postRef, { commentCount: increment(1) });
-    await batch.commit();
+    await runTransaction(db, async (transaction) => {
+        transaction.set(newDocRef, newComment);
+        transaction.update(postRef, { commentCount: increment(1) });
+        
+        if (parentCommentId) {
+            const parentCommentRef = doc(db, 'posts', postId, 'comments', parentCommentId);
+            transaction.update(parentCommentRef, { replyCount: increment(1) });
+        }
+    });
 
     return newDocRef.id;
 }
@@ -323,15 +348,23 @@ export async function updateComment(postId: string, commentId: string, newConten
     });
 }
 
-export async function deleteComment(postId: string, commentId: string) {
+export async function deleteComment(postId: string, commentId: string, parentCommentId: string | null) {
     if (!db) throw new Error("Firestore is not initialized.");
-    const commentRef = doc(db, 'posts', postId, 'comments', commentId);
     
     const postRef = doc(db, 'posts', postId);
+    const commentRef = doc(db, 'posts', postId, 'comments', commentId);
     
-    const batch = writeBatch(db);
-    batch.delete(commentRef);
-    batch.update(postRef, { commentCount: increment(-1) });
-    
-    await batch.commit();
+    await runTransaction(db, async (transaction) => {
+        // Decrement post's total comment count
+        transaction.update(postRef, { commentCount: increment(-1) });
+
+        // If it's a reply, decrement parent comment's reply count
+        if (parentCommentId) {
+            const parentRef = doc(db, 'posts', postId, 'comments', parentCommentId);
+            transaction.update(parentRef, { replyCount: increment(-1) });
+        }
+        
+        // Delete the comment itself
+        transaction.delete(commentRef);
+    });
 }

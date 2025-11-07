@@ -242,6 +242,7 @@
         "userId": { "type": "string" },
         "content": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
+        "replyCount": { "type": "number", "default": 0 },
         "reactions": {
           "type": "object",
           "description": "A map of user IDs to their reaction type.",

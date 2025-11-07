@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '../ui/skeleton';
 import Link from 'next/link';
 import { useAuthStore } from '@/stores/auth-store';
-import { togglePostReaction, deletePost, updatePost, addComment, deleteComment, updateComment } from '@/lib/communityService';
+import { toggleCommentReaction, deleteComment, updateComment } from '@/lib/communityService';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useMemo } from 'react';
 import { Button } from '../ui/button';
@@ -15,15 +15,8 @@ import { motion } from 'framer-motion';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '../ui/dropdown-menu';
 import { Textarea } from '../ui/textarea';
+import type { Comment as CommentData } from '@/lib/communityService';
 
-interface CommentData {
-  id: string;
-  userId: string;
-  postId: string;
-  content: string;
-  createdAt: any;
-  reactions: { [key: string]: string };
-}
 
 const reactionIcons: { [key: string]: React.FC<any> } = {
   like: ThumbsUp,
@@ -39,7 +32,7 @@ const reactionColors: { [key: string]: string } = {
 };
 
 
-export const Comment = ({ comment, onReply }: { comment: CommentData; onReply: () => void; }) => {
+export const Comment = ({ comment, onReply, onDelete }: { comment: CommentData; onReply: () => void; onDelete: (comment: CommentData) => void }) => {
   const { user: currentUser } = useAuthStore();
   const { userProfile, loading } = useUserProfile(comment.userId);
   const postDate = comment.createdAt?.toDate ? comment.createdAt.toDate() : new Date(comment.createdAt);
@@ -57,7 +50,7 @@ export const Comment = ({ comment, onReply }: { comment: CommentData; onReply: (
 
   const handleReaction = async (reactionType: string) => {
     if (!currentUser) return;
-    await togglePostReaction(comment.id, currentUser.uid, reactionType, true);
+    await toggleCommentReaction(comment.postId, comment.id, currentUser.uid, reactionType);
   };
   
   const handleUpdateComment = async () => {
@@ -75,8 +68,8 @@ export const Comment = ({ comment, onReply }: { comment: CommentData; onReply: (
   }
 
   const handleDeleteComment = async () => {
-      try {
-        await deleteComment(comment.postId, comment.id);
+    try {
+        onDelete(comment);
         toast({ title: "Comment deleted." });
       } catch (e) {
           toast({ title: "Error", description: "Could not delete comment.", variant: "destructive" });
@@ -174,6 +167,12 @@ export const Comment = ({ comment, onReply }: { comment: CommentData; onReply: (
                 </PopoverContent>
              </Popover>
             <button onClick={onReply} className="font-semibold hover:underline">Reply</button>
+            {comment.replyCount && comment.replyCount > 0 && (
+                <>
+                    <span className="text-slate-600">•</span>
+                    <span>{comment.replyCount} {comment.replyCount === 1 ? 'reply' : 'replies'}</span>
+                </>
+            )}
         </div>
       </div>
     </div>

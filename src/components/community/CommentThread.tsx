@@ -2,21 +2,11 @@
 import { useState, useMemo } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { CommentInput } from './CommentInput';
-import { addComment } from '@/lib/communityService';
+import { addComment, deleteComment } from '@/lib/communityService';
 import { useAuthStore } from '@/stores/auth-store';
 import { Comment } from './Comment';
 import { Loader2, MessageCircleOff } from 'lucide-react';
-
-interface CommentData {
-  id: string;
-  postId: string;
-  parentCommentId: string | null;
-  userId: string;
-  content: string;
-  createdAt: any;
-  reactions: { [userId: string]: string };
-  children?: CommentData[];
-}
+import type { Comment as CommentData } from '@/lib/communityService';
 
 export function CommentThread({ postId, commentsDisabled }: { postId: string, commentsDisabled: boolean }) {
   const { user } = useAuthStore();
@@ -47,12 +37,17 @@ export function CommentThread({ postId, commentsDisabled }: { postId: string, co
     }
   };
 
+  const handleDeleteComment = async (comment: CommentData) => {
+    await deleteComment(comment.postId, comment.id, comment.parentCommentId);
+  }
+
   const renderComments = (commentsToRender: CommentData[], level = 0) => {
     return commentsToRender.map(comment => (
       <div key={comment.id} className={level > 0 ? 'ml-4 sm:ml-8' : ''}>
         <Comment
           comment={comment}
           onReply={() => setReplyTo(replyTo === comment.id ? null : comment.id)}
+          onDelete={handleDeleteComment}
         />
         {replyTo === comment.id && (
           <div className="mt-2 ml-4 sm:ml-10">
