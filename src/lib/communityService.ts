@@ -34,6 +34,16 @@ export interface Post {
     reactions: { [userId: string]: string }; // userId: reactionType
 }
 
+export interface Comment {
+    id: string;
+    postId: string;
+    parentCommentId: string | null;
+    userId: string;
+    content: string;
+    createdAt: any;
+}
+
+
 export interface DirectMessage {
   id: string;
   participants: string[];
@@ -252,4 +262,34 @@ export async function togglePostReaction(postId: string, userId: string) {
     await updateDoc(postRef, {
         reactions: newReactions,
     });
+}
+
+
+export async function addComment(postId: string, userId: string, content: string, parentCommentId: string | null): Promise<string> {
+    if (!db) throw new Error("Firestore is not initialized.");
+    
+    const commentsColRef = collection(db, 'posts', postId, 'comments');
+    const newDocRef = doc(commentsColRef);
+
+    const newComment: Omit<Comment, 'id'| 'createdAt'> & {id: string, createdAt: any} = {
+        id: newDocRef.id,
+        postId,
+        parentCommentId,
+        userId,
+        content,
+        createdAt: serverTimestamp()
+    };
+    
+    await setDoc(newDocRef, newComment);
+
+    return newDocRef.id;
+}
+
+
+export async function getComments(postId: string): Promise<Comment[]> {
+  if (!db) throw new Error("Firestore is not initialized.");
+  const commentsColRef = collection(db, 'posts', postId, 'comments');
+  const q = query(commentsColRef, orderBy('createdAt', 'asc'));
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => doc.data() as Comment);
 }

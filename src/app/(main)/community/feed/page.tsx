@@ -186,7 +186,7 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
                     rows={5}
                 />
                 {post.imageUrl && (
-                     <img src={post.imageUrl} alt="Post image" className="mt-4 rounded-lg object-contain max-h-[200px] w-full" />
+                     <img src={post.imageUrl} alt="Post image" className="mt-4 rounded-lg object-contain max-h-[400px] w-full" />
                 )}
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
