@@ -247,22 +247,20 @@ export function ChatInput({
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
       
       <form onSubmit={handleSend} className="flex items-center gap-2">
-        <div className="flex items-center">
-            <Popover>
-                <PopoverTrigger asChild>
-                    <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400">
-                        <Smile className="w-5 h-5" />
-                    </Button>
-                </PopoverTrigger>
-                <PopoverContent>
-                    <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => setContent(prev => prev + emojiData.emoji)} theme={Theme.DARK} />
-                </PopoverContent>
-            </Popover>
-            <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400" onClick={() => imageInputRef.current?.click()}>
-                <Paperclip className="w-5 h-5" />
-                <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-            </Button>
-        </div>
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400">
+                    <Smile className="w-5 h-5" />
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent>
+                <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => setContent(prev => prev + emojiData.emoji)} theme={Theme.DARK} />
+            </PopoverContent>
+        </Popover>
+        <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400" onClick={() => imageInputRef.current?.click()}>
+            <Paperclip className="w-5 h-5" />
+            <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+        </Button>
         <Textarea
           ref={textareaRef}
           value={content}
