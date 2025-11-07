@@ -110,7 +110,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
   );
 
   return (
-    <div className={cn("flex flex-col gap-2 group", alignClass)}>
+    <div className={cn("flex flex-col gap-2 group/message-wrapper", alignClass)}>
        {message.replyTo && (
         <div className="flex items-center gap-2 max-w-[80%] text-xs border-l-2 border-slate-500 pl-2 ml-10 mr-2">
             {!isDM && <p className="font-semibold text-slate-400">{getTruncatedName(message.replyTo.userName)}:</p>}
@@ -127,9 +127,10 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                 <div className="cursor-default">{AvatarComponent}</div>
             )
         )}
-        <div className={cn("flex items-center gap-2", isCurrentUser ? "flex-row-reverse" : "flex-row")}>
-             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <Popover>
+        
+        <div className={cn("px-3.5 py-2 rounded-2xl relative group/bubble", bubbleClass, (message.audioUrl || message.imageUrl) && "p-2")}>
+            <div className={cn("absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity", isCurrentUser ? "left-[-4rem] flex-row-reverse" : "right-[-4rem]")}>
+               <Popover>
                     <PopoverTrigger asChild>
                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
                            <span className="text-base">🙂</span>
@@ -145,7 +146,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                         </div>
                     </PopoverContent>
                  </Popover>
-                {isCurrentUser && (
+                {isCurrentUser ? (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
@@ -175,39 +176,37 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                             </AlertDialog>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                )}
-                 {!isCurrentUser && (
+                ) : (
                      <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => onReply(message)}>
                         <Reply size={16}/>
                     </Button>
                 )}
             </div>
-            <div className={cn("px-3.5 py-2 rounded-2xl relative", bubbleClass, (message.audioUrl || message.imageUrl) && "p-2")}>
-                {!isCurrentUser && !isDM && (
-                     <p className="text-xs font-bold text-slate-300 mb-1">{senderName}</p>
-                )}
-                {message.audioUrl ? (
-                    <WaveformAudioPlayer src={message.audioUrl} isCurrentUser={isCurrentUser} />
-                ) : message.imageUrl ? (
-                    <div className="max-w-xs cursor-pointer" onClick={() => window.open(message.imageUrl, '_blank')}>
-                        <Image src={message.imageUrl} alt="attached image" width={300} height={200} className="rounded-lg object-cover" />
-                         {message.content && <p className="text-sm whitespace-pre-wrap mt-2">{message.content}</p>}
-                    </div>
-                ) : (
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                )}
+            
+            {!isCurrentUser && !isDM && (
+                 <p className="text-xs font-bold text-slate-300 mb-1">{senderName}</p>
+            )}
+            {message.audioUrl ? (
+                <WaveformAudioPlayer src={message.audioUrl} isCurrentUser={isCurrentUser} />
+            ) : message.imageUrl ? (
+                <div className="max-w-xs cursor-pointer" onClick={() => window.open(message.imageUrl, '_blank')}>
+                    <Image src={message.imageUrl} alt="attached image" width={300} height={200} className="rounded-lg object-cover" />
+                     {message.content && <p className="text-sm whitespace-pre-wrap mt-2">{message.content}</p>}
+                </div>
+            ) : (
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            )}
 
-                 {topReactions.length > 0 && (
-                    <div className={cn("absolute -bottom-3 flex items-center bg-slate-800 rounded-full border border-slate-700 px-1 py-0.5 text-lg", isCurrentUser ? 'right-2' : 'left-2')}>
-                        <div className="flex -space-x-1">
-                            {topReactions.map(r => (
-                                <span key={r} className="text-xs">{reactionEmojis[r]}</span>
-                            ))}
-                        </div>
-                        <span className="ml-1 text-xs font-mono">{Object.keys(message.reactions || {}).length}</span>
+             {topReactions.length > 0 && (
+                <div className={cn("absolute -bottom-3 flex items-center bg-slate-800 rounded-full border border-slate-700 px-1 py-0.5 text-lg", isCurrentUser ? 'right-2' : 'left-2')}>
+                    <div className="flex -space-x-1">
+                        {topReactions.map(r => (
+                            <span key={r} className="text-xs">{reactionEmojis[r]}</span>
+                        ))}
                     </div>
-                )}
-            </div>
+                    <span className="ml-1.5 text-xs font-mono">{Object.keys(message.reactions || {}).length}</span>
+                </div>
+            )}
         </div>
       </div>
       <div className={cn("text-xs text-slate-500 flex items-center gap-1.5", isCurrentUser ? 'mr-10' : (isDM ? '' : 'ml-10') )}>

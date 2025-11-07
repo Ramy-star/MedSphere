@@ -73,6 +73,8 @@ export interface Message {
   audioUrl?: string;
   audioDuration?: number;
   audioType?: string;
+  imageUrl?: string;
+  imageCloudinaryPublicId?: string;
   replyTo?: {
     messageId: string;
     content: string;
@@ -191,20 +193,28 @@ export async function createOrGetDirectChat(userId1: string, userId2: string): P
 }
 
 
-export async function sendDirectMessage(chatId: string, userId: string, content: string, audio?: { blob: Blob, duration: number }, replyTo?: Message['replyTo']): Promise<void> {
+export async function sendDirectMessage(chatId: string, userId: string, content: string, media?: { file: File, type: 'image' | 'audio', duration?: number }, replyTo?: Message['replyTo']): Promise<void> {
     if (!db) throw new Error("Firestore is not initialized.");
 
-    let audioData = {};
+    let mediaData = {};
     let messageContent = content;
 
-    if (audio) {
-        const { url } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'community_audio');
-        audioData = {
-            audioUrl: url,
-            audioDuration: audio.duration,
-            audioType: audio.blob.type,
-        };
-        messageContent = '';
+    if (media) {
+        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, media.file, () => {}, 'community_media');
+        
+        if (media.type === 'audio') {
+            mediaData = {
+                audioUrl: url,
+                audioDuration: media.duration,
+                audioType: media.file.type,
+            };
+            messageContent = '';
+        } else { // image
+            mediaData = {
+                imageUrl: url,
+                imageCloudinaryPublicId: publicId,
+            };
+        }
     }
 
     const messagesColRef = collection(db, 'directMessages', chatId, 'messages');
@@ -213,16 +223,16 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
         userId,
         content: messageContent,
         timestamp: serverTimestamp(),
-        isAnonymous: false, // DMs are never anonymous
+        isAnonymous: false, 
         replyTo: replyTo || null,
         reactions: {},
-        ...audioData,
+        ...mediaData,
     });
 
     const chatRef = doc(db, 'directMessages', chatId);
     await updateDoc(chatRef, {
         lastMessage: {
-            text: audio ? 'Voice message' : content,
+            text: media ? (media.type === 'audio' ? 'Voice message' : 'Image') : content,
             timestamp: serverTimestamp(),
             userId: userId,
         },

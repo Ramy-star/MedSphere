@@ -2,7 +2,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, Mic, Trash2, Play, Pause } from 'lucide-react';
+import { Send, Mic, Trash2, Play, Pause, Smile, Paperclip } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 import { EyeOff, X } from 'lucide-react';
@@ -10,9 +10,12 @@ import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/communityService';
 import ChatQuote from '@/components/ChatQuote';
 import { useAuthStore } from '@/stores/auth-store';
+import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
+import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+
 
 interface ChatInputProps {
-  onSendMessage: (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }, replyTo?: Message['replyTo']) => void;
+  onSendMessage: (content: string, isAnonymous: boolean, media?: { file: File, type: 'image' | 'audio', duration?: number }, replyTo?: Message['replyTo']) => void;
   showAnonymousOption?: boolean;
   replyingTo: Message | null;
   onClearReply: () => void;
@@ -44,6 +47,7 @@ export function ChatInput({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioDuration, setAudioDuration] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
 
   useEffect(() => {
@@ -131,7 +135,7 @@ export function ChatInput({
             : (replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName));
         replyContext = {
             messageId: replyingTo.id,
-            content: replyingTo.content || 'Voice message',
+            content: replyingTo.content || 'Media message',
             userId: replyingTo.userId,
             userName: senderName,
         };
@@ -157,6 +161,27 @@ export function ChatInput({
     onClearEditing();
     setContent('');
   }
+  
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      let replyContext: Message['replyTo'] | undefined;
+      if (replyingTo) {
+          const senderName = isDM 
+              ? getTruncatedName(user?.displayName)
+              : (replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName));
+          replyContext = {
+              messageId: replyingTo.id,
+              content: replyingTo.content || 'Media message',
+              userId: replyingTo.userId,
+              userName: senderName,
+          };
+      }
+      onSendMessage(content.trim(), isAnonymous, { file, type: 'image' }, replyContext);
+      setContent('');
+      onClearReply();
+    }
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -208,12 +233,28 @@ export function ChatInput({
     <form onSubmit={handleSend} className="flex flex-col gap-2">
       {replyingTo && <ChatQuote replyTo={{
           messageId: replyingTo.id,
-          content: replyingTo.content || 'Voice Message',
+          content: replyingTo.content || 'Media Message',
           userId: replyingTo.userId,
-          userName: replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName)
+          userName: isDM ? getTruncatedName(user?.displayName) : (replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName))
       }} onClose={onClearReply} isDM={isDM} />}
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
-      <div className="flex items-center gap-2">
+      <div className="flex items-end gap-2">
+         <div className="flex items-center">
+            <Popover>
+                <PopoverTrigger asChild>
+                    <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0">
+                        <Smile className="w-5 h-5" />
+                    </Button>
+                </PopoverTrigger>
+                <PopoverContent>
+                    <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => setContent(prev => prev + emojiData.emoji)} theme={Theme.DARK} />
+                </PopoverContent>
+            </Popover>
+            <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0" onClick={() => imageInputRef.current?.click()}>
+                <Paperclip className="w-5 h-5" />
+                <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+            </Button>
+        </div>
         <Textarea
           ref={textareaRef}
           value={content}
