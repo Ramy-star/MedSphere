@@ -12,7 +12,7 @@ import { Button } from './ui/button';
 import { Checkbox } from './ui/checkbox';
 import { ScrollArea } from './ui/scroll-area';
 import { useState, useMemo, useEffect } from 'react';
-import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield, Move, ListPlus, Settings, BookUser, SlidersHorizontal, Shuffle, Inbox } from 'lucide-react';
+import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield, Move, ListPlus, Settings, BookUser, SlidersHorizontal, Shuffle, Inbox, Users } from 'lucide-react';
 import { Content } from '@/lib/contentService';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
@@ -49,6 +49,7 @@ const permissionGroups = {
     'Page Access': [
         { id: 'canAccessAdminPanel', label: 'Admin Panel' },
         { id: 'canAccessQuestionCreator', label: 'Questions Creator' },
+        { id: 'canAccessCommunityPage', label: 'Community Page' },
     ],
     'Additional': [
         { id: 'canReorder', label: 'Reorder (Drag & Drop)' },

@@ -226,80 +226,11 @@
             "playerTwo": { "type": "number" }
           }
         },
-        "answers": {
-            "type": "array",
-            "items": {
-                "type": "object",
-                "properties": {
-                    "questionIndex": { "type": "number" },
-                    "userId": { "type": "string" },
-                    "answer": { "type": "string" },
-                    "isCorrect": { "type": "boolean" },
-                    "timestamp": { "type": "string", "format": "date-time" }
-                }
-            }
-        },
+        "answers": { "type": "array", "items": { "type": "object" } },
         "createdAt": { "type": "string", "format": "date-time" },
         "finishedAt": { "type": "string", "format": "date-time" }
       },
       "required": ["id", "playerOneId", "status", "questions", "createdAt"]
-    },
-    "QuizBattleRoyale": {
-        "title": "Quiz Battle Royale",
-        "description": "Represents a free-for-all quiz game.",
-        "type": "object",
-        "properties": {
-            "id": { "type": "string" },
-            "name": { "type": "string", "description": "Name of the Battle Royale game session." },
-            "status": { "type": "string", "enum": ["lobby", "active", "finished"] },
-            "participants": { 
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "userId": { "type": "string" },
-                        "score": { "type": "number" },
-                        "isEliminated": { "type": "boolean" }
-                    }
-                }
-            },
-            "questions": { "type": "array", "items": { "type": "object" } },
-            "createdAt": { "type": "string", "format": "date-time" }
-        }
-    },
-    "TeamQuiz": {
-        "title": "Team Quiz",
-        "description": "Represents a team-based quiz game.",
-        "type": "object",
-        "properties": {
-            "id": { "type": "string" },
-            "status": { "type": "string", "enum": ["lobby", "challenging", "active", "finished"] },
-            "teams": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "id": { "type": "string" },
-                        "name": { "type": "string" },
-                        "members": { "type": "array", "items": { "type": "string" } },
-                        "score": { "type": "number" }
-                    }
-                }
-            },
-            "challenges": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "properties": {
-                        "fromTeamId": { "type": "string" },
-                        "toTeamId": { "type": "string" },
-                        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] }
-                    }
-                }
-            },
-            "questions": { "type": "array", "items": { "type": "object" } },
-            "createdAt": { "type": "string", "format": "date-time" }
-        }
     },
     "AiBuddyChatSession": {
         "title": "AI Study Buddy Chat Session",
@@ -429,15 +360,7 @@
     },
     "/duels/{duelId}": {
         "schema": { "$ref": "#/entities/QuizDuel" },
-        "description": "Stores real-time 1v1 quiz duel sessions."
-    },
-    "/battleRoyales/{gameId}": {
-        "schema": { "$ref": "#/entities/QuizBattleRoyale" },
-        "description": "Stores real-time battle royale quiz games."
-    },
-    "/teamQuizzes/{gameId}": {
-        "schema": { "$ref": "#/entities/TeamQuiz" },
-        "description": "Stores real-time team-based quiz games."
+        "description": "Stores real-time quiz duel sessions."
     }
   }
 }

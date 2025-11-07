@@ -2,29 +2,30 @@
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEffect } from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, usePathname } from 'next/navigation';
 
 export default function CommunityLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuthStore();
-  
-  // This check is now more robust. It waits for loading to be false AND
-  // for the user object to be fully populated, including the roles array.
-  const hasAdminRole = !loading && user && Array.isArray(user.roles) && user.roles.length > 0;
+  const { can, loading } = useAuthStore();
+  const pathname = usePathname();
+
+  // Use a specific permission for community access. This is more robust.
+  // This permission can now be granted to sub-admins.
+  const canAccess = can('canAccessCommunityPage', null);
 
   useEffect(() => {
-    // We only trigger notFound if loading is complete AND the user definitively has no admin role.
-    if (!loading && !hasAdminRole) {
+    // Only check for permissions once loading is complete.
+    if (!loading && !canAccess) {
       notFound();
     }
-  }, [hasAdminRole, loading]);
+  }, [canAccess, loading]);
 
-  // While loading or if the role hasn't been determined yet, render nothing.
+  // While loading or if access is not determined yet, render nothing.
   // This prevents a flash of content or a premature redirect.
-  if (loading || !hasAdminRole) {
+  if (loading || !canAccess) {
     return null;
   }
   
