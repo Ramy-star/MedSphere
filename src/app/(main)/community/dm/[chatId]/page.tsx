@@ -171,6 +171,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
             editingMessage={editingMessage}
             onEditMessage={handleEditMessage}
             onClearEditing={() => setEditingMessage(null)}
+            isDM={true}
         />
       </div>
     </div>
@@ -182,4 +183,3 @@ const getTruncatedName = (name: string | undefined, count = 2) => {
     const nameParts = name.split(' ');
     return nameParts.slice(0, count).join(' ');
 };
-

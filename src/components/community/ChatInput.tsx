@@ -19,6 +19,7 @@ interface ChatInputProps {
   onEditMessage: (message: Message, newContent: string) => Promise<void>;
   editingMessage: Message | null;
   onClearEditing: () => void;
+  isDM?: boolean;
 }
 
 export function ChatInput({ 
@@ -26,9 +27,10 @@ export function ChatInput({
   showAnonymousOption = true,
   replyingTo,
   onClearReply,
-  editingMessage,
   onEditMessage,
+  editingMessage,
   onClearEditing,
+  isDM = false,
 }: ChatInputProps) {
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
@@ -42,6 +44,7 @@ export function ChatInput({
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioDuration, setAudioDuration] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { user } = useAuthStore();
 
   useEffect(() => {
     if (editingMessage) {
@@ -125,7 +128,7 @@ export function ChatInput({
         messageId: replyingTo.id,
         content: replyingTo.content || 'Voice message',
         userId: replyingTo.userId,
-        userName: useAuthStore.getState().user?.displayName || 'User', // This is a simplification
+        userName: replyingTo.isAnonymous ? "Anonymous User" : user?.displayName || 'User',
     } : undefined;
 
     if (audioBlob) {
@@ -191,7 +194,7 @@ export function ChatInput({
 
   return (
     <form onSubmit={handleSend} className="flex flex-col gap-2">
-      {replyingTo && <ChatQuote text={replyingTo.content || 'Voice message'} onClose={onClearReply} />}
+      {replyingTo && <ChatQuote replyTo={replyingTo} onClose={onClearReply} isDM={isDM} />}
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
       <div className="flex items-center gap-2">
         <Textarea
