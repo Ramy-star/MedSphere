@@ -11,17 +11,19 @@ export default function CommunityLayout({
 }) {
   const { user, loading } = useAuthStore();
   
-  // This is the key change: Check if the user has ANY admin role.
-  const hasAdminRole = user?.roles && user.roles.length > 0;
+  // This check is now more robust. It waits for loading to be false AND
+  // for the user object to be fully populated, including the roles array.
+  const hasAdminRole = !loading && user && Array.isArray(user.roles) && user.roles.length > 0;
 
   useEffect(() => {
-    // Wait for auth state to be resolved before checking
-    if (!loading && !hasAdminRole) { 
+    // We only trigger notFound if loading is complete AND the user definitively has no admin role.
+    if (!loading && !hasAdminRole) {
       notFound();
     }
   }, [hasAdminRole, loading]);
 
-  // While loading, render nothing to avoid flashes of content.
+  // While loading or if the role hasn't been determined yet, render nothing.
+  // This prevents a flash of content or a premature redirect.
   if (loading || !hasAdminRole) {
     return null;
   }
