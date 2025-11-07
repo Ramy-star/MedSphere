@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/communityService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, MoreHorizontal, Reply, Edit, Trash2, Smile, ThumbsUp, Heart, Laugh, Sparkles, Frown, Angry } from "lucide-react";
+import { User as UserIcon, MoreHorizontal, Reply, Edit, Trash2 } from "lucide-react";
 import Link from 'next/link';
 import { WaveformAudioPlayer } from './WaveformAudioPlayer';
 import {
@@ -23,14 +23,13 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
 import { motion } from 'framer-motion';
 import { toggleMessageReaction } from '@/lib/communityService';
 import { useAuthStore } from '@/stores/auth-store';
-
+import Image from 'next/image';
 
 interface ChatMessageProps {
   message: Message;
@@ -48,22 +47,13 @@ const getTruncatedName = (name: string | undefined, count = 2) => {
     return nameParts.slice(0, count).join(' ');
 };
 
-const reactionIcons: {[key: string]: React.FC<any>} = {
-    like: ThumbsUp,
-    love: Heart,
-    haha: Laugh,
-    wow: Sparkles,
-    sad: Frown,
-    angry: Angry,
-};
-
-const reactionColors: {[key: string]: string} = {
-    like: 'text-blue-500',
-    love: 'text-red-500',
-    haha: 'text-yellow-500',
-    wow: 'text-indigo-400',
-    sad: 'text-yellow-600',
-    angry: 'text-orange-600'
+const reactionEmojis: { [key: string]: string } = {
+  like: '👍',
+  love: '❤️',
+  haha: '😂',
+  wow: '✨',
+  sad: '😢',
+  angry: '😠',
 };
 
 export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onReply, onEdit, onDelete }: ChatMessageProps) {
@@ -72,8 +62,8 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
   
   const alignClass = isCurrentUser ? 'items-end' : 'items-start';
   const bubbleClass = isCurrentUser
-    ? 'bg-blue-600 text-white rounded-br-none'
-    : 'bg-slate-700 text-slate-200 rounded-bl-none';
+    ? 'bg-blue-600 text-white rounded-tr-none'
+    : 'bg-slate-700 text-slate-200 rounded-tl-none';
 
   const senderName = message.isAnonymous
     ? "Anonymous User"
@@ -126,7 +116,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
             <p className="text-slate-400 line-clamp-1">{message.replyTo.content}</p>
         </div>
       )}
-      <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse", isDM && "max-w-full")}>
+      <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse", isDM && !message.audioUrl && "max-w-full")}>
         {!isCurrentUser && !isDM && (
             isLink ? (
                 <Link href={`/users/${username}`}>
@@ -136,31 +126,28 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                 <div className="cursor-default">{AvatarComponent}</div>
             )
         )}
-        <div className="flex items-center gap-2">
-            <div className={cn("flex items-center gap-1", isCurrentUser ? 'flex-row-reverse' : 'flex-row')}>
+        <div className={cn("flex items-center gap-2", isCurrentUser ? "flex-row-reverse" : "flex-row")}>
+             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Popover>
                     <PopoverTrigger asChild>
-                         <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100">
-                           <Smile size={16}/>
+                         <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
+                           <span className="text-base">🙂</span>
                         </Button>
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-1 rounded-full bg-slate-800 border-slate-700">
                         <div className="flex gap-1">
-                           {Object.keys(reactionIcons).map(reaction => {
-                                const Icon = reactionIcons[reaction];
-                                return (
-                                    <motion.button key={reaction} whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} className="p-1.5 rounded-full hover:bg-white/20" onClick={() => handleReaction(reaction)}>
-                                        <Icon className={reactionColors[reaction]}/>
-                                    </motion.button>
-                                )
-                           })}
+                           {Object.keys(reactionEmojis).map(reaction => (
+                                <motion.button key={reaction} whileHover={{ scale: 1.3 }} whileTap={{ scale: 0.9 }} className="p-1.5 rounded-full hover:bg-white/20 text-xl" onClick={() => handleReaction(reaction)}>
+                                    {reactionEmojis[reaction]}
+                                </motion.button>
+                           ))}
                         </div>
                     </PopoverContent>
                  </Popover>
                 {isCurrentUser && (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100">
+                            <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">
                                <MoreHorizontal size={16}/>
                             </Button>
                         </DropdownMenuTrigger>
@@ -187,30 +174,34 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                     </DropdownMenu>
                 )}
                  {!isCurrentUser && (
-                     <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full opacity-0 group-hover:opacity-100" onClick={() => onReply(message)}>
+                     <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full" onClick={() => onReply(message)}>
                         <Reply size={16}/>
                     </Button>
                 )}
             </div>
-            <div className={cn("px-4 py-2 rounded-2xl relative", bubbleClass, message.audioUrl && "p-2")}>
+            <div className={cn("px-3.5 py-2 rounded-2xl relative", bubbleClass, (message.audioUrl || message.imageUrl) && "p-2")}>
                 {!isCurrentUser && !isDM && (
-                     <p className="text-xs font-bold text-slate-400 mb-1">{senderName}</p>
+                     <p className="text-xs font-bold text-slate-300 mb-1">{senderName}</p>
                 )}
                 {message.audioUrl ? (
                     <WaveformAudioPlayer src={message.audioUrl} isCurrentUser={isCurrentUser} />
+                ) : message.imageUrl ? (
+                    <div className="max-w-xs cursor-pointer" onClick={() => window.open(message.imageUrl, '_blank')}>
+                        <Image src={message.imageUrl} alt="attached image" width={300} height={200} className="rounded-lg object-cover" />
+                         {message.content && <p className="text-sm whitespace-pre-wrap mt-2">{message.content}</p>}
+                    </div>
                 ) : (
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 )}
 
                  {topReactions.length > 0 && (
-                    <div className={cn("absolute -bottom-3 flex items-center bg-slate-800 rounded-full border border-slate-700 px-1 py-0.5", isCurrentUser ? 'right-2' : 'left-2')}>
+                    <div className={cn("absolute -bottom-3 flex items-center bg-slate-800 rounded-full border border-slate-700 px-1 py-0.5 text-lg", isCurrentUser ? 'right-2' : 'left-2')}>
                         <div className="flex -space-x-1">
-                            {topReactions.map(r => {
-                                const Icon = reactionIcons[r];
-                                return <Icon key={r} className={`${reactionColors[r]} h-3 w-3`} />;
-                            })}
+                            {topReactions.map(r => (
+                                <span key={r} className="text-xs">{reactionEmojis[r]}</span>
+                            ))}
                         </div>
-                        <span className="ml-1.5 text-xs font-mono">{Object.keys(message.reactions || {}).length}</span>
+                        <span className="ml-1 text-xs font-mono">{Object.keys(message.reactions || {}).length}</span>
                     </div>
                 )}
             </div>
