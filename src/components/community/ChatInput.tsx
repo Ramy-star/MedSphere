@@ -186,7 +186,6 @@ export function ChatInput({
     if (file) {
       setImageToSend(file);
     }
-    // Reset input value to allow selecting the same file again
     if(e.target) e.target.value = '';
   };
 
@@ -238,7 +237,7 @@ export function ChatInput({
 
   return (
     <>
-    <form onSubmit={handleSend} className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2">
       {replyingTo && <ChatQuote replyTo={{
           messageId: replyingTo.id,
           content: replyingTo.content || 'Media Message',
@@ -246,11 +245,12 @@ export function ChatInput({
           userName: isDM ? getTruncatedName(user?.displayName) : (replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName))
       }} onClose={onClearReply} isDM={isDM} />}
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
-      <div className="flex items-end gap-2">
-         <div className="flex items-center">
+      
+      <form onSubmit={handleSend} className="bg-slate-800/60 border border-slate-700 rounded-xl flex items-center p-2">
+        <div className="flex items-center">
             <Popover>
                 <PopoverTrigger asChild>
-                    <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0">
+                    <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400">
                         <Smile className="w-5 h-5" />
                     </Button>
                 </PopoverTrigger>
@@ -258,7 +258,7 @@ export function ChatInput({
                     <EmojiPicker onEmojiClick={(emojiData: EmojiClickData) => setContent(prev => prev + emojiData.emoji)} theme={Theme.DARK} />
                 </PopoverContent>
             </Popover>
-            <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0" onClick={() => imageInputRef.current?.click()}>
+            <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400" onClick={() => imageInputRef.current?.click()}>
                 <Paperclip className="w-5 h-5" />
                 <input ref={imageInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
             </Button>
@@ -268,19 +268,22 @@ export function ChatInput({
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
-          className="bg-slate-800/60 border-slate-700 text-white rounded-xl focus-visible:ring-blue-500"
+          placeholder="Type a message"
+          className="bg-transparent border-0 text-white rounded-xl focus-visible:ring-0 focus-visible:ring-offset-0 flex-1 resize-none no-scrollbar py-2.5"
           rows={1}
         />
-        <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0" onClick={startRecording}>
-            <Mic className="w-5 h-5" />
-        </Button>
-        <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!content.trim() && !editingMessage}>
-          <Send className="w-5 h-5" />
-        </Button>
-      </div>
+        {content.trim().length > 0 ? (
+            <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0 ml-2" disabled={!content.trim() && !editingMessage}>
+                <Send className="w-5 h-5" />
+            </Button>
+        ) : (
+            <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400 ml-2" onClick={startRecording}>
+                <Mic className="w-5 h-5" />
+            </Button>
+        )}
+      </form>
        {showAnonymousOption && (
-        <div className="flex items-center space-x-2 self-start">
+        <div className="flex items-center space-x-2 self-start pl-2">
             <Checkbox 
                 id="anonymous" 
                 checked={isAnonymous} 
@@ -292,7 +295,7 @@ export function ChatInput({
             </Label>
         </div>
        )}
-    </form>
+    </div>
      <ImagePreviewDialog
         file={imageToSend}
         onClose={() => setImageToSend(null)}
