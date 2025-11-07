@@ -65,6 +65,7 @@ export interface Message {
   channelId?: string; // For group chats
   chatId?: string; // For DMs
   userId: string;
+  userName?: string;
   content?: string;
   timestamp: any;
   updatedAt?: any;
@@ -78,6 +79,7 @@ export interface Message {
     userId: string;
     userName: string;
   };
+  reactions?: { [key: string]: string };
 }
 
 export type Content = {
@@ -113,6 +115,7 @@ export async function sendMessage(channelId: string, userId: string, content: st
         content: content,
         isAnonymous,
         timestamp: serverTimestamp(),
+        reactions: {},
         ...audioData,
     });
 
@@ -212,6 +215,7 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
         timestamp: serverTimestamp(),
         isAnonymous: false, // DMs are never anonymous
         replyTo: replyTo || null,
+        reactions: {},
         ...audioData,
     });
 
@@ -239,6 +243,29 @@ export async function deleteDirectMessage(chatId: string, messageId: string) {
     if (!db) throw new Error("Firestore is not initialized.");
     const messageRef = doc(db, 'directMessages', chatId, 'messages', messageId);
     await deleteFirestoreDoc(messageRef);
+}
+
+export async function toggleMessageReaction(chatId: string, messageId: string, userId: string, reactionType: string, isDM: boolean) {
+  if (!db) throw new Error("Firestore is not initialized.");
+  
+  const collectionPath = isDM ? 'directMessages' : 'channels';
+  const messageRef = doc(db, collectionPath, chatId, 'messages', messageId);
+
+  await runTransaction(db, async (transaction) => {
+    const messageSnap = await transaction.get(messageRef);
+    if (!messageSnap.exists()) throw new Error("Message not found.");
+    
+    const messageData = messageSnap.data() as Message;
+    const newReactions = { ...messageData.reactions };
+
+    if (newReactions[userId] === reactionType) {
+        delete newReactions[userId];
+    } else {
+        newReactions[userId] = reactionType;
+    }
+
+    transaction.update(messageRef, { reactions: newReactions });
+  });
 }
 
 

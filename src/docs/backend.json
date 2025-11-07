@@ -189,7 +189,12 @@
         "isAnonymous": { "type": "boolean" },
         "audioUrl": { "type": "string", "format": "uri" },
         "audioDuration": { "type": "number" },
-        "audioType": { "type": "string" }
+        "audioType": { "type": "string" },
+        "reactions": {
+          "type": "object",
+          "description": "A map of user IDs to their reaction type.",
+          "additionalProperties": { "type": "string" }
+        }
       },
       "required": ["id", "channelId", "userId", "timestamp"]
     },

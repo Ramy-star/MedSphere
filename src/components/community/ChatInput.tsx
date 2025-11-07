@@ -210,7 +210,7 @@ export function ChatInput({
           messageId: replyingTo.id,
           content: replyingTo.content || 'Voice Message',
           userId: replyingTo.userId,
-          userName: replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(profileForReply?.displayName)
+          userName: replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName)
       }} onClose={onClearReply} isDM={isDM} />}
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
       <div className="flex items-center gap-2">

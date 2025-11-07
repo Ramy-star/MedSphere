@@ -182,7 +182,7 @@ export function WaveformAudioPlayer({ src, className, isCurrentUser }: WaveformA
   const playButtonColor = isCurrentUser ? 'bg-white text-blue-600' : 'bg-blue-500 text-white';
 
   return (
-    <div className={cn("flex items-center gap-3 w-full max-w-xs", className)}>
+    <div className={cn("flex items-center gap-3 w-full max-w-xs sm:max-w-md md:max-w-lg", className)}>
       <audio ref={audioRef} src={src} preload="metadata" />
       <button
         onClick={togglePlayPause}
