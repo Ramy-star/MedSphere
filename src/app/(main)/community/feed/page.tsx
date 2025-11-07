@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image as ImageIcon, Send, X, ThumbsUp, MessageSquare, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare as MessageSquareIcon, EyeOff } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Send, X, ThumbsUp, MessageSquare, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare as MessageSquareIcon, EyeOff, Angry } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
