@@ -91,9 +91,9 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSendMessage = async (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }, replyTo?: Message['replyTo']) => {
+  const handleSendMessage = async (content: string, isAnonymous: boolean, media?: { file: File, type: 'image' | 'audio', duration?: number }, replyTo?: Message['replyTo']) => {
     if (!currentUser || !chatId) return;
-    await sendDirectMessage(chatId, currentUser.uid, content, audio, replyTo);
+    await sendDirectMessage(chatId, currentUser.uid, content, media, replyTo);
   };
   
   const handleEditMessage = async (message: Message, newContent: string) => {
