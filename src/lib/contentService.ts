@@ -496,7 +496,7 @@ export const contentService = {
                 await setDoc(doc(db, 'content', id), newFileContent);
                 callbacks.onSuccess(newFileContent);
             } else {
-                 callbacks.onError(new Error(`Cloudinary upload failed: ${xhr.statusText}`));
+                 callbacks.onError(new Error(`Upload failed: ${xhr.statusText}`));
             }
         };
         xhr.onerror = () => {
@@ -512,9 +512,9 @@ export const contentService = {
     }
     return xhr;
   },
-    async uploadUserAvatar(user: UserProfile, file: File, onProgress: (progress: number) => void): Promise<{ publicId: string, url: string }> {
-        const folder = `avatars/${user.id}`;
-        const public_id = `${folder}/${uuidv4()}`;
+    async uploadUserAvatar(user: UserProfile, file: File, onProgress: (progress: number) => void, folderName: string = 'avatars'): Promise<{ publicId: string, url: string }> {
+        const folder = `${folderName}/${user.id}`;
+        const public_id = `${folder}/${nanoid()}`;
         const paramsToSign = { 
           public_id, 
           folder,
@@ -528,9 +528,12 @@ export const contentService = {
         if (!sigResponse.ok) throw new Error('Failed to get signature.');
         const { signature, apiKey, cloudName } = await sigResponse.json();
         
-        if (user.photoURL && user.metadata?.cloudinaryPublicId) {
+        if (folderName === 'avatars' && user.photoURL && user.metadata?.cloudinaryPublicId) {
             await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
         }
+
+        const resourceType = folderName === 'community_audio' ? 'raw' : 'image';
+
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             const formData = new FormData();
@@ -541,7 +544,7 @@ export const contentService = {
             formData.append('public_id', public_id);
             formData.append('folder', folder);
 
-            xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
+            xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`);
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) {
                     onProgress((event.loaded / event.total) * 100);
@@ -552,10 +555,14 @@ export const contentService = {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const data = JSON.parse(xhr.responseText);
                     const finalUrl = createProxiedUrl(data.secure_url);
-                    await updateDoc(doc(db, 'users', user.id), {
-                        photoURL: finalUrl,
-                        'metadata.cloudinaryPublicId': data.public_id,
-                    });
+
+                    if (folderName === 'avatars') {
+                        await updateDoc(doc(db, 'users', user.id), {
+                            photoURL: finalUrl,
+                            'metadata.cloudinaryPublicId': data.public_id,
+                        });
+                    }
+                    
                     resolve({ publicId: data.public_id, url: finalUrl });
                 } else {
                     reject(new Error(`Upload failed: ${xhr.statusText}`));
