@@ -89,7 +89,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
                   src={user.metadata.coverPhotoURL}
                   alt="Cover photo"
                   fill
-                  objectFit="cover"
+                  style={{objectFit: 'cover'}}
                   className="pointer-events-none select-none"
                   priority
               />
