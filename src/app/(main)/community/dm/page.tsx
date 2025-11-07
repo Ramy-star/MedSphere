@@ -77,7 +77,7 @@ export default function DirectMessagesPage() {
                 Direct Messages
             </h1>
         </div>
-        <div className="flex-1 overflow-y-auto no-scrollbar">
+        <div className="flex-1 overflow-hidden">
             {loading ? (
                 <div className="flex items-center justify-center h-full">
                     <Loader2 className="w-8 h-8 animate-spin text-slate-500"/>
