@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, BarChart2, MessageSquare, BookOpen, Globe, Shield, Lock, ArrowRight } from 'lucide-react';
+import { Users, BarChart2, MessageSquare, BookOpen, Globe, Shield, Lock, ArrowRight, Swords } from 'lucide-react';
 import Link from 'next/link';
 
 const SectionCard = ({
@@ -73,6 +73,13 @@ export default function CommunityPage() {
                     icon={MessageSquare}
                     color="from-purple-500 to-indigo-500"
                     link="/community/dm"
+                />
+                <SectionCard
+                    title="Quiz Duels"
+                    description="Challenge your friends to a real-time quiz battle and see who comes out on top."
+                    icon={Swords}
+                    color="from-red-500 to-rose-500"
+                    link="/community/duels"
                 />
             </div>
         </div>
