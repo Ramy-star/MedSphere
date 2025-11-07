@@ -1,6 +1,6 @@
 'use client';
 
-import { Users, BarChart2, MessageSquare, BookOpen, Globe, Shield, Lock, ArrowRight, Swords } from 'lucide-react';
+import { Users, BarChart2, MessageSquare, BookOpen, Globe, Shield, Lock, ArrowRight, Swords, Newspaper } from 'lucide-react';
 import Link from 'next/link';
 
 const SectionCard = ({
@@ -47,11 +47,11 @@ export default function CommunityPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  <SectionCard 
-                    title="Public Channels"
-                    description="Open forums for general discussions, announcements, and sharing resources available to everyone."
-                    icon={Globe}
+                    title="Community Feed"
+                    description="Share your thoughts, ask questions, and see what's happening in the MedSphere community."
+                    icon={Newspaper}
                     color="from-blue-500 to-cyan-500"
-                    link="/community/channels/public"
+                    link="/community/feed"
                 />
                 <SectionCard 
                     title="Level Groups"
