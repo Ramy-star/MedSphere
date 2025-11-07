@@ -1,7 +1,8 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
+import { useAuthStore } from '@/stores/auth-store';
 
 export interface Channel {
   id: string;
@@ -42,6 +43,15 @@ export interface Message {
   isAnonymous: boolean;
 }
 
+export type Content = {
+    id: string;
+    name: string;
+    type: string;
+    parentId: string | null;
+    metadata?: { [key: string]: any };
+};
+
+
 export async function sendMessage(channelId: string, userId: string, content: string, isAnonymous: boolean): Promise<void> {
     if (!db) {
         throw new Error("Firestore is not initialized.");
@@ -57,14 +67,16 @@ export async function sendMessage(channelId: string, userId: string, content: st
         timestamp: serverTimestamp()
     });
 
-    // Also update the lastMessage on the channel
     const channelRef = doc(db, 'channels', channelId);
+    const user = useAuthStore.getState().user;
+    const userName = user?.displayName || 'User';
+
     await updateDoc(channelRef, {
         lastMessage: {
             text: content,
             timestamp: serverTimestamp(),
             userId: userId,
-            userName: isAnonymous ? 'Anonymous' : 'User' // You might want to fetch the real username
+            userName: isAnonymous ? 'Anonymous' : userName,
         }
     });
 }
@@ -83,7 +95,7 @@ export async function createChannel(
     const channelsColRef = collection(db, 'channels');
     const newDocRef = doc(channelsColRef);
     
-    const newChannelData = {
+    const newChannelData: Partial<Channel> = {
         id: newDocRef.id,
         name,
         description,
@@ -126,10 +138,11 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
 
     const messagesColRef = collection(db, 'directMessages', chatId, 'messages');
     await addDoc(messagesColRef, {
+        chatId: chatId,
         userId,
         content,
         timestamp: serverTimestamp(),
-        isAnonymous: false, // DMs can't be anonymous
+        isAnonymous: false,
     });
 
     const chatRef = doc(db, 'directMessages', chatId);
