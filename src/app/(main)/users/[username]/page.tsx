@@ -8,8 +8,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon, Crown, Shield } from 'lucide-react';
 import { InfoCard } from '@/components/profile/InfoCard';
 import { AchievementsSection } from '@/components/profile/Achievements';
-import { FavoritesSection } from '@/components/profile/FavoritesSection';
-import { FilePreviewModal } from '@/components/FilePreviewModal';
 import { createOrGetDirectChat } from '@/lib/communityService';
 import type { Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
@@ -30,7 +28,6 @@ export default function PublicProfilePage({ params }: { params: { username: stri
   });
   
   const [user, setUser] = useState<UserProfile | null>(null);
-  const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   useEffect(() => {
@@ -40,14 +37,6 @@ export default function PublicProfilePage({ params }: { params: { username: stri
       notFound();
     }
   }, [loading, users]);
-
-  const handleFileClick = (item: Content) => {
-    if (item.type === 'LINK') {
-      if (item.metadata?.url) window.open(item.metadata.url, '_blank');
-      return;
-    }
-    setPreviewFile(item);
-  };
 
   const handleStartChat = async () => {
       if (!currentUser || !user) return;
@@ -102,7 +91,13 @@ export default function PublicProfilePage({ params }: { params: { username: stri
 
         <div className="relative z-10 flex flex-col items-center -mt-12 sm:-mt-16 px-4 sm:px-8 sm:flex-row sm:items-end sm:gap-4">
           <Avatar className={cn("h-20 w-20 sm:h-28 sm:w-28 ring-4", avatarRingClass)}>
-            <AvatarImage src={user.photoURL ?? ''} alt={user.displayName ?? ''} />
+            <AvatarImage 
+                src={user.photoURL ?? ''} 
+                alt={user.displayName ?? ''}
+                className="pointer-events-none select-none"
+                onDragStart={(e) => e.preventDefault()}
+                onContextMenu={(e) => e.preventDefault()}
+            />
             <AvatarFallback className="text-3xl sm:text-4xl">
               {user.displayName?.[0] || <UserIcon />}
             </AvatarFallback>
@@ -137,10 +132,6 @@ export default function PublicProfilePage({ params }: { params: { username: stri
             </div>
         </div>
       </div>
-       <FilePreviewModal
-        item={previewFile}
-        onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
-      />
     </>
   );
 }
