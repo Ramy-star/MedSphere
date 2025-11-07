@@ -2,25 +2,27 @@
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
 import { useEffect } from 'react';
-import { usePathname, notFound } from 'next/navigation';
+import { notFound } from 'next/navigation';
 
 export default function CommunityLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const { can } = useAuthStore();
-  const canAccess = can('canAccessAdminPanel', null); // Correct permission check for any admin role
+  const { user, loading } = useAuthStore();
+  
+  // This is the key change: Check if the user has ANY admin role.
+  const hasAdminRole = user?.roles && user.roles.length > 0;
 
   useEffect(() => {
-    // If user doesn't have access, show a 404 not found page.
-    if (canAccess === false) { 
+    // Wait for auth state to be resolved before checking
+    if (!loading && !hasAdminRole) { 
       notFound();
     }
-  }, [canAccess]);
+  }, [hasAdminRole, loading]);
 
-  if (canAccess === null) {
-    // Render nothing or a loading spinner while checking auth
+  // While loading, render nothing to avoid flashes of content.
+  if (loading || !hasAdminRole) {
     return null;
   }
   
