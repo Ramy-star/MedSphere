@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, UserSecret } from 'lucide-react';
+import { Send, EyeOff } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
 
@@ -53,8 +53,8 @@ export function ChatInput({ onSendMessage }: ChatInputProps) {
             onCheckedChange={(checked) => setIsAnonymous(!!checked)}
         />
         <Label htmlFor="anonymous" className="text-xs text-slate-400 flex items-center gap-1.5 cursor-pointer">
-            <UserSecret className="w-3.5 h-3.5" />
-            Post anonymously
+            <EyeOff className="w-3.5 h-3.5" />
+            Send anonymously
         </Label>
       </div>
     </form>
