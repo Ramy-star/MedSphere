@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit } from 'lucide-react';
+import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit, Globe } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -175,13 +175,15 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
 
     const isOwner = currentUser?.uid === post.userId;
     
+    const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
+
     return (
       <>
         <div className="glass-card p-4 rounded-2xl">
             <div className="flex items-center justify-between">
                 <PostAuthor userId={post.userId} />
                 <div className="flex items-center gap-1">
-                    <p className="text-xs text-slate-400">{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</p>
+                    <p className="text-xs text-slate-400">{formatDistanceToNow(postDate, { addSuffix: true })}</p>
                     {isOwner && (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
