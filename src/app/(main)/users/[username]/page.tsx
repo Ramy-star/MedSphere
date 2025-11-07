@@ -124,7 +124,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
         <div className="mt-8 sm:mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 sm:px-8">
             <div className="lg:col-span-1 space-y-4">
                 <InfoCard icon={RoleIcon} label="Username" value={`@${user.username}`} />
-                {userLevel && <InfoCard icon={Crown} label="Academic Level" value={userLevel} />}
+                {userLevel && <InfoCard icon={School} label="Academic Level" value={userLevel} />}
             </div>
             <div className="lg:col-span-2 space-y-6">
                 <div>
