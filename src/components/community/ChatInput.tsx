@@ -51,6 +51,8 @@ export function ChatInput({
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
 
   useEffect(() => {
     if (editingMessage) {
@@ -124,9 +126,11 @@ export function ChatInput({
     e?.preventDefault();
 
     if (editingMessage) {
+        setIsSubmitting(true);
         await onEditMessage(editingMessage, content);
         onClearEditing();
         setContent('');
+        setIsSubmitting(false);
         return;
     }
     
