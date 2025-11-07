@@ -5,7 +5,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
 import { type DirectMessage, type Message, sendDirectMessage } from '@/lib/communityService';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ChatMessage } from '@/components/community/ChatMessage';
 import { ChatInput } from '@/components/community/ChatInput';
@@ -19,6 +19,8 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
   const { user: currentUser } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
 
   const { data: chat, loading: loadingChat } = useDoc<DirectMessage>('directMessages', chatId);
   
@@ -49,12 +51,43 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
     return map;
   }, [profiles]);
 
-  useEffect(() => {
+  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'auto') => {
     if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+        messagesContainerRef.current.scrollTo({
+            top: messagesContainerRef.current.scrollHeight,
+            behavior: behavior
+        });
     }
-  }, [messages, loadingMessages]);
+  };
 
+  useEffect(() => {
+    if (!loadingMessages) {
+        scrollToBottom();
+    }
+  }, [loadingMessages]);
+
+  useEffect(() => {
+     if (messagesContainerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+        if (scrollHeight - scrollTop <= clientHeight + 100) {
+            scrollToBottom('smooth');
+        }
+    }
+  }, [messages]);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const isScrolledUp = scrollHeight - scrollTop > clientHeight + 150;
+        setShowScrollToBottom(isScrolledUp);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const handleSendMessage = async (content: string, isAnonymous: boolean) => {
     if (!currentUser || !chatId) return;
@@ -64,7 +97,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
   const isLoading = loadingChat || loadingOtherUser || (loadingMessages && !messages) || (loadingProfiles && !profiles);
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden relative">
       <header className="flex-shrink-0 flex items-center gap-2 p-3 border-b border-white/10">
         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => router.back()}>
           <ArrowLeft className="w-5 h-5" />
@@ -101,6 +134,16 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
           ))
         )}
       </div>
+
+       {showScrollToBottom && (
+            <button
+                onClick={() => scrollToBottom('smooth')}
+                className="absolute bottom-24 right-6 z-20 w-9 h-9 rounded-full border border-white/20 bg-slate-800/80 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-90"
+                aria-label="Scroll to bottom"
+            >
+                <ChevronDown className="w-5 h-5" />
+            </button>
+        )}
 
       <div className="p-4 border-t border-white/10">
         <ChatInput onSendMessage={handleSendMessage} />

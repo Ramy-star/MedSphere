@@ -36,6 +36,8 @@ import { FilePreviewModal } from '@/components/FilePreviewModal';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
+
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -321,6 +323,7 @@ export default function ProfilePage() {
   const DesktopLayout = () => (
     <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
       <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
+          {!isMobile && <AiStudyBuddy user={user} />}
           <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
               <ProfileNotesSection user={user} />
           </CollapsibleSection>
@@ -351,6 +354,7 @@ export default function ProfilePage() {
 
   const MobileLayout = () => (
       <div className="mt-8 sm:mt-12 flex flex-col gap-y-8 items-start w-full px-4 sm:px-8">
+          <AiStudyBuddy user={user} />
           <CollapsibleSection title="User Information" icon={Info} defaultOpen={false}>
               <div className="space-y-3 sm:space-y-4">
                   <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
@@ -604,10 +608,14 @@ export default function ProfilePage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <FilePreviewModal
-        item={previewFile}
-        onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
-      />
+       <Suspense fallback={null}>
+        {previewFile && (
+            <FilePreviewModal
+                item={previewFile}
+                onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
+            />
+        )}
+      </Suspense>
     </>
   );
 }

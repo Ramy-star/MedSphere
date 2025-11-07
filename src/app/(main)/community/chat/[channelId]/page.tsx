@@ -6,7 +6,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, type Message, sendMessage } from '@/lib/communityService';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ChatMessage } from '@/components/community/ChatMessage';
 import { ChatInput } from '@/components/community/ChatInput';
@@ -18,6 +18,8 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
   const { user } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+
 
   const { data: channel, loading: loadingChannel } = useDoc<Channel>('channels', channelId);
   const { data: messages, loading: loadingMessages } = useCollection<Message>(`channels/${channelId}/messages`, {
@@ -39,13 +41,48 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
     profiles?.forEach(p => map.set(p.uid, p));
     return map;
   }, [profiles]);
+  
+  const scrollToBottom = (behavior: 'smooth' | 'auto' = 'auto') => {
+    if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTo({
+            top: messagesContainerRef.current.scrollHeight,
+            behavior: behavior
+        });
+    }
+  };
 
   useEffect(() => {
-    // Scroll to the bottom when messages load or a new message is added
-    if (messagesContainerRef.current) {
-        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    // Scroll to the bottom when messages load for the first time
+    if (!loadingMessages) {
+        scrollToBottom();
     }
-  }, [messages, loadingMessages]);
+  }, [loadingMessages]);
+
+  useEffect(() => {
+    // Scroll to bottom when a new message is added, but only if user is near the bottom
+     if (messagesContainerRef.current) {
+        const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
+        // The threshold of 100px allows some space for the user to be slightly scrolled up
+        if (scrollHeight - scrollTop <= clientHeight + 100) {
+            scrollToBottom('smooth');
+        }
+    }
+  }, [messages]);
+  
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+
+    const handleScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = container;
+        const isScrolledUp = scrollHeight - scrollTop > clientHeight + 150;
+        setShowScrollToBottom(isScrolledUp);
+    };
+
+    container.addEventListener('scroll', handleScroll, { passive: true });
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, []);
+
 
 
   const handleSendMessage = async (content: string, isAnonymous: boolean) => {
@@ -78,7 +115,7 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
   );
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden relative">
       <header className="flex-shrink-0 flex items-center gap-2 p-3 border-b border-white/10">
         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => router.back()}>
           <ArrowLeft className="w-5 h-5" />
@@ -104,6 +141,16 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
           ))
         )}
       </div>
+
+       {showScrollToBottom && (
+            <button
+                onClick={() => scrollToBottom('smooth')}
+                className="absolute bottom-24 right-6 z-20 w-9 h-9 rounded-full border border-white/20 bg-slate-800/80 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-90"
+                aria-label="Scroll to bottom"
+            >
+                <ChevronDown className="w-5 h-5" />
+            </button>
+        )}
 
       <div className="p-4 border-t border-white/10">
         <ChatInput onSendMessage={handleSendMessage} />
