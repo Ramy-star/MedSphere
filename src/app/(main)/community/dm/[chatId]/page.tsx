@@ -113,7 +113,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
 
   return (
     <div className="flex flex-col h-full overflow-hidden relative">
-      <header className="flex-shrink-0 flex items-center gap-2 p-3 border-b border-white/10">
+      <header className="flex-shrink-0 flex items-center gap-2 p-3 border-b border-white/10 bg-black/20">
         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => router.back()}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -163,7 +163,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
         )}
       </div>
 
-      <div className="p-2 border-t border-white/10 flex-shrink-0">
+      <div className="p-2 border-t border-white/10 flex-shrink-0 bg-black/20">
         <ChatInput 
             onSendMessage={handleSendMessage} 
             showAnonymousOption={false}
