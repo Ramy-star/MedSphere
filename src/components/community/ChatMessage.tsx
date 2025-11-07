@@ -23,6 +23,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -199,9 +200,10 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
              {topReactions.length > 0 && (
                 <div className={cn("absolute -bottom-3 flex items-center bg-slate-800 rounded-full border border-slate-700 px-1 py-0.5 text-lg", isCurrentUser ? 'right-2' : 'left-2')}>
                     <div className="flex -space-x-1">
-                        {topReactions.map(r => (
-                            <span key={r} className="text-xs">{reactionEmojis[r]}</span>
-                        ))}
+                        {topReactions.map(r => {
+                            const Icon = reactionIcons[r];
+                            return <Icon key={r} className={cn(reactionColors[r] || 'text-white', "h-3 w-3")} />
+                        })}
                     </div>
                     <span className="ml-1.5 text-xs font-mono">{Object.keys(message.reactions || {}).length}</span>
                 </div>
