@@ -196,7 +196,7 @@ export function ChatInput({
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleSend(e);
+        handleSubmit(e);
     }
      if (e.key === 'Escape') {
       if (editingMessage) {
@@ -250,7 +250,7 @@ export function ChatInput({
       }} onClose={onClearReply} isDM={isDM} />}
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
       
-      <form onSubmit={handleSend} className="flex items-center gap-2">
+      <form onSubmit={handleSend} className="flex items-end gap-2">
         <Popover>
             <PopoverTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400">
