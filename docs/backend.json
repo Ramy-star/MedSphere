@@ -216,22 +216,16 @@
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "content": { "type": "string" },
+        "isAnonymous": { "type": "boolean", "description": "Whether the post is anonymous." },
         "imageUrl": { "type": "string", "format": "uri" },
         "imageCloudinaryPublicId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" },
-        "commentCount": { "type": "number", "default": 0 },
+        "commentsDisabled": { "type": "boolean", "description": "Whether comments are disabled for this post." },
         "reactions": {
           "type": "object",
-          "properties": {
-            "like": { "type": "number", "default": 0 },
-            "love": { "type": "number", "default": 0 },
-            "support": { "type": "number", "default": 0 },
-            "haha": { "type": "number", "default": 0 },
-            "wow": { "type": "number", "default": 0 },
-            "sad": { "type": "number", "default": 0 },
-            "angry": { "type": "number", "default": 0 }
-          }
+          "description": "A map of user IDs to their reaction type.",
+          "additionalProperties": { "type": "string" }
         }
       },
       "required": ["id", "userId", "content", "createdAt"]
@@ -246,7 +240,12 @@
         "parentCommentId": { "type": "string", "description": "Null if it's a top-level comment." },
         "userId": { "type": "string" },
         "content": { "type": "string" },
-        "createdAt": { "type": "string", "format": "date-time" }
+        "createdAt": { "type": "string", "format": "date-time" },
+        "reactions": {
+          "type": "object",
+          "description": "A map of user IDs to their reaction type.",
+          "additionalProperties": { "type": "string" }
+        }
       },
       "required": ["id", "postId", "userId", "content", "createdAt"]
     },
