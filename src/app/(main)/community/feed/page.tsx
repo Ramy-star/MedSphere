@@ -225,8 +225,8 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
                         />
                     </div>
                     {post.imageUrl && (
-                        <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[200px] w-full">
-                            <img src={post.imageUrl} alt="Post image" className="rounded-lg w-full h-full object-cover max-h-[200px]" />
+                        <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[300px] w-full">
+                            <img src={post.imageUrl} alt="Post image" className="rounded-lg w-full h-full object-cover max-h-[300px]" />
                         </div>
                     )}
                 </div>
@@ -264,6 +264,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
     }, [post.reactions]);
     
     const totalReactions = useMemo(() => Object.keys(post.reactions || {}).length, [post.reactions]);
+    const commentCount = post.commentCount || 0;
 
     const topReactions = useMemo(() => {
         return Object.entries(reactionCounts)
@@ -370,7 +371,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                 </div>
             )}
              <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
-                <div>
+                <div className="min-w-0">
                     {totalReactions > 0 && (
                         <div className="flex items-center gap-2">
                             <div className="flex -space-x-1">
@@ -383,12 +384,10 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                         </div>
                     )}
                 </div>
-                <div>
-                    {post.commentCount > 0 && (
-                        <button onClick={() => setShowComments(prev => !prev)} className="hover:underline">
-                            {post.commentCount} {post.commentCount === 1 ? 'comment' : 'comments'}
-                        </button>
-                    )}
+                <div className="min-w-0">
+                    <button onClick={() => setShowComments(prev => !prev)} className="hover:underline">
+                        {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
+                    </button>
                 </div>
             </div>
 
