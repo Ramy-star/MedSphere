@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit, Globe, Loader2 } from 'lucide-react';
+import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -25,6 +25,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
+import { CommentThread } from '@/components/community/CommentThread';
+
 
 const getTruncatedName = (name: string | undefined, count = 2) => {
     if (!name) return 'User';
@@ -203,6 +205,8 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
     const { toast } = useToast();
     const [itemToDelete, setItemToDelete] = useState<Post | null>(null);
     const [itemToEdit, setItemToEdit] = useState<Post | null>(null);
+    const [showComments, setShowComments] = useState(false);
+
 
     const hasLiked = useMemo(() => {
         if (!currentUser || !post.reactions) return false;
@@ -278,10 +282,15 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                     <ThumbsUp className={`mr-2 h-4 w-4 ${hasLiked ? 'text-blue-500 fill-current' : ''}`}/> 
                     {likeCount > 0 ? `${likeCount} Like${likeCount > 1 ? 's' : ''}` : 'Like'}
                  </Button>
-                 <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full">
+                 <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full" onClick={() => setShowComments(prev => !prev)}>
                     <MessageCircle className="mr-2 h-4 w-4"/> Comment
                  </Button>
             </div>
+             {showComments && (
+                <div className="mt-4 border-t border-white/10 pt-4">
+                    <CommentThread postId={post.id} />
+                </div>
+            )}
         </div>
          <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
             <AlertDialogContent>
