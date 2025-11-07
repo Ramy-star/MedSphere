@@ -1,40 +1,144 @@
 'use client';
-
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Send, EyeOff } from 'lucide-react';
+import { Send, Mic, Trash2, Play, Pause } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
+import { EyeOff } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface ChatInputProps {
-  onSendMessage: (content: string, isAnonymous: boolean) => void;
+  onSendMessage: (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }) => void;
   showAnonymousOption?: boolean;
 }
 
 export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInputProps) {
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [recordingTime, setRecordingTime] = useState(0);
+  
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const [audioDuration, setAudioDuration] = useState(0);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (content.trim()) {
-      onSendMessage(content.trim(), isAnonymous);
-      setContent('');
-      // We keep the isAnonymous state as the user might want to send multiple anonymous messages.
+  useEffect(() => {
+    if (audioUrl) {
+      audioRef.current = new Audio(audioUrl);
+      audioRef.current.onloadedmetadata = () => {
+        setAudioDuration(audioRef.current!.duration);
+      };
+    }
+    return () => {
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+      }
+    };
+  }, [audioUrl]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = recorder;
+      
+      const audioChunks: BlobPart[] = [];
+      recorder.ondataavailable = event => {
+        audioChunks.push(event.data);
+      };
+
+      recorder.onstop = () => {
+        const blob = new Blob(audioChunks, { type: 'audio/webm' });
+        setAudioBlob(blob);
+        setAudioUrl(URL.createObjectURL(blob));
+        stream.getTracks().forEach(track => track.stop()); // Stop microphone
+      };
+
+      recorder.start();
+      setIsRecording(true);
+      
+      setRecordingTime(0);
+      recordingIntervalRef.current = setInterval(() => {
+          setRecordingTime(prev => prev + 1);
+      }, 1000);
+
+    } catch (err) {
+      console.error("Error accessing microphone:", err);
+      // You might want to show a toast message to the user here
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      if(recordingIntervalRef.current) clearInterval(recordingIntervalRef.current);
     }
   };
   
+  const handleDeleteRecording = () => {
+    setAudioBlob(null);
+    setAudioUrl(null);
+    setRecordingTime(0);
+  };
+
+  const handleSend = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (audioBlob) {
+        onSendMessage('', isAnonymous, { blob: audioBlob, duration: audioDuration });
+        handleDeleteRecording();
+    } else if (content.trim()) {
+      onSendMessage(content.trim(), isAnonymous);
+      setContent('');
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        handleSubmit(e);
+        handleSend(e);
     }
   }
 
+  const formatTime = (time: number) => {
+      const minutes = Math.floor(time / 60);
+      const seconds = time % 60;
+      return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  if (audioBlob && audioUrl) {
+    return (
+      <div className="flex items-center gap-2 p-2 bg-slate-800/60 border border-slate-700 rounded-xl">
+        <Button variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0" onClick={handleDeleteRecording}>
+            <Trash2 className="w-5 h-5 text-red-500"/>
+        </Button>
+        <div className="flex-1 text-center text-white font-mono">{formatTime(Math.round(audioDuration))}</div>
+        <Button size="icon" className="rounded-full h-10 w-10 shrink-0" onClick={handleSend}>
+            <Send className="w-5 h-5" />
+        </Button>
+      </div>
+    )
+  }
+
+  if (isRecording) {
+     return (
+        <div className="flex items-center gap-4 p-2 bg-slate-800/60 border border-slate-700 rounded-xl">
+            <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+            <p className="flex-1 text-center font-mono text-white">{formatTime(recordingTime)}</p>
+            <Button onClick={stopRecording} size="icon" className="rounded-full h-10 w-10 bg-red-600 hover:bg-red-700">
+                <Pause className="w-5 h-5" />
+            </Button>
+        </div>
+    )
+  }
+
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-2">
-      <div className="flex items-center gap-4">
+    <form onSubmit={handleSend} className="flex flex-col gap-2">
+      <div className="flex items-center gap-2">
         <Textarea
           value={content}
           onChange={(e) => setContent(e.target.value)}
@@ -43,6 +147,9 @@ export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInp
           className="bg-slate-800/60 border-slate-700 text-white rounded-xl focus-visible:ring-blue-500"
           rows={1}
         />
+        <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0" onClick={startRecording}>
+            <Mic className="w-5 h-5" />
+        </Button>
         <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!content.trim()}>
           <Send className="w-5 h-5" />
         </Button>

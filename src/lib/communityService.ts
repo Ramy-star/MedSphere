@@ -65,9 +65,12 @@ export interface Message {
   channelId?: string; // For group chats
   chatId?: string; // For DMs
   userId: string;
-  content: string;
+  content?: string;
   timestamp: any;
   isAnonymous: boolean;
+  audioUrl?: string;
+  audioDuration?: number;
+  audioType?: string;
 }
 
 export type Content = {
@@ -79,11 +82,22 @@ export type Content = {
 };
 
 
-export async function sendMessage(channelId: string, userId: string, content: string, isAnonymous: boolean): Promise<void> {
+export async function sendMessage(channelId: string, userId: string, content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }): Promise<void> {
     if (!db) {
         throw new Error("Firestore is not initialized.");
     }
     
+    let audioData = {};
+    if (audio) {
+        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'voice_messages');
+        audioData = {
+            audioUrl: url,
+            audioDuration: audio.duration,
+            audioType: audio.blob.type,
+        };
+        content = `Voice message (${Math.round(audio.duration)}s)`;
+    }
+
     const messagesColRef = collection(db, 'channels', channelId, 'messages');
     
     await addDoc(messagesColRef, {
@@ -91,7 +105,8 @@ export async function sendMessage(channelId: string, userId: string, content: st
         userId,
         content,
         isAnonymous,
-        timestamp: serverTimestamp()
+        timestamp: serverTimestamp(),
+        ...audioData,
     });
 
     const channelRef = doc(db, 'channels', channelId);
@@ -106,7 +121,7 @@ export async function sendMessage(channelId: string, userId: string, content: st
 
     await updateDoc(channelRef, {
         lastMessage: {
-            text: content,
+            text: audio ? 'Voice message' : content,
             timestamp: serverTimestamp(),
             userId: userId,
             userName: isAnonymous ? 'Anonymous User' : userName,
@@ -166,22 +181,34 @@ export async function createOrGetDirectChat(userId1: string, userId2: string): P
 }
 
 
-export async function sendDirectMessage(chatId: string, userId: string, content: string): Promise<void> {
+export async function sendDirectMessage(chatId: string, userId: string, content: string, audio?: { blob: Blob, duration: number }): Promise<void> {
     if (!db) throw new Error("Firestore is not initialized.");
+
+    let audioData = {};
+    if (audio) {
+        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'voice_messages');
+        audioData = {
+            audioUrl: url,
+            audioDuration: audio.duration,
+            audioType: audio.blob.type,
+        };
+        content = `Voice message (${Math.round(audio.duration)}s)`;
+    }
 
     const messagesColRef = collection(db, 'directMessages', chatId, 'messages');
     await addDoc(messagesColRef, {
         chatId: chatId,
         userId,
-        content,
+        content: audio ? '' : content,
         timestamp: serverTimestamp(),
         isAnonymous: false,
+        ...audioData,
     });
 
     const chatRef = doc(db, 'directMessages', chatId);
     await updateDoc(chatRef, {
         lastMessage: {
-            text: content,
+            text: audio ? 'Voice message' : content,
             timestamp: serverTimestamp(),
             userId: userId,
         },

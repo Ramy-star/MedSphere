@@ -5,6 +5,7 @@ import type { Message } from "@/lib/communityService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from "lucide-react";
 import Link from 'next/link';
+import { AudioPlayer } from './AudioPlayer';
 
 interface ChatMessageProps {
   message: Message;
@@ -27,7 +28,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false }: C
 
   const senderName = message.isAnonymous
     ? "Anonymous User"
-    : isDM
+    : isDM && !isCurrentUser
     ? getTruncatedName(profile?.displayName)
     : profile?.displayName || '...';
     
@@ -62,7 +63,11 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false }: C
             {!isCurrentUser && (
                  <p className="text-xs font-bold text-slate-400 mb-1">{senderName}</p>
             )}
-            <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            {message.audioUrl ? (
+                <AudioPlayer src={message.audioUrl} />
+            ) : (
+                <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+            )}
         </div>
       </div>
     </div>

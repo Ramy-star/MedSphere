@@ -85,10 +85,10 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
 
 
 
-  const handleSendMessage = async (content: string, isAnonymous: boolean) => {
+  const handleSendMessage = async (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }) => {
     if (!user || !channelId) return;
     try {
-        await sendMessage(channelId, user.uid, content, isAnonymous);
+        await sendMessage(channelId, user.uid, content, isAnonymous, audio);
     } catch (error) {
         console.error("Failed to send message:", error);
         // Optionally, show a toast to the user

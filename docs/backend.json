@@ -185,9 +185,12 @@
         "userId": { "type": "string" },
         "content": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
-        "isAnonymous": { "type": "boolean" }
+        "isAnonymous": { "type": "boolean" },
+        "audioUrl": { "type": "string", "format": "uri" },
+        "audioDuration": { "type": "number" },
+        "audioType": { "type": "string" }
       },
-      "required": ["id", "channelId", "userId", "content", "timestamp"]
+      "required": ["id", "channelId", "userId", "timestamp"]
     },
     "DirectMessage": {
       "title": "Direct Message",
