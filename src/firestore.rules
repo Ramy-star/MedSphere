@@ -13,6 +13,8 @@ service cloud.firestore {
     // Users can read/write their own profile
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Allow any authenticated user to read public profiles
+      allow get: if request.auth != null;
     }
 
     // Rules for subcollections within a user's document
@@ -45,8 +47,8 @@ service cloud.firestore {
         // Anyone authenticated can list and read public channels
         // Members can read private/level channels
         allow list, read: if request.auth != null && (resource.data.type == 'public' || request.auth.uid in resource.data.members);
-        // Only members can update channel details (like last message), only admins can change settings
-        allow update: if request.auth != null && request.auth.uid in resource.data.members;
+        // Only members or admins can update channel details (like last message, or adding members)
+        allow update: if request.auth != null && (request.auth.uid in resource.data.admins || request.auth.uid in resource.data.members);
         // Allow any authenticated user to create a channel (can be restricted later)
         allow create: if request.auth != null;
     }

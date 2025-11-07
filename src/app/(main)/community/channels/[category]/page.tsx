@@ -2,36 +2,74 @@
 import { useMemo, useState } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
-import { type Channel, createChannel } from '@/lib/communityService';
+import { type Channel, createChannel, joinChannel } from '@/lib/communityService';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlusCircle, Users } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Users, Check, UserPlus } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CreateChannelDialog } from '@/components/community/CreateChannelDialog';
 import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+
 
 const ChannelCard = ({ channel }: { channel: Channel }) => {
   const memberCount = Array.isArray(channel.members) ? channel.members.length : 0;
+  const { user } = useAuthStore();
+  const router = useRouter();
+  const [isJoining, setIsJoining] = useState(false);
+  
+  const isMember = useMemo(() => {
+    if (!user || !channel.members) return false;
+    return channel.members.includes(user.uid);
+  }, [user, channel.members]);
+
+  const handleAction = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isMember) {
+        router.push(`/community/chat/${channel.id}`);
+    } else {
+        if (!user) return;
+        setIsJoining(true);
+        try {
+            await joinChannel(channel.id, user.uid);
+            router.push(`/community/chat/${channel.id}`);
+        } catch (error) {
+            console.error("Failed to join channel:", error);
+        } finally {
+            setIsJoining(false);
+        }
+    }
+  };
+
   return (
-    <Link href={`/community/chat/${channel.id}`}>
-        <motion.div 
-        className="glass-card p-5 rounded-xl flex flex-col justify-between"
-        whileHover={{ y: -5, transition: { type: 'spring', stiffness: 300 } }}
-        >
+    <div 
+        className="glass-card p-5 rounded-xl flex flex-col justify-between group"
+    >
         <div>
             <h3 className="text-lg font-bold text-white">{channel.name}</h3>
             <p className="text-sm text-slate-400 mt-1 h-10 line-clamp-2">{channel.description}</p>
         </div>
         <div className="flex justify-between items-center mt-4">
             <div className="flex items-center text-xs text-slate-500 gap-2">
-            <Users className="w-4 h-4" />
-            <span>{memberCount} {memberCount === 1 ? 'member' : 'members'}</span>
+                <Users className="w-4 h-4" />
+                <span>{memberCount} {memberCount === 1 ? 'member' : 'members'}</span>
             </div>
-            <Button size="sm" className="rounded-full bg-blue-600 hover:bg-blue-700 h-8 text-xs">View</Button>
+            <Button 
+              size="sm" 
+              className={cn(
+                "rounded-full h-8 text-xs w-20 transition-all",
+                isMember ? "bg-blue-600 hover:bg-blue-700" : "bg-green-600 hover:bg-green-700"
+              )}
+              onClick={handleAction}
+              disabled={isJoining}
+            >
+                {isJoining ? <Check className="w-4 h-4 animate-pulse" /> : (isMember ? 'View' : 'Join')}
+            </Button>
         </div>
-        </motion.div>
-    </Link>
+    </div>
   );
 };
 

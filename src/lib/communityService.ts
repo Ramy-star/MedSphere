@@ -1,6 +1,6 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -153,5 +153,14 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
             userId: userId,
         },
         lastUpdated: serverTimestamp()
+    });
+}
+
+export async function joinChannel(channelId: string, userId: string): Promise<void> {
+    if (!db) throw new Error("Firestore is not initialized.");
+
+    const channelRef = doc(db, 'channels', channelId);
+    await updateDoc(channelRef, {
+        members: arrayUnion(userId)
     });
 }

@@ -45,9 +45,9 @@ const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
         <div className="flex-1 overflow-hidden">
           <div className="flex justify-between items-start">
             <h3 className="font-bold text-white truncate">{otherUser.displayName}</h3>
-            {chat.lastUpdated && (
+            {chat.lastMessage?.timestamp && (
               <p className="text-xs text-slate-500 shrink-0 ml-2">
-                {formatDistanceToNow(new Date(chat.lastUpdated.seconds * 1000), { addSuffix: true })}
+                {formatDistanceToNow(new Date(chat.lastMessage.timestamp.seconds * 1000), { addSuffix: true })}
               </p>
             )}
           </div>
