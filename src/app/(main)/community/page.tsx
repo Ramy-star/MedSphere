@@ -26,7 +26,7 @@ const SectionCard = ({
                 <p className="text-sm text-slate-400">{description}</p>
             </div>
             <div className="mt-6 flex items-center justify-end text-sm font-semibold text-blue-400 group-hover:text-blue-300 transition-colors">
-                View Channels <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
+                View <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
             </div>
         </div>
     </Link>
@@ -66,6 +66,13 @@ export default function CommunityPage() {
                     icon={Lock}
                     color="from-orange-500 to-amber-500"
                     link="/community/channels/private"
+                />
+                <SectionCard 
+                    title="Direct Messages"
+                    description="Engage in one-on-one private conversations with your friends and colleagues."
+                    icon={MessageSquare}
+                    color="from-purple-500 to-indigo-500"
+                    link="/community/dm"
                 />
             </div>
         </div>
