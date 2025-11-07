@@ -1,46 +1,26 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Swords, User, Users, Shield, Loader2 } from 'lucide-react';
+import { ArrowLeft, Swords, User, Users, Shield } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import {
-    Tooltip,
-    TooltipContent,
-    TooltipProvider,
-    TooltipTrigger,
-} from "@/components/ui/tooltip"
 
-const GameModeCard = ({ title, description, icon: Icon, link, comingSoon }: { title: string, description: string, icon: React.ElementType, link?: string, comingSoon?: boolean }) => {
+const GameModeCard = ({ title, description, icon: Icon, link }: { title: string, description: string, icon: React.ElementType, link: string }) => {
     
-    const CardContent = () => (
-         <div className={cn(
-            "glass-card p-6 rounded-2xl h-full flex flex-col justify-between transition-all duration-300",
-            comingSoon ? "opacity-50 cursor-not-allowed" : "hover:bg-white/10 hover:shadow-lg hover:-translate-y-1"
-        )}>
-            <div>
-                <div className="mb-4 inline-block p-3 rounded-full bg-slate-800">
-                    <Icon className="w-8 h-8 text-red-400" />
-                </div>
-                <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
-                <p className="text-sm text-slate-400">{description}</p>
-            </div>
-             {comingSoon && (
-                <div className="mt-4 text-center">
-                    <span className="text-xs font-bold text-yellow-400 bg-yellow-900/50 px-3 py-1 rounded-full">Coming Soon</span>
-                </div>
-            )}
-        </div>
-    );
-    
-    if (comingSoon || !link) {
-        return <div className="relative group"><CardContent /></div>;
-    }
-
     return (
         <Link href={link} className="block group">
-            <CardContent />
+            <div className={cn(
+                "glass-card p-6 rounded-2xl h-full flex flex-col justify-between transition-all duration-300 hover:bg-white/10 hover:shadow-lg hover:-translate-y-1"
+            )}>
+                <div>
+                    <div className="mb-4 inline-block p-3 rounded-full bg-slate-800">
+                        <Icon className="w-8 h-8 text-red-400" />
+                    </div>
+                    <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
+                    <p className="text-sm text-slate-400">{description}</p>
+                </div>
+            </div>
         </Link>
     );
 }
@@ -82,38 +62,20 @@ export default function DuelsModeSelectionPage() {
                 />
             </motion.div>
             <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
-                 <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger>
-                            <GameModeCard 
-                                title="Battle Royale"
-                                description="A free-for-all quiz where many compete but only one emerges victorious. Last student standing wins."
-                                icon={Users}
-                                comingSoon
-                            />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p>This mode is under development. Stay tuned!</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                <GameModeCard 
+                    title="Battle Royale"
+                    description="A free-for-all quiz where many compete but only one emerges victorious. Last student standing wins."
+                    icon={Users}
+                    link="/community/duels/battleroyale"
+                />
             </motion.div>
             <motion.div variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}>
-                 <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger>
-                            <GameModeCard 
-                                title="Team vs. Team"
-                                description="Form a squad and face off against another team. The highest-scoring team wins bragging rights."
-                                icon={Shield}
-                                comingSoon
-                            />
-                        </TooltipTrigger>
-                         <TooltipContent>
-                            <p>This mode is under development. Stay tuned!</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
+                <GameModeCard 
+                    title="Team vs. Team"
+                    description="Form a squad and face off against another team. The highest-scoring team wins bragging rights."
+                    icon={Shield}
+                    link="/community/duels/teams"
+                />
             </motion.div>
         </motion.div>
     </div>
