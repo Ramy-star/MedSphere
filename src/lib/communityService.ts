@@ -1,6 +1,6 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc as deleteFirestoreDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc as deleteFirestoreDoc, writeBatch, increment } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { useAuthStore } from '@/stores/auth-store';
 import { contentService } from './contentService';
@@ -32,6 +32,7 @@ export interface Post {
     createdAt: any;
     updatedAt?: any;
     commentCount?: number;
+    commentsDisabled?: boolean;
     reactions: { [userId: string]: string }; // userId: reactionType
 }
 
@@ -42,6 +43,7 @@ export interface Comment {
     userId: string;
     content: string;
     createdAt: any;
+    reactions: { [key: string]: string };
 }
 
 
@@ -217,6 +219,8 @@ export async function createPost(userId: string, content: string, imageFile: Fil
         reactions: {},
         isAnonymous: isAnonymous,
         createdAt: serverTimestamp(),
+        commentCount: 0,
+        commentsDisabled: false,
         ...(imageUrl && { imageUrl }),
         ...(imageCloudinaryPublicId && { imageCloudinaryPublicId }),
     };
@@ -244,26 +248,35 @@ export async function deletePost(post: Post) {
     await deleteFirestoreDoc(postRef);
 }
 
-export async function togglePostReaction(postId: string, userId: string, reactionType: string) {
+export async function togglePostReaction(itemId: string, userId: string, reactionType: string, isComment = false) {
     if (!db) throw new Error("Firestore is not initialized.");
-    const postRef = doc(db, 'posts', postId);
+    const collectionName = isComment ? 'comments' : 'posts';
+    const itemRef = isComment 
+        ? doc(collection(db, 'posts'), new URLSearchParams(window.location.search).get('postId') || '', 'comments', itemId) 
+        : doc(db, collectionName, itemId);
     
-    const postSnap = await getDoc(postRef);
-    if(!postSnap.exists()) throw new Error("Post not found.");
+    const itemSnap = await getDoc(itemRef);
+    if(!itemSnap.exists()) throw new Error("Item not found.");
 
-    const postData = postSnap.data() as Post;
-    const newReactions = { ...postData.reactions };
+    const itemData = itemSnap.data() as Post | Comment;
+    const newReactions = { ...itemData.reactions };
 
     if (newReactions[userId] === reactionType) {
-        // User is clicking the same reaction, so remove it
         delete newReactions[userId];
     } else {
-        // User is adding a new reaction or changing their reaction
         newReactions[userId] = reactionType;
     }
 
-    await updateDoc(postRef, {
+    await updateDoc(itemRef, {
         reactions: newReactions,
+    });
+}
+
+export async function toggleComments(postId: string, disable: boolean) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const postRef = doc(db, 'posts', postId);
+    await updateDoc(postRef, {
+        commentsDisabled: disable,
     });
 }
 
@@ -271,7 +284,8 @@ export async function togglePostReaction(postId: string, userId: string, reactio
 export async function addComment(postId: string, userId: string, content: string, parentCommentId: string | null): Promise<string> {
     if (!db) throw new Error("Firestore is not initialized.");
     
-    const commentsColRef = collection(db, 'posts', postId, 'comments');
+    const postRef = doc(db, 'posts', postId);
+    const commentsColRef = collection(postRef, 'comments');
     const newDocRef = doc(commentsColRef);
 
     const newComment: Omit<Comment, 'id'| 'createdAt'> & {id: string, createdAt: any} = {
@@ -280,10 +294,14 @@ export async function addComment(postId: string, userId: string, content: string
         parentCommentId,
         userId,
         content,
-        createdAt: serverTimestamp()
+        createdAt: serverTimestamp(),
+        reactions: {},
     };
     
-    await setDoc(newDocRef, newComment);
+    const batch = writeBatch(db);
+    batch.set(newDocRef, newComment);
+    batch.update(postRef, { commentCount: increment(1) });
+    await batch.commit();
 
     return newDocRef.id;
 }
@@ -295,4 +313,25 @@ export async function getComments(postId: string): Promise<Comment[]> {
   const q = query(commentsColRef, where('postId', '==', postId)); // Ensure we only get comments for this post
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => doc.data() as Comment);
+}
+
+export async function updateComment(postId: string, commentId: string, newContent: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+    await updateDoc(commentRef, {
+        content: newContent,
+    });
+}
+
+export async function deleteComment(postId: string, commentId: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const commentRef = doc(db, 'posts', postId, 'comments', commentId);
+    
+    const postRef = doc(db, 'posts', postId);
+    
+    const batch = writeBatch(db);
+    batch.delete(commentRef);
+    batch.update(postRef, { commentCount: increment(-1) });
+    
+    await batch.commit();
 }

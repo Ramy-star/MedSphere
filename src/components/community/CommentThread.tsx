@@ -5,7 +5,7 @@ import { CommentInput } from './CommentInput';
 import { addComment } from '@/lib/communityService';
 import { useAuthStore } from '@/stores/auth-store';
 import { Comment } from './Comment';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MessageCircleOff } from 'lucide-react';
 
 interface CommentData {
   id: string;
@@ -14,10 +14,11 @@ interface CommentData {
   userId: string;
   content: string;
   createdAt: any;
+  reactions: { [userId: string]: string };
   children?: CommentData[];
 }
 
-export function CommentThread({ postId }: { postId: string }) {
+export function CommentThread({ postId, commentsDisabled }: { postId: string, commentsDisabled: boolean }) {
   const { user } = useAuthStore();
   const { data: comments, loading } = useCollection<CommentData>(`posts/${postId}/comments`, {
     orderBy: ['createdAt', 'asc'],
@@ -73,6 +74,15 @@ export function CommentThread({ postId }: { postId: string }) {
   
   if (loading) {
     return <div className="flex items-center justify-center p-4"><Loader2 className="w-5 h-5 animate-spin" /></div>
+  }
+  
+  if (commentsDisabled) {
+    return (
+      <div className="text-center text-slate-500 text-sm p-4 rounded-lg bg-slate-800/50">
+        <MessageCircleOff className="w-5 h-5 mx-auto mb-2" />
+        Comments are turned off for this post.
+      </div>
+    );
   }
 
   return (

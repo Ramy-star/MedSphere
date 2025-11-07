@@ -262,6 +262,15 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             return acc;
         }, {} as Record<string, number>);
     }, [post.reactions]);
+    
+    const totalReactions = useMemo(() => Object.keys(post.reactions || {}).length, [post.reactions]);
+
+    const topReactions = useMemo(() => {
+        return Object.entries(reactionCounts)
+            .sort(([, a], [, b]) => b - a)
+            .slice(0, 3)
+            .map(([type]) => type);
+    }, [reactionCounts]);
 
     const handleReaction = async (reactionType: string) => {
         if(!currentUser) return;
@@ -360,11 +369,31 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                     <img src={post.imageUrl} alt="Post image" className="w-full h-full object-cover max-h-[300px]" />
                 </div>
             )}
+             <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
+                <div className="flex items-center gap-2">
+                    {totalReactions > 0 && (
+                        <div className="flex items-center">
+                            <div className="flex -space-x-1">
+                                {topReactions.map(reaction => {
+                                    const Icon = reactionIcons[reaction];
+                                    return <Icon key={reaction} className={`${reactionColors[reaction]} h-4 w-4`} />;
+                                })}
+                            </div>
+                            <span className="ml-2">{totalReactions}</span>
+                        </div>
+                    )}
+                </div>
+                {post.commentCount > 0 && (
+                    <button onClick={() => setShowComments(prev => !prev)} className="hover:underline">
+                        {post.commentCount} {post.commentCount === 1 ? 'comment' : 'comments'}
+                    </button>
+                )}
+            </div>
 
-             <div className="mt-4 flex items-center justify-between text-slate-400 border-t border-white/10 pt-2">
+             <div className="mt-2 flex items-center justify-between text-slate-400 border-t border-white/10 pt-2">
                  <Popover>
                     <PopoverTrigger asChild>
-                         <Button variant="ghost" className={`hover:bg-white/10 rounded-full ${userReaction ? reactionColors[userReaction] : 'text-slate-400'}`}>
+                         <Button variant="ghost" className={`flex-1 hover:bg-white/10 rounded-lg ${userReaction ? reactionColors[userReaction] : 'text-slate-400'}`}>
                             <CurrentReactionIcon className={`mr-2 h-4 w-4 ${userReaction ? 'fill-current' : ''}`}/> 
                              {userReaction ? userReaction.charAt(0).toUpperCase() + userReaction.slice(1) : 'Like'}
                          </Button>
@@ -382,7 +411,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                         </div>
                     </PopoverContent>
                  </Popover>
-                 <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full" onClick={() => setShowComments(prev => !prev)}>
+                 <Button variant="ghost" className="flex-1 text-slate-400 hover:text-white hover:bg-white/10 rounded-lg" onClick={() => setShowComments(prev => !prev)}>
                     <MessageSquareIcon className="mr-2 h-4 w-4"/> Comment
                  </Button>
             </div>

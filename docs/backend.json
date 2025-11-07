@@ -222,6 +222,7 @@
         "createdAt": { "type": "string", "format": "date-time" },
         "updatedAt": { "type": "string", "format": "date-time" },
         "commentsDisabled": { "type": "boolean", "description": "Whether comments are disabled for this post." },
+        "commentCount": { "type": "number", "default": 0 },
         "reactions": {
           "type": "object",
           "description": "A map of user IDs to their reaction type.",
