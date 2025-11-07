@@ -130,6 +130,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
               message={message}
               profile={profilesMap.get(message.userId)}
               isCurrentUser={message.userId === currentUser?.uid}
+              isDM={true}
             />
           ))
         )}
