@@ -1,4 +1,3 @@
-
 'use client';
 import { motion } from 'framer-motion';
 import { useAuthStore } from '@/stores/auth-store';
@@ -11,7 +10,7 @@ export default function CommunityLayout({
   children: React.ReactNode;
 }) {
   const { can } = useAuthStore();
-  const canAccess = can('canAccessAdminPanel', null);
+  const canAccess = can('canAccessAdminPanel', null); // Correct permission check for any admin role
 
   useEffect(() => {
     // If user doesn't have access, show a 404 not found page.
