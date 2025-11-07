@@ -1,0 +1,110 @@
+'use client';
+import { useState, useMemo, useEffect, useRef } from 'react';
+import { useDoc } from '@/firebase/firestore/use-doc';
+import { useCollection } from '@/firebase/firestore/use-collection';
+import { useAuthStore } from '@/stores/auth-store';
+import { type DirectMessage, type Message, sendDirectMessage } from '@/lib/communityService';
+import { Button } from '@/components/ui/button';
+import { ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ChatMessage } from '@/components/community/ChatMessage';
+import { ChatInput } from '@/components/community/ChatInput';
+import { useUserProfile } from '@/hooks/use-user-profile';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User as UserIcon } from 'lucide-react';
+
+export default function DirectMessagePage({ params }: { params: { chatId: string } }) {
+  const { chatId } = params;
+  const { user: currentUser } = useAuthStore();
+  const router = useRouter();
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+
+  const { data: chat, loading: loadingChat } = useDoc<DirectMessage>('directMessages', chatId);
+  
+  const otherParticipantId = useMemo(() => {
+    if (!chat || !currentUser) return null;
+    return chat.participants.find(p => p !== currentUser.uid);
+  }, [chat, currentUser]);
+
+  const { userProfile: otherUser, loading: loadingOtherUser } = useUserProfile(otherParticipantId);
+  
+  const { data: messages, loading: loadingMessages } = useCollection<Message>(`directMessages/${chatId}/messages`, {
+    orderBy: ['timestamp', 'asc']
+  });
+
+  const participantIds = useMemo(() => {
+    if (!chat) return [];
+    return chat.participants;
+  }, [chat]);
+  
+  const { data: profiles, loading: loadingProfiles } = useCollection<any>('users', {
+    where: ['uid', 'in', participantIds.length > 0 ? participantIds : ['dummy-id']],
+    disabled: participantIds.length === 0,
+  });
+
+  const profilesMap = useMemo(() => {
+    const map = new Map<string, any>();
+    profiles?.forEach(p => map.set(p.uid, p));
+    return map;
+  }, [profiles]);
+
+  useEffect(() => {
+    if (messagesContainerRef.current) {
+        messagesContainerRef.current.scrollTop = messagesContainerRef.current.scrollHeight;
+    }
+  }, [messages, loadingMessages]);
+
+
+  const handleSendMessage = async (content: string, isAnonymous: boolean) => {
+    if (!currentUser || !chatId) return;
+    await sendDirectMessage(chatId, currentUser.uid, content);
+  };
+
+  const isLoading = loadingChat || loadingOtherUser || (loadingMessages && !messages) || (loadingProfiles && !profiles);
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <header className="flex-shrink-0 flex items-center gap-2 p-3 border-b border-white/10">
+        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => router.back()}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        {isLoading || !otherUser ? (
+          <div className="flex items-center gap-3">
+             <Skeleton className="h-9 w-9 rounded-full" />
+             <Skeleton className="h-6 w-40" />
+          </div>
+        ) : (
+          <div className="flex items-center gap-3">
+              <Avatar className="h-9 w-9">
+                <AvatarImage src={otherUser.photoURL || ''} alt={otherUser.displayName || 'User'} />
+                <AvatarFallback>{otherUser.displayName?.[0] || <UserIcon />}</AvatarFallback>
+              </Avatar>
+              <h1 className="text-lg font-bold text-white">{otherUser.displayName}</h1>
+          </div>
+        )}
+      </header>
+
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
+        {isLoading ? (
+          <div className="p-4 space-y-4">
+              <Skeleton className="h-8 w-1/2" />
+          </div>
+        ) : (
+          messages?.map(message => (
+            <ChatMessage
+              key={message.id}
+              message={message}
+              profile={profilesMap.get(message.userId)}
+              isCurrentUser={message.userId === currentUser?.uid}
+            />
+          ))
+        )}
+      </div>
+
+      <div className="p-4 border-t border-white/10">
+        <ChatInput onSendMessage={handleSendMessage} />
+      </div>
+    </div>
+  );
+}

@@ -1,18 +1,19 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { UserProfile } from '@/stores/auth-store';
-import { notFound } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+import { UserProfile, useAuthStore } from '@/stores/auth-store';
+import { notFound, useRouter } from 'next/navigation';
+import { Loader2, MessageSquare } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon, Crown, Shield } from 'lucide-react';
 import { InfoCard } from '@/components/profile/InfoCard';
 import { AchievementsSection } from '@/components/profile/Achievements';
 import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { FilePreviewModal } from '@/components/FilePreviewModal';
-import { Content } from '@/lib/contentService';
+import { Content, createOrGetDirectChat } from '@/lib/communityService';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { Button } from '@/components/ui/button';
 
 const studentIdToLevelMap = new Map<string, string>();
 // Populate with actual data if needed, for now it's a placeholder
@@ -20,6 +21,8 @@ const studentIdToLevelMap = new Map<string, string>();
 
 export default function PublicProfilePage({ params }: { params: { username: string } }) {
   const { username } = params;
+  const router = useRouter();
+  const { user: currentUser } = useAuthStore();
   const { data: users, loading } = useCollection<UserProfile>('users', {
     where: ['username', '==', username],
     limit: 1,
@@ -27,6 +30,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
   
   const [user, setUser] = useState<UserProfile | null>(null);
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
 
   useEffect(() => {
     if (!loading && users && users.length > 0) {
@@ -36,14 +40,6 @@ export default function PublicProfilePage({ params }: { params: { username: stri
     }
   }, [loading, users]);
 
-  if (loading || !user) {
-    return (
-      <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="w-8 w-8 animate-spin" />
-      </div>
-    );
-  }
-
   const handleFileClick = (item: Content) => {
     if (item.type === 'LINK') {
       if (item.metadata?.url) window.open(item.metadata.url, '_blank');
@@ -51,7 +47,29 @@ export default function PublicProfilePage({ params }: { params: { username: stri
     }
     setPreviewFile(item);
   };
+
+  const handleStartChat = async () => {
+      if (!currentUser || !user) return;
+      setIsCreatingChat(true);
+      try {
+          const chatId = await createOrGetDirectChat(currentUser.uid, user.uid);
+          router.push(`/community/dm/${chatId}`);
+      } catch (error) {
+          console.error("Failed to start chat:", error);
+      } finally {
+          setIsCreatingChat(false);
+      }
+  };
   
+  if (loading || !user) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="w-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+  
+  const isOwnProfile = currentUser?.uid === user.uid;
   const isSuperAdmin = user.roles?.some(r => r.role === 'superAdmin');
   const isSubAdmin = user.roles?.some(r => r.role === 'subAdmin') && !isSuperAdmin;
 
@@ -85,12 +103,20 @@ export default function PublicProfilePage({ params }: { params: { username: stri
               {user.displayName?.[0] || <UserIcon />}
             </AvatarFallback>
           </Avatar>
-          <div className="text-center sm:text-left sm:pb-4 w-full">
-            <h1 className="text-xl sm:text-3xl font-bold">{user.displayName}</h1>
-            <p className={cn("mt-1 text-sm sm:text-lg font-medium flex items-center justify-center sm:justify-start gap-2", roleColor)}>
-              <RoleIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-              {roleText}
-            </p>
+          <div className="flex-1 text-center sm:text-left sm:pb-4 w-full flex flex-col sm:flex-row items-center justify-between">
+            <div>
+              <h1 className="text-xl sm:text-3xl font-bold">{user.displayName}</h1>
+              <p className={cn("mt-1 text-sm sm:text-lg font-medium flex items-center justify-center sm:justify-start gap-2", roleColor)}>
+                <RoleIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+                {roleText}
+              </p>
+            </div>
+             {!isOwnProfile && (
+                <Button onClick={handleStartChat} disabled={isCreatingChat} className="mt-4 sm:mt-0 rounded-full">
+                    {isCreatingChat ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <MessageSquare className="mr-2 h-4 w-4" />}
+                    Message
+                </Button>
+            )}
           </div>
         </div>
 

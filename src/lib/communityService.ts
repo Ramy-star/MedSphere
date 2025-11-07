@@ -1,6 +1,6 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 
 export interface Channel {
@@ -20,9 +20,22 @@ export interface Channel {
   };
 }
 
+export interface DirectMessage {
+  id: string;
+  participants: string[];
+  lastMessage?: {
+    text: string;
+    timestamp: any;
+    userId: string;
+  };
+  lastUpdated: any;
+}
+
+
 export interface Message {
   id: string;
-  channelId: string;
+  channelId?: string; // For group chats
+  chatId?: string; // For DMs
   userId: string;
   content: string;
   timestamp: any;
@@ -68,8 +81,10 @@ export async function createChannel(
     }
 
     const channelsColRef = collection(db, 'channels');
+    const newDocRef = doc(channelsColRef);
     
     const newChannelData = {
+        id: newDocRef.id,
         name,
         description,
         type,
@@ -79,10 +94,51 @@ export async function createChannel(
         ...(type === 'level' && { levelId }),
     };
 
-    const docRef = await addDoc(channelsColRef, newChannelData);
-    
-    // Update the document with its own ID
-    await updateDoc(docRef, { id: docRef.id });
+    await setDoc(newDocRef, newChannelData);
+    return newDocRef.id;
+}
 
-    return docRef.id;
+
+export async function createOrGetDirectChat(userId1: string, userId2: string): Promise<string> {
+    if (!db) throw new Error("Firestore is not initialized.");
+
+    const participants = [userId1, userId2].sort();
+    const chatId = participants.join('_');
+    
+    const chatRef = doc(db, 'directMessages', chatId);
+    const chatSnap = await getDoc(chatRef);
+
+    if (chatSnap.exists()) {
+        return chatSnap.id;
+    } else {
+        await setDoc(chatRef, {
+            id: chatId,
+            participants,
+            lastUpdated: serverTimestamp(),
+        });
+        return chatId;
+    }
+}
+
+
+export async function sendDirectMessage(chatId: string, userId: string, content: string): Promise<void> {
+    if (!db) throw new Error("Firestore is not initialized.");
+
+    const messagesColRef = collection(db, 'directMessages', chatId, 'messages');
+    await addDoc(messagesColRef, {
+        userId,
+        content,
+        timestamp: serverTimestamp(),
+        isAnonymous: false, // DMs can't be anonymous
+    });
+
+    const chatRef = doc(db, 'directMessages', chatId);
+    await updateDoc(chatRef, {
+        lastMessage: {
+            text: content,
+            timestamp: serverTimestamp(),
+            userId: userId,
+        },
+        lastUpdated: serverTimestamp()
+    });
 }
