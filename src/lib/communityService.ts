@@ -1,8 +1,9 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { useAuthStore } from '@/stores/auth-store';
+import { contentService } from './contentService';
 
 export interface Channel {
   id: string;
@@ -19,6 +20,18 @@ export interface Channel {
     userId: string;
     userName: string;
   };
+}
+
+export interface Post {
+    id: string;
+    userId: string;
+    content: string;
+    imageUrl?: string;
+    imageCloudinaryPublicId?: string;
+    createdAt: any;
+    updatedAt?: any;
+    commentCount?: number;
+    reactions?: { [key: string]: number };
 }
 
 export interface DirectMessage {
@@ -170,4 +183,51 @@ export async function joinChannel(channelId: string, userId: string): Promise<vo
     await updateDoc(channelRef, {
         members: arrayUnion(userId)
     });
+}
+
+export async function createPost(userId: string, content: string, imageFile: File | null): Promise<string> {
+    if (!db) throw new Error("Firestore is not initialized.");
+
+    let imageUrl: string | undefined;
+    let imageCloudinaryPublicId: string | undefined;
+
+    if (imageFile) {
+        const uploadResult = await contentService.uploadUserAvatar({ id: userId } as any, imageFile, () => {});
+        imageUrl = uploadResult.url;
+        imageCloudinaryPublicId = uploadResult.publicId;
+    }
+    
+    const postsColRef = collection(db, 'posts');
+    const newDocRef = doc(postsColRef);
+    
+    const newPostData: Omit<Post, 'id' | 'createdAt'> & { id: string, createdAt: any } = {
+        id: newDocRef.id,
+        userId,
+        content,
+        createdAt: serverTimestamp(),
+        ...(imageUrl && { imageUrl }),
+        ...(imageCloudinaryPublicId && { imageCloudinaryPublicId }),
+    };
+
+    await setDoc(newDocRef, newPostData);
+    
+    return newDocRef.id;
+}
+
+export async function updatePost(postId: string, newContent: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const postRef = doc(db, 'posts', postId);
+    await updateDoc(postRef, {
+        content: newContent,
+        updatedAt: serverTimestamp(),
+    });
+}
+
+export async function deletePost(post: Post) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    if (post.imageCloudinaryPublicId) {
+        await contentService.deleteCloudinaryAsset(post.imageCloudinaryPublicId, 'image');
+    }
+    const postRef = doc(db, 'posts', post.id);
+    await deleteDoc(postRef);
 }

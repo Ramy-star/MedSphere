@@ -208,6 +208,61 @@
       },
       "required": ["id", "participants", "lastUpdated"]
     },
+    "Post": {
+      "title": "Post",
+      "description": "Represents a single post in the community feed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "imageCloudinaryPublicId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "commentCount": { "type": "number", "default": 0 },
+        "reactions": {
+          "type": "object",
+          "properties": {
+            "like": { "type": "number", "default": 0 },
+            "love": { "type": "number", "default": 0 },
+            "support": { "type": "number", "default": 0 },
+            "haha": { "type": "number", "default": 0 },
+            "wow": { "type": "number", "default": 0 },
+            "sad": { "type": "number", "default": 0 },
+            "angry": { "type": "number", "default": 0 }
+          }
+        }
+      },
+      "required": ["id", "userId", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Represents a comment on a post or another comment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "parentCommentId": { "type": "string", "description": "Null if it's a top-level comment." },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "postId", "userId", "content", "createdAt"]
+    },
+    "Reaction": {
+      "title": "Reaction",
+      "description": "Represents a single reaction from a user to a post or comment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite key like '{userId}_{postId}' or '{userId}_{commentId}'" },
+        "userId": { "type": "string" },
+        "targetId": { "type": "string", "description": "ID of the Post or Comment being reacted to." },
+        "targetType": { "type": "string", "enum": ["post", "comment"] },
+        "reactionType": { "type": "string", "enum": ["like", "love", "support", "haha", "wow", "sad", "angry"] }
+      },
+      "required": ["id", "userId", "targetId", "targetType", "reactionType"]
+    },
     "QuizDuel": {
       "title": "Quiz Duel",
       "description": "Represents a real-time quiz challenge between two players.",
@@ -361,6 +416,18 @@
     "/duels/{duelId}": {
         "schema": { "$ref": "#/entities/QuizDuel" },
         "description": "Stores real-time quiz duel sessions."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Stores all community feed posts."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Stores comments for a specific post."
+    },
+    "/reactions/{reactionId}": {
+      "schema": { "$ref": "#/entities/Reaction" },
+      "description": "Stores all reactions."
     }
   }
 }
