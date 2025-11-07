@@ -195,7 +195,7 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
     let messageContent = content;
 
     if (audio) {
-        const { url } = await contentService.uploadNoteImage(audio.blob, 'community_audio');
+        const { url } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'community_audio');
         audioData = {
             audioUrl: url,
             audioDuration: audio.duration,
