@@ -363,15 +363,15 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                 </div>
             </div>
             
-            {post.content && <p className="mt-4 text-white whitespace-pre-wrap select-text">{post.content}</p>}
+            <p className="mt-4 text-white whitespace-pre-wrap select-text">{post.content}</p>
             
             {post.imageUrl && (
                 <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-full mx-auto flex items-center justify-center bg-black">
-                    <img src={post.imageUrl} alt="Post image" className="w-full h-full object-contain max-h-[300px] select-none pointer-events-none" />
+                    <img src={post.imageUrl} alt="Post image" className="w-full h-full object-cover" />
                 </div>
             )}
              <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1">
                     {totalReactions > 0 && (
                         <div className="flex items-center gap-2">
                             <div className="flex -space-x-1">
@@ -384,7 +384,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                         </div>
                     )}
                 </div>
-                <div className="min-w-0">
+                <div className="min-w-0 flex-1 text-right">
                     <button onClick={() => setShowComments(prev => !prev)} className="hover:underline">
                         {commentCount} {commentCount === 1 ? 'comment' : 'comments'}
                     </button>
