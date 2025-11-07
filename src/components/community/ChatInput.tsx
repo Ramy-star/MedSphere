@@ -246,7 +246,7 @@ export function ChatInput({
       }} onClose={onClearReply} isDM={isDM} />}
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
       
-      <form onSubmit={handleSend} className="flex items-center">
+      <form onSubmit={handleSend} className="flex items-center gap-2">
         <div className="flex items-center">
             <Popover>
                 <PopoverTrigger asChild>
