@@ -48,7 +48,7 @@ export function ChatInput({
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioDuration, setAudioDuration] = useState(0);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuthStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -122,9 +122,12 @@ export function ChatInput({
     setRecordingTime(0);
   };
 
-  const handleSend = async (e?: React.FormEvent) => {
+  const handleSubmit = async (e?: React.FormEvent) => {
     e?.preventDefault();
+    handleSend();
+  }
 
+  const handleSend = async () => {
     if (editingMessage) {
         setIsSubmitting(true);
         await onEditMessage(editingMessage, content);
@@ -250,7 +253,7 @@ export function ChatInput({
       }} onClose={onClearReply} isDM={isDM} />}
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
       
-      <form onSubmit={handleSend} className="flex items-end gap-2">
+      <form onSubmit={handleSubmit} className="flex items-end gap-2">
         <Popover>
             <PopoverTrigger asChild>
                 <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0 text-slate-400">
@@ -274,7 +277,7 @@ export function ChatInput({
           className="bg-transparent border-0 text-white rounded-xl focus-visible:ring-0 focus-visible:ring-offset-0 flex-1 resize-none no-scrollbar py-2.5"
           rows={1}
         />
-        {content.trim().length > 0 ? (
+        {content.trim().length > 0 || editingMessage ? (
             <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0 ml-2" disabled={!content.trim() && !editingMessage}>
                 <Send className="w-5 h-5" />
             </Button>

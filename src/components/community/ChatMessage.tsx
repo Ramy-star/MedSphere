@@ -23,7 +23,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -117,7 +116,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
             <p className="text-slate-400 line-clamp-1">{message.replyTo.content}</p>
         </div>
       )}
-      <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse", isDM && !message.audioUrl && "max-w-full")}>
+      <div className={cn("flex items-end gap-2", isCurrentUser ? "flex-row-reverse" : "", isDM && !message.audioUrl ? "max-w-full" : "max-w-[80%]")}>
         {!isCurrentUser && !isDM && (
             isLink ? (
                 <Link href={`/users/${username}`}>
@@ -129,7 +128,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
         )}
         
         <div className={cn("px-3.5 py-2 rounded-2xl relative group/bubble", bubbleClass, (message.audioUrl || message.imageUrl) && "p-2")}>
-            <div className={cn("absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity", isCurrentUser ? "left-[-4rem] flex-row-reverse" : "right-[-4rem]")}>
+            <div className={cn("absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity", isCurrentUser ? "left-0 -translate-x-full flex-row-reverse" : "right-0 translate-x-full")}>
                <Popover>
                     <PopoverTrigger asChild>
                          <Button variant="ghost" size="icon" className="h-6 w-6 rounded-full">

@@ -17,9 +17,11 @@ interface ImagePreviewDialogProps {
 export function ImagePreviewDialog({ file, onClose, onSend }: ImagePreviewDialogProps) {
   const [caption, setCaption] = useState('');
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [internalFile, setInternalFile] = useState<File | null>(file);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    setInternalFile(file);
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
@@ -33,8 +35,8 @@ export function ImagePreviewDialog({ file, onClose, onSend }: ImagePreviewDialog
   }, [file]);
 
   const handleSend = () => {
-    if (file) {
-      onSend(caption, file);
+    if (internalFile) {
+      onSend(caption, internalFile);
     }
   };
   
@@ -45,15 +47,7 @@ export function ImagePreviewDialog({ file, onClose, onSend }: ImagePreviewDialog
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newFile = e.target.files?.[0];
     if (newFile) {
-        const reader = new FileReader();
-        reader.onloadend = () => {
-            setImagePreview(reader.result as string);
-        };
-        reader.readAsDataURL(newFile);
-        // This is a bit of a trick to update the file in the parent without passing a setter
-        // The parent will re-render with the new file, which will be passed back here.
-        // A more robust solution would use a state management library.
-        (e.target as any)._newFile = newFile; // Attach to event for parent
+        setInternalFile(newFile);
     }
   }
 

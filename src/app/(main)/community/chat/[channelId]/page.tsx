@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
-import { type Channel, type Message, sendMessage } from '@/lib/communityService';
+import { type Channel, type Message, sendMessage, updateMessage, deleteMessage } from '@/lib/communityService';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
@@ -12,6 +12,7 @@ import { ChatMessage } from '@/components/community/ChatMessage';
 import { ChatInput } from '@/components/community/ChatInput';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 export default function ChatPage({ params }: { params: { channelId: string } }) {
   const { channelId } = params;
@@ -19,6 +20,8 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
 
   const { data: channel, loading: loadingChannel } = useDoc<Channel>('channels', channelId);
@@ -85,15 +88,25 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
 
 
 
-  const handleSendMessage = async (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }) => {
+  const handleSendMessage = async (content: string, isAnonymous: boolean, media?: { file: File, type: 'image' | 'audio', duration?: number }, replyTo?: Message['replyTo']) => {
     if (!user || !channelId) return;
     try {
-        await sendMessage(channelId, user.uid, content, isAnonymous, audio);
+        await sendMessage(channelId, user.uid, content, isAnonymous, media, replyTo);
     } catch (error) {
         console.error("Failed to send message:", error);
-        // Optionally, show a toast to the user
     }
   };
+  
+  const handleEditMessage = async (message: Message, newContent: string) => {
+    if (!channelId) return;
+    await updateMessage(channelId, message.id, newContent);
+  }
+
+  const handleDeleteMessage = async (message: Message) => {
+    if (!channelId) return;
+    await deleteMessage(channelId, message.id);
+  }
+
 
   const LoadingSkeleton = () => (
     <div className="p-4 space-y-4">
@@ -116,7 +129,7 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
 
   return (
     <div className="flex flex-col h-full overflow-hidden relative">
-      <header className="flex-shrink-0 flex items-center gap-2 p-3 border-b border-white/10">
+      <header className="flex-shrink-0 flex items-center gap-2 p-3 border-b border-white/10 bg-black/20">
         <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => router.back()}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
@@ -137,6 +150,9 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
               message={message}
               profile={profilesMap.get(message.userId)}
               isCurrentUser={message.userId === user?.uid}
+              onReply={setReplyingTo}
+              onEdit={setEditingMessage}
+              onDelete={handleDeleteMessage}
             />
           ))
         )}
@@ -152,8 +168,16 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
             </button>
         )}
 
-      <div className="p-4 border-t border-white/10">
-        <ChatInput onSendMessage={handleSendMessage} />
+      <div className="p-2 border-t border-white/10 bg-black/20">
+        <ChatInput 
+            onSendMessage={handleSendMessage} 
+            showAnonymousOption={true}
+            replyingTo={replyingTo}
+            onClearReply={() => setReplyingTo(null)}
+            editingMessage={editingMessage}
+            onEditMessage={handleEditMessage}
+            onClearEditing={() => setEditingMessage(null)}
+        />
       </div>
     </div>
   );
