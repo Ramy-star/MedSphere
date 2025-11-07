@@ -342,8 +342,8 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-[95%] mx-auto flex items-center justify-center bg-black">
-                    <img src={post.imageUrl} alt="Post image" className="w-full h-full object-cover max-h-[300px]" />
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[400px] w-[95%] mx-auto flex items-center justify-center bg-black">
+                    <img src={post.imageUrl} alt="Post image" className="w-full h-full object-cover max-h-[400px]" />
                 </div>
             )}
 
