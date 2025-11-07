@@ -12,6 +12,12 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
+const getTruncatedName = (name: string | undefined, count = 2) => {
+    if (!name) return 'User';
+    const nameParts = name.split(' ');
+    return nameParts.slice(0, count).join(' ');
+};
+
 const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
   const { user: currentUser } = useAuthStore();
   const otherParticipantId = useMemo(() => {
@@ -19,7 +25,7 @@ const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
     return chat.participants.find(p => p !== currentUser?.uid);
   }, [chat, currentUser]);
 
-  const { userProfile: otherUser, loading } = useUserProfile(otherParticipantId || undefined);
+  const { userProfile: otherUser, loading } = useUserProfile(otherParticipantId);
 
   if (loading) {
     return (
@@ -47,7 +53,7 @@ const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
         </Avatar>
         <div className="flex-1 overflow-hidden">
           <div className="flex justify-between items-start">
-            <h3 className="font-bold text-white truncate">{otherUser.displayName}</h3>
+            <h3 className="font-bold text-white truncate">{getTruncatedName(otherUser.displayName)}</h3>
             {chat.lastMessage?.timestamp && (
               <p className="text-xs text-slate-500 shrink-0 ml-2">
                 {formatDistanceToNow(new Date(chat.lastMessage.timestamp.seconds * 1000), { addSuffix: true })}
@@ -70,18 +76,9 @@ export default function DirectMessagesPage() {
   const router = useRouter();
   const { data: chats, loading } = useCollection<DirectMessage>('directMessages', {
     where: ['participants', 'array-contains', user?.uid],
-    // orderBy: ['lastUpdated', 'desc'], // This was causing the index error
+    orderBy: ['lastUpdated', 'desc'], 
     disabled: !user?.uid,
   });
-
-  const sortedChats = useMemo(() => {
-    if (!chats) return [];
-    return [...chats].sort((a, b) => {
-        const aDate = a.lastUpdated?.seconds ? new Date(a.lastUpdated.seconds * 1000) : new Date(0);
-        const bDate = b.lastUpdated?.seconds ? new Date(b.lastUpdated.seconds * 1000) : new Date(0);
-        return bDate.getTime() - aDate.getTime();
-    });
-  }, [chats]);
 
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full">
@@ -98,9 +95,9 @@ export default function DirectMessagesPage() {
                 <div className="flex items-center justify-center h-full">
                     <Loader2 className="w-8 h-8 animate-spin text-slate-500"/>
                 </div>
-            ) : sortedChats && sortedChats.length > 0 ? (
+            ) : chats && chats.length > 0 ? (
                 <div className="space-y-1">
-                    {sortedChats.map(chat => (
+                    {chats.map(chat => (
                         <ChatListItem key={chat.id} chat={chat} />
                     ))}
                 </div>

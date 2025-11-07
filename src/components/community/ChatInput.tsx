@@ -5,15 +5,30 @@ import { Textarea } from '@/components/ui/textarea';
 import { Send, Mic, Trash2, Play, Pause } from 'lucide-react';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
-import { EyeOff } from 'lucide-react';
+import { EyeOff, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import type { Message } from '@/lib/communityService';
+import ChatQuote from '@/components/ChatQuote';
 
 interface ChatInputProps {
-  onSendMessage: (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }) => void;
+  onSendMessage: (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }, replyTo?: Message['replyTo']) => void;
   showAnonymousOption?: boolean;
+  replyingTo: Message | null;
+  onClearReply: () => void;
+  onEditMessage: (message: Message, newContent: string) => Promise<void>;
+  editingMessage: Message | null;
+  onClearEditing: () => void;
 }
 
-export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInputProps) {
+export function ChatInput({ 
+  onSendMessage, 
+  showAnonymousOption = true,
+  replyingTo,
+  onClearReply,
+  editingMessage,
+  onEditMessage,
+  onClearEditing,
+}: ChatInputProps) {
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -25,6 +40,16 @@ export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInp
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [audioDuration, setAudioDuration] = useState(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (editingMessage) {
+        setContent(editingMessage.content || '');
+        textareaRef.current?.focus();
+    } else {
+        setContent('');
+    }
+  }, [editingMessage]);
 
   useEffect(() => {
     if (audioUrl) {
@@ -43,7 +68,7 @@ export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInp
   const startRecording = async () => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recorder = new MediaRecorder(stream);
+      const recorder = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       mediaRecorderRef.current = recorder;
       
       const audioChunks: BlobPart[] = [];
@@ -55,7 +80,7 @@ export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInp
         const blob = new Blob(audioChunks, { type: 'audio/webm' });
         setAudioBlob(blob);
         setAudioUrl(URL.createObjectURL(blob));
-        stream.getTracks().forEach(track => track.stop()); // Stop microphone
+        stream.getTracks().forEach(track => track.stop());
       };
 
       recorder.start();
@@ -68,7 +93,6 @@ export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInp
 
     } catch (err) {
       console.error("Error accessing microphone:", err);
-      // You might want to show a toast message to the user here
     }
   };
 
@@ -86,21 +110,49 @@ export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInp
     setRecordingTime(0);
   };
 
-  const handleSend = (e: React.FormEvent) => {
+  const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (editingMessage) {
+        await onEditMessage(editingMessage, content);
+        onClearEditing();
+        setContent('');
+        return;
+    }
+
+    const replyContext = replyingTo ? {
+        messageId: replyingTo.id,
+        content: replyingTo.content || 'Voice message',
+        userId: replyingTo.userId,
+        userName: useAuthStore.getState().user?.displayName || 'User', // This is a simplification
+    } : undefined;
+
     if (audioBlob) {
-        onSendMessage('', isAnonymous, { blob: audioBlob, duration: audioDuration });
+        onSendMessage('', isAnonymous, { blob: audioBlob, duration: audioDuration }, replyContext);
         handleDeleteRecording();
     } else if (content.trim()) {
-      onSendMessage(content.trim(), isAnonymous);
+      onSendMessage(content.trim(), isAnonymous, undefined, replyContext);
       setContent('');
     }
+    onClearReply();
   };
+  
+  const handleCancelEdit = () => {
+    onClearEditing();
+    setContent('');
+  }
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
         handleSend(e);
+    }
+     if (e.key === 'Escape') {
+      if (editingMessage) {
+        handleCancelEdit();
+      } else if (replyingTo) {
+        onClearReply();
+      }
     }
   }
 
@@ -138,8 +190,11 @@ export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInp
 
   return (
     <form onSubmit={handleSend} className="flex flex-col gap-2">
+      {replyingTo && <ChatQuote text={replyingTo.content || 'Voice message'} onClose={onClearReply} />}
+      {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
       <div className="flex items-center gap-2">
         <Textarea
+          ref={textareaRef}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -150,7 +205,7 @@ export function ChatInput({ onSendMessage, showAnonymousOption = true }: ChatInp
         <Button type="button" variant="ghost" size="icon" className="rounded-full h-10 w-10 shrink-0" onClick={startRecording}>
             <Mic className="w-5 h-5" />
         </Button>
-        <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!content.trim()}>
+        <Button type="submit" size="icon" className="rounded-full h-10 w-10 shrink-0" disabled={!content.trim() && !editingMessage}>
           <Send className="w-5 h-5" />
         </Button>
       </div>

@@ -3,7 +3,7 @@ import { useState, useMemo, useEffect, useRef, use } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
-import { type DirectMessage, type Message, sendDirectMessage } from '@/lib/communityService';
+import { type DirectMessage, type Message, sendDirectMessage, updateDirectMessage, deleteDirectMessage } from '@/lib/communityService';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -20,6 +20,8 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
 
   const { data: chat, loading: loadingChat } = useDoc<DirectMessage>('directMessages', chatId);
@@ -89,10 +91,21 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
     return () => container.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleSendMessage = async (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }) => {
+  const handleSendMessage = async (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }, replyTo?: Message['replyTo']) => {
     if (!currentUser || !chatId) return;
-    await sendDirectMessage(chatId, currentUser.uid, content, audio);
+    await sendDirectMessage(chatId, currentUser.uid, content, audio, replyTo);
   };
+  
+  const handleEditMessage = async (message: Message, newContent: string) => {
+    if (!chatId) return;
+    await updateDirectMessage(chatId, message.id, newContent);
+  }
+
+  const handleDeleteMessage = async (message: Message) => {
+    if (!chatId) return;
+    await deleteDirectMessage(chatId, message.id);
+  }
+
 
   const isLoading = loadingChat || loadingOtherUser || (loadingMessages && !messages) || (loadingProfiles && !profiles);
 
@@ -113,7 +126,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
                 <AvatarImage src={otherUser.photoURL || ''} alt={otherUser.displayName || 'User'} />
                 <AvatarFallback>{otherUser.displayName?.[0] || <UserIcon />}</AvatarFallback>
               </Avatar>
-              <h1 className="text-lg font-bold text-white">{otherUser.displayName}</h1>
+              <h1 className="text-lg font-bold text-white">{getTruncatedName(otherUser.displayName)}</h1>
           </div>
         )}
       </header>
@@ -131,6 +144,9 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
               profile={profilesMap.get(message.userId)}
               isCurrentUser={message.userId === currentUser?.uid}
               isDM={true}
+              onReply={setReplyingTo}
+              onEdit={setEditingMessage}
+              onDelete={handleDeleteMessage}
             />
           ))
         )}
@@ -147,8 +163,23 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
         )}
 
       <div className="p-4 border-t border-white/10">
-        <ChatInput onSendMessage={handleSendMessage} showAnonymousOption={false} />
+        <ChatInput 
+            onSendMessage={handleSendMessage} 
+            showAnonymousOption={false}
+            replyingTo={replyingTo}
+            onClearReply={() => setReplyingTo(null)}
+            editingMessage={editingMessage}
+            onEditMessage={handleEditMessage}
+            onClearEditing={() => setEditingMessage(null)}
+        />
       </div>
     </div>
   );
 }
+
+const getTruncatedName = (name: string | undefined, count = 2) => {
+    if (!name) return 'User';
+    const nameParts = name.split(' ');
+    return nameParts.slice(0, count).join(' ');
+};
+
