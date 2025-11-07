@@ -3,7 +3,7 @@ import { useEffect, useState, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { UserProfile, useAuthStore } from '@/stores/auth-store';
 import { notFound, useRouter } from 'next/navigation';
-import { Loader2, MessageSquare, School } from 'lucide-react';
+import { Loader2, MessageSquare, School, ArrowLeft } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon, Crown, Shield } from 'lucide-react';
 import { InfoCard } from '@/components/profile/InfoCard';
@@ -84,6 +84,9 @@ export default function PublicProfilePage({ params }: { params: { username: stri
     <>
       <div className="w-full pb-12">
         <div className="relative sm:h-64 h-36">
+           <Button variant="ghost" size="icon" className="absolute top-4 left-4 z-10 rounded-full h-9 w-9 bg-black/20 text-white hover:bg-black/40" onClick={() => router.back()}>
+                <ArrowLeft className="w-5 h-5" />
+            </Button>
            {user.metadata?.coverPhotoURL && (
               <Image
                   src={user.metadata.coverPhotoURL}

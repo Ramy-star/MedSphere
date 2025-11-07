@@ -1,11 +1,11 @@
 'use client';
 import React, { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image as ImageIcon, Send, X, ThumbsUp, MessageSquare, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare as MessageSquareIcon, EyeOff, Angry, Sparkles, Frown } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Send, X, ThumbsUp, MessageSquare, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare as MessageSquareIcon, EyeOff, Angry, Sparkles, Frown, MessageCircleOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { createPost, type Post, togglePostReaction, deletePost, updatePost, addComment, type Comment as CommentData } from '@/lib/communityService';
+import { createPost, type Post, togglePostReaction, deletePost, updatePost, addComment, type Comment as CommentData, toggleComments } from '@/lib/communityService';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -212,23 +212,23 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
             <DialogContent className="glass-card sm:max-w-2xl p-0 rounded-2xl bg-slate-900/80 backdrop-blur-lg">
-                 <DialogHeader className="p-6 pb-4">
+                <DialogHeader className="p-6 pb-4">
                     <DialogTitle className="text-xl">Edit Post</DialogTitle>
                 </DialogHeader>
                 <div className="flex flex-col gap-4 px-6 max-h-[70vh] overflow-y-auto no-scrollbar">
-                  <div className="bg-slate-800/60 rounded-xl border border-slate-700 p-1">
-                      <Textarea
-                          ref={textareaRef}
-                          value={content}
-                          onChange={(e) => setContent(e.target.value)}
-                          className="w-full bg-transparent border-0 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[90px] max-h-[200px]"
-                      />
-                  </div>
-                  {post.imageUrl && (
-                      <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[200px]">
-                        <img src={post.imageUrl} alt="Post image" className="rounded-lg w-full h-full object-cover" />
-                      </div>
-                  )}
+                    <div className="bg-slate-800/60 rounded-xl border border-slate-700 p-1">
+                         <Textarea
+                            ref={textareaRef}
+                            value={content}
+                            onChange={(e) => setContent(e.target.value)}
+                            className="w-full bg-transparent border-0 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[120px] max-h-[250px]"
+                        />
+                    </div>
+                    {post.imageUrl && (
+                        <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[250px] w-full">
+                            <img src={post.imageUrl} alt="Post image" className="rounded-lg w-full h-full object-cover max-h-[250px]" />
+                        </div>
+                    )}
                 </div>
                 <DialogFooter className="p-6 pt-4">
                     <Button variant="outline" onClick={() => onOpenChange(false)} className="rounded-xl">Cancel</Button>
@@ -284,6 +284,16 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             toast({ variant: 'destructive', title: 'Error', description: 'Could not delete post.' });
         }
     }
+    
+    const handleToggleComments = async () => {
+      try {
+        await toggleComments(post.id, !post.commentsDisabled);
+        toast({ title: `Comments ${!post.commentsDisabled ? 'disabled' : 'enabled'}.` });
+        refetchPosts();
+      } catch (e: any) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not change comment settings.' });
+      }
+    };
 
     const isOwner = currentUser?.uid === post.userId;
     
@@ -327,6 +337,10 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                                 <DropdownMenuItem onSelect={() => setItemToEdit(post)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Edit</span>
+                                </DropdownMenuItem>
+                                 <DropdownMenuItem onSelect={handleToggleComments}>
+                                    <MessageCircleOff className="mr-2 h-4 w-4" />
+                                    <span>{post.commentsDisabled ? 'Enable' : 'Disable'} Comments</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onSelect={() => setItemToDelete(post)} className="text-red-400 focus:text-red-400">
@@ -374,7 +388,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             </div>
              {showComments && (
                 <div className="mt-4 border-t border-white/10 pt-4">
-                    <CommentThread postId={post.id} />
+                    <CommentThread postId={post.id} commentsDisabled={!!post.commentsDisabled} />
                 </div>
             )}
         </div>
