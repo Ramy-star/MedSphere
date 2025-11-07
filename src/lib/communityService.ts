@@ -71,6 +71,12 @@ export interface Message {
   audioUrl?: string;
   audioDuration?: number;
   audioType?: string;
+  replyTo?: {
+    messageId: string;
+    content: string;
+    userId: string;
+    userName: string;
+  };
 }
 
 export type Content = {
@@ -89,7 +95,7 @@ export async function sendMessage(channelId: string, userId: string, content: st
     
     let audioData = {};
     if (audio) {
-        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'voice_messages');
+        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'community_audio');
         audioData = {
             audioUrl: url,
             audioDuration: audio.duration,
@@ -181,27 +187,30 @@ export async function createOrGetDirectChat(userId1: string, userId2: string): P
 }
 
 
-export async function sendDirectMessage(chatId: string, userId: string, content: string, audio?: { blob: Blob, duration: number }): Promise<void> {
+export async function sendDirectMessage(chatId: string, userId: string, content: string, audio?: { blob: Blob, duration: number }, replyTo?: Message['replyTo']): Promise<void> {
     if (!db) throw new Error("Firestore is not initialized.");
 
     let audioData = {};
+    let messageContent = content;
+
     if (audio) {
-        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'voice_messages');
+        const { url } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'community_audio');
         audioData = {
             audioUrl: url,
             audioDuration: audio.duration,
             audioType: audio.blob.type,
         };
-        content = `Voice message (${Math.round(audio.duration)}s)`;
+        messageContent = ''; // No text content for voice messages
     }
 
     const messagesColRef = collection(db, 'directMessages', chatId, 'messages');
     await addDoc(messagesColRef, {
         chatId: chatId,
         userId,
-        content: audio ? '' : content,
+        content: messageContent,
         timestamp: serverTimestamp(),
-        isAnonymous: false,
+        isAnonymous: false, // DMs are never anonymous
+        replyTo: replyTo || null,
         ...audioData,
     });
 
@@ -215,6 +224,21 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
         lastUpdated: serverTimestamp()
     });
 }
+
+export async function updateDirectMessage(chatId: string, messageId: string, newContent: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const messageRef = doc(db, 'directMessages', chatId, 'messages', messageId);
+    await updateDoc(messageRef, {
+        content: newContent,
+    });
+}
+
+export async function deleteDirectMessage(chatId: string, messageId: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const messageRef = doc(db, 'directMessages', chatId, 'messages', messageId);
+    await deleteFirestoreDoc(messageRef);
+}
+
 
 export async function joinChannel(channelId: string, userId: string): Promise<void> {
     if (!db) throw new Error("Firestore is not initialized.");
