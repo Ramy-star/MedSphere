@@ -1,4 +1,3 @@
-
 'use client';
 import { useState, useMemo } from 'react';
 import type { UserProfile } from '@/stores/auth-store';
@@ -37,10 +36,15 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
 
   
-  const { data: pinnedNotes, loading } = useCollection<Note>(`users/${user.id}/profileNotes`, {
-    where: ['pinned', '==', true],
+  const { data: allNotes, loading } = useCollection<Note>(`users/${user.id}/profileNotes`, {
     orderBy: ['order', 'asc'],
   });
+
+  const pinnedNotes = useMemo(() => {
+    if (!allNotes) return [];
+    return allNotes.filter(note => note.pinned === true);
+  }, [allNotes]);
+
 
   const handleTogglePin = async (note: Note) => {
     const noteRef = doc(db, `users/${user.id}/profileNotes`, note.id);
