@@ -3,7 +3,7 @@ import { useEffect, useState, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { UserProfile, useAuthStore } from '@/stores/auth-store';
 import { notFound, useRouter } from 'next/navigation';
-import { Loader2, MessageSquare } from 'lucide-react';
+import { Loader2, MessageSquare, School } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon, Crown, Shield } from 'lucide-react';
 import { InfoCard } from '@/components/profile/InfoCard';
