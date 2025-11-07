@@ -169,11 +169,6 @@ input:focus {
   text-shadow: 0 0 0.1px #000;
 }
 
-/* Add some global transitions for a smoother feel */
-button, a, input, select, textarea {
-  @apply transition-colors duration-200 ease-in-out;
-}
-
 /* --- Keyframes for Animations --- */
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
@@ -418,40 +413,4 @@ button.lecture-tab-btn.active {
 }
 .review-option > svg {
   flex-shrink: 0;
-}
-
-.report-btn {
-    @apply bg-transparent border-2 border-primary text-primary font-semibold rounded-full cursor-pointer inline-flex items-center justify-center gap-2 overflow-hidden transition-all duration-300 ease-in-out;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-}
-.report-btn .report-text {
-    @apply whitespace-nowrap opacity-0 max-w-0 transition-all duration-200 ease-in-out;
-}
-.report-btn:hover {
-    @apply bg-primary text-primary-foreground;
-    width: 120px; /* Expanded width */
-    padding: 0 16px;
-}
-.report-btn:hover .report-text {
-    @apply opacity-100 max-w-[100px] ml-2;
-}
-
-@media (max-width: 768px) {
-    .exam-page-container {
-        @apply p-0 m-0;
-    }
-    .exam-container {
-        @apply p-4;
-    }
-    .exam-start-screen h2 {
-        @apply text-3xl;
-    }
-    .results-summary .score-container .score {
-        @apply text-6xl;
-    }
-    .results-summary {
-        @apply flex-col-reverse p-6;
-    }
 }

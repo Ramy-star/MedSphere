@@ -5,7 +5,7 @@ import type { Message } from "@/lib/communityService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, MoreHorizontal, Reply, Edit, Trash2 } from "lucide-react";
 import Link from 'next/link';
-import { AudioPlayer } from './AudioPlayer';
+import { WaveformAudioPlayer } from './WaveformAudioPlayer';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,7 +23,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState } from "react";
 
@@ -77,11 +76,11 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
     <div className={cn("flex flex-col gap-2 group", alignClass)}>
        {message.replyTo && (
         <div className="flex items-center gap-2 max-w-[80%] text-xs border-l-2 border-slate-500 pl-2 ml-10 mr-2">
-            <p className="font-semibold text-slate-400">{message.replyTo.userName}:</p>
+            <p className="font-semibold text-slate-400">{getTruncatedName(message.replyTo.userName)}:</p>
             <p className="text-slate-400 line-clamp-1">{message.replyTo.content}</p>
         </div>
       )}
-      <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse")}>
+      <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse", isDM && "max-w-full")}>
         {!isCurrentUser && !isDM && (
             isLink ? (
                 <Link href={`/users/${username}`}>
@@ -126,19 +125,19 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                     <Reply size={16}/>
                 </Button>
             )}
-            <div className={cn("px-4 py-2 rounded-2xl", bubbleClass)}>
+            <div className={cn("px-4 py-2 rounded-2xl", bubbleClass, message.audioUrl && "p-2")}>
                 {!isCurrentUser && !isDM && (
                      <p className="text-xs font-bold text-slate-400 mb-1">{senderName}</p>
                 )}
                 {message.audioUrl ? (
-                    <AudioPlayer src={message.audioUrl} />
+                    <WaveformAudioPlayer src={message.audioUrl} isCurrentUser={isCurrentUser} />
                 ) : (
                     <p className="text-sm whitespace-pre-wrap">{message.content}</p>
                 )}
             </div>
         </div>
       </div>
-      <div className={cn("text-xs text-slate-500 flex items-center gap-1.5", isCurrentUser ? 'mr-10' : 'ml-10')}>
+      <div className={cn("text-xs text-slate-500 flex items-center gap-1.5", isCurrentUser ? 'mr-10' : (isDM ? '' : 'ml-10') )}>
           <span>{messageTimestamp}</span>
           {wasEdited && <span>(edited)</span>}
       </div>
