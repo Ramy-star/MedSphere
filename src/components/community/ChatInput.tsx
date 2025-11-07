@@ -20,6 +20,7 @@ export function ChatInput({ onSendMessage }: ChatInputProps) {
     if (content.trim()) {
       onSendMessage(content.trim(), isAnonymous);
       setContent('');
+      // We keep the isAnonymous state as the user might want to send multiple anonymous messages.
     }
   };
   
