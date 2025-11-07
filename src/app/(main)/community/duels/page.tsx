@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Swords, User, Users, Shield } from 'lucide-react';
@@ -6,21 +7,33 @@ import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 
-const GameModeCard = ({ title, description, icon: Icon, link }: { title: string, description: string, icon: React.ElementType, link: string }) => {
+const GameModeCard = ({ title, description, icon: Icon, link, disabled = false }: { title: string, description: string, icon: React.ElementType, link: string, disabled?: boolean }) => {
     
-    return (
-        <Link href={link} className="block group">
-            <div className={cn(
-                "glass-card p-6 rounded-2xl h-full flex flex-col justify-between transition-all duration-300 hover:bg-white/10 hover:shadow-lg hover:-translate-y-1"
-            )}>
-                <div>
-                    <div className="mb-4 inline-block p-3 rounded-full bg-slate-800">
-                        <Icon className="w-8 h-8 text-red-400" />
-                    </div>
-                    <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
-                    <p className="text-sm text-slate-400">{description}</p>
+    const content = (
+        <div className={cn(
+            "glass-card p-6 rounded-2xl h-full flex flex-col justify-between transition-all duration-300",
+            disabled 
+                ? "opacity-50 cursor-not-allowed"
+                : "hover:bg-white/10 hover:shadow-lg hover:-translate-y-1 group"
+        )}>
+            <div>
+                <div className="mb-4 inline-block p-3 rounded-full bg-slate-800">
+                    <Icon className="w-8 h-8 text-red-400" />
                 </div>
+                <h2 className="text-xl font-bold text-white mb-2">{title}</h2>
+                <p className="text-sm text-slate-400">{description}</p>
             </div>
+             {disabled && <p className="text-center text-xs font-bold text-yellow-400 mt-4">COMING SOON</p>}
+        </div>
+    );
+    
+    if (disabled) {
+        return <div className="block cursor-not-allowed">{content}</div>
+    }
+
+    return (
+        <Link href={link} className="block">
+            {content}
         </Link>
     );
 }

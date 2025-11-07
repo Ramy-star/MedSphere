@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Swords, User, Loader2 } from 'lucide-react';
@@ -8,6 +9,8 @@ import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { cn } from '@/lib/utils';
 import { useMemo } from 'react';
+import { motion } from 'framer-motion';
+
 
 const PlayerCard = ({ player }: { player: UserProfile }) => {
     const isSuperAdmin = player.roles?.some(r => r.role === 'superAdmin');
@@ -15,7 +18,12 @@ const PlayerCard = ({ player }: { player: UserProfile }) => {
     const avatarRingClass = isSuperAdmin ? "ring-yellow-400" : isSubAdmin ? "ring-blue-400" : "ring-transparent";
     
     return (
-        <div className="glass-card p-4 rounded-xl flex items-center justify-between">
+        <motion.div 
+            className="glass-card p-4 rounded-xl flex items-center justify-between"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3 }}
+        >
             <div className="flex items-center gap-3">
                 <Avatar className={cn("h-10 w-10 ring-2", avatarRingClass)}>
                     <AvatarImage src={player.photoURL || ''} alt={player.displayName} />
@@ -30,7 +38,7 @@ const PlayerCard = ({ player }: { player: UserProfile }) => {
                 <Swords className="mr-2 h-4 w-4"/>
                 Challenge
             </Button>
-        </div>
+        </motion.div>
     )
 }
 

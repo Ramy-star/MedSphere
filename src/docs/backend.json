@@ -250,6 +250,7 @@
         "type": "object",
         "properties": {
             "id": { "type": "string" },
+            "name": { "type": "string", "description": "Name of the Battle Royale game session." },
             "status": { "type": "string", "enum": ["lobby", "active", "finished"] },
             "participants": { 
                 "type": "array",
@@ -272,21 +273,28 @@
         "type": "object",
         "properties": {
             "id": { "type": "string" },
-            "status": { "type": "string", "enum": ["lobby", "active", "finished"] },
-            "teamOne": { 
-                "type": "object",
-                "properties": {
-                    "name": { "type": "string" },
-                    "members": { "type": "array", "items": { "type": "string" } },
-                    "score": { "type": "number" }
+            "status": { "type": "string", "enum": ["lobby", "challenging", "active", "finished"] },
+            "teams": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "id": { "type": "string" },
+                        "name": { "type": "string" },
+                        "members": { "type": "array", "items": { "type": "string" } },
+                        "score": { "type": "number" }
+                    }
                 }
             },
-            "teamTwo": { 
-                "type": "object",
-                "properties": {
-                    "name": { "type": "string" },
-                    "members": { "type": "array", "items": { "type": "string" } },
-                    "score": { "type": "number" }
+            "challenges": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "fromTeamId": { "type": "string" },
+                        "toTeamId": { "type": "string" },
+                        "status": { "type": "string", "enum": ["pending", "accepted", "declined"] }
+                    }
                 }
             },
             "questions": { "type": "array", "items": { "type": "object" } },
