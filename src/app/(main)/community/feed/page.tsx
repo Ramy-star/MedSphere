@@ -370,24 +370,26 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                 </div>
             )}
              <div className="mt-2 flex items-center justify-between text-xs text-slate-400">
-                <div className="flex items-center gap-2">
+                <div>
                     {totalReactions > 0 && (
-                        <div className="flex items-center">
+                        <div className="flex items-center gap-2">
                             <div className="flex -space-x-1">
                                 {topReactions.map(reaction => {
                                     const Icon = reactionIcons[reaction];
                                     return <Icon key={reaction} className={`${reactionColors[reaction]} h-4 w-4`} />;
                                 })}
                             </div>
-                            <span className="ml-2">{totalReactions}</span>
+                            <span>{totalReactions}</span>
                         </div>
                     )}
                 </div>
-                {post.commentCount > 0 && (
-                    <button onClick={() => setShowComments(prev => !prev)} className="hover:underline">
-                        {post.commentCount} {post.commentCount === 1 ? 'comment' : 'comments'}
-                    </button>
-                )}
+                <div>
+                    {post.commentCount > 0 && (
+                        <button onClick={() => setShowComments(prev => !prev)} className="hover:underline">
+                            {post.commentCount} {post.commentCount === 1 ? 'comment' : 'comments'}
+                        </button>
+                    )}
+                </div>
             </div>
 
              <div className="mt-2 flex items-center justify-between text-slate-400 border-t border-white/10 pt-2">
