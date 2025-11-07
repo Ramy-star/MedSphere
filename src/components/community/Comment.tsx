@@ -135,7 +135,7 @@ export const Comment = ({ comment, onReply, onDelete }: { comment: CommentData; 
                   </div>
               </div>
            ) : (
-             <p className="text-sm text-slate-200 whitespace-pre-wrap">{comment.content}</p>
+             <p className="text-sm text-slate-200 whitespace-pre-wrap select-text">{comment.content}</p>
            )}
           {totalReactions > 0 && (
             <div className="absolute -bottom-3 right-2 flex items-center bg-slate-800 rounded-full border border-slate-700 px-1 py-0.5">
@@ -149,7 +149,7 @@ export const Comment = ({ comment, onReply, onDelete }: { comment: CommentData; 
             </div>
           )}
         </div>
-        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1 px-2">
+        <div className="flex items-center gap-2 text-xs text-slate-400 mt-1 px-2 select-none">
             <p>{formatDistanceToNow(postDate, { addSuffix: true })}</p>
              <Popover>
                 <PopoverTrigger asChild><button className="font-semibold hover:underline">Like</button></PopoverTrigger>
