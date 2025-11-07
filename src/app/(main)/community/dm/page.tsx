@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon, Loader2, Inbox, ArrowLeft } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
@@ -15,10 +15,11 @@ import { useRouter } from 'next/navigation';
 const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
   const { user: currentUser } = useAuthStore();
   const otherParticipantId = useMemo(() => {
+    if (!chat || !chat.participants) return null;
     return chat.participants.find(p => p !== currentUser?.uid);
   }, [chat, currentUser]);
 
-  const { userProfile: otherUser, loading } = useUserProfile(otherParticipantId);
+  const { userProfile: otherUser, loading } = useUserProfile(otherParticipantId || undefined);
 
   if (loading) {
     return (
@@ -69,9 +70,18 @@ export default function DirectMessagesPage() {
   const router = useRouter();
   const { data: chats, loading } = useCollection<DirectMessage>('directMessages', {
     where: ['participants', 'array-contains', user?.uid],
-    orderBy: ['lastUpdated', 'desc'],
+    // orderBy: ['lastUpdated', 'desc'], // This was causing the index error
     disabled: !user?.uid,
   });
+
+  const sortedChats = useMemo(() => {
+    if (!chats) return [];
+    return [...chats].sort((a, b) => {
+        const aDate = a.lastUpdated?.seconds ? new Date(a.lastUpdated.seconds * 1000) : new Date(0);
+        const bDate = b.lastUpdated?.seconds ? new Date(b.lastUpdated.seconds * 1000) : new Date(0);
+        return bDate.getTime() - aDate.getTime();
+    });
+  }, [chats]);
 
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full">
@@ -88,9 +98,9 @@ export default function DirectMessagesPage() {
                 <div className="flex items-center justify-center h-full">
                     <Loader2 className="w-8 h-8 animate-spin text-slate-500"/>
                 </div>
-            ) : chats && chats.length > 0 ? (
+            ) : sortedChats && sortedChats.length > 0 ? (
                 <div className="space-y-1">
-                    {chats.map(chat => (
+                    {sortedChats.map(chat => (
                         <ChatListItem key={chat.id} chat={chat} />
                     ))}
                 </div>
