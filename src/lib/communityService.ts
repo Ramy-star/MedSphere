@@ -1,6 +1,6 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc as deleteFirestoreDoc, writeBatch } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { useAuthStore } from '@/stores/auth-store';
 import { contentService } from './contentService';
@@ -192,8 +192,6 @@ export async function createPost(userId: string, content: string, imageFile: Fil
     let imageCloudinaryPublicId: string | undefined;
 
     if (imageFile) {
-        // Since this is not a user avatar, we can simplify the upload call.
-        // Let's assume a generic folder for posts.
         const uploadResult = await contentService.uploadUserAvatar({ id: userId } as any, imageFile, () => {}, 'posts');
         imageUrl = uploadResult.url;
         imageCloudinaryPublicId = uploadResult.publicId;
@@ -232,7 +230,7 @@ export async function deletePost(post: Post) {
         await contentService.deleteCloudinaryAsset(post.imageCloudinaryPublicId, 'image');
     }
     const postRef = doc(db, 'posts', post.id);
-    await deleteDoc(postRef);
+    await deleteFirestoreDoc(postRef);
 }
 
 export async function togglePostReaction(postId: string, userId: string) {

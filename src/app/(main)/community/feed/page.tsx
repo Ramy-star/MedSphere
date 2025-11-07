@@ -1,17 +1,28 @@
 'use client';
 import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { createPost, type Post, togglePostReaction } from '@/lib/communityService';
+import { createPost, type Post, togglePostReaction, deletePost } from '@/lib/communityService';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const getTruncatedName = (name: string | undefined, count = 2) => {
     if (!name) return 'User';
@@ -117,21 +128,24 @@ const PostAuthor = ({ userId }: { userId: string }) => {
     if (!userProfile) return null;
 
     return (
-        <div className="flex items-center gap-3">
-            <Avatar>
-                <AvatarImage src={userProfile.photoURL || ''} alt={userProfile.displayName || 'User'} />
-                <AvatarFallback>{userProfile.displayName?.[0]}</AvatarFallback>
-            </Avatar>
-            <div>
-                <p className="font-bold text-white">{userProfile.displayName}</p>
-                <p className="text-xs text-slate-400">@{userProfile.username}</p>
-            </div>
-        </div>
+      <Link href={`/users/${userProfile.username}`} className="flex items-center gap-3 group/author">
+          <Avatar>
+              <AvatarImage src={userProfile.photoURL || ''} alt={userProfile.displayName || 'User'} />
+              <AvatarFallback>{userProfile.displayName?.[0]}</AvatarFallback>
+          </Avatar>
+          <div>
+              <p className="font-bold text-white group-hover/author:underline">{userProfile.displayName}</p>
+              <p className="text-xs text-slate-400">@{userProfile.username}</p>
+          </div>
+      </Link>
     );
 };
 
-const PostCard = ({ post }: { post: Post }) => {
+const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void }) => {
     const { user: currentUser } = useAuthStore();
+    const { toast } = useToast();
+    const [itemToDelete, setItemToDelete] = useState<Post | null>(null);
+
     const hasLiked = useMemo(() => {
         if (!currentUser || !post.reactions) return false;
         return post.reactions.hasOwnProperty(currentUser.uid);
@@ -146,12 +160,49 @@ const PostCard = ({ post }: { post: Post }) => {
         if(!currentUser) return;
         await togglePostReaction(post.id, currentUser.uid);
     }
+
+    const handleDelete = async () => {
+        if (!itemToDelete) return;
+        try {
+            await deletePost(itemToDelete);
+            toast({ title: 'Post deleted successfully.' });
+            setItemToDelete(null);
+            refetchPosts(); // Refetch posts after deletion
+        } catch(e: any) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not delete post.' });
+        }
+    }
+
+    const isOwner = currentUser?.uid === post.userId;
     
     return (
+      <>
         <div className="glass-card p-4 rounded-2xl">
             <div className="flex items-center justify-between">
                 <PostAuthor userId={post.userId} />
-                <div className="text-xs text-slate-400">{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</div>
+                <div className="flex items-center gap-1">
+                    <p className="text-xs text-slate-400">{formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}</p>
+                    {isOwner && (
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full text-slate-400">
+                                    <MoreHorizontal size={18} />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                                <DropdownMenuItem>
+                                    <Edit className="mr-2 h-4 w-4" />
+                                    <span>Edit</span>
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onSelect={() => setItemToDelete(post)} className="text-red-400 focus:text-red-400">
+                                    <Trash2 className="mr-2 h-4 w-4" />
+                                    <span>Delete</span>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    )}
+                </div>
             </div>
             
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
@@ -172,6 +223,21 @@ const PostCard = ({ post }: { post: Post }) => {
                  </Button>
             </div>
         </div>
+         <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This action will permanently delete this post. This cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+      </>
     )
 }
 
@@ -199,7 +265,7 @@ export default function FaceSpherePage() {
                     <Skeleton className="h-64 w-full rounded-2xl"/>
                 </>
             ) : (
-                posts?.map(post => <PostCard key={post.id} post={post} />)
+                posts?.map(post => <PostCard key={post.id} post={post} refetchPosts={refetch} />)
             )}
             {!loading && posts?.length === 0 && (
                 <div className="text-center py-16 text-slate-500">
