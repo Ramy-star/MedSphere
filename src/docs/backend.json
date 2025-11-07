@@ -216,6 +216,7 @@
         "id": { "type": "string" },
         "userId": { "type": "string" },
         "content": { "type": "string" },
+        "isAnonymous": { "type": "boolean", "description": "Whether the post is anonymous." },
         "imageUrl": { "type": "string", "format": "uri" },
         "imageCloudinaryPublicId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },

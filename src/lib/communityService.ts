@@ -28,6 +28,7 @@ export interface Post {
     content: string;
     imageUrl?: string;
     imageCloudinaryPublicId?: string;
+    isAnonymous?: boolean;
     createdAt: any;
     updatedAt?: any;
     commentCount?: number;
@@ -194,14 +195,13 @@ export async function joinChannel(channelId: string, userId: string): Promise<vo
     });
 }
 
-export async function createPost(userId: string, content: string, imageFile: File | null): Promise<string> {
+export async function createPost(userId: string, content: string, imageFile: File | null, isAnonymous: boolean): Promise<string> {
     if (!db) throw new Error("Firestore is not initialized.");
 
     let imageUrl: string | undefined;
     let imageCloudinaryPublicId: string | undefined;
 
     if (imageFile) {
-        // Use a generic uploader function that is not tied to user avatars
         const uploadResult = await contentService.uploadUserAvatar({ id: userId } as any, imageFile, () => {}, 'posts');
         imageUrl = uploadResult.url;
         imageCloudinaryPublicId = uploadResult.publicId;
@@ -215,6 +215,7 @@ export async function createPost(userId: string, content: string, imageFile: Fil
         userId,
         content,
         reactions: {},
+        isAnonymous: isAnonymous,
         createdAt: serverTimestamp(),
         ...(imageUrl && { imageUrl }),
         ...(imageCloudinaryPublicId && { imageCloudinaryPublicId }),
@@ -243,7 +244,7 @@ export async function deletePost(post: Post) {
     await deleteFirestoreDoc(postRef);
 }
 
-export async function togglePostReaction(postId: string, userId: string) {
+export async function togglePostReaction(postId: string, userId: string, reactionType: string) {
     if (!db) throw new Error("Firestore is not initialized.");
     const postRef = doc(db, 'posts', postId);
     
@@ -253,10 +254,12 @@ export async function togglePostReaction(postId: string, userId: string) {
     const postData = postSnap.data() as Post;
     const newReactions = { ...postData.reactions };
 
-    if (newReactions[userId]) {
+    if (newReactions[userId] === reactionType) {
+        // User is clicking the same reaction, so remove it
         delete newReactions[userId];
     } else {
-        newReactions[userId] = 'like'; // For now, only 'like' is supported
+        // User is adding a new reaction or changing their reaction
+        newReactions[userId] = reactionType;
     }
 
     await updateDoc(postRef, {
@@ -289,7 +292,7 @@ export async function addComment(postId: string, userId: string, content: string
 export async function getComments(postId: string): Promise<Comment[]> {
   if (!db) throw new Error("Firestore is not initialized.");
   const commentsColRef = collection(db, 'posts', postId, 'comments');
-  const q = query(commentsColRef, orderBy('createdAt', 'asc'));
+  const q = query(commentsColRef, where('postId', '==', postId)); // Ensure we only get comments for this post
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => doc.data() as Comment);
 }

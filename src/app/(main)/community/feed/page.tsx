@@ -1,7 +1,7 @@
 'use client';
-import { useState, useCallback, useMemo, useEffect } from 'react';
+import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Angry, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Image as ImageIcon, Send, X, ThumbsUp, MessageSquare, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare as MessageSquareIcon, EyeOff } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -9,7 +9,7 @@ import { createPost, type Post, togglePostReaction, deletePost, updatePost } fro
 import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useUserProfile } from '@/hooks/use-user-profile';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
@@ -28,7 +28,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { CommentThread } from '@/components/community/CommentThread';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { motion } from 'framer-motion';
-
+import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 
 const getTruncatedName = (name: string | undefined, count = 2) => {
     if (!name) return 'User';
@@ -43,6 +44,7 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isAnonymous, setIsAnonymous] = useState(false);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -56,11 +58,12 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
     if (!user || (!postContent.trim() && !imageFile)) return;
     setIsSubmitting(true);
     try {
-      await createPost(user.uid, postContent, imageFile);
+      await createPost(user.uid, postContent, imageFile, isAnonymous);
       toast({ title: 'Post created successfully!' });
       setPostContent('');
       setImageFile(null);
       setImagePreview(null);
+      setIsAnonymous(false);
       onPostCreated();
     } catch (error: any) {
       toast({
@@ -81,8 +84,8 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
     <div className="glass-card p-4 rounded-2xl mb-6">
       <div className="flex gap-4">
         <Avatar>
-          <AvatarImage src={user.photoURL || ''} alt={user.displayName || 'User'} />
-          <AvatarFallback>{user.displayName?.[0]}</AvatarFallback>
+          <AvatarImage src={isAnonymous ? '' : user.photoURL || ''} alt={isAnonymous ? 'Anonymous' : user.displayName || 'User'} />
+          <AvatarFallback>{isAnonymous ? <EyeOff/> : user.displayName?.[0]}</AvatarFallback>
         </Avatar>
         <textarea
           value={postContent}
@@ -101,10 +104,16 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
         </div>
       )}
       <div className="flex justify-between items-center mt-4 ml-16">
-        <label htmlFor="image-upload" className="cursor-pointer text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10">
-          <Image size={20} />
-          <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-        </label>
+        <div className="flex items-center gap-4">
+            <label htmlFor="image-upload" className="cursor-pointer text-slate-400 hover:text-white p-2 rounded-full hover:bg-white/10">
+              <ImageIcon size={20} />
+              <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
+            </label>
+             <div className="flex items-center space-x-2">
+                <Checkbox id="anonymous-post" checked={isAnonymous} onCheckedChange={(checked) => setIsAnonymous(!!checked)} />
+                <Label htmlFor="anonymous-post" className="text-sm font-medium text-slate-300">Post anonymously</Label>
+            </div>
+        </div>
         <Button size="sm" className="rounded-full" disabled={isSubmitting || (!postContent.trim() && !imageFile)} onClick={handlePost}>
           <Send size={16} className="mr-2" />
           {isSubmitting ? 'Posting...' : 'Post'}
@@ -115,8 +124,21 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
 };
 
 
-const PostAuthor = ({ userId }: { userId: string }) => {
+const PostAuthor = ({ userId, isAnonymous }: { userId: string, isAnonymous?: boolean }) => {
     const { userProfile, loading } = useUserProfile(userId);
+
+    if (isAnonymous) {
+        return (
+            <div className="flex items-center gap-3">
+                <Avatar>
+                    <AvatarFallback><EyeOff/></AvatarFallback>
+                </Avatar>
+                <div>
+                    <p className="font-bold text-white">Anonymous User</p>
+                </div>
+            </div>
+        );
+    }
 
     if (loading) {
         return (
@@ -187,7 +209,7 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
                     rows={5}
                 />
                 {post.imageUrl && (
-                     <img src={post.imageUrl} alt="Post image" className="mt-4 rounded-lg object-contain max-h-[400px] w-full" />
+                     <img src={post.imageUrl} alt="Post image" className="mt-4 rounded-lg object-contain max-h-[300px] w-full" />
                 )}
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -224,7 +246,12 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
 
     const handleReaction = async (reactionType: string) => {
         if(!currentUser) return;
-        await togglePostReaction(post.id, currentUser.uid, reactionType);
+        const currentReaction = userReaction;
+        if (currentReaction === reactionType) {
+            await togglePostReaction(post.id, currentUser.uid, reactionType);
+        } else {
+            await togglePostReaction(post.id, currentUser.uid, reactionType);
+        }
     }
 
     const handleDelete = async () => {
@@ -233,7 +260,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             await deletePost(itemToDelete);
             toast({ title: 'Post deleted successfully.' });
             setItemToDelete(null);
-            refetchPosts(); // This is correct, no need to call it inside the service
+            refetchPosts();
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not delete post.' });
         }
@@ -269,7 +296,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
       <>
         <div className="glass-card p-4 rounded-2xl">
             <div className="flex items-center justify-between">
-                <PostAuthor userId={post.userId} />
+                <PostAuthor userId={post.userId} isAnonymous={post.isAnonymous} />
                 <div className="flex items-center gap-1">
                     <p className="text-xs text-slate-400">{formatDistanceToNow(postDate, { addSuffix: true })}</p>
                     {isOwner && (
@@ -298,7 +325,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden max-h-[400px] flex items-center justify-center bg-black">
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] flex items-center justify-center bg-black">
                     <img src={post.imageUrl} alt="Post image" className="w-full h-auto object-contain" />
                 </div>
             )}
@@ -325,7 +352,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                     </PopoverContent>
                  </Popover>
                  <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full" onClick={() => setShowComments(prev => !prev)}>
-                    <MessageSquare className="mr-2 h-4 w-4"/> Comment
+                    <MessageSquareIcon className="mr-2 h-4 w-4"/> Comment
                  </Button>
             </div>
              {showComments && (
