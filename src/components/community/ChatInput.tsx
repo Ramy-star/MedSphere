@@ -123,13 +123,19 @@ export function ChatInput({
         setContent('');
         return;
     }
-
-    const replyContext = replyingTo ? {
-        messageId: replyingTo.id,
-        content: replyingTo.content || 'Voice message',
-        userId: replyingTo.userId,
-        userName: replyingTo.isAnonymous ? "Anonymous User" : user?.displayName || 'User',
-    } : undefined;
+    
+    let replyContext: Message['replyTo'] | undefined;
+    if (replyingTo) {
+        const senderName = isDM 
+            ? getTruncatedName(user?.displayName)
+            : (replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName));
+        replyContext = {
+            messageId: replyingTo.id,
+            content: replyingTo.content || 'Voice message',
+            userId: replyingTo.userId,
+            userName: senderName,
+        };
+    }
 
     if (audioBlob) {
         onSendMessage('', isAnonymous, { blob: audioBlob, duration: audioDuration }, replyContext);
@@ -139,6 +145,12 @@ export function ChatInput({
       setContent('');
     }
     onClearReply();
+  };
+  
+  const getTruncatedName = (name: string | undefined) => {
+    if (!name) return 'User';
+    const nameParts = name.split(' ');
+    return nameParts.slice(0, 2).join(' ');
   };
   
   const handleCancelEdit = () => {
@@ -194,7 +206,12 @@ export function ChatInput({
 
   return (
     <form onSubmit={handleSend} className="flex flex-col gap-2">
-      {replyingTo && <ChatQuote replyTo={replyingTo} onClose={onClearReply} isDM={isDM} />}
+      {replyingTo && <ChatQuote replyTo={{
+          messageId: replyingTo.id,
+          content: replyingTo.content || 'Voice Message',
+          userId: replyingTo.userId,
+          userName: replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(profileForReply?.displayName)
+      }} onClose={onClearReply} isDM={isDM} />}
       {editingMessage && <div className="text-xs text-yellow-400 px-3 py-1 bg-yellow-900/50 rounded-md">Editing message... (Press Esc to cancel)</div>}
       <div className="flex items-center gap-2">
         <Textarea

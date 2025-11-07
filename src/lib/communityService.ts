@@ -67,6 +67,7 @@ export interface Message {
   userId: string;
   content?: string;
   timestamp: any;
+  updatedAt?: any;
   isAnonymous: boolean;
   audioUrl?: string;
   audioDuration?: number;
@@ -101,7 +102,7 @@ export async function sendMessage(channelId: string, userId: string, content: st
             audioDuration: audio.duration,
             audioType: audio.blob.type,
         };
-        content = `Voice message (${Math.round(audio.duration)}s)`;
+        content = ''; // No text for voice messages, but we need some content for lastMessage
     }
 
     const messagesColRef = collection(db, 'channels', channelId, 'messages');
@@ -109,7 +110,7 @@ export async function sendMessage(channelId: string, userId: string, content: st
     await addDoc(messagesColRef, {
         channelId,
         userId,
-        content,
+        content: content,
         isAnonymous,
         timestamp: serverTimestamp(),
         ...audioData,
@@ -194,13 +195,13 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
     let messageContent = content;
 
     if (audio) {
-        const { url } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'community_audio');
+        const { url } = await contentService.uploadNoteImage(audio.blob, 'community_audio');
         audioData = {
             audioUrl: url,
             audioDuration: audio.duration,
             audioType: audio.blob.type,
         };
-        messageContent = ''; // No text content for voice messages
+        messageContent = '';
     }
 
     const messagesColRef = collection(db, 'directMessages', chatId, 'messages');
@@ -230,6 +231,7 @@ export async function updateDirectMessage(chatId: string, messageId: string, new
     const messageRef = doc(db, 'directMessages', chatId, 'messages', messageId);
     await updateDoc(messageRef, {
         content: newContent,
+        updatedAt: serverTimestamp(),
     });
 }
 
@@ -406,8 +408,14 @@ export async function deleteComment(postId: string, commentId: string, parentCom
     const commentRef = doc(db, 'posts', postId, 'comments', commentId);
     
     await runTransaction(db, async (transaction) => {
-        // Decrement post's total comment count
-        transaction.update(postRef, { commentCount: increment(-1) });
+        const commentSnap = await transaction.get(commentRef);
+        if (!commentSnap.exists()) return; // Comment already deleted
+
+        const commentData = commentSnap.data() as Comment;
+        const totalReplies = commentData.replyCount || 0;
+
+        // Decrement post's total comment count by 1 (for the main comment) + any replies it had
+        transaction.update(postRef, { commentCount: increment(-(1 + totalReplies)) });
 
         // If it's a reply, decrement parent comment's reply count
         if (parentCommentId) {

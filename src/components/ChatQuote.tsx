@@ -6,22 +6,17 @@ import type { Message } from "@/lib/communityService";
 import { useUserProfile } from "@/hooks/use-user-profile";
 
 type Props = {
-  replyTo: Message;
+  replyTo: Message['replyTo'];
   onClose?: () => void;
   className?: string;
   isDM?: boolean;
 };
 
 export default function ChatQuote({ replyTo, onClose, className = "", isDM = false }: Props) {
-    const { userProfile } = useUserProfile(isDM ? undefined : replyTo.userId);
+    
+    const senderName = replyTo?.userName || 'User';
+    const content = replyTo?.content || '...';
 
-    const getTruncatedName = (name: string | undefined) => {
-        if (!name) return 'User';
-        const nameParts = name.split(' ');
-        return nameParts.slice(0, 2).join(' ');
-    };
-
-    const senderName = replyTo.isAnonymous ? "Anonymous User" : getTruncatedName(userProfile?.displayName);
 
   return (
     <div
@@ -50,7 +45,7 @@ export default function ChatQuote({ replyTo, onClose, className = "", isDM = fal
             <CornerRightDown className="inline-block h-4 w-4 shrink-0 text-slate-400" />
             <div className="flex-1 overflow-hidden">
                 {!isDM && <p className="font-semibold text-xs text-slate-300 truncate">{senderName}</p>}
-                <p className="text-slate-300 line-clamp-1">{replyTo.content || "Voice message"}</p>
+                <p className="text-slate-300 line-clamp-1">{content}</p>
             </div>
         </div>
       </blockquote>

@@ -9,7 +9,7 @@ interface AudioPlayerProps {
 }
 
 const formatTime = (time: number) => {
-  if (isNaN(time) || time === Infinity) {
+  if (isNaN(time) || !isFinite(time) || time < 0) {
     return '0:00';
   }
   const minutes = Math.floor(time / 60);
@@ -29,7 +29,9 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
     if (!audio) return;
 
     const handleLoadedMetadata = () => {
-      setDuration(audio.duration);
+      if (isFinite(audio.duration)) {
+        setDuration(audio.duration);
+      }
       setIsLoading(false);
     };
 
@@ -47,19 +49,21 @@ export function AudioPlayer({ src, className }: AudioPlayerProps) {
     }
 
     audio.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audio.addEventListener('durationchange', handleLoadedMetadata);
     audio.addEventListener('timeupdate', handleTimeUpdate);
     audio.addEventListener('ended', handleEnded);
     audio.addEventListener('canplay', handleCanPlay);
 
 
     // Check if metadata is already loaded
-    if (audio.readyState >= 1) {
+    if (audio.readyState >= 1 && isFinite(audio.duration)) {
       handleLoadedMetadata();
     }
 
 
     return () => {
       audio.removeEventListener('loadedmetadata', handleLoadedMetadata);
+      audio.removeEventListener('durationchange', handleLoadedMetadata);
       audio.removeEventListener('timeupdate', handleTimeUpdate);
       audio.removeEventListener('ended', handleEnded);
       audio.removeEventListener('canplay', handleCanPlay);

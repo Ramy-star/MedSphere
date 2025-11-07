@@ -6,7 +6,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon, MoreHorizontal, Reply, Edit, Trash2 } from "lucide-react";
 import Link from 'next/link';
 import { AudioPlayer } from './AudioPlayer';
-import { useAuthStore } from "@/stores/auth-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +13,20 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "../ui/button";
+import { format } from 'date-fns';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
+
 
 interface ChatMessageProps {
   message: Message;
@@ -32,6 +45,8 @@ const getTruncatedName = (name: string | undefined, count = 2) => {
 };
 
 export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onReply, onEdit, onDelete }: ChatMessageProps) {
+  const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
+  
   const alignClass = isCurrentUser ? 'items-end' : 'items-start';
   const bubbleClass = isCurrentUser
     ? 'bg-blue-600 text-white rounded-br-none'
@@ -46,6 +61,10 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
   const username = profile?.username;
 
   const isLink = !isCurrentUser && !message.isAnonymous && username && !isDM;
+  
+  const messageTimestamp = message.timestamp?.toDate ? format(message.timestamp.toDate(), 'p') : '';
+  const wasEdited = !!message.updatedAt;
+
 
   const AvatarComponent = (
     <Avatar className="h-8 w-8">
@@ -82,7 +101,23 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                     </DropdownMenuTrigger>
                     <DropdownMenuContent>
                         <DropdownMenuItem onSelect={() => onEdit(message)}><Edit className="mr-2 h-4 w-4"/>Edit</DropdownMenuItem>
-                        <DropdownMenuItem onSelect={() => onDelete(message)} className="text-red-400"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                        <AlertDialog onOpenChange={setIsDeleteAlertOpen} open={isDeleteAlertOpen}>
+                          <AlertDialogTrigger asChild>
+                             <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-red-400"><Trash2 className="mr-2 h-4 w-4"/>Delete</DropdownMenuItem>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action will permanently delete this message.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => onDelete(message)} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                     </DropdownMenuContent>
                 </DropdownMenu>
             )}
@@ -102,6 +137,10 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                 )}
             </div>
         </div>
+      </div>
+      <div className={cn("text-xs text-slate-500 flex items-center gap-1.5", isCurrentUser ? 'mr-10' : 'ml-10')}>
+          <span>{messageTimestamp}</span>
+          {wasEdited && <span>(edited)</span>}
       </div>
     </div>
   );
