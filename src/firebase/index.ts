@@ -4,9 +4,6 @@ import { initializeApp, getApps, getApp, type FirebaseOptions } from 'firebase/a
 import { 
   getFirestore, 
   Firestore, 
-  initializeFirestore, 
-  persistentLocalCache,
-  memoryLocalCache
 } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 import { getAuth, Auth } from 'firebase/auth';
@@ -20,37 +17,23 @@ export { useDoc } from './firestore/use-doc';
 export let db: Firestore;
 export let auth: Auth;
 
-let dbInitialized = false;
+let firebaseInitialized = false;
 
 export async function initializeFirebase(config: FirebaseOptions) {
+  if (firebaseInitialized) {
+    const app = getApp();
+    return { app, auth, db, storage: getStorage(app) };
+  }
+  
   const apps = getApps();
   const app = !apps.length ? initializeApp(config) : getApp();
   
-  if (!dbInitialized) { // Check if db is already initialized
-    if (typeof window !== 'undefined') {
-      try {
-        db = initializeFirestore(app, {
-            localCache: persistentLocalCache()
-        });
-        console.log("Firestore initialized with persistent cache.");
-      } catch (err: any) {
-        console.error("Firestore persistence initialization failed, falling back to in-memory.", err);
-        // Fallback to in-memory persistence if it fails
-        try {
-            db = initializeFirestore(app, { localCache: memoryLocalCache() });
-        } catch (e) {
-            db = getFirestore(app);
-        }
-      }
-    } else {
-      // For server-side rendering, just get the instance without persistence.
-      db = getFirestore(app);
-    }
-    dbInitialized = true;
-  }
-  
+  // Use getFirestore() which is idempotent and handles initialization complexities.
+  db = getFirestore(app);
   auth = getAuth(app);
   const storage = getStorage(app);
+
+  firebaseInitialized = true;
 
   return { app, auth, db, storage };
 }
