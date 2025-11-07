@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/communityService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User as UserIcon } from "lucide-react";
+import Link from 'next/link';
 
 interface ChatMessageProps {
   message: Message;
@@ -20,20 +21,32 @@ export function ChatMessage({ message, profile, isCurrentUser }: ChatMessageProp
   const senderName = message.isAnonymous ? "Anonymous User" : profile?.displayName || '...';
   const avatarUrl = message.isAnonymous ? '' : profile?.photoURL;
   const fallbackInitial = message.isAnonymous ? 'A' : senderName.charAt(0).toUpperCase();
+  const username = profile?.username;
+
+  const userLink = !isCurrentUser && !message.isAnonymous && username
+    ? `/users/${username}`
+    : '#';
+  const isLink = userLink !== '#';
 
   return (
     <div className={cn("flex flex-col gap-2", alignClass)}>
       <div className={cn("flex items-end gap-2 max-w-[80%]", isCurrentUser && "flex-row-reverse")}>
         {!isCurrentUser && (
-            <Avatar className="h-8 w-8">
-              <AvatarImage src={avatarUrl} alt={senderName} />
-              <AvatarFallback>{fallbackInitial}</AvatarFallback>
-            </Avatar>
+            <Link href={userLink} className={cn(!isLink && "pointer-events-none")}>
+                <Avatar className="h-8 w-8">
+                <AvatarImage src={avatarUrl} alt={senderName} />
+                <AvatarFallback>{fallbackInitial}</AvatarFallback>
+                </Avatar>
+            </Link>
         )}
         <div
           className={cn("px-4 py-2 rounded-2xl", bubbleClass)}
         >
-            {!isCurrentUser && <p className="text-xs font-bold text-slate-400 mb-1">{senderName}</p>}
+            {!isCurrentUser && (
+                 <Link href={userLink} className={cn(!isLink && "pointer-events-none")}>
+                    <p className="text-xs font-bold text-slate-400 mb-1 hover:underline">{senderName}</p>
+                 </Link>
+            )}
             <p className="text-sm whitespace-pre-wrap">{message.content}</p>
         </div>
       </div>
