@@ -152,9 +152,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
             />
           ))
         )}
-      </div>
-
-       {showScrollToBottom && (
+         {showScrollToBottom && (
             <button
                 onClick={() => scrollToBottom('smooth')}
                 className="absolute bottom-24 right-6 z-20 w-9 h-9 rounded-full border border-white/20 bg-slate-800/80 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/10 transition-all active:scale-90"
@@ -163,6 +161,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
                 <ChevronDown className="w-5 h-5" />
             </button>
         )}
+      </div>
 
       <div className="p-4 border-t border-white/10 flex-shrink-0">
         <ChatInput 
