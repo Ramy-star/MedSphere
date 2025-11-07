@@ -11,18 +11,16 @@ export default function CommunityLayout({
   children: React.ReactNode;
 }) {
   const { can } = useAuthStore();
-  const pathname = usePathname();
-  // We reuse the admin panel permission for now, but could use 'canAccessCommunityPage' in the future.
-  const canAccess = can('canAccessCommunityPage', pathname);
+  const canAccess = can('canAccessAdminPanel', null);
 
   useEffect(() => {
-    // If user doesn't have access, redirect to home page.
-    if (canAccess === false) { // Check for explicit false, as it might be null initially
+    // If user doesn't have access, show a 404 not found page.
+    if (canAccess === false) { 
       notFound();
     }
   }, [canAccess]);
 
-  if (canAccess === null || !canAccess) {
+  if (canAccess === null) {
     // Render nothing or a loading spinner while checking auth
     return null;
   }
