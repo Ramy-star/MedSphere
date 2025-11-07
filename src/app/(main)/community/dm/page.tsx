@@ -5,10 +5,12 @@ import { useAuthStore } from '@/stores/auth-store';
 import { type DirectMessage } from '@/lib/communityService';
 import Link from 'next/link';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User as UserIcon, Loader2, Inbox } from 'lucide-react';
+import { User as UserIcon, Loader2, Inbox, ArrowLeft } from 'lucide-react';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { formatDistanceToNow } from 'date-fns';
 import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
   const { user: currentUser } = useAuthStore();
@@ -47,7 +49,7 @@ const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
             <h3 className="font-bold text-white truncate">{otherUser.displayName}</h3>
             {chat.lastMessage?.timestamp && (
               <p className="text-xs text-slate-500 shrink-0 ml-2">
-                {formatDistanceToNow(new Date(chat.lastMessage.timestamp), { addSuffix: true })}
+                {formatDistanceToNow(new Date(chat.lastMessage.timestamp.seconds * 1000), { addSuffix: true })}
               </p>
             )}
           </div>
@@ -64,6 +66,7 @@ const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
 
 export default function DirectMessagesPage() {
   const { user } = useAuthStore();
+  const router = useRouter();
   const { data: chats, loading } = useCollection<DirectMessage>('directMessages', {
     where: ['participants', 'array-contains', user?.uid],
     orderBy: ['lastUpdated', 'desc'],
@@ -72,8 +75,11 @@ export default function DirectMessagesPage() {
 
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full">
-       <div className="text-center mb-10">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-500 text-transparent bg-clip-text">
+       <div className="flex items-center gap-2 mb-10">
+            <Button variant="ghost" size="icon" className="rounded-full h-9 w-9" onClick={() => router.push('/community')}>
+                <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-purple-400 to-indigo-500 text-transparent bg-clip-text">
                 Direct Messages
             </h1>
         </div>
