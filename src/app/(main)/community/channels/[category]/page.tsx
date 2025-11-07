@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useMemo, useState, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, createChannel, joinChannel } from '@/lib/communityService';
@@ -89,7 +89,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
 };
 
 export default function ChannelsPage({ params }: { params: { category: string } }) {
-  const { category } = params;
+  const { category } = use(params);
   const { user } = useAuthStore();
   const router = useRouter();
   const { toast } = useToast();
@@ -108,7 +108,7 @@ export default function ChannelsPage({ params }: { params: { category: string } 
   }, [category, user]);
 
   const { data, loading } = useCollection<Channel>('channels', queryOptions);
-
+  
   const channels = useMemo(() => {
     if (!data) return [];
     return [...data].sort((a, b) => {

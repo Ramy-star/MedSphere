@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, use } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
@@ -15,7 +15,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon } from 'lucide-react';
 
 export default function DirectMessagePage({ params }: { params: { chatId: string } }) {
-  const { chatId } = params;
+  const { chatId } = use(params);
   const { user: currentUser } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);

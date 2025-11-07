@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { UserProfile, useAuthStore } from '@/stores/auth-store';
 import { notFound, useRouter } from 'next/navigation';
@@ -21,7 +21,7 @@ const studentIdToLevelMap = new Map<string, string>();
 // level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
 
 export default function PublicProfilePage({ params }: { params: { username: string } }) {
-  const { username } = params;
+  const { username } = use(params);
   const router = useRouter();
   const { user: currentUser } = useAuthStore();
   const { data: users, loading } = useCollection<UserProfile>('users', {
@@ -65,7 +65,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
   if (loading || !user) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="w-8 w-8 animate-spin" />
+        <Loader2 className="w-8 h-8 animate-spin" />
       </div>
     );
   }

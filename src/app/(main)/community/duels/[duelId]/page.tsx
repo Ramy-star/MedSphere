@@ -1,10 +1,11 @@
 'use client';
+import { use } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Swords } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function DuelPage({ params }: { params: { duelId: string } }) {
-  const { duelId } = params;
+  const { duelId } = use(params);
   const router = useRouter();
 
   // This is a placeholder page. The actual duel logic will be implemented here.
