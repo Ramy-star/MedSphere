@@ -84,7 +84,7 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
     <div className="glass-card p-4 rounded-2xl mb-6">
       <div className="flex gap-4">
         <Avatar>
-          <AvatarImage src={isAnonymous ? '' : user.photoURL || ''} alt={isAnonymous ? 'Anonymous' : user.displayName || 'User'} />
+          <AvatarImage src={isAnonymous ? undefined : (user.photoURL ?? undefined)} alt={isAnonymous ? 'Anonymous' : user.displayName || 'User'} />
           <AvatarFallback>{isAnonymous ? <EyeOff/> : user.displayName?.[0]}</AvatarFallback>
         </Avatar>
         <textarea
@@ -157,7 +157,7 @@ const PostAuthor = ({ userId, isAnonymous }: { userId: string, isAnonymous?: boo
     return (
       <Link href={`/users/${userProfile.username}`} className="flex items-center gap-3 group/author">
           <Avatar>
-              <AvatarImage src={userProfile.photoURL || ''} alt={userProfile.displayName || 'User'} />
+              <AvatarImage src={userProfile.photoURL ?? undefined} alt={userProfile.displayName || 'User'} />
               <AvatarFallback>{userProfile.displayName?.[0]}</AvatarFallback>
           </Avatar>
           <div>
