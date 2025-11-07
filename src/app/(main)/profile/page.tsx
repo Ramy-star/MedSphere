@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, ReactNode, Suspense, lazy } from 'react';
@@ -33,11 +34,14 @@ import { AchievementsSection } from '@/components/profile/Achievements';
 import Image from 'next/image';
 import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
-import { FilePreviewModal } from '@/components/FilePreviewModal';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
+
+const FilePreviewModal = dynamic(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal), {
+    ssr: false
+});
 
 
 const studentIdToLevelMap = new Map<string, string>();
@@ -620,3 +624,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
