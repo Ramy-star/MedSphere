@@ -221,11 +221,11 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
                           ref={textareaRef}
                           value={content}
                           onChange={(e) => setContent(e.target.value)}
-                          className="w-full bg-transparent border-0 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[120px] max-h-[250px]"
+                          className="w-full bg-transparent border-0 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[90px] max-h-[200px]"
                       />
                   </div>
                   {post.imageUrl && (
-                      <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[250px]">
+                      <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[200px]">
                         <img src={post.imageUrl} alt="Post image" className="rounded-lg w-full h-full object-cover" />
                       </div>
                   )}
