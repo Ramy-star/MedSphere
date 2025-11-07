@@ -172,12 +172,19 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
     const [content, setContent] = useState('');
     const [isSaving, setIsSaving] = useState(false);
     const { toast } = useToast();
+    const textareaRef = React.useRef<HTMLTextAreaElement>(null);
 
     useEffect(() => {
         if (post) {
             setContent(post.content);
         }
-    }, [post]);
+        if (open) {
+            setTimeout(() => {
+                textareaRef.current?.focus();
+                textareaRef.current?.select();
+            }, 100);
+        }
+    }, [post, open]);
 
     const handleSave = async () => {
         if (!post) return;
@@ -198,23 +205,28 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
+            <DialogContent className="glass-card sm:max-w-xl">
                 <DialogHeader>
                     <DialogTitle>Edit Post</DialogTitle>
                 </DialogHeader>
-                <Textarea
-                    value={content}
-                    onChange={(e) => setContent(e.target.value)}
-                    className="w-full bg-slate-800 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-lg"
-                    rows={5}
-                />
-                {post.imageUrl && (
-                     <img src={post.imageUrl} alt="Post image" className="mt-4 rounded-lg object-contain max-h-[300px] w-full" />
-                )}
+                <div className="flex flex-col gap-4 max-h-[70vh]">
+                  <Textarea
+                      ref={textareaRef}
+                      value={content}
+                      onChange={(e) => setContent(e.target.value)}
+                      className="w-full bg-slate-800/60 border-slate-700 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[120px] max-h-[300px]"
+                  />
+                  {post.imageUrl && (
+                      <div className="overflow-y-auto no-scrollbar flex-shrink">
+                        <img src={post.imageUrl} alt="Post image" className="rounded-lg object-contain w-full" />
+                      </div>
+                  )}
+                </div>
                 <DialogFooter>
                     <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
                     <Button onClick={handleSave} disabled={isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save'}
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        Save
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -323,7 +335,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-[95%] mx-auto flex items-center justify-center bg-black">
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-full mx-auto flex items-center justify-center bg-black">
                     <img src={post.imageUrl} alt="Post image" className="w-full h-auto object-contain" />
                 </div>
             )}
