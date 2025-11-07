@@ -9,6 +9,7 @@ import { EyeOff, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { Message } from '@/lib/communityService';
 import ChatQuote from '@/components/ChatQuote';
+import { useAuthStore } from '@/stores/auth-store';
 
 interface ChatInputProps {
   onSendMessage: (content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }, replyTo?: Message['replyTo']) => void;
