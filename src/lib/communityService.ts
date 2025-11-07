@@ -84,7 +84,6 @@ export async function sendMessage(channelId: string, userId: string, content: st
     const user = useAuthStore.getState().user;
     let userName = user?.displayName || 'User';
 
-    // Truncate name to first two parts
     const nameParts = userName.split(' ');
     if (nameParts.length > 2) {
         userName = `${nameParts[0]} ${nameParts[1]}`;
@@ -120,8 +119,8 @@ export async function createChannel(
         name,
         description,
         type,
-        members: [creatorId], // Creator is the first member
-        admins: [creatorId], // and the first admin
+        members: [creatorId], 
+        admins: [creatorId],
         createdAt: serverTimestamp(),
         ...(type === 'level' && { levelId }),
     };

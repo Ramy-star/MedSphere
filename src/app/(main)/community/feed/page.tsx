@@ -5,7 +5,7 @@ import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Tra
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { createPost, type Post, togglePostReaction, deletePost } from '@/lib/communityService';
+import { createPost, type Post, togglePostReaction, deletePost, updatePost } from '@/lib/communityService';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useUserProfile } from '@/hooks/use-user-profile';
@@ -134,7 +134,7 @@ const PostAuthor = ({ userId }: { userId: string }) => {
               <AvatarFallback>{userProfile.displayName?.[0]}</AvatarFallback>
           </Avatar>
           <div>
-              <p className="font-bold text-white group-hover/author:underline">{userProfile.displayName}</p>
+              <p className="font-bold text-white group-hover/author:underline">{getTruncatedName(userProfile.displayName)}</p>
               <p className="text-xs text-slate-400">@{userProfile.username}</p>
           </div>
       </Link>
@@ -167,7 +167,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             await deletePost(itemToDelete);
             toast({ title: 'Post deleted successfully.' });
             setItemToDelete(null);
-            refetchPosts(); // Refetch posts after deletion
+            refetchPosts();
         } catch(e: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not delete post.' });
         }
@@ -210,8 +210,8 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden">
-                    <img src={post.imageUrl} alt="Post image" className="w-full h-auto object-cover" />
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[500px] flex items-center justify-center bg-black">
+                    <img src={post.imageUrl} alt="Post image" className="w-full h-auto object-contain" />
                 </div>
             )}
 
@@ -271,8 +271,9 @@ export default function FaceSpherePage() {
             )}
             {!loading && posts?.length === 0 && (
                 <div className="text-center py-16 text-slate-500">
-                    <p className="text-lg font-medium">No posts yet.</p>
-                    <p>Be the first to share something with the community!</p>
+                    <Globe className="w-12 h-12 mx-auto mb-4" />
+                    <p className="text-lg font-medium">Be the first to post!</p>
+                    <p>Share something with the community.</p>
                 </div>
             )}
         </div>
