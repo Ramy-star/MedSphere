@@ -12,6 +12,7 @@ import ChatQuote from '@/components/ChatQuote';
 import { useAuthStore } from '@/stores/auth-store';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
+import { ImagePreviewDialog } from './ImagePreviewDialog';
 
 
 interface ChatInputProps {
@@ -41,6 +42,7 @@ export function ChatInput({
   const [audioBlob, setAudioBlob] = useState<Blob | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [imageToSend, setImageToSend] = useState<File | null>(null);
   
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const recordingIntervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -118,8 +120,8 @@ export function ChatInput({
     setRecordingTime(0);
   };
 
-  const handleSend = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSend = async (e?: React.FormEvent) => {
+    e?.preventDefault();
 
     if (editingMessage) {
         await onEditMessage(editingMessage, content);
@@ -142,7 +144,7 @@ export function ChatInput({
     }
 
     if (audioBlob) {
-        onSendMessage('', isAnonymous, { blob: audioBlob, duration: audioDuration }, replyContext);
+        onSendMessage('', isAnonymous, { file: audioBlob as File, type: 'audio', duration: audioDuration }, replyContext);
         handleDeleteRecording();
     } else if (content.trim()) {
       onSendMessage(content.trim(), isAnonymous, undefined, replyContext);
@@ -150,6 +152,23 @@ export function ChatInput({
     }
     onClearReply();
   };
+  
+  const handleSendImage = (caption: string, file: File) => {
+      let replyContext: Message['replyTo'] | undefined;
+      if (replyingTo) {
+          const senderName = isDM ? getTruncatedName(user?.displayName) : (replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName));
+          replyContext = {
+              messageId: replyingTo.id,
+              content: replyingTo.content || 'Media message',
+              userId: replyingTo.userId,
+              userName: senderName,
+          };
+      }
+      onSendMessage(caption, isAnonymous, { file, type: 'image' }, replyContext);
+      setImageToSend(null);
+      onClearReply();
+  };
+
   
   const getTruncatedName = (name: string | undefined) => {
     if (!name) return 'User';
@@ -165,22 +184,10 @@ export function ChatInput({
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      let replyContext: Message['replyTo'] | undefined;
-      if (replyingTo) {
-          const senderName = isDM 
-              ? getTruncatedName(user?.displayName)
-              : (replyingTo.isAnonymous ? "Anonymous User" : getTruncatedName(replyingTo.userName));
-          replyContext = {
-              messageId: replyingTo.id,
-              content: replyingTo.content || 'Media message',
-              userId: replyingTo.userId,
-              userName: senderName,
-          };
-      }
-      onSendMessage(content.trim(), isAnonymous, { file, type: 'image' }, replyContext);
-      setContent('');
-      onClearReply();
+      setImageToSend(file);
     }
+    // Reset input value to allow selecting the same file again
+    if(e.target) e.target.value = '';
   };
 
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -230,6 +237,7 @@ export function ChatInput({
   }
 
   return (
+    <>
     <form onSubmit={handleSend} className="flex flex-col gap-2">
       {replyingTo && <ChatQuote replyTo={{
           messageId: replyingTo.id,
@@ -285,5 +293,11 @@ export function ChatInput({
         </div>
        )}
     </form>
+     <ImagePreviewDialog
+        file={imageToSend}
+        onClose={() => setImageToSend(null)}
+        onSend={handleSendImage}
+      />
+    </>
   );
 }
