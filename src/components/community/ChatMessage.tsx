@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/communityService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, MoreHorizontal, Reply, Edit, Trash2 } from "lucide-react";
+import { User as UserIcon, MoreHorizontal, Reply, Edit, Trash2, ThumbsUp, Heart, Laugh, Sparkles, Frown, Angry } from "lucide-react";
 import Link from 'next/link';
 import { WaveformAudioPlayer } from './WaveformAudioPlayer';
 import {
@@ -56,6 +56,20 @@ const reactionEmojis: { [key: string]: string } = {
   sad: '😢',
   angry: '😠',
 };
+
+const reactionIcons: { [key: string]: React.FC<any> } = {
+  like: ThumbsUp,
+  love: Heart,
+  haha: Laugh,
+  wow: Sparkles,
+  sad: Frown,
+  angry: Angry,
+};
+const reactionColors: { [key: string]: string } = {
+  like: 'text-blue-500', love: 'text-red-500', haha: 'text-yellow-500',
+  wow: 'text-indigo-400', sad: 'text-yellow-600', angry: 'text-orange-600'
+};
+
 
 export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onReply, onEdit, onDelete }: ChatMessageProps) {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
