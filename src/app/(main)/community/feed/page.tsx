@@ -1,5 +1,5 @@
 'use client';
-import { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, lazy, Suspense } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Image as ImageIcon, Send, X, ThumbsUp, MessageSquare, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare as MessageSquareIcon, EyeOff, Angry, Sparkles, Frown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -84,7 +84,7 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
     <div className="glass-card p-4 rounded-2xl mb-6">
       <div className="flex gap-4">
         <Avatar>
-          <AvatarImage src={isAnonymous ? undefined : (user.photoURL ?? undefined)} alt={isAnonymous ? 'Anonymous' : user.displayName || 'User'} />
+          <AvatarImage src={isAnonymous ? undefined : user.photoURL ?? undefined} alt={isAnonymous ? 'Anonymous' : user.displayName || 'User'} />
           <AvatarFallback>{isAnonymous ? <EyeOff/> : user.displayName?.[0]}</AvatarFallback>
         </Avatar>
         <textarea
@@ -341,8 +341,8 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-[95%] mx-auto flex items-center justify-center bg-black">
-                    <img src={post.imageUrl} alt="Post image" className="w-full h-auto object-contain" />
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-full mx-auto flex items-center justify-center bg-black">
+                    <img src={post.imageUrl} alt="Post image" className="w-auto h-auto object-contain max-h-[300px]" />
                 </div>
             )}
 
