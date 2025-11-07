@@ -226,7 +226,7 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
                   </div>
                   {post.imageUrl && (
                       <div className="overflow-hidden bg-black/20 rounded-xl p-2 max-h-[250px]">
-                        <img src={post.imageUrl} alt="Post image" className="rounded-lg object-cover w-full h-full" />
+                        <img src={post.imageUrl} alt="Post image" className="rounded-lg w-full h-full object-cover" />
                       </div>
                   )}
                 </div>
