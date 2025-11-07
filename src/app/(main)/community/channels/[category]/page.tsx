@@ -44,8 +44,9 @@ export default function ChannelsPage({ params }: { params: { category: string } 
 
   const queryOptions = useMemo(() => {
     const type = category as Channel['type'];
-    if (type === 'level' && user?.level) {
-      return { where: ['levelId', '==', user.level], orderBy: ['createdAt', 'desc'] };
+    if (type === 'level') {
+        const userLevel = user?.level || 'Unknown';
+        return { where: ['levelId', '==', userLevel], orderBy: ['createdAt', 'desc'] };
     }
     if (type === 'private' && user?.uid) {
       return { where: ['members', 'array-contains', user.uid], orderBy: ['createdAt', 'desc'] };

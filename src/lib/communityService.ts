@@ -95,7 +95,7 @@ export async function createChannel(
     const channelsColRef = collection(db, 'channels');
     const newDocRef = doc(channelsColRef);
     
-    const newChannelData: Partial<Channel> = {
+    const newChannelData: Omit<Channel, 'createdAt' | 'id'> & { createdAt: any; id: string } = {
         id: newDocRef.id,
         name,
         description,
