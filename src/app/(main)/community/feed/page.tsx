@@ -1,16 +1,24 @@
 'use client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image, Send, X, MoreHorizontal, MessageCircle, ThumbsUp } from 'lucide-react';
+import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { createPost, type Post } from '@/lib/communityService';
+import { createPost, type Post, togglePostReaction } from '@/lib/communityService';
 import { useToast } from '@/hooks/use-toast';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+
+const getTruncatedName = (name: string | undefined, count = 2) => {
+    if (!name) return 'User';
+    const nameParts = name.split(' ');
+    return nameParts.slice(0, count).join(' ');
+};
+
 
 const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
   const { user } = useAuthStore();
@@ -51,6 +59,8 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
   
   if (!user) return null;
 
+  const displayName = getTruncatedName(user.displayName);
+
   return (
     <div className="glass-card p-4 rounded-2xl mb-6">
       <div className="flex gap-4">
@@ -61,7 +71,7 @@ const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
         <textarea
           value={postContent}
           onChange={(e) => setPostContent(e.target.value)}
-          placeholder={`What's on your mind, ${user.displayName}?`}
+          placeholder={`What's on your mind, ${displayName}?`}
           className="w-full bg-transparent text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-lg"
           rows={postContent.length > 50 ? 3 : 2}
         />
@@ -121,6 +131,22 @@ const PostAuthor = ({ userId }: { userId: string }) => {
 };
 
 const PostCard = ({ post }: { post: Post }) => {
+    const { user: currentUser } = useAuthStore();
+    const hasLiked = useMemo(() => {
+        if (!currentUser || !post.reactions) return false;
+        return post.reactions.hasOwnProperty(currentUser.uid);
+    }, [currentUser, post.reactions]);
+    
+    const likeCount = useMemo(() => {
+        if (!post.reactions) return 0;
+        return Object.keys(post.reactions).length;
+    }, [post.reactions]);
+
+    const handleLike = async () => {
+        if(!currentUser) return;
+        await togglePostReaction(post.id, currentUser.uid);
+    }
+    
     return (
         <div className="glass-card p-4 rounded-2xl">
             <div className="flex items-center justify-between">
@@ -137,8 +163,9 @@ const PostCard = ({ post }: { post: Post }) => {
             )}
 
             <div className="mt-4 flex items-center justify-between text-slate-400 border-t border-white/10 pt-2">
-                 <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full">
-                    <ThumbsUp className="mr-2 h-4 w-4"/> Like
+                 <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full" onClick={handleLike}>
+                    <ThumbsUp className={`mr-2 h-4 w-4 ${hasLiked ? 'text-blue-500 fill-current' : ''}`}/> 
+                    {likeCount > 0 ? `${likeCount} Like${likeCount > 1 ? 's' : ''}` : 'Like'}
                  </Button>
                  <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full">
                     <MessageCircle className="mr-2 h-4 w-4"/> Comment

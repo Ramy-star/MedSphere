@@ -223,15 +223,8 @@
         "commentCount": { "type": "number", "default": 0 },
         "reactions": {
           "type": "object",
-          "properties": {
-            "like": { "type": "number", "default": 0 },
-            "love": { "type": "number", "default": 0 },
-            "support": { "type": "number", "default": 0 },
-            "haha": { "type": "number", "default": 0 },
-            "wow": { "type": "number", "default": 0 },
-            "sad": { "type": "number", "default": 0 },
-            "angry": { "type": "number", "default": 0 }
-          }
+          "description": "A map of user IDs to their reaction type.",
+          "additionalProperties": { "type": "string" }
         }
       },
       "required": ["id", "userId", "content", "createdAt"]

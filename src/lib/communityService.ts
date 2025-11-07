@@ -1,6 +1,6 @@
 'use client';
 import { db } from '@/firebase';
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc, writeBatch } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { useAuthStore } from '@/stores/auth-store';
 import { contentService } from './contentService';
@@ -31,7 +31,7 @@ export interface Post {
     createdAt: any;
     updatedAt?: any;
     commentCount?: number;
-    reactions?: { [key: string]: number };
+    reactions: { [userId: string]: string }; // userId: reactionType
 }
 
 export interface DirectMessage {
@@ -192,7 +192,9 @@ export async function createPost(userId: string, content: string, imageFile: Fil
     let imageCloudinaryPublicId: string | undefined;
 
     if (imageFile) {
-        const uploadResult = await contentService.uploadUserAvatar({ id: userId } as any, imageFile, () => {});
+        // Since this is not a user avatar, we can simplify the upload call.
+        // Let's assume a generic folder for posts.
+        const uploadResult = await contentService.uploadUserAvatar({ id: userId } as any, imageFile, () => {}, 'posts');
         imageUrl = uploadResult.url;
         imageCloudinaryPublicId = uploadResult.publicId;
     }
@@ -204,6 +206,7 @@ export async function createPost(userId: string, content: string, imageFile: Fil
         id: newDocRef.id,
         userId,
         content,
+        reactions: {},
         createdAt: serverTimestamp(),
         ...(imageUrl && { imageUrl }),
         ...(imageCloudinaryPublicId && { imageCloudinaryPublicId }),
@@ -230,4 +233,25 @@ export async function deletePost(post: Post) {
     }
     const postRef = doc(db, 'posts', post.id);
     await deleteDoc(postRef);
+}
+
+export async function togglePostReaction(postId: string, userId: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const postRef = doc(db, 'posts', postId);
+    
+    const postSnap = await getDoc(postRef);
+    if(!postSnap.exists()) throw new Error("Post not found.");
+
+    const postData = postSnap.data() as Post;
+    const newReactions = { ...postData.reactions };
+
+    if (newReactions[userId]) {
+        delete newReactions[userId];
+    } else {
+        newReactions[userId] = 'like'; // For now, only 'like' is supported
+    }
+
+    await updateDoc(postRef, {
+        reactions: newReactions,
+    });
 }
