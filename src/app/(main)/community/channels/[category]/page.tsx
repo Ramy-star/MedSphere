@@ -99,16 +99,24 @@ export default function ChannelsPage({ params }: { params: { category: string } 
     const type = category as Channel['type'];
     if (type === 'level') {
         const userLevel = user?.level || 'Unknown';
-        return { where: ['levelId', '==', userLevel], orderBy: ['lastMessage.timestamp', 'desc'] };
+        return { where: ['levelId', '==', userLevel] };
     }
     if (type === 'private' && user?.uid) {
-      return { where: ['members', 'array-contains', user.uid], orderBy: ['lastMessage.timestamp', 'desc'] };
+      return { where: ['members', 'array-contains', user.uid] };
     }
-    // For 'public' and any other case
-    return { where: ['type', '==', 'public'], orderBy: ['lastMessage.timestamp', 'desc'] };
+    return { where: ['type', '==', 'public'] };
   }, [category, user]);
 
-  const { data: channels, loading } = useCollection<Channel>('channels', queryOptions);
+  const { data, loading } = useCollection<Channel>('channels', queryOptions);
+
+  const channels = useMemo(() => {
+    if (!data) return [];
+    return [...data].sort((a, b) => {
+        const aTime = a.lastMessage?.timestamp?.seconds || 0;
+        const bTime = b.lastMessage?.timestamp?.seconds || 0;
+        return bTime - aTime;
+    });
+  }, [data]);
 
   const categoryTitles: { [key: string]: string } = {
     public: 'Public Channels',
