@@ -211,20 +211,22 @@ const EditPostDialog = ({ post, open, onOpenChange, onPostUpdated }: { post: Pos
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="glass-card sm:max-w-2xl p-0">
+            <DialogContent className="glass-card sm:max-w-2xl p-0 rounded-2xl bg-slate-900/80 backdrop-blur-lg">
                  <DialogHeader className="p-6 pb-4">
                     <DialogTitle className="text-xl">Edit Post</DialogTitle>
                 </DialogHeader>
-                <div className="flex flex-col gap-4 px-6 max-h-[70vh]">
-                  <Textarea
-                      ref={textareaRef}
-                      value={content}
-                      onChange={(e) => setContent(e.target.value)}
-                      className="w-full bg-slate-800/60 border-slate-700 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[150px] max-h-[300px] rounded-xl"
-                  />
+                <div className="flex flex-col gap-4 px-6 max-h-[70vh] overflow-y-auto no-scrollbar">
+                  <div className="bg-slate-800/60 rounded-xl border border-slate-700 p-1">
+                      <Textarea
+                          ref={textareaRef}
+                          value={content}
+                          onChange={(e) => setContent(e.target.value)}
+                          className="w-full bg-transparent border-0 text-white placeholder-slate-400 focus:outline-none resize-none no-scrollbar text-base min-h-[150px]"
+                      />
+                  </div>
                   {post.imageUrl && (
-                      <div className="overflow-y-auto no-scrollbar flex-shrink-0 bg-black/20 rounded-xl p-2">
-                        <img src={post.imageUrl} alt="Post image" className="rounded-lg object-contain w-full mx-auto" style={{ maxHeight: '250px' }} />
+                      <div className="overflow-hidden bg-black/20 rounded-xl p-2">
+                        <img src={post.imageUrl} alt="Post image" className="rounded-lg object-contain w-full mx-auto max-h-[250px]" />
                       </div>
                   )}
                 </div>
@@ -340,7 +342,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
             {post.content && <p className="mt-4 text-white whitespace-pre-wrap">{post.content}</p>}
             
             {post.imageUrl && (
-                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-full mx-auto flex items-center justify-center bg-black">
+                <div className="mt-4 rounded-lg overflow-hidden max-h-[300px] w-[95%] mx-auto flex items-center justify-center bg-black">
                     <img src={post.imageUrl} alt="Post image" className="w-full h-full object-cover max-h-[300px]" />
                 </div>
             )}
