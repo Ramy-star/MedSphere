@@ -1,7 +1,7 @@
 'use client';
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight } from 'lucide-react';
+import { ArrowLeft, Image, Send, X, ThumbsUp, MessageCircle, MoreHorizontal, Trash2, Edit, Globe, Loader2, CornerDownRight, Heart, Laugh, Angry, Annoyed, HandHelping, Hand, ThumbsDown, Clapperboard, FileQuestion, MessageSquare } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -26,6 +26,8 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 import { CommentThread } from '@/components/community/CommentThread';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { motion } from 'framer-motion';
 
 
 const getTruncatedName = (name: string | undefined, count = 2) => {
@@ -33,7 +35,6 @@ const getTruncatedName = (name: string | undefined, count = 2) => {
     const nameParts = name.split(' ');
     return nameParts.slice(0, count).join(' ');
 };
-
 
 const CreatePost = ({ onPostCreated }: { onPostCreated: () => void }) => {
   const { user } = useAuthStore();
@@ -208,19 +209,22 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
     const [showComments, setShowComments] = useState(false);
 
 
-    const hasLiked = useMemo(() => {
-        if (!currentUser || !post.reactions) return false;
-        return post.reactions.hasOwnProperty(currentUser.uid);
+    const userReaction = useMemo(() => {
+        if (!currentUser || !post.reactions) return null;
+        return post.reactions[currentUser.uid];
     }, [currentUser, post.reactions]);
     
-    const likeCount = useMemo(() => {
-        if (!post.reactions) return 0;
-        return Object.keys(post.reactions).length;
+    const reactionCounts = useMemo(() => {
+        if (!post.reactions) return {};
+        return Object.values(post.reactions).reduce((acc, reaction) => {
+            acc[reaction] = (acc[reaction] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
     }, [post.reactions]);
 
-    const handleLike = async () => {
+    const handleReaction = async (reactionType: string) => {
         if(!currentUser) return;
-        await togglePostReaction(post.id, currentUser.uid);
+        await togglePostReaction(post.id, currentUser.uid, reactionType);
     }
 
     const handleDelete = async () => {
@@ -238,6 +242,28 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
     const isOwner = currentUser?.uid === post.userId;
     
     const postDate = post.createdAt?.toDate ? post.createdAt.toDate() : new Date(post.createdAt);
+
+    const reactionIcons: {[key: string]: React.FC<any>} = {
+        like: ThumbsUp,
+        love: Heart,
+        support: HandHelping,
+        haha: Laugh,
+        wow: Clapperboard,
+        sad: Annoyed,
+        angry: Angry
+    };
+
+    const reactionColors: {[key: string]: string} = {
+        like: 'text-blue-500',
+        love: 'text-red-500',
+        support: 'text-green-500',
+        haha: 'text-yellow-500',
+        wow: 'text-indigo-500',
+        sad: 'text-yellow-600',
+        angry: 'text-orange-600'
+    };
+
+    const CurrentReactionIcon = userReaction ? reactionIcons[userReaction] : ThumbsUp;
 
     return (
       <>
@@ -277,13 +303,29 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
                 </div>
             )}
 
-            <div className="mt-4 flex items-center justify-between text-slate-400 border-t border-white/10 pt-2">
-                 <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full" onClick={handleLike}>
-                    <ThumbsUp className={`mr-2 h-4 w-4 ${hasLiked ? 'text-blue-500 fill-current' : ''}`}/> 
-                    {likeCount > 0 ? `${likeCount} Like${likeCount > 1 ? 's' : ''}` : 'Like'}
-                 </Button>
+             <div className="mt-4 flex items-center justify-between text-slate-400 border-t border-white/10 pt-2">
+                 <Popover>
+                    <PopoverTrigger asChild>
+                         <Button variant="ghost" className={`hover:bg-white/10 rounded-full ${userReaction ? reactionColors[userReaction] : 'text-slate-400'}`}>
+                            <CurrentReactionIcon className={`mr-2 h-4 w-4 ${userReaction ? 'fill-current' : ''}`}/> 
+                             {userReaction ? userReaction.charAt(0).toUpperCase() + userReaction.slice(1) : 'Like'}
+                         </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-1 rounded-full bg-slate-800 border-slate-700">
+                        <div className="flex gap-1">
+                           {Object.keys(reactionIcons).map(reaction => {
+                                const Icon = reactionIcons[reaction];
+                                return (
+                                    <motion.button key={reaction} whileHover={{ scale: 1.2 }} whileTap={{ scale: 0.9 }} className="p-2 rounded-full hover:bg-white/20" onClick={() => handleReaction(reaction)}>
+                                        <Icon className={reactionColors[reaction]}/>
+                                    </motion.button>
+                                )
+                           })}
+                        </div>
+                    </PopoverContent>
+                 </Popover>
                  <Button variant="ghost" className="text-slate-400 hover:text-white hover:bg-white/10 rounded-full" onClick={() => setShowComments(prev => !prev)}>
-                    <MessageCircle className="mr-2 h-4 w-4"/> Comment
+                    <MessageSquare className="mr-2 h-4 w-4"/> Comment
                  </Button>
             </div>
              {showComments && (
