@@ -47,6 +47,12 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   const handleCardClick = () => {
       router.push(`/community/chat/${channel.id}`);
   }
+  
+  const getTruncatedName = (name: string | undefined) => {
+    if (!name) return 'User';
+    const nameParts = name.split(' ');
+    return nameParts.slice(0, 2).join(' ');
+  }
 
   return (
     <div 
@@ -59,7 +65,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
              {channel.lastMessage && (
                 <div className="mt-3 pt-3 border-t border-white/10 text-xs">
                     <p className="text-slate-300 truncate">
-                        <span className="font-semibold">{channel.lastMessage.userName || 'User'}:</span> {channel.lastMessage.text}
+                        <span className="font-semibold">{getTruncatedName(channel.lastMessage.userName)}:</span> {channel.lastMessage.text}
                     </p>
                     <p className="text-slate-500 mt-1">
                         {channel.lastMessage.timestamp && formatDistanceToNow(new Date(channel.lastMessage.timestamp.seconds * 1000), { addSuffix: true })}
@@ -97,23 +103,22 @@ export default function ChannelsPage({ params }: { params: { category: string } 
 
   const queryOptions = useMemo(() => {
     const type = category as Channel['type'];
-    if (type === 'level') {
-        const userLevel = user?.level || 'Unknown';
-        return { where: ['levelId', '==', userLevel] };
+    if (type === 'level' && user?.level) {
+        return { where: ['levelId', '==', user.level] };
     }
     if (type === 'private' && user?.uid) {
       return { where: ['members', 'array-contains', user.uid] };
     }
     return { where: ['type', '==', 'public'] };
   }, [category, user]);
-
+  
   const { data, loading } = useCollection<Channel>('channels', queryOptions);
   
   const channels = useMemo(() => {
     if (!data) return [];
     return [...data].sort((a, b) => {
-        const aTime = a.lastMessage?.timestamp?.seconds || 0;
-        const bTime = b.lastMessage?.timestamp?.seconds || 0;
+        const aTime = a.lastMessage?.timestamp?.seconds || a.createdAt?.seconds || 0;
+        const bTime = b.lastMessage?.timestamp?.seconds || b.createdAt?.seconds || 0;
         return bTime - aTime;
     });
   }, [data]);

@@ -69,7 +69,14 @@ export async function sendMessage(channelId: string, userId: string, content: st
 
     const channelRef = doc(db, 'channels', channelId);
     const user = useAuthStore.getState().user;
-    const userName = user?.displayName || 'User';
+    let userName = user?.displayName || 'User';
+
+    // Truncate name to first two parts
+    const nameParts = userName.split(' ');
+    if (nameParts.length > 2) {
+        userName = `${nameParts[0]} ${nameParts[1]}`;
+    }
+
 
     await updateDoc(channelRef, {
         lastMessage: {
