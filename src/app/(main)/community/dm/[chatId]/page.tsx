@@ -13,6 +13,8 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { ImagePreviewDialog } from '@/components/community/ImagePreviewDialog';
 
 export default function DirectMessagePage({ params }: { params: { chatId: string } }) {
   const { chatId } = use(params);
