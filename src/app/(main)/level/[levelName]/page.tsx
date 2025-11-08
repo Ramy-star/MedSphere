@@ -9,31 +9,30 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { prefetcher } from '@/lib/prefetchService';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
+import { where } from 'firebase/firestore';
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
   const resolvedParams = use(params);
   const { levelName } = resolvedParams;
   const router = useRouter();
-  // Firestore queries are case-sensitive. Decoding should be sufficient.
   const decodedLevelName = decodeURIComponent(levelName);
   
   const { data: levels, loading: loadingLevels } = useCollection<Content>('content', {
-    where: ['name', '==', decodedLevelName],
+    where: [where('type', '==', 'LEVEL'), where('name', '==', decodedLevelName)],
     limit: 1,
   });
   
   const level = useMemo(() => levels?.[0], [levels]);
 
   const { data: semesters, loading: loadingSemesters } = useCollection<Content>('content', {
-    where: ['parentId', '==', level?.id],
+    where: where('parentId', '==', level?.id),
     orderBy: ['order', 'asc'],
-    disabled: !level, // Disable query until level is found
+    disabled: !level, 
   });
 
   const loading = loadingLevels || (!!level && loadingSemesters);
 
   useEffect(() => {
-    // If after loading levels, no level is found, show 404.
     if (!loadingLevels && !level) {
       notFound();
     }

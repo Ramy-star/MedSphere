@@ -127,7 +127,7 @@ export function FolderGrid({
   const { can } = useAuthStore();
   const canReorder = can('canReorder', parentId);
 
-  const { data: fetchedItems, loading, offline } = useCollection<Content>('content', {
+  const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: where('parentId', '==', parentId),
       orderBy: ['order', 'asc']
   });
