@@ -56,8 +56,11 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
           
           if (memoizedOptions.where) {
               const whereClauses = Array.isArray(memoizedOptions.where) ? memoizedOptions.where : [memoizedOptions.where];
-              if (whereClauses.every(clause => clause)) { // Ensure no clause is undefined
+              // This is the critical fix. Ensure we only push valid QueryConstraint objects.
+              if (whereClauses.every(c => c && typeof c === 'object' && '_type' in c && c._type === 'queryConstraint')) {
                   constraints.push(...whereClauses);
+              } else {
+                  console.warn("useCollection: Invalid 'where' option provided. It should be a QueryConstraint or an array of QueryConstraints.", memoizedOptions.where);
               }
           }
 

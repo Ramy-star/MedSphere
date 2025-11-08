@@ -13,6 +13,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { FolderCard } from '@/components/FolderCard';
 import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
+import { where } from 'firebase/firestore';
 
 
 // This forces the page to be dynamically rendered.
@@ -24,7 +25,7 @@ export default function HomePage() {
   const router = useRouter();
   const { can } = useAuthStore();
   const { data: allItems, loading } = useCollection<Content>('content', {
-      where: ['type', '==', 'LEVEL'],
+      where: where('type', '==', 'LEVEL'),
       orderBy: ['order', 'asc']
   });
 
