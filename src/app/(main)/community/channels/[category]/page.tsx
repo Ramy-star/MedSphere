@@ -109,30 +109,37 @@ export default function ChannelsPage({ params }: { params: { category: string } 
     }
   }, [category, isSuperAdmin, router]);
 
-  const queryOptions = useMemo(() => {
-    if (category === 'private' && user?.uid) {
-      return { where: ['members', 'array-contains', user.uid] };
-    }
-    if (category === 'level') {
-        return { where: ['type', '==', 'level'] };
-    }
-    return { where: ['type', '==', 'public'] };
-  }, [category, user]);
-  
-  const { data, loading } = useCollection<Channel>('channels', queryOptions);
-  
+  // Fetch all channels, then filter on the client. This ensures Super Admin sees all level channels.
+  const { data, loading } = useCollection<Channel>('channels');
+
   const channels = useMemo(() => {
-    if (!data) return [];
-    if (category === 'level') {
-      // Custom sort for level channels
-      return [...data].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
-    }
-    return [...data].sort((a, b) => {
-        const aTime = a.lastMessage?.timestamp?.seconds || a.createdAt?.seconds || 0;
-        const bTime = b.lastMessage?.timestamp?.seconds || b.createdAt?.seconds || 0;
-        return bTime - aTime;
-    });
-  }, [data, category]);
+      if (!data) return [];
+
+      let filteredChannels = data;
+
+      if (category === 'public') {
+          filteredChannels = data.filter(c => c.type === 'public');
+      } else if (category === 'private' && user?.uid) {
+          filteredChannels = data.filter(c => c.type === 'private' && c.members.includes(user.uid));
+      } else if (category === 'level') {
+          if (isSuperAdmin) {
+              filteredChannels = data.filter(c => c.type === 'level');
+          } else {
+              // This case is largely handled by the redirect, but as a fallback:
+              filteredChannels = data.filter(c => c.type === 'level' && c.levelId === user?.level);
+          }
+      }
+
+      if (category === 'level') {
+          // Custom sort for level channels
+          return [...filteredChannels].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      }
+      return [...filteredChannels].sort((a, b) => {
+          const aTime = a.lastMessage?.timestamp?.seconds || a.createdAt?.seconds || 0;
+          const bTime = b.lastMessage?.timestamp?.seconds || b.createdAt?.seconds || 0;
+          return bTime - aTime;
+      });
+  }, [data, category, user, isSuperAdmin]);
 
   const categoryTitles: { [key: string]: string } = {
     public: 'Public Channels',
@@ -142,7 +149,7 @@ export default function ChannelsPage({ params }: { params: { category: string } 
 
   const title = categoryTitles[category] || 'Channels';
   
-  if (category === 'level' && !isSuperAdmin) {
+  if (category === 'level' && !isSuperAdmin && !loading) {
       return null; // Render nothing while redirecting
   }
 
