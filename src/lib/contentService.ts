@@ -1,4 +1,3 @@
-
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
@@ -15,7 +14,7 @@ import * as pdfjs from 'pdfjs-dist';
 
 // Set workerSrc once, globally for client-side operations.
 if (typeof window !== 'undefined') {
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${'3.11.174'}/pdf.worker.min.js`;
 }
 
 export type Content = {
@@ -1065,6 +1064,79 @@ export const contentService = {
       const data = await uploadResponse.json();
       return createProxiedUrl(data.secure_url);
   },
-};
+  
+  async resetToInitialStructure(): Promise<void> {
+    if (!db) throw new Error("Firestore not initialized.");
 
+    console.log("Starting structure reset...");
     
+    // 1. Get the IDs of the items to keep (original Levels and Semesters)
+    const seedIdsToKeep = new Set(
+        seedData
+            .filter(item => item.type === 'LEVEL' || item.type === 'SEMESTER')
+            .map(item => item.id)
+    );
+    // Also keep the telegram inbox
+    seedIdsToKeep.add(telegramInbox.id);
+
+    // 2. Fetch all content from Firestore
+    const contentRef = collection(db, 'content');
+    const allContentSnapshot = await getDocs(contentRef);
+    
+    const itemsToDelete: Content[] = [];
+    
+    allContentSnapshot.forEach(doc => {
+        const item = doc.data() as Content;
+        if (!seedIdsToKeep.has(item.id)) {
+            itemsToDelete.push(item);
+        }
+    });
+
+    if (itemsToDelete.length === 0) {
+        console.log("No items to delete. Structure is already clean.");
+        return;
+    }
+
+    console.log(`Found ${itemsToDelete.length} items to delete.`);
+
+    // 3. Collect Cloudinary public IDs for deletion
+    const assetsToDelete: { publicId: string, resourceType: 'image' | 'video' | 'raw' }[] = [];
+    itemsToDelete.forEach(item => {
+        if (item.metadata?.cloudinaryPublicId) {
+            assetsToDelete.push({
+                publicId: item.metadata.cloudinaryPublicId,
+                resourceType: item.metadata.cloudinaryResourceType || 'raw'
+            });
+        }
+        if (item.metadata?.iconCloudinaryPublicId) {
+             assetsToDelete.push({
+                publicId: item.metadata.iconCloudinaryPublicId,
+                resourceType: 'image'
+            });
+        }
+    });
+
+    // 4. Delete Firestore documents in a batch
+    const batch = writeBatch(db);
+    itemsToDelete.forEach(item => {
+        batch.delete(doc(db, 'content', item.id));
+    });
+    
+    console.log("Committing Firestore batch deletion...");
+    await batch.commit();
+    console.log("Firestore documents deleted.");
+
+    // 5. Delete Cloudinary assets
+    if (assetsToDelete.length > 0) {
+        console.log(`Deleting ${assetsToDelete.length} assets from Cloudinary...`);
+        for (const asset of assetsToDelete) {
+            try {
+                await this.deleteCloudinaryAsset(asset.publicId, asset.resourceType);
+            } catch (error) {
+                console.error(`Failed to delete Cloudinary asset ${asset.publicId}:`, error);
+            }
+        }
+        console.log("Cloudinary asset deletion process completed.");
+    }
+  },
+};
