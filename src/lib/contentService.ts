@@ -501,6 +501,15 @@ export const contentService = {
     return xhr;
   },
     async uploadUserAvatar(user: UserProfile, file: File, onProgress: (progress: number) => void, folderName: string = 'avatars'): Promise<{ publicId: string, url: string }> {
+        // Before uploading, delete the old asset if it exists
+        if (folderName === 'avatars' && user.metadata?.cloudinaryPublicId) {
+            try {
+                await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
+            } catch (e) {
+                console.warn("Failed to delete old avatar, proceeding with upload:", e);
+            }
+        }
+        
         const folder = `${folderName}/${user.id}`;
         const public_id = `${folder}/${nanoid()}`;
         const paramsToSign = { 
@@ -514,10 +523,6 @@ export const contentService = {
         });
         if (!sigResponse.ok) throw new Error('Failed to get signature.');
         const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
-        
-        if (folderName === 'avatars' && user.photoURL && user.metadata?.cloudinaryPublicId) {
-            await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
-        }
 
         const resourceType = folderName === 'community_media' ? 'auto' : 'image';
 
@@ -568,6 +573,15 @@ export const contentService = {
         });
     },
     async uploadUserCoverPhoto(user: UserProfile, file: File, onProgress: (progress: number) => void): Promise<{ publicId: string, url: string }> {
+        // Before uploading, delete the old asset if it exists
+        if (user.metadata?.coverPhotoCloudinaryPublicId) {
+            try {
+                await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
+            } catch (e) {
+                console.warn("Failed to delete old cover photo, proceeding with upload:", e);
+            }
+        }
+        
         const folder = `covers/${user.id}`;
         const public_id = `${folder}/${uuidv4()}`;
         const paramsToSign = { 
@@ -581,9 +595,7 @@ export const contentService = {
         });
         if (!sigResponse.ok) throw new Error('Failed to get signature.');
         const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
-        if (user.metadata?.coverPhotoCloudinaryPublicId) {
-            await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
-        }
+
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
             const formData = new FormData();
@@ -628,11 +640,18 @@ export const contentService = {
         const itemRef = doc(db, 'content', itemId);
         const itemSnap = await getDoc(itemRef);
         if (!itemSnap.exists()) throw new Error("Item not found");
+        
+        // Before uploading, delete the old asset if it exists
         const existingItem = itemSnap.data() as Content;
         const oldPublicId = existingItem.metadata?.iconCloudinaryPublicId;
         if (oldPublicId) {
-            await this.deleteCloudinaryAsset(oldPublicId, 'image');
+            try {
+                await this.deleteCloudinaryAsset(oldPublicId, 'image');
+            } catch(e) {
+                console.warn("Failed to delete old icon, proceeding with upload:", e);
+            }
         }
+        
         const folder = 'icons';
         const public_id = `${folder}/${uuidv4()}`;
         const paramsToSign = { 
@@ -1128,5 +1147,3 @@ export const contentService = {
     }
   },
 };
-
-    
