@@ -33,6 +33,7 @@ import { useRouter } from 'next/navigation';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
+import { where } from 'firebase/firestore';
 
 
 const FilePreviewModal = dynamic(() => import('./FilePreviewModal').then(mod => mod.FilePreviewModal), {
@@ -127,7 +128,7 @@ export function FolderGrid({
   const canReorder = can('canReorder', parentId);
 
   const { data: fetchedItems, loading, offline } = useCollection<Content>('content', {
-      where: ['parentId', '==', parentId],
+      where: where('parentId', '==', parentId),
       orderBy: ['order', 'asc']
   });
 
