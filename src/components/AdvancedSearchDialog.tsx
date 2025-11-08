@@ -236,6 +236,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
                                         onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
                                         onToggleVisibility={() => handleToggleVisibility(item)}
                                         showDragHandle={false}
+                                        dialogContainer={dialogContentRef.current}
                                     />
                                 ))
                             ) : (

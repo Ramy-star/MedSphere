@@ -127,6 +127,7 @@ export const FileCard = React.memo(function FileCard({
     uploadingFile,
     onRemoveUpload,
     onRetryUpload,
+    dialogContainer,
 }: { 
     item: Content, 
     onFileClick: (item: Content) => void, 
@@ -140,6 +141,7 @@ export const FileCard = React.memo(function FileCard({
     uploadingFile?: UploadingFile,
     onRemoveUpload?: (id: string) => void,
     onRetryUpload?: (id: string) => void,
+    dialogContainer?: HTMLElement | null;
 }) {
     const isMobile = useIsMobile();
     const router = useRouter();
@@ -310,6 +312,7 @@ export const FileCard = React.memo(function FileCard({
                         <DropdownMenuContent 
                             className="w-48 p-2"
                             align="end"
+                            container={dialogContainer}
                             onPointerDownOutside={(e) => {
                                 if (dropdownTriggerRef.current?.contains(e.target as Node)) {
                                   e.preventDefault();
@@ -404,4 +407,4 @@ export const FileCard = React.memo(function FileCard({
            prevProps.item.metadata?.isHidden === nextProps.item.metadata?.isHidden &&
            (prevProps.user?.favorites?.includes(prevProps.item.id)) === (nextProps.user?.favorites?.includes(nextProps.item.id)) &&
            prevProps.uploadingFile === nextProps.uploadingFile;
-});
+})
