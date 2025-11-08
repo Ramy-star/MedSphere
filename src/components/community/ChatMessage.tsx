@@ -36,6 +36,7 @@ interface ChatMessageProps {
   message: Message;
   profile: any;
   isCurrentUser: boolean;
+  isConsecutive?: boolean;
   isDM?: boolean;
   onReply: (message: Message) => void;
   onEdit: (message: Message) => void;
@@ -71,7 +72,7 @@ const reactionColors: { [key: string]: string } = {
 };
 
 
-export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onReply, onEdit, onDelete }: ChatMessageProps) {
+export function ChatMessage({ message, profile, isCurrentUser, isConsecutive = false, isDM = false, onReply, onEdit, onDelete }: ChatMessageProps) {
   const [isDeleteAlertOpen, setIsDeleteAlertOpen] = useState(false);
   const { user: currentUser } = useAuthStore();
   
@@ -124,7 +125,11 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
   );
 
   return (
-    <div className={cn("flex flex-col gap-2 group/message-wrapper", alignClass)}>
+    <div className={cn(
+        "flex flex-col gap-2 group/message-wrapper", 
+        alignClass,
+        isConsecutive && (isCurrentUser ? "mt-0.5" : "mt-0.5")
+    )}>
        {message.replyTo && (
         <div className="flex items-center gap-2 max-w-[80%] text-xs border-l-2 border-slate-500 pl-2 ml-10 mr-2">
             {!isDM && <p className="font-semibold text-slate-400">{getTruncatedName(message.replyTo.userName)}:</p>}
@@ -133,16 +138,20 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
       )}
       <div className={cn("flex items-end gap-2", isCurrentUser ? "flex-row-reverse" : "", isDM && !message.audioUrl ? "max-w-full" : "max-w-[80%]")}>
         {!isCurrentUser && !isDM && (
-            isLink ? (
-                <Link href={`/users/${username}`}>
-                    {AvatarComponent}
-                </Link>
-            ) : (
-                <div className="cursor-default">{AvatarComponent}</div>
-            )
+          <div className="w-8 shrink-0">
+            {!isConsecutive && (
+                isLink ? (
+                    <Link href={`/users/${username}`}>
+                        {AvatarComponent}
+                    </Link>
+                ) : (
+                    <div className="cursor-default">{AvatarComponent}</div>
+                )
+            )}
+            </div>
         )}
         
-        <div className={cn("px-3.5 py-2 rounded-2xl relative group/bubble", bubbleClass, (message.audioUrl || message.imageUrl) && "p-2")}>
+        <div className={cn("px-3.5 py-2 rounded-2xl relative group/bubble", bubbleClass, (message.audioUrl || message.imageUrl) && "p-2", isConsecutive ? "mt-0" : "mt-1")}>
             <div className={cn("absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity", isCurrentUser ? "left-0 -translate-x-full flex-row-reverse" : "right-0 translate-x-full")}>
                <Popover>
                     <PopoverTrigger asChild>
@@ -197,7 +206,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
                 )}
             </div>
             
-            {!isCurrentUser && !isDM && (
+            {!isCurrentUser && !isDM && !isConsecutive && (
                  <p className="text-xs font-bold text-slate-300 mb-1">{senderName}</p>
             )}
             {message.audioUrl ? (
@@ -224,10 +233,12 @@ export function ChatMessage({ message, profile, isCurrentUser, isDM = false, onR
             )}
         </div>
       </div>
-      <div className={cn("text-xs text-slate-500 flex items-center gap-1.5", isCurrentUser ? 'mr-10' : (isDM ? '' : 'ml-10') )}>
-          <span>{messageTimestamp}</span>
-          {wasEdited && <span>(edited)</span>}
-      </div>
+      {!isConsecutive && (
+        <div className={cn("text-xs text-slate-500 flex items-center gap-1.5", isCurrentUser ? 'mr-10' : (isDM ? '' : 'ml-10') )}>
+            <span>{messageTimestamp}</span>
+            {wasEdited && <span>(edited)</span>}
+        </div>
+      )}
     </div>
   );
 }

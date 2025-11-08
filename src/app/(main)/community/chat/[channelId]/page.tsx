@@ -13,6 +13,8 @@ import { ChatInput } from '@/components/community/ChatInput';
 import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
+import { isSameDay, isAfter, subMinutes } from 'date-fns';
+
 
 export default function ChatPage({ params }: { params: { channelId: string } }) {
   const resolvedParams = use(params);
@@ -141,21 +143,32 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
         )}
       </header>
 
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-1">
         {(loadingMessages || loadingProfiles) && (!messages || !profiles) ? (
           <LoadingSkeleton />
         ) : (
-          messages?.map(message => (
-            <ChatMessage
-              key={message.id}
-              message={message}
-              profile={profilesMap.get(message.userId)}
-              isCurrentUser={message.userId === user?.uid}
-              onReply={setReplyingTo}
-              onEdit={setEditingMessage}
-              onDelete={handleDeleteMessage}
-            />
-          ))
+          messages?.map((message, index) => {
+            const previousMessage = messages[index - 1];
+            const isConsecutive = 
+              previousMessage &&
+              previousMessage.userId === message.userId &&
+              !previousMessage.isAnonymous && !message.isAnonymous &&
+              message.timestamp && previousMessage.timestamp &&
+              isAfter(message.timestamp.toDate(), subMinutes(previousMessage.timestamp.toDate(), -5));
+
+            return (
+                <ChatMessage
+                  key={message.id}
+                  message={message}
+                  profile={profilesMap.get(message.userId)}
+                  isCurrentUser={message.userId === user?.uid}
+                  isConsecutive={isConsecutive}
+                  onReply={setReplyingTo}
+                  onEdit={setEditingMessage}
+                  onDelete={handleDeleteMessage}
+                />
+            );
+          })
         )}
       </div>
 
