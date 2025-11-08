@@ -36,7 +36,7 @@ import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 
 const FilePreviewModal = dynamic(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal), {
@@ -622,4 +622,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
