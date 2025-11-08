@@ -171,7 +171,8 @@
             "userId": { "type": "string" },
             "userName": { "type": "string" }
           }
-        }
+        },
+        "joinRequests": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["id", "name", "type", "members", "admins", "createdAt"]
     },
@@ -185,27 +186,10 @@
         "userId": { "type": "string" },
         "content": { "type": "string" },
         "timestamp": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
         "isAnonymous": { "type": "boolean" },
         "audioUrl": { "type": "string", "format": "uri" },
         "audioDuration": { "type": "number" },
-        "audioType": { "type": "string" },
-        "imageUrl": { "type": "string", "format": "uri" },
-        "imageCloudinaryPublicId": { "type": "string" },
-        "reactions": {
-            "type": "object",
-            "description": "A map of user IDs to their reaction type.",
-            "additionalProperties": { "type": "string" }
-        },
-        "replyTo": {
-            "type": "object",
-            "properties": {
-                "messageId": { "type": "string" },
-                "content": { "type": "string" },
-                "userId": { "type": "string" },
-                "userName": { "type": "string" }
-            }
-        }
+        "audioType": { "type": "string" }
       },
       "required": ["id", "channelId", "userId", "timestamp"]
     },

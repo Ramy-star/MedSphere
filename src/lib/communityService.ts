@@ -26,6 +26,7 @@ export interface Channel {
     userId: string;
     userName: string;
   };
+  joinRequests?: string[];
 }
 
 export interface Post {
