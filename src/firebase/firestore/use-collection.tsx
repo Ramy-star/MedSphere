@@ -18,7 +18,7 @@ import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
 type CollectionOptions = {
-  where?: [string, any, any] | [string, any, any][];
+  where?: QueryConstraint | QueryConstraint[];
   orderBy?: [string, 'asc' | 'desc'];
   limit?: number;
   disabled?: boolean;
@@ -53,22 +53,16 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
         if (typeof pathOrQuery === 'string') {
           queryStringPath = pathOrQuery;
           const constraints: QueryConstraint[] = [];
+          
+          // Simplified and robust where clause handling
           if (memoizedOptions.where) {
-              if (Array.isArray(memoizedOptions.where[0])) {
-                  (memoizedOptions.where as [string, any, any][]).forEach(w => {
-                      // Add a guard to ensure the where clause values are not undefined
-                      if (w.every(val => val !== undefined)) {
-                        constraints.push(where(...w));
-                      }
-                  });
+              if (Array.isArray(memoizedOptions.where)) {
+                  constraints.push(...memoizedOptions.where);
               } else {
-                  const w = memoizedOptions.where as [string, any, any];
-                   // Add a guard to ensure the where clause values are not undefined
-                  if (w.every(val => val !== undefined)) {
-                    constraints.push(where(...w));
-                  }
+                  constraints.push(memoizedOptions.where);
               }
           }
+
           if (memoizedOptions.orderBy) {
               constraints.push(orderBy(...memoizedOptions.orderBy));
           }
