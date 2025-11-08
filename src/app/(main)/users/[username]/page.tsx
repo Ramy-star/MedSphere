@@ -3,7 +3,7 @@ import { useEffect, useState, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { UserProfile, useAuthStore } from '@/stores/auth-store';
 import { notFound, useRouter } from 'next/navigation';
-import { Loader2, MessageSquare, School, ArrowLeft } from 'lucide-react';
+import { Loader2, MessageSquare, School, ArrowLeft, Badge } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon, Crown, Shield } from 'lucide-react';
 import { InfoCard } from '@/components/profile/InfoCard';
@@ -122,7 +122,7 @@ export default function PublicProfilePage({ params }: { params: { username: stri
 
         <div className="mt-8 sm:mt-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 px-4 sm:px-8">
             <div className="lg:col-span-1 space-y-4">
-                <InfoCard icon={RoleIcon} label="Username" value={`@${user.username}`} />
+                <InfoCard icon={Badge} label="Student ID" value={user.studentId} />
                 {userLevel && <InfoCard icon={School} label="Academic Level" value={userLevel} />}
             </div>
             <div className="lg:col-span-2 space-y-6">
