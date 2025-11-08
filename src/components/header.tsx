@@ -3,8 +3,8 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox, Users, Home, NotebookPen, Palette } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox, Users, Home, NotebookPen, Palette, Camera } from 'lucide-react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
 import { Logo } from './logo';
@@ -32,6 +32,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AdvancedSearchDialog } from './AdvancedSearchDialog';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
+import { toPng } from 'html-to-image';
+import { useToast } from '@/hooks/use-toast';
 
 
 export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
@@ -42,6 +44,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const [showComingSoon, setShowComingSoon] = useState(false);
   const { can, user } = useAuthStore();
   const isMobile = useIsMobile();
+  const { toast } = useToast();
   
   useKeyboardShortcuts({
     onSearch: () => setShowAdvancedSearch(true),
@@ -55,6 +58,41 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       setShowComingSoon(true);
     }
   };
+
+  const handleScreenshot = useCallback(async () => {
+    const mainContent = document.body;
+    if (!mainContent) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Could not find the content to capture.",
+      });
+      return;
+    }
+
+    try {
+      const dataUrl = await toPng(mainContent, { 
+        cacheBust: true,
+        pixelRatio: 2, // Higher pixel ratio for better quality
+        // Filter out elements that shouldn't be in the screenshot, like the button itself
+        filter: (node: HTMLElement) => {
+            return node.id !== 'screenshot-button';
+        }
+      });
+      const link = document.createElement('a');
+      link.download = `medsphere-screenshot-${new Date().toISOString()}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Oops, something went wrong!', err);
+      toast({
+        variant: "destructive",
+        title: "Screenshot Failed",
+        description: "Could not capture the screen. Please try again.",
+      });
+    }
+  }, [toast]);
+
 
   const navItems = [
     {
@@ -110,6 +148,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const DesktopNav = () => (
     <div className="hidden md:flex items-center gap-1">
         <TooltipProvider>
+            {can('canAccessAdminPanel', null) && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" id="screenshot-button" className="rounded-full h-9 w-9 text-slate-300 hover:text-green-400" onClick={handleScreenshot}>
+                            <Camera className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Take Screenshot</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
             {can('canAccessAdminPanel', null) && (
                  <Tooltip>
                     <TooltipTrigger asChild>
