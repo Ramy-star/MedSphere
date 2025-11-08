@@ -35,13 +35,6 @@ export const SubjectCard = React.memo(function SubjectCard({
   const { can } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
-  const handleCardClick = useCallback((e: React.MouseEvent) => {
-    if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-  }, []);
-  
   const handleAction = useCallback((e: Event, action: () => void) => {
     e.preventDefault();
     e.stopPropagation();
@@ -51,7 +44,7 @@ export const SubjectCard = React.memo(function SubjectCard({
 
 
   return (
-    <Link href={subjectPath} className="block h-full" onClick={handleCardClick}>
+    <Link href={subjectPath} className="block h-full">
         <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 h-full flex flex-col justify-between hover:scale-[1.02]">
             <div>
                 <div className="flex justify-between items-start mb-4">
@@ -63,6 +56,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                                     variant="ghost" 
                                     size="icon" 
                                     className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
+                                    onClick={(e) => e.stopPropagation()}
                                 >
                                     <MoreVertical className="w-5 h-5" />
                                 </Button>

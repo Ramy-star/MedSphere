@@ -47,7 +47,6 @@ export const FolderCard = React.memo(function FolderCard({
     const { user, can } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { toast } = useToast();
-    const clickTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
     const isFavorited = user?.favorites?.includes(item.id) || false;
     
@@ -159,37 +158,11 @@ export const FolderCard = React.memo(function FolderCard({
           )}
       </DropdownMenuContent>
     );
-    
-    // Prevent click from firing during a drag operation
-    const handlePointerDown = () => {
-        // Set a timeout. If a drag starts, it will be cancelled.
-        clickTimeoutRef.current = setTimeout(() => {
-          clickTimeoutRef.current = null;
-        }, 200); // 200ms threshold to differentiate click from drag
-    };
-
-    const handlePointerUp = (e: React.MouseEvent) => {
-        if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
-            return;
-        }
-        if (clickTimeoutRef.current) {
-            clearTimeout(clickTimeoutRef.current);
-            onClick(item);
-        }
-    };
-
-    const handleDragStart = () => {
-        if (clickTimeoutRef.current) {
-            clearTimeout(clickTimeoutRef.current);
-            clickTimeoutRef.current = null;
-        }
-    };
-
 
     if (displayAs === 'list') {
         return (
              <div 
-                onClick={(e) => handlePointerUp(e)}
+                onClick={() => onClick(item)}
                 className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
@@ -237,10 +210,8 @@ export const FolderCard = React.memo(function FolderCard({
     // Grid view (default)
     return (
       <div 
+        onClick={() => onClick(item)}
         onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerMove={handleDragStart}
         className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 cursor-pointer", item.metadata?.isHidden && "opacity-60 bg-white/5")}
       >
         <div className="transition-transform duration-200 group-hover:scale-[1.01]">
@@ -253,7 +224,7 @@ export const FolderCard = React.memo(function FolderCard({
                                 variant="ghost" 
                                 size="icon" 
                                 className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
-                                onPointerDown={(e) => e.stopPropagation()} // Prevent card's onPointerDown
+                                onClick={(e) => e.stopPropagation()}
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </Button>
