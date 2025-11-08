@@ -170,13 +170,13 @@ export const contentService = {
         await runTransaction(db, async (transaction) => {
             const allSeedItems = [...seedData, telegramInbox];
 
-            for (const item of allSeedItems) {
+            for (const [index, item] of allSeedItems.entries()) {
                 const docRef = doc(contentRef, item.id);
                 const docSnap = await transaction.get(docRef);
                 if (!docSnap.exists()) {
                     transaction.set(docRef, {
                         ...item,
-                        order: allContent.findIndex(i => i.id === item.id), // Ensure order is set
+                        order: item.order ?? index, // Use existing order or index as fallback
                         createdAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
                     });
@@ -185,7 +185,7 @@ export const contentService = {
         });
         console.log('Data seeding check completed successfully.');
     } catch (e: any) {
-        if (e.code === 'permission-denied') {
+        if (e && e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
                 path: '/content (batch write)',
                 operation: 'write',
