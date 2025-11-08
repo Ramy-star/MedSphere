@@ -149,10 +149,12 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
         ) : (
           messages?.map((message, index) => {
             const previousMessage = messages[index - 1];
+            // A message is consecutive if it's from the same user, with the same anonymity status,
+            // and sent within 5 minutes of the previous one.
             const isConsecutive = 
               previousMessage &&
               previousMessage.userId === message.userId &&
-              !previousMessage.isAnonymous && !message.isAnonymous &&
+              previousMessage.isAnonymous === message.isAnonymous &&
               message.timestamp && previousMessage.timestamp &&
               isAfter(message.timestamp.toDate(), subMinutes(previousMessage.timestamp.toDate(), -5));
 

@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { Message } from "@/lib/communityService";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { User as UserIcon, MoreHorizontal, Reply, Edit, Trash2, ThumbsUp, Heart, Laugh, Sparkles, Frown, Angry } from "lucide-react";
+import { User as UserIcon, MoreHorizontal, Reply, Edit, Trash2, ThumbsUp, Heart, Laugh, Sparkles, Frown, Angry, EyeOff } from "lucide-react";
 import Link from 'next/link';
 import { WaveformAudioPlayer } from './WaveformAudioPlayer';
 import {
@@ -23,7 +23,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo } from "react";
 import { Popover, PopoverTrigger, PopoverContent } from '@/components/ui/popover';
@@ -86,7 +85,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isConsecutive = f
     : getTruncatedName(profile?.displayName);
     
   const avatarUrl = message.isAnonymous ? '' : profile?.photoURL;
-  const fallbackInitial = message.isAnonymous ? 'A' : (profile?.displayName || 'U').charAt(0).toUpperCase();
+  const fallbackInitial = message.isAnonymous ? <EyeOff size={16}/> : (profile?.displayName || 'U').charAt(0).toUpperCase();
   const username = profile?.username;
 
   const isLink = !isCurrentUser && !message.isAnonymous && username && !isDM;
@@ -120,7 +119,7 @@ export function ChatMessage({ message, profile, isCurrentUser, isConsecutive = f
   const AvatarComponent = (
     <Avatar className="h-8 w-8">
         <AvatarImage src={avatarUrl} alt={senderName} />
-        <AvatarFallback>{fallbackInitial}</AvatarFallback>
+        <AvatarFallback className={cn(message.isAnonymous && 'bg-slate-600')}>{fallbackInitial}</AvatarFallback>
     </Avatar>
   );
 
@@ -136,20 +135,19 @@ export function ChatMessage({ message, profile, isCurrentUser, isConsecutive = f
             <p className="text-slate-400 line-clamp-1">{message.replyTo.content}</p>
         </div>
       )}
-      <div className={cn("flex items-end gap-2", isCurrentUser ? "flex-row-reverse" : "", isDM && !message.audioUrl ? "max-w-full" : "max-w-[80%]")}>
-        {!isCurrentUser && !isDM && (
-          <div className="w-8 shrink-0">
-            {!isConsecutive && (
-                isLink ? (
-                    <Link href={`/users/${username}`}>
-                        {AvatarComponent}
-                    </Link>
-                ) : (
-                    <div className="cursor-default">{AvatarComponent}</div>
-                )
-            )}
-            </div>
-        )}
+      <div className={cn("flex items-end gap-2", isCurrentUser ? "flex-row-reverse" : "flex-row", isDM && !message.audioUrl ? "max-w-full" : "max-w-[80%]")}>
+        {/* Avatar and spacer for non-consecutive messages */}
+        <div className="w-8 shrink-0">
+          {!isCurrentUser && !isConsecutive && !isDM && (
+              isLink ? (
+                  <Link href={`/users/${username}`}>
+                      {AvatarComponent}
+                  </Link>
+              ) : (
+                  <div className="cursor-default">{AvatarComponent}</div>
+              )
+          )}
+        </div>
         
         <div className={cn("px-3.5 py-2 rounded-2xl relative group/bubble", bubbleClass, (message.audioUrl || message.imageUrl) && "p-2", isConsecutive ? "mt-0" : "mt-1")}>
             <div className={cn("absolute top-1/2 -translate-y-1/2 flex items-center gap-1 opacity-0 group-hover/bubble:opacity-100 transition-opacity", isCurrentUser ? "left-0 -translate-x-full flex-row-reverse" : "right-0 translate-x-full")}>
