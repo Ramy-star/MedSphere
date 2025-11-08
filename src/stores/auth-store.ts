@@ -77,6 +77,7 @@ type AuthState = {
   error: string | null;
   itemHierarchy: ItemHierarchy;
   newlyEarnedAchievement: Achievement | null;
+  set: (partial: Partial<AuthState>) => void; // Allow direct state setting
   buildHierarchy: () => (() => void);
   checkAuth: () => Promise<void>;
   login: (studentId: string, secretCode?: string) => Promise<void>;
@@ -85,7 +86,7 @@ type AuthState = {
   logoutSession: (sessionId: string) => Promise<void>;
   can: (permission: string, itemId: string | null) => boolean;
   canAddContent: (parentId: string | null) => boolean;
-  checkAndAwardAchievements: () => Promise<void>;
+  checkAndAwardAchievements: (isInitialCheck?: boolean) => Promise<void>;
   clearNewlyEarnedAchievement: () => void;
   awardSpecialAchievement: (badgeId: string) => Promise<void>;
 };
@@ -98,7 +99,7 @@ let hierarchyListenerUnsubscribe: () => void = () => {};
 const hasPermission = (user: UserProfile | null | undefined, permission: string, itemId: string | null, hierarchy: ItemHierarchy): boolean => {
     if (!user) return false;
     if (user.roles?.some(r => r.role === 'superAdmin')) return true;
-    const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator'];
+    const pagePermissions = ['canAccessAdminPanel', 'canAccessQuestionCreator', 'canAccessCommunityPage'];
     if (pagePermissions.includes(permission)) {
         return user.roles?.some(role => role.permissions?.includes(permission)) || false;
     }
@@ -138,6 +139,7 @@ const listenToUserProfile = (studentId: string) => {
     if (!db) return;
     const userDocRef = doc(db, 'users', studentId);
     userListenerUnsubscribe = onSnapshot(userDocRef, async (doc) => {
+        const isInitialLoad = useAuthStore.getState().user === undefined;
         if (doc.exists()) {
             const userProfile = { id: doc.id, ...doc.data() } as UserProfile;
             const currentSessionId = useAuthStore.getState().currentSessionId;
@@ -150,7 +152,12 @@ const listenToUserProfile = (studentId: string) => {
             }
             const isSuper = userProfile.studentId === '221100154';
             useAuthStore.setState({ authState: 'authenticated', isAuthenticated: true, studentId: userProfile.studentId, isSuperAdmin: !!isSuper, user: userProfile, loading: false, error: null });
-            useAuthStore.getState().checkAndAwardAchievements();
+            
+            // Add a slight delay before checking achievements, especially on initial load
+            setTimeout(() => {
+                useAuthStore.getState().checkAndAwardAchievements(isInitialLoad);
+            }, isInitialLoad ? 1500 : 100);
+
         } else {
             useAuthStore.getState().logout();
         }
@@ -171,6 +178,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
   error: null,
   itemHierarchy: {},
   newlyEarnedAchievement: null,
+  set: (partial) => set(partial),
   buildHierarchy: () => {
     if (!db) return () => {};
     if (hierarchyListenerUnsubscribe) hierarchyListenerUnsubscribe();
@@ -293,7 +301,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
   canAddContent: (parentId) => {
       const { user, can } = get();
       if (!user) return false;
-      const addPermissions = ['canAddClass', 'canAddFolder', 'canUploadFile', 'canAddLink', 'canCreateFlashcard'];
+      const addPermissions = ['canAddClass', 'canAddFolder', 'canUploadFile', 'canAddLink', 'canCreateFlashcard', 'canCreateQuiz', 'canCreateExam'];
       return addPermissions.some(p => can(p, parentId));
   },
   awardSpecialAchievement: async (badgeId: string) => {
@@ -309,41 +317,39 @@ const useAuthStore = create<AuthState>((set, get) => ({
         await updateDoc(userRef, {
             achievements: arrayUnion({ badgeId, earnedAt: new Date().toISOString() })
         });
-
-        // Set this achievement to be displayed in the toast
         set({ newlyEarnedAchievement: achievement });
     },
-  checkAndAwardAchievements: async () => {
+  checkAndAwardAchievements: async (isInitialCheck = false) => {
     const { user } = get();
     if (!user || !user.stats) return;
 
-    // Calculate account age for 'ONE_YEAR_MEMBER'
     if (user.createdAt) {
         user.stats.accountAgeDays = differenceInCalendarDays(new Date(), parseISO(user.createdAt));
     }
-
     const earnedIds = new Set(user.achievements?.map(a => a.badgeId) || []);
     let newAchievements: { badgeId: string; earnedAt: string }[] = [];
-    let achievementToShow: Achievement | null = get().newlyEarnedAchievement;
-
+    let achievementToShow: Achievement | null = null;
     allAchievements.forEach(achievement => {
-        if (achievement.condition.value === -1) return; // Skip special achievements
-
+        if (achievement.condition.value === -1) return;
         if (!earnedIds.has(achievement.id)) {
             const statValue = user.stats?.[achievement.condition.stat as keyof typeof user.stats] || 0;
             if (typeof statValue === 'number' && statValue >= achievement.condition.value) {
                 newAchievements.push({ badgeId: achievement.id, earnedAt: new Date().toISOString() });
-                if (!achievementToShow) { // Only show the first new achievement
+                if (!achievementToShow) {
                     achievementToShow = achievement;
                 }
             }
         }
     });
+
     if (newAchievements.length > 0) {
         const userRef = doc(db, 'users', user.id);
         await updateDoc(userRef, { achievements: arrayUnion(...newAchievements) });
-        if(achievementToShow && get().newlyEarnedAchievement?.id !== achievementToShow.id) {
-            set({ newlyEarnedAchievement: achievementToShow });
+        if (achievementToShow && (!get().newlyEarnedAchievement || get().newlyEarnedAchievement?.id !== achievementToShow.id)) {
+            // Only set if we're not already showing this achievement, and if it's not the initial auth check
+            if(!isInitialCheck) {
+              set({ newlyEarnedAchievement: achievementToShow });
+            }
         }
     }
   },
