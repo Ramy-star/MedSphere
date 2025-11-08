@@ -1,3 +1,4 @@
+
 // src/app/api/sign-cloudinary-params/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { v2 as cloudinary } from "cloudinary";
@@ -21,7 +22,6 @@ cloudinary.config({
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    // The client now sends all parameters that need to be signed.
     const { paramsToSign } = body;
 
     if (!paramsToSign || typeof paramsToSign !== 'object') {
@@ -36,12 +36,17 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Generate the signature using Cloudinary's utility function
-    const signature = cloudinary.utils.api_sign_request(paramsToSign, process.env.CLOUDINARY_API_SECRET!);
+    // Generate timestamp on the server
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const paramsWithTimestamp = { ...paramsToSign, timestamp };
 
-    // Return the signature and other useful data to the client
+    // Generate the signature using Cloudinary's utility function
+    const signature = cloudinary.utils.api_sign_request(paramsWithTimestamp, process.env.CLOUDINARY_API_SECRET!);
+
+    // Return the signature and the timestamp to the client
     return NextResponse.json({ 
         signature,
+        timestamp,
         apiKey: process.env.CLOUDINARY_API_KEY,
         cloudName: process.env.CLOUDINARY_CLOUD_NAME,
     });
@@ -52,3 +57,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error", details: error.message }, { status: 500 });
   }
 }
+
+    
