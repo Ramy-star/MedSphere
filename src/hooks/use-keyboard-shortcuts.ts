@@ -21,26 +21,28 @@ export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
             return;
         }
 
+        const isModifier = e.ctrlKey || e.metaKey;
+
         // Ctrl/Cmd + K = Open Search
-        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        if (isModifier && e.key.toLowerCase() === 'k') {
             e.preventDefault();
             onSearch?.();
         }
 
-        // Ctrl/Cmd + Shift + S = Take Screenshot
-        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+        // Ctrl/Cmd + M = Take Screenshot
+        if (isModifier && e.key.toLowerCase() === 'm') {
             e.preventDefault();
             onScreenshot?.();
         }
 
         // Ctrl/Cmd + / = Toggle AI Assistant
-        if ((e.ctrlKey || e.metaKey) && e.key === '/') {
+        if (isModifier && e.key === '/') {
             e.preventDefault();
             toggleAI();
         }
 
         // Ctrl/Cmd + N = New Note
-        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        if (isModifier && e.key.toLowerCase() === 'n') {
             e.preventDefault();
             // If onNewNote is provided, use it, otherwise navigate.
             if (onNewNote) {
