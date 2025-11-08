@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -236,7 +237,12 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   );
 
   const MobileNav = () => (
-      <div className="md:hidden">
+      <div className="md:hidden flex items-center gap-1">
+        {can('canAccessAdminPanel', null) && (
+            <Button variant="ghost" size="icon" id="screenshot-button-mobile" className="rounded-full h-9 w-9 text-slate-300 hover:text-green-400" onClick={handleScreenshot}>
+                <Camera className="h-5 w-5" />
+            </Button>
+        )}
         <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <div><AuthButton /></div>
