@@ -1,11 +1,10 @@
-
 'use client';
 
 import { useState, useRef, useEffect, ReactNode, Suspense, lazy } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, StickyNote } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, StickyNote, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -38,6 +37,7 @@ import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ChangeSecretCodeDialog } from '@/components/profile/ChangeSecretCodeDialog';
 
 const FilePreviewModal = dynamic(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal), {
     loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4" /></div>,
@@ -124,6 +124,7 @@ export default function ProfilePage() {
   const [showDeleteCoverConfirm, setShowDeleteCoverConfirm] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
+  const [showChangeSecretCode, setShowChangeSecretCode] = useState(false);
 
   // New state for drag-and-drop and confirmation
   const [imageToConfirm, setImageToConfirm] = useState<{ file: File; type: 'avatar' | 'cover' } | null>(null);
@@ -333,6 +334,7 @@ export default function ProfilePage() {
               <div className="space-y-3 sm:space-y-4">
                   <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                   <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
+                  <InfoCard icon={KeyRound} label="Secret Code" value={"••••••••"} onEdit={() => setShowChangeSecretCode(true)} />
                   <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
               </div>
           </CollapsibleSection>
@@ -363,6 +365,7 @@ export default function ProfilePage() {
               <div className="space-y-3 sm:space-y-4">
                   <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                   <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
+                   <InfoCard icon={KeyRound} label="Secret Code" value={"••••••••"} onEdit={() => setShowChangeSecretCode(true)} />
                   <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
               </div>
           </CollapsibleSection>
@@ -545,6 +548,13 @@ export default function ProfilePage() {
       </div>
 
     </motion.div>
+
+    <ChangeSecretCodeDialog
+        open={showChangeSecretCode}
+        onOpenChange={setShowChangeSecretCode}
+        userId={user.id}
+    />
+
     <AlertDialog open={!!imageToConfirm} onOpenChange={(open) => !open && setImageToConfirm(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>

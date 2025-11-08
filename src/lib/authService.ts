@@ -1,7 +1,7 @@
 'use client';
 
 import { db } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 
 import level1Ids from '@/lib/student-ids/level-1.json';
@@ -31,6 +31,19 @@ async function compareSecretCode(secretCode: string, hash: string): Promise<bool
     const bcrypt = (await import('bcryptjs')).default;
     return await bcrypt.compare(secretCode, hash);
 }
+
+export async function updateSecretCode(userId: string, newSecretCode: string): Promise<void> {
+    if (!db) throw new Error("Database not available.");
+    if (!userId) throw new Error("User ID is required.");
+    if (!newSecretCode) throw new Error("New secret code is required.");
+
+    const userDocRef = doc(db, 'users', userId);
+    const newHash = await hashSecretCode(newSecretCode);
+    await updateDoc(userDocRef, {
+        secretCodeHash: newHash,
+    });
+}
+
 
 const allStudentIds = new Set([
     ...level1Ids,
