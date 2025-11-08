@@ -1,7 +1,7 @@
-
 'use client';
 import type { Content } from '@/lib/contentService';
 import Fuse from 'fuse.js';
+import { naturalSort } from '@/lib/sort';
 
 type SearchFilters = {
     type: 'all' | 'lecture' | 'quiz' | 'exam' | 'flashcard';
@@ -99,15 +99,13 @@ async function searchFlow(query: string, items: Content[], filters: SearchFilter
       threshold: 0.3,
       ignoreLocation: true,
     });
-    return fuseForFiltered.search(query).map(result => result.item);
+    const searchResults = fuseForFiltered.search(query).map(result => result.item);
+    // Sort the fuzzy search results alphanumerically
+    return searchResults.sort((a, b) => naturalSort(a.name, b.name));
   }
 
-  // 5. If no query, return the hard-filtered results, sorted by date.
-  return fileResults.sort((a, b) => {
-    const dateA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
-    const dateB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
-    return dateB - dateA;
-  });
+  // 5. If no query, return the hard-filtered results, sorted alphanumerically.
+  return fileResults.sort((a, b) => naturalSort(a.name, b.name));
 }
 
 
