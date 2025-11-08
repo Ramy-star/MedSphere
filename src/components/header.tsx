@@ -60,7 +60,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   };
 
   const handleScreenshot = useCallback(async () => {
-    const mainContent = document.body;
+    const mainContent = document.documentElement; // Change: Capture the entire HTML document
     if (!mainContent) {
       toast({
         variant: "destructive",
