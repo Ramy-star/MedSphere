@@ -308,8 +308,10 @@ export const FileCard = React.memo(function FileCard({
                         <DropdownMenuContent 
                             className="w-48 p-2"
                             align="end"
-                            container={dropdownTriggerRef.current?.closest('.fixed')}
-                            onPointerDownOutside={(e) => e.preventDefault()} // Prevents closing and triggering card click
+                            onPointerDownOutside={(e) => {
+                                if (e.target instanceof HTMLElement && dropdownTriggerRef.current?.contains(e.target)) return;
+                                e.preventDefault();
+                            }}
                         >
                             <DropdownMenuItem onSelect={(e) => handleAction(e, () => onFileClick(item))}>
                                 <MousePointerSquareDashed className="mr-2 h-4 w-4" />

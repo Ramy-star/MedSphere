@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { allSubjectIcons } from '@/lib/file-data';
 import type { Content } from '@/lib/contentService';
 import { Folder } from 'lucide-react';
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,6 +34,7 @@ export const SubjectCard = React.memo(function SubjectCard({
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
   const { can } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   
   const handleAction = useCallback((e: Event, action: () => void) => {
     e.preventDefault();
@@ -53,10 +54,11 @@ export const SubjectCard = React.memo(function SubjectCard({
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <DropdownMenuTrigger asChild>
                                 <Button 
+                                    ref={dropdownTriggerRef}
                                     variant="ghost" 
                                     size="icon" 
                                     className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
-                                    onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }} // Stop propagation here
+                                    onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }}
                                 >
                                     <MoreVertical className="w-5 h-5" />
                                 </Button>
@@ -64,7 +66,10 @@ export const SubjectCard = React.memo(function SubjectCard({
                             <DropdownMenuContent 
                                 className="w-48 p-2"
                                 align="end"
-                                onPointerDownOutside={(e) => e.preventDefault()} // Prevents closing and triggering card click
+                                onPointerDownOutside={(e) => {
+                                    if (e.target instanceof HTMLElement && dropdownTriggerRef.current?.contains(e.target)) return;
+                                    e.preventDefault();
+                                }}
                             >
                                 {can('canRename', subject.id) && (
                                 <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>

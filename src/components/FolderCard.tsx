@@ -47,6 +47,7 @@ export const FolderCard = React.memo(function FolderCard({
     const { user, can } = useAuthStore();
     const [dropdownOpen, setDropdownOpen] = useState(false);
     const { toast } = useToast();
+    const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
 
     const isFavorited = user?.favorites?.includes(item.id) || false;
     
@@ -105,8 +106,10 @@ export const FolderCard = React.memo(function FolderCard({
       <DropdownMenuContent 
           className="w-48 p-2"
           align="end"
-          onCloseAutoFocus={(e) => e.preventDefault()} // Prevents re-focusing the trigger
-          onPointerDownOutside={(e) => e.preventDefault()} // Prevents closing and triggering card click
+          onPointerDownOutside={(e) => {
+            if (e.target instanceof HTMLElement && dropdownTriggerRef.current?.contains(e.target)) return;
+            e.preventDefault();
+          }}
       >
           {user && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, handleToggleFavorite)}>
@@ -192,6 +195,7 @@ export const FolderCard = React.memo(function FolderCard({
                         <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                             <DropdownMenuTrigger asChild>
                                 <Button 
+                                    ref={dropdownTriggerRef}
                                     variant="ghost" 
                                     size="icon" 
                                     className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -222,6 +226,7 @@ export const FolderCard = React.memo(function FolderCard({
                   <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
                        <DropdownMenuTrigger asChild>
                             <Button 
+                                ref={dropdownTriggerRef}
                                 variant="ghost" 
                                 size="icon" 
                                 className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
