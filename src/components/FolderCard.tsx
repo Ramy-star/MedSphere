@@ -70,7 +70,6 @@ export const FolderCard = React.memo(function FolderCard({
     }
     
     const handleAction = (e: Event, action: () => void) => {
-        e.preventDefault();
         e.stopPropagation();
         action();
         setDropdownOpen(false);
@@ -107,8 +106,9 @@ export const FolderCard = React.memo(function FolderCard({
           className="w-48 p-2"
           align="end"
           onPointerDownOutside={(e) => {
-            if (e.target instanceof HTMLElement && dropdownTriggerRef.current?.contains(e.target)) return;
-            e.preventDefault();
+            if (dropdownTriggerRef.current?.contains(e.target as Node)) {
+              e.preventDefault();
+            }
           }}
       >
           {user && (
@@ -199,7 +199,6 @@ export const FolderCard = React.memo(function FolderCard({
                                     variant="ghost" 
                                     size="icon" 
                                     className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                    onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }} // Stop propagation here
                                 >
                                     <MoreVertical className="w-5 h-5" />
                                 </Button>
@@ -230,7 +229,6 @@ export const FolderCard = React.memo(function FolderCard({
                                 variant="ghost" 
                                 size="icon" 
                                 className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
-                                onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }} // Stop propagation here
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </Button>

@@ -179,6 +179,10 @@ export const FileCard = React.memo(function FileCard({
     const browserUrl = isLink ? linkUrl : storagePath;
 
     const handleClick = useCallback((e: React.MouseEvent) => {
+      // Prevent clicks on dropdown trigger from opening the file
+      if (dropdownTriggerRef.current && dropdownTriggerRef.current.contains(e.target as Node)) {
+        return;
+      }
       if (uploadingFile) return; // Prevent clicks during update
       onFileClick(item);
     }, [item, onFileClick, uploadingFile]);
@@ -224,7 +228,6 @@ export const FileCard = React.memo(function FileCard({
     }, [user, item.id, item.name, isFavorited, toast]);
     
     const handleAction = useCallback((e: Event, action: () => void) => {
-        e.preventDefault();
         e.stopPropagation();
         action();
         setDropdownOpen(false);
@@ -300,7 +303,6 @@ export const FileCard = React.memo(function FileCard({
                                 variant="ghost" 
                                 size="icon" 
                                 className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }} // Stop propagation here
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </Button>
@@ -309,8 +311,9 @@ export const FileCard = React.memo(function FileCard({
                             className="w-48 p-2"
                             align="end"
                             onPointerDownOutside={(e) => {
-                                if (e.target instanceof HTMLElement && dropdownTriggerRef.current?.contains(e.target)) return;
-                                e.preventDefault();
+                                if (dropdownTriggerRef.current?.contains(e.target as Node)) {
+                                  e.preventDefault();
+                                }
                             }}
                         >
                             <DropdownMenuItem onSelect={(e) => handleAction(e, () => onFileClick(item))}>
@@ -349,7 +352,7 @@ export const FileCard = React.memo(function FileCard({
                                 </DropdownMenuItem>
                             )}
                             {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', item.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleUpdateClick(e as unknown as React.MouseEvent)}>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, () => handleUpdateClick(e as unknown as React.SyntheticEvent))}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 <span>Update</span>
                                 </DropdownMenuItem>

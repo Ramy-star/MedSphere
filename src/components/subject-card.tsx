@@ -37,7 +37,6 @@ export const SubjectCard = React.memo(function SubjectCard({
   const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   
   const handleAction = useCallback((e: Event, action: () => void) => {
-    e.preventDefault();
     e.stopPropagation();
     action();
     setDropdownOpen(false);
@@ -58,7 +57,6 @@ export const SubjectCard = React.memo(function SubjectCard({
                                     variant="ghost" 
                                     size="icon" 
                                     className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
-                                    onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }}
                                 >
                                     <MoreVertical className="w-5 h-5" />
                                 </Button>
@@ -67,8 +65,9 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 className="w-48 p-2"
                                 align="end"
                                 onPointerDownOutside={(e) => {
-                                    if (e.target instanceof HTMLElement && dropdownTriggerRef.current?.contains(e.target)) return;
-                                    e.preventDefault();
+                                    if (dropdownTriggerRef.current?.contains(e.target as Node)) {
+                                      e.preventDefault();
+                                    }
                                 }}
                             >
                                 {can('canRename', subject.id) && (
