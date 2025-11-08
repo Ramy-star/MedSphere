@@ -2,6 +2,7 @@
 
 import { Users, BarChart2, MessageSquare, BookOpen, Globe, Shield, Lock, ArrowRight, Swords, Newspaper } from 'lucide-react';
 import Link from 'next/link';
+import { LevelGroupCard } from '@/components/community/LevelGroupCard';
 
 const SectionCard = ({
   title,
@@ -53,13 +54,7 @@ export default function CommunityPage() {
                     color="from-blue-500 to-cyan-500"
                     link="/community/feed"
                 />
-                <SectionCard 
-                    title="Level Groups"
-                    description="Dedicated channels for each academic level to discuss coursework, exams, and level-specific topics."
-                    icon={Users}
-                    color="from-green-500 to-teal-500"
-                    link="/community/channels/level"
-                />
+                <LevelGroupCard />
                  <SectionCard 
                     title="Private Groups"
                     description="Invite-only groups for focused study sessions, project collaboration, or special interest topics."

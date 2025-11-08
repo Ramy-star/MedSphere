@@ -4,6 +4,12 @@ import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, ge
 import { nanoid } from 'nanoid';
 import { useAuthStore } from '@/stores/auth-store';
 import { contentService } from './contentService';
+import level1Data from '@/lib/student-ids/level-1-data.json';
+import level2Data from '@/lib/student-ids/level-2-data.json';
+import level3Data from '@/lib/student-ids/level-3-data.json';
+import level4Data from '@/lib/student-ids/level-4-data.json';
+import level5Data from '@/lib/student-ids/level-5-data.json';
+
 
 export interface Channel {
   id: string;
@@ -496,4 +502,60 @@ export async function deleteComment(postId: string, commentId: string, parentCom
         // Delete the comment itself
         transaction.delete(commentRef);
     });
+}
+
+
+type StudentData = {
+    "Student ID": string | number;
+    "Student Name": string;
+    "Academic Email"?: string;
+};
+
+const getStudentIdsForLevel = (level: string): string[] => {
+    switch (level) {
+        case 'Level 1': return (level1Data as StudentData[]).map(s => String(s['Student ID']));
+        case 'Level 2': return (level2Data as StudentData[]).map(s => String(s['Student ID']));
+        case 'Level 3': return (level3Data as StudentData[]).map(s => String(s['Student ID']));
+        case 'Level 4': return (level4Data as StudentData[]).map(s => String(s['Student ID']));
+        case 'Level 5': return (level5Data as StudentData[]).map(s => String(s['Student ID']));
+        default: return [];
+    }
+}
+
+export async function findOrCreateLevelChannel(level: string): Promise<string> {
+    if (!db) throw new Error("Firestore is not initialized.");
+
+    const channelsRef = collection(db, 'channels');
+    const q = query(channelsRef, where("type", "==", "level"), where("levelId", "==", level));
+    const querySnapshot = await getDocs(q);
+
+    if (!querySnapshot.empty) {
+        // Channel already exists
+        return querySnapshot.docs[0].id;
+    } else {
+        // Channel does not exist, create it
+        const studentIdsForLevel = getStudentIdsForLevel(level);
+
+        const usersQuery = query(collection(db, 'users'), where('studentId', 'in', studentIdsForLevel));
+        const usersSnapshot = await getDocs(usersQuery);
+        const memberUids = usersSnapshot.docs.map(doc => doc.data().uid);
+
+        const newChannelId = await createChannel(
+            `${level} Group`,
+            `Official discussion group for ${level} students.`,
+            'level',
+            useAuthStore.getState().user!.uid, // Creator
+            level
+        );
+
+        // Add all members
+        if (memberUids.length > 0) {
+            const channelRef = doc(db, 'channels', newChannelId);
+            await updateDoc(channelRef, {
+                members: arrayUnion(...memberUids)
+            });
+        }
+        
+        return newChannelId;
+    }
 }

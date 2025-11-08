@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState, use } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, createChannel, joinChannel } from '@/lib/communityService';
@@ -95,24 +95,27 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
 };
 
 export default function ChannelsPage({ params }: { params: { category: string } }) {
-  const { category } = use(params);
+  const { category } = params;
   const { user } = useAuthStore();
   const router = useRouter();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  const queryOptions = useMemo(() => {
-    const type = category as Channel['type'];
-    if (type === 'level') {
-        if (user?.level) {
-            return { where: ['levelId', '==', user.level] };
-        }
-        // If user has no level, don't show any level channels.
-        return { where: ['levelId', '==', 'nonexistent'] }; 
+  useEffect(() => {
+    // If this is the 'level' category, the logic is now handled by LevelGroupCard.
+    // This page should redirect or ideally not be hit directly for 'level'.
+    // For now, a simple redirect to the main community page is a safe fallback.
+    if (category === 'level') {
+        router.replace('/community');
     }
-    if (type === 'private' && user?.uid) {
+  }, [category, router]);
+
+  const queryOptions = useMemo(() => {
+    // We remove the level-specific logic from here as it's now handled by the direct navigation.
+    if (category === 'private' && user?.uid) {
       return { where: ['members', 'array-contains', user.uid] };
     }
+    // Default to public channels
     return { where: ['type', '==', 'public'] };
   }, [category, user]);
   
@@ -129,11 +132,15 @@ export default function ChannelsPage({ params }: { params: { category: string } 
 
   const categoryTitles: { [key: string]: string } = {
     public: 'Public Channels',
-    level: `Your Level (${user?.level || 'N/A'})`,
     private: 'Private & Study Groups',
   };
 
   const title = categoryTitles[category] || 'Channels';
+
+  // If the category is level, we show nothing to prevent a flash of content before redirect
+  if (category === 'level') {
+      return null;
+  }
 
   const handleCreateChannel = async (name: string, description: string) => {
     if (!user) {
@@ -173,12 +180,10 @@ export default function ChannelsPage({ params }: { params: { category: string } 
                 {title}
             </h1>
         </div>
-        {category !== 'level' && (
-          <Button className="rounded-full" onClick={() => setIsCreateDialogOpen(true)}>
+        <Button className="rounded-full" onClick={() => setIsCreateDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4"/>
             Create Group
           </Button>
-        )}
       </div>
       
       {loading ? (
@@ -196,8 +201,8 @@ export default function ChannelsPage({ params }: { params: { category: string } 
       ) : (
         <div className="flex-1 flex items-center justify-center text-center">
             <div className="text-slate-500">
-                <p className="text-lg font-medium">{category === 'level' ? 'Your level group is not available yet.' : 'No channels found in this category.'}</p>
-                 {category !== 'level' && <p className="text-sm">Why not be the first to create one?</p>}
+                <p className="text-lg font-medium">No channels found in this category.</p>
+                <p className="text-sm">Why not be the first to create one?</p>
             </div>
         </div>
       )}
