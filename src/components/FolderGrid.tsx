@@ -131,6 +131,14 @@ export function FolderGrid({
       where: where('parentId', '==', parentId),
       orderBy: ['order', 'asc']
   });
+  
+  const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setHasInitialDataLoaded(true);
+    }
+  }, [loading]);
+
 
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
@@ -300,14 +308,31 @@ export function FolderGrid({
 
   const newUploads = useMemo(() => uploadingFiles.filter(f => !f.isUpdate), [uploadingFiles]);
 
-  if (loading && itemsToRender.length === 0 && newUploads.length === 0) {
-      const skeletonCount = 10;
+  if (!hasInitialDataLoaded) {
+    return null; // Render nothing until the initial fetch is complete to avoid flash
+  }
+  
+  if (itemsToRender.length === 0 && newUploads.length === 0) {
       return (
-          <div className="space-y-1">
-              {Array.from({ length: skeletonCount }).map((_, i) => (
-                  <div key={i} className="my-1.5"><Skeleton className="h-14 w-full" /></div>
-              ))}
-          </div>
+         <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
+             <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
+             <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
+             <p className="mt-2 text-sm text-slate-400">
+               Drag and drop files here, or use the button to add content.
+             </p>
+             {can('canAddFolder', parentId) && (
+               <AddContentMenu
+                 parentId={parentId}
+                 onFileSelected={onFileSelected}
+                 trigger={
+                   <Button className="mt-6 rounded-2xl active:scale-95 transition-transform">
+                     <Plus className="mr-2 h-4 w-4" />
+                     Add Content
+                   </Button>
+                 }
+               />
+             )}
+         </div>
       );
   }
 
@@ -335,28 +360,6 @@ export function FolderGrid({
          </div>
        )}
 
-      {!loading && itemsToRender.length === 0 && newUploads.length === 0 && (
-         <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
-             <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
-             <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
-             <p className="mt-2 text-sm text-slate-400">
-               Drag and drop files here, or use the button to add content.
-             </p>
-             {can('canAddFolder', parentId) && (
-               <AddContentMenu
-                 parentId={parentId}
-                 onFileSelected={onFileSelected}
-                 trigger={
-                   <Button className="mt-6 rounded-2xl active:scale-95 transition-transform">
-                     <Plus className="mr-2 h-4 w-4" />
-                     Add Content
-                   </Button>
-                 }
-               />
-             )}
-         </div>
-      )}
-      
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={sortedItems.map(i => i.id)} strategy={isSubjectView ? rectSortingStrategy : verticalListSortingStrategy} disabled={!canReorder}>
           <motion.div 
