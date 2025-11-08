@@ -73,10 +73,15 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
     try {
       const dataUrl = await toPng(mainContent, { 
         cacheBust: true,
-        pixelRatio: 2, // Higher pixel ratio for better quality
-        // Filter out elements that shouldn't be in the screenshot, like the button itself
+        pixelRatio: 2,
+        // Filter out any element that is a tooltip content
         filter: (node: HTMLElement) => {
-            return node.id !== 'screenshot-button';
+            // This is a robust way to check for Radix UI's tooltip content,
+            // which is what ShadCN uses under the hood.
+            if (node.hasAttribute && node.hasAttribute('data-radix-tooltip-content')) {
+                return false;
+            }
+            return true;
         }
       });
       const link = document.createElement('a');
