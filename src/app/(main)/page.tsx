@@ -84,7 +84,6 @@ export default function HomePage() {
            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
               {levels && levels.map((item, index) => {
                   const isLastItem = index === levels.length - 1;
-                  const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
 
                   if (item.type === 'FOLDER' || item.type === 'SUBJECT' || item.type === 'SEMESTER' ) {
                     return (
@@ -104,24 +103,29 @@ export default function HomePage() {
                     );
                   }
 
-                  return (
-                    <div 
-                        key={item.id}
-                        className={cn(
-                            "col-span-1 cursor-pointer",
-                            isLastItem && isOdd && "col-span-2 sm:col-span-1"
-                        )} 
-                        onClick={() => handleItemClick(item)}
-                        onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
-                    >
-                        <div className={cn(
-                            "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors h-24 md:h-28 flex items-center justify-center text-center rounded-[1.25rem]",
-                            isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
-                        )}>
-                            <h3 className="text-base md:text-xl font-semibold text-white">{item.name}</h3>
+                  // Render only LEVEL type items
+                  if (item.type === 'LEVEL') {
+                    return (
+                        <div 
+                            key={item.id}
+                            className={cn(
+                                "col-span-1 cursor-pointer",
+                                isLastItem && isOdd && "col-span-2 sm:col-span-1"
+                            )} 
+                            onClick={() => handleItemClick(item)}
+                            onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
+                        >
+                            <div className={cn(
+                                "glass-card p-4 md:p-6 group hover:bg-white/10 transition-colors h-24 md:h-28 flex items-center justify-center text-center rounded-[1.25rem]",
+                                isLastItem && isOdd && "w-1/2 mx-auto sm:w-full"
+                            )}>
+                                <h3 className="text-base md:text-xl font-semibold text-white">{item.name}</h3>
+                            </div>
                         </div>
-                    </div>
-                  )
+                    )
+                  }
+
+                  return null; // Don't render other types directly
                 })}
           </div>
       )
