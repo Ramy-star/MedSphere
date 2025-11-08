@@ -36,7 +36,7 @@ import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 
 const FilePreviewModal = dynamic(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal), {
@@ -328,8 +328,7 @@ export default function ProfilePage() {
   const DesktopLayout = () => (
     <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
       <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-          {!isMobile && <AiStudyBuddy user={user} />}
-          <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
+          <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={true}>
               <ProfileNotesSection user={user} />
           </CollapsibleSection>
           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
@@ -359,7 +358,6 @@ export default function ProfilePage() {
 
   const MobileLayout = () => (
       <div className="mt-8 sm:mt-12 flex flex-col gap-y-8 items-start w-full px-4 sm:px-8">
-          <AiStudyBuddy user={user} />
           <CollapsibleSection title="User Information" icon={Info} defaultOpen={false}>
               <div className="space-y-3 sm:space-y-4">
                   <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
@@ -625,4 +623,3 @@ export default function ProfilePage() {
   );
 }
 
-    
