@@ -56,10 +56,17 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
           if (memoizedOptions.where) {
               if (Array.isArray(memoizedOptions.where[0])) {
                   (memoizedOptions.where as [string, any, any][]).forEach(w => {
-                      constraints.push(where(...w));
+                      // Add a guard to ensure the where clause values are not undefined
+                      if (w.every(val => val !== undefined)) {
+                        constraints.push(where(...w));
+                      }
                   });
               } else {
-                  constraints.push(where(...(memoizedOptions.where as [string, any, any])));
+                  const w = memoizedOptions.where as [string, any, any];
+                   // Add a guard to ensure the where clause values are not undefined
+                  if (w.every(val => val !== undefined)) {
+                    constraints.push(where(...w));
+                  }
               }
           }
           if (memoizedOptions.orderBy) {
