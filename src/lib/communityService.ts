@@ -93,20 +93,30 @@ export type Content = {
 };
 
 
-export async function sendMessage(channelId: string, userId: string, content: string, isAnonymous: boolean, audio?: { blob: Blob, duration: number }): Promise<void> {
+export async function sendMessage(channelId: string, userId: string, content: string, isAnonymous: boolean, media?: { file: File, type: 'image' | 'audio', duration?: number }, replyTo?: Message['replyTo']): Promise<void> {
     if (!db) {
         throw new Error("Firestore is not initialized.");
     }
     
-    let audioData = {};
-    if (audio) {
-        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, audio.blob, () => {}, 'community_audio');
-        audioData = {
-            audioUrl: url,
-            audioDuration: audio.duration,
-            audioType: audio.blob.type,
-        };
-        content = ''; // No text for voice messages, but we need some content for lastMessage
+    let mediaData = {};
+    let messageContent = content;
+
+    if (media) {
+        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, media.file, () => {}, 'community_media');
+        
+        if (media.type === 'audio') {
+            mediaData = {
+                audioUrl: url,
+                audioDuration: media.duration,
+                audioType: media.file.type,
+            };
+            messageContent = ''; // Voice message text is handled client-side if needed
+        } else { // image
+            mediaData = {
+                imageUrl: url,
+                imageCloudinaryPublicId: publicId,
+            };
+        }
     }
 
     const messagesColRef = collection(db, 'channels', channelId, 'messages');
@@ -114,11 +124,12 @@ export async function sendMessage(channelId: string, userId: string, content: st
     await addDoc(messagesColRef, {
         channelId,
         userId,
-        content: content,
+        content: messageContent,
         isAnonymous,
         timestamp: serverTimestamp(),
         reactions: {},
-        ...audioData,
+        replyTo: replyTo || null,
+        ...mediaData,
     });
 
     const channelRef = doc(db, 'channels', channelId);
@@ -130,10 +141,16 @@ export async function sendMessage(channelId: string, userId: string, content: st
         userName = `${nameParts[0]} ${nameParts[1]}`;
     }
 
+    let lastMessageText = messageContent;
+    if (media) {
+        if (media.type === 'audio') lastMessageText = 'Voice message';
+        if (media.type === 'image') lastMessageText = content || 'Image';
+    }
+
 
     await updateDoc(channelRef, {
         lastMessage: {
-            text: audio ? 'Voice message' : content,
+            text: lastMessageText,
             timestamp: serverTimestamp(),
             userId: userId,
             userName: isAnonymous ? 'Anonymous User' : userName,
@@ -232,13 +249,29 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
     const chatRef = doc(db, 'directMessages', chatId);
     await updateDoc(chatRef, {
         lastMessage: {
-            text: media ? (media.type === 'audio' ? 'Voice message' : 'Image') : content,
+            text: media ? (media.type === 'audio' ? 'Voice message' : content || 'Image') : content,
             timestamp: serverTimestamp(),
             userId: userId,
         },
         lastUpdated: serverTimestamp()
     });
 }
+
+export async function updateMessage(chatId: string, messageId: string, newContent: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const messageRef = doc(db, 'channels', chatId, 'messages', messageId);
+    await updateDoc(messageRef, {
+        content: newContent,
+        updatedAt: serverTimestamp(),
+    });
+}
+
+export async function deleteMessage(chatId: string, messageId: string) {
+    if (!db) throw new Error("Firestore is not initialized.");
+    const messageRef = doc(db, 'channels', chatId, 'messages', messageId);
+    await deleteFirestoreDoc(messageRef);
+}
+
 
 export async function updateDirectMessage(chatId: string, messageId: string, newContent: string) {
     if (!db) throw new Error("Firestore is not initialized.");

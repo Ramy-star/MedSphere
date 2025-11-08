@@ -103,8 +103,12 @@ export default function ChannelsPage({ params }: { params: { category: string } 
 
   const queryOptions = useMemo(() => {
     const type = category as Channel['type'];
-    if (type === 'level' && user?.level) {
-        return { where: ['levelId', '==', user.level] };
+    if (type === 'level') {
+        if (user?.level) {
+            return { where: ['levelId', '==', user.level] };
+        }
+        // If user has no level, don't show any level channels.
+        return { where: ['levelId', '==', 'nonexistent'] }; 
     }
     if (type === 'private' && user?.uid) {
       return { where: ['members', 'array-contains', user.uid] };
@@ -169,10 +173,12 @@ export default function ChannelsPage({ params }: { params: { category: string } 
                 {title}
             </h1>
         </div>
-        <Button className="rounded-full" onClick={() => setIsCreateDialogOpen(true)}>
-          <PlusCircle className="mr-2 h-4 w-4"/>
-          Create Group
-        </Button>
+        {category !== 'level' && (
+          <Button className="rounded-full" onClick={() => setIsCreateDialogOpen(true)}>
+            <PlusCircle className="mr-2 h-4 w-4"/>
+            Create Group
+          </Button>
+        )}
       </div>
       
       {loading ? (
@@ -190,8 +196,8 @@ export default function ChannelsPage({ params }: { params: { category: string } 
       ) : (
         <div className="flex-1 flex items-center justify-center text-center">
             <div className="text-slate-500">
-                <p className="text-lg font-medium">No channels found in this category.</p>
-                <p className="text-sm">Why not be the first to create one?</p>
+                <p className="text-lg font-medium">{category === 'level' ? 'Your level group is not available yet.' : 'No channels found in this category.'}</p>
+                 {category !== 'level' && <p className="text-sm">Why not be the first to create one?</p>}
             </div>
         </div>
       )}
