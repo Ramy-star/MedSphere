@@ -12,6 +12,7 @@ import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 const CURRENT_SESSION_ID_KEY = 'medsphere-session-id';
+const DISPLAYED_ACHIEVEMENTS_KEY = 'medsphere-displayed-achievements';
 
 export type UserSession = {
     sessionId: string;
@@ -86,7 +87,7 @@ type AuthState = {
   logoutSession: (sessionId: string) => Promise<void>;
   can: (permission: string, itemId: string | null) => boolean;
   canAddContent: (parentId: string | null) => boolean;
-  checkAndAwardAchievements: (isInitialCheck?: boolean) => Promise<void>;
+  checkAndAwardAchievements: () => Promise<void>;
   clearNewlyEarnedAchievement: () => void;
   awardSpecialAchievement: (badgeId: string) => Promise<void>;
 };
@@ -139,7 +140,6 @@ const listenToUserProfile = (studentId: string) => {
     if (!db) return;
     const userDocRef = doc(db, 'users', studentId);
     userListenerUnsubscribe = onSnapshot(userDocRef, async (doc) => {
-        const isInitialLoad = useAuthStore.getState().user === undefined;
         if (doc.exists()) {
             const userProfile = { id: doc.id, ...doc.data() } as UserProfile;
             const currentSessionId = useAuthStore.getState().currentSessionId;
@@ -153,10 +153,8 @@ const listenToUserProfile = (studentId: string) => {
             const isSuper = userProfile.studentId === '221100154';
             useAuthStore.setState({ authState: 'authenticated', isAuthenticated: true, studentId: userProfile.studentId, isSuperAdmin: !!isSuper, user: userProfile, loading: false, error: null });
             
-            // Add a slight delay before checking achievements, especially on initial load
-            setTimeout(() => {
-                useAuthStore.getState().checkAndAwardAchievements(isInitialLoad);
-            }, isInitialLoad ? 1500 : 100);
+            // Check for achievements after user data is fully loaded and set
+            await useAuthStore.getState().checkAndAwardAchievements();
 
         } else {
             useAuthStore.getState().logout();
@@ -255,6 +253,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
           const userProfile = await createUserProfile(studentId, secretCode);
           if (userProfile) {
               localStorage.setItem(VERIFIED_STUDENT_ID_KEY, userProfile.id);
+              localStorage.setItem(DISPLAYED_ACHIEVEMENTS_KEY, JSON.stringify([])); // Initialize displayed achievements
               listenToUserProfile(userProfile.id);
               set({ authState: 'authenticated' });
           } else {
@@ -286,6 +285,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     try {
       localStorage.removeItem(VERIFIED_STUDENT_ID_KEY);
       localStorage.removeItem(CURRENT_SESSION_ID_KEY);
+      localStorage.removeItem(DISPLAYED_ACHIEVEMENTS_KEY);
     } catch (e) { console.error("Could not clear localStorage:", e); }
     set({ authState: 'anonymous', isAuthenticated: false, studentId: null, isSuperAdmin: false, user: null, loading: false, error: null, itemHierarchy: {}, currentSessionId: null });
     if (typeof window !== 'undefined' && window.location.pathname !== '/') window.location.href = '/';
@@ -319,38 +319,68 @@ const useAuthStore = create<AuthState>((set, get) => ({
         });
         set({ newlyEarnedAchievement: achievement });
     },
-  checkAndAwardAchievements: async (isInitialCheck = false) => {
+  checkAndAwardAchievements: async () => {
     const { user } = get();
-    if (!user || !user.stats) return;
-
+    if (!user) return;
+  
+    const userStats = user.stats || {};
     if (user.createdAt) {
-        user.stats.accountAgeDays = differenceInCalendarDays(new Date(), parseISO(user.createdAt));
+      userStats.accountAgeDays = differenceInCalendarDays(new Date(), parseISO(user.createdAt));
     }
-    const earnedIds = new Set(user.achievements?.map(a => a.badgeId) || []);
-    let newAchievements: { badgeId: string; earnedAt: string }[] = [];
-    let achievementToShow: Achievement | null = null;
+  
+    const earnedAchievementIds = new Set(user.achievements?.map(a => a.badgeId) || []);
+    
+    let displayedAchievements: string[] = [];
+    try {
+        const stored = localStorage.getItem(DISPLAYED_ACHIEVEMENTS_KEY);
+        if(stored) displayedAchievements = JSON.parse(stored);
+    } catch(e) {
+        console.error("Could not parse displayed achievements from localStorage", e);
+    }
+
+    let newAchievementsToGrant: { badgeId: string; earnedAt: string }[] = [];
+    let achievementToToast: Achievement | null = null;
+  
     allAchievements.forEach(achievement => {
-        if (achievement.condition.value === -1) return;
-        if (!earnedIds.has(achievement.id)) {
-            const statValue = user.stats?.[achievement.condition.stat as keyof typeof user.stats] || 0;
-            if (typeof statValue === 'number' && statValue >= achievement.condition.value) {
-                newAchievements.push({ badgeId: achievement.id, earnedAt: new Date().toISOString() });
-                if (!achievementToShow) {
-                    achievementToShow = achievement;
-                }
-            }
+      // Check if it's already earned in the database
+      if (earnedAchievementIds.has(achievement.id)) {
+        // If it's earned but not yet displayed, it's the one to show
+        if (!displayedAchievements.includes(achievement.id) && !achievementToToast) {
+            achievementToToast = achievement;
+            displayedAchievements.push(achievement.id);
         }
+        return; 
+      }
+      
+      // If not earned, check if conditions are met now
+      if (achievement.condition.value > -1) {
+        const statValue = userStats[achievement.condition.stat as keyof typeof userStats] || 0;
+        if (typeof statValue === 'number' && statValue >= achievement.condition.value) {
+          newAchievementsToGrant.push({ badgeId: achievement.id, earnedAt: new Date().toISOString() });
+          
+          if (!achievementToToast) {
+            achievementToToast = achievement;
+            displayedAchievements.push(achievement.id);
+          }
+        }
+      }
     });
 
-    if (newAchievements.length > 0) {
-        const userRef = doc(db, 'users', user.id);
-        await updateDoc(userRef, { achievements: arrayUnion(...newAchievements) });
-        if (achievementToShow && (!get().newlyEarnedAchievement || get().newlyEarnedAchievement?.id !== achievementToShow.id)) {
-            // Only set if we're not already showing this achievement, and if it's not the initial auth check
-            if(!isInitialCheck) {
-              set({ newlyEarnedAchievement: achievementToShow });
-            }
-        }
+    try {
+        localStorage.setItem(DISPLAYED_ACHIEVEMENTS_KEY, JSON.stringify(displayedAchievements));
+    } catch (e) {
+        console.error("Could not save displayed achievements to localStorage", e);
+    }
+    
+    // Batch update Firestore with all newly granted achievements
+    if (newAchievementsToGrant.length > 0) {
+      const userRef = doc(db, 'users', user.id);
+      await updateDoc(userRef, { achievements: arrayUnion(...newAchievementsToGrant) });
+    }
+  
+    // Update the state to show the toast for the first new achievement found
+    if (achievementToToast && (!get().newlyEarnedAchievement || get().newlyEarnedAchievement?.id !== achievementToToast.id)) {
+      set({ newlyEarnedAchievement: achievementToToast });
     }
   },
   clearNewlyEarnedAchievement: () => set({ newlyEarnedAchievement: null }),

@@ -13,7 +13,7 @@ import { addDocumentNonBlocking } from '@/firebase/firestore/non-blocking-update
 import { useFirebase } from '@/firebase/provider';
 import { useAuthStore, type UserProfile } from '@/stores/auth-store';
 import { contentService } from '@/lib/contentService';
-import { updateDoc, collection, doc, query, where, getDocs, CollectionReference, DocumentData, Query, getDoc } from 'firebase/firestore';
+import { updateDoc, collection, doc, query, where, getDocs, CollectionReference, DocumentData, Query, getDoc, runTransaction } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -740,7 +740,7 @@ const ExamMode = ({
     const [isFullLectureEditorOpen, setIsFullLectureEditorOpen] = useState(false);
     const isInitialRender = useRef(true);
 
-    const { studentId, user, can, awardSpecialAchievement, checkAndAwardAchievements } = useAuthStore();
+    const { studentId, user, can, checkAndAwardAchievements } = useAuthStore();
     const canAdminister = can('canAdministerExams', fileItemId);
     const { db: firestore } = useFirebase();
     
@@ -802,11 +802,6 @@ const ExamMode = ({
     const storageKey = useMemo(() => studentId ? `exam_progress_${activeLecture.id}_${studentId}` : null, [activeLecture.id, studentId]);
 
     const handleSubmit = useCallback(async (isSkip = false) => {
-        const hour = new Date().getHours();
-        if (hour >= 0 && hour < 4) {
-            awardSpecialAchievement('NIGHT_OWL');
-        }
-
         const userHasAlreadySubmitted = !!userFirstResult;
         if (studentId && resultsCollectionRef && !isSkip && !userHasAlreadySubmitted) {
             try {
@@ -828,7 +823,8 @@ const ExamMode = ({
                     const newExamsCompleted = (currentStats.examsCompleted || 0) + 1;
                     transaction.update(userRef, { 'stats.examsCompleted': newExamsCompleted });
                   });
-                  // This will trigger the listener in useAuthStore to check for new achievements
+                  // Trigger achievement check
+                  await checkAndAwardAchievements();
                 }
 
             } catch (e) {
@@ -844,7 +840,7 @@ const ExamMode = ({
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, activeLecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, awardSpecialAchievement, userFirstResult, user, firestore, checkAndAwardAchievements]);
+    }, [storageKey, activeLecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, userFirstResult, user, firestore, checkAndAwardAchievements]);
 
 
     useEffect(() => {
