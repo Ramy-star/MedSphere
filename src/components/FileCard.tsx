@@ -180,10 +180,6 @@ export const FileCard = React.memo(function FileCard({
 
     const handleClick = useCallback((e: React.MouseEvent) => {
       if (uploadingFile) return; // Prevent clicks during update
-      // Ignore clicks on interactive elements within the card
-      if (e.target instanceof HTMLElement && e.target.closest('button, a, input, [role="menuitem"], [data-radix-dropdown-menu-trigger]')) {
-          return;
-      }
       onFileClick(item);
     }, [item, onFileClick, uploadingFile]);
 
@@ -211,8 +207,6 @@ export const FileCard = React.memo(function FileCard({
 
     const handleUpdateClick = useCallback((e: React.SyntheticEvent) => {
         if (!can('canUpdateFile', item.id)) return;
-        e.stopPropagation();
-        e.preventDefault();
         updateFileInputRef.current?.click();
     }, [can, item.id]);
     
@@ -306,6 +300,7 @@ export const FileCard = React.memo(function FileCard({
                                 variant="ghost" 
                                 size="icon" 
                                 className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                onClick={(e) => e.stopPropagation()}
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </Button>

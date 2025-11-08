@@ -36,9 +36,9 @@ export const SubjectCard = React.memo(function SubjectCard({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const handleCardClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
     if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
-        return;
+        e.preventDefault();
+        e.stopPropagation();
     }
   }, []);
   
@@ -72,13 +72,13 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 align="end"
                             >
                                 {can('canRename', subject.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)} onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
                                 )}
                                 {can('canChangeIcon', subject.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(subject))} onClick={(e) => e.stopPropagation()}>
+                                <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(subject))}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
@@ -86,7 +86,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 {can('canDelete', subject.id) && (
                                     <>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10" onClick={(e) => e.stopPropagation()}>
+                                        <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             <span>Delete</span>
                                         </DropdownMenuItem>

@@ -13,7 +13,7 @@ import { format } from 'date-fns';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useAuthStore } from '@/stores/auth-store';
 import Image from 'next/image';
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { prefetcher } from '@/lib/prefetchService';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
@@ -168,7 +168,10 @@ export const FolderCard = React.memo(function FolderCard({
         }, 200); // 200ms threshold to differentiate click from drag
     };
 
-    const handlePointerUp = () => {
+    const handlePointerUp = (e: React.MouseEvent) => {
+        if (e.target instanceof Element && (e.target.closest('[data-radix-dropdown-menu-trigger]') || e.target.closest('[role="menuitem"]'))) {
+            return;
+        }
         if (clickTimeoutRef.current) {
             clearTimeout(clickTimeoutRef.current);
             onClick(item);
@@ -186,7 +189,7 @@ export const FolderCard = React.memo(function FolderCard({
     if (displayAs === 'list') {
         return (
              <div 
-                onClick={() => onClick(item)}
+                onClick={(e) => handlePointerUp(e)}
                 className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
@@ -218,6 +221,7 @@ export const FolderCard = React.memo(function FolderCard({
                                     variant="ghost" 
                                     size="icon" 
                                     className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                    onClick={(e) => e.stopPropagation()}
                                 >
                                     <MoreVertical className="w-5 h-5" />
                                 </Button>
