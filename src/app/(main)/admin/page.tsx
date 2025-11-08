@@ -116,7 +116,6 @@ function AdminPageContent() {
     const [sortOption, setSortOption] = useState<SortOption>('name');
     const [levelFilter, setLevelFilter] = useState<string | null>(null);
     const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
-    const [showResetConfirm, setShowResetConfirm] = useState(false);
 
 
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
@@ -282,18 +281,6 @@ function AdminPageContent() {
             setShowClearHistoryDialog(false);
         }
     }, [isSuperAdmin, toast]);
-
-    const handleResetStructure = useCallback(async () => {
-        setShowResetConfirm(false);
-        toast({ title: "Resetting Structure", description: "This may take a few moments..." });
-        try {
-            await contentService.resetToInitialStructure();
-            toast({ title: "Success", description: "The content structure has been reset." });
-        } catch (error: any) {
-            console.error("Error resetting structure:", error);
-            toast({ variant: "destructive", title: "Error", description: `Could not reset structure: ${error.message}` });
-        }
-    }, [toast]);
 
     const UserCard = React.memo(({ user }: { user: UserProfile }) => {
         const userIsSuperAdmin = isUserSuperAdmin(user);
@@ -548,17 +535,6 @@ function AdminPageContent() {
                     </TabsContent>
                     <TabsContent value="management" className="space-y-4">
                         {renderUserList(filteredAndSortedUsers)}
-                        {isSuperAdmin && (
-                            <div className="mt-8 border-t border-dashed border-red-500/30 pt-6">
-                                <h3 className="text-lg font-bold text-red-400 text-center">Danger Zone</h3>
-                                <div className="mt-4 flex justify-center">
-                                    <Button variant="destructive" onClick={() => setShowResetConfirm(true)} className="rounded-2xl flex items-center gap-2">
-                                        <Construction className="h-4 w-4" />
-                                        Reset Structure
-                                    </Button>
-                                </div>
-                            </div>
-                        )}
                     </TabsContent>
                     {isSuperAdmin && (
                         <TabsContent value="audit">
@@ -650,22 +626,6 @@ function AdminPageContent() {
                     <AlertDialogCancel>Cancel</AlertDialogCancel>
                     <AlertDialogAction asChild>
                       <Button onClick={handleClearHistory} variant="destructive">Clear History</Button>
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
-            <AlertDialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
-                <AlertDialogContent className="w-[90vw] sm:w-full rounded-2xl">
-                  <AlertDialogHeader>
-                    <AlertDialogTitle className="text-red-500">Extreme Warning!</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      This will delete ALL content (subjects, folders, files, links) and reset the structure to only Levels and Semesters. All associated cloud files will be permanently deleted. This action is irreversible.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction asChild>
-                      <Button onClick={handleResetStructure} variant="destructive">I understand, Reset Structure</Button>
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>
