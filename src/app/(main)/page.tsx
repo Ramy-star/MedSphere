@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -13,6 +12,7 @@ import { prefetcher } from '@/lib/prefetchService';
 import { useAuthStore } from '@/stores/auth-store';
 import { FolderCard } from '@/components/FolderCard';
 import { Loader2 } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 
 // This forces the page to be dynamically rendered.
@@ -62,9 +62,10 @@ export default function HomePage() {
   const renderContent = () => {
       if (loading || isSeeding) {
            return (
-                <div className="text-center min-h-[16rem] md:min-h-0 flex flex-col justify-center items-center">
-                   <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-                   <p className="text-lg text-slate-300 mt-4">Setting up your study space...</p>
+                <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
+                    {[...Array(5)].map((_, i) => (
+                        <Skeleton key={i} className="h-24 md:h-28 w-full rounded-[1.25rem]" />
+                    ))}
                 </div>
             );
       }
@@ -75,24 +76,6 @@ export default function HomePage() {
            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
               {levels && levels.map((item, index) => {
                   const isLastItem = index === levels.length - 1;
-
-                  if (item.type === 'FOLDER' || item.type === 'SUBJECT' || item.type === 'SEMESTER' ) {
-                    return (
-                        <div key={item.id} className={cn("col-span-1")}>
-                             <FolderCard
-                                item={item}
-                                onRename={() => {}}
-                                onDelete={() => {}}
-                                onIconChange={() => {}}
-                                onClick={() => handleItemClick(item)}
-                                onMove={() => {}}
-                                onCopy={() => {}}
-                                onToggleVisibility={() => {}}
-                                displayAs="grid"
-                            />
-                        </div>
-                    );
-                  }
 
                   // Render only LEVEL type items
                   if (item.type === 'LEVEL') {
