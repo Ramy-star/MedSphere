@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -141,13 +140,13 @@ export function CreateSecretCodeScreen({ open, onOpenChange, onSecretCreated }: 
                         >
                             {showConfirmSecret ? <EyeOff size={20} /> : <Eye size={20} />}
                         </Button>
-                        {confirmSecretCode && !codesMatch && (
-                            <p className="text-red-400 text-xs text-left mt-1.5 px-2">Codes do not match.</p>
-                        )}
                     </div>
+                     {confirmSecretCode && !codesMatch && (
+                        <p className="text-red-400 text-xs text-left mt-0 px-2">Codes do not match.</p>
+                    )}
 
 
-                    {error && <p className="text-red-400 text-sm">{error}</p>}
+                    {error && <p className="text-red-400 text-sm mt-1">{error}</p>}
                 </div>
 
                 <div className="space-y-2 p-4 rounded-lg bg-black/20">

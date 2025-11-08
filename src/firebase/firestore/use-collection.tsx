@@ -25,7 +25,7 @@ type CollectionOptions = {
 };
 
 
-export function useCollection<T extends { id: string }>(pathOrQuery: string | Query, options: CollectionOptions = {}) {
+export function useCollection<T extends { id: string }>(pathOrQuery: string | Query | null, options: CollectionOptions = {}) {
   const { db } = useFirebase();
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,7 +37,8 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
   ]);
 
   useEffect(() => {
-    if (memoizedOptions.disabled || !db) {
+    // FIX: Do not run if pathOrQuery or db is not ready.
+    if (memoizedOptions.disabled || !db || !pathOrQuery) {
       setLoading(false);
       setData(null);
       return;
@@ -56,7 +57,6 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
           
           if (memoizedOptions.where) {
               const whereClauses = Array.isArray(memoizedOptions.where) ? memoizedOptions.where : [memoizedOptions.where];
-              // This is the critical fix. Ensure we only push valid QueryConstraint objects.
               if (whereClauses.every(c => c && typeof c === 'object' && '_type' in c && c._type === 'queryConstraint')) {
                   constraints.push(...whereClauses);
               } else {
@@ -73,8 +73,6 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
           q = query(collection(db, pathOrQuery), ...constraints);
         } else {
           q = pathOrQuery;
-          // Attempt to derive path from query for error reporting
-          // This is a simplified approach and might not cover all edge cases
           queryStringPath = (q as any)._query?.path?.segments?.join('/') || 'complex query';
         }
 
