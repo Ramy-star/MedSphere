@@ -167,23 +167,22 @@ export const contentService = {
     const contentRef = collection(db, 'content');
     
     try {
-        await runTransaction(db, async (transaction) => {
-            const allSeedItems = [...seedData, telegramInbox];
+        const batch = writeBatch(db);
+        const allSeedItems = [...seedData, telegramInbox];
 
-            for (const [index, item] of allSeedItems.entries()) {
-                const docRef = doc(contentRef, item.id);
-                const docSnap = await transaction.get(docRef);
-                if (!docSnap.exists()) {
-                    transaction.set(docRef, {
-                        ...item,
-                        order: item.order ?? index, // Use existing order or index as fallback
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    });
-                }
-            }
+        allSeedItems.forEach((item, index) => {
+            const docRef = doc(contentRef, item.id);
+            const dataWithDefaults = {
+                ...item,
+                order: item.order ?? index,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            };
+            batch.set(docRef, dataWithDefaults, { merge: true }); // Use merge: true to avoid overwriting user data if item exists
         });
-        console.log('Data seeding check completed successfully.');
+
+        await batch.commit();
+        console.log('Data seeding/verification completed successfully.');
     } catch (e: any) {
         if (e && e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
@@ -1129,3 +1128,5 @@ export const contentService = {
     }
   },
 };
+
+    

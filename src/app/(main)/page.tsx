@@ -21,7 +21,7 @@ export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
   const { db } = useFirebase();
-  const [isSeeding, setIsSeeding] = useState(false);
+  const [isSeeding, setIsSeeding] = useState(true);
   const router = useRouter();
   const { can } = useAuthStore();
   const { data: allItems, loading } = useCollection<Content>('content', {
@@ -38,7 +38,6 @@ export default function HomePage() {
     setIsSeeding(true);
     try {
       await contentService.seedInitialData();
-      // Data will refetch automatically via useCollection
     } catch (error) {
       console.error("Seeding failed:", error);
     } finally {
@@ -49,6 +48,8 @@ export default function HomePage() {
   useEffect(() => {
     if (!loading && db) {
         handleSeed();
+    } else if (!loading) {
+        setIsSeeding(false);
     }
   }, [loading, db, handleSeed]);
 
@@ -59,7 +60,7 @@ export default function HomePage() {
   };
 
   const renderContent = () => {
-      if (loading || isSeeding) {
+      if (isSeeding) {
            return (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
                     {[...Array(5)].map((_, i) => (
@@ -132,3 +133,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+    
