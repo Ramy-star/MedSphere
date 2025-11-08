@@ -37,7 +37,7 @@ import { ActiveSessions } from '@/components/profile/ActiveSessions';
 import * as Collapsible from '@radix-ui/react-collapsible';
 import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Skeleton } from '../ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const FilePreviewModal = dynamic(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal), {
     loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4" /></div>,
@@ -329,7 +329,7 @@ export default function ProfilePage() {
   const DesktopLayout = () => (
     <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
       <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-          <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
+           <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
               <div className="space-y-3 sm:space-y-4">
                   <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                   <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
@@ -347,11 +347,11 @@ export default function ProfilePage() {
       <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
 
       <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-          <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={true}>
-              <ProfileNotesSection user={user} />
-          </CollapsibleSection>
           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
               <FavoritesSection user={user} onFileClick={handleFileClick} />
+          </CollapsibleSection>
+          <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
+              <ProfileNotesSection user={user} />
           </CollapsibleSection>
       </div>
     </div>
@@ -623,3 +623,5 @@ export default function ProfilePage() {
     </>
   );
 }
+
+    
