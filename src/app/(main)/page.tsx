@@ -12,6 +12,7 @@ import React from 'react';
 import { prefetcher } from '@/lib/prefetchService';
 import { useAuthStore } from '@/stores/auth-store';
 import { FolderCard } from '@/components/FolderCard';
+import { Loader2 } from 'lucide-react';
 
 
 // This forces the page to be dynamically rendered.
@@ -59,21 +60,11 @@ export default function HomePage() {
   };
 
   const renderContent = () => {
-      if (loading || (!levels && !isSeeding)) {
+      if (loading || isSeeding) {
            return (
                 <div className="text-center min-h-[16rem] md:min-h-0 flex flex-col justify-center items-center">
-                   {/* Loading state, can add a spinner later */}
-                </div>
-            );
-      }
-      
-      if (!loading && (!levels || levels.length === 0)) {
-           return (
-                <div className="text-center min-h-[16rem] md:min-h-0 flex flex-col justify-center items-center">
-                    <p className="text-lg text-slate-300 mb-4">Your study space is empty.</p>
-                     <Button onClick={handleSeed} disabled={isSeeding}>
-                        {isSeeding ? 'Setting up...' : 'Setup Initial Study Levels'}
-                    </Button>
+                   <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+                   <p className="text-lg text-slate-300 mt-4">Setting up your study space...</p>
                 </div>
             );
       }
