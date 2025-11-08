@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -13,6 +14,7 @@ import type { Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
+import { ActiveSessions } from '@/components/profile/ActiveSessions';
 
 const studentIdToLevelMap = new Map<string, string>();
 // Populate with actual data if needed, for now it's a placeholder
@@ -129,6 +131,10 @@ export default function PublicProfilePage({ params }: { params: { username: stri
                  <div>
                     <h2 className="text-xl font-bold mb-4">Achievements</h2>
                     <AchievementsSection user={user} />
+                </div>
+                 <div>
+                    <h2 className="text-xl font-bold mb-4">Active Sessions</h2>
+                    <ActiveSessions user={user} />
                 </div>
             </div>
         </div>

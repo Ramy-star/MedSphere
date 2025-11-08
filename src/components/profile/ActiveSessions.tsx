@@ -15,7 +15,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 const getDeviceIcon = (device: string | undefined) => {
@@ -28,11 +27,21 @@ const getDeviceIcon = (device: string | undefined) => {
 };
 
 const TimeAgo = ({ dateString }: { dateString: string }) => {
-    const [timeAgo, setTimeAgo] = useState(() => formatDistanceToNow(parseISO(dateString), { addSuffix: true }));
+    const [timeAgo, setTimeAgo] = useState(() => {
+        try {
+            return formatDistanceToNow(parseISO(dateString), { addSuffix: true });
+        } catch (e) {
+            return 'Invalid date';
+        }
+    });
 
     useEffect(() => {
         const interval = setInterval(() => {
-            setTimeAgo(formatDistanceToNow(parseISO(dateString), { addSuffix: true }));
+            try {
+                setTimeAgo(formatDistanceToNow(parseISO(dateString), { addSuffix: true }));
+            } catch (e) {
+                setTimeAgo('Invalid date');
+            }
         }, 60000); // Update every minute
 
         return () => clearInterval(interval);
@@ -44,6 +53,7 @@ const TimeAgo = ({ dateString }: { dateString: string }) => {
 
 export const ActiveSessions = ({ user }: { user: UserProfile }) => {
     const { logoutSession, currentSessionId } = useAuthStore();
+    const isOwnProfile = useAuthStore(state => state.user?.id === user.id);
 
     const sessions = user.sessions?.filter(s => s.status !== 'logged_out') || [];
     
@@ -54,7 +64,11 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
     const sortedSessions = [...sessions].sort((a, b) => {
         if (a.sessionId === currentSessionId) return -1;
         if (b.sessionId === currentSessionId) return 1;
-        return parseISO(b.lastActive).getTime() - parseISO(a.lastActive).getTime();
+        try {
+            return parseISO(b.lastActive).getTime() - parseISO(a.lastActive).getTime();
+        } catch (e) {
+            return 0;
+        }
     });
 
     return (
@@ -68,14 +82,14 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
                             <div>
                                 <p className="font-medium text-white text-sm sm:text-base flex items-center gap-2">
                                     {session.device || 'Unknown Device'}
-                                    {isCurrent && <span className="text-xs font-bold text-green-400 bg-green-900/50 px-2 py-0.5 rounded-full">Current</span>}
+                                    {isCurrent && isOwnProfile && <span className="text-xs font-bold text-green-400 bg-green-900/50 px-2 py-0.5 rounded-full">Current</span>}
                                 </p>
                                 <p className="text-xs text-slate-400 mt-1">
                                     <span>Last active <TimeAgo dateString={session.lastActive} /></span>
                                 </p>
                             </div>
                        </div>
-                       {!isCurrent && (
+                       {!isCurrent && isOwnProfile && (
                             <div className="flex items-center gap-2 self-end sm:self-center sm:ml-auto">
                                 <AlertDialog>
                                     <AlertDialogTrigger asChild>
