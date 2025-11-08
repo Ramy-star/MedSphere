@@ -97,20 +97,24 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
 export default function ChannelsPage({ params }: { params: { category: string } }) {
   const resolvedParams = use(params);
   const { category } = resolvedParams;
-  const { user } = useAuthStore();
+  const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
+  // If a non-admin tries to access the 'level' category page, redirect them.
   useEffect(() => {
-    if (category === 'level') {
+    if (category === 'level' && !isSuperAdmin) {
         router.replace('/community');
     }
-  }, [category, router]);
+  }, [category, isSuperAdmin, router]);
 
   const queryOptions = useMemo(() => {
     if (category === 'private' && user?.uid) {
       return { where: ['members', 'array-contains', user.uid] };
+    }
+    if (category === 'level') {
+        return { where: ['type', '==', 'level'] };
     }
     return { where: ['type', '==', 'public'] };
   }, [category, user]);
@@ -119,22 +123,27 @@ export default function ChannelsPage({ params }: { params: { category: string } 
   
   const channels = useMemo(() => {
     if (!data) return [];
+    if (category === 'level') {
+      // Custom sort for level channels
+      return [...data].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+    }
     return [...data].sort((a, b) => {
         const aTime = a.lastMessage?.timestamp?.seconds || a.createdAt?.seconds || 0;
         const bTime = b.lastMessage?.timestamp?.seconds || b.createdAt?.seconds || 0;
         return bTime - aTime;
     });
-  }, [data]);
+  }, [data, category]);
 
   const categoryTitles: { [key: string]: string } = {
     public: 'Public Channels',
     private: 'Private & Study Groups',
+    level: 'All Level Groups'
   };
 
   const title = categoryTitles[category] || 'Channels';
-
-  if (category === 'level') {
-      return null;
+  
+  if (category === 'level' && !isSuperAdmin) {
+      return null; // Render nothing while redirecting
   }
 
   const handleCreateChannel = async (name: string, description: string) => {
@@ -175,10 +184,12 @@ export default function ChannelsPage({ params }: { params: { category: string } 
                 {title}
             </h1>
         </div>
-        <Button className="rounded-full" onClick={() => setIsCreateDialogOpen(true)}>
+        {category !== 'level' && (
+          <Button className="rounded-full" onClick={() => setIsCreateDialogOpen(true)}>
             <PlusCircle className="mr-2 h-4 w-4"/>
             Create Group
           </Button>
+        )}
       </div>
       
       {loading ? (
@@ -197,7 +208,7 @@ export default function ChannelsPage({ params }: { params: { category: string } 
         <div className="flex-1 flex items-center justify-center text-center">
             <div className="text-slate-500">
                 <p className="text-lg font-medium">No channels found in this category.</p>
-                <p className="text-sm">Why not be the first to create one?</p>
+                {category !== 'level' && <p className="text-sm">Why not be the first to create one?</p>}
             </div>
         </div>
       )}

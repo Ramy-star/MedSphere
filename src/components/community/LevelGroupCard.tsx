@@ -7,13 +7,29 @@ import { Users, ArrowRight, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export const LevelGroupCard = () => {
-    const { user } = useAuthStore();
+    const { user, isSuperAdmin } = useAuthStore();
     const router = useRouter();
     const { toast } = useToast();
     const [isLoading, setIsLoading] = useState(false);
 
     const handleLevelGroupClick = async () => {
-        if (!user || !user.level) {
+        if (!user) {
+            toast({
+                variant: 'destructive',
+                title: 'Not Authenticated',
+                description: "You must be logged in to access level groups.",
+            });
+            return;
+        }
+
+        // If the user is a super admin, navigate them to the overview page
+        if (isSuperAdmin) {
+            router.push('/community/channels/level');
+            return;
+        }
+
+        // For regular users, find/create their specific level group and navigate
+        if (!user.level) {
             toast({
                 variant: 'destructive',
                 title: 'Level Not Found',
@@ -33,9 +49,8 @@ export const LevelGroupCard = () => {
                 title: 'Error Accessing Group',
                 description: "Could not access the group for your level. Please try again.",
             });
-            setIsLoading(false);
+            setIsLoading(false); // Only set loading to false on error
         }
-        // Don't set isLoading to false on success, as the page will navigate away.
     };
 
     return (

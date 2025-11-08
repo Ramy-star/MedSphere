@@ -530,29 +530,33 @@ export async function findOrCreateLevelChannel(level: string): Promise<string> {
     const querySnapshot = await getDocs(q);
 
     if (!querySnapshot.empty) {
-        // Channel already exists
         return querySnapshot.docs[0].id;
     } else {
-        // Channel does not exist, create it
         const studentIdsForLevel = getStudentIdsForLevel(level);
 
-        const usersQuery = query(collection(db, 'users'), where('studentId', 'in', studentIdsForLevel));
-        const usersSnapshot = await getDocs(usersQuery);
-        const memberUids = usersSnapshot.docs.map(doc => doc.data().uid);
+        const usersQuery = studentIdsForLevel.length > 0 
+            ? query(collection(db, 'users'), where('studentId', 'in', studentIdsForLevel))
+            : null;
+        
+        const memberUids = usersQuery ? (await getDocs(usersQuery)).docs.map(doc => doc.data().uid) : [];
+        
+        const creatorId = useAuthStore.getState().user?.uid;
+        if (!creatorId) throw new Error("User must be logged in to create a channel.");
 
         const newChannelId = await createChannel(
             `${level} Group`,
             `Official discussion group for ${level} students.`,
             'level',
-            useAuthStore.getState().user!.uid, // Creator
+            creatorId,
             level
         );
 
-        // Add all members
-        if (memberUids.length > 0) {
+        const allMembers = Array.from(new Set([...memberUids, creatorId]));
+
+        if (allMembers.length > 0) {
             const channelRef = doc(db, 'channels', newChannelId);
             await updateDoc(channelRef, {
-                members: arrayUnion(...memberUids)
+                members: allMembers
             });
         }
         
