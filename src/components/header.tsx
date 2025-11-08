@@ -156,7 +156,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                         </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
-                        <p>Take Screenshot</p>
+                        <p>Take Screenshot (Ctrl+M)</p>
                     </TooltipContent>
                 </Tooltip>
             )}
