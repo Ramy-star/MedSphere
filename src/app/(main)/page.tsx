@@ -23,7 +23,7 @@ export default function HomePage() {
   const router = useRouter();
   const { can } = useAuthStore();
   const { data: allItems, loading } = useCollection<Content>('content', {
-      where: ['parentId', '==', null],
+      where: ['type', '==', 'LEVEL'],
       orderBy: ['order', 'asc']
   });
 
