@@ -309,12 +309,24 @@ export function FolderGrid({
   const newUploads = useMemo(() => uploadingFiles.filter(f => !f.isUpdate), [uploadingFiles]);
 
   if (!hasInitialDataLoaded) {
-    return null; // Render nothing until the initial fetch is complete to avoid flash
+    return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+            {[...Array(8)].map((_, i) => (
+                <Skeleton key={i} className="h-40 rounded-2xl bg-slate-800/50" />
+            ))}
+        </div>
+    );
   }
   
   if (itemsToRender.length === 0 && newUploads.length === 0) {
       return (
-         <div className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full">
+         <div 
+            className="text-center py-16 border-2 border-dashed border-slate-700 rounded-xl flex flex-col items-center justify-center h-full"
+            onDragEnter={handleDragEnter}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={handleDrop}
+          >
              <FolderIcon className="mx-auto h-12 w-12 text-slate-500" />
              <h3 className="mt-4 text-lg font-semibold text-white">This folder is empty</h3>
              <p className="mt-2 text-sm text-slate-400">

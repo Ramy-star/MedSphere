@@ -300,7 +300,7 @@ export const FileCard = React.memo(function FileCard({
                                 variant="ghost" 
                                 size="icon" 
                                 className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }} // Stop propagation here
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </Button>
@@ -309,6 +309,7 @@ export const FileCard = React.memo(function FileCard({
                             className="w-48 p-2"
                             align="end"
                             container={dropdownTriggerRef.current?.closest('.fixed')}
+                            onPointerDownOutside={(e) => e.preventDefault()} // Prevents closing and triggering card click
                         >
                             <DropdownMenuItem onSelect={(e) => handleAction(e, () => onFileClick(item))}>
                                 <MousePointerSquareDashed className="mr-2 h-4 w-4" />

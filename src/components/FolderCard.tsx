@@ -106,6 +106,7 @@ export const FolderCard = React.memo(function FolderCard({
           className="w-48 p-2"
           align="end"
           onCloseAutoFocus={(e) => e.preventDefault()} // Prevents re-focusing the trigger
+          onPointerDownOutside={(e) => e.preventDefault()} // Prevents closing and triggering card click
       >
           {user && (
             <DropdownMenuItem onSelect={(e) => handleAction(e, handleToggleFavorite)}>
@@ -194,7 +195,7 @@ export const FolderCard = React.memo(function FolderCard({
                                     variant="ghost" 
                                     size="icon" 
                                     className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                    onClick={(e) => e.stopPropagation()}
+                                    onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }} // Stop propagation here
                                 >
                                     <MoreVertical className="w-5 h-5" />
                                 </Button>
@@ -224,7 +225,7 @@ export const FolderCard = React.memo(function FolderCard({
                                 variant="ghost" 
                                 size="icon" 
                                 className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
-                                onClick={(e) => e.stopPropagation()}
+                                onClick={(e) => { e.stopPropagation(); setDropdownOpen(true); }} // Stop propagation here
                             >
                                 <MoreVertical className="w-5 h-5" />
                             </Button>
