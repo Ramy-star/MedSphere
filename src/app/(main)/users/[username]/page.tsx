@@ -19,7 +19,8 @@ const studentIdToLevelMap = new Map<string, string>();
 // level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
 
 export default function PublicProfilePage({ params }: { params: { username: string } }) {
-  const { username } = use(params);
+  const resolvedParams = use(params);
+  const { username } = resolvedParams;
   const router = useRouter();
   const { user: currentUser } = useAuthStore();
   const { data: users, loading } = useCollection<UserProfile>('users', {

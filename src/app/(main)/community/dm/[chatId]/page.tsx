@@ -17,7 +17,8 @@ import { cn } from '@/lib/utils';
 import { ImagePreviewDialog } from '@/components/community/ImagePreviewDialog';
 
 export default function DirectMessagePage({ params }: { params: { chatId: string } }) {
-  const { chatId } = use(params);
+  const resolvedParams = use(params);
+  const { chatId } = resolvedParams;
   const { user: currentUser } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);

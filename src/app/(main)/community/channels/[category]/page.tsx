@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, createChannel, joinChannel } from '@/lib/communityService';
@@ -95,27 +95,23 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
 };
 
 export default function ChannelsPage({ params }: { params: { category: string } }) {
-  const { category } = params;
+  const resolvedParams = use(params);
+  const { category } = resolvedParams;
   const { user } = useAuthStore();
   const router = useRouter();
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   useEffect(() => {
-    // If this is the 'level' category, the logic is now handled by LevelGroupCard.
-    // This page should redirect or ideally not be hit directly for 'level'.
-    // For now, a simple redirect to the main community page is a safe fallback.
     if (category === 'level') {
         router.replace('/community');
     }
   }, [category, router]);
 
   const queryOptions = useMemo(() => {
-    // We remove the level-specific logic from here as it's now handled by the direct navigation.
     if (category === 'private' && user?.uid) {
       return { where: ['members', 'array-contains', user.uid] };
     }
-    // Default to public channels
     return { where: ['type', '==', 'public'] };
   }, [category, user]);
   
@@ -137,7 +133,6 @@ export default function ChannelsPage({ params }: { params: { category: string } 
 
   const title = categoryTitles[category] || 'Channels';
 
-  // If the category is level, we show nothing to prevent a flash of content before redirect
   if (category === 'level') {
       return null;
   }
