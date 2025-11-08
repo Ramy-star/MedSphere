@@ -4,21 +4,18 @@ import { useEffect, useState, useMemo } from 'react';
 import {
   collection,
   query,
-  where,
   onSnapshot,
   Query,
   DocumentData,
   QueryConstraint,
   FirestoreError,
-  orderBy,
-  limit,
 } from 'firebase/firestore';
 import { useFirebase } from '../provider';
 import { errorEmitter } from '../error-emitter';
 import { FirestorePermissionError } from '../errors';
 
 type CollectionOptions = {
-  where?: QueryConstraint | QueryConstraint[];
+  where?: QueryConstraint | QueryConstraint[]; // Kept for API consistency but logic simplified
   orderBy?: [string, 'asc' | 'desc'];
   limit?: number;
   disabled?: boolean;
@@ -31,14 +28,16 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
   
-  const memoizedOptions = useMemo(() => options, [
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-      JSON.stringify(options)
-  ]);
+  // A simplified memoization key. This is less precise but avoids stringifying complex objects.
+  // The primary dependency causing re-renders should be the pathOrQuery itself.
+  const memoizedOptionsKey = JSON.stringify({
+    orderBy: options.orderBy,
+    limit: options.limit,
+    disabled: options.disabled,
+  });
 
   useEffect(() => {
-    // FIX: Do not run if pathOrQuery or db is not ready.
-    if (memoizedOptions.disabled || !db || !pathOrQuery) {
+    if (options.disabled || !db || !pathOrQuery) {
       setLoading(false);
       setData(null);
       return;
@@ -51,28 +50,15 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
     let queryStringPath: string;
 
     try {
+        // The logic is simplified. We expect either a string path or a pre-built Query object.
+        // We no longer try to construct the query from options within the hook.
+        // This is now the responsibility of the calling component, which promotes better
+        // memoization practices (using useMemoFirebase) at the call site.
         if (typeof pathOrQuery === 'string') {
+          q = query(collection(db, pathOrQuery));
           queryStringPath = pathOrQuery;
-          const constraints: QueryConstraint[] = [];
-          
-          if (memoizedOptions.where) {
-              const whereClauses = Array.isArray(memoizedOptions.where) ? memoizedOptions.where : [memoizedOptions.where];
-              if (whereClauses.every(c => c && typeof c === 'object' && '_type' in c && c._type === 'queryConstraint')) {
-                  constraints.push(...whereClauses);
-              } else {
-                  console.warn("useCollection: Invalid 'where' option provided. It should be a QueryConstraint or an array of QueryConstraints.", memoizedOptions.where);
-              }
-          }
-
-          if (memoizedOptions.orderBy) {
-              constraints.push(orderBy(...memoizedOptions.orderBy));
-          }
-          if (memoizedOptions.limit) {
-              constraints.push(limit(memoizedOptions.limit));
-          }
-          q = query(collection(db, pathOrQuery), ...constraints);
         } else {
-          q = pathOrQuery;
+          q = pathOrQuery as Query<DocumentData>;
           queryStringPath = (q as any)._query?.path?.segments?.join('/') || 'complex query';
         }
 
@@ -119,7 +105,7 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
       isMounted = false;
       unsubscribe();
     };
-  }, [db, pathOrQuery, memoizedOptions]);
+  }, [db, pathOrQuery, memoizedOptionsKey, options.disabled]); // pathOrQuery is the main dependency
 
   return { data, loading, error };
 }

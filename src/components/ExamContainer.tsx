@@ -821,10 +821,14 @@ const ExamMode = ({
                 await addDocumentNonBlocking(resultsCollectionRef, result);
                 if (user && firestore) {
                   const userRef = doc(firestore, 'users', user.id);
-                  const newStats = { ...user.stats };
-                  newStats.examsCompleted = (newStats.examsCompleted || 0) + 1;
-                  await updateDoc(userRef, { stats: newStats });
-                  checkAndAwardAchievements();
+                  await runTransaction(firestore, async (transaction) => {
+                    const userDoc = await transaction.get(userRef);
+                    if (!userDoc.exists()) return;
+                    const currentStats = userDoc.data().stats || {};
+                    const newExamsCompleted = (currentStats.examsCompleted || 0) + 1;
+                    transaction.update(userRef, { 'stats.examsCompleted': newExamsCompleted });
+                  });
+                  // This will trigger the listener in useAuthStore to check for new achievements
                 }
 
             } catch (e) {
