@@ -47,12 +47,10 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    // This effect runs once when the component mounts and the initial data check is done.
-    if (!loading && db && (!levels || levels.length === 0)) {
+    if (!loading && db) {
         handleSeed();
     }
-    // We only want this to run based on the initial loading and data state.
-  }, [loading, db, levels, handleSeed]);
+  }, [loading, db, handleSeed]);
 
   
   const handleItemClick = (item: Content) => {

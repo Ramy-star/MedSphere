@@ -165,32 +165,25 @@ export const contentService = {
         return;
     }
     const contentRef = collection(db, 'content');
-    const levelQuery = query(contentRef, where('type', '==', 'LEVEL'));
-    const levelSnapshot = await getDocs(levelQuery);
-    const shouldSeedLevels = levelSnapshot.empty;
+    
     try {
         await runTransaction(db, async (transaction) => {
-            // Seed full academic structure only if no levels exist
-            if (shouldSeedLevels) {
-                console.log("No levels found. Seeding initial academic structure.");
-                seedData.forEach((item, index) => {
-                    if (item.id !== telegramInbox.id) { // Don't seed inbox here
-                       const docRef = doc(contentRef, item.id);
-                       transaction.set(docRef, { ...item, order: index, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
-                    }
-                });
-            } else {
-                 console.log("Levels already exist. Skipping academic structure seed.");
-            }
-            // Always check for the Telegram Inbox folder and create if it doesn't exist
-            const inboxRef = doc(contentRef, telegramInbox.id);
-            const inboxDoc = await transaction.get(inboxRef);
-            if (!inboxDoc.exists()) {
-                console.log("Telegram Inbox not found. Creating it now.");
-                transaction.set(inboxRef, { ...telegramInbox, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
+            const allSeedItems = [...seedData, telegramInbox];
+
+            for (const item of allSeedItems) {
+                const docRef = doc(contentRef, item.id);
+                const docSnap = await transaction.get(docRef);
+                if (!docSnap.exists()) {
+                    transaction.set(docRef, {
+                        ...item,
+                        order: allContent.findIndex(i => i.id === item.id), // Ensure order is set
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                }
             }
         });
-        console.log('Data seeding check completed.');
+        console.log('Data seeding check completed successfully.');
     } catch (e: any) {
         if (e.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
@@ -202,7 +195,6 @@ export const contentService = {
         } else {
             console.error("Error during data seeding transaction:", e);
         }
-        // Don't re-throw, as this shouldn't block the app load
     }
 },
   async getChildren(parentId: string | null): Promise<Content[]> {
@@ -1070,13 +1062,10 @@ export const contentService = {
 
     console.log("Starting structure reset...");
     
-    // 1. Get the IDs of the items to keep (original Levels and Semesters)
+    // 1. Define the IDs of the items to keep (original Levels and Semesters)
     const seedIdsToKeep = new Set(
-        seedData
-            .filter(item => item.type === 'LEVEL' || item.type === 'SEMESTER')
-            .map(item => item.id)
+        seedData.map(item => item.id)
     );
-    // Also keep the telegram inbox
     seedIdsToKeep.add(telegramInbox.id);
 
     // 2. Fetch all content from Firestore

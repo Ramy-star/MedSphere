@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import type { Content } from './contentService';
 import { SurgeryIcon } from '@/components/icons/SurgeryIcon';
-import { v4 as uuidv4 } from 'uuid';
 
 export const allSubjectIcons: { [key: string]: LucideIcon } = {
     Anatomy: Bone,
@@ -64,11 +63,11 @@ export const allSubjectIcons: { [key: string]: LucideIcon } = {
 };
 
 const levelsRaw = [
-  { name: 'Level 1', semesters: ['Semester 1', 'Semester 2'] },
-  { name: 'Level 2', semesters: ['Semester 3', 'Semester 4'] },
-  { name: 'Level 3', semesters: ['Semester 5', 'Semester 6'] },
-  { name: 'Level 4', semesters: ['Semester 7', 'Semester 8'] },
-  { name: 'Level 5', semesters: ['Semester 9', 'Semester 10'] },
+  { id: 'level-1', name: 'Level 1', semesters: [{id: 'sem-1', name: 'Semester 1'}, {id: 'sem-2', name: 'Semester 2'}] },
+  { id: 'level-2', name: 'Level 2', semesters: [{id: 'sem-3', name: 'Semester 3'}, {id: 'sem-4', name: 'Semester 4'}] },
+  { id: 'level-3', name: 'Level 3', semesters: [{id: 'sem-5', name: 'Semester 5'}, {id: 'sem-6', name: 'Semester 6'}] },
+  { id: 'level-4', name: 'Level 4', semesters: [{id: 'sem-7', name: 'Semester 7'}, {id: 'sem-8', name: 'Semester 8'}] },
+  { id: 'level-5', name: 'Level 5', semesters: [{id: 'sem-9', name: 'Semester 9'}, {id: 'sem-10', name: 'Semester 10'}] },
 ];
 
 const subjectsBySemesterRaw: { [key: string]: Omit<Content, 'id' | 'parentId' | 'type'>[] } = {
@@ -162,45 +161,31 @@ export const telegramInbox: Content = {
 export const allContent: Content[] = [];
 
 levelsRaw.forEach(level => {
-    const levelId = uuidv4();
     allContent.push({
-        id: levelId,
+        id: level.id,
         name: level.name,
         type: 'LEVEL',
         parentId: null,
     });
 
-    level.semesters.forEach(semesterName => {
-        const semesterId = uuidv4();
+    level.semesters.forEach(semester => {
         allContent.push({
-            id: semesterId,
-            name: semesterName,
+            id: semester.id,
+            name: semester.name,
             type: 'SEMESTER',
-            parentId: levelId,
+            parentId: level.id,
         });
 
-        const subjects = subjectsBySemesterRaw[semesterName];
+        const subjects = subjectsBySemesterRaw[semester.name];
         if (subjects) {
             subjects.forEach(subject => {
-                const subjectId = uuidv4();
+                const subjectId = `${semester.id}-${subject.name.toLowerCase().replace(/ /g, '-')}`;
                 allContent.push({
                     id: subjectId,
                     ...subject,
                     type: 'SUBJECT',
-                    parentId: semesterId
+                    parentId: semester.id
                 });
-
-                if (subject.name === 'Medicine 1') {
-                    const medicineSubjects = ['GIT', 'Tropical', 'Cardiology', 'Chest', 'Hematology'];
-                    medicineSubjects.forEach(medSubject => {
-                         allContent.push({
-                            id: uuidv4(),
-                            name: medSubject,
-                            type: 'FOLDER',
-                            parentId: subjectId
-                        });
-                    });
-                }
             });
         }
     });
