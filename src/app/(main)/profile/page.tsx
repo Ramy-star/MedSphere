@@ -339,9 +339,6 @@ export default function ProfilePage() {
            <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
               <ActiveSessions user={user} />
           </CollapsibleSection>
-           <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
-             <AchievementsSection user={user} />
-          </CollapsibleSection>
       </div>
 
       <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
@@ -352,6 +349,9 @@ export default function ProfilePage() {
           </CollapsibleSection>
           <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
               <ProfileNotesSection user={user} />
+          </CollapsibleSection>
+          <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
+             <AchievementsSection user={user} />
           </CollapsibleSection>
       </div>
     </div>
@@ -623,5 +623,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
-    
