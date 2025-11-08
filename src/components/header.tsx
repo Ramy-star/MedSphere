@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Button } from '@/components/ui/button';
@@ -45,22 +44,9 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
   const { can, user } = useAuthStore();
   const isMobile = useIsMobile();
   const { toast } = useToast();
-  
-  useKeyboardShortcuts({
-    onSearch: () => setShowAdvancedSearch(true),
-    // other shortcuts are handled globally in layout
-  });
-
-  const handleCommunityClick = () => {
-    if (can('canAccessCommunityPage', null)) {
-      router.push('/community');
-    } else {
-      setShowComingSoon(true);
-    }
-  };
 
   const handleScreenshot = useCallback(async () => {
-    const mainContent = document.documentElement; // Change: Capture the entire HTML document
+    const mainContent = document.documentElement;
     if (!mainContent) {
       toast({
         variant: "destructive",
@@ -74,10 +60,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       const dataUrl = await toPng(mainContent, { 
         cacheBust: true,
         pixelRatio: 2,
-        // Filter out any element that is a tooltip content
         filter: (node: HTMLElement) => {
-            // This is a robust way to check for Radix UI's tooltip content,
-            // which is what ShadCN uses under the hood.
             if (node.hasAttribute && node.hasAttribute('data-radix-tooltip-content')) {
                 return false;
             }
@@ -97,7 +80,19 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       });
     }
   }, [toast]);
+  
+  useKeyboardShortcuts({
+    onSearch: () => setShowAdvancedSearch(true),
+    onScreenshot: handleScreenshot,
+  });
 
+  const handleCommunityClick = () => {
+    if (can('canAccessCommunityPage', null)) {
+      router.push('/community');
+    } else {
+      setShowComingSoon(true);
+    }
+  };
 
   const navItems = [
     {

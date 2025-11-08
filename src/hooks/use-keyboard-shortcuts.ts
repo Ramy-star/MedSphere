@@ -6,10 +6,11 @@ import { useEffect, useCallback } from 'react';
 type ShortcutOptions = {
     onSearch?: () => void;
     onNewNote?: () => void;
+    onScreenshot?: () => void;
 };
 
 export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
-    const { onSearch, onNewNote } = options;
+    const { onSearch, onNewNote, onScreenshot } = options;
     const { toggle: toggleAI } = useFloatingAssistantStore();
     const router = useRouter();
 
@@ -24,6 +25,12 @@ export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
         if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
             e.preventDefault();
             onSearch?.();
+        }
+
+        // Ctrl/Cmd + Shift + S = Take Screenshot
+        if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 's') {
+            e.preventDefault();
+            onScreenshot?.();
         }
 
         // Ctrl/Cmd + / = Toggle AI Assistant
@@ -42,7 +49,7 @@ export function useKeyboardShortcuts(options: ShortcutOptions = {}) {
                 router.push('/notes?new=true');
             }
         }
-    }, [onSearch, onNewNote, toggleAI, router]);
+    }, [onSearch, onNewNote, onScreenshot, toggleAI, router]);
 
     useEffect(() => {
         window.addEventListener('keydown', handleKeyPress);
