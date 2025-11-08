@@ -71,7 +71,7 @@ export const LevelGroupCard = () => {
                         </>
                     ) : (
                         <>
-                            <span>Enter Chat</span>
+                            <span>{isSuperAdmin ? 'View All' : 'Enter Chat'}</span>
                             <ArrowRight className="w-4 h-4 ml-2 transition-transform group-hover:translate-x-1" />
                         </>
                     )}

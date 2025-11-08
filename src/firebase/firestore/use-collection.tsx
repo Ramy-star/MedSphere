@@ -54,12 +54,10 @@ export function useCollection<T extends { id: string }>(pathOrQuery: string | Qu
           queryStringPath = pathOrQuery;
           const constraints: QueryConstraint[] = [];
           
-          // Simplified and robust where clause handling
           if (memoizedOptions.where) {
-              if (Array.isArray(memoizedOptions.where)) {
-                  constraints.push(...memoizedOptions.where);
-              } else {
-                  constraints.push(memoizedOptions.where);
+              const whereClauses = Array.isArray(memoizedOptions.where) ? memoizedOptions.where : [memoizedOptions.where];
+              if (whereClauses.every(clause => clause)) { // Ensure no clause is undefined
+                  constraints.push(...whereClauses);
               }
           }
 

@@ -103,7 +103,6 @@ export default function ChannelsPage({ params }: { params: { category: string } 
   const { toast } = useToast();
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
-  // If a non-admin tries to access the 'level' category page, redirect them.
   useEffect(() => {
     if (category === 'level' && !isSuperAdmin) {
         router.replace('/community');
@@ -112,35 +111,32 @@ export default function ChannelsPage({ params }: { params: { category: string } 
 
   const queryConstraints = useMemo(() => {
     const constraints: QueryConstraint[] = [];
-    switch (category) {
-        case 'public':
-            constraints.push(where('type', '==', 'public'));
-            break;
-        case 'private':
-            if (user?.uid) {
-                constraints.push(where('type', '==', 'private'));
-                constraints.push(where('members', 'array-contains', user.uid));
-            }
-            break;
-        case 'level':
-            constraints.push(where('type', '==', 'level'));
-            // Super admin sees all level groups, this is handled by not adding more constraints.
-            // Regular users are redirected, but this is a fallback.
-            if (!isSuperAdmin && user?.level) {
-                constraints.push(where('levelId', '==', user.level));
-            }
-            break;
-        default:
-            // Return a query that finds nothing
+    
+    // For super admins on the 'level' page, we want all level channels.
+    if (category === 'level' && isSuperAdmin) {
+        constraints.push(where('type', '==', 'level'));
+    } else if (category === 'public') {
+        constraints.push(where('type', '==', 'public'));
+    } else if (category === 'private') {
+        if (user?.uid) {
+            constraints.push(where('type', '==', 'private'));
+            constraints.push(where('members', 'array-contains', user.uid));
+        } else {
+            // If user is not logged in, they can't see private channels.
+            // This creates a query that finds nothing.
             constraints.push(where('type', '==', 'invalid-category'));
-            break;
+        }
+    } else {
+        // Fallback for any other category or non-admin on level page
+        constraints.push(where('type', '==', 'invalid-category'));
     }
+
     return constraints;
   }, [category, user, isSuperAdmin]);
 
 
   const { data: channels, loading } = useCollection<Channel>('channels', {
-    where: queryConstraints as any, // Cast because where can have multiple signatures
+    where: queryConstraints,
   });
 
   const sortedChannels = useMemo(() => {
@@ -164,7 +160,7 @@ export default function ChannelsPage({ params }: { params: { category: string } 
   const title = categoryTitles[category] || 'Channels';
   
   if (category === 'level' && !isSuperAdmin && !loading) {
-      return null; // Render nothing while redirecting
+      return null;
   }
 
   const handleCreateChannel = async (name: string, description: string) => {
