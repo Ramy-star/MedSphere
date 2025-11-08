@@ -12,6 +12,7 @@ import { CreateChannelDialog } from '@/components/community/CreateChannelDialog'
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { QueryConstraint, where, or } from 'firebase/firestore';
 
 const ChannelCard = ({ channel }: { channel: Channel }) => {
   const memberCount = Array.isArray(channel.members) ? channel.members.length : 0;
@@ -109,37 +110,50 @@ export default function ChannelsPage({ params }: { params: { category: string } 
     }
   }, [category, isSuperAdmin, router]);
 
-  // Fetch all channels, then filter on the client. This ensures Super Admin sees all level channels.
-  const { data, loading } = useCollection<Channel>('channels');
+  const queryConstraints = useMemo(() => {
+    const constraints: QueryConstraint[] = [];
+    switch (category) {
+        case 'public':
+            constraints.push(where('type', '==', 'public'));
+            break;
+        case 'private':
+            if (user?.uid) {
+                constraints.push(where('type', '==', 'private'));
+                constraints.push(where('members', 'array-contains', user.uid));
+            }
+            break;
+        case 'level':
+            constraints.push(where('type', '==', 'level'));
+            // Super admin sees all level groups, this is handled by not adding more constraints.
+            // Regular users are redirected, but this is a fallback.
+            if (!isSuperAdmin && user?.level) {
+                constraints.push(where('levelId', '==', user.level));
+            }
+            break;
+        default:
+            // Return a query that finds nothing
+            constraints.push(where('type', '==', 'invalid-category'));
+            break;
+    }
+    return constraints;
+  }, [category, user, isSuperAdmin]);
 
-  const channels = useMemo(() => {
-      if (!data) return [];
 
-      let filteredChannels = data;
+  const { data: channels, loading } = useCollection<Channel>('channels', {
+    where: queryConstraints as any, // Cast because where can have multiple signatures
+  });
 
-      if (category === 'public') {
-          filteredChannels = data.filter(c => c.type === 'public');
-      } else if (category === 'private' && user?.uid) {
-          filteredChannels = data.filter(c => c.type === 'private' && c.members.includes(user.uid));
-      } else if (category === 'level') {
-          if (isSuperAdmin) {
-              filteredChannels = data.filter(c => c.type === 'level');
-          } else {
-              // This case is largely handled by the redirect, but as a fallback:
-              filteredChannels = data.filter(c => c.type === 'level' && c.levelId === user?.level);
-          }
-      }
-
+  const sortedChannels = useMemo(() => {
+      if (!channels) return [];
       if (category === 'level') {
-          // Custom sort for level channels
-          return [...filteredChannels].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+          return [...channels].sort((a, b) => (a.name || '').localeCompare(b.name || ''));
       }
-      return [...filteredChannels].sort((a, b) => {
+      return [...channels].sort((a, b) => {
           const aTime = a.lastMessage?.timestamp?.seconds || a.createdAt?.seconds || 0;
           const bTime = b.lastMessage?.timestamp?.seconds || b.createdAt?.seconds || 0;
           return bTime - aTime;
       });
-  }, [data, category, user, isSuperAdmin]);
+  }, [channels, category]);
 
   const categoryTitles: { [key: string]: string } = {
     public: 'Public Channels',
@@ -205,9 +219,9 @@ export default function ChannelsPage({ params }: { params: { category: string } 
             <div key={i} className="glass-card p-5 rounded-xl h-[180px] animate-pulse" />
           ))}
         </div>
-      ) : channels && channels.length > 0 ? (
+      ) : sortedChannels && sortedChannels.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 pb-4">
-          {channels.map((channel) => (
+          {sortedChannels.map((channel) => (
             <ChannelCard key={channel.id} channel={channel} />
           ))}
         </div>

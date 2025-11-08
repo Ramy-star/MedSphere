@@ -5,7 +5,8 @@ import { ArrowLeft, Swords } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function DuelPage({ params }: { params: { duelId: string } }) {
-  const { duelId } = use(params);
+  const resolvedParams = use(params);
+  const { duelId } = resolvedParams;
   const router = useRouter();
 
   // This is a placeholder page. The actual duel logic will be implemented here.
