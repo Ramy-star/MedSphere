@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useRouter } from 'next/navigation';
@@ -21,13 +22,20 @@ export const dynamic = 'force-dynamic';
 
 export default function HomePage() {
   const { db } = useFirebase();
-  const [isSeeding, setIsSeeding] = useState(true);
+  const [isSeeding, setIsSeeding] = useState(false);
   const router = useRouter();
   const { can } = useAuthStore();
   const { data: allItems, loading } = useCollection<Content>('content', {
       where: where('type', '==', 'LEVEL'),
       orderBy: ['order', 'asc']
   });
+  
+  const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
+  useEffect(() => {
+    if (!loading) {
+      setHasInitialDataLoaded(true);
+    }
+  }, [loading]);
 
   const levels = useMemo(() => {
     if (!allItems) return [];
@@ -46,12 +54,12 @@ export default function HomePage() {
   }, []);
 
   useEffect(() => {
-    if (!loading && db) {
+    if (!loading && db && allItems && allItems.length === 0) {
         handleSeed();
-    } else if (!loading) {
+    } else {
         setIsSeeding(false);
     }
-  }, [loading, db, handleSeed]);
+  }, [loading, db, handleSeed, allItems]);
 
   
   const handleItemClick = (item: Content) => {
@@ -60,7 +68,7 @@ export default function HomePage() {
   };
 
   const renderContent = () => {
-      if (isSeeding) {
+      if (!hasInitialDataLoaded || isSeeding) {
            return (
                 <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
                     {[...Array(5)].map((_, i) => (
@@ -134,4 +142,3 @@ export default function HomePage() {
   );
 }
 
-    

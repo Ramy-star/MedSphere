@@ -148,14 +148,16 @@ export default function FolderPage({ params }: { params: { id: string } }) {
     >
         <FileExplorerHeader onFileSelected={processFileUpload} />
         <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-            <FolderGrid 
-                parentId={id} 
-                uploadingFiles={uploadingFiles} 
-                onFileSelected={processFileUpload}
-                onUpdateFile={handleUpdateFile}
-                onRetry={handleRetryUpload}
-                onRemove={handleRemoveUpload}
-            />
+            {!loadingCurrent && current && (
+                <FolderGrid 
+                    parentId={id} 
+                    uploadingFiles={uploadingFiles} 
+                    onFileSelected={processFileUpload}
+                    onUpdateFile={handleUpdateFile}
+                    onRetry={handleRetryUpload}
+                    onRemove={handleRemoveUpload}
+                />
+            )}
         </div>
     </motion.div>
   );
