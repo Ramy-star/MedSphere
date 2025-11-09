@@ -58,7 +58,8 @@ function SearchResults() {
 
         setIsSearching(true);
         try {
-            const searchResults = await search(query, allItems);
+            // Fix: Added the missing filters argument to the search call.
+            const searchResults = await search(query, allItems, { type: 'all', level: 'all' });
             // Filter results to only include files and links
             const fileResults = searchResults.filter(item => item.type === 'FILE' || item.type === 'LINK' || item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM' || item.type === 'INTERACTIVE_FLASHCARD');
             setResults(fileResults);
