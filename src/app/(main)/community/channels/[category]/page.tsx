@@ -95,9 +95,12 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-export default function ChannelsPage({ params }: { params: { category: string } }) {
-  const resolvedParams = use(params);
-  const { category } = resolvedParams;
+interface ChannelsPageProps {
+  params: { category: string };
+}
+
+export default function ChannelsPage({ params }: ChannelsPageProps) {
+  const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
   const { toast } = useToast();

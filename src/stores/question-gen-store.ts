@@ -130,7 +130,7 @@ async function runGenerationProcess(
             
             let fileBlob: Blob;
             if (source.file) fileBlob = source.file;
-            else if (source.fileUrl) fileBlob = await contentService.getFileContent(source.fileUrl);
+            else if (source.fileUrl) fileBlob = await contentService.getFileContent(source.fileUrl, source.id);
             else throw new Error("No file content or URL provided.");
             
             const loadingTask = pdfjs.getDocument(await fileBlob.arrayBuffer());

@@ -28,6 +28,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Icon } from './icon';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from './ui/table';
 import { ScrollArea } from './ui/scroll-area';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 
 // === Types ===
@@ -749,8 +755,9 @@ const ExamMode = ({
     }, [firestore]);
 
     const examResultsQuery = useMemo((): Query<DocumentData> | undefined => {
-        return resultsCollectionRef ? query(resultsCollectionRef, where("lectureId", "==", activeLecture.id)) : undefined;
-    }, [resultsCollectionRef, activeLecture.id]);
+        if (!resultsCollectionRef || !activeLecture?.id) return undefined;
+        return query(resultsCollectionRef, where("lectureId", "==", activeLecture.id));
+    }, [resultsCollectionRef, activeLecture?.id]);
 
     const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery as any, { disabled: !examResultsQuery });
 
@@ -799,7 +806,7 @@ const ExamMode = ({
         return userResults[0];
     }, [allResults, studentId]);
 
-    const storageKey = useMemo(() => studentId ? `exam_progress_${activeLecture.id}_${studentId}` : null, [activeLecture.id, studentId]);
+    const storageKey = useMemo(() => studentId && activeLecture ? `exam_progress_${activeLecture.id}_${studentId}` : null, [activeLecture, studentId]);
 
     const handleSubmit = useCallback(async (isSkip = false) => {
         const userHasAlreadySubmitted = !!userFirstResult;
@@ -840,7 +847,7 @@ const ExamMode = ({
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, activeLecture.id, questions.length, studentId, resultsCollectionRef, score, percentage, userFirstResult, user, firestore, checkAndAwardAchievements]);
+    }, [storageKey, activeLecture, questions.length, studentId, resultsCollectionRef, score, percentage, userFirstResult, user, firestore, checkAndAwardAchievements]);
 
 
     useEffect(() => {
@@ -862,22 +869,7 @@ const ExamMode = ({
         } catch (error) {
             console.error("Could not access localStorage:", error);
         }
-    }, [storageKey, questions.length, activeLecture.id]);
-
-    useEffect(() => {
-        if (examState === 'in-progress' && storageKey) {
-            try {
-                const progress = {
-                    currentQuestionIndex,
-                    userAnswers,
-                    timeLeft,
-                };
-                localStorage.setItem(storageKey, JSON.stringify(progress));
-            } catch (error) {
-                console.error("Could not save to localStorage:", error);
-            }
-        }
-    }, [currentQuestionIndex, userAnswers, timeLeft, examState, storageKey]);
+    }, [storageKey, questions.length, activeLecture?.id]);
 
     const startTimer = useCallback(() => {
         const totalTime = questions.length * 30; // 30 seconds per question
@@ -1067,6 +1059,14 @@ const ExamMode = ({
     
     const containerClasses = `exam-container ${isAnimating ? 'animating-out' : 'animating-in'}`;
 
+    if (!activeLecture) {
+      return (
+        <div className="exam-container">
+          <p>No active lecture selected. Please select a lecture to begin.</p>
+        </div>
+      );
+    }
+    
     if (questions.length === 0 && examState === 'not-started' && !canAdminister) {
         return <div className="exam-container"><p>No multiple-choice questions available for this lecture.</p></div>;
     }
@@ -1202,35 +1202,6 @@ const ExamMode = ({
             {examState === 'not-started' && (
                 <div className={cn(containerClasses, "start-mode")}>
                     <div className="exam-start-screen">
-                        <div className="w-full flex justify-between items-center mb-4">
-                            <div>
-                                {canAdminister && (
-                                    <div className="flex items-center gap-2">
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive"><Trash2 size={14}/></Button>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>This will permanently delete this lecture and all its questions.</AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleDeleteLecture} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 text-foreground" onClick={() => setIsFullLectureEditorOpen(true)}><Edit size={14}/></Button>
-                                    </div>
-                                )}
-                            </div>
-                            {canAdminister && (
-                                <Button onClick={() => setIsUpsertMcqDialogOpen(true)} className="flex items-center gap-2">
-                                    <PlusCircle size={18} /> Create Question
-                                </Button>
-                            )}
-                        </div>
                         <div id="lecture-tabs">
                             {allLectures.map(l => (
                                 <button 
@@ -1247,9 +1218,39 @@ const ExamMode = ({
                         <hr className="w-full border-t border-border mb-8" />
                         <h2 style={{ fontFamily: "'Calistoga', cursive" }}>{activeLecture.name} Exam</h2>
                         <p>{`Ready to test your knowledge? You have ${questions.length} questions.`}</p>
-                        <button onClick={() => handleStartExam(false)} className="start-exam-btn">
-                            Start Exam
-                        </button>
+                        <div className="flex gap-4 items-center justify-center">
+                            <button onClick={() => handleStartExam(false)} className="start-exam-btn">Start Exam</button>
+                            {canAdminister && (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground"><Settings2 /></Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent>
+                                        <DropdownMenuItem onSelect={() => setIsFullLectureEditorOpen(true)}><Edit size={16} className="mr-2" />Edit Lecture</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => setIsUpsertMcqDialogOpen(true)}><PlusSquare size={16} className="mr-2" />Add Question</DropdownMenuItem>
+                                        <DropdownMenuItem onSelect={() => setIsReportModalOpen(true)}><FileText size={16} className="mr-2" />View Report</DropdownMenuItem>
+                                        <AlertDialog>
+                                            <AlertDialogTrigger asChild>
+                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                                  <Trash2 size={16} className="mr-2" />
+                                                  Delete Lecture
+                                                </DropdownMenuItem>
+                                            </AlertDialogTrigger>
+                                            <AlertDialogContent>
+                                                <AlertDialogHeader>
+                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                    <AlertDialogDescription>This will permanently delete this lecture and all its questions.</AlertDialogDescription>
+                                                </AlertDialogHeader>
+                                                <AlertDialogFooter>
+                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                    <AlertDialogAction onClick={handleDeleteLecture} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                                </AlertDialogFooter>
+                                            </AlertDialogContent>
+                                        </AlertDialog>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -1444,136 +1445,6 @@ const ExamMode = ({
     );
 };
 
-interface AdminReportModalProps {
-    isOpen: boolean;
-    onClose: () => void;
-    lectureId: string;
-}
-
-const AdminReportModal = ({ isOpen, onClose, lectureId }: AdminReportModalProps) => {
-    const { db } = useFirebase();
-    const [reportData, setReportData] = useState<{ userProfile: UserProfile, result: ExamResult }[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    const formatPercentage = (percentage: number) => {
-        return Number.isInteger(percentage) ? `${percentage}%` : `${percentage.toFixed(2)}%`;
-    };
-
-    useEffect(() => {
-        if (isOpen && db) {
-            const fetchReportData = async () => {
-                setLoading(true);
-                
-                const resultsQuery = query(collection(db, "examResults"), where("lectureId", "==", lectureId));
-                const resultsSnapshot = await getDocs(resultsQuery);
-                const resultsByUser: { [userId: string]: ExamResult } = {};
-
-                resultsSnapshot.forEach(snap => {
-                    const result = snap.data() as ExamResult;
-                    const existing = resultsByUser[result.userId];
-                    const thisTs: any = (result as any).timestamp;
-                    const thisDate = thisTs && typeof thisTs.toDate === 'function' ? thisTs.toDate() : new Date(thisTs);
-                    if (!existing) {
-                        resultsByUser[result.userId] = result;
-                    } else {
-                        const existingTs: any = (existing as any).timestamp;
-                        const existingDate = existingTs && typeof existingTs.toDate === 'function' ? existingTs.toDate() : new Date(existingTs);
-                        if (thisDate.getTime() < existingDate.getTime()) {
-                            resultsByUser[result.userId] = result;
-                        }
-                    }
-                });
-
-                const userIds = Object.keys(resultsByUser);
-                if (userIds.length === 0) {
-                    setReportData([]);
-                    setLoading(false);
-                    return;
-                }
-                
-                const userProfilesPromises = userIds.map(id => getDoc(doc(db, 'users', id)));
-                const userProfilesSnapshots = await Promise.all(userProfilesPromises);
-                const userProfilesMap = new Map(userProfilesSnapshots.map(snap => [snap.id, snap.data() as UserProfile]));
-
-                const finalData = Object.values(resultsByUser).map(result => {
-                    return {
-                        userProfile: userProfilesMap.get(result.userId) || { displayName: `Student ${result.userId}`, studentId: result.userId, id: result.userId, uid: result.userId, username: `student_${result.userId}`, secretCodeHash: '' },
-                        result: result,
-                    };
-                }).sort((a, b) => b.result.percentage - a.result.percentage);
-
-                setReportData(finalData);
-                setLoading(false);
-            };
-
-            fetchReportData();
-        }
-    }, [isOpen, db, lectureId]);
-
-    const getRingColor = (userProfile: UserProfile): string => {
-        const isSuperAdmin = userProfile.roles?.some(r => r.role === 'superAdmin');
-        const isSubAdmin = userProfile.roles?.some(r => r.role === 'subAdmin');
-        if (isSuperAdmin) return "ring-yellow-400";
-        if (isSubAdmin) return "ring-blue-400";
-        return "ring-transparent";
-    };
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-4xl p-0 modal-card">
-                <DialogHeader className="p-6 pb-4 border-b border-slate-700">
-                    <DialogTitle className="text-xl">Exam Report</DialogTitle>
-                </DialogHeader>
-                <ScrollArea className="max-h-[60vh]">
-                    <div className="p-6">
-                        {loading ? (
-                            <p>Loading report...</p>
-                        ) : reportData.length > 0 ? (
-                            <Table>
-                                <TableHeader>
-                                    <TableRow className="border-slate-700 hover:bg-slate-800/50">
-                                        <TableHead className="w-[50px] text-center">#</TableHead>
-                                        <TableHead>Student Name</TableHead>
-                                        <TableHead>Student ID</TableHead>
-                                        <TableHead>Level</TableHead>
-                                        <TableHead className="text-center">Score</TableHead>
-                                        <TableHead className="text-right">Percentage</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {reportData.map((data, index) => {
-                                        const { userProfile, result } = data;
-                                        const isAdmin = userProfile.roles?.some(r => r.role === 'superAdmin' || r.role === 'subAdmin');
-                                        return (
-                                            <TableRow key={index} className="border-slate-800 hover:bg-slate-800/50">
-                                                <TableCell className="text-center font-medium text-slate-400">{index + 1}</TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-3">
-                                                        <Avatar className={cn("h-8 w-8 ring-offset-2 ring-offset-slate-900", isAdmin && 'ring-2', getRingColor(userProfile))}>
-                                                            <AvatarImage src={userProfile.photoURL} alt={userProfile.displayName} />
-                                                            <AvatarFallback><UserIcon size={14}/></AvatarFallback>
-                                                        </Avatar>
-                                                        <span className="font-medium">{userProfile.displayName}</span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>{userProfile.studentId}</TableCell>
-                                                <TableCell>{userProfile.level || 'N/A'}</TableCell>
-                                                <TableCell className="text-center">{`${result.score}/${result.totalQuestions}`}</TableCell>
-                                                <TableCell className="text-right font-semibold">{formatPercentage(result.percentage)}</TableCell>
-                                            </TableRow>
-                                        )
-                                    })}
-                                </TableBody>
-                            </Table>
-                        ) : (
-                            <p className="text-center py-8 text-muted-foreground">No results found for this exam yet.</p>
-                        )}
-                    </div>
-                </ScrollArea>
-            </DialogContent>
-        </Dialog>
-    );
-};
 
 export default function ExamContainer({ lectures: rawLecturesData, onStateChange, fileItemId }: { lectures: Lecture[] | Lecture, onStateChange?: (inProgress: boolean) => void, fileItemId: string | null }) {
     const [lecturesState, setLecturesState] = useState<Lecture[]>(Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []));
@@ -1638,17 +1509,13 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
 
     const activeLecture = lecturesState.find(l => l.id === activeLectureId);
 
-    if (!activeLecture) {
-        return <div className="flex items-center justify-center h-full"><p>Loading lecture...</p></div>;
-    }
-
     return (
         <main className="exam-page-container h-full">
             <div id="questions-container" className="h-full">
                  <ExamMode 
                     fileItemId={fileItemId}
                     lectures={lecturesState}
-                    activeLecture={activeLecture}
+                    activeLecture={activeLecture!} // We can assert it's not null here due to the check above
                     onExit={handleExit} 
                     onSwitchLecture={handleSwitchLecture}
                     onLecturesUpdate={handleLecturesUpdate}
