@@ -229,11 +229,11 @@ export const FileCard = React.memo(function FileCard({
         }
     }, [user, item.id, item.name, isFavorited, toast]);
     
-    const handleAction = useCallback((e: Event, action: () => void) => {
+    const handleAction = (e: Event, action: () => void) => {
         e.stopPropagation();
         action();
         setDropdownOpen(false);
-    }, []);
+    };
 
     if (uploadingFile) {
         return (
@@ -319,19 +319,20 @@ export const FileCard = React.memo(function FileCard({
                                 }
                             }}
                         >
-                            <DropdownMenuItem onSelect={(e) => handleAction(e, () => onFileClick(item))}>
+                            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={() => onFileClick(item)}>
                                 <MousePointerSquareDashed className="mr-2 h-4 w-4" />
                                 <span>Open</span>
                             </DropdownMenuItem>
                             {browserUrl && (
-                            <DropdownMenuItem onSelect={(e) => handleAction(e, () => window.open(browserUrl, '_blank'))} disabled={!browserUrl}>
+                            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={() => window.open(browserUrl, '_blank')} disabled={!browserUrl}>
                                 <ExternalLink className="mr-2 h-4 w-4" />
                                 <span>Open in browser</span>
                             </DropdownMenuItem>
                             )}
                             {!isLink && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' &&(
                                 <DropdownMenuItem 
-                                    onSelect={(e) => handleAction(e, () => { if (storagePath) handleForceDownload(storagePath, item.name); })}
+                                    onPointerDown={(e) => e.stopPropagation()}
+                                    onSelect={() => { if (storagePath) handleForceDownload(storagePath, item.name); }}
                                     disabled={!storagePath}
                                 >
                                     <Download className="mr-2 h-4 w-4" />
@@ -340,7 +341,7 @@ export const FileCard = React.memo(function FileCard({
                             )}
                             
                             {user && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, handleToggleFavorite)}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={handleToggleFavorite}>
                                     <FavoriteIcon className="mr-2 h-4 w-4" />
                                     <span>{isFavorited ? 'Remove from Favorite' : 'Add to Favorite'}</span>
                                 </DropdownMenuItem>
@@ -349,37 +350,37 @@ export const FileCard = React.memo(function FileCard({
                             {(can('canRename', item.id) || can('canDelete', item.id)) && <DropdownMenuSeparator />}
 
                             {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && can('canCreateQuestions', item.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, handleCreateQuestions)}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={handleCreateQuestions}>
                                     <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
                                     <span>Create Questions</span>
                                 </DropdownMenuItem>
                             )}
                             {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', item.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, () => handleUpdateClick(e as unknown as React.SyntheticEvent))}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={handleUpdateClick}>
                                 <RefreshCw className="mr-2 h-4 w-4" />
                                 <span>Update</span>
                                 </DropdownMenuItem>
                             )}
                             {can('canRename', item.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onRename}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
                             )}
                             {can('canMove', item.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, onMove)}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onMove}>
                                     <Move className="mr-2 h-4 w-4" />
                                     <span>Move</span>
                                 </DropdownMenuItem>
                             )}
                             {can('canCopy', item.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, onCopy)}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onCopy}>
                                     <Copy className="mr-2 h-4 w-4" />
                                     <span>Copy</span>
                                 </DropdownMenuItem>
                             )}
                             {can('canToggleVisibility', item.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onToggleVisibility}>
                                     <VisibilityIcon className="mr-2 h-4 w-4" />
                                     <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
                                 </DropdownMenuItem>
@@ -388,7 +389,7 @@ export const FileCard = React.memo(function FileCard({
                             {can('canDelete', item.id) && (
                                 <>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                    <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                         <Trash2 className="mr-2 h-4 w-4" />
                                         <span>Delete</span>
                                     </DropdownMenuItem>
@@ -399,12 +400,5 @@ export const FileCard = React.memo(function FileCard({
                 )}
             </div>
         </div>
-    )
-}, (prevProps, nextProps) => {
-    // Only re-render if essential props change.
-    return prevProps.item.id === nextProps.item.id &&
-           prevProps.item.name === nextProps.item.name &&
-           prevProps.item.metadata?.isHidden === nextProps.item.metadata?.isHidden &&
-           (prevProps.user?.favorites?.includes(prevProps.item.id)) === (nextProps.user?.favorites?.includes(nextProps.item.id)) &&
-           prevProps.uploadingFile === nextProps.uploadingFile;
-})
+    );
+});

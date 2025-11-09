@@ -33,16 +33,7 @@ export const SubjectCard = React.memo(function SubjectCard({
   const subjectPath = `/folder/${id}`;
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
   const { can } = useAuthStore();
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
   
-  const handleAction = useCallback((e: Event, action: () => void) => {
-    e.stopPropagation();
-    action();
-    setDropdownOpen(false);
-  }, []);
-
-
   return (
     <Link href={subjectPath} className="block h-full">
         <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 h-full flex flex-col justify-between hover:scale-[1.02]">
@@ -50,10 +41,9 @@ export const SubjectCard = React.memo(function SubjectCard({
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />
                     {(can('canRename', subject.id) || can('canDelete', subject.id) || can('canChangeIcon', subject.id)) && (
-                        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                        <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button 
-                                    ref={dropdownTriggerRef}
                                     variant="ghost" 
                                     size="icon" 
                                     className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -64,20 +54,15 @@ export const SubjectCard = React.memo(function SubjectCard({
                             <DropdownMenuContent 
                                 className="w-48 p-2"
                                 align="end"
-                                onPointerDownOutside={(e) => {
-                                    if (dropdownTriggerRef.current?.contains(e.target as Node)) {
-                                      e.preventDefault();
-                                    }
-                                }}
                             >
                                 {can('canRename', subject.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={(e) => { e.stopPropagation(); onRename(); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
                                 )}
                                 {can('canChangeIcon', subject.id) && (
-                                <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(subject))}>
+                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={(e) => { e.stopPropagation(); onIconChange(subject); }}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
@@ -85,7 +70,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 {can('canDelete', subject.id) && (
                                     <>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                        <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={(e) => { e.stopPropagation(); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             <span>Delete</span>
                                         </DropdownMenuItem>
@@ -101,3 +86,4 @@ export const SubjectCard = React.memo(function SubjectCard({
     </Link>
   );
 }, (prevProps, nextProps) => prevProps.subject.id === nextProps.subject.id && prevProps.subject.name === nextProps.subject.name && prevProps.subject.iconName === nextProps.subject.iconName && prevProps.subject.color === nextProps.subject.color);
+SubjectCard.displayName = 'SubjectCard';

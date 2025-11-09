@@ -112,7 +112,7 @@ export const FolderCard = React.memo(function FolderCard({
           }}
       >
           {user && (
-            <DropdownMenuItem onSelect={(e) => handleAction(e, handleToggleFavorite)}>
+            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={handleToggleFavorite}>
                 <FavoriteIcon className="mr-2 h-4 w-4" />
                 <span>{isFavorited ? 'Remove from Favorite' : 'Add to Favorite'}</span>
             </DropdownMenuItem>
@@ -121,31 +121,31 @@ export const FolderCard = React.memo(function FolderCard({
           {(can('canRename', item.id) || can('canDelete', item.id) || can('canChangeIcon', item.id)) && <DropdownMenuSeparator />}
           
           {can('canRename', item.id) && (
-            <DropdownMenuItem onSelect={(e) => handleAction(e, onRename)}>
+            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onRename}>
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Rename</span>
             </DropdownMenuItem>
           )}
           {can('canChangeIcon', item.id) && (
-            <DropdownMenuItem onSelect={(e) => handleAction(e, () => onIconChange(item))}>
+            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={() => onIconChange(item)}>
                 <ImageIcon className="mr-2 h-4 w-4" />
                 <span>Change Icon</span>
             </DropdownMenuItem>
           )}
           {can('canMove', item.id) && (
-            <DropdownMenuItem onSelect={(e) => handleAction(e, onMove)}>
+            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onMove}>
               <Move className="mr-2 h-4 w-4" />
               <span>Move</span>
             </DropdownMenuItem>
           )}
           {can('canCopy', item.id) && (
-            <DropdownMenuItem onSelect={(e) => handleAction(e, onCopy)}>
+            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onCopy}>
               <Copy className="mr-2 h-4 w-4" />
               <span>Copy</span>
             </DropdownMenuItem>
           )}
           {can('canToggleVisibility', item.id) && (
-            <DropdownMenuItem onSelect={(e) => handleAction(e, onToggleVisibility)}>
+            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onToggleVisibility}>
               <VisibilityIcon className="mr-2 h-4 w-4" />
               <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
             </DropdownMenuItem>
@@ -154,7 +154,7 @@ export const FolderCard = React.memo(function FolderCard({
           {can('canDelete', item.id) && (
             <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={(e) => handleAction(e, onDelete)} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                     <Trash2 className="mr-2 h-4 w-4" />
                     <span>Delete</span>
                 </DropdownMenuItem>
