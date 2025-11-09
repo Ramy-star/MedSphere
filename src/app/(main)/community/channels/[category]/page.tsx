@@ -14,12 +14,6 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { QueryConstraint, where, or } from 'firebase/firestore';
 
-interface PageProps {
-    params: {
-      category: string;
-    };
-}
-
 const ChannelCard = ({ channel }: { channel: Channel }) => {
   const memberCount = Array.isArray(channel.members) ? channel.members.length : 0;
   const { user } = useAuthStore();
@@ -101,7 +95,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-export default function ChannelsPage({ params }: PageProps) {
+export default function ChannelsPage({ params }: { params: { category: string } }) {
   const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
