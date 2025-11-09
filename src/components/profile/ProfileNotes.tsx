@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -48,7 +49,7 @@ const NoteCard = ({ note, onUpdate, onDelete }: { note: Note, onUpdate: (id: str
             layout
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.9 }}
+            exit={{ opacity: 0, scale: 0.8 }}
             className={cn("rounded-2xl p-4 flex flex-col h-64", note.color)}
         >
             {isEditing ? (
@@ -129,13 +130,7 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
 
     const handleAddNote = async () => {
         try {
-            const notesCollection = collection(db, `users/${userId}/notes`);
-            await addDoc(notesCollection, {
-                content: 'New Note',
-                color: 'bg-slate-700/50 border-slate-500/30',
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-            });
+            await contentService.createNote(userId);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not create a new note.' });
         }
@@ -143,8 +138,7 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
 
     const handleUpdateNote = async (id: string, content: string, color: string) => {
         try {
-            const noteRef = doc(db, `users/${userId}/notes`, id);
-            await updateDoc(noteRef, { content, color, updatedAt: new Date().toISOString() });
+            await contentService.updateNote(userId, id, { content, color });
         } catch (error: any) {
              toast({ variant: 'destructive', title: 'Error', description: 'Could not update the note.' });
         }
@@ -152,7 +146,7 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
     
     const handleDeleteNote = async (id: string) => {
         try {
-            await deleteDoc(doc(db, `users/${userId}/notes`, id));
+            await contentService.deleteNote(userId, id);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the note.' });
         }
@@ -193,3 +187,5 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
         </div>
     );
 };
+
+    
