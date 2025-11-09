@@ -1,4 +1,5 @@
 
+
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown, GripVertical, Pencil, Settings2, PlusSquare, Tag, ImageIcon, Upload, Save, GraduationCap } from 'lucide-react';
@@ -249,9 +250,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'tex
 Textarea.displayName = 'Textarea';
 
 const AdminReportModal = ({ isOpen, onClose, lectureId }: { isOpen: boolean, onClose: () => void, lectureId: string }) => {
-    const { data: results, loading: loadingResults } = useCollection<ExamResultWithId>(
-        lectureId && db ? query(collection(db, 'examResults'), where('lectureId', '==', lectureId)) : null
-    );
+    const { data: results, loading: loadingResults } = useCollection<ExamResultWithId>('examResults', {
+        where: where('lectureId', '==', lectureId),
+        disabled: !lectureId,
+    });
     const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
 
     const combinedData = useMemo(() => {
