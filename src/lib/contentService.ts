@@ -8,7 +8,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { nanoid } from 'nanoid';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { offlineStorage } from '@/lib/offline';
+import { offlineStorage } from './offline';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
 import * as pdfjs from 'pdfjs-dist';
