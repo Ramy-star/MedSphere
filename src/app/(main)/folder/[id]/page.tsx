@@ -161,5 +161,3 @@ export default function FolderPage({ params }: { params: { id: string } }) {
     </motion.div>
   );
 }
-
-    

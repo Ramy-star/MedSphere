@@ -143,5 +143,3 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
         </div>
     );
 };
-
-    

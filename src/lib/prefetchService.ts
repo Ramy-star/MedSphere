@@ -40,5 +40,3 @@ class PrefetchService {
 }
 
 export const prefetcher = new PrefetchService();
-
-    

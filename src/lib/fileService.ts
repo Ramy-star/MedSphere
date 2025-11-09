@@ -1,8 +1,6 @@
 
-'use client';
-
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { nanoid } from 'nanoid';
 import { offlineStorage } from './offline';
@@ -416,5 +414,3 @@ export const fileService = {
     return createProxiedUrl(data.secure_url);
   },
 };
-
-    

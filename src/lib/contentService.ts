@@ -587,5 +587,3 @@ export const contentService = {
     console.log("Firestore documents deleted.");
   },
 };
-
-    
