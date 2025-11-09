@@ -878,7 +878,6 @@ export const contentService = {
        
         if (filesToDeleteFromCache.length > 0) {
             for (const url of filesToDeleteFromCache) {
-                // Assuming fileId is the URL for cache purposes
                 await fileService.deleteFileFromCache(url);
             }
         }
