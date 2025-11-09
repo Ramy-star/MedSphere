@@ -45,8 +45,8 @@ export const FolderCard = React.memo(function FolderCard({
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
     const { user, can } = useAuthStore();
-    const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
     const { toast } = useToast();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const isFavorited = user?.favorites?.includes(item.id) || false;
     
@@ -69,15 +69,12 @@ export const FolderCard = React.memo(function FolderCard({
     }
 
     const handleClick = useCallback((e: React.MouseEvent) => {
-        if (dropdownTriggerRef.current && dropdownTriggerRef.current.contains(e.target as Node)) {
-            return;
-        }
-        const target = e.target as HTMLElement;
-        if (target.closest('[data-radix-dropdown-menu-content]')) {
-            return;
+        if (isMenuOpen) {
+          e.preventDefault();
+          return;
         }
         onClick(item);
-    }, [onClick, item]);
+    }, [onClick, item, isMenuOpen]);
 
     const handleToggleFavorite = async () => {
         if (!user) return;
@@ -191,10 +188,9 @@ export const FolderCard = React.memo(function FolderCard({
                     </p>
                     
                     {hasAnyPermission && (
-                        <DropdownMenu>
+                        <DropdownMenu onOpenChange={setIsMenuOpen}>
                             <DropdownMenuTrigger asChild>
                                 <Button 
-                                    ref={dropdownTriggerRef}
                                     variant="ghost" 
                                     size="icon" 
                                     className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -221,10 +217,9 @@ export const FolderCard = React.memo(function FolderCard({
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
               {hasAnyPermission && (
-                  <DropdownMenu>
+                  <DropdownMenu onOpenChange={setIsMenuOpen}>
                        <DropdownMenuTrigger asChild>
                             <Button 
-                                ref={dropdownTriggerRef}
                                 variant="ghost" 
                                 size="icon" 
                                 className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"

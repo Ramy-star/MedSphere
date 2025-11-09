@@ -148,8 +148,8 @@ export const FileCard = React.memo(function FileCard({
     const { user, can } = useAuthStore();
     const { initiateGeneration } = useQuestionGenerationStore();
     const updateFileInputRef = useRef<HTMLInputElement>(null);
-    const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
     const { toast } = useToast();
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
 
     const isFavorited = user?.favorites?.includes(item.id) || false;
 
@@ -179,16 +179,13 @@ export const FileCard = React.memo(function FileCard({
     const browserUrl = isLink ? linkUrl : storagePath;
 
     const handleClick = useCallback((e: React.MouseEvent) => {
-      if (dropdownTriggerRef.current && dropdownTriggerRef.current.contains(e.target as Node)) {
-        return;
-      }
-      const target = e.target as HTMLElement;
-      if (target.closest('[data-radix-dropdown-menu-content]')) {
-        return;
+      if (isMenuOpen) {
+          e.preventDefault();
+          return;
       }
       if (uploadingFile) return;
       onFileClick(item);
-    }, [item, onFileClick, uploadingFile]);
+    }, [item, onFileClick, uploadingFile, isMenuOpen]);
 
 
     const handleCreateQuestions = useCallback(() => {
@@ -293,10 +290,9 @@ export const FileCard = React.memo(function FileCard({
                 </p>
                 
                 {hasAnyPermission && (
-                    <DropdownMenu>
+                    <DropdownMenu onOpenChange={setIsMenuOpen}>
                         <DropdownMenuTrigger asChild>
                             <Button 
-                                ref={dropdownTriggerRef}
                                 variant="ghost" 
                                 size="icon" 
                                 className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"

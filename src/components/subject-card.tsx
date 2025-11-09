@@ -33,18 +33,14 @@ export const SubjectCard = React.memo(function SubjectCard({
   const subjectPath = `/folder/${id}`;
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
   const { can } = useAuthStore();
-  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
-    if (dropdownTriggerRef.current && dropdownTriggerRef.current.contains(e.target as Node)) {
-        return;
+    if (isMenuOpen) {
+      e.preventDefault();
+      return;
     }
-    const target = e.target as HTMLElement;
-    if (target.closest('[data-radix-dropdown-menu-content]')) {
-        return;
-    }
-    // Let Link handle navigation. We prevent any other action.
-  }, []);
+  }, [isMenuOpen]);
   
   return (
     <Link href={subjectPath} className="block h-full" onClick={handleClick}>
@@ -53,10 +49,9 @@ export const SubjectCard = React.memo(function SubjectCard({
                 <div className="flex justify-between items-start mb-4">
                     <Icon className={`w-8 h-8 ${color}`} />
                     {(can('canRename', subject.id) || can('canDelete', subject.id) || can('canChangeIcon', subject.id)) && (
-                        <DropdownMenu>
+                        <DropdownMenu onOpenChange={setIsMenuOpen}>
                             <DropdownMenuTrigger asChild>
                                 <Button 
-                                    ref={dropdownTriggerRef}
                                     variant="ghost" 
                                     size="icon" 
                                     className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
