@@ -20,7 +20,8 @@ export function FloatingStudyBuddy() {
         setIsExpanded(prev => !prev);
     };
 
-    const handleIconClick = () => {
+    const handleIconClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
         if (isExpanded) {
             setIsOpen(prev => !prev);
         } else {

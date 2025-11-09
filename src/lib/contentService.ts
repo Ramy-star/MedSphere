@@ -1,4 +1,4 @@
-'use client';
+'use server';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
 import { allContent as seedData, telegramInbox } from '@/lib/file-data';
@@ -6,7 +6,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { nanoid } from 'nanoid';
-import { fileService } from './fileService';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
 
@@ -45,14 +44,6 @@ export type UploadCallbacks = {
 
 
 export const contentService = {
-    async getFileContent(url: string, fileId?: string): Promise<Blob> {
-        return fileService.getFileContent(url, fileId);
-    },
-    
-    async extractTextFromPdf(pdfOrBlob: any | Blob): Promise<string> {
-        return fileService.extractTextFromPdf(pdfOrBlob);
-    },
- 
   async seedInitialData() {
     if (!db) {
         console.error("Firestore is not initialized.");
@@ -72,7 +63,7 @@ export const contentService = {
                 createdAt: new Date().toISOString(),
                 updatedAt: new Date().toISOString()
             };
-            batch.set(docRef, dataWithDefaults, { merge: true }); // Use merge: true to avoid overwriting user data if item exists
+            batch.set(docRef, dataWithDefaults, { merge: true });
         });
 
         await batch.commit();
@@ -295,347 +286,6 @@ export const contentService = {
  
       throw new Error(`Cannot save ${type} to a file of type ${destination.type}.`);
   },
- 
-  async createFile(parentId: string | null, file: File, callbacks: UploadCallbacks, extraMetadata: { [key: string]: any } = {}): Promise<XMLHttpRequest> {
-    const xhr = new XMLHttpRequest();
-   
-    try {
-        const folder = 'content'; // Or derive a more specific folder if needed
-        const public_id = `${folder}/${nanoid()}`;
-        
-        // The client only needs to specify non-sensitive parameters.
-        const paramsToSign = {
-            folder,
-            public_id,
-        };
-
-        const sigResponse = await fetch('/api/sign-cloudinary-params', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paramsToSign })
-        });
-
-        if (!sigResponse.ok) {
-            const errorBody = await sigResponse.json();
-            throw new Error(`Failed to get Cloudinary signature: ${errorBody.error || sigResponse.statusText}`);
-        }
-        
-        const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
-
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('api_key', apiKey);
-        formData.append('signature', signature);
-        // Append all the signed parameters to the form data
-        formData.append('folder', paramsToSign.folder);
-        formData.append('public_id', paramsToSign.public_id);
-        formData.append('timestamp', String(timestamp));
-
-
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/raw/upload`);
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) {
-                const progress = (event.loaded / event.total) * 100;
-                callbacks.onProgress(progress);
-            }
-        };
-        xhr.onload = async () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                const data = JSON.parse(xhr.responseText);
-               
-                const q = query(collection(db, 'content'), where('metadata.cloudinaryPublicId', '==', data.public_id), where('parentId', '==', parentId));
-                const existingDocs = await getDocs(q);
-                if (!existingDocs.empty) {
-                    console.log("File with this content already exists in this folder.");
-                    callbacks.onSuccess(existingDocs.docs[0].data() as Content);
-                    return;
-                }
-                const id = uuidv4();
-                const children = await this.getChildren(parentId);
-               
-                const finalFileUrl = fileService.createProxiedUrl(data.secure_url);
-                const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
-               
-                const fileNameWithoutExt = file.name.endsWith('.md') ? file.name.slice(0, -3) : file.name;
-                const newFileContent: Content = {
-                    id,
-                    name: fileNameWithoutExt,
-                    type: 'FILE',
-                    parentId: parentId,
-                    metadata: {
-                        size: data.bytes,
-                        mime: mimeType,
-                        storagePath: finalFileUrl,
-                        cloudinaryPublicId: data.public_id,
-                        cloudinaryResourceType: 'raw',
-                        ...extraMetadata
-                    },
-                    createdAt: new Date(data.created_at).toISOString(),
-                    updatedAt: new Date(data.created_at).toISOString(),
-                    order: children.length,
-                };
-               
-                await setDoc(doc(db, 'content', id), newFileContent);
-                callbacks.onSuccess(newFileContent);
-            } else {
-                 callbacks.onError(new Error(`Upload failed: ${xhr.statusText}`));
-            }
-        };
-        xhr.onerror = () => {
-            callbacks.onError(new Error('Network error during upload.'));
-        };
-        xhr.onabort = () => {
-            console.log("Upload aborted by user.");
-        };
-       
-        xhr.send(formData);
-    } catch(e: any) {
-        callbacks.onError(e);
-    }
-    return xhr;
-  },
-    async uploadUserAvatar(user: UserProfile, file: File, onProgress: (progress: number) => void, folderName: string = 'avatars'): Promise<{ publicId: string, url: string }> {
-        // Before uploading, delete the old asset if it exists
-        if (folderName === 'avatars' && user.metadata?.cloudinaryPublicId) {
-            try {
-                await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
-            } catch (e) {
-                console.warn("Failed to delete old avatar, proceeding with upload:", e);
-            }
-        }
-        
-        const folder = `${folderName}/${user.id}`;
-        const public_id = `${folder}/${nanoid()}`;
-        const paramsToSign = { 
-          public_id, 
-          folder,
-        };
-        const sigResponse = await fetch('/api/sign-cloudinary-params', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paramsToSign })
-        });
-        if (!sigResponse.ok) throw new Error('Failed to get signature.');
-        const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
-
-        const resourceType = folderName === 'community_media' ? 'auto' : 'image';
-
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('api_key', apiKey);
-            formData.append('timestamp', String(timestamp));
-            formData.append('signature', signature);
-            formData.append('public_id', public_id);
-            formData.append('folder', folder);
-
-            xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/${resourceType}/upload`);
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) {
-                    onProgress((event.loaded / event.total) * 100);
-                }
-            };
-           
-            xhr.onload = async () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    const data = JSON.parse(xhr.responseText);
-                    const finalUrl = fileService.createProxiedUrl(data.secure_url);
-
-                    if (folderName === 'avatars') {
-                        await updateDoc(doc(db, 'users', user.id), {
-                            photoURL: finalUrl,
-                            'metadata.cloudinaryPublicId': data.public_id,
-                        });
-                    }
-                    
-                    resolve({ publicId: data.public_id, url: finalUrl });
-                } else {
-                    reject(new Error(`Upload failed: ${xhr.statusText}`));
-                }
-            };
-            xhr.onerror = () => reject(new Error('Network error.'));
-            xhr.send(formData);
-        });
-    },
-    async deleteUserAvatar(user: UserProfile) {
-        if (!user.metadata?.cloudinaryPublicId) return;
-        await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
-        await updateDoc(doc(db, 'users', user.id), {
-            photoURL: null,
-            'metadata.cloudinaryPublicId': null
-        });
-    },
-    async uploadUserCoverPhoto(user: UserProfile, file: File, onProgress: (progress: number) => void): Promise<{ publicId: string, url: string }> {
-        // Before uploading, delete the old asset if it exists
-        if (user.metadata?.coverPhotoCloudinaryPublicId) {
-            try {
-                await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
-            } catch (e) {
-                console.warn("Failed to delete old cover photo, proceeding with upload:", e);
-            }
-        }
-        
-        const folder = `covers/${user.id}`;
-        const public_id = `${folder}/${uuidv4()}`;
-        const paramsToSign = { 
-          public_id, 
-          folder,
-        };
-        const sigResponse = await fetch('/api/sign-cloudinary-params', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paramsToSign })
-        });
-        if (!sigResponse.ok) throw new Error('Failed to get signature.');
-        const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
-
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('api_key', apiKey);
-            formData.append('signature', signature);
-            formData.append('timestamp', String(timestamp));
-            formData.append('public_id', public_id);
-            formData.append('folder', folder);
-            xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
-            xhr.upload.onprogress = (event) => {
-                if (event.lengthComputable) onProgress((event.loaded / event.total) * 100);
-            };
-            xhr.onload = async () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    const data = JSON.parse(xhr.responseText);
-                    const finalUrl = fileService.createProxiedUrl(data.secure_url);
-                    await updateDoc(doc(db, 'users', user.id), {
-                        'metadata.coverPhotoURL': finalUrl,
-                        'metadata.coverPhotoCloudinaryPublicId': data.public_id,
-                    });
-                    resolve({ publicId: data.public_id, url: finalUrl });
-                } else {
-                    reject(new Error(`Upload failed: ${xhr.statusText}`));
-                }
-            };
-            xhr.onerror = () => reject(new Error('Network error.'));
-            xhr.send(formData);
-        });
-    },
-    async deleteUserCoverPhoto(user: UserProfile) {
-        if (!user.metadata?.coverPhotoCloudinaryPublicId) return;
-        await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
-        await updateDoc(doc(db, 'users', user.id), {
-            'metadata.coverPhotoURL': null,
-            'metadata.coverPhotoCloudinaryPublicId': null
-        });
-    },
-  async uploadAndSetIcon(itemId: string, iconFile: File, callbacks: Omit<UploadCallbacks, 'onSuccess'> & { onSuccess: (url: string) => void }): Promise<void> {
-    if (!db) throw new Error("Firestore not initialized");
-    try {
-        const itemRef = doc(db, 'content', itemId);
-        const itemSnap = await getDoc(itemRef);
-        if (!itemSnap.exists()) throw new Error("Item not found");
-        
-        // Before uploading, delete the old asset if it exists
-        const existingItem = itemSnap.data() as Content;
-        const oldPublicId = existingItem.metadata?.iconCloudinaryPublicId;
-        if (oldPublicId) {
-            try {
-                await this.deleteCloudinaryAsset(oldPublicId, 'image');
-            } catch(e) {
-                console.warn("Failed to delete old icon, proceeding with upload:", e);
-            }
-        }
-        
-        const folder = 'icons';
-        const public_id = `${folder}/${uuidv4()}`;
-        const paramsToSign = { 
-          public_id, 
-          folder,
-        };
-        const sigResponse = await fetch('/api/sign-cloudinary-params', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paramsToSign })
-        });
-        if (!sigResponse.ok) throw new Error(`Failed to get Cloudinary signature: ${sigResponse.statusText}`);
-       
-        const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
-        const formData = new FormData();
-        formData.append('file', iconFile);
-        formData.append('api_key', apiKey);
-        formData.append('signature', signature);
-        formData.append('timestamp', String(timestamp));
-        formData.append('public_id', public_id);
-        formData.append('folder', folder);
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`);
-       
-        xhr.upload.onprogress = (event) => {
-            if (event.lengthComputable) callbacks.onProgress((event.loaded / event.total) * 100);
-        };
-       
-        xhr.onload = async () => {
-            if (xhr.status >= 200 && xhr.status < 300) {
-                const data = JSON.parse(xhr.responseText);
-                const finalIconUrl = fileService.createProxiedUrl(data.secure_url);
-                await updateDoc(itemRef, {
-                    'metadata.iconURL': finalIconUrl,
-                    'metadata.iconCloudinaryPublicId': data.public_id,
-                    updatedAt: new Date().toISOString()
-                });
-                callbacks.onSuccess(finalIconUrl);
-            } else {
-                callbacks.onError(new Error(`Cloudinary upload failed: ${xhr.statusText}`));
-            }
-        };
-        xhr.onerror = () => callbacks.onError(new Error('Network error during icon upload.'));
-        xhr.send(formData);
-    } catch (e: any) {
-        if (e.code === 'permission-denied') {
-            errorEmitter.emit('permission-error', new FirestorePermissionError({
-                path: `/content/${itemId}`,
-                operation: 'update',
-                requestResourceData: { 'metadata.iconURL': '...new_url...' },
-            }));
-        } else {
-          console.error("Icon update failed:", e);
-        }
-        callbacks.onError(e);
-        throw e;
-    }
-  },
-  async updateFile(itemToUpdate: Content, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest | undefined> {
-    if (!db) {
-        const error = new Error("Firestore not initialized");
-        callbacks.onError(error);
-        throw error;
-    }
-    const batch = writeBatch(db);
-
-    try {
-        const parentId = itemToUpdate.parentId;
-        const oldFilePublicId = itemToUpdate.metadata?.cloudinaryPublicId;
-        const oldFileResourceType = itemToUpdate.metadata?.cloudinaryResourceType || 'raw';
-        
-        // 1. Delete old Firestore document
-        batch.delete(doc(db, 'content', itemToUpdate.id));
-        await batch.commit();
-
-        // 2. Delete old Cloudinary asset
-        if (oldFilePublicId) {
-            await this.deleteCloudinaryAsset(oldFilePublicId, oldFileResourceType);
-        }
-
-        // 3. Create the new file, preserving the original order
-        return await this.createFile(parentId, newFile, callbacks, { order: itemToUpdate.order });
-
-    } catch (e: any) {
-        console.error("Update (delete and replace) failed:", e);
-        callbacks.onError(e);
-        // Don't re-throw as the callback handles the error state
-    }
-  },
- 
   async getById(id: string): Promise<Content | null> {
     if (!db) return null;
     if (id === 'root') {
@@ -821,15 +471,10 @@ export const contentService = {
         throw e;
     }
   },
-  async deleteCloudinaryAsset(publicId: string, resourceType: 'image' | 'video' | 'raw' = 'raw'): Promise<void> {
-    await fileService.deleteCloudinaryAsset(publicId, resourceType);
-  },
   async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
     const deleteQueue: string[] = [id];
     const visited = new Set<string>([id]);
-    const filesToDeleteFromCloudinary: { publicId: string; resourceType: 'image' | 'video' | 'raw'; }[] = [];
-    const filesToDeleteFromCache: string[] = [];
     const batch = writeBatch(db);
     try {
         let head = 0;
@@ -849,38 +494,9 @@ export const contentService = {
         const allDocsSnapshot = await getDocs(allDocsToDeleteQuery);
        
         allDocsSnapshot.forEach(docSnap => {
-            const item = docSnap.data() as Content;
-            if (item.type === 'FILE' && item.metadata?.cloudinaryPublicId) {
-                filesToDeleteFromCloudinary.push({
-                    publicId: item.metadata.cloudinaryPublicId,
-                    resourceType: item.metadata.cloudinaryResourceType || 'raw'
-                });
-                if (item.metadata.storagePath) {
-                    filesToDeleteFromCache.push(item.metadata.storagePath);
-                }
-            }
-            if ((item.type === 'FOLDER' || item.type === 'SUBJECT') && item.metadata?.iconCloudinaryPublicId) {
-                filesToDeleteFromCloudinary.push({
-                    publicId: item.metadata.iconCloudinaryPublicId,
-                    resourceType: 'image'
-                });
-                 if (item.metadata.iconURL) {
-                    filesToDeleteFromCache.push(item.metadata.iconURL);
-                }
-            }
             batch.delete(docSnap.ref);
         });
-        if (filesToDeleteFromCloudinary.length > 0) {
-            for (const file of filesToDeleteFromCloudinary) {
-                await this.deleteCloudinaryAsset(file.publicId, file.resourceType);
-            }
-        }
        
-        if (filesToDeleteFromCache.length > 0) {
-            for (const url of filesToDeleteFromCache) {
-                await fileService.deleteFileFromCache(url);
-            }
-        }
         await batch.commit();
     } catch (e: any) {
         if (e.code === 'permission-denied') {
@@ -940,40 +556,6 @@ export const contentService = {
     await deleteFirestoreDoc(noteRef);
   },
     
-  async uploadNoteImage(file: File): Promise<string> {
-      const folder = `notes_images`;
-      const public_id = `${folder}/${nanoid()}`;
-      const paramsToSign = { 
-        public_id, 
-        folder,
-      };
-      const sigResponse = await fetch('/api/sign-cloudinary-params', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ paramsToSign })
-      });
-      if (!sigResponse.ok) throw new Error('Failed to get signature.');
-      const { signature, apiKey, cloudName, timestamp } = await sigResponse.json();
-
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('api_key', apiKey);
-      formData.append('timestamp', String(timestamp));
-      formData.append('signature', signature);
-      formData.append('public_id', public_id);
-      formData.append('folder', folder);
-      
-      const uploadResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
-          method: 'POST',
-          body: formData,
-      });
-
-      if (!uploadResponse.ok) {
-          throw new Error('Cloudinary image upload failed.');
-      }
-      const data = await uploadResponse.json();
-      return fileService.createProxiedUrl(data.secure_url);
-  },
   
   async resetToInitialStructure(): Promise<void> {
     if (!db) throw new Error("Firestore not initialized.");
@@ -1032,18 +614,5 @@ export const contentService = {
     console.log("Committing Firestore batch deletion...");
     await batch.commit();
     console.log("Firestore documents deleted.");
-
-    // 5. Delete Cloudinary assets
-    if (assetsToDelete.length > 0) {
-        console.log(`Deleting ${assetsToDelete.length} assets from Cloudinary...`);
-        for (const asset of assetsToDelete) {
-            try {
-                await this.deleteCloudinaryAsset(asset.publicId, asset.resourceType);
-            } catch (error) {
-                console.error(`Failed to delete Cloudinary asset ${asset.publicId}:`, error);
-            }
-        }
-        console.log("Cloudinary asset deletion process completed.");
-    }
   },
 };

@@ -3,6 +3,7 @@
 import { db } from '@/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
+import { nanoid } from 'nanoid';
 
 // Dynamically import bcryptjs only when needed to avoid bundling issues.
 async function hashSecretCode(secretCode: string): Promise<string> {
