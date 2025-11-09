@@ -1,6 +1,5 @@
-
 'use client';
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState, useEffect, use } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, createChannel, joinChannel } from '@/lib/communityService';
@@ -103,7 +102,8 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
 };
 
 export default function ChannelsPage({ params }: PageProps) {
-  const { category } = params;
+  const resolvedParams = use(params);
+  const { category } = resolvedParams;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
   const { toast } = useToast();
@@ -169,7 +169,7 @@ export default function ChannelsPage({ params }: PageProps) {
       return null;
   }
 
-  const handleCreateChannel = async (name: string, description: string) => {
+  const handleCreateChannel = async (name: string, description: string, type: 'public' | 'private') => {
     if (!user) {
         toast({
             variant: "destructive",
@@ -179,7 +179,7 @@ export default function ChannelsPage({ params }: PageProps) {
         return;
     }
     try {
-        const newChannelId = await createChannel(name, description, category as Channel['type'], user.uid, category === 'level' ? user.level : undefined);
+        const newChannelId = await createChannel(name, description, type, user.uid);
         toast({
             title: "Channel Created!",
             description: `"${name}" has been successfully created.`,
