@@ -297,7 +297,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                 referencedFileContent: fileContent,
             });
             
-            const finalHistory = [...newHistory, { role: 'model', text: response }];
+            const finalHistory: ChatMessage[] = [...newHistory, { role: 'model', text: response } as ChatMessage];
             setChatHistory(finalHistory);
             
             const newChatId = await saveChatSession(finalHistory, isNewChat ? null : currentChatId);
