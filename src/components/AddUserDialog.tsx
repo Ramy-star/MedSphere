@@ -33,7 +33,7 @@ import { Loader2 } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Content } from '@/lib/contentService';
 import { db } from '@/firebase';
-import { collection, doc, runTransaction, addDoc } from 'firebase/firestore';
+import { collection, doc, runTransaction, addDoc, where, orderBy } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useAuthStore } from '@/stores/auth-store';
 
@@ -82,7 +82,7 @@ export function AddUserDialog({ open, onOpenChange }: AddUserDialogProps) {
   });
   
   const { data: levels, loading: loadingLevels } = useCollection<Content>('content', {
-      where: ['type', '==', 'LEVEL'],
+      where: where('type', '==', 'LEVEL'),
       orderBy: ['order', 'asc']
   });
 
