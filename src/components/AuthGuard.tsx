@@ -103,7 +103,7 @@ function ProfileSetupForm() {
           // This satisfies the non-null requirement for the hash.
           const secretCodeHash = await hashSecretCode(nanoid());
 
-          const newProfileData: Omit<UserProfile, 'roles'> = {
+          const newProfileData: Omit<UserProfile, 'roles' | 'secretCodeHash'> = {
             id: firebaseUser.uid,
             uid: firebaseUser.uid,
             email: firebaseUser.email!,
@@ -112,9 +112,8 @@ function ProfileSetupForm() {
             username: username.trim(),
             studentId: studentId,
             createdAt: new Date().toISOString(),
-            secretCodeHash,
           };
-          batch.set(userDocRef, { ...newProfileData, roles: {} });
+          batch.set(userDocRef, { ...newProfileData, secretCodeHash, roles: {} });
           batch.set(studentIdRef, {
             userId: firebaseUser.uid,
             claimedAt: new Date().toISOString(),

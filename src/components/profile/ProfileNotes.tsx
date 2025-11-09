@@ -129,7 +129,13 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
 
     const handleAddNote = async () => {
         try {
-            await contentService.createNote(userId);
+            const notesCollection = collection(db, `users/${userId}/notes`);
+            await addDoc(notesCollection, {
+                content: 'New Note',
+                color: 'bg-slate-700/50 border-slate-500/30',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+            });
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not create a new note.' });
         }
@@ -137,7 +143,8 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
 
     const handleUpdateNote = async (id: string, content: string, color: string) => {
         try {
-            await contentService.updateNote(userId, id, { content, color });
+            const noteRef = doc(db, `users/${userId}/notes`, id);
+            await updateDoc(noteRef, { content, color, updatedAt: new Date().toISOString() });
         } catch (error: any) {
              toast({ variant: 'destructive', title: 'Error', description: 'Could not update the note.' });
         }
@@ -145,11 +152,15 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
     
     const handleDeleteNote = async (id: string) => {
         try {
-            await contentService.deleteNote(userId, id);
+            await deleteDoc(doc(db, `users/${userId}/notes`, id));
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the note.' });
         }
     };
+
+    if (loading && !notes) {
+        return <div className="h-20 w-full rounded-lg bg-slate-800/50 animate-pulse" />;
+    }
 
     return (
         <div className="space-y-4">

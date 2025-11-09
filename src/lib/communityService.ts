@@ -3,7 +3,8 @@ import { db } from '@/firebase';
 import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc, setDoc, getDocs, query, where, arrayUnion, deleteDoc as deleteFirestoreDoc, writeBatch, increment, runTransaction } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import { useAuthStore } from '@/stores/auth-store';
-import { contentService } from './contentService';
+import { fileService } from './fileService';
+import type { Content } from './contentService';
 import level1Data from '@/lib/student-ids/level-1-data.json';
 import level2Data from '@/lib/student-ids/level-2-data.json';
 import level3Data from '@/lib/student-ids/level-3-data.json';
@@ -92,14 +93,6 @@ export interface Message {
   reactions?: { [key: string]: string };
 }
 
-export type Content = {
-    id: string;
-    name: string;
-    type: string;
-    parentId: string | null;
-    metadata?: { [key: string]: any };
-};
-
 
 export async function sendMessage(channelId: string, userId: string, content: string, isAnonymous: boolean, media?: { file: File, type: 'image' | 'audio', duration?: number }, replyTo?: Message['replyTo']): Promise<void> {
     if (!db) {
@@ -110,7 +103,7 @@ export async function sendMessage(channelId: string, userId: string, content: st
     let messageContent = content;
 
     if (media) {
-        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, media.file, () => {}, 'community_media');
+        const { url, publicId } = await fileService.uploadUserAvatar({ id: userId } as any, media.file, () => {}, 'community_media');
         
         if (media.type === 'audio') {
             mediaData = {
@@ -225,7 +218,7 @@ export async function sendDirectMessage(chatId: string, userId: string, content:
     let messageContent = content;
 
     if (media) {
-        const { url, publicId } = await contentService.uploadUserAvatar({ id: userId } as any, media.file, () => {}, 'community_media');
+        const { url, publicId } = await fileService.uploadUserAvatar({ id: userId } as any, media.file, () => {}, 'community_media');
         
         if (media.type === 'audio') {
             mediaData = {
@@ -336,7 +329,7 @@ export async function createPost(userId: string, content: string, imageFile: Fil
     let imageCloudinaryPublicId: string | undefined;
 
     if (imageFile) {
-        const uploadResult = await contentService.uploadUserAvatar({ id: userId } as any, imageFile, () => {}, 'posts');
+        const uploadResult = await fileService.uploadUserAvatar({ id: userId } as any, imageFile, () => {}, 'posts');
         imageUrl = uploadResult.url;
         imageCloudinaryPublicId = uploadResult.publicId;
     }
@@ -374,7 +367,7 @@ export async function updatePost(postId: string, newContent: string) {
 export async function deletePost(post: Post) {
     if (!db) throw new Error("Firestore is not initialized.");
     if (post.imageCloudinaryPublicId) {
-        await contentService.deleteCloudinaryAsset(post.imageCloudinaryPublicId, 'image');
+        await fileService.deleteCloudinaryAsset(post.imageCloudinaryPublicId, 'image');
     }
     const postRef = doc(db, 'posts', post.id);
     await deleteFirestoreDoc(postRef);
@@ -466,7 +459,7 @@ export async function addComment(postId: string, userId: string, content: string
 export async function getComments(postId: string): Promise<Comment[]> {
   if (!db) throw new Error("Firestore is not initialized.");
   const commentsColRef = collection(db, 'posts', postId, 'comments');
-  const q = query(commentsColRef, where('postId', '==', postId)); // Ensure we only get comments for this post
+  const q = query(commentsColRef, where('postId', '==', postId));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(doc => doc.data() as Comment);
 }
@@ -487,21 +480,18 @@ export async function deleteComment(postId: string, commentId: string, parentCom
     
     await runTransaction(db, async (transaction) => {
         const commentSnap = await transaction.get(commentRef);
-        if (!commentSnap.exists()) return; // Comment already deleted
+        if (!commentSnap.exists()) return;
 
         const commentData = commentSnap.data() as Comment;
         const totalReplies = commentData.replyCount || 0;
 
-        // Decrement post's total comment count by 1 (for the main comment) + any replies it had
         transaction.update(postRef, { commentCount: increment(-(1 + totalReplies)) });
 
-        // If it's a reply, decrement parent comment's reply count
         if (parentCommentId) {
             const parentRef = doc(db, 'posts', postId, 'comments', parentCommentId);
             transaction.update(parentRef, { replyCount: increment(-1) });
         }
         
-        // Delete the comment itself
         transaction.delete(commentRef);
     });
 }

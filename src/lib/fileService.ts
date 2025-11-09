@@ -6,19 +6,20 @@ import { v4 as uuidv4 } from 'uuid';
 import { nanoid } from 'nanoid';
 import { offlineStorage } from './offline';
 import * as pdfjs from 'pdfjs-dist';
-import { contentService, type Content, type UploadCallbacks } from './contentService';
+import { contentService as serverContentService, type Content } from './contentService';
 import type { UserProfile } from '@/stores/auth-store';
 
 if (typeof window !== 'undefined') {
     pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
 }
 
-/**
- * Creates a proxied URL through the Cloudflare worker if configured,
- * otherwise returns the direct Cloudinary URL.
- * @param secureUrl The full secure_url from Cloudinary.
- * @returns The final URL to be used in the app.
- */
+export type UploadCallbacks = {
+  onProgress: (progress: number) => void;
+  onSuccess: (content: Content) => void;
+  onError: (error: Error) => void;
+};
+
+
 function createProxiedUrl(secureUrl: string): string {
     const workerBase = process.env.NEXT_PUBLIC_FILES_BASE_URL;
     if (!workerBase) {
@@ -39,16 +40,7 @@ function createProxiedUrl(secureUrl: string): string {
 
 export const fileService = {
     async getFileContent(url: string, fileId?: string): Promise<Blob> {
-        const isOnline = typeof window !== 'undefined' ? navigator.onLine : true;
-
-        // Temporarily disabled offline check to fix build
-        // if (fileId) {
-        //     const cached = await offlineStorage.getFile(fileId);
-        //     if (cached) {
-        //         console.log('📦 Loading from offline cache');
-        //         return cached.content;
-        //     }
-        // }
+        const isOnline = true; 
     
         if (!isOnline) {
             throw new Error("You are offline and the file is not available in the cache.");
@@ -60,27 +52,8 @@ export const fileService = {
                 throw new Error(`Failed to fetch file from network: ${response.statusText}`);
             }
             const blob = await response.blob();
-           
-            // Temporarily disabled offline saving to fix build
-            // if (fileId) {
-            //     await offlineStorage.saveFile(fileId, {
-            //       name: url.split('/').pop() || 'file',
-            //       content: blob,
-            //       mime: blob.type
-            //     });
-            //     // Run cleaning process in the background
-            //     offlineStorage.cleanOldFiles().catch(console.error);
-            // }
             return blob;
         } catch (error) {
-            // Temporarily disabled offline fallback to fix build
-            // if (fileId) {
-            //   const cached = await offlineStorage.getFile(fileId);
-            //   if (cached) {
-            //       console.log('📦 Network failed, falling back to offline cache');
-            //       return cached.content;
-            //   }
-            // }
             throw error;
         }
     },
@@ -134,12 +107,10 @@ export const fileService = {
             }
         } catch (err) {
             console.error("Cloudinary deletion via API failed:", err);
-            // Don't re-throw, as this is a cleanup operation and shouldn't block the main flow.
         }
     },
 
     async deleteFileFromCache(fileId: string): Promise<void> {
-        // await offlineStorage.deleteFile(fileId);
     },
 
     createProxiedUrl: createProxiedUrl,
@@ -184,7 +155,7 @@ export const fileService = {
                     return;
                 }
                 const id = uuidv4();
-                const children = await contentService.getChildren(parentId);
+                const children = await serverContentService.getChildren(parentId);
                 const finalFileUrl = createProxiedUrl(data.secure_url);
                 const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
                 const fileNameWithoutExt = file.name.endsWith('.md') ? file.name.slice(0, -3) : file.name;
@@ -352,7 +323,7 @@ export const fileService = {
 
   async deleteUserAvatar(user: UserProfile) {
       if (!user.metadata?.cloudinaryPublicId) return;
-      await fileService.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
+      await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
       await updateDoc(doc(db, 'users', user.id), {
           photoURL: null,
           'metadata.cloudinaryPublicId': null
@@ -362,7 +333,7 @@ export const fileService = {
   async uploadUserCoverPhoto(user: UserProfile, file: File, onProgress: (progress: number) => void): Promise<{ publicId: string, url: string }> {
       if (user.metadata?.coverPhotoCloudinaryPublicId) {
           try {
-              await fileService.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
+              await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
           } catch (e) {
               console.warn("Failed to delete old cover photo, proceeding with upload:", e);
           }
@@ -411,7 +382,7 @@ export const fileService = {
 
   async deleteUserCoverPhoto(user: UserProfile) {
       if (!user.metadata?.coverPhotoCloudinaryPublicId) return;
-      await fileService.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
+      await this.deleteCloudinaryAsset(user.metadata.coverPhotoCloudinaryPublicId, 'image');
       await updateDoc(doc(db, 'users', user.id), {
           'metadata.coverPhotoURL': null,
           'metadata.coverPhotoCloudinaryPublicId': null

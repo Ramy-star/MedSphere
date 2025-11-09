@@ -1,13 +1,13 @@
 'use server';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
-import { allContent as seedData, telegramInbox } from '@/lib/file-data';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { nanoid } from 'nanoid';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
+import { allContent as seedData, telegramInbox } from '@/lib/file-data';
 
 export type Content = {
   id: string;
@@ -36,13 +36,8 @@ export type Content = {
   color?: string;
 };
 
-export type UploadCallbacks = {
-  onProgress: (progress: number) => void;
-  onSuccess: (content: Content) => void;
-  onError: (error: Error) => void;
-};
-
-
+// This service is now only for Firestore-related content management.
+// File uploads and client-side operations are moved to fileService.ts
 export const contentService = {
   async seedInitialData() {
     if (!db) {
@@ -80,7 +75,7 @@ export const contentService = {
             console.error("Error during data seeding transaction:", e);
         }
     }
-},
+  },
   async getChildren(parentId: string | null): Promise<Content[]> {
     if (!db) return [];
     const q = query(collection(db, 'content'), where('parentId', '==', parentId), orderBy('order'));
@@ -257,9 +252,7 @@ export const contentService = {
               const existingLectureIndex = existingLectures.findIndex(lec => lec.id === newLectureData.id);
  
               if (existingLectureIndex > -1) {
-                  // Merge content into existing lecture object
                   const lectureToUpdate = { ...existingLectures[existingLectureIndex] };
-                  // Smartly merge based on which content type is being updated
                   if(newLectureData.mcqs_level_1 && newLectureData.mcqs_level_1.length > 0) lectureToUpdate.mcqs_level_1 = newLectureData.mcqs_level_1;
                   if(newLectureData.mcqs_level_2 && newLectureData.mcqs_level_2.length > 0) lectureToUpdate.mcqs_level_2 = newLectureData.mcqs_level_2;
                   if(newLectureData.written && newLectureData.written.length > 0) lectureToUpdate.written = newLectureData.written;
@@ -267,7 +260,6 @@ export const contentService = {
                  
                   existingLectures[existingLectureIndex] = lectureToUpdate;
               } else {
-                  // Add as a new lecture object to the array
                   existingLectures.push(newLectureData);
               }
  
@@ -386,11 +378,10 @@ export const contentService = {
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
-        // Ensure icon URL is copied, but not public ID to avoid deleting original
         if (originalItem.metadata?.iconURL) {
             if (!newItemData.metadata) newItemData.metadata = {};
             newItemData.metadata.iconURL = originalItem.metadata.iconURL;
-            newItemData.metadata.iconCloudinaryPublicId = undefined; // Don't copy public id
+            newItemData.metadata.iconCloudinaryPublicId = undefined;
         }
        
         const newDocRef = doc(db, 'content', newId);
@@ -531,88 +522,5 @@ export const contentService = {
         }
         throw e;
     }
-  },
-  async createNote(userId: string) {
-    if (!db) throw new Error("Database not initialized");
-    const notesCollection = collection(db, `users/${userId}/notes`);
-    const newNote = {
-      content: '## New Note\n\nStart writing here...',
-      color: '#333333',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    await addDoc(notesCollection, newNote);
-  },
-
-  async updateNote(userId: string, noteId: string, updates: Partial<Note>) {
-    if (!db) throw new Error("Database not initialized");
-    const noteRef = doc(db, `users/${userId}/notes`, noteId);
-    await updateDoc(noteRef, { ...updates, updatedAt: new Date().toISOString() });
-  },
-
-  async deleteNote(userId: string, noteId: string) {
-    if (!db) throw new Error("Database not initialized");
-    const noteRef = doc(db, `users/${userId}/notes`, noteId);
-    await deleteFirestoreDoc(noteRef);
-  },
-    
-  
-  async resetToInitialStructure(): Promise<void> {
-    if (!db) throw new Error("Firestore not initialized.");
-
-    console.log("Starting structure reset...");
-    
-    // 1. Define the IDs of the items to keep (original Levels and Semesters)
-    const seedIdsToKeep = new Set(
-        seedData.map(item => item.id)
-    );
-    seedIdsToKeep.add(telegramInbox.id);
-
-    // 2. Fetch all content from Firestore
-    const contentRef = collection(db, 'content');
-    const allContentSnapshot = await getDocs(contentRef);
-    
-    const itemsToDelete: Content[] = [];
-    
-    allContentSnapshot.forEach(doc => {
-        const item = doc.data() as Content;
-        if (!seedIdsToKeep.has(item.id)) {
-            itemsToDelete.push(item);
-        }
-    });
-
-    if (itemsToDelete.length === 0) {
-        console.log("No items to delete. Structure is already clean.");
-        return;
-    }
-
-    console.log(`Found ${itemsToDelete.length} items to delete.`);
-
-    // 3. Collect Cloudinary public IDs for deletion
-    const assetsToDelete: { publicId: string, resourceType: 'image' | 'video' | 'raw' }[] = [];
-    itemsToDelete.forEach(item => {
-        if (item.metadata?.cloudinaryPublicId) {
-            assetsToDelete.push({
-                publicId: item.metadata.cloudinaryPublicId,
-                resourceType: item.metadata.cloudinaryResourceType || 'raw'
-            });
-        }
-        if (item.metadata?.iconCloudinaryPublicId) {
-             assetsToDelete.push({
-                publicId: item.metadata.iconCloudinaryPublicId,
-                resourceType: 'image'
-            });
-        }
-    });
-
-    // 4. Delete Firestore documents in a batch
-    const batch = writeBatch(db);
-    itemsToDelete.forEach(item => {
-        batch.delete(doc(db, 'content', item.id));
-    });
-    
-    console.log("Committing Firestore batch deletion...");
-    await batch.commit();
-    console.log("Firestore documents deleted.");
   },
 };

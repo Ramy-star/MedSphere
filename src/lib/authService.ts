@@ -4,6 +4,7 @@ import { db } from '@/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 import { nanoid } from 'nanoid';
+import type { UserProfile } from '@/stores/auth-store';
 
 // Dynamically import bcryptjs only when needed to avoid bundling issues.
 async function hashSecretCode(secretCode: string): Promise<string> {
@@ -45,6 +46,11 @@ import level5Data from '@/lib/student-ids/level-5-data.json';
 
 const SUPER_ADMIN_ID = "221100154";
 
+type StudentData = {
+  "Student ID": string | number;
+  "Student Name": string;
+  "Academic Email"?: string;
+};
 
 const allStudentIds = new Set([
     ...level1Ids,
@@ -55,19 +61,19 @@ const allStudentIds = new Set([
 ].map(String));
 
 const allStudentData = new Map([
-    ...(level1Data as any[]).map(d => [String(d['Student ID']), d]),
-    ...(level2Data as any[]).map(d => [String(d['Student ID']), d]),
-    ...(level3Data as any[]).map(d => [String(d['Student ID']), d]),
-    ...(level4Data as any[]).map(d => [String(d['Student ID']), d]),
-    ...(level5Data as any[]).map(d => [String(d['Student ID']), d]),
+    ...(level1Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level2Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level3Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level4Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
+    ...(level5Data as StudentData[]).map(d => [String(d['Student ID']), d] as const),
 ]);
 
 const idToLevelMap = new Map([
-    ...level1Ids.map(id => [String(id), 'Level 1']),
-    ...level2Ids.map(id => [String(id), 'Level 2']),
-    ...level3Ids.map(id => [String(id), 'Level 3']),
-    ...level4Ids.map(id => [String(id), 'Level 4']),
-    ...level5Ids.map(id => [String(id), 'Level 5']),
+    ...level1Ids.map(id => [String(id), 'Level 1'] as const),
+    ...level2Ids.map(id => [String(id), 'Level 2'] as const),
+    ...level3Ids.map(id => [String(id), 'Level 3'] as const),
+    ...level4Ids.map(id => [String(id), 'Level 4'] as const),
+    ...level5Ids.map(id => [String(id), 'Level 5'] as const),
 ]);
 
 export async function getStudentDetails(studentId: string): Promise<{ isValid: boolean, isClaimed: boolean, userProfile: any | null }> {
