@@ -33,6 +33,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { db } from '@/firebase';
 
@@ -1203,7 +1204,7 @@ const ExamMode = ({
                                                 <DropdownMenuItem onSelect={onOpenLectureEditor}><Edit size={16} className="mr-2" />Edit Lecture</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => onOpenUpsertDialog(null, 1)}><PlusSquare size={16} className="mr-2" />Add Question</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setIsReportModalOpen(true)}><FileText size={16} className="mr-2" />View Report</DropdownMenuItem>
-                                                
+                                                <DropdownMenuSeparator />
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
@@ -1416,7 +1417,7 @@ const ExamMode = ({
                     </div>
                 );
             })()}
-             {canAdminister && <AdminReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} lectureId={activeLecture.id} />}
+             {canAdminister && activeLecture && <AdminReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} lectureId={activeLecture.id} />}
         </div>
     );
 };

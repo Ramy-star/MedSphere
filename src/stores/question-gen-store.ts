@@ -291,7 +291,9 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
 
     resetFlow: () => {
         const { task } = get();
-        if (task) task.abortController.abort();
+        if (task) {
+            task.abortController.abort();
+        }
         set({
             flowStep: 'idle',
             pendingSource: null,
