@@ -1,3 +1,4 @@
+
 'use client';
 
 import { create } from 'zustand';
@@ -65,7 +66,7 @@ export type UserProfile = {
   secretCodeHash: string;
 };
 
-type AuthFlowState = 'anonymous' | 'authenticated' | 'awaiting_secret_creation';
+type AuthFlowState = 'anonymous' | 'authenticated' | 'awaiting_secret_creation' | 'loading';
 
 type AuthState = {
   authState: AuthFlowState;
@@ -166,7 +167,7 @@ const listenToUserProfile = (studentId: string) => {
 };
 
 const useAuthStore = create<AuthState>((set, get) => ({
-  authState: 'anonymous',
+  authState: 'loading',
   isAuthenticated: false,
   isSuperAdmin: false,
   studentId: null,
@@ -206,7 +207,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
       set({ authState: 'anonymous', loading: false, user: null });
       return;
     }
-    set({ loading: true });
+    set({ loading: true, authState: 'loading' });
     try {
         const storedId = localStorage.getItem(VERIFIED_STUDENT_ID_KEY);
         if (storedId) {
@@ -221,7 +222,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
   login: async (studentId: string, secretCode?: string) => {
-    set({ loading: true, error: null });
+    set({ loading: true, error: null, authState: 'loading' });
     if (!db) {
         set({ loading: false, error: "Database not available." });
         return;
@@ -244,11 +245,11 @@ const useAuthStore = create<AuthState>((set, get) => ({
       }
     } catch (error: any) {
         console.error("Login/Verification error:", error);
-        set({ loading: false, error: error.message });
+        set({ loading: false, error: error.message, authState: 'anonymous' });
     }
   },
   createProfileAndLogin: async (studentId, secretCode) => {
-      set({ loading: true, error: null });
+      set({ loading: true, error: null, authState: 'loading' });
       try {
           const userProfile = await createUserProfile(studentId, secretCode);
           if (userProfile) {
