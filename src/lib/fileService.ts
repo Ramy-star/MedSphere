@@ -1,7 +1,6 @@
 'use client';
 
 import { offlineStorage } from './offline';
-import type { Content } from './contentService';
 import * as pdfjs from 'pdfjs-dist';
 
 if (typeof window !== 'undefined') {
@@ -57,7 +56,6 @@ export const fileService = {
            
             if (fileId) {
                 await offlineStorage.saveFile(fileId, {
-                  id: fileId,
                   name: url.split('/').pop() || 'file',
                   content: blob,
                   mime: blob.type
@@ -129,6 +127,10 @@ export const fileService = {
             console.error("Cloudinary deletion via API failed:", err);
             // Don't re-throw, as this is a cleanup operation and shouldn't block the main flow.
         }
+    },
+
+    async deleteFileFromCache(fileId: string): Promise<void> {
+        await offlineStorage.deleteFile(fileId);
     },
 
     createProxiedUrl

@@ -879,7 +879,7 @@ export const contentService = {
         if (filesToDeleteFromCache.length > 0) {
             for (const url of filesToDeleteFromCache) {
                 // Assuming fileId is the URL for cache purposes
-                await fileService.getFileContent(url, url).catch(() => {});
+                await fileService.deleteFileFromCache(url);
             }
         }
         await batch.commit();
