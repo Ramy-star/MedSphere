@@ -32,6 +32,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
@@ -220,7 +221,7 @@ const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
 const DialogOverlay = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Overlay>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>>(({ className, ...props }, ref) => (<DialogPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className)} {...props} />));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
-const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>>(({ className, children, ...props }, ref) => (<DialogPortal><DialogOverlay /><DialogPrimitive.Content ref={ref} className={cn("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg", className)} {...props}>{children}<DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"><X className="h-4 w-4" /><span className="sr-only">Close</span></DialogPrimitive.Close></DialogPrimitive.Content></DialogPortal>));
+const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>>(({ className, children, ...props }, ref) => (<DialogPortal><DialogOverlay /><DialogPrimitive.Content ref={ref} className={cn("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg z-[9999]", className)} {...props}>{children}<DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"><X className="h-4 w-4" /><span className="sr-only">Close</span></DialogPrimitive.Close></DialogPrimitive.Content></DialogPortal>));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (<div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />);
 DialogHeader.displayName = "DialogHeader";
@@ -387,8 +388,6 @@ const ResultsDistributionChart = ({ results, userFirstResult, currentPercentage 
         </ResponsiveContainer>
     );
 }
-
-// --- MAIN EXAM COMPONENT LOGIC ---
 
 const motionVariants = {
   hidden: { opacity: 0, y: 10 },
@@ -712,6 +711,66 @@ const UpsertMcqFormContent = ({
     );
 };
 
+const AdminReportModal = ({ isOpen, onClose, lectureId }: { isOpen: boolean, onClose: () => void, lectureId: string }) => {
+    const { data: results, loading: loadingResults } = useCollection<ExamResultWithId>(
+        query(collection(db, 'examResults'), where('lectureId', '==', lectureId)),
+        { disabled: !lectureId || !isOpen }
+    );
+    const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
+
+    const combinedData = useMemo(() => {
+        if (!results || !users) return [];
+        const userMap = new Map(users.map(u => [u.studentId, u]));
+        return results.map(res => ({
+            ...res,
+            user: userMap.get(res.userId),
+        })).sort((a, b) => b.percentage - a.percentage);
+    }, [results, users]);
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="modal-card sm:max-w-4xl max-h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Exam Report</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-hidden">
+                    <ScrollArea className="h-full">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Student</TableHead>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Score</TableHead>
+                                    <TableHead>Percentage</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {(loadingResults || loadingUsers) && <tr><TableCell colSpan={4} className="text-center">Loading...</TableCell></tr>}
+                                {combinedData.map(res => (
+                                    <TableRow key={res.id}>
+                                        <TableCell className="font-medium flex items-center gap-2">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={res.user?.photoURL || ''} />
+                                                <AvatarFallback>{res.user?.displayName?.[0] || 'U'}</AvatarFallback>
+                                            </Avatar>
+                                            {res.user?.displayName || 'Unknown User'}
+                                        </TableCell>
+                                        <TableCell>{res.userId}</TableCell>
+                                        <TableCell>{res.score}/{res.totalQuestions}</TableCell>
+                                        <TableCell>{res.percentage.toFixed(1)}%</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
+// --- MAIN EXAM COMPONENT LOGIC ---
 
 const ExamMode = ({
     fileItemId,
@@ -759,7 +818,7 @@ const ExamMode = ({
         return query(resultsCollectionRef, where("lectureId", "==", activeLecture.id));
     }, [resultsCollectionRef, activeLecture?.id]);
 
-    const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery as any, { disabled: !examResultsQuery });
+    const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery, { disabled: !examResultsQuery });
 
     const questions = useMemo(() => {
         const l1 = Array.isArray(activeLecture?.mcqs_level_1) ? activeLecture.mcqs_level_1 : [];
@@ -1219,37 +1278,38 @@ const ExamMode = ({
                         <h2 style={{ fontFamily: "'Calistoga', cursive" }}>{activeLecture.name} Exam</h2>
                         <p>{`Ready to test your knowledge? You have ${questions.length} questions.`}</p>
                         <div className="flex gap-4 items-center justify-center">
-                            <button onClick={() => handleStartExam(false)} className="start-exam-btn">Start Exam</button>
-                            {canAdminister && (
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground"><Settings2 /></Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent>
-                                        <DropdownMenuItem onSelect={() => setIsFullLectureEditorOpen(true)}><Edit size={16} className="mr-2" />Edit Lecture</DropdownMenuItem>
-                                        <DropdownMenuItem onSelect={() => setIsUpsertMcqDialogOpen(true)}><PlusSquare size={16} className="mr-2" />Add Question</DropdownMenuItem>
-                                        <DropdownMenuItem onSelect={() => setIsReportModalOpen(true)}><FileText size={16} className="mr-2" />View Report</DropdownMenuItem>
-                                        <AlertDialog>
-                                            <AlertDialogTrigger asChild>
-                                                <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
-                                                  <Trash2 size={16} className="mr-2" />
-                                                  Delete Lecture
-                                                </DropdownMenuItem>
-                                            </AlertDialogTrigger>
-                                            <AlertDialogContent>
-                                                <AlertDialogHeader>
-                                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                    <AlertDialogDescription>This will permanently delete this lecture and all its questions.</AlertDialogDescription>
-                                                </AlertDialogHeader>
-                                                <AlertDialogFooter>
-                                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                    <AlertDialogAction onClick={handleDeleteLecture} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                                </AlertDialogFooter>
-                                            </AlertDialogContent>
-                                        </AlertDialog>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            )}
+                                    <button onClick={() => handleStartExam(false)} className="start-exam-btn">Start Exam</button>
+                                    {canAdminister && (
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground"><Settings2 /></Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent>
+                                                <DropdownMenuItem onSelect={() => setIsFullLectureEditorOpen(true)}><Edit size={16} className="mr-2" />Edit Lecture</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => setIsUpsertMcqDialogOpen(true)}><PlusSquare size={16} className="mr-2" />Add Question</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => setIsReportModalOpen(true)}><FileText size={16} className="mr-2" />View Report</DropdownMenuItem>
+                                                <DropdownMenuSeparator />
+                                                <AlertDialog>
+                                                    <AlertDialogTrigger asChild>
+                                                        <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
+                                                          <Trash2 size={16} className="mr-2" />
+                                                          Delete Lecture
+                                                        </DropdownMenuItem>
+                                                    </AlertDialogTrigger>
+                                                    <AlertDialogContent>
+                                                        <AlertDialogHeader>
+                                                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                                            <AlertDialogDescription>This will permanently delete this lecture and all its questions.</AlertDialogDescription>
+                                                        </AlertDialogHeader>
+                                                        <AlertDialogFooter>
+                                                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                                            <AlertDialogAction onClick={handleDeleteLecture} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                                        </AlertDialogFooter>
+                                                    </AlertDialogContent>
+                                                </AlertDialog>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    )}
                         </div>
                     </div>
                 </div>
@@ -1449,6 +1509,9 @@ const ExamMode = ({
 export default function ExamContainer({ lectures: rawLecturesData, onStateChange, fileItemId }: { lectures: Lecture[] | Lecture, onStateChange?: (inProgress: boolean) => void, fileItemId: string | null }) {
     const [lecturesState, setLecturesState] = useState<Lecture[]>(Array.isArray(rawLecturesData) ? rawLecturesData : (rawLecturesData ? [rawLecturesData] : []));
     const [activeLectureId, setActiveLectureId] = useState<string | undefined>(lecturesState[0]?.id);
+    const [isUpsertMcqDialogOpen, setIsUpsertMcqDialogOpen] = useState(false);
+    const [mcqToEdit, setMcqToEdit] = useState<{ mcq: MCQ, level: 1 | 2 } | null>(null);
+    const [isFullLectureEditorOpen, setIsFullLectureEditorOpen] = useState(false);
     const isInitialRender = useRef(true);
 
     const persistChanges = async (updatedLectures: Lecture[]) => {
@@ -1503,26 +1566,81 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         }
     }, [lecturesState]);
 
-    if (!lecturesState || lecturesState.length === 0) {
-        return <p className="p-4 text-center">No lectures available.</p>;
-    }
-
     const activeLecture = lecturesState.find(l => l.id === activeLectureId);
 
     return (
+        <>
         <main className="exam-page-container h-full">
             <div id="questions-container" className="h-full">
-                 <ExamMode 
+                 {activeLecture ? <ExamMode 
                     fileItemId={fileItemId}
                     lectures={lecturesState}
-                    activeLecture={activeLecture!} // We can assert it's not null here due to the check above
+                    activeLecture={activeLecture}
                     onExit={handleExit} 
                     onSwitchLecture={handleSwitchLecture}
                     onLecturesUpdate={handleLecturesUpdate}
                     allLectures={lecturesState}
                     onStateChange={onStateChange}
-                />
+                /> : <div className="flex items-center justify-center h-full"><p>No lectures available for this exam.</p></div>}
             </div>
         </main>
+         <UpsertMcqDialog
+            isOpen={isUpsertMcqDialogOpen}
+            onClose={() => {setIsUpsertMcqDialogOpen(false); setMcqToEdit(null);}}
+            lectures={lecturesState}
+            activeLectureId={activeLectureId}
+            onUpsert={(lectureId, newLectureName, mcqData, level, originalMcq) => {
+                let updatedLectures = [...lecturesState];
+                let targetLectureId = lectureId;
+                let newLectureCreated = false;
+        
+                if (lectureId === 'new') {
+                    if (!newLectureName.trim()) return;
+                    const newLec: Lecture = { id: `l${Date.now()}`, name: newLectureName.trim(), mcqs_level_1: [], mcqs_level_2: [] };
+                    updatedLectures.push(newLec);
+                    targetLectureId = newLec.id;
+                    newLectureCreated = true;
+                }
+        
+                const lectureIndex = updatedLectures.findIndex(l => l.id === targetLectureId);
+                if (lectureIndex === -1) return;
+        
+                const lectureToUpdate = {...updatedLectures[lectureIndex]};
+                const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
+                let mcqs = [...(lectureToUpdate[key] || [])];
+        
+                if (originalMcq) {
+                    const mcqIndex = mcqs.findIndex(m => m.q === originalMcq.q);
+                    if (mcqIndex > -1) mcqs[mcqIndex] = mcqData;
+                } else {
+                    mcqs.push(mcqData);
+                }
+                lectureToUpdate[key] = mcqs;
+                updatedLectures[lectureIndex] = lectureToUpdate;
+        
+                handleLecturesUpdate(updatedLectures);
+                if (newLectureCreated) setTimeout(() => setActiveLectureId(targetLectureId), 0);
+            }}
+            mcqToEdit={mcqToEdit}
+        />
+        {activeLecture && <FullLectureEditorDialog 
+            isOpen={isFullLectureEditorOpen}
+            onClose={() => setIsFullLectureEditorOpen(false)}
+            lecture={activeLecture}
+            onDeleteMcq={(mcqToDelete, level) => {
+                const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
+                const updatedLectures = lecturesState.map(l => l.id === activeLectureId ? {...l, [key]: (l[key] || []).filter(mcq => mcq.q !== mcqToDelete.q)} : l);
+                handleLecturesUpdate(updatedLectures);
+            }}
+            onOpenUpsertDialog={(mcq, level) => {
+                setMcqToEdit({mcq, level});
+                setIsUpsertMcqDialogOpen(true);
+            }}
+            onLectureNameSave={(newName) => {
+                const updatedLectures = lecturesState.map(l => l.id === activeLectureId ? {...l, name: newName} : l);
+                handleLecturesUpdate(updatedLectures);
+            }}
+        />}
+      </>
     );
 }
