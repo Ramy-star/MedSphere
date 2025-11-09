@@ -1,0 +1,286 @@
+
+'use client';
+
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
+import { Button } from './ui/button';
+import { Checkbox } from './ui/checkbox';
+import { ScrollArea } from './ui/scroll-area';
+import { useState, useMemo, useEffect } from 'react';
+import { Loader2, PlusCircle, Trash2, Layers, Pencil, Shield, Move, ListPlus, Settings, BookUser, SlidersHorizontal, Shuffle, Inbox, Users } from 'lucide-react';
+import { Content } from '@/lib/contentService';
+import { FolderSelectorDialog } from './FolderSelectorDialog';
+import { doc, updateDoc, addDoc, collection } from 'firebase/firestore';
+import { db } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
+import { cn } from '@/lib/utils';
+import { useAuthStore } from '@/stores/auth-store';
+import { FlashcardIcon } from './icons/FlashcardIcon';
+import type { UserProfile, UserRole } from '@/stores/auth-store';
+import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
+import { Lightbulb } from 'lucide-react';
+
+
+const permissionGroups = {
+    'Add Content Menu': [
+        { id: 'canAddClass', label: 'Add Class' },
+        { id: 'canAddFolder', label: 'Add Folder' },
+        { id: 'canUploadFile', label: 'Upload File' },
+        { id: 'canAddLink', label: 'Add Link' },
+        { id: 'canCreateFlashcard', label: 'Create Flashcard' },
+        { id: 'canCreateQuiz', label: 'Create Quiz' },
+        { id: 'canCreateExam', label: 'Create Exam' },
+    ],
+    'Item Options Menu': [
+        { id: 'canRename', label: 'Rename' },
+        { id: 'canDelete', label: 'Delete' },
+        { id: 'canMove', label: 'Move' },
+        { id: 'canCopy', label: 'Copy' },
+        { id: 'canChangeIcon', label: 'Change Icon' },
+        { id: 'canToggleVisibility', label: 'Toggle Visibility' },
+        { id: 'canUpdateFile', label: 'Update File' },
+        { id: 'canCreateQuestions', label: 'Create Questions (AI)' },
+    ],
+    'Page Access': [
+        { id: 'canAccessAdminPanel', label: 'Admin Panel' },
+        { id: 'canAccessQuestionCreator', label: 'Questions Creator' },
+        { id: 'canAccessCommunityPage', label: 'Community Page' },
+    ],
+    'Additional': [
+        { id: 'canReorder', label: 'Reorder (Drag & Drop)' },
+        { id: 'canAdministerExams', label: 'Administer Exams' },
+        { id: 'canAdministerFlashcards', label: 'Administer Flashcards' },
+        { id: 'canAccessTelegramInbox', label: 'Telegram Inbox' },
+    ]
+};
+
+async function logAdminAction(actor: any, action: string, target: any, details?: object) {
+    if (!db || !actor || !target) return;
+    try {
+        await addDoc(collection(db, 'auditLogs'), {
+            timestamp: new Date().toISOString(),
+            actorId: actor.id,
+            actorName: actor.displayName || actor.username,
+            action: action,
+            targetId: target.id,
+            targetName: target.displayName || target.username,
+            details: details || {}
+        });
+    } catch(error) {
+        console.error("Failed to log admin action:", error);
+    }
+}
+
+
+export function PermissionsDialog({ user, open, onOpenChange }: { user: UserProfile | null, open: boolean, onOpenChange: (open: boolean) => void }) {
+    const [roles, setRoles] = useState<UserRole[]>([]);
+    const [isSaving, setIsSaving] = useState(false);
+    const { toast } = useToast();
+    const { user: currentUser } = useAuthStore();
+    const originalRoles = useMemo(() => user?.roles || [], [user]);
+
+    useEffect(() => {
+        if (user && open) {
+            setRoles(user.roles && Array.isArray(user.roles) ? JSON.parse(JSON.stringify(user.roles)) : []);
+        }
+    }, [user, open]);
+
+    const handleSave = async () => {
+        if (!user || !currentUser) return;
+        setIsSaving(true);
+        try {
+            const userRef = doc(db, 'users', user.id);
+            await updateDoc(userRef, { roles });
+
+            const details = {
+                from: JSON.stringify(originalRoles),
+                to: JSON.stringify(roles)
+            };
+            await logAdminAction(currentUser, 'user.updatePermissions', user, details);
+
+            toast({ title: "Permissions Saved", description: `Permissions for ${user.displayName} have been updated.` });
+            onOpenChange(false);
+        } catch (error: any) {
+            toast({ variant: 'destructive', title: 'Error Saving', description: error.message });
+        } finally {
+            setIsSaving(false);
+        }
+    };
+    
+    const handleAddRole = () => {
+        const newRole: UserRole = { role: 'subAdmin', scope: 'global', permissions: [] };
+        setRoles([...roles, newRole]);
+    };
+    
+    const handleRemoveRole = (index: number) => {
+        const newRoles = [...roles];
+        newRoles.splice(index, 1);
+        setRoles(newRoles);
+    };
+
+    const handleRoleChange = (index: number, updatedRole: Partial<UserRole>) => {
+        const newRoles = [...roles];
+        newRoles[index] = { ...newRoles[index], ...updatedRole };
+        setRoles(newRoles);
+    };
+    
+    if (!user) return null;
+
+    return (
+        <Dialog open={open} onOpenChange={onOpenChange}>
+            <DialogContent className="w-[90vw] max-w-2xl p-0 border-slate-700 rounded-2xl bg-slate-900/80 backdrop-blur-xl shadow-lg text-white flex flex-col h-[80vh]">
+                <div className="p-6 pb-4">
+                    <DialogHeader>
+                        <DialogTitle>Edit Permissions for {user.displayName}</DialogTitle>
+                        <DialogDescription>
+                            Assign roles and specific permissions for this user.
+                        </DialogDescription>
+                    </DialogHeader>
+                </div>
+                <ScrollArea className="flex-1 px-6">
+                    <div className="space-y-6">
+                        {roles.map((role, index) => (
+                            <RoleEditor 
+                                key={index}
+                                role={role}
+                                onRemove={() => handleRemoveRole(index)}
+                                onChange={(updatedRole) => handleRoleChange(index, updatedRole)}
+                            />
+                        ))}
+                    </div>
+                </ScrollArea>
+                <div className="p-6 pt-4 mt-auto border-t border-slate-800 flex justify-between items-center">
+                     <Button variant="outline" onClick={handleAddRole} className="rounded-xl">
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Role
+                    </Button>
+                    <div className="flex gap-2">
+                       <Button variant="outline" className="rounded-xl" onClick={() => onOpenChange(false)}>Cancel</Button>
+                        <Button onClick={handleSave} disabled={isSaving} className="rounded-xl">
+                           {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                           Save Changes
+                        </Button>
+                    </div>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
+function RoleEditor({ role, onChange, onRemove }: { role: UserRole, onChange: (updatedRole: Partial<UserRole>) => void, onRemove: () => void }) {
+    const [showFolderSelector, setShowFolderSelector] = useState(false);
+
+    const handleScopeSelect = (scopeItem: Content) => {
+        onChange({ 
+            scope: scopeItem.type.toLowerCase() as UserRole['scope'], 
+            scopeId: scopeItem.id, 
+            scopeName: scopeItem.name 
+        });
+        setShowFolderSelector(false);
+    };
+
+    const handleGlobalToggle = (isGlobal: boolean) => {
+        if (isGlobal) {
+            onChange({ scope: 'global', scopeId: undefined, scopeName: undefined });
+        } else {
+            setShowFolderSelector(true);
+        }
+    };
+    
+    const handlePermissionChange = (permissionId: string, checked: boolean) => {
+        const currentPermissions = role.permissions || [];
+        const newPermissions = checked
+            ? [...currentPermissions, permissionId]
+            : currentPermissions.filter(p => p !== permissionId);
+        onChange({ permissions: newPermissions });
+    };
+    
+    const groupIcons = {
+        'Add Content Menu': ListPlus,
+        'Item Options Menu': Settings,
+        'Page Access': BookUser,
+        'Additional': SlidersHorizontal
+    }
+
+    return (
+        <div className="bg-black/20 border border-white/10 p-4 rounded-xl space-y-4 mt-6">
+            <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2 text-slate-400">
+                    <Shield size={16} />
+                    <h4 className="font-semibold capitalize">Admin Role</h4>
+                </div>
+                <Button variant="ghost" size="icon" className="h-7 w-7 text-red-400 hover:bg-red-500/20" onClick={onRemove}>
+                    <Trash2 size={16} />
+                </Button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+                <div className="flex items-center space-x-2 p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <Checkbox
+                        id={`global-scope-${role.scopeId || 'global'}`}
+                        checked={role.scope === 'global'}
+                        onCheckedChange={handleGlobalToggle}
+                    />
+                    <label
+                        htmlFor={`global-scope-${role.scopeId || 'global'}`}
+                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                        Global Scope
+                    </label>
+                </div>
+                 <Button 
+                    variant="outline" 
+                    className={cn(
+                        "rounded-xl justify-start truncate",
+                        role.scope !== 'global' && "border-blue-500 text-white"
+                    )} 
+                    onClick={() => setShowFolderSelector(true)}
+                >
+                    <Pencil className="mr-2 h-4 w-4"/>
+                    {role.scope !== 'global' && role.scopeName ? role.scopeName : 'Select Specific Scope...'}
+                </Button>
+            </div>
+            
+            <div className="space-y-6 pt-2">
+                {Object.entries(permissionGroups).map(([groupName, permissions]) => {
+                    const Icon = groupIcons[groupName as keyof typeof groupIcons] || Layers;
+                    return (
+                        <div key={groupName}>
+                            <h5 className="font-medium text-sm text-slate-400 mb-3 border-b border-white/10 pb-2 flex items-center gap-2">
+                                <Icon size={16}/>
+                                {groupName}
+                            </h5>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3">
+                               {permissions.map(p => (
+                                    <div key={p.id} className="flex items-center space-x-2 p-1 rounded-md">
+                                        <Checkbox 
+                                            id={`${role.scopeId || 'global'}-${p.id}`}
+                                            checked={role.permissions?.includes(p.id)}
+                                            onCheckedChange={(checked) => handlePermissionChange(p.id, !!checked)}
+                                        />
+                                         <label htmlFor={`${role.scopeId || 'global'}-${p.id}`} className="text-sm font-medium leading-none cursor-pointer text-slate-200">
+                                            {p.label}
+                                        </label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            <FolderSelectorDialog 
+                open={showFolderSelector}
+                onOpenChange={setShowFolderSelector}
+                onSelect={handleScopeSelect}
+                actionType={null} 
+            />
+        </div>
+    );
+}
+
+    

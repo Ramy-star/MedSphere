@@ -1,0 +1,437 @@
+
+{
+  "entities": {
+    "Content": {
+      "title": "Content",
+      "description": "Represents any piece of content in the application, such as a level, semester, subject, folder, or file.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the content item." },
+        "name": { "type": "string", "description": "Display name of the content item." },
+        "type": { "type": "string", "enum": ["LEVEL", "SEMESTER", "SUBJECT", "FOLDER", "FILE", "LINK", "INTERACTIVE_QUIZ", "INTERACTIVE_EXAM", "INTERACTIVE_FLASHCARD"], "description": "The type of content." },
+        "parentId": { "type": "string", "description": "The ID of the parent item. Null for top-level items." },
+        "order": { "type": "number", "description": "The order of the item within its parent." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the item was created." },
+        "updatedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the item was last updated." },
+        "iconName": { "type": "string", "description": "Name of the Lucide icon for subjects." },
+        "color": { "type": "string", "description": "Tailwind color class for subject icons." },
+        "metadata": {
+          "type": "object",
+          "properties": {
+            "size": { "type": "number", "description": "File size in bytes." },
+            "mime": { "type": "string", "description": "MIME type of the file." },
+            "storagePath": { "type": "string", "description": "Path to the file in Firebase Cloud Storage." },
+            "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the file resource." },
+            "cloudinaryResourceType": { "type": "string", "enum": ["image", "video", "raw"], "description": "The resource type on Cloudinary." },
+            "iconURL": { "type": "string", "format": "uri", "description": "URL for a custom folder/subject icon." },
+            "iconCloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the icon resource." },
+            "url": { "type": "string", "format": "uri", "description": "The URL for LINK type content." },
+            "shortId": { "type": "string", "description": "A short ID for links." },
+            "sourceFileId": { "type": "string", "description": "The ID of the original source file for generated content." },
+            "quizData": { "type": "string", "description": "JSON string containing the data for an interactive quiz." },
+            "isClassContainer": { "type": "boolean", "description": "True if the folder represents a class." },
+            "isHidden": { "type": "boolean", "description": "Whether the content is hidden from non-admins." }
+          }
+        }
+      },
+      "required": ["id", "name", "type", "parentId", "order", "createdAt", "updatedAt"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "Represents a user's profile information, including their role.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "The Firestore document ID, same as studentId." },
+        "uid": { "type": "string", "description": "The user's student ID." },
+        "username": { "type": "string", "description": "Unique, user-chosen username." },
+        "studentId": { "type": "string", "description": "The user's verified university student ID." },
+        "email": { "type": "string", "format": "email" },
+        "displayName": { "type": "string" },
+        "photoURL": { "type": "string", "format": "uri" },
+        "createdAt": { "type": "string", "format": "date-time"},
+        "isBlocked": { "type": "boolean", "description": "Whether the user account is blocked." },
+        "level": { "type": "string", "description": "The academic level of the user." },
+        "favorites": {
+            "type": "array",
+            "description": "An array of content IDs that the user has favorited.",
+            "items": { "type": "string" }
+        },
+        "metadata": {
+            "type": "object",
+            "properties": {
+                "cloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the avatar." },
+                "coverPhotoURL": { "type": "string", "format": "uri", "description": "URL for the user's cover photo." },
+                "coverPhotoCloudinaryPublicId": { "type": "string", "description": "Cloudinary public ID for the cover photo." }
+            }
+        },
+        "sessions": {
+            "type": "array",
+            "description": "A list of active user sessions.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "sessionId": { "type": "string", "description": "Unique identifier for the session." },
+                    "device": { "type": "string", "description": "Description of the device/browser." },
+                    "lastActive": { "type": "string", "format": "date-time", "description": "Timestamp of the last activity." },
+                    "loggedIn": { "type": "string", "format": "date-time", "description": "Timestamp when the session was created." },
+                    "status": { "type": "string", "enum": ["active", "logged_out"], "description": "The status of the session." }
+                },
+                "required": ["sessionId", "device", "lastActive", "loggedIn"]
+            }
+        },
+        "stats": {
+            "type": "object",
+            "description": "User activity statistics for achievements.",
+            "properties": {
+                "filesUploaded": { "type": "number", "default": 0 },
+                "foldersCreated": { "type": "number", "default": 0 },
+                "examsCompleted": { "type": "number", "default": 0 },
+                "aiQueries": { "type": "number", "default": 0 },
+                "consecutiveLoginDays": { "type": "number", "default": 0 },
+                "lastLoginDate": { "type": "string", "format": "date" }
+            }
+        },
+        "achievements": {
+            "type": "array",
+            "description": "An array of earned achievements.",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "badgeId": { "type": "string", "description": "The ID of the earned badge." },
+                    "earnedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the badge was earned." }
+                },
+                "required": ["badgeId", "earnedAt"]
+            }
+        },
+        "roles": {
+          "type": "array",
+          "description": "An array of roles and permissions assigned to the user.",
+          "items": {
+            "type": "object",
+            "properties": {
+              "role": { "type": "string", "enum": ["superAdmin", "subAdmin"], "description": "The role of the user." },
+              "scope": { "type": "string", "enum": ["global", "level", "semester", "subject", "folder"], "description": "The scope of the sub-admin's permissions (e.g., a specific level ID)." },
+              "scopeId": { "type": "string", "description": "The ID of the item the permission applies to." },
+              "scopeName": { "type": "string", "description": "The display name of the scope item." },
+              "permissions": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "enum": [
+                    "canAddClass",
+                    "canAddFolder",
+                    "canUploadFile",
+                    "canAddLink",
+                    "canCreateFlashcard",
+                    "canRename",
+                    "canDelete",
+                    "canMove",
+                    "canCopy",
+                    "canChangeIcon",
+                    "canToggleVisibility",
+                    "canUpdateFile",
+                    "canCreateQuestions",
+                    "canAccessQuestionCreator",
+                    "canAccessAdminPanel",
+                    "canReorder",
+                    "canAdministerExams",
+                    "canAdministerFlashcards",
+                    "canAccessTelegramInbox",
+                    "canCreateQuiz",
+                    "canCreateExam",
+                    "canAccessCommunityPage"
+                  ]
+                }
+              }
+            },
+            "required": ["role", "scope"]
+          }
+        }
+      },
+      "required": ["id", "uid", "studentId", "createdAt"]
+    },
+    "Channel": {
+      "title": "Channel",
+      "description": "Represents a discussion channel in the community.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "type": { "type": "string", "enum": ["public", "private", "level"] },
+        "levelId": { "type": "string" },
+        "members": { "type": "array", "items": { "type": "string" } },
+        "admins": { "type": "array", "items": { "type": "string" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "lastMessage": {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "userId": { "type": "string" },
+            "userName": { "type": "string" }
+          }
+        }
+      },
+      "required": ["id", "name", "type", "members", "admins", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "Represents a single message within a channel.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "channelId": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "isAnonymous": { "type": "boolean" },
+        "audioUrl": { "type": "string", "format": "uri" },
+        "audioDuration": { "type": "number" },
+        "audioType": { "type": "string" }
+      },
+      "required": ["id", "channelId", "userId", "timestamp"]
+    },
+    "DirectMessage": {
+      "title": "Direct Message",
+      "description": "Represents a private conversation between two users.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite ID of participants." },
+        "participants": { "type": "array", "items": { "type": "string" } },
+        "lastMessage": {
+          "type": "object",
+          "properties": {
+            "text": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "userId": { "type": "string" }
+          }
+        },
+        "lastUpdated": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "participants", "lastUpdated"]
+    },
+    "Post": {
+      "title": "Post",
+      "description": "Represents a single post in the community feed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "isAnonymous": { "type": "boolean", "description": "Whether the post is anonymous." },
+        "imageUrl": { "type": "string", "format": "uri" },
+        "imageCloudinaryPublicId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "commentsDisabled": { "type": "boolean", "description": "Whether comments are disabled for this post." },
+        "commentCount": { "type": "number", "default": 0 },
+        "reactions": {
+          "type": "object",
+          "description": "A map of user IDs to their reaction type.",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "required": ["id", "userId", "content", "createdAt"]
+    },
+    "Comment": {
+      "title": "Comment",
+      "description": "Represents a comment on a post or another comment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "postId": { "type": "string" },
+        "parentCommentId": { "type": "string", "description": "Null if it's a top-level comment." },
+        "userId": { "type": "string" },
+        "content": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "replyCount": { "type": "number", "default": 0 },
+        "reactions": {
+          "type": "object",
+          "description": "A map of user IDs to their reaction type.",
+          "additionalProperties": { "type": "string" }
+        }
+      },
+      "required": ["id", "postId", "userId", "content", "createdAt"]
+    },
+    "Reaction": {
+      "title": "Reaction",
+      "description": "Represents a single reaction from a user to a post or comment.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Composite key like '{userId}_{postId}' or '{userId}_{commentId}'" },
+        "userId": { "type": "string" },
+        "targetId": { "type": "string", "description": "ID of the Post or Comment being reacted to." },
+        "targetType": { "type": "string", "enum": ["post", "comment"] },
+        "reactionType": { "type": "string", "enum": ["like", "love", "support", "haha", "wow", "sad", "angry"] }
+      },
+      "required": ["id", "userId", "targetId", "targetType", "reactionType"]
+    },
+    "QuizDuel": {
+      "title": "Quiz Duel",
+      "description": "Represents a real-time quiz challenge between two players.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "playerOneId": { "type": "string" },
+        "playerTwoId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "active", "finished", "cancelled"] },
+        "questions": { "type": "array", "items": { "type": "object" } },
+        "currentQuestionIndex": { "type": "number" },
+        "scores": {
+          "type": "object",
+          "properties": {
+            "playerOne": { "type": "number" },
+            "playerTwo": { "type": "number" }
+          }
+        },
+        "answers": { "type": "array", "items": { "type": "object" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "finishedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "playerOneId", "status", "questions", "createdAt"]
+    },
+    "AiBuddyChatSession": {
+        "title": "AI Study Buddy Chat Session",
+        "description": "Represents a single chat conversation with the AI study buddy.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "userId": { "type": "string" },
+            "title": { "type": "string", "description": "A short, auto-generated title from the first user message." },
+            "messages": {
+                "type": "array",
+                "description": "The full list of messages in the conversation.",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "role": { "type": "string", "enum": ["user", "model"] },
+                        "text": { "type": "string" },
+                        "referencedFiles": {
+                            "type": "array",
+                            "items": { "type": "object" }
+                        }
+                    }
+                }
+            },
+            "createdAt": { "type": "string", "format": "date-time" },
+            "updatedAt": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "userId", "title", "messages", "createdAt", "updatedAt"]
+    },
+    "QuestionSet": {
+      "title": "Question Set",
+      "description": "Represents a set of questions generated by the AI.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the question set." },
+        "userId": { "type": "string", "description": "The ID of the user who owns this set." },
+        "fileName": { "type": "string", "description": "The name of the source file for the questions." },
+        "textQuestions": { "type": "string", "description": "The questions in plain text format." },
+        "jsonQuestions": { "type": "string", "description": "The questions in JSON format." },
+        "textExam": { "type": "string", "description": "The exam questions in plain text format." },
+        "jsonExam": { "type": "string", "description": "The exam questions in JSON format." },
+        "textFlashcard": { "type": "string", "description": "The flashcard questions in plain text format." },
+        "jsonFlashcard": { "type": "string", "description": "The flashcard questions in JSON format." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp when the set was created." },
+        "sourceFileId": { "type": "string", "description": "The ID of the original source file." },
+        "order": { "type": "number", "description": "The display order of the question set." }
+      },
+      "required": ["id", "userId", "fileName", "textQuestions", "jsonQuestions", "createdAt", "sourceFileId", "order"]
+    },
+    "ClaimedStudentId": {
+      "title": "Claimed Student ID",
+      "description": "A record to show that a student ID has been claimed by a user.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "The UID of the user who claimed this ID." },
+        "claimedAt": { "type": "string", "format": "date-time", "description": "Timestamp when the ID was claimed." }
+      },
+      "required": ["userId", "claimedAt"]
+    },
+    "AuditLog": {
+        "title": "Audit Log",
+        "description": "Represents a log of an administrative action.",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "actorId": { "type": "string", "description": "UID of the user who performed the action." },
+            "actorName": { "type": "string", "description": "Display name of the actor." },
+            "action": { "type": "string", "description": "The action performed (e.g., 'user.block', 'user.promote')." },
+            "targetId": { "type": "string", "description": "UID of the user who was the target of the action." },
+            "targetName": { "type": "string", "description": "Display name of the target." },
+            "details": {
+                "type": "object",
+                "description": "Additional details about the action.",
+                 "properties": {
+                    "from": { "type": "string" },
+                    "to": { "type": "string" }
+                }
+            }
+        },
+        "required": ["id", "timestamp", "actorId", "actorName", "action", "targetId", "targetName"]
+    }
+  },
+  "auth": {
+    "providers": ["anonymous"]
+  },
+  "firestore": {
+    "/content/{contentId}": {
+      "schema": { "$ref": "#/entities/Content" },
+      "description": "Stores all content items in a flat structure."
+    },
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "Stores user profile information."
+    },
+    "/users/{userId}/questionSets/{questionSetId}": {
+        "schema": { "$ref": "#/entities/QuestionSet" },
+        "description": "Stores user-specific generated question sets."
+    },
+    "/users/{userId}/aiBuddySessions/{sessionId}": {
+        "schema": { "$ref": "#/entities/AiBuddyChatSession" },
+        "description": "Stores chat history sessions for the AI Study Buddy."
+    },
+    "/claimedStudentIds/{studentId}": {
+        "schema": { "$ref": "#/entities/ClaimedStudentId" },
+        "description": "Stores a record of student IDs that have been linked to an account to ensure uniqueness."
+    },
+    "/auditLogs/{logId}": {
+        "schema": { "$ref": "#/entities/AuditLog" },
+        "description": "Stores a log of all administrative actions."
+    },
+    "/channels/{channelId}": {
+        "schema": { "$ref": "#/entities/Channel" },
+        "description": "Stores community channels/groups."
+    },
+    "/channels/{channelId}/messages/{messageId}": {
+        "schema": { "$ref": "#/entities/Message" },
+        "description": "Stores messages for a specific channel."
+    },
+    "/directMessages/{chatId}": {
+        "schema": { "$ref": "#/entities/DirectMessage" },
+        "description": "Stores metadata for private one-to-one chats."
+    },
+    "/directMessages/{chatId}/messages/{messageId}": {
+        "schema": { "$ref": "#/entities/Message" },
+        "description": "Stores messages for a specific private chat."
+    },
+    "/duels/{duelId}": {
+        "schema": { "$ref": "#/entities/QuizDuel" },
+        "description": "Stores real-time quiz duel sessions."
+    },
+    "/posts/{postId}": {
+      "schema": { "$ref": "#/entities/Post" },
+      "description": "Stores all community feed posts."
+    },
+    "/posts/{postId}/comments/{commentId}": {
+      "schema": { "$ref": "#/entities/Comment" },
+      "description": "Stores comments for a specific post."
+    },
+    "/reactions/{reactionId}": {
+      "schema": { "$ref": "#/entities/Reaction" },
+      "description": "Stores all reactions."
+    }
+  }
+}

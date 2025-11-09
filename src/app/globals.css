@@ -1,76 +1,53 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
   :root {
-    --background: 207 89% 94%;
-    --foreground: 210 30% 25%;
-    --card: 207 89% 98%;
-    --card-foreground: 210 30% 25%;
-    --popover: 207 89% 98%;
-    --popover-foreground: 210 30% 25%;
-    --primary: 207 88% 70%;
-    --primary-foreground: 210 50% 15%;
-    --secondary: 207 80% 88%;
-    --secondary-foreground: 210 30% 25%;
-    --muted: 207 80% 88%;
-    --muted-foreground: 210 20% 50%;
-    --accent: 232 40% 63%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 207 70% 80%;
-    --input: 207 70% 85%;
-    --ring: 207 88% 70%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 215 33% 10%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 90% 45%;
+    --primary-foreground: 210 20% 96%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 150 30% 15%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 14% 34%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --radius: 1rem;
   }
+
   .dark {
-    --background: 210 30% 10%;
-    --foreground: 207 89% 94%;
-    --card: 210 30% 15%;
-    --card-foreground: 207 89% 94%;
-    --popover: 210 30% 15%;
-    --popover-foreground: 207 89% 94%;
-    --primary: 207 88% 70%;
-    --primary-foreground: 210 50% 15%;
-    --secondary: 210 25% 25%;
-    --secondary-foreground: 207 89% 94%;
-    --muted: 210 25% 25%;
-    --muted-foreground: 207 80% 80%;
-    --accent: 232 40% 63%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 25% 30%;
-    --input: 210 25% 30%;
-    --ring: 207 88% 70%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 215 33% 10%;
+    --foreground: 210 40% 98%;
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 71% 4%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 90% 45%;
+    --primary-foreground: 210 20% 96%;
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 150 30% 15%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 217 33% 17%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 63% 31%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 215 14% 34%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
   }
 }
 
@@ -79,6 +56,361 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground overflow-hidden;
   }
+  .light {
+     background-image: none;
+  }
+  body:not(.light) {
+    background-image: radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.1) 0px, transparent 50%), radial-gradient(at 52% 99%, hsla(355, 98%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 10% 29%, hsla(256, 96%, 61%, 0.1) 0px, transparent 50%), radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.1) 0px, transparent 50%), radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.1) 0px, transparent 50%), radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.1) 0px, transparent 50%);
+  }
+  
+  .prose hr {
+    @apply !w-full border-white my-6;
+  }
+
+  .prose blockquote {
+    @apply border-slate-500 pl-4;
+  }
+  
+  .prose[dir="rtl"] blockquote {
+    @apply border-l-0 border-r-4 border-slate-500 pr-4 pl-0;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply rounded-2xl border border-white/10 bg-white/5 backdrop-blur-lg;
+  }
+   .indent {
+    @apply pl-6;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .selectable {
+    @apply select-text;
+  }
+  /* Fix for PDF text selection issue */
+  .react-pdf__Page__textContent {
+    mix-blend-mode: multiply;
+  }
+
+  /* Expanding button styles */
+  .expanding-btn {
+    @apply bg-transparent font-semibold rounded-full cursor-pointer inline-flex items-center justify-center overflow-hidden transition-all duration-300 ease-in-out;
+    width: 44px;
+    height: 44px;
+    padding: 0;
+    gap: 0;
+  }
+
+  .expanding-btn .expanding-text {
+    @apply whitespace-nowrap opacity-0 max-w-0 transition-all duration-200 ease-in-out;
+  }
+
+  .expanding-btn:hover {
+    width: 140px;
+    padding: 0 16px;
+    @apply justify-start gap-2;
+  }
+  
+  .expanding-btn:hover .expanding-text {
+    @apply opacity-100 max-w-xs;
+  }
+
+  .expanding-btn.primary {
+    @apply border-2 border-primary text-primary;
+  }
+  .expanding-btn.primary:hover {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .expanding-btn.destructive {
+    @apply border-2 border-destructive text-destructive;
+  }
+  .expanding-btn.destructive:hover {
+    @apply bg-destructive text-primary-foreground;
+  }
+
+  .expanding-btn.warning {
+    @apply border-2 border-yellow-500 text-yellow-500;
+  }
+  .expanding-btn.warning:hover {
+    @apply bg-yellow-500 text-black;
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}
+
+input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+::selection {
+  background-color: #99c1da;
+  color: inherit;
+}
+.react-pdf__Page__textContent span::selection {
+  text-shadow: 0 0 0.1px #000;
+}
+
+/* --- Keyframes for Animations --- */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-10px); }
+}
+@keyframes progress-bar {
+    from { width: 0%; }
+    to { width: var(--progress-width); }
+}
+
+/* --- Achievement Toast Animation --- */
+@keyframes confetti-fall {
+  0% { transform: translateY(-100%) rotateZ(0); opacity: 1; }
+  100% { transform: translateY(150%) rotateZ(360deg); opacity: 0; }
+}
+
+.confetti {
+  position: absolute;
+  width: 12px; /* Increased size */
+  height: 12px; /* Increased size */
+  animation: confetti-fall 3s linear infinite;
+  animation-timing-function: cubic-bezier(0.3, 0.9, 0.8, 0.1); /* More dynamic fall */
+}
+
+
+/* --- Exam Component Styles --- */
+.exam-page-container {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    position: relative;
+}
+
+.exam-container {
+    @apply relative bg-card rounded-2xl p-8;
+}
+.exam-container.start-mode {
+    @apply flex flex-col justify-center items-center min-h-[70vh];
+}
+
+.animating-out {
+    animation: fadeOut 0.3s ease-out forwards;
+}
+.animating-in {
+     animation: fadeIn 0.5s ease-out forwards;
+}
+
+#lecture-tabs {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    gap: 12px;
+    padding: 5px 2px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch; 
+    scrollbar-width: none; 
+    scroll-behavior: smooth;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+#lecture-tabs::-webkit-scrollbar {
+    display: none;
+}
+
+button.lecture-tab-btn {
+    @apply flex-shrink-0 px-4 py-2 rounded-full border bg-card text-muted-foreground text-sm font-medium cursor-pointer transition-all;
+}
+
+button.lecture-tab-btn:hover {
+    @apply bg-muted border-primary;
+}
+
+button.lecture-tab-btn.active {
+    @apply bg-primary border-ring text-primary-foreground font-semibold shadow-none;
+    transform: scale(1);
+}
+
+.exam-start-screen {
+    @apply text-center p-8 w-full;
+}
+.exam-start-screen h2 {
+    @apply text-4xl font-bold mb-2 text-foreground;
+}
+.exam-start-screen p {
+    @apply text-lg text-muted-foreground mb-10;
+}
+.start-exam-btn {
+    @apply bg-primary text-primary-foreground px-10 py-3 text-lg font-semibold rounded-full border-none cursor-pointer transition-transform;
+}
+.start-exam-btn:hover {
+    transform: translateY(-3px);
+    @apply bg-primary/90;
+}
+
+.quick-exit-btn {
+    @apply absolute top-8 right-8 bg-transparent border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer text-muted-foreground transition-all duration-200;
+}
+.quick-exit-btn:hover {
+    background-color: hsl(var(--destructive) / 0.1);
+    @apply text-destructive scale-110;
+}
+
+.exam-progress-header {
+    @apply mb-6;
+}
+
+.progress-bar-container {
+    @apply w-full bg-muted rounded-full h-2 overflow-hidden;
+}
+.progress-bar {
+    @apply h-full bg-primary rounded-full transition-all duration-500 ease-in-out;
+}
+.question-area {
+  min-height: 320px;
+  @apply transition-opacity duration-300 ease-in-out;
+}
+.question-area.question-fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.question-area.question-fade-in {
+  opacity: 1;
+  transform: translateY(0px);
+}
+.question-title {
+    @apply text-base font-medium text-muted-foreground mb-4;
+}
+.question-text {
+    @apply text-lg font-semibold mb-8 leading-relaxed;
+}
+.options-grid {
+    @apply grid grid-cols-1 gap-4;
+}
+.option-btn {
+    @apply flex items-center text-left w-full px-5 py-3 border-2 border-border rounded-2xl bg-card text-sm cursor-pointer transition-all duration-200;
+}
+.option-btn:hover {
+    @apply border-primary;
+    transform: translateX(5px);
+}
+.option-btn.selected {
+    background-color: hsl(var(--primary) / 0.1);
+    @apply border-primary font-semibold;
+}
+.option-letter {
+    @apply font-bold mr-4 py-1 px-2.5 border border-border rounded-md min-w-[32px] text-center transition-all duration-200;
+}
+.option-btn.selected .option-letter {
+  @apply bg-primary text-primary-foreground border-primary;
+}
+
+.exam-navigation {
+    @apply flex justify-between items-center mt-8 border-t border-border pt-6;
+}
+.nav-btn {
+    @apply bg-card text-muted-foreground px-6 py-2.5 text-base font-medium rounded-xl border border-border cursor-pointer flex items-center gap-2;
+}
+.nav-btn:hover:not(:disabled) {
+    @apply bg-muted;
+}
+.nav-btn:active:not(:disabled) {
+    transform: scale(0.97);
+}
+.nav-btn:disabled {
+    @apply opacity-50 cursor-not-allowed;
+}
+.nav-btn.finish {
+    background-color: #10b981;
+    color: white;
+    border-color: #10b981;
+    @apply font-semibold;
+}
+.nav-btn.finish:hover {
+    background-color: #059669;
+    border-color: #059669;
+}
+
+.exam-results-screen {
+    @apply text-center;
+}
+.results-summary {
+    @apply bg-muted border border-border rounded-2xl px-8 py-10 mb-10 flex flex-wrap items-center justify-center gap-8;
+}
+.results-summary h2 {
+    @apply text-3xl font-bold text-foreground mb-3 w-full text-center;
+}
+.score-container {
+    @apply text-center;
+    flex-basis: 40%;
+}
+.score-container .score {
+    @apply text-7xl font-extrabold leading-tight text-primary m-0;
+}
+.score-container .score-text {
+    @apply text-xl text-muted-foreground mt-2;
+}
+.chart-container {
+    flex-basis: 50%;
+    min-width: 220px;
+    height: 200px;
+}
+.review-answers-title {
+    @apply text-3xl font-bold mb-6 text-left border-b border-border pb-4;
+}
+.review-question {
+    @apply bg-card border border-border rounded-2xl p-6 mb-5 text-left transition-shadow;
+}
+.review-question:hover {
+    box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+}
+.review-question-header {
+    @apply flex items-center gap-3 mb-5;
+}
+.review-question-text {
+  @apply font-semibold text-lg leading-relaxed;
+}
+.review-option {
+    @apply px-4 py-3 rounded-xl mb-3 flex gap-4 items-center border text-base;
+}
+.review-option.correct {
+    background-color: #dcfce7;
+    color: #166534;
+    border-color: #86efac;
+    @apply font-semibold;
+}
+.review-option.incorrect {
+    background-color: #fee2e2;
+    color: #991b1b;
+    border-color: #fca5a5;
+}
+.review-option.unanswered {
+    background-color: #fffbeb;
+    color: #b45309;
+    border-color: #fcd34d;
+}
+.review-option > svg {
+  flex-shrink: 0;
 }
