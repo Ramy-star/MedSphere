@@ -1,9 +1,8 @@
-
 'use client';
 
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import React, { useEffect, useMemo, use } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { prefetcher } from '@/lib/prefetchService';
@@ -12,17 +11,16 @@ import { motion } from 'framer-motion';
 import { where } from 'firebase/firestore';
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
-  const resolvedParams = use(params);
-  const { levelName } = resolvedParams;
+  const { levelName } = params;
   const router = useRouter();
   const decodedLevelName = decodeURIComponent(levelName);
   
   const { data: levels, loading: loadingLevels } = useCollection<Content>('content', {
-    where: [where('type', '==', 'LEVEL'), where('name', '==', decodedLevelName)],
+    where: where('type', '==', 'LEVEL'),
     limit: 1,
   });
   
-  const level = useMemo(() => levels?.[0], [levels]);
+  const level = useMemo(() => levels?.find(l => l.name === decodedLevelName), [levels, decodedLevelName]);
 
   const { data: semesters, loading: loadingSemesters } = useCollection<Content>('content', {
     where: where('parentId', '==', level?.id),

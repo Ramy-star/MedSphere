@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useMemo, use } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { FileText, FileJson, Save, Loader2, Copy, Download, Pencil, Check, Eye, X, Wrench, ArrowLeft, FolderPlus, DownloadCloud, Lightbulb, HelpCircle, FileQuestion, FileCheck, ChevronDown } from 'lucide-react';
@@ -51,8 +51,7 @@ type EditingContentState = {
 };
 
 function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
-  const resolvedParams = use(params);
-  const { id } = resolvedParams;
+  const { id } = params;
   const router = useRouter();
   const { studentId, can } = useAuthStore();
   const { convertExistingTextToJson } = useQuestionGenerationStore();
@@ -458,18 +457,30 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
                 icon={<FileText className="text-yellow-400 h-8 w-8 shrink-0" />}
                 content={editingContent.text}
                 type="text"
+                isEditing={isEditing.text}
+                onToggleEdit={() => handleToggleEdit('text')}
+                onContentChange={(value) => setEditingContent(prev => ({...prev, text: value}))}
+                onCancel={() => handleCancelEdit('text')}
             />
              <OutputCard
                 title="Flashcard"
                 icon={<FileText className="text-green-400 h-8 w-8 shrink-0" />}
                 content={editingContent.flashcardText}
                 type="flashcardText"
+                isEditing={isEditing.flashcardText}
+                onToggleEdit={() => handleToggleEdit('flashcardText')}
+                onContentChange={(value) => setEditingContent(prev => ({...prev, flashcardText: value}))}
+                onCancel={() => handleCancelEdit('flashcardText')}
             />
              <OutputCard
                 title="Exam"
                 icon={<FileText className="text-red-400 h-8 w-8 shrink-0" />}
                 content={editingContent.examText}
                 type="examText"
+                isEditing={isEditing.examText}
+                onToggleEdit={() => handleToggleEdit('examText')}
+                onContentChange={(value) => setEditingContent(prev => ({...prev, examText: value}))}
+                onCancel={() => handleCancelEdit('examText')}
             />
         </div>
         

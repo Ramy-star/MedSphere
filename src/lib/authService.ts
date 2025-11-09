@@ -4,21 +4,6 @@ import { db } from '@/firebase';
 import { doc, getDoc, setDoc, updateDoc } from 'firebase/firestore';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 
-import level1Ids from '@/lib/student-ids/level-1.json';
-import level2Ids from '@/lib/student-ids/level-2.json';
-import level3Ids from '@/lib/student-ids/level-3.json';
-import level4Ids from '@/lib/student-ids/level-4.json';
-import level5Ids from '@/lib/student-ids/level-5.json';
-
-import level1Data from '@/lib/student-ids/level-1-data.json';
-import level2Data from '@/lib/student-ids/level-2-data.json';
-import level3Data from '@/lib/student-ids/level-3-data.json';
-import level4Data from '@/lib/student-ids/level-4-data.json';
-import level5Data from '@/lib/student-ids/level-5-data.json';
-
-const SUPER_ADMIN_ID = "221100154";
-
-// --- Hashing functions using bcryptjs ---
 // Dynamically import bcryptjs only when needed to avoid bundling issues.
 async function hashSecretCode(secretCode: string): Promise<string> {
     const bcrypt = (await import('bcryptjs')).default;
@@ -43,6 +28,21 @@ export async function updateSecretCode(userId: string, newSecretCode: string): P
         secretCodeHash: newHash,
     });
 }
+
+
+import level1Ids from '@/lib/student-ids/level-1.json';
+import level2Ids from '@/lib/student-ids/level-2.json';
+import level3Ids from '@/lib/student-ids/level-3.json';
+import level4Ids from '@/lib/student-ids/level-4.json';
+import level5Ids from '@/lib/student-ids/level-5.json';
+
+import level1Data from '@/lib/student-ids/level-1-data.json';
+import level2Data from '@/lib/student-ids/level-2-data.json';
+import level3Data from '@/lib/student-ids/level-3-data.json';
+import level4Data from '@/lib/student-ids/level-4-data.json';
+import level5Data from '@/lib/student-ids/level-5-data.json';
+
+const SUPER_ADMIN_ID = "221100154";
 
 
 const allStudentIds = new Set([

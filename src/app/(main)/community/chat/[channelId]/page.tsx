@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect, useRef, use } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
@@ -17,8 +17,7 @@ import { isSameDay, isAfter, subMinutes } from 'date-fns';
 
 
 export default function ChatPage({ params }: { params: { channelId: string } }) {
-  const resolvedParams = use(params);
-  const { channelId } = resolvedParams;
+  const { channelId } = params;
   const { user } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);

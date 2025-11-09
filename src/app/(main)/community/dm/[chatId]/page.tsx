@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect, useRef, use } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
@@ -17,8 +17,7 @@ import { cn } from '@/lib/utils';
 import { ImagePreviewDialog } from '@/components/community/ImagePreviewDialog';
 
 export default function DirectMessagePage({ params }: { params: { chatId: string } }) {
-  const resolvedParams = use(params);
-  const { chatId } = resolvedParams;
+  const { chatId } = params;
   const { user: currentUser } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
