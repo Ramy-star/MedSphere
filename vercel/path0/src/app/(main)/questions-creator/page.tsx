@@ -63,78 +63,6 @@ type SavedQuestionSet = {
   order: number;
 };
 
-// Programmatic reordering to guarantee final structure
-function reorderAndStringify(obj: any): string {
-    if (typeof obj === 'string') {
-        try {
-            obj = JSON.parse(obj);
-        } catch (e) {
-            return obj; // Return original string if it's not valid JSON
-        }
-    }
-    if (typeof obj !== 'object' || obj === null) return '';
-
-    const orderedKeys: (keyof Lecture)[] = ['id', 'name', 'mcqs_level_1', 'mcqs_level_2', 'written', 'flashcards'];
-    const orderedObject: { [key: string]: any } = {};
-
-    for (const key of orderedKeys) {
-        if (obj.hasOwnProperty(key)) {
-            orderedObject[key] = obj[key];
-        }
-    }
-
-    for (const key in obj) {
-        if (!orderedObject.hasOwnProperty(key)) {
-            orderedObject[key] = obj[key];
-        }
-    }
-    
-    const reorderMcqKeys = (mcqs: any[]) => {
-      if (!Array.isArray(mcqs)) return mcqs;
-      return mcqs.map(mcq => {
-        if (typeof mcq !== 'object' || mcq === null) return mcq;
-        const orderedMcq: {[key: string]: any} = {};
-        if (mcq.hasOwnProperty('q')) orderedMcq.q = mcq.q;
-        if (mcq.hasOwnProperty('o')) orderedMcq.o = mcq.o;
-        if (mcq.hasOwnProperty('a')) orderedMcq.a = mcq.a;
-        Object.keys(mcq).forEach(key => {
-          if (!orderedMcq.hasOwnProperty(key)) {
-            orderedMcq[key] = mcq[key];
-          }
-        });
-        return orderedMcq;
-      });
-    };
-
-    if (orderedObject.mcqs_level_1) {
-      orderedObject.mcqs_level_1 = reorderMcqKeys(orderedObject.mcqs_level_1);
-    }
-    if (orderedObject.mcqs_level_2) {
-      orderedObject.mcqs_level_2 = reorderMcqKeys(orderedObject.mcqs_level_2);
-    }
-    if (orderedObject.flashcards) {
-        if(Array.isArray(orderedObject.flashcards)) {
-            orderedObject.flashcards = orderedObject.flashcards.map(fc => {
-                if (typeof fc !== 'object' || fc === null) return fc;
-                const orderedFc: {[key: string]: any} = {};
-                if (fc.hasOwnProperty('id')) orderedFc.id = fc.id;
-                if (fc.hasOwnProperty('front')) orderedFc.front = fc.front;
-                if (fc.hasOwnProperty('back')) orderedFc.back = fc.back;
-                Object.keys(fc).forEach(key => {
-                    if (!orderedFc.hasOwnProperty(key)) {
-                        orderedFc[key] = fc[key];
-                    }
-                });
-                return orderedFc;
-            });
-        }
-    }
-
-
-    return JSON.stringify(orderedObject, null, 2);
-}
-
-
 const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boolean, onOpenChange: (open: boolean) => void, onGenerate: (options: GenerationOptions) => void }) => {
     const [options, setOptions] = useState<GenerationOptions>({
         generateQuestions: false,
@@ -191,6 +119,15 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         icon={Lightbulb}
                         color="text-yellow-400"
                     />
+                    <OptionCheckbox
+                        id="generateFlashcards"
+                        label="Flashcards"
+                        description="Produce flashcards for key concepts and terms."
+                        checked={options.generateFlashcards}
+                        onCheckedChange={(c) => handleCheckedChange('generateFlashcards', !!c)}
+                        icon={FlashcardIcon}
+                        color="text-indigo-400"
+                    />
                      <OptionCheckbox
                         id="generateExam"
                         label="MCQ Exam"
@@ -199,15 +136,6 @@ const GenerationOptionsDialog = ({ open, onOpenChange, onGenerate }: { open: boo
                         onCheckedChange={(c) => handleCheckedChange('generateExam', !!c)}
                         icon={InteractiveExamIcon}
                         color="text-rose-400"
-                    />
-                     <OptionCheckbox
-                        id="generateFlashcards"
-                        label="Flashcards"
-                        description="Produce flashcards for key concepts and terms."
-                        checked={options.generateFlashcards}
-                        onCheckedChange={(c) => handleCheckedChange('generateFlashcards', !!c)}
-                        icon={FlashcardIcon}
-                        color="text-indigo-400"
                     />
                 </div>
                  <div className="flex justify-center gap-2 p-6">
@@ -231,7 +159,6 @@ const SortableQuestionSetCard = ({ set, canAdminister, onDeleteClick }: { set: S
     };
 
     const handleClick = () => {
-        // Only navigate if not dragging. The 'isDragging' state is provided by useSortable.
         if (!isDragging) {
             router.push(`/questions-creator/${set.id}`);
         }
@@ -257,7 +184,7 @@ const SortableQuestionSetCard = ({ set, canAdminister, onDeleteClick }: { set: S
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity active:scale-95 z-10"
-                            onMouseDown={(e) => e.stopPropagation()} // Prevent drag from starting on button click
+                            onMouseDown={(e) => e.stopPropagation()}
                             onClick={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
@@ -281,19 +208,13 @@ function QuestionsCreatorContent() {
   const activeTab = searchParams.get('tab') || 'generate';
 
   const [generationPrompt, setGenerationPrompt] = useState('');
-  const [jsonPrompt, setJsonPrompt] = useState('');
   const [examGenerationPrompt, setExamGenerationPrompt] = useState('');
-  const [examJsonPrompt, setExamJsonPrompt] = useState('');
   const [flashcardGenerationPrompt, setFlashcardGenerationPrompt] = useState('');
-  const [flashcardJsonPrompt, setFlashcardJsonPrompt] = useState('');
-  const [originalPrompts, setOriginalPrompts] = useState({ gen: '', json: '', examGen: '', examJson: '', flashcardGen: '', flashcardJson: '' });
-  const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, json: false, examGen: false, examJson: false, flashcardGen: false, flashcardJson: false });
+  
+  const [originalPrompts, setOriginalPrompts] = useState({ gen: '', examGen: '', flashcardGen: '' });
+  const [isEditingPrompts, setIsEditingPrompts] = useState({ gen: false, examGen: false, flashcardGen: false });
+  
   const [itemToDelete, setItemToDelete] = useState<SavedQuestionSet | null>(null);
-  const [sectionsVisibility, setSectionsVisibility] = useState({
-    questions: true,
-    exam: true,
-    flashcards: true,
-  });
   const [showFolderSelector, setShowFolderSelector] = useState(false);
 
 
@@ -345,30 +266,21 @@ function QuestionsCreatorContent() {
 
   const { toast } = useToast();
 
-  const handleSavePrompt = (type: 'gen' | 'json' | 'examGen' | 'examJson' | 'flashcardGen' | 'flashcardJson') => {
+  const handleSavePrompt = (type: 'gen' | 'examGen' | 'flashcardGen') => {
     const keyMap = {
         gen: 'questionGenPrompt',
-        json: 'questionJsonPrompt',
         examGen: 'examGenPrompt',
-        examJson: 'examJsonPrompt',
         flashcardGen: 'flashcardGenPrompt',
-        flashcardJson: 'flashcardJsonPrompt'
     };
     const promptMap = {
         gen: generationPrompt,
-        json: jsonPrompt,
         examGen: examGenerationPrompt,
-        examJson: examJsonPrompt,
         flashcardGen: flashcardGenerationPrompt,
-        flashcardJson: flashcardJsonPrompt,
     };
     const titleMap = {
-        gen: 'Question Generation Prompt',
-        json: 'JSON Conversion Prompt',
-        examGen: 'Exam Generation Prompt',
-        examJson: 'Exam JSON Conversion Prompt',
-        flashcardGen: 'Flashcard Generation Prompt',
-        flashcardJson: 'Flashcard JSON Conversion Prompt'
+        gen: 'Quiz Prompt',
+        examGen: 'Exam Prompt',
+        flashcardGen: 'Flashcard Prompt'
     }
 
     localStorage.setItem(keyMap[type], promptMap[type]);
@@ -377,14 +289,11 @@ function QuestionsCreatorContent() {
     setIsEditingPrompts(prev => ({...prev, [type]: false}));
   }
 
-  const handleCancelPrompt = (type: 'gen' | 'json' | 'examGen' | 'examJson' | 'flashcardGen' | 'flashcardJson') => {
+  const handleCancelPrompt = (type: 'gen' | 'examGen' | 'flashcardGen') => {
     const promptSetterMap = {
         gen: setGenerationPrompt,
-        json: setJsonPrompt,
         examGen: setExamGenerationPrompt,
-        examJson: setExamJsonPrompt,
         flashcardGen: setFlashcardGenerationPrompt,
-        flashcardJson: setFlashcardJsonPrompt,
     };
     promptSetterMap[type](originalPrompts[type as keyof typeof originalPrompts]);
     setIsEditingPrompts(prev => ({...prev, [type]: false}));
@@ -392,30 +301,24 @@ function QuestionsCreatorContent() {
 
   useEffect(() => {
     const gen = localStorage.getItem('questionGenPrompt') || 'Generate 10 multiple-choice questions based on the following text. The questions should cover the main topics and details of the provided content.';
-    const json = localStorage.getItem('questionJsonPrompt') || 'Convert the following text containing multiple-choice questions into a JSON array. Each object in the array should represent a single question and have the following structure: { "question": "The question text", "options": ["Option A", "Option B", "Option C", "Option D"], "answer": "The correct option text" }. Ensure the output is only the JSON array.';
     const examGen = localStorage.getItem('examGenPrompt') || 'Generate 20 difficult exam-style multiple-choice questions based on the document.';
-    const examJson = localStorage.getItem('examJsonPrompt') || 'Convert the exam questions into a JSON array with structure: { "question": "...", "options": [...], "answer": "..." }.';
     const flashcardGen = localStorage.getItem('flashcardGenPrompt') || 'Generate 15 flashcards based on the key concepts in the document.';
-    const flashcardJson = localStorage.getItem('flashcardJsonPrompt') || 'Convert the flashcards into a JSON array with structure: { "front": "...", "back": "..." }.';
 
     setGenerationPrompt(gen);
-    setJsonPrompt(json);
     setExamGenerationPrompt(examGen);
-    setExamJsonPrompt(examJson);
     setFlashcardGenerationPrompt(flashcardGen);
-    setFlashcardJsonPrompt(flashcardJson);
-    setOriginalPrompts({ gen, json, examGen, examJson, flashcardGen, flashcardJson });
+    setOriginalPrompts({ gen, examGen, flashcardGen });
   }, []);
 
   useEffect(() => {
-    if (flowStep === 'error' && task?.error && !task.error?.includes('Aborted')) { // Don't toast for user-aborted actions
-      toast({
-        variant: 'destructive',
-        title: 'Generation Failed',
-        description: task.error || 'An unexpected error occurred.',
-      });
+    if (flowStep === 'error' && task?.status && Object.values(task.status).some(s => s && typeof s === 'object' && s.status === 'error')) {
+        toast({
+            variant: 'destructive',
+            title: 'Generation Failed',
+            description: 'One or more generation tasks failed. You can retry them individually.',
+        });
     }
-  }, [flowStep, task?.error, toast]);
+  }, [flowStep, task?.status, toast]);
 
 
   const handleSaveCurrentQuestions = async () => {
@@ -430,7 +333,6 @@ function QuestionsCreatorContent() {
     await saveCurrentResults(studentId, savedQuestions.length);
     toast({ title: 'Questions Saved', description: 'Your generated questions have been saved to your library.' });
 
-    // Reset flow after a short delay
     setTimeout(() => {
         resetFlow();
     }, 3000);
@@ -438,18 +340,15 @@ function QuestionsCreatorContent() {
 
   const allPrompts = useMemo(() => ({
     gen: generationPrompt,
-    json: jsonPrompt,
     examGen: examGenerationPrompt,
-    examJson: examJsonPrompt,
     flashcardGen: flashcardGenerationPrompt,
-    flashcardJson: flashcardJsonPrompt,
-  }), [generationPrompt, jsonPrompt, examGenerationPrompt, examJsonPrompt, flashcardGenerationPrompt, flashcardJsonPrompt]);
+  }), [generationPrompt, examGenerationPrompt, flashcardGenerationPrompt]);
 
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       initiateGeneration({
-        id: '', // Will be generated on save
+        id: '', 
         fileName: e.target.files[0].name,
         file: e.target.files[0],
       });
@@ -474,7 +373,6 @@ function QuestionsCreatorContent() {
   const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     e.stopPropagation();
-    // Check if the relatedTarget is inside the drop zone before setting isDragging to false
     if (e.relatedTarget && e.currentTarget.contains(e.relatedTarget as Node)) {
         return;
     }
@@ -492,7 +390,7 @@ function QuestionsCreatorContent() {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // Require pointer to move 8px before activating a drag
+        distance: 8,
       },
     })
   );
@@ -505,7 +403,6 @@ function QuestionsCreatorContent() {
             const newIndex = currentItems.findIndex((item) => item.id === over.id);
             const newOrderedItems = arrayMove(currentItems, oldIndex, newIndex);
 
-            // Persist the new order to Firestore
             if (studentId) {
                 const batch = writeBatch(db);
                 newOrderedItems.forEach((item, index) => {
@@ -515,7 +412,6 @@ function QuestionsCreatorContent() {
                 batch.commit().catch(err => {
                     console.error("Failed to update order:", err);
                     toast({ variant: 'destructive', title: 'Error', description: 'Could not save new order.' });
-                    // Optionally revert state on failure
                     setSavedQuestions(currentItems);
                 });
             }
@@ -529,197 +425,66 @@ function QuestionsCreatorContent() {
     visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
   };
 
-  const isGenerating = flowStep === 'processing';
-
-  const showRetryButtonForStep = (step: 'generating_text' | 'converting_json' | 'generating_exam_text' | 'converting_exam_json' | 'generating_flashcard_text' | 'converting_flashcard_json') => {
-      return task?.status === 'error' && task.failedStep === step;
-  };
-
-  const handleRetry = useCallback(() => {
-    retryGeneration(allPrompts);
+  const handleRetry = useCallback((type: 'questions' | 'exam' | 'flashcards') => {
+    retryGeneration(type, allPrompts);
   }, [retryGeneration, allPrompts]);
 
-
   const OutputCard = ({
-    title,
-    icon,
-    content,
-    isLoading,
-    loadingText,
-    showRetryButton
+    title, icon, content, isLoading, loadingText, showRetryButton, onRetry
   }: {
-    title: string;
-    icon: React.ReactNode;
-    content: any; // Can be string or object
-    isLoading: boolean;
-    loadingText: string;
-    showRetryButton: boolean;
+    title: string; icon: React.ReactNode; content: string | null; isLoading: boolean;
+    loadingText: string; showRetryButton: boolean; onRetry: () => void;
   }) => {
-    const hasContent = !!content || isLoading || showRetryButton;
+    const hasContent = !!content;
+    const isProcessing = isLoading || showRetryButton;
   
-    const displayContent = useMemo(() => {
-      if (typeof content === 'string') {
-        return content;
-      }
-      if (content !== null && typeof content === 'object') {
-        return reorderAndStringify(content);
-      }
-      return '';
-    }, [content]);
-
     return (
-        <div className={cn(
-            "relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out",
-            !hasContent && "h-24 justify-center",
-            showRetryButton && "min-h-[240px]"
-          )}>
-           <div className="flex items-start gap-4">
-               {icon}
-               <div>
-                   <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
-                   {!hasContent && <p className="text-sm text-slate-400 mt-1">Generated content will appear here.</p>}
+      <div className={cn("relative group glass-card p-6 rounded-3xl flex flex-col justify-between transition-all duration-300 ease-in-out")}>
+        <div className="flex items-center gap-4">
+          {icon}
+          <h3 className="text-lg font-semibold text-white break-words">{title}</h3>
+        </div>
+        <div className="mt-4 flex-grow flex flex-col">
+          <div className="relative flex-grow min-h-[96px]">
+            {isProcessing ? (
+              <div className="absolute inset-0 flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
+                {isLoading ? (
+                  <>
+                    <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
+                    <p className="ml-3 text-slate-300">{loadingText}</p>
+                  </>
+                ) : (
+                  <Button onClick={onRetry} className="rounded-xl active:scale-95">
+                    <RotateCw className="mr-2 h-4 w-4" />
+                    Retry
+                  </Button>
+                )}
+              </div>
+            ) : hasContent ? (
+              <textarea
+                value={content}
+                readOnly
+                className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+              />
+            ) : (
+               <div className="absolute inset-0 flex items-center justify-center text-slate-500">
+                  Not generated.
                </div>
-           </div>
-           {hasContent && (
-             <div className="mt-4 flex-grow flex flex-col">
-                <div className="relative flex-grow">
-                    {isLoading ? (
-                        <div className="absolute inset-0 flex items-center justify-center w-full h-full text-center flex-grow bg-slate-800/60 border-slate-700 rounded-xl">
-                            <Loader2 className="h-8 w-8 text-blue-400 animate-spin" />
-                            <p className="ml-3 text-slate-300">{loadingText}</p>
-                        </div>
-                    ) : showRetryButton ? (
-                        <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full text-center flex-grow">
-                            <Button onClick={handleRetry} className="rounded-xl active:scale-95">
-                                <RotateCw className="mr-2 h-4 w-4" />
-                                Retry
-                            </Button>
-                        </div>
-                    ) : (
-                       <textarea
-                           value={displayContent}
-                           readOnly
-                           placeholder="Generated content will appear here..."
-                           className="bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
-                       />
-                    )}
-                </div>
-            </div>
-           )}
+            )}
+          </div>
         </div>
+      </div>
     );
-};
-
-  const renderPromptCard = (type: 'gen' | 'json' | 'examGen' | 'examJson' | 'flashcardGen' | 'flashcardJson') => {
-      const titleMap = {
-          gen: "Question Generation Prompt",
-          json: "Text-to-JSON Conversion Prompt",
-          examGen: "Exam Generation Prompt",
-          examJson: "Exam-to-JSON Conversion Prompt",
-          flashcardGen: "Flashcard Generation Prompt",
-          flashcardJson: "Flashcard-to-JSON Conversion Prompt"
-      }
-      const iconMap = {
-          gen: <FileText className="w-8 h-8 text-blue-400 shrink-0" />,
-          json: <FileJson className="w-8 h-8 text-blue-400 shrink-0" />,
-          examGen: <FileText className="w-8 h-8 text-red-400 shrink-0" />,
-          examJson: <FileJson className="w-8 h-8 text-red-400 shrink-0" />,
-          flashcardGen: <FileText className="w-8 h-8 text-green-400 shrink-0" />,
-          flashcardJson: <FileJson className="w-8 h-8 text-green-400 shrink-0" />,
-      }
-      const promptMap = {
-          gen: generationPrompt,
-          json: jsonPrompt,
-          examGen: examGenerationPrompt,
-          examJson: examJsonPrompt,
-          flashcardGen: flashcardGenerationPrompt,
-          flashcardJson: flashcardJsonPrompt,
-      }
-      const setPromptMap = {
-          gen: setGenerationPrompt,
-          json: setJsonPrompt,
-          examGen: setExamGenerationPrompt,
-          examJson: setExamJsonPrompt,
-          flashcardGen: setFlashcardGenerationPrompt,
-          flashcardJson: setFlashcardJsonPrompt,
-      }
-
-      return (
-        <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-                <div className="flex items-start gap-4">
-                    {iconMap[type]}
-                    <div>
-                        <h3 className="text-lg font-semibold text-white break-words">{titleMap[type]}</h3>
-                    </div>
-                </div>
-                <TooltipProvider>
-                    <div className="flex items-center gap-0">
-                        {isEditingPrompts[type] ? (
-                            <>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button onClick={() => handleSavePrompt(type)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                            <Check className="h-5 w-5 text-green-400" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Save</p></TooltipContent>
-                                </Tooltip>
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <Button onClick={() => handleCancelPrompt(type)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                            <X className="h-5 w-5 text-red-400" />
-                                        </Button>
-                                    </TooltipTrigger>
-                                    <TooltipContent><p>Cancel</p></TooltipContent>
-                                </Tooltip>
-                            </>
-                        ) : (
-                            <Tooltip>
-                                <TooltipTrigger asChild>
-                                    <Button onClick={() => setIsEditingPrompts(p => ({...p, [type]: true}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
-                                        <Pencil className="h-5 w-5" />
-                                    </Button>
-                                </TooltipTrigger>
-                                <TooltipContent><p>Edit</p></TooltipContent>
-                            </Tooltip>
-                        )}
-                    </div>
-                </TooltipProvider>
-            </div>
-            <textarea
-                value={promptMap[type]}
-                onChange={(e) => setPromptMap[type](e.target.value)}
-                readOnly={!isEditingPrompts[type]}
-                className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
-            />
-        </div>
-      );
-  }
-
-
-  const handleTabChange = (value: string) => {
-    // Do not show warning when just switching tabs
-    router.push(`/questions-creator?tab=${value}`, { scroll: false });
   };
-
-  const SectionHeader = ({ title, section, isVisible, onToggle }: { title: string, section: keyof typeof sectionsVisibility, isVisible: boolean, onToggle: (section: keyof typeof sectionsVisibility) => void }) => (
-    <div className="flex items-center gap-2 my-4">
-      <Button variant="ghost" size="icon" onClick={() => onToggle(section)} className="h-6 w-6 rounded-full">
-        <ChevronDown className={cn("h-5 w-5 transition-transform", isVisible ? "" : "-rotate-90")} />
-      </Button>
-      <div className="flex-grow border-t border-white/10"></div>
-    </div>
-  );
-
 
   const renderGenerateTabContent = () => {
     if (flowStep !== 'idle' && (pendingSource || task)) {
-        const generationOptions = task?.generationOptions || { generateQuestions: true, generateExam: false, generateFlashcards: false };
+        const genOpts = task?.generationOptions || { generateQuestions: false, generateExam: false, generateFlashcards: false };
+        
         return (
             <div className="flex flex-col items-center">
                 <AnimatePresence>
-                    <div className="w-full max-w-2xl flex items-center justify-between gap-4 my-4">
+                    <div className="w-full max-w-4xl flex items-center justify-between gap-4 my-4">
                         {(task || pendingSource) && (
                             <motion.div
                                 initial={{ opacity: 0, y: -10 }}
@@ -754,113 +519,39 @@ function QuestionsCreatorContent() {
                     </div>
                 </AnimatePresence>
                 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-                    {generationOptions.generateQuestions && (
-                        <div className="md:col-span-2">
-                            <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                            <AnimatePresence initial={false}>
-                            {sectionsVisibility.questions && (
-                                <motion.div
-                                    key="questions"
-                                    initial="collapsed" animate="open" exit="collapsed"
-                                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                                    transition={{ duration: 0.3 }}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                        <OutputCard
-                                            title="Text Questions"
-                                            icon={<FileText className="w-8 h-8 text-blue-400 shrink-0" />}
-                                            content={task?.textQuestions ?? null}
-                                            isLoading={isGenerating && ['extracting', 'generating_text'].includes(task?.status || '')}
-                                            loadingText={task?.status === 'extracting' ? 'Extracting text...' : 'Generating questions...'}
-                                            showRetryButton={showRetryButtonForStep('generating_text')}
-                                        />
-                                        <OutputCard
-                                            title="JSON Questions"
-                                            icon={<FileJson className="w-8 h-8 text-blue-400 shrink-0" />}
-                                            content={task?.jsonQuestions ?? null}
-                                            isLoading={isGenerating && task?.status === 'converting_json'}
-                                            loadingText='Converting to JSON...'
-                                            showRetryButton={showRetryButtonForStep('converting_json')}
-                                        />
-                                    </div>
-                                </motion.div>
-                            )}
-                            </AnimatePresence>
-                        </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 w-full max-w-7xl">
+                    {genOpts.generateQuestions && (
+                        <OutputCard
+                            title="Quiz"
+                            icon={<FileText className="w-8 h-8 text-yellow-400 shrink-0" />}
+                            content={task?.status.questions.text ?? null}
+                            isLoading={task?.status.questions.status === 'processing'}
+                            loadingText="Generating..."
+                            showRetryButton={task?.status.questions.status === 'error'}
+                            onRetry={() => handleRetry('questions')}
+                        />
                     )}
-
-                    {generationOptions.generateExam && (
-                        <div className="md:col-span-2">
-                            <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                            <AnimatePresence initial={false}>
-                            {sectionsVisibility.exam && (
-                                <motion.div
-                                    key="exam"
-                                    initial="collapsed" animate="open" exit="collapsed"
-                                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                                    transition={{ duration: 0.3 }}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                        <OutputCard
-                                            title="Text Exam"
-                                            icon={<FileText className="w-8 h-8 text-red-400 shrink-0" />}
-                                            content={task?.textExam ?? null}
-                                            isLoading={isGenerating && task?.status === 'generating_exam_text'}
-                                            loadingText='Generating exam...'
-                                            showRetryButton={showRetryButtonForStep('generating_exam_text')}
-                                        />
-                                        <OutputCard
-                                            title="JSON Exam"
-                                            icon={<FileJson className="w-8 h-8 text-red-400 shrink-0" />}
-                                            content={task?.jsonExam ?? null}
-                                            isLoading={isGenerating && task?.status === 'converting_exam_json'}
-                                            loadingText='Converting exam to JSON...'
-                                            showRetryButton={showRetryButtonForStep('converting_exam_json')}
-                                        />
-                                    </div>
-                                </motion.div>
-                            )}
-                            </AnimatePresence>
-                        </div>
+                     {genOpts.generateFlashcards && (
+                        <OutputCard
+                            title="Flashcard"
+                            icon={<FileText className="w-8 h-8 text-green-400 shrink-0" />}
+                            content={task?.status.flashcards.text ?? null}
+                            isLoading={task?.status.flashcards.status === 'processing'}
+                            loadingText="Generating..."
+                            showRetryButton={task?.status.flashcards.status === 'error'}
+                            onRetry={() => handleRetry('flashcards')}
+                        />
                     )}
-
-                    {generationOptions.generateFlashcards && (
-                        <div className="md:col-span-2">
-                            <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                            <AnimatePresence initial={false}>
-                            {sectionsVisibility.flashcards && (
-                                <motion.div
-                                    key="flashcards"
-                                    initial="collapsed" animate="open" exit="collapsed"
-                                    variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                                    transition={{ duration: 0.3 }}
-                                    className="overflow-hidden"
-                                >
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                        <OutputCard
-                                            title="Text Flashcard"
-                                            icon={<FileText className="w-8 h-8 text-green-400 shrink-0" />}
-                                            content={task?.textFlashcard ?? null}
-                                            isLoading={isGenerating && task?.status === 'generating_flashcard_text'}
-                                            loadingText='Generating flashcards...'
-                                            showRetryButton={showRetryButtonForStep('generating_flashcard_text')}
-                                        />
-                                        <OutputCard
-                                            title="JSON Flashcard"
-                                            icon={<FileJson className="w-8 h-8 text-green-400 shrink-0" />}
-                                            content={task?.jsonFlashcard ?? null}
-                                            isLoading={isGenerating && task?.status === 'converting_flashcard_json'}
-                                            loadingText='Converting flashcards to JSON...'
-                                            showRetryButton={showRetryButtonForStep('converting_flashcard_json')}
-                                        />
-                                    </div>
-                                </motion.div>
-                            )}
-                            </AnimatePresence>
-                        </div>
+                    {genOpts.generateExam && (
+                        <OutputCard
+                            title="Exam"
+                            icon={<FileText className="w-8 h-8 text-rose-400 shrink-0" />}
+                            content={task?.status.exam.text ?? null}
+                            isLoading={task?.status.exam.status === 'processing'}
+                            loadingText="Generating..."
+                            showRetryButton={task?.status.exam.status === 'error'}
+                            onRetry={() => handleRetry('exam')}
+                        />
                     )}
                 </div>
             </div>
@@ -912,6 +603,85 @@ function QuestionsCreatorContent() {
     );
   }
 
+  const renderPromptCard = (type: 'gen' | 'examGen' | 'flashcardGen') => {
+      const titleMap = {
+          gen: "Quiz Prompt",
+          examGen: "Exam Prompt",
+          flashcardGen: "Flashcard Prompt"
+      }
+      const iconMap = {
+          gen: <FileText className="w-8 h-8 text-yellow-400 shrink-0" />,
+          examGen: <FileText className="w-8 h-8 text-rose-400 shrink-0" />,
+          flashcardGen: <FileText className="w-8 h-8 text-green-400 shrink-0" />,
+      }
+      const promptMap = {
+          gen: generationPrompt,
+          examGen: examGenerationPrompt,
+          flashcardGen: flashcardGenerationPrompt,
+      }
+      const setPromptMap = {
+          gen: setGenerationPrompt,
+          examGen: setExamGenerationPrompt,
+          flashcardGen: setFlashcardGenerationPrompt,
+      }
+
+      return (
+        <div className="relative group glass-card p-6 rounded-3xl flex flex-col justify-between">
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                    {iconMap[type]}
+                    <h3 className="text-lg font-semibold text-white break-words">{titleMap[type]}</h3>
+                </div>
+                <TooltipProvider>
+                    <div className="flex items-center gap-0">
+                        {isEditingPrompts[type] ? (
+                            <>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button onClick={() => handleSavePrompt(type)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                            <Check className="h-5 w-5 text-green-400" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Save</p></TooltipContent>
+                                </Tooltip>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button onClick={() => handleCancelPrompt(type)} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                            <X className="h-5 w-5 text-red-400" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent><p>Cancel</p></TooltipContent>
+                                </Tooltip>
+                            </>
+                        ) : (
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button onClick={() => setIsEditingPrompts(p => ({...p, [type]: true}))} size="icon" variant="ghost" className="h-9 w-9 rounded-full">
+                                        <Pencil className="h-5 w-5" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent><p>Edit</p></TooltipContent>
+                            </Tooltip>
+                        )}
+                    </div>
+                </TooltipProvider>
+            </div>
+            <textarea
+                value={promptMap[type]}
+                onChange={(e) => setPromptMap[type](e.target.value)}
+                readOnly={!isEditingPrompts[type]}
+                className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
+            />
+        </div>
+      );
+  }
+
+
+  const handleTabChange = (value: string) => {
+    router.push(`/questions-creator?tab=${value}`, { scroll: false });
+  };
+
+
   return (
     <div className="flex-1 flex flex-col overflow-y-auto no-scrollbar pt-8">
       <div className="text-center">
@@ -932,60 +702,10 @@ function QuestionsCreatorContent() {
         </TabsContent>
 
         <TabsContent value="prompts" className="w-full max-w-7xl mx-auto mt-4">
-             <div className="max-w-7xl mx-auto">
-                <SectionHeader title="Questions" section="questions" isVisible={sectionsVisibility.questions} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                 <AnimatePresence initial={false}>
-                    {sectionsVisibility.questions && (
-                         <motion.div
-                            key="questions"
-                            initial="collapsed" animate="open" exit="collapsed"
-                            variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                {renderPromptCard('gen')}
-                                {renderPromptCard('json')}
-                            </div>
-                        </motion.div>
-                    )}
-                 </AnimatePresence>
-
-                 <SectionHeader title="Exam" section="exam" isVisible={sectionsVisibility.exam} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                 <AnimatePresence initial={false}>
-                    {sectionsVisibility.exam && (
-                         <motion.div
-                            key="exam"
-                            initial="collapsed" animate="open" exit="collapsed"
-                            variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                {renderPromptCard('examGen')}
-                                {renderPromptCard('examJson')}
-                            </div>
-                        </motion.div>
-                    )}
-                 </AnimatePresence>
-
-                 <SectionHeader title="Flashcards" section="flashcards" isVisible={sectionsVisibility.flashcards} onToggle={(s) => setSectionsVisibility(p => ({...p, [s]: !p[s]}))} />
-                 <AnimatePresence initial={false}>
-                    {sectionsVisibility.flashcards && (
-                         <motion.div
-                            key="flashcards"
-                            initial="collapsed" animate="open" exit="collapsed"
-                            variants={{ open: { opacity: 1, height: 'auto' }, collapsed: { opacity: 0, height: 0 } }}
-                            transition={{ duration: 0.3 }}
-                            className="overflow-hidden"
-                        >
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
-                                {renderPromptCard('flashcardGen')}
-                                {renderPromptCard('flashcardJson')}
-                            </div>
-                        </motion.div>
-                    )}
-                 </AnimatePresence>
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {renderPromptCard('gen')}
+                {renderPromptCard('flashcardGen')}
+                {renderPromptCard('examGen')}
             </div>
         </TabsContent>
 
@@ -1073,4 +793,3 @@ export default function QuestionsCreatorPage() {
         </Suspense>
     )
 }
-

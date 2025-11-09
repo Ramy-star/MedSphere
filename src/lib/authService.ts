@@ -1,3 +1,4 @@
+
 'use client';
 
 import { db } from '@/firebase';
@@ -166,4 +167,19 @@ export async function createUserProfile(studentId: string, secretCode: string): 
     await setDoc(userDocRef, newUserProfile);
 
     return newUserProfile;
+}
+
+export async function isStudentIdValid(id: string): Promise<boolean> {
+    const trimmedId = id.trim();
+    return allStudentIds.has(trimmedId);
+}
+
+export async function getClaimedStudentIdUser(studentId: string): Promise<string | null> {
+    if (!db) return null;
+    const docRef = doc(db, 'claimedStudentIds', studentId);
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+        return docSnap.data().userId || null;
+    }
+    return null;
 }

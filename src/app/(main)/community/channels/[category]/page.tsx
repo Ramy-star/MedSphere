@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -13,6 +14,12 @@ import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { QueryConstraint, where, or } from 'firebase/firestore';
+
+interface PageProps {
+    params: {
+      category: string;
+    };
+}
 
 const ChannelCard = ({ channel }: { channel: Channel }) => {
   const memberCount = Array.isArray(channel.members) ? channel.members.length : 0;
@@ -95,7 +102,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-export default function ChannelsPage({ params }: { params: { category: string } }) {
+export default function ChannelsPage({ params }: PageProps) {
   const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
