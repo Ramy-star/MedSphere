@@ -11,6 +11,12 @@ type SearchFilters = {
 let fuse: Fuse<Content> | null = null;
 let allItemsCache: Content[] = [];
 
+const FUSE_KEYS = [
+  { name: 'name', weight: 0.7 },
+  { name: 'type', weight: 0.1 },
+  { name: 'metadata.mime', weight: 0.2 },
+] as const;
+
 /**
  * Initializes the Fuse.js instance with the provided items.
  */
@@ -18,14 +24,10 @@ function initializeFuse(items: Content[]) {
   if (items === allItemsCache && fuse) {
     return;
   }
-  
+
   allItemsCache = items;
   fuse = new Fuse(items, {
-    keys: [
-      { name: 'name', weight: 0.7 },
-      { name: 'type', weight: 0.1 },
-      { name: 'metadata.mime', weight: 0.2 },
-    ],
+    keys: FUSE_KEYS,
     includeScore: true,
     threshold: 0.3,
     ignoreLocation: true,
@@ -94,7 +96,7 @@ async function searchFlow(query: string, items: Content[], filters: SearchFilter
   // 4. If there's a search query, perform fuzzy search on the final filtered items.
   if (query.trim()) {
     const fuseForFiltered = new Fuse(fileResults, {
-      keys: fuse.options.keys,
+      keys: FUSE_KEYS,
       includeScore: true,
       threshold: 0.3,
       ignoreLocation: true,
