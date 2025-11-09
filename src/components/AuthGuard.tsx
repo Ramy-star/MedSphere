@@ -21,6 +21,7 @@ import { GoogleIcon } from './icons/GoogleIcon';
 import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { getClaimedStudentIdUser } from '@/lib/verificationService';
 import type { UserProfile } from '@/stores/auth-store';
+import { nanoid } from 'nanoid';
 
 // Dynamically import bcryptjs only when needed to avoid bundling issues.
 async function hashSecretCode(secretCode: string): Promise<string> {
@@ -289,5 +290,3 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     </motion.div>
   );
 }
-
-    
