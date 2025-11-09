@@ -1,10 +1,9 @@
-
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { db } from '@/firebase';
 import { collection, doc, addDoc, updateDoc, deleteDoc, serverTimestamp, writeBatch } from 'firebase/firestore';
-import { Plus, Check, Loader2, Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, Image as ImageIcon, Minus, Trash2, Edit, Palette } from 'lucide-react';
+import { Plus, Check, Loader2, Bold, Italic, Underline, List, ListOrdered, Link as LinkIcon, Image as ImageIcon, Minus, Trash2, Edit, Palette, MoreVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from '../ui/dropdown-menu';
@@ -127,29 +126,29 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
     const { data: notes, loading } = useCollection<Note>(`users/${userId}/notes`, { orderBy: ['createdAt', 'desc'] });
     const { toast } = useToast();
 
-    const handleAddNote = useCallback(async () => {
+    const handleAddNote = async () => {
         try {
             await contentService.createNote(userId);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not create a new note.' });
         }
-    }, [userId, toast]);
+    };
 
-    const handleUpdateNote = useCallback(async (id: string, content: string, color: string) => {
+    const handleUpdateNote = async (id: string, content: string, color: string) => {
         try {
             await contentService.updateNote(userId, id, { content, color });
         } catch (error: any) {
              toast({ variant: 'destructive', title: 'Error', description: 'Could not update the note.' });
         }
-    }, [userId, toast]);
+    };
     
-    const handleDeleteNote = useCallback(async (id: string) => {
+    const handleDeleteNote = async (id: string) => {
         try {
             await contentService.deleteNote(userId, id);
         } catch (error: any) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not delete the note.' });
         }
-    }, [userId, toast]);
+    };
 
     return (
         <div className="space-y-4">
@@ -182,5 +181,3 @@ export const ProfileNotes = ({ userId }: { userId: string }) => {
         </div>
     );
 };
-
-    
