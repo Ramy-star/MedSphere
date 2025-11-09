@@ -52,6 +52,7 @@ export interface Comment {
     createdAt: any;
     reactions: { [key: string]: string };
     replyCount?: number;
+    children?: Comment[];
 }
 
 
