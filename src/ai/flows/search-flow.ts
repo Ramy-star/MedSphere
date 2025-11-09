@@ -8,6 +8,17 @@ type SearchFilters = {
     level: string | 'all';
 };
 
+const fuseOptions = {
+    keys: [
+      { name: 'name', weight: 0.7 },
+      { name: 'type', weight: 0.1 },
+      { name: 'metadata.mime', weight: 0.2 },
+    ],
+    includeScore: true,
+    threshold: 0.3,
+    ignoreLocation: true,
+};
+
 let fuse: Fuse<Content> | null = null;
 let allItemsCache: Content[] = [];
 
@@ -20,16 +31,7 @@ function initializeFuse(items: Content[]) {
   }
   
   allItemsCache = items;
-  fuse = new Fuse(items, {
-    keys: [
-      { name: 'name', weight: 0.7 },
-      { name: 'type', weight: 0.1 },
-      { name: 'metadata.mime', weight: 0.2 },
-    ],
-    includeScore: true,
-    threshold: 0.3,
-    ignoreLocation: true,
-  });
+  fuse = new Fuse(items, fuseOptions);
 }
 
 const itemTypeMap: Record<SearchFilters['type'], Content['type'] | null> = {
@@ -93,12 +95,7 @@ async function searchFlow(query: string, items: Content[], filters: SearchFilter
 
   // 4. If there's a search query, perform fuzzy search on the final filtered items.
   if (query.trim()) {
-    const fuseForFiltered = new Fuse(fileResults, {
-      keys: fuse.options.keys,
-      includeScore: true,
-      threshold: 0.3,
-      ignoreLocation: true,
-    });
+    const fuseForFiltered = new Fuse(fileResults, fuseOptions);
     const searchResults = fuseForFiltered.search(query).map(result => result.item);
     // Sort the fuzzy search results alphanumerically
     return searchResults.sort((a, b) => naturalSort(a.name, b.name));
