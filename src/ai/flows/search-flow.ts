@@ -15,7 +15,7 @@ const FUSE_KEYS = [
   { name: 'name', weight: 0.7 },
   { name: 'type', weight: 0.1 },
   { name: 'metadata.mime', weight: 0.2 },
-] as const;
+];
 
 /**
  * Initializes the Fuse.js instance with the provided items.
