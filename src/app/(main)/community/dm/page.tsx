@@ -11,6 +11,7 @@ import { formatDistanceToNow, parseISO } from 'date-fns';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { where } from 'firebase/firestore';
 
 const getTruncatedName = (name: string | undefined, count = 2) => {
     if (!name) return 'User';
@@ -75,7 +76,7 @@ export default function DirectMessagesPage() {
   const { user } = useAuthStore();
   const router = useRouter();
   const { data: chatsData, loading } = useCollection<DirectMessage>('directMessages', {
-    where: ['participants', 'array-contains', user?.uid],
+    where: user?.uid ? where('participants', 'array-contains', user.uid) : undefined,
     disabled: !user?.uid,
   });
 
