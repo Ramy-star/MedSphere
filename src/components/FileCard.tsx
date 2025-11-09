@@ -309,7 +309,7 @@ export const FileCard = React.memo(function FileCard({
                         <DropdownMenuContent 
                             className="w-48 p-2"
                             align="end"
-                            container={dialogContainer}
+                            container={dialogContainer || undefined}
                         >
                             <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onFileClick(item); }}>
                                 <MousePointerSquareDashed className="mr-2 h-4 w-4" />
