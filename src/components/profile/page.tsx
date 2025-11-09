@@ -4,7 +4,7 @@ import { useState, useRef, useEffect, ReactNode, Suspense, lazy } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, StickyNote } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, StickyNote, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -22,6 +22,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import dynamic from 'next/dynamic';
+
 import level1Ids from '@/lib/student-ids/level-1.json';
 import level2Ids from '@/lib/student-ids/level-2.json';
 import level3Ids from '@/lib/student-ids/level-3.json';
@@ -32,16 +33,17 @@ import { AchievementsSection } from '@/components/profile/Achievements';
 import Image from 'next/image';
 import { FavoritesSection } from '@/components/profile/FavoritesSection';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
-import { AiStudyBuddy } from '@/components/profile/AiStudyBuddy';
 import * as Collapsible from '@radix-ui/react-collapsible';
-import { ProfileNotesSection } from './ProfileNotesSection';
+import { ProfileNotesSection } from '@/components/profile/ProfileNotesSection';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { Skeleton } from '../ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
+// import { ChangeSecretCodeDialog } from '@/components/profile/ChangeSecretCodeDialog';
 
 const FilePreviewModal = dynamic(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal), {
     loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4" /></div>,
     ssr: false
 });
+
 
 const studentIdToLevelMap = new Map<string, string>();
 level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
@@ -122,6 +124,7 @@ export default function ProfilePage() {
   const [showDeleteCoverConfirm, setShowDeleteCoverConfirm] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
+  const [showChangeSecretCode, setShowChangeSecretCode] = useState(false);
 
   // New state for drag-and-drop and confirmation
   const [imageToConfirm, setImageToConfirm] = useState<{ file: File; type: 'avatar' | 'cover' } | null>(null);
@@ -326,33 +329,33 @@ export default function ProfilePage() {
 
   const DesktopLayout = () => (
     <div className="mt-8 sm:mt-12 grid grid-cols-1 lg:grid-cols-[1fr_auto_1fr] lg:gap-x-8 gap-y-8 items-start w-full px-4 sm:px-8">
-      <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-          {!isMobile && <AiStudyBuddy user={user} />}
-          <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
-              <ProfileNotesSection user={user} />
-          </CollapsibleSection>
-      </div>
+        <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
+             <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
+                <div className="space-y-3 sm:space-y-4">
+                    <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
+                    <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
+                    <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
+                    {/* <InfoCard icon={KeyRound} label="Secret Code" value={"••••••••"} onEdit={() => setShowChangeSecretCode(true)} /> */}
+                </div>
+            </CollapsibleSection>
+             <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
+                <ActiveSessions user={user} />
+            </CollapsibleSection>
+        </div>
 
-      <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
+        <div className="hidden lg:block self-stretch w-px bg-slate-700/80" />
 
-      <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
-           <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
-              <div className="space-y-3 sm:space-y-4">
-                  <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
-                  <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
-                  <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
-              </div>
-          </CollapsibleSection>
-          <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
-              <ActiveSessions user={user} />
-          </CollapsibleSection>
-          <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
-              <FavoritesSection user={user} onFileClick={handleFileClick} />
-          </CollapsibleSection>
-          <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
-             <AchievementsSection user={user} />
-          </CollapsibleSection>
-      </div>
+        <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
+            <CollapsibleSection title="Favorites" icon={Star} defaultOpen={true}>
+                <FavoritesSection user={user} onFileClick={handleFileClick} />
+            </CollapsibleSection>
+            <CollapsibleSection title="My Pinned Notes" icon={StickyNote} defaultOpen={false}>
+                <ProfileNotesSection user={user} />
+            </CollapsibleSection>
+            <CollapsibleSection title="Achievements" icon={Crown} defaultOpen={true}>
+               <AchievementsSection user={user} />
+            </CollapsibleSection>
+        </div>
     </div>
   );
 
@@ -363,6 +366,7 @@ export default function ProfilePage() {
                   <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                   <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
                   <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
+                  {/* <InfoCard icon={KeyRound} label="Secret Code" value={"••••••••"} onEdit={() => setShowChangeSecretCode(true)} /> */}
               </div>
           </CollapsibleSection>
           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={false}>
@@ -544,6 +548,13 @@ export default function ProfilePage() {
       </div>
 
     </motion.div>
+
+    {/* <ChangeSecretCodeDialog
+        open={showChangeSecretCode}
+        onOpenChange={setShowChangeSecretCode}
+        userId={user.id}
+    /> */}
+
     <AlertDialog open={!!imageToConfirm} onOpenChange={(open) => !open && setImageToConfirm(null)}>
         <AlertDialogContent>
             <AlertDialogHeader>
