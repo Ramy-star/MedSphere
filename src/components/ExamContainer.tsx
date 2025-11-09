@@ -32,7 +32,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { db } from '@/firebase';
@@ -781,7 +780,10 @@ const ExamMode = ({
     onSwitchLecture,
     onLecturesUpdate,
     allLectures,
-    onStateChange
+    onStateChange,
+    onOpenUpsertDialog,
+    onOpenLectureEditor,
+    onDeleteLecture,
 }: {
     fileItemId: string | null;
     lectures: Lecture[];
@@ -791,6 +793,9 @@ const ExamMode = ({
     onLecturesUpdate: (updatedLectures: Lecture[]) => void;
     allLectures: Lecture[];
     onStateChange?: (inProgress: boolean) => void;
+    onOpenUpsertDialog: (mcq: MCQ | null, level: 1 | 2) => void;
+    onOpenLectureEditor: () => void;
+    onDeleteLecture: () => void;
 }) => {
     const [examState, setExamState] = useState<'not-started' | 'in-progress' | 'finished'>('not-started');
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
@@ -801,9 +806,6 @@ const ExamMode = ({
     const [showResumeAlert, setShowResumeAlert] = useState(false);
     const [questionAnimation, setQuestionAnimation] = useState('');
     const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-    const [isUpsertMcqDialogOpen, setIsUpsertMcqDialogOpen] = useState(false);
-    const [mcqToEdit, setMcqToEdit] = useState<{ mcq: MCQ, level: 1 | 2 } | null>(null);
-    const [isFullLectureEditorOpen, setIsFullLectureEditorOpen] = useState(false);
     const isInitialRender = useRef(true);
 
     const { studentId, user, can, checkAndAwardAchievements } = useAuthStore();
@@ -1055,67 +1057,6 @@ const ExamMode = ({
         setIsExitAlertOpen(true);
     };
 
-    // Admin functions
-    const handleUpsertMcq = (lectureId: string, newLectureName: string, mcqData: MCQ, level: 1 | 2, originalMcq?: MCQ) => {
-        let updatedLectures = [...initialLectures];
-        let targetLectureId = lectureId;
-        let newLectureCreated = false;
-
-        if (lectureId === 'new') {
-            if (!newLectureName.trim()) return;
-            const newLec: Lecture = {
-                id: `l${Date.now()}`,
-                name: newLectureName.trim(),
-                mcqs_level_1: [], mcqs_level_2: []
-            };
-            updatedLectures.push(newLec);
-            targetLectureId = newLec.id;
-            newLectureCreated = true;
-        }
-
-        const lectureIndex = updatedLectures.findIndex(l => l.id === targetLectureId);
-        if (lectureIndex === -1) return;
-
-        const lectureToUpdate = {...updatedLectures[lectureIndex]};
-        const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
-        let mcqs = [...(lectureToUpdate[key] || [])];
-
-        if (originalMcq) {
-            const mcqIndex = mcqs.findIndex(m => m.q === originalMcq.q);
-            if (mcqIndex > -1) mcqs[mcqIndex] = mcqData;
-        } else {
-            mcqs.push(mcqData);
-        }
-        lectureToUpdate[key] = mcqs;
-        updatedLectures[lectureIndex] = lectureToUpdate;
-
-        onLecturesUpdate(updatedLectures);
-        if (newLectureCreated) {
-            setTimeout(() => onSwitchLecture(targetLectureId), 0);
-        }
-    };
-
-    const handleDeleteMcq = (mcqToDelete: MCQ, level: 1 | 2) => {
-        const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
-        const updatedLectures = initialLectures.map(l => {
-            if (l.id === activeLecture.id) {
-                return {...l, [key]: (l[key] || []).filter(mcq => mcq.q !== mcqToDelete.q)}
-            }
-            return l;
-        });
-        onLecturesUpdate(updatedLectures);
-    };
-
-    const handleEditLectureSave = (newName: string) => {
-        const updatedLectures = initialLectures.map(l => l.id === activeLecture.id ? {...l, name: newName} : l);
-        onLecturesUpdate(updatedLectures);
-    };
-    
-    const handleDeleteLecture = () => {
-        const updatedLectures = initialLectures.filter(l => l.id !== activeLecture.id);
-        onLecturesUpdate(updatedLectures);
-        onSwitchLecture(updatedLectures[0]?.id || '');
-    };
     
     const containerClasses = `exam-container ${isAnimating ? 'animating-out' : 'animating-in'}`;
 
@@ -1259,10 +1200,10 @@ const ExamMode = ({
                                                 <Button variant="ghost" size="icon" className="h-10 w-10 text-muted-foreground"><Settings2 /></Button>
                                             </DropdownMenuTrigger>
                                             <DropdownMenuContent>
-                                                <DropdownMenuItem onSelect={() => setIsFullLectureEditorOpen(true)}><Edit size={16} className="mr-2" />Edit Lecture</DropdownMenuItem>
-                                                <DropdownMenuItem onSelect={() => setIsUpsertMcqDialogOpen(true)}><PlusSquare size={16} className="mr-2" />Add Question</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={onOpenLectureEditor}><Edit size={16} className="mr-2" />Edit Lecture</DropdownMenuItem>
+                                                <DropdownMenuItem onSelect={() => onOpenUpsertDialog(null, 1)}><PlusSquare size={16} className="mr-2" />Add Question</DropdownMenuItem>
                                                 <DropdownMenuItem onSelect={() => setIsReportModalOpen(true)}><FileText size={16} className="mr-2" />View Report</DropdownMenuItem>
-                                                <DropdownMenuSeparator />
+                                                
                                                 <AlertDialog>
                                                     <AlertDialogTrigger asChild>
                                                         <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive focus:bg-destructive/10 focus:text-destructive">
@@ -1277,7 +1218,7 @@ const ExamMode = ({
                                                         </AlertDialogHeader>
                                                         <AlertDialogFooter>
                                                             <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                                            <AlertDialogAction onClick={handleDeleteLecture} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
+                                                            <AlertDialogAction onClick={onDeleteLecture} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
                                                         </AlertDialogFooter>
                                                     </AlertDialogContent>
                                                 </AlertDialog>
@@ -1475,6 +1416,7 @@ const ExamMode = ({
                     </div>
                 );
             })()}
+             {canAdminister && <AdminReportModal isOpen={isReportModalOpen} onClose={() => setIsReportModalOpen(false)} lectureId={activeLecture.id} />}
         </div>
     );
 };
@@ -1542,6 +1484,50 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
 
     const activeLecture = lecturesState.find(l => l.id === activeLectureId);
 
+    const handleOpenUpsertDialog = (mcq: MCQ | null, level: 1 | 2) => {
+        setMcqToEdit(mcq ? { mcq, level } : null);
+        setIsUpsertMcqDialogOpen(true);
+    };
+
+    const handleUpsertMcq = (lectureId: string, newLectureName: string, mcqData: MCQ, level: 1 | 2, originalMcq?: MCQ) => {
+        let updatedLectures = [...lecturesState];
+        let targetLectureId = lectureId;
+        let newLectureCreated = false;
+
+        if (lectureId === 'new') {
+            if (!newLectureName.trim()) return;
+            const newLec: Lecture = {
+                id: `l${Date.now()}`,
+                name: newLectureName.trim(),
+                mcqs_level_1: [], mcqs_level_2: []
+            };
+            updatedLectures.push(newLec);
+            targetLectureId = newLec.id;
+            newLectureCreated = true;
+        }
+
+        const lectureIndex = updatedLectures.findIndex(l => l.id === targetLectureId);
+        if (lectureIndex === -1) return;
+
+        const lectureToUpdate = {...updatedLectures[lectureIndex]};
+        const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
+        let mcqs = [...(lectureToUpdate[key] || [])];
+
+        if (originalMcq) {
+            const mcqIndex = mcqs.findIndex(m => m.q === originalMcq.q);
+            if (mcqIndex > -1) mcqs[mcqIndex] = mcqData;
+        } else {
+            mcqs.push(mcqData);
+        }
+        lectureToUpdate[key] = mcqs;
+        updatedLectures[lectureIndex] = lectureToUpdate;
+
+        handleLecturesUpdate(updatedLectures);
+        if (newLectureCreated) {
+            setTimeout(() => setActiveLectureId(targetLectureId), 0);
+        }
+    };
+    
     return (
         <>
         <main className="exam-page-container h-full">
@@ -1555,6 +1541,13 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
                     onLecturesUpdate={handleLecturesUpdate}
                     allLectures={lecturesState}
                     onStateChange={onStateChange}
+                    onOpenUpsertDialog={handleOpenUpsertDialog}
+                    onOpenLectureEditor={() => setIsFullLectureEditorOpen(true)}
+                    onDeleteLecture={() => {
+                        const updated = lecturesState.filter(l => l.id !== activeLectureId);
+                        handleLecturesUpdate(updated);
+                        setActiveLectureId(updated[0]?.id || undefined);
+                    }}
                 /> : <div className="flex items-center justify-center h-full"><p>No lectures available for this exam.</p></div>}
             </div>
         </main>
@@ -1563,38 +1556,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
             onClose={() => {setIsUpsertMcqDialogOpen(false); setMcqToEdit(null);}}
             lectures={lecturesState}
             activeLectureId={activeLectureId}
-            onUpsert={(lectureId, newLectureName, mcqData, level, originalMcq) => {
-                let updatedLectures = [...lecturesState];
-                let targetLectureId = lectureId;
-                let newLectureCreated = false;
-        
-                if (lectureId === 'new') {
-                    if (!newLectureName.trim()) return;
-                    const newLec: Lecture = { id: `l${Date.now()}`, name: newLectureName.trim(), mcqs_level_1: [], mcqs_level_2: [] };
-                    updatedLectures.push(newLec);
-                    targetLectureId = newLec.id;
-                    newLectureCreated = true;
-                }
-        
-                const lectureIndex = updatedLectures.findIndex(l => l.id === targetLectureId);
-                if (lectureIndex === -1) return;
-        
-                const lectureToUpdate = {...updatedLectures[lectureIndex]};
-                const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
-                let mcqs = [...(lectureToUpdate[key] || [])];
-        
-                if (originalMcq) {
-                    const mcqIndex = mcqs.findIndex(m => m.q === originalMcq.q);
-                    if (mcqIndex > -1) mcqs[mcqIndex] = mcqData;
-                } else {
-                    mcqs.push(mcqData);
-                }
-                lectureToUpdate[key] = mcqs;
-                updatedLectures[lectureIndex] = lectureToUpdate;
-        
-                handleLecturesUpdate(updatedLectures);
-                if (newLectureCreated) setTimeout(() => setActiveLectureId(targetLectureId), 0);
-            }}
+            onUpsert={handleUpsertMcq}
             mcqToEdit={mcqToEdit}
         />
         {activeLecture && <FullLectureEditorDialog 
@@ -1606,10 +1568,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
                 const updatedLectures = lecturesState.map(l => l.id === activeLectureId ? {...l, [key]: (l[key] || []).filter(mcq => mcq.q !== mcqToDelete.q)} : l);
                 handleLecturesUpdate(updatedLectures);
             }}
-            onOpenUpsertDialog={(mcq, level) => {
-                setMcqToEdit({mcq, level});
-                setIsUpsertMcqDialogOpen(true);
-            }}
+            onOpenUpsertDialog={handleOpenUpsertDialog}
             onLectureNameSave={(newName) => {
                 const updatedLectures = lecturesState.map(l => l.id === activeLectureId ? {...l, name: newName} : l);
                 handleLecturesUpdate(updatedLectures);
