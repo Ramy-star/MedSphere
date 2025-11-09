@@ -22,6 +22,15 @@ import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { getClaimedStudentIdUser } from '@/lib/verificationService';
 import type { UserProfile } from '@/stores/auth-store';
 
+// Dynamically import bcryptjs only when needed to avoid bundling issues.
+async function hashSecretCode(secretCode: string): Promise<string> {
+    const bcrypt = (await import('bcryptjs')).default;
+    const salt = await bcrypt.genSalt(10);
+    const hash = await bcrypt.hash(secretCode, salt);
+    return hash;
+}
+
+
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 
 function ProfileSetupForm() {
@@ -88,6 +97,11 @@ function ProfileSetupForm() {
           }
           const batch = writeBatch(db);
           const studentIdRef = doc(db, 'claimedStudentIds', studentId);
+          
+          // A dummy secret code, as the user will be using Google Sign-In primarily.
+          // This satisfies the non-null requirement for the hash.
+          const secretCodeHash = await hashSecretCode(nanoid());
+
           const newProfileData: Omit<UserProfile, 'roles'> = {
             id: firebaseUser.uid,
             uid: firebaseUser.uid,
@@ -97,6 +111,7 @@ function ProfileSetupForm() {
             username: username.trim(),
             studentId: studentId,
             createdAt: new Date().toISOString(),
+            secretCodeHash,
           };
           batch.set(userDocRef, { ...newProfileData, roles: {} });
           batch.set(studentIdRef, {
@@ -274,3 +289,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
     </motion.div>
   );
 }
+
+    

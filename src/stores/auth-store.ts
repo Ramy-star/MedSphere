@@ -1,4 +1,3 @@
-
 'use client';
 
 import { create } from 'zustand';
@@ -392,3 +391,5 @@ if (typeof window !== 'undefined') {
 }
 
 export { useAuthStore };
+
+    
