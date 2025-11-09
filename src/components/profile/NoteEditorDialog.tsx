@@ -148,7 +148,7 @@ const ColorPicker = ({ editor, container }: { editor: Editor, container: HTMLEle
         <Palette className="h-4 w-4" />
       </Button>
     </PopoverTrigger>
-    <PopoverContent container={container} className="w-auto p-2 bg-slate-900 border-slate-700">
+    <PopoverContent container={container || undefined} className="w-auto p-2 bg-slate-900 border-slate-700">
     <div className="flex gap-1">
         {['#ffffff', '#ff6b6b', '#feca57', '#48dbfb', '#1dd1a1', '#ff9ff3'].map(color => (
         <button
@@ -171,7 +171,7 @@ const HighlightPicker = ({ editor, container }: { editor: Editor, container: HTM
             <Highlighter className="h-4 w-4" />
         </Button>
     </PopoverTrigger>
-    <PopoverContent container={container} className="w-auto p-2 bg-slate-900 border-slate-700">
+    <PopoverContent container={container || undefined} className="w-auto p-2 bg-slate-900 border-slate-700">
         <div className="flex gap-1">
             {HIGHLIGHT_COLORS.map(({ color }) => (
                 <button
@@ -199,7 +199,7 @@ const FontPicker = ({ editor, container }: { editor: Editor, container: HTMLElem
                 <ChevronDown className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent container={container} className="w-56 p-1 bg-slate-900 border-slate-700">
+        <PopoverContent container={container || undefined} className="w-56 p-1 bg-slate-900 border-slate-700">
             <ScrollArea className="h-60">
                 {FONT_FAMILIES.map(({ name, value }) => (
                     <button
@@ -304,7 +304,7 @@ const EmojiSelector = ({ editor, container }: { editor: Editor, container: HTMLE
                 <Smile className="h-4 w-4" />
             </Button>
         </PopoverTrigger>
-        <PopoverContent container={container} className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
+        <PopoverContent container={container || undefined} className="w-auto p-0 bg-slate-900 border-slate-700 overflow-hidden rounded-2xl">
             <ScrollArea className="h-[300px]">
                 <EmojiPicker
                     onEmojiClick={(emojiData: EmojiClickData) => editor.chain().focus().insertContent(emojiData.emoji).run()}
@@ -709,7 +709,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                       <AlertDialogTrigger asChild>
                                         <button onClick={(e) => {e.stopPropagation(); setPageToDelete(page)}} className="p-0.5 rounded-full hover:bg-red-500/20 text-slate-500 hover:text-red-400"><X size={12} /></button>
                                       </AlertDialogTrigger>
-                                      <AlertDialogContent container={dialogContentRef.current}>
+                                      <AlertDialogContent container={dialogContentRef.current || undefined}>
                                         <AlertDialogHeader>
                                           <AlertDialogTitle>Delete Page?</AlertDialogTitle>
                                           <AlertDialogDescription>Are you sure you want to delete the page "{page.title}"? This cannot be undone.</AlertDialogDescription>
@@ -729,7 +729,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                                 <Paperclip size={14} />
                                             </button>
                                         </PopoverTrigger>
-                                        <PopoverContent container={dialogContentRef.current} className="w-64 p-1 bg-slate-800/80 border-slate-700 backdrop-blur-md">
+                                        <PopoverContent container={dialogContentRef.current || undefined} className="w-64 p-1 bg-slate-800/80 border-slate-700 backdrop-blur-md">
                                             <div className="flex flex-col">
                                                 <Popover open={showFileSearch} onOpenChange={setShowFileSearch}>
                                                     <PopoverTrigger asChild>
@@ -737,7 +737,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                                                             <Plus className="mr-2 h-4 w-4" /> Add Reference
                                                         </Button>
                                                     </PopoverTrigger>
-                                                     <PopoverContent container={dialogContentRef.current} className="w-[300px] p-1 bg-slate-900/80 border-slate-700 backdrop-blur-md" side="right" align="start">
+                                                     <PopoverContent container={dialogContentRef.current || undefined} className="w-[300px] p-1 bg-slate-900/80 border-slate-700 backdrop-blur-md" side="right" align="start">
                                                         <Input
                                                             placeholder="Search files..."
                                                             value={fileSearchQuery}
@@ -786,7 +786,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
                       <PopoverTrigger asChild>
                           <Button variant="ghost" size="icon" title="Change color"><Palette className="h-4 w-4" /></Button>
                       </PopoverTrigger>
-                      <PopoverContent container={dialogContentRef.current} className="w-auto p-2 bg-slate-900 border-slate-700">
+                      <PopoverContent container={dialogContentRef.current || undefined} className="w-auto p-2 bg-slate-900 border-slate-700">
                           <div className="flex gap-2">
                               {NOTE_COLORS.map(c => (
                                   <button
