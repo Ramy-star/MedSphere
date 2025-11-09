@@ -16,8 +16,7 @@ export function FloatingStudyBuddy() {
         return null;
     }
 
-    const toggleExpansion = (e: React.MouseEvent) => {
-        e.stopPropagation();
+    const toggleExpansion = () => {
         setIsExpanded(prev => !prev);
     };
 
