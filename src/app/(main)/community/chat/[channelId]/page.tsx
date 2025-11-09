@@ -14,10 +14,12 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { isSameDay, isAfter, subMinutes } from 'date-fns';
+import { useParams } from 'next/navigation';
 
 
-export default function ChatPage({ params }: { params: { channelId: string } }) {
-  const { channelId } = params;
+export default function ChatPage() {
+  const params = useParams();
+  const channelId = params.channelId as string;
   const { user } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);

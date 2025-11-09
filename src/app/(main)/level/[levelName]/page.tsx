@@ -9,9 +9,11 @@ import { prefetcher } from '@/lib/prefetchService';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 import { where } from 'firebase/firestore';
+import { useParams } from 'next/navigation';
 
-export default function LevelPage({ params }: { params: { levelName: string } }) {
-    const { levelName } = params;
+export default function LevelPage() {
+  const params = useParams();
+  const levelName = params.levelName as string;
   const router = useRouter();
   const decodedLevelName = decodeURIComponent(levelName);
   

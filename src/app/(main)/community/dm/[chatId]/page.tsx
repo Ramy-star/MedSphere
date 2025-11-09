@@ -15,9 +15,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ImagePreviewDialog } from '@/components/community/ImagePreviewDialog';
+import { useParams } from 'next/navigation';
 
-export default function DirectMessagePage({ params }: { params: { chatId: string } }) {
-  const { chatId } = params;
+export default function DirectMessagePage() {
+  const params = useParams();
+  const chatId = params.chatId as string;
   const { user: currentUser } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);

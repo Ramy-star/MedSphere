@@ -5,7 +5,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, createChannel, joinChannel } from '@/lib/communityService';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, PlusCircle, Users, Check, UserPlus } from 'lucide-react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { CreateChannelDialog } from '@/components/community/CreateChannelDialog';
@@ -95,8 +95,9 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-export default function ChannelsPage({ params }: { params: { category: string } }) {
-  const { category } = params;
+export default function ChannelsPage() {
+  const params = useParams();
+  const category = params.category as string;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
   const { toast } = useToast();

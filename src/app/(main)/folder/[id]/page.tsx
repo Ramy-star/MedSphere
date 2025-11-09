@@ -10,9 +10,11 @@ import { useToast } from '@/hooks/use-toast';
 import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
+import { useParams } from 'next/navigation';
 
-export default function FolderPage({ params }: { params: { id: string } }) {
-    const { id } = params;
+export default function FolderPage() {
+  const params = useParams();
+  const id = params.id as string;
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { toast } = useToast();

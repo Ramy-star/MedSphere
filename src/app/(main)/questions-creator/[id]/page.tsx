@@ -28,6 +28,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { FlashcardIcon } from '@/components/icons/FlashcardIcon';
 import { InteractiveExamIcon } from '@/components/icons/InteractiveExamIcon';
 import { useQuestionGenerationStore } from '@/stores/question-gen-store';
+import { useParams } from 'next/navigation';
 
 
 type SavedQuestionSet = {
@@ -50,8 +51,7 @@ type EditingContentState = {
     flashcardText: string;
 };
 
-function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
-  const { id } = params;
+function SavedQuestionSetPageContent({ id }: { id: string }) {
   const router = useRouter();
   const { studentId, can } = useAuthStore();
   const { convertExistingTextToJson } = useQuestionGenerationStore();
@@ -528,8 +528,9 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
   );
 }
 
-export default function SavedQuestionSetPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function SavedQuestionSetPage() {
+  const params = useParams();
+  const id = params.id as string;
   const { studentId, loading } = useAuthStore();
 
   if (loading) {
@@ -544,6 +545,6 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
     // Or a login prompt
     return <div className="text-center p-8">Please log in to view saved questions.</div>
   }
-  
-  return <SavedQuestionSetPageContent id={params.id} params={params} />;
+
+  return <SavedQuestionSetPageContent id={id} />;
 }

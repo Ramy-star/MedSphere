@@ -14,13 +14,15 @@ import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { ActiveSessions } from '@/components/profile/ActiveSessions';
+import { useParams } from 'next/navigation';
 
 const studentIdToLevelMap = new Map<string, string>();
 // Populate with actual data if needed, for now it's a placeholder
 // level1Ids.forEach(id => studentIdToLevelMap.set(String(id), 'Level 1'));
 
-export default function PublicProfilePage({ params }: { params: { username: string } }) {
-  const { username } = params;
+export default function PublicProfilePage() {
+  const params = useParams();
+  const username = params.username as string;
   const router = useRouter();
   const { user: currentUser } = useAuthStore();
   const { data: users, loading } = useCollection<UserProfile>('users', {
