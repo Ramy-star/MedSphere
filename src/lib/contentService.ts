@@ -1,4 +1,3 @@
-
 'use client';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
@@ -7,16 +6,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { nanoid } from 'nanoid';
-import type { PDFDocumentProxy } from 'pdfjs-dist';
-import { offlineStorage } from './offline';
+import { fileService } from './fileService';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
-import * as pdfjs from 'pdfjs-dist';
-
-// Set workerSrc once, globally for client-side operations.
-if (typeof window !== 'undefined') {
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${'3.11.174'}/pdf.worker.min.js`;
-}
 
 export type Content = {
   id: string;
@@ -51,113 +43,14 @@ export type UploadCallbacks = {
   onError: (error: Error) => void;
 };
 
-/**
- * Creates a proxied URL through the Cloudflare worker if configured,
- * otherwise returns the direct Cloudinary URL.
- * @param secureUrl The full secure_url from Cloudinary.
- * @returns The final URL to be used in the app.
- */
-function createProxiedUrl(secureUrl: string): string {
-    const workerBase = process.env.NEXT_PUBLIC_FILES_BASE_URL;
-    if (!workerBase) {
-        return secureUrl;
-    }
-    try {
-        const urlObject = new URL(secureUrl);
-        // The path we need is everything after the cloud name, e.g., /image/upload/v123...
-        const pathParts = urlObject.pathname.split('/');
-        // The path starts with a '/', so the cloud name is at index 1.
-        // We want the parts after the cloud name.
-        const pathAfterCloudName = pathParts.slice(2).join('/');
-       
-        // Ensure workerBase doesn't have a trailing slash.
-        const cleanWorkerBase = workerBase.endsWith('/') ? workerBase.slice(0, -1) : workerBase;
-        return `${cleanWorkerBase}/${pathAfterCloudName}`;
-    } catch (error) {
-        console.error("Error creating proxied URL, falling back to direct URL:", error);
-        return secureUrl;
-    }
-}
 
 export const contentService = {
     async getFileContent(url: string, fileId?: string): Promise<Blob> {
-        const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-
-        if (fileId) {
-            const cached = await offlineStorage.getFile(fileId);
-            if (cached) {
-                console.log('📦 Loading from offline cache');
-                return cached.content;
-            }
-        }
-    
-        if (!isOnline) {
-            throw new Error("You are offline and the file is not available in the cache.");
-        }
-    
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`Failed to fetch file from network: ${response.statusText}`);
-            }
-            const blob = await response.blob();
-           
-            if (fileId) {
-                await offlineStorage.saveFile(fileId, {
-                  name: url.split('/').pop() || 'file',
-                  content: blob,
-                  mime: blob.type
-                });
-                // Run cleaning process in the background
-                offlineStorage.cleanOldFiles().catch(console.error);
-            }
-            return blob;
-        } catch (error) {
-            if (fileId) {
-              const cached = await offlineStorage.getFile(fileId);
-              if (cached) {
-                  console.log('📦 Network failed, falling back to offline cache');
-                  return cached.content;
-              }
-            }
-            throw error;
-        }
+        return fileService.getFileContent(url, fileId);
     },
     
-    async extractTextFromPdf(pdfOrBlob: PDFDocumentProxy | Blob): Promise<string> {
-        let pdf: PDFDocumentProxy;
-        if (pdfOrBlob instanceof Blob) {
-            const loadingTask = pdfjs.getDocument(await pdfOrBlob.arrayBuffer());
-            pdf = await loadingTask.promise;
-        } else {
-            pdf = pdfOrBlob;
-        }
-    
-        const maxPages = pdf.numPages;
-        const textPromises: Promise<string>[] = [];
-
-        for (let pageNum = 1; pageNum <= maxPages; pageNum++) {
-            textPromises.push(
-                pdf.getPage(pageNum)
-                .then(async (page) => {
-                    const textContent = await page.getTextContent();
-                    return textContent.items
-                    .map((item: any) => item.str)
-                    .join(' ');
-                })
-                .catch((error) => {
-                    console.error(`Error extracting text from page ${pageNum}:`, error);
-                    return '';
-                })
-            );
-        }
-        try {
-            const pageTexts = await Promise.all(textPromises);
-            return pageTexts.join('\n');
-        } catch (error) {
-            console.error('Failed to process all pages for text extraction:', error);
-            throw new Error('Failed to extract text from PDF.');
-        }
+    async extractTextFromPdf(pdfOrBlob: any | Blob): Promise<string> {
+        return fileService.extractTextFromPdf(pdfOrBlob);
     },
  
   async seedInitialData() {
@@ -460,7 +353,7 @@ export const contentService = {
                 const id = uuidv4();
                 const children = await this.getChildren(parentId);
                
-                const finalFileUrl = createProxiedUrl(data.secure_url);
+                const finalFileUrl = fileService.createProxiedUrl(data.secure_url);
                 const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
                
                 const fileNameWithoutExt = file.name.endsWith('.md') ? file.name.slice(0, -3) : file.name;
@@ -547,7 +440,7 @@ export const contentService = {
             xhr.onload = async () => {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const data = JSON.parse(xhr.responseText);
-                    const finalUrl = createProxiedUrl(data.secure_url);
+                    const finalUrl = fileService.createProxiedUrl(data.secure_url);
 
                     if (folderName === 'avatars') {
                         await updateDoc(doc(db, 'users', user.id), {
@@ -613,7 +506,7 @@ export const contentService = {
             xhr.onload = async () => {
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const data = JSON.parse(xhr.responseText);
-                    const finalUrl = createProxiedUrl(data.secure_url);
+                    const finalUrl = fileService.createProxiedUrl(data.secure_url);
                     await updateDoc(doc(db, 'users', user.id), {
                         'metadata.coverPhotoURL': finalUrl,
                         'metadata.coverPhotoCloudinaryPublicId': data.public_id,
@@ -684,7 +577,7 @@ export const contentService = {
         xhr.onload = async () => {
             if (xhr.status >= 200 && xhr.status < 300) {
                 const data = JSON.parse(xhr.responseText);
-                const finalIconUrl = createProxiedUrl(data.secure_url);
+                const finalIconUrl = fileService.createProxiedUrl(data.secure_url);
                 await updateDoc(itemRef, {
                     'metadata.iconURL': finalIconUrl,
                     'metadata.iconCloudinaryPublicId': data.public_id,
@@ -929,20 +822,7 @@ export const contentService = {
     }
   },
   async deleteCloudinaryAsset(publicId: string, resourceType: 'image' | 'video' | 'raw' = 'raw'): Promise<void> {
-    try {
-        const res = await fetch('/api/delete-cloudinary', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ publicId, resourceType }),
-        });
-        if (!res.ok) {
-            const errorBody = await res.json();
-            throw new Error(`Failed to delete asset from Cloudinary: ${errorBody.details || res.statusText}`);
-        }
-    } catch (err) {
-        console.error("Cloudinary deletion via API failed:", err);
-        // Don't re-throw, as this is a cleanup operation and shouldn't block the main flow.
-    }
+    await fileService.deleteCloudinaryAsset(publicId, resourceType);
   },
   async delete(id: string): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
@@ -998,7 +878,8 @@ export const contentService = {
        
         if (filesToDeleteFromCache.length > 0) {
             for (const url of filesToDeleteFromCache) {
-                await offlineStorage.deleteFile(url);
+                // Assuming fileId is the URL for cache purposes
+                await fileService.getFileContent(url, url).catch(() => {});
             }
         }
         await batch.commit();
@@ -1092,7 +973,7 @@ export const contentService = {
           throw new Error('Cloudinary image upload failed.');
       }
       const data = await uploadResponse.json();
-      return createProxiedUrl(data.secure_url);
+      return fileService.createProxiedUrl(data.secure_url);
   },
   
   async resetToInitialStructure(): Promise<void> {
@@ -1167,5 +1048,3 @@ export const contentService = {
     }
   },
 };
-
-    

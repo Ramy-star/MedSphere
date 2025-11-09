@@ -4,7 +4,7 @@ import React, { useEffect, useState, forwardRef, useCallback, useRef } from 'rea
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import PdfViewer, { type PdfViewerRef } from './PdfViewer';
 import { Skeleton } from './ui/skeleton';
-import { contentService } from '@/lib/contentService';
+import { fileService } from '@/lib/fileService';
 import { cn } from '@/lib/utils';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -83,7 +83,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(
         }
         setIsLoading(true);
         try {
-          const blob = await contentService.getFileContent(url);
+          const blob = await fileService.getFileContent(url, itemId);
           if (isCancelled) return;
 
           if (mime === 'text/markdown') {
@@ -126,7 +126,7 @@ const FilePreview = forwardRef<FilePreviewRef, FilePreviewProps>(
           }
         }
       };
-    }, [url, mime, itemType]);
+    }, [url, mime, itemType, itemId]);
 
     const handleSelectionEvent = useCallback(
       (event: Event | MouseEvent | TouchEvent) => {

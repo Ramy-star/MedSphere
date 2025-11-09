@@ -26,6 +26,7 @@ import { Progress } from './ui/progress';
 import { CopyIcon } from './icons/CopyIcon';
 import { MessageCirclePlus } from 'lucide-react';
 import ChatQuote from './ChatQuote';
+import { fileService } from '@/lib/fileService';
 
 type ChatPanelProps = {
   showChat: boolean;
