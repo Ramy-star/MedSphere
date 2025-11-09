@@ -1,5 +1,3 @@
-
-
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown, GripVertical, Pencil, Settings2, PlusSquare, Tag, ImageIcon, Upload, Save, GraduationCap } from 'lucide-react';
@@ -814,16 +812,11 @@ const ExamMode = ({
     const canAdminister = can('canAdministerExams', fileItemId);
     const { db: firestore } = useFirebase();
     
-    const resultsCollectionRef = useMemo((): CollectionReference<DocumentData> | undefined => {
-        return firestore ? collection(firestore, "examResults") : undefined;
-    }, [firestore]);
+    const { data: allResults } = useCollection<ExamResultWithId>('examResults', {
+        where: where('lectureId', '==', activeLecture?.id),
+        disabled: !activeLecture?.id
+    });
 
-    const examResultsQuery = useMemo((): Query<DocumentData> | undefined => {
-        if (!resultsCollectionRef || !activeLecture?.id) return undefined;
-        return query(resultsCollectionRef, where("lectureId", "==", activeLecture.id));
-    }, [resultsCollectionRef, activeLecture?.id]);
-
-    const { data: allResults } = useCollection<ExamResultWithId>(examResultsQuery, { disabled: !examResultsQuery });
 
     const questions = useMemo(() => {
         const l1 = Array.isArray(activeLecture?.mcqs_level_1) ? activeLecture.mcqs_level_1 : [];
@@ -874,7 +867,7 @@ const ExamMode = ({
 
     const handleSubmit = useCallback(async (isSkip = false) => {
         const userHasAlreadySubmitted = !!userFirstResult;
-        if (studentId && resultsCollectionRef && !isSkip && !userHasAlreadySubmitted) {
+        if (studentId && !isSkip && !userHasAlreadySubmitted) {
             try {
                  const result: Omit<ExamResult, 'id'> = {
                     lectureId: activeLecture.id,
@@ -884,7 +877,10 @@ const ExamMode = ({
                     userId: studentId,
                     timestamp: new Date(),
                 };
-                await addDocumentNonBlocking(resultsCollectionRef, result);
+                if(firestore) {
+                    await addDocumentNonBlocking(collection(firestore, "examResults"), result);
+                }
+                
                 if (user && firestore) {
                   const userRef = doc(firestore, 'users', user.id);
                   await runTransaction(firestore, async (transaction) => {
@@ -911,7 +907,7 @@ const ExamMode = ({
             }
         }
         triggerAnimation('finished');
-    }, [storageKey, activeLecture, questions.length, studentId, resultsCollectionRef, score, percentage, userFirstResult, user, firestore, checkAndAwardAchievements]);
+    }, [storageKey, activeLecture, questions.length, studentId, score, percentage, userFirstResult, user, firestore, checkAndAwardAchievements]);
 
 
     useEffect(() => {
