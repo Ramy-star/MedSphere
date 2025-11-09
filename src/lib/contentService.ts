@@ -711,15 +711,34 @@ export const contentService = {
     }
   },
   async updateFile(itemToUpdate: Content, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest | undefined> {
+    if (!db) {
+        const error = new Error("Firestore not initialized");
+        callbacks.onError(error);
+        throw error;
+    }
+    const batch = writeBatch(db);
+
     try {
-      const parentId = itemToUpdate.parentId;
-     
-      await this.delete(itemToUpdate.id);
-     
-      return await this.createFile(parentId, newFile, callbacks, { order: itemToUpdate.order });
+        const parentId = itemToUpdate.parentId;
+        const oldFilePublicId = itemToUpdate.metadata?.cloudinaryPublicId;
+        const oldFileResourceType = itemToUpdate.metadata?.cloudinaryResourceType || 'raw';
+        
+        // 1. Delete old Firestore document
+        batch.delete(doc(db, 'content', itemToUpdate.id));
+        await batch.commit();
+
+        // 2. Delete old Cloudinary asset
+        if (oldFilePublicId) {
+            await this.deleteCloudinaryAsset(oldFilePublicId, oldFileResourceType);
+        }
+
+        // 3. Create the new file, preserving the original order
+        return await this.createFile(parentId, newFile, callbacks, { order: itemToUpdate.order });
+
     } catch (e: any) {
-      console.error("Update (delete and replace) failed:", e);
-      callbacks.onError(e);
+        console.error("Update (delete and replace) failed:", e);
+        callbacks.onError(e);
+        // Don't re-throw as the callback handles the error state
     }
   },
  
