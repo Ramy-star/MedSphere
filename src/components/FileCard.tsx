@@ -214,7 +214,7 @@ export const FileCard = React.memo(function FileCard({
         }
     }, [onUpdate]);
 
-    const handleUpdateClick = useCallback((e: React.SyntheticEvent) => {
+    const handleUpdateClick = useCallback((e: Event) => {
         e.stopPropagation();
         if (!can('canUpdateFile', item.id)) return;
         updateFileInputRef.current?.click();
