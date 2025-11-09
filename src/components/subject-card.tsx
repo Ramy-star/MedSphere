@@ -33,9 +33,21 @@ export const SubjectCard = React.memo(function SubjectCard({
   const subjectPath = `/folder/${id}`;
   const Icon = (iconName && allSubjectIcons[iconName]) || Folder;
   const { can } = useAuthStore();
+  const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    if (dropdownTriggerRef.current && dropdownTriggerRef.current.contains(e.target as Node)) {
+        return;
+    }
+    const target = e.target as HTMLElement;
+    if (target.closest('[data-radix-dropdown-menu-content]')) {
+        return;
+    }
+    // Let Link handle navigation. We prevent any other action.
+  }, []);
   
   return (
-    <Link href={subjectPath} className="block h-full">
+    <Link href={subjectPath} className="block h-full" onClick={handleClick}>
         <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 h-full flex flex-col justify-between hover:scale-[1.02]">
             <div>
                 <div className="flex justify-between items-start mb-4">
@@ -44,6 +56,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button 
+                                    ref={dropdownTriggerRef}
                                     variant="ghost" 
                                     size="icon" 
                                     className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
@@ -56,13 +69,13 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 align="end"
                             >
                                 {can('canRename', subject.id) && (
-                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={(e) => { e.stopPropagation(); onRename(); }}>
+                                <DropdownMenuItem onSelect={onRename}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
                                 )}
                                 {can('canChangeIcon', subject.id) && (
-                                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={(e) => { e.stopPropagation(); onIconChange(subject); }}>
+                                <DropdownMenuItem onSelect={() => onIconChange(subject)}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
@@ -70,7 +83,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 {can('canDelete', subject.id) && (
                                     <>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={(e) => { e.stopPropagation(); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                        <DropdownMenuItem onSelect={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             <span>Delete</span>
                                         </DropdownMenuItem>
@@ -85,5 +98,4 @@ export const SubjectCard = React.memo(function SubjectCard({
         </div>
     </Link>
   );
-}, (prevProps, nextProps) => prevProps.subject.id === nextProps.subject.id && prevProps.subject.name === nextProps.subject.name && prevProps.subject.iconName === nextProps.subject.iconName && prevProps.subject.color === nextProps.subject.color);
-SubjectCard.displayName = 'SubjectCard';
+});

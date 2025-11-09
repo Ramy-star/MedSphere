@@ -45,9 +45,8 @@ export const FolderCard = React.memo(function FolderCard({
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
     const { user, can } = useAuthStore();
-    const [dropdownOpen, setDropdownOpen] = useState(false);
-    const { toast } = useToast();
     const dropdownTriggerRef = useRef<HTMLButtonElement>(null);
+    const { toast } = useToast();
 
     const isFavorited = user?.favorites?.includes(item.id) || false;
     
@@ -68,12 +67,17 @@ export const FolderCard = React.memo(function FolderCard({
       }
       return <Folder className="w-8 h-8 text-yellow-400" />;
     }
-    
-    const handleAction = (e: Event, action: () => void) => {
-        e.stopPropagation();
-        action();
-        setDropdownOpen(false);
-    };
+
+    const handleClick = useCallback((e: React.MouseEvent) => {
+        if (dropdownTriggerRef.current && dropdownTriggerRef.current.contains(e.target as Node)) {
+            return;
+        }
+        const target = e.target as HTMLElement;
+        if (target.closest('[data-radix-dropdown-menu-content]')) {
+            return;
+        }
+        onClick(item);
+    }, [onClick, item]);
 
     const handleToggleFavorite = async () => {
         if (!user) return;
@@ -105,14 +109,9 @@ export const FolderCard = React.memo(function FolderCard({
       <DropdownMenuContent 
           className="w-48 p-2"
           align="end"
-          onPointerDownOutside={(e) => {
-            if (dropdownTriggerRef.current?.contains(e.target as Node)) {
-              e.preventDefault();
-            }
-          }}
       >
           {user && (
-            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={handleToggleFavorite}>
+            <DropdownMenuItem onSelect={handleToggleFavorite}>
                 <FavoriteIcon className="mr-2 h-4 w-4" />
                 <span>{isFavorited ? 'Remove from Favorite' : 'Add to Favorite'}</span>
             </DropdownMenuItem>
@@ -121,31 +120,31 @@ export const FolderCard = React.memo(function FolderCard({
           {(can('canRename', item.id) || can('canDelete', item.id) || can('canChangeIcon', item.id)) && <DropdownMenuSeparator />}
           
           {can('canRename', item.id) && (
-            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onRename}>
+            <DropdownMenuItem onSelect={onRename}>
                 <Edit className="mr-2 h-4 w-4" />
                 <span>Rename</span>
             </DropdownMenuItem>
           )}
           {can('canChangeIcon', item.id) && (
-            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={() => onIconChange(item)}>
+            <DropdownMenuItem onSelect={() => onIconChange(item)}>
                 <ImageIcon className="mr-2 h-4 w-4" />
                 <span>Change Icon</span>
             </DropdownMenuItem>
           )}
           {can('canMove', item.id) && (
-            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onMove}>
+            <DropdownMenuItem onSelect={onMove}>
               <Move className="mr-2 h-4 w-4" />
               <span>Move</span>
             </DropdownMenuItem>
           )}
           {can('canCopy', item.id) && (
-            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onCopy}>
+            <DropdownMenuItem onSelect={onCopy}>
               <Copy className="mr-2 h-4 w-4" />
               <span>Copy</span>
             </DropdownMenuItem>
           )}
           {can('canToggleVisibility', item.id) && (
-            <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onToggleVisibility}>
+            <DropdownMenuItem onSelect={onToggleVisibility}>
               <VisibilityIcon className="mr-2 h-4 w-4" />
               <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
             </DropdownMenuItem>
@@ -154,7 +153,7 @@ export const FolderCard = React.memo(function FolderCard({
           {can('canDelete', item.id) && (
             <>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onPointerDown={(e) => e.stopPropagation()} onSelect={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                <DropdownMenuItem onSelect={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                     <Trash2 className="mr-2 h-4 w-4" />
                     <span>Delete</span>
                 </DropdownMenuItem>
@@ -166,7 +165,7 @@ export const FolderCard = React.memo(function FolderCard({
     if (displayAs === 'list') {
         return (
              <div 
-                onClick={() => onClick(item)}
+                onClick={handleClick}
                 className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
@@ -192,7 +191,7 @@ export const FolderCard = React.memo(function FolderCard({
                     </p>
                     
                     {hasAnyPermission && (
-                        <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                        <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <Button 
                                     ref={dropdownTriggerRef}
@@ -214,7 +213,7 @@ export const FolderCard = React.memo(function FolderCard({
     // Grid view (default)
     return (
       <div 
-        onClick={() => onClick(item)}
+        onClick={handleClick}
         onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
         className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 cursor-pointer", item.metadata?.isHidden && "opacity-60 bg-white/5")}
       >
@@ -222,7 +221,7 @@ export const FolderCard = React.memo(function FolderCard({
           <div className="flex justify-between items-start mb-4">
               {renderIcon()}
               {hasAnyPermission && (
-                  <DropdownMenu open={dropdownOpen} onOpenChange={setDropdownOpen}>
+                  <DropdownMenu>
                        <DropdownMenuTrigger asChild>
                             <Button 
                                 ref={dropdownTriggerRef}
