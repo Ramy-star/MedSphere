@@ -35,6 +35,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { db } from '@/firebase';
 
 
 // === Types ===
@@ -219,9 +220,9 @@ TooltipContent.displayName = TooltipPrimitive.Content.displayName;
 const Dialog = DialogPrimitive.Root;
 const DialogTrigger = DialogPrimitive.Trigger;
 const DialogPortal = DialogPrimitive.Portal;
-const DialogOverlay = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Overlay>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>>(({ className, ...props }, ref) => (<DialogPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-50 bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className)} {...props} />));
+const DialogOverlay = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Overlay>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>>(({ className, ...props }, ref) => (<DialogPrimitive.Overlay ref={ref} className={cn("fixed inset-0 z-[9999] bg-black/80 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0", className)} {...props} />));
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
-const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>>(({ className, children, ...props }, ref) => (<DialogPortal><DialogOverlay /><DialogPrimitive.Content ref={ref} className={cn("fixed left-[50%] top-[50%] z-50 grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg z-[9999]", className)} {...props}>{children}<DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"><X className="h-4 w-4" /><span className="sr-only">Close</span></DialogPrimitive.Close></DialogPrimitive.Content></DialogPortal>));
+const DialogContent = React.forwardRef<React.ElementRef<typeof DialogPrimitive.Content>, React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content>>(({ className, children, ...props }, ref) => (<DialogPortal><DialogOverlay /><DialogPrimitive.Content ref={ref} className={cn("fixed left-[50%] top-[50%] z-[9999] grid w-full max-w-lg translate-x-[-50%] translate-y-[-50%] gap-4 border bg-background p-6 shadow-lg duration-200 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%] sm:rounded-lg", className)} {...props}>{children}<DialogPrimitive.Close className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100 focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:pointer-events-none data-[state=open]:bg-accent data-[state=open]:text-muted-foreground"><X className="h-4 w-4" /><span className="sr-only">Close</span></DialogPrimitive.Close></DialogPrimitive.Content></DialogPortal>));
 DialogContent.displayName = DialogPrimitive.Content.displayName;
 const DialogHeader = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => (<div className={cn("flex flex-col space-y-1.5 text-center sm:text-left", className)} {...props} />);
 DialogHeader.displayName = "DialogHeader";
@@ -248,6 +249,62 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, React.ComponentProps<'tex
 });
 Textarea.displayName = 'Textarea';
 
+const AdminReportModal = ({ isOpen, onClose, lectureId }: { isOpen: boolean, onClose: () => void, lectureId: string }) => {
+    const { data: results, loading: loadingResults } = useCollection<ExamResultWithId>(
+        lectureId && db ? query(collection(db, 'examResults'), where('lectureId', '==', lectureId)) : null
+    );
+    const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
+
+    const combinedData = useMemo(() => {
+        if (!results || !users) return [];
+        const userMap = new Map(users.map(u => [u.studentId, u]));
+        return results.map(res => ({
+            ...res,
+            user: userMap.get(res.userId),
+        })).sort((a, b) => b.percentage - a.percentage);
+    }, [results, users]);
+
+    return (
+        <Dialog open={isOpen} onOpenChange={onClose}>
+            <DialogContent className="modal-card sm:max-w-4xl max-h-[80vh] flex flex-col">
+                <DialogHeader>
+                    <DialogTitle>Exam Report</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-hidden">
+                    <ScrollArea className="h-full">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Student</TableHead>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Score</TableHead>
+                                    <TableHead>Percentage</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {(loadingResults || loadingUsers) && <tr><TableCell colSpan={4} className="text-center">Loading...</TableCell></tr>}
+                                {combinedData.map(res => (
+                                    <TableRow key={res.id}>
+                                        <TableCell className="font-medium flex items-center gap-2">
+                                            <Avatar className="h-8 w-8">
+                                                <AvatarImage src={res.user?.photoURL || ''} />
+                                                <AvatarFallback>{res.user?.displayName?.[0] || 'U'}</AvatarFallback>
+                                            </Avatar>
+                                            {res.user?.displayName || 'Unknown User'}
+                                        </TableCell>
+                                        <TableCell>{res.userId}</TableCell>
+                                        <TableCell>{res.score}/{res.totalQuestions}</TableCell>
+                                        <TableCell>{res.percentage.toFixed(1)}%</TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </ScrollArea>
+                </div>
+            </DialogContent>
+        </Dialog>
+    );
+};
 // --- CHART COMPONENTS ---
 
 const PerformanceChart = ({ correct, incorrect, unanswered }: { correct: number, incorrect: number, unanswered: number }) => {
@@ -711,63 +768,7 @@ const UpsertMcqFormContent = ({
     );
 };
 
-const AdminReportModal = ({ isOpen, onClose, lectureId }: { isOpen: boolean, onClose: () => void, lectureId: string }) => {
-    const { data: results, loading: loadingResults } = useCollection<ExamResultWithId>(
-        query(collection(db, 'examResults'), where('lectureId', '==', lectureId)),
-        { disabled: !lectureId || !isOpen }
-    );
-    const { data: users, loading: loadingUsers } = useCollection<UserProfile>('users');
 
-    const combinedData = useMemo(() => {
-        if (!results || !users) return [];
-        const userMap = new Map(users.map(u => [u.studentId, u]));
-        return results.map(res => ({
-            ...res,
-            user: userMap.get(res.userId),
-        })).sort((a, b) => b.percentage - a.percentage);
-    }, [results, users]);
-
-    return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="modal-card sm:max-w-4xl max-h-[80vh] flex flex-col">
-                <DialogHeader>
-                    <DialogTitle>Exam Report</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 overflow-hidden">
-                    <ScrollArea className="h-full">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Student</TableHead>
-                                    <TableHead>ID</TableHead>
-                                    <TableHead>Score</TableHead>
-                                    <TableHead>Percentage</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {(loadingResults || loadingUsers) && <tr><TableCell colSpan={4} className="text-center">Loading...</TableCell></tr>}
-                                {combinedData.map(res => (
-                                    <TableRow key={res.id}>
-                                        <TableCell className="font-medium flex items-center gap-2">
-                                            <Avatar className="h-8 w-8">
-                                                <AvatarImage src={res.user?.photoURL || ''} />
-                                                <AvatarFallback>{res.user?.displayName?.[0] || 'U'}</AvatarFallback>
-                                            </Avatar>
-                                            {res.user?.displayName || 'Unknown User'}
-                                        </TableCell>
-                                        <TableCell>{res.userId}</TableCell>
-                                        <TableCell>{res.score}/{res.totalQuestions}</TableCell>
-                                        <TableCell>{res.percentage.toFixed(1)}%</TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
-                    </ScrollArea>
-                </div>
-            </DialogContent>
-        </Dialog>
-    );
-};
 
 
 // --- MAIN EXAM COMPONENT LOGIC ---
@@ -1230,33 +1231,6 @@ const ExamMode = ({
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
-
-            <AdminReportModal
-                isOpen={isReportModalOpen}
-                onClose={() => setIsReportModalOpen(false)}
-                lectureId={activeLecture.id}
-            />
-            
-            <UpsertMcqDialog
-                isOpen={isUpsertMcqDialogOpen}
-                onClose={() => {setIsUpsertMcqDialogOpen(false); setMcqToEdit(null);}}
-                lectures={initialLectures}
-                activeLectureId={activeLecture.id}
-                onUpsert={handleUpsertMcq}
-                mcqToEdit={mcqToEdit}
-            />
-
-            {activeLecture && <FullLectureEditorDialog 
-                isOpen={isFullLectureEditorOpen}
-                onClose={() => setIsFullLectureEditorOpen(false)}
-                lecture={activeLecture}
-                onDeleteMcq={handleDeleteMcq}
-                onOpenUpsertDialog={(mcq, level) => {
-                    setMcqToEdit({mcq, level});
-                    setIsUpsertMcqDialogOpen(true);
-                }}
-                onLectureNameSave={handleEditLectureSave}
-            />}
 
             {examState === 'not-started' && (
                 <div className={cn(containerClasses, "start-mode")}>
