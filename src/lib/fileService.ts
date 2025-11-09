@@ -1,3 +1,4 @@
+
 'use client';
 
 import { db } from '@/firebase';
@@ -261,7 +262,6 @@ export const fileService = {
         xhr.onerror = () => callbacks.onError(new Error('Network error during icon upload.'));
         xhr.send(formData);
     } catch (e: any) {
-       console.error("Icon update failed:", e);
        callbacks.onError(e);
        throw e;
     }
@@ -416,3 +416,5 @@ export const fileService = {
     return createProxiedUrl(data.secure_url);
   },
 };
+
+    

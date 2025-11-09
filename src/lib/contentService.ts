@@ -1,6 +1,7 @@
+
 'use server';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, collectionGroup, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -523,4 +524,68 @@ export const contentService = {
         throw e;
     }
   },
+  async createNote(userId: string) {
+    if (!db) throw new Error("Database not initialized");
+    const notesCollection = collection(db, `users/${userId}/notes`);
+    const newNote = {
+      content: '## New Note\n\nStart writing here...',
+      color: '#333333',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    await addDoc(notesCollection, newNote);
+  },
+
+  async updateNote(userId: string, noteId: string, updates: Partial<Note>) {
+    if (!db) throw new Error("Database not initialized");
+    const noteRef = doc(db, `users/${userId}/notes`, noteId);
+    await updateDoc(noteRef, { ...updates, updatedAt: new Date().toISOString() });
+  },
+
+  async deleteNote(userId: string, noteId: string) {
+    if (!db) throw new Error("Database not initialized");
+    const noteRef = doc(db, `users/${userId}/notes`, noteId);
+    await deleteFirestoreDoc(noteRef);
+  },
+  
+  async resetToInitialStructure(): Promise<void> {
+    if (!db) throw new Error("Firestore not initialized.");
+
+    console.log("Starting structure reset...");
+    
+    const seedIdsToKeep = new Set(
+        seedData.map(item => item.id)
+    );
+    seedIdsToKeep.add(telegramInbox.id);
+
+    const contentRef = collection(db, 'content');
+    const allContentSnapshot = await getDocs(contentRef);
+    
+    const itemsToDelete: Content[] = [];
+    
+    allContentSnapshot.forEach(doc => {
+        const item = doc.data() as Content;
+        if (!seedIdsToKeep.has(item.id)) {
+            itemsToDelete.push(item);
+        }
+    });
+
+    if (itemsToDelete.length === 0) {
+        console.log("No items to delete. Structure is already clean.");
+        return;
+    }
+
+    console.log(`Found ${itemsToDelete.length} items to delete.`);
+
+    const batch = writeBatch(db);
+    itemsToDelete.forEach(item => {
+        batch.delete(doc(db, 'content', item.id));
+    });
+    
+    console.log("Committing Firestore batch deletion...");
+    await batch.commit();
+    console.log("Firestore documents deleted.");
+  },
 };
+
+    

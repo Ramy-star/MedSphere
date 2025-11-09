@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { useState, useEffect } from 'react';
 import type { UserProfile, UserSession } from '@/stores/auth-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { Monitor, Smartphone, Tablet, LogOut, Laptop, Ban, AlertDialogTrigger } from 'lucide-react';
+import { Monitor, Smartphone, Tablet, LogOut, Laptop, Ban } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
 import {
   AlertDialog,
@@ -14,6 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 const getDeviceIcon = (device: string | undefined) => {
@@ -141,3 +143,5 @@ export const ActiveSessions = ({ user }: { user: UserProfile }) => {
         </div>
     );
 };
+
+    

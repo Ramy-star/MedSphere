@@ -1,9 +1,10 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { FolderGrid } from '@/components/FolderGrid';
 import type { Content } from '@/lib/contentService';
-import { contentService } from '@/lib/contentService';
+import { fileService } from '@/lib/fileService';
 import { notFound } from 'next/navigation';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useToast } from '@/hooks/use-toast';
@@ -48,7 +49,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         }
     };
     
-    const xhr = await contentService.createFile(id, file, callbacks);
+    const xhr = await fileService.createFile(id, file, callbacks);
     setUploadingFiles(prev => [...prev, { id: tempId, name: file.name, size: file.size, progress: 0, status: 'uploading', file: file, xhr }]);
 
   }, [id, toast]);
@@ -94,7 +95,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
     setUploadingFiles(prev => [...prev, uploadingFile]);
     
     // Start the update process, which will eventually use the callbacks
-    await contentService.updateFile(itemToUpdate, newFile, callbacks);
+    await fileService.updateFile(itemToUpdate, newFile, callbacks);
 
   }, [toast]);
 
@@ -123,7 +124,7 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         }
       };
 
-      const newXhr = await contentService.createFile(id, fileToRetry.file, callbacks);
+      const newXhr = await fileService.createFile(id, fileToRetry.file, callbacks);
       setUploadingFiles(prev => prev.map(f => f.id === fileId ? { ...f, xhr: newXhr } : f));
     }
   }, [uploadingFiles, id, toast]);
@@ -160,3 +161,5 @@ export default function FolderPage({ params }: { params: { id: string } }) {
     </motion.div>
   );
 }
+
+    
