@@ -25,7 +25,7 @@ const ChatListItem = ({ chat }: { chat: DirectMessage }) => {
     return chat.participants.find(p => p !== currentUser?.uid);
   }, [chat, currentUser]);
 
-  const { userProfile: otherUser, loading } = useUserProfile(otherParticipantId);
+  const { userProfile: otherUser, loading } = useUserProfile(otherParticipantId ?? undefined);
 
   if (loading) {
     return (
