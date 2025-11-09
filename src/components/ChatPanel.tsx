@@ -271,7 +271,12 @@ const ChatInputForm = React.memo(function ChatInputForm({
                 style={{backgroundColor: '#303030'}}
             >
                 {quotedText && (
-                    <ChatQuote text={quotedText} onClose={onClearQuote} />
+                    <ChatQuote replyTo={{
+                        messageId: '',
+                        content: quotedText,
+                        userId: '',
+                        userName: ''
+                    }} onClose={onClearQuote} />
                 )}
                 <div className="relative flex">
                     <Textarea
