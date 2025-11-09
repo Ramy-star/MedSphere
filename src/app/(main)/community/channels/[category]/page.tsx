@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState, useEffect, use } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, createChannel, joinChannel } from '@/lib/communityService';
@@ -102,8 +102,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
 };
 
 export default function ChannelsPage({ params }: PageProps) {
-  const resolvedParams = use(params);
-  const { category } = resolvedParams;
+  const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
   const { toast } = useToast();
