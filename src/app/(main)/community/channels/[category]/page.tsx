@@ -18,7 +18,6 @@ interface PageProps {
     params: {
       category: string;
     };
-    searchParams: { [key: string]: string | string[] | undefined };
 }
 
 const ChannelCard = ({ channel }: { channel: Channel }) => {
@@ -102,7 +101,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-export default function ChannelsPage({ params }: { params: { category: string } }) {
+export default function ChannelsPage({ params }: PageProps) {
   const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();

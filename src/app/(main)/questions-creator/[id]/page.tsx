@@ -280,8 +280,7 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
     );
   }
 
-  const OutputCard = ({ title, icon, content, type }: { title: string, icon: React.ReactNode, content: any, type: keyof EditingContentState }) => {
-    const isEditingThisCard = isEditing[type];
+  const OutputCard = ({ title, icon, content, type, isEditing, onToggleEdit, onContentChange, onCancel }: { title: string, icon: React.ReactNode, content: any, type: keyof EditingContentState, isEditing: boolean, onToggleEdit: () => void, onContentChange: (value: string) => void, onCancel: () => void }) => {
     const isCopied = copiedStatus[type];
 
     const interactiveButtonConfig = {
@@ -327,11 +326,11 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
                         </Tooltip>
                         
                         {canAdminister && (
-                          isEditingThisCard ? (
+                          isEditing ? (
                               <div className="flex items-center">
                                   <Tooltip>
                                       <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleToggleEdit(type)}>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={onToggleEdit}>
                                               <Check className="h-4 w-4 text-green-400" />
                                           </Button>
                                       </TooltipTrigger>
@@ -339,7 +338,7 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
                                   </Tooltip>
                                   <Tooltip>
                                       <TooltipTrigger asChild>
-                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleCancelEdit(type)}>
+                                          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={onCancel}>
                                               <X className="h-4 w-4 text-red-400" />
                                           </Button>
                                       </TooltipTrigger>
@@ -349,7 +348,7 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
                           ) : (
                               <Tooltip>
                                   <TooltipTrigger asChild>
-                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={() => handleToggleEdit(type)}>
+                                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full active:scale-95" onClick={onToggleEdit}>
                                           <Pencil className="h-4 w-4" />
                                       </Button>
                                   </TooltipTrigger>
@@ -371,11 +370,11 @@ function SavedQuestionSetPageContent({ params }: { params: { id: string } }) {
             </div>
              <textarea
                 value={content}
-                readOnly={!isEditingThisCard || !canAdminister}
+                readOnly={!isEditing || !canAdminister}
                 className="mt-4 bg-slate-800/60 border-slate-700 rounded-xl w-full p-3 text-sm text-slate-200 no-scrollbar resize-none h-96 font-code"
                 onChange={(e) => {
-                    if (isEditingThisCard) {
-                        setEditingContent(prev => ({ ...prev, [type]: e.target.value }));
+                    if (isEditing) {
+                        onContentChange(e.target.value);
                     }
                 }}
             />
@@ -545,5 +544,5 @@ export default function SavedQuestionSetPage({ params }: { params: { id: string 
     return <div className="text-center p-8">Please log in to view saved questions.</div>
   }
   
-  return <SavedQuestionSetPageContent params={params} />;
+  return <SavedQuestionSetPageContent id={params.id} />;
 }

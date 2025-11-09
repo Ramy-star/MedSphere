@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import React, { useEffect, useMemo, use } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { prefetcher } from '@/lib/prefetchService';
@@ -11,8 +11,7 @@ import { motion } from 'framer-motion';
 import { where } from 'firebase/firestore';
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
-  const resolvedParams = use(params);
-  const { levelName } = resolvedParams;
+    const { levelName } = params;
   const router = useRouter();
   const decodedLevelName = decodeURIComponent(levelName);
   
