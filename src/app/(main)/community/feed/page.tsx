@@ -448,7 +448,7 @@ const PostCard = ({ post, refetchPosts }: { post: Post, refetchPosts: () => void
 
 export default function FaceSpherePage() {
   const router = useRouter();
-  const { data: posts, loading, refetch } = useCollection<Post>('posts', { orderBy: ['createdAt', 'desc']});
+  const { data: posts, loading } = useCollection<Post>('posts', { orderBy: ['createdAt', 'desc']});
 
   return (
     <div className="p-4 sm:p-6 flex flex-col h-full">
@@ -462,7 +462,10 @@ export default function FaceSpherePage() {
       </div>
       
       <div className="w-full max-w-2xl mx-auto">
-        <CreatePost onPostCreated={refetch} />
+        <CreatePost onPostCreated={() => {
+          // Since useCollection is real-time, we don't need to manually refetch.
+          // This function can be used for other side effects if needed.
+        }} />
         <div className="space-y-4">
             {loading ? (
                 <>
@@ -470,7 +473,7 @@ export default function FaceSpherePage() {
                     <Skeleton className="h-64 w-full rounded-2xl"/>
                 </>
             ) : (
-                posts?.map(post => <PostCard key={post.id} post={post} refetchPosts={refetch} />)
+                posts?.map(post => <PostCard key={post.id} post={post} refetchPosts={() => {}} />)
             )}
             {!loading && posts?.length === 0 && (
                 <div className="text-center py-16 text-slate-500">
