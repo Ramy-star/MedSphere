@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, use } from 'react';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { prefetcher } from '@/lib/prefetchService';
@@ -11,13 +11,13 @@ import { motion } from 'framer-motion';
 import { where } from 'firebase/firestore';
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
-  const { levelName } = params;
+  const resolvedParams = use(params);
+  const { levelName } = resolvedParams;
   const router = useRouter();
   const decodedLevelName = decodeURIComponent(levelName);
   
   const { data: levels, loading: loadingLevels } = useCollection<Content>('content', {
     where: where('type', '==', 'LEVEL'),
-    limit: 1,
   });
   
   const level = useMemo(() => levels?.find(l => l.name === decodedLevelName), [levels, decodedLevelName]);

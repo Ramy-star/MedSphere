@@ -154,8 +154,6 @@
     white-space: nowrap;
     border-width: 0;
   }
-
-  /* Import react-h5-audio-player styles */
   .rhap_container {
     background-color: transparent !important;
     box-shadow: none !important;
