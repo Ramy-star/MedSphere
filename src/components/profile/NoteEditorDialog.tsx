@@ -31,6 +31,7 @@ import Placeholder from '@tiptap/extension-placeholder';
 import FontFamily from '@tiptap/extension-font-family';
 import ImageExtension from '@tiptap/extension-image';
 import { contentService, Content } from '@/lib/contentService';
+import { fileService } from '@/lib/fileService';
 import EmojiPicker, { EmojiClickData, Theme } from 'emoji-picker-react';
 import { Smile } from 'lucide-react';
 import { nanoid } from 'nanoid';
@@ -542,7 +543,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const handleImageUpload = useCallback(async (file: File) => {
     if (!editor) return;
     try {
-        const url = await contentService.uploadNoteImage(file);
+        const url = await fileService.uploadNoteImage(file);
         editor.chain().focus().setImage({ src: url }).run();
     } catch (error) {
         console.error("Image upload failed:", error);
