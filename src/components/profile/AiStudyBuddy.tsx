@@ -16,8 +16,8 @@ import { Skeleton } from '../ui/skeleton';
 import { Textarea } from '../ui/textarea';
 import { Check, Trash2 } from 'lucide-react';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { Content } from '@/lib/contentService';
 import { fileService } from '@/lib/fileService';
+import { contentService, Content } from '@/lib/contentService';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { FileText } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
@@ -87,26 +87,24 @@ const isRtl = (text: string) => {
   return rtlRegex.test(text);
 };
 
-const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () => void }) => {
-    return (
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5 bg-blue-900/70 text-blue-200 text-xs font-medium pl-2 pr-1 py-0.5 rounded-full shrink-0">
-                        <Paperclip className="w-3 h-3" />
-                        <span className="truncate max-w-[100px]">{file.name}</span>
-                        <button onClick={onRemove} className="p-0.5 rounded-full hover:bg-white/20 shrink-0">
-                            <X className="w-3 h-3" />
-                        </button>
-                    </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>{file.name}</p>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
-    );
-};
+const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () => void }) => (
+    <TooltipProvider>
+        <Tooltip>
+            <TooltipTrigger asChild>
+                <div className="flex items-center gap-1.5 bg-blue-900/70 text-blue-200 text-xs font-medium pl-2 pr-1 py-0.5 rounded-full shrink-0">
+                    <Paperclip className="w-3 h-3" />
+                    <span className="truncate max-w-[100px]">{file.name}</span>
+                    <button onClick={onRemove} className="p-0.5 rounded-full hover:bg-white/20 shrink-0">
+                        <X className="w-3 h-3" />
+                    </button>
+                </div>
+            </TooltipTrigger>
+            <TooltipContent>
+                <p>{file.name}</p>
+            </TooltipContent>
+        </Tooltip>
+    </TooltipProvider>
+);
 
 
 export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpanded }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: () => void, isExpanded?: boolean }) {
@@ -260,7 +258,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                     filesToSubmit.map(async file => {
                         if (file.metadata?.storagePath) {
                             try {
-                                const fileBlob = await fileService.getFileContent(file.metadata.storagePath);
+                                const fileBlob = await fileService.getFileContent(file.metadata.storagePath, file.id);
                                 if (file.metadata.mime === 'application/pdf') {
                                     const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
                                     const text = await fileService.extractTextFromPdf(pdf);
