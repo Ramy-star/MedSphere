@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useRef, useEffect, ReactNode, Suspense, lazy } from 'react';
@@ -8,7 +9,8 @@ import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
-import { contentService, type Content } from '@/lib/contentService';
+import { fileService } from '@/lib/fileService';
+import type { Content } from '@/lib/contentService';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -186,7 +188,7 @@ export default function ProfilePage() {
       if (!user) return;
       setIsUploading(true);
       try {
-          await contentService.uploadUserAvatar(user, file, (progress) => {});
+          await fileService.uploadUserAvatar(user, file, (progress) => {});
           toast({ title: 'Success', description: 'Profile picture updated.' });
       } catch (error: any) {
           toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
@@ -211,7 +213,7 @@ export default function ProfilePage() {
       if (!user) return;
       setIsUploadingCover(true);
       try {
-          await contentService.uploadUserCoverPhoto(user, file, (progress) => {});
+          await fileService.uploadUserCoverPhoto(user, file, (progress) => {});
           toast({ title: 'Success', description: 'Cover photo updated.' });
       } catch (error: any) {
           toast({ variant: 'destructive', title: 'Upload Failed', description: error.message });
@@ -276,7 +278,7 @@ export default function ProfilePage() {
       if (!user) return;
       setIsUploading(true);
       try {
-          await contentService.deleteUserAvatar(user);
+          await fileService.deleteUserAvatar(user);
           toast({ title: 'Success', description: 'Profile picture removed.' });
       } catch(error: any) {
           toast({ variant: 'destructive', title: 'Error', description: 'Could not remove profile picture.' });
@@ -291,7 +293,7 @@ export default function ProfilePage() {
       if (!user) return;
       setIsUploadingCover(true);
       try {
-          await contentService.deleteUserCoverPhoto(user);
+          await fileService.deleteUserCoverPhoto(user);
           toast({ title: 'Success', description: 'Cover photo removed.' });
       } catch(error: any) {
           toast({ variant: 'destructive', title: 'Error', description: 'Could not remove cover photo.' });
@@ -633,3 +635,4 @@ export default function ProfilePage() {
     </>
   );
 }
+

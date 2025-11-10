@@ -1,3 +1,4 @@
+
 'use server';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
@@ -8,7 +9,6 @@ import { nanoid } from 'nanoid';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
 import { allContent as seedData, telegramInbox } from '@/lib/file-data';
-import { fileService } from './fileService';
 
 export type Content = {
   id: string;
