@@ -3,7 +3,7 @@
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox, Users, Home, NotebookPen, Palette, Camera } from 'lucide-react';
+import { Search, X, Menu, Wand2, Shield, User as UserIcon, Inbox, Users, Home, NotebookPen, Palette, Camera, Share2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { useDebounce } from 'use-debounce';
@@ -127,6 +127,12 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       permission: () => can('canAccessAdminPanel', null),
     },
     {
+      label: 'Share Card',
+      icon: Share2,
+      action: () => router.push('/share-card'),
+      permission: () => !!user,
+    },
+    {
       label: 'Telegram Inbox',
       icon: Inbox,
       action: () => router.push('/folder/telegram-inbox-folder'),
@@ -139,7 +145,7 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       permission: () => can('canAccessAdminPanel', null),
     },
   ].sort((a, b) => {
-    const order = ['Profile', 'Community', 'Questions Creator', 'My Notes', 'News Studio', 'Telegram Inbox', 'Admin Panel'];
+    const order = ['Profile', 'Community', 'Questions Creator', 'My Notes', 'Share Card', 'News Studio', 'Telegram Inbox', 'Admin Panel'];
     return order.indexOf(a.label) - order.indexOf(b.label);
   });
 
@@ -194,6 +200,18 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
                     </TooltipTrigger>
                     <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
                         <p>News Studio</p>
+                    </TooltipContent>
+                </Tooltip>
+            )}
+            {!!user && (
+                 <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" size="icon" className="rounded-full h-9 w-9 text-slate-300 hover:text-rose-400" onClick={() => router.push('/share-card')}>
+                            <Share2 className="h-5 w-5" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="rounded-lg bg-black text-white">
+                        <p>Share Card</p>
                     </TooltipContent>
                 </Tooltip>
             )}
