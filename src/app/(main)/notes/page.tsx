@@ -25,10 +25,12 @@ export type NotePage = {
   content: string;
 }
 
+// FIX: Unify the Note type to match the one expected by NoteCard
 export type Note = {
   id: string;
   title: string;
   pages: NotePage[];
+  content: string; // Add the missing content property
   color: string;
   createdAt: any; 
   updatedAt: any; 
@@ -95,10 +97,12 @@ export default function NotesPage() {
 
   const handleNewNote = () => {
     const newPageId = nanoid();
+    // FIX: Ensure new notes have the 'content' property.
     setEditingNote({
       id: `temp_${nanoid()}`,
       title: 'Untitled Note',
       pages: [{ id: newPageId, title: 'Page 1', content: '' }],
+      content: '', // Initialize content property
       color: '#282828',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -114,19 +118,14 @@ export default function NotesPage() {
   };
 
   const handleViewNote = (note: Note) => {
+    // FIX: Pass the unified note structure to the preview modal
     const contentToView = {
         id: note.id,
         name: note.title,
-        type: 'INTERACTIVE_QUIZ', // Using this type to trigger the correct preview logic
+        type: 'NOTE', 
         parentId: user?.id || null,
         metadata: {
-            quizData: JSON.stringify(note.pages.map(p => ({
-                id: p.id,
-                name: p.title,
-                mcqs_level_1: [],
-                mcqs_level_2: [],
-                written: [{ case: "", subqs: [{ q: "", a: p.content }] }]
-            })))
+            quizData: JSON.stringify(note) // Pass the whole note object
         }
     };
     setViewingNote(contentToView as any);
