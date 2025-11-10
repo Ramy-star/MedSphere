@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import { UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass } from 'lucide-react';
 
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'special';
 
@@ -7,7 +8,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: any;
+  icon: React.ElementType;
   tier: AchievementTier;
   category: 'Organization & Contribution' | 'Learning & Interaction' | 'Consistency & Perseverance' | 'Special';
   condition: {
@@ -17,8 +18,12 @@ export interface Achievement {
   group: string; // To group related achievements
 }
 
-// This list only contains the data, not the actual icon components.
-export const allAchievementsData: Omit<Achievement, 'icon'>[] = [
+const iconMap: { [key: string]: React.ElementType } = {
+    UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap,
+    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
+};
+
+const allAchievementsData: Omit<Achievement, 'icon'>[] = [
   // --- Organization & Contribution ---
   {
     id: 'FILES_UPLOADED_10',
@@ -186,3 +191,31 @@ export const allAchievementsData: Omit<Achievement, 'icon'>[] = [
     group: 'hidden',
   },
 ];
+
+// This is now the single source of truth for achievements with their icons.
+export const allAchievementsWithIcons: Achievement[] = allAchievementsData.map(ach => {
+    let icon = UploadCloud; // Default
+    if (ach.id === 'FIRST_LOGIN') icon = Sunrise;
+    else if (ach.id.startsWith('LOGIN_STREAK')) icon = CalendarDays;
+    else if (ach.id === 'ONE_YEAR_MEMBER') icon = HeartHandshake;
+    else if (ach.id === 'NIGHT_OWL') icon = Moon;
+    else if (ach.id === 'EXPLORER') icon = Compass;
+    else if (ach.group === 'filesUploaded') icon = UploadCloud;
+    else if (ach.group === 'foldersCreated') {
+      if (ach.id.includes('100')) icon = Library;
+      else if (ach.id.includes('50')) icon = FolderKanban;
+      else icon = FolderPlus;
+    }
+    else if (ach.group === 'examsCompleted') {
+       if (ach.id.includes('100')) icon = GraduationCap;
+       else icon = FileCheck2;
+    }
+    else if (ach.group === 'aiQueries') {
+      if (ach.id.includes('500')) icon = BrainCircuit;
+      else icon = MessageSquareQuote;
+    }
+    return {
+        ...ach,
+        icon,
+    };
+});

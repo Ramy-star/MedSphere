@@ -1,43 +1,11 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { allAchievementsData, Achievement } from '@/lib/achievements';
+import { Achievement, allAchievementsWithIcons } from '@/lib/achievements';
 import { Button } from '@/components/ui/button';
-import { X, Check, UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass } from 'lucide-react';
+import { X, Check } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
-
-const iconMap: { [key: string]: React.ElementType } = {
-    UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap,
-    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
-};
-
-export const allAchievementsWithIcons: Achievement[] = allAchievementsData.map(ach => {
-    let icon = UploadCloud; // Default
-    if (ach.id === 'FIRST_LOGIN') icon = Sunrise;
-    else if (ach.id.startsWith('LOGIN_STREAK')) icon = CalendarDays;
-    else if (ach.id === 'ONE_YEAR_MEMBER') icon = HeartHandshake;
-    else if (ach.id === 'NIGHT_OWL') icon = Moon;
-    else if (ach.id === 'EXPLORER') icon = Compass;
-    else if (ach.group === 'filesUploaded') icon = UploadCloud;
-    else if (ach.group === 'foldersCreated') {
-      if (ach.id.includes('100')) icon = Library;
-      else if (ach.id.includes('50')) icon = FolderKanban;
-      else icon = FolderPlus;
-    }
-    else if (ach.group === 'examsCompleted') {
-       if (ach.id.includes('100')) icon = GraduationCap;
-       else icon = FileCheck2;
-    }
-    else if (ach.group === 'aiQueries') {
-      if (ach.id.includes('500')) icon = BrainCircuit;
-      else icon = MessageSquareQuote;
-    }
-    return {
-        ...ach,
-        icon,
-    };
-});
 
 const tierColors = {
   bronze: { bg: 'bg-gradient-to-br from-orange-300 to-orange-600', text: 'text-white', icon: 'text-white' },

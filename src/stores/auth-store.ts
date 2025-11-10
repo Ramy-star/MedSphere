@@ -7,9 +7,8 @@ import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, upd
 import type { Content } from '@/lib/contentService';
 import { nanoid } from 'nanoid';
 import { telegramInbox } from '@/lib/file-data';
-import { allAchievementsData, type Achievement } from '@/lib/achievements';
+import { allAchievementsWithIcons, type Achievement } from '@/lib/achievements';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
-import { allAchievementsWithIcons } from '@/components/AchievementToast';
 
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
