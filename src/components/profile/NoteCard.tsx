@@ -77,7 +77,9 @@ export const NoteCard = ({ note, onEdit, onDelete, onTogglePin, onView, attribut
       onView();
     }
   };
-
+  
+  // FIX: Extract content from the first page for the preview.
+  const contentPreview = note.pages?.[0]?.content || '';
 
   return (
     <div

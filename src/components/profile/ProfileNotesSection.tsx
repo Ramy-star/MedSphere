@@ -12,10 +12,18 @@ import { useToast } from '@/hooks/use-toast';
 import { FilePreviewModal } from '../FilePreviewModal';
 
 
+// FIX: This type definition must match the one in `notes/page.tsx`.
+// It should contain 'pages' instead of a simple 'content' string.
+export type NotePage = {
+  id: string;
+  title: string;
+  content: string;
+  referencedFileIds?: string[];
+}
 export type Note = {
   id: string;
   title: string;
-  content: string; // Simplified from pages array
+  pages: NotePage[];
   color: string;
   createdAt: any; 
   updatedAt: any; 
@@ -56,7 +64,6 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
         type: 'NOTE',
         parentId: user?.id || null,
         metadata: {
-            // Pass the entire simplified note structure
             quizData: JSON.stringify(note) 
         }
     };
