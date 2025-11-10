@@ -9,6 +9,8 @@ import { nanoid } from 'nanoid';
 import type { Lecture } from './types';
 import type { UserProfile } from '@/stores/auth-store';
 import { allContent as seedData, telegramInbox } from '@/lib/file-data';
+import type { Note } from '@/components/profile/ProfileNotesSection';
+
 
 export type Content = {
   id: string;
@@ -587,3 +589,5 @@ export const contentService = {
     console.log("Firestore documents deleted.");
   },
 };
+
+    
