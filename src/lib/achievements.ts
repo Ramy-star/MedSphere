@@ -11,7 +11,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: React.FC<any>;
+  icon: any;
   tier: AchievementTier;
   category: 'Organization & Contribution' | 'Learning & Interaction' | 'Consistency & Perseverance' | 'Special';
   condition: {
