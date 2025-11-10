@@ -78,7 +78,7 @@ export const NoteCard = ({ note, onEdit, onDelete, onTogglePin, onView, attribut
     }
   };
   
-  const contentPreview = note.content || (note.pages && note.pages[0]?.content) || '';
+  const contentPreview = (note.pages && note.pages[0]?.content) || '';
 
   return (
     <div
