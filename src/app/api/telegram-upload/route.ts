@@ -1,7 +1,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { fileService } from "@/lib/fileService";
-import type { UploadCallbacks, Content } from "@/lib/fileService";
+import type { UploadCallbacks, Content } from "@/lib/contentService";
 
 const INBOX_FOLDER_ID = 'telegram-inbox-folder';
 const UPLOAD_SECRET = process.env.TELEGRAM_UPLOAD_SECRET;
