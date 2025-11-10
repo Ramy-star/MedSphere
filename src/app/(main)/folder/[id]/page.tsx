@@ -10,6 +10,9 @@ import { useToast } from '@/hooks/use-toast';
 import { UploadingFile, UploadCallbacks } from '@/components/UploadProgress';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
+import { db } from '@/firebase';
+import { doc, deleteDoc, writeBatch } from 'firebase/firestore';
+
 
 export default function FolderPage({ params }: { params: { id: string } }) {
     const { id } = params;
@@ -93,30 +96,12 @@ export default function FolderPage({ params }: { params: { id: string } }) {
     // Add to state immediately to show progress bar
     setUploadingFiles(prev => [...prev, uploadingFile]);
     
-    // This logic should be client-side. The function in fileService now expects to be called from the client.
-    // However, the original structure had this in contentService and called it directly.
-    // For now, we assume this component is a client component and can call fileService.
-    const batch = writeBatch(db);
-    try {
-        const parentId = itemToUpdate.parentId;
-        const oldFilePublicId = itemToUpdate.metadata?.cloudinaryPublicId;
-        const oldFileResourceType = itemToUpdate.metadata?.cloudinaryResourceType || 'raw';
-        
-        // This should be a single transaction/batch on the backend, 
-        // but for simplicity on the client we'll do it sequentially.
-        await deleteDoc(doc(db, 'content', itemToUpdate.id));
-        
-        if (oldFilePublicId) {
-            await fileService.deleteCloudinaryAsset(oldFilePublicId, oldFileResourceType);
-        }
-
-        // Now create the new file
-        await fileService.createFile(parentId, newFile, callbacks, { order: itemToUpdate.order });
-
-    } catch (e: any) {
-        console.error("Update (delete and replace) failed:", e);
-        callbacks.onError(e);
+    // Call the centralized update function
+    const xhr = await fileService.updateFile(itemToUpdate, newFile, callbacks);
+    if(xhr) {
+        setUploadingFiles(prev => prev.map(f => f.id === tempId ? {...f, xhr} : f));
     }
+
 
   }, [toast]);
 

@@ -1,5 +1,5 @@
 import { db } from '@/firebase';
-import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, writeBatch, deleteDoc as deleteFirestoreDoc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
 import * as pdfjs from 'pdfjs-dist';
 import type { Content } from './contentService';
@@ -184,22 +184,37 @@ export const fileService = {
   },
 
   async updateFile(itemToUpdate: Content, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest | undefined> {
-    // This function is now client-only and uses other fileService methods
-    // It is located in FolderGrid.tsx's handleUpdateFile
-    // This is a placeholder to prevent breaking changes if it's called elsewhere, though it shouldn't be.
-    console.error("updateFile is a client-side method and should not be called from a service.");
-    callbacks.onError(new Error("Invalid call to updateFile."));
-    return undefined;
+    if (!db) {
+        const error = new Error("Firestore not initialized");
+        callbacks.onError(error);
+        throw error;
+    }
+    const batch = writeBatch(db);
+    try {
+        const parentId = itemToUpdate.parentId;
+        const oldFilePublicId = itemToUpdate.metadata?.cloudinaryPublicId;
+        const oldFileResourceType = itemToUpdate.metadata?.cloudinaryResourceType || 'raw';
+        batch.delete(doc(db, 'content', itemToUpdate.id));
+        await batch.commit();
+        if (oldFilePublicId) {
+            await this.deleteCloudinaryAsset(oldFilePublicId, oldFileResourceType);
+        }
+        return await this.createFile(parentId, newFile, callbacks, { order: itemToUpdate.order });
+    } catch (e: any) {
+        console.error("Update (delete and replace) failed:", e);
+        callbacks.onError(e);
+        return undefined;
+    }
   },
 
   async uploadAndSetIcon(itemId: string, iconFile: File, callbacks: Omit<UploadCallbacks, 'onSuccess'> & { onSuccess: (url: string) => void }): Promise<void> {
     if (!db) throw new Error("Firestore not initialized");
     try {
         const itemRef = doc(db, 'content', itemId);
-        const itemSnap = await getDoc(itemRef);
-        if (!itemSnap.exists()) throw new Error("Item not found");
-        const existingItem = itemSnap.data() as Content;
-        const oldPublicId = existingItem.metadata?.iconCloudinaryPublicId;
+        const itemSnap = await contentService.getById(itemId); // Use contentService to get doc
+        if (!itemSnap) throw new Error("Item not found");
+        
+        const oldPublicId = itemSnap.metadata?.iconCloudinaryPublicId;
         if (oldPublicId) {
             try {
                 await fileService.deleteCloudinaryAsset(oldPublicId, 'image');
@@ -254,7 +269,7 @@ export const fileService = {
   async uploadUserAvatar(user: UserProfile, file: File, onProgress: (progress: number) => void, folderName: string = 'avatars'): Promise<{ publicId: string, url: string }> {
       if (folderName === 'avatars' && user.metadata?.cloudinaryPublicId) {
           try {
-              await fileService.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
+              await this.deleteCloudinaryAsset(user.metadata.cloudinaryPublicId, 'image');
           } catch (e) {
               console.warn("Failed to delete old avatar, proceeding with upload:", e);
           }
