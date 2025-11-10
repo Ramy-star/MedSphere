@@ -2,7 +2,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { allAchievementsData, Achievement } from '@/lib/achievements';
-import { Button } from './ui/button';
+import { Button } from '@/components/ui/button';
 import { X, Check, UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';

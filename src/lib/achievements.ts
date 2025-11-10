@@ -7,7 +7,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: React.ElementType; // Use a more generic type for React components
+  icon: any;
   tier: AchievementTier;
   category: 'Organization & Contribution' | 'Learning & Interaction' | 'Consistency & Perseverance' | 'Special';
   condition: {
@@ -17,7 +17,7 @@ export interface Achievement {
   group: string; // To group related achievements
 }
 
-// This list only contains the data, not the actual icon components, to avoid circular dependencies and build issues.
+// This list only contains the data, not the actual icon components.
 export const allAchievementsData: Omit<Achievement, 'icon'>[] = [
   // --- Organization & Contribution ---
   {
