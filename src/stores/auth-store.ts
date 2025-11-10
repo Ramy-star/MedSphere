@@ -7,8 +7,10 @@ import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, upd
 import type { Content } from '@/lib/contentService';
 import { nanoid } from 'nanoid';
 import { telegramInbox } from '@/lib/file-data';
-import { allAchievements, type Achievement } from '@/lib/achievements';
+import { allAchievementsData, type Achievement } from '@/lib/achievements';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
+import { allAchievementsWithIcons } from '@/components/AchievementToast';
+
 
 const VERIFIED_STUDENT_ID_KEY = 'medsphere-verified-student-id';
 const CURRENT_SESSION_ID_KEY = 'medsphere-session-id';
@@ -310,7 +312,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
         const earnedIds = new Set(user.achievements?.map(a => a.badgeId) || []);
         if (earnedIds.has(badgeId)) return;
 
-        const achievement = allAchievements.find(a => a.id === badgeId);
+        const achievement = allAchievementsWithIcons.find(a => a.id === badgeId);
         if (!achievement) return;
 
         const userRef = doc(db, 'users', user.id);
@@ -341,26 +343,29 @@ const useAuthStore = create<AuthState>((set, get) => ({
     let newAchievementsToGrant: { badgeId: string; earnedAt: string }[] = [];
     let achievementToToast: Achievement | null = null;
   
-    allAchievements.forEach(achievement => {
+    allAchievementsData.forEach(achievementData => {
+      const achievementWithIcon = allAchievementsWithIcons.find(a => a.id === achievementData.id);
+      if (!achievementWithIcon) return; // Skip if we can't find the full achievement object
+
       // Check if it's already earned in the database
-      if (earnedAchievementIds.has(achievement.id)) {
+      if (earnedAchievementIds.has(achievementData.id)) {
         // If it's earned but not yet displayed, it's the one to show
-        if (!displayedAchievements.includes(achievement.id) && !achievementToToast) {
-            achievementToToast = achievement;
-            displayedAchievements.push(achievement.id);
+        if (!displayedAchievements.includes(achievementData.id) && !achievementToToast) {
+            achievementToToast = achievementWithIcon;
+            displayedAchievements.push(achievementData.id);
         }
         return; 
       }
       
       // If not earned, check if conditions are met now
-      if (achievement.condition.value > -1) {
-        const statValue = userStats[achievement.condition.stat as keyof typeof userStats] || 0;
-        if (typeof statValue === 'number' && statValue >= achievement.condition.value) {
-          newAchievementsToGrant.push({ badgeId: achievement.id, earnedAt: new Date().toISOString() });
+      if (achievementData.condition.value > -1) {
+        const statValue = userStats[achievementData.condition.stat as keyof typeof userStats] || 0;
+        if (typeof statValue === 'number' && statValue >= achievementData.condition.value) {
+          newAchievementsToGrant.push({ badgeId: achievementData.id, earnedAt: new Date().toISOString() });
           
           if (!achievementToToast) {
-            achievementToToast = achievement;
-            displayedAchievements.push(achievement.id);
+            achievementToToast = achievementWithIcon;
+            displayedAchievements.push(achievementData.id);
           }
         }
       }
@@ -391,5 +396,3 @@ if (typeof window !== 'undefined') {
 }
 
 export { useAuthStore };
-
-    

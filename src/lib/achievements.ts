@@ -7,7 +7,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: React.ElementType;
+  icon: React.ElementType; // Use a more generic type for React components
   tier: AchievementTier;
   category: 'Organization & Contribution' | 'Learning & Interaction' | 'Consistency & Perseverance' | 'Special';
   condition: {
@@ -17,9 +17,8 @@ export interface Achievement {
   group: string; // To group related achievements
 }
 
-// We will dynamically import icons in the component that renders them
-// to avoid type issues during build time. This file will only contain the data.
-export const allAchievements: Omit<Achievement, 'icon'>[] = [
+// This list only contains the data, not the actual icon components, to avoid circular dependencies and build issues.
+export const allAchievementsData: Omit<Achievement, 'icon'>[] = [
   // --- Organization & Contribution ---
   {
     id: 'FILES_UPLOADED_10',

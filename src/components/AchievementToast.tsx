@@ -1,7 +1,7 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { allAchievements as allAchievementsData, Achievement } from '@/lib/achievements';
+import { allAchievementsData, Achievement } from '@/lib/achievements';
 import { Button } from './ui/button';
 import { X, Check, UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
@@ -12,9 +12,7 @@ const iconMap: { [key: string]: React.ElementType } = {
     MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
 };
 
-const allAchievements: Achievement[] = allAchievementsData.map(ach => {
-    const iconName = Object.keys(iconMap).find(key => key.toLowerCase() === ach.group.toLowerCase() || key.toLowerCase() === ach.id.toLowerCase().split('_')[0]);
-    
+export const allAchievementsWithIcons: Achievement[] = allAchievementsData.map(ach => {
     let icon = UploadCloud; // Default
     if (ach.id === 'FIRST_LOGIN') icon = Sunrise;
     else if (ach.id.startsWith('LOGIN_STREAK')) icon = CalendarDays;
@@ -66,7 +64,7 @@ export const AchievementToast = ({ achievement: rawAchievement }: { achievement:
     const clearNewlyEarnedAchievement = useAuthStore(state => state.clearNewlyEarnedAchievement);
 
     const achievement = useMemo(() => {
-        const fullAchievement = allAchievements.find(a => a.id === rawAchievement.id);
+        const fullAchievement = allAchievementsWithIcons.find(a => a.id === rawAchievement.id);
         return fullAchievement ? { ...rawAchievement, icon: fullAchievement.icon } : null;
     }, [rawAchievement]);
 
