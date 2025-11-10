@@ -4,7 +4,7 @@ import { Logo } from '@/components/logo';
 import { Button } from '@/components/ui/button';
 import { Download } from 'lucide-react';
 import { toPng } from 'html-to-image';
-import QRCode from 'react-qr-code';
+import QRCode from 'qrcode.react';
 
 const ShareCardPage = () => {
   const cardRef = useRef<HTMLDivElement>(null);
@@ -55,8 +55,6 @@ const ShareCardPage = () => {
                 bgColor="#f3f4f6"
                 fgColor="#1e293b"
                 level="H"
-                quietZone={10}
-                qrStyle="dots"
             />
         </div>
         <div className="flex items-center justify-center -mt-[140px] mb-[120px]">
