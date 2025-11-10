@@ -22,12 +22,13 @@ import { fileService } from '@/lib/fileService';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { FileText } from 'lucide-react';
 import * as pdfjs from 'pdfjs-dist';
-import { Tooltip, TooltipProvider, TooltipTrigger, TooltipContent } from '@/components/ui/tooltip';
+import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { create } from 'zustand';
 import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 
 if (typeof window !== 'undefined') {
@@ -99,7 +100,7 @@ const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () =>
                     </button>
                 </div>
             </TooltipTrigger>
-            <TooltipContent side="top" className="rounded-lg bg-black text-white">
+            <TooltipContent>
                 <p>{file.name}</p>
             </TooltipContent>
         </Tooltip>
@@ -824,3 +825,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         </div>
     );
 }
+
+
+    
