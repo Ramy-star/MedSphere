@@ -26,7 +26,7 @@ import { create } from 'zustand';
 import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import { useIsMobile } from '@/hooks/use-is-mobile';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 
@@ -87,24 +87,26 @@ const isRtl = (text: string) => {
   return rtlRegex.test(text);
 };
 
-const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () => void }) => (
-    <TooltipProvider>
-        <Tooltip>
-            <TooltipTrigger asChild>
-                <div className="flex items-center gap-1.5 bg-blue-900/70 text-blue-200 text-xs font-medium pl-2 pr-1 py-0.5 rounded-full shrink-0">
-                    <Paperclip className="w-3 h-3" />
-                    <span className="truncate max-w-[100px]">{file.name}</span>
-                    <button onClick={onRemove} className="p-0.5 rounded-full hover:bg-white/20 shrink-0">
-                        <X className="w-3 h-3" />
-                    </button>
-                </div>
-            </TooltipTrigger>
-            <TooltipContent>
-                <p>{file.name}</p>
-            </TooltipContent>
-        </Tooltip>
-    </TooltipProvider>
-);
+const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () => void }) => {
+    return (
+        <TooltipProvider>
+            <Tooltip>
+                <TooltipTrigger asChild>
+                    <div className="flex items-center gap-1.5 bg-blue-900/70 text-blue-200 text-xs font-medium pl-2 pr-1 py-0.5 rounded-full shrink-0">
+                        <Paperclip className="w-3 h-3" />
+                        <span className="truncate max-w-[100px]">{file.name}</span>
+                        <button onClick={onRemove} className="p-0.5 rounded-full hover:bg-white/20 shrink-0">
+                            <X className="w-3 h-3" />
+                        </button>
+                    </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                    <p>{file.name}</p>
+                </TooltipContent>
+            </Tooltip>
+        </TooltipProvider>
+    );
+};
 
 
 export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpanded }: { user: UserProfile, isFloating?: boolean, onToggleExpand?: () => void, isExpanded?: boolean }) {
