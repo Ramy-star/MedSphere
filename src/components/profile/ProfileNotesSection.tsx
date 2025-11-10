@@ -12,17 +12,10 @@ import { useToast } from '@/hooks/use-toast';
 import { FilePreviewModal } from '../FilePreviewModal';
 
 
-export type NotePage = {
-  id: string;
-  title: string;
-  content: string;
-  referencedFileIds?: string[];
-}
-
 export type Note = {
   id: string;
   title: string;
-  pages: NotePage[];
+  content: string; // Simplified from pages array
   color: string;
   createdAt: any; 
   updatedAt: any; 
@@ -57,14 +50,14 @@ export const ProfileNotesSection = ({ user }: { user: UserProfile }) => {
   };
 
   const handleViewNote = (note: Note) => {
-    // Since the floating assistant logic was reverted, we'll use the standard FilePreviewModal
     const syntheticContentItem = {
         id: note.id,
         name: note.title,
-        type: 'NOTE', // Custom type to signal special handling in FilePreviewModal
+        type: 'NOTE',
         parentId: user?.id || null,
         metadata: {
-            quizData: JSON.stringify(note) // Pass the full note data
+            // Pass the entire simplified note structure
+            quizData: JSON.stringify(note) 
         }
     };
     setViewingNote(syntheticContentItem as any);

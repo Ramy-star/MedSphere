@@ -1,4 +1,3 @@
-
 'use server';
 import { db } from '@/firebase';
 import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot, addDoc } from 'firebase/firestore';
@@ -589,5 +588,3 @@ export const contentService = {
     console.log("Firestore documents deleted.");
   },
 };
-
-    
