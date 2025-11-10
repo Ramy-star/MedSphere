@@ -3,7 +3,7 @@ import {
     UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, 
     MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
 } from 'lucide-react';
-import { type LucideIcon } from 'lucide-react';
+import React from 'react';
 
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'special';
 
@@ -11,7 +11,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: LucideIcon;
+  icon: React.ElementType;
   tier: AchievementTier;
   category: 'Organization & Contribution' | 'Learning & Interaction' | 'Consistency & Perseverance' | 'Special';
   condition: {
