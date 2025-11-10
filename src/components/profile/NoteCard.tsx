@@ -1,5 +1,5 @@
 'use client';
-import { Note } from './ProfileNotesSection';
+import { Note, NotePage } from './ProfileNotesSection';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, Star, Eye } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -78,8 +78,7 @@ export const NoteCard = ({ note, onEdit, onDelete, onTogglePin, onView, attribut
     }
   };
   
-  // FIX: Extract content from the first page for the preview.
-  const contentPreview = note.pages?.[0]?.content || '';
+  const contentPreview = note.content || (note.pages && note.pages[0]?.content) || '';
 
   return (
     <div

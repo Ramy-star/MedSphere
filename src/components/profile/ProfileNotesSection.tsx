@@ -3,7 +3,7 @@ import { useState, useMemo } from 'react';
 import type { UserProfile } from '@/stores/auth-store';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
-import { PlusCircle, Loader2, StickyNote, Star, Eye } from 'lucide-react';
+import { PlusCircle, Loader2, StickyNote, Star } from 'lucide-react';
 import { NoteCard } from './NoteCard';
 import { db } from '@/firebase';
 import { doc, updateDoc } from 'firebase/firestore';

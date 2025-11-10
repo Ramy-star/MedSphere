@@ -25,7 +25,6 @@ export type NotePage = {
   content: string;
 }
 
-// FIX: Unify the Note type to match the one expected by NoteCard
 export type Note = {
   id: string;
   title: string;
@@ -97,7 +96,6 @@ export default function NotesPage() {
 
   const handleNewNote = () => {
     const newPageId = nanoid();
-    // FIX: Ensure new notes have the 'content' property.
     setEditingNote({
       id: `temp_${nanoid()}`,
       title: 'Untitled Note',
@@ -118,7 +116,6 @@ export default function NotesPage() {
   };
 
   const handleViewNote = (note: Note) => {
-    // FIX: Pass the unified note structure to the preview modal
     const contentToView = {
         id: note.id,
         name: note.title,
@@ -257,7 +254,7 @@ export default function NotesPage() {
             setIsEditorOpen(isOpen);
         }}
         note={editingNote}
-        onSave={handleSaveNote}
+        onSave={handleSaveNote as any}
       />
       {viewingNote && (
           <FilePreviewModal 
