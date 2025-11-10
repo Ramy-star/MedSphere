@@ -25,17 +25,11 @@ const ShareCardPage = () => {
     }
   };
   
-  const QRLogo = () => (
-    <div className="bg-background p-1 rounded-md">
-        <Logo className="w-full h-full" />
-    </div>
-  );
-
   return (
     <div className="flex flex-col items-center justify-center p-4 sm:p-8 bg-background flex-1">
       <div
         ref={cardRef}
-        className="w-full max-w-md bg-white text-slate-800 rounded-3xl p-8 shadow-2xl"
+        className="w-full max-w-md bg-white text-slate-800 p-8 shadow-2xl"
       >
         <div className="flex items-center justify-center gap-3">
           <Logo className="h-14 w-14 text-slate-900" />
@@ -48,26 +42,28 @@ const ShareCardPage = () => {
           Your all-in-one digital companion to organize, access, and master your medical study materials effortlessly.
         </p>
         
-        <div className="mt-8 p-4 bg-gray-100 rounded-2xl flex items-center justify-center">
+        <div className="mt-8 flex items-center justify-center">
             <QRCode
                 value={siteUrl}
                 size={220}
-                bgColor="#f3f4f6"
+                bgColor="#ffffff"
                 fgColor="#1e293b"
                 level="H"
+                includeMargin={false}
+                imageSettings={{
+                    src: "/logo.svg",
+                    height: 40,
+                    width: 40,
+                    excavate: true,
+                }}
             />
-        </div>
-        <div className="flex items-center justify-center -mt-[140px] mb-[120px]">
-            <div className="bg-white p-1 rounded-xl shadow-lg">
-                <Logo className="w-12 h-12" />
-            </div>
         </div>
 
         <a
           href={siteUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="text-center block text-blue-600 font-semibold mt-4 hover:underline"
+          className="text-center block text-blue-600 font-semibold mt-8 hover:underline"
         >
           {siteUrl}
         </a>
