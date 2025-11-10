@@ -3,7 +3,7 @@ import {
     UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, 
     MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
 } from 'lucide-react';
-import type { LucideIcon } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 
 export type AchievementTier = 'bronze' | 'silver' | 'gold' | 'special';
 
