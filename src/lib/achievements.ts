@@ -11,7 +11,7 @@ export interface Achievement {
   id: string;
   name: string;
   description: string;
-  icon: any; // Use 'any' to avoid complex type inference issues during build
+  icon: React.FC<any>;
   tier: AchievementTier;
   category: 'Organization & Contribution' | 'Learning & Interaction' | 'Consistency & Perseverance' | 'Special';
   condition: {
