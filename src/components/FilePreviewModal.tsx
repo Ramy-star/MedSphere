@@ -9,7 +9,7 @@ import {
 import { Button } from './ui/button';
 import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
-import { contentService } from '@/lib/contentService';
+import { fileService } from '@/lib/fileService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
 import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck, Edit, SquareArrowOutUpRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -309,13 +309,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         
         if (currentItem.type === 'NOTE') {
             try {
-                const noteData: Note = JSON.parse(currentItem.metadata?.quizData || '{}');
+                const noteData: Note = JSON.parse(currentItem.metadata!.quizData!);
                 const activePage = noteData.pages[0]; // Assuming only one page is passed for context
                 lectureText = `# ${noteData.title}\n\n**Page: ${activePage.title}**\n\n${activePage.content}`;
                 
                 if (activePage.referencedFileIds) {
                     for (const fileId of activePage.referencedFileIds) {
-                        const file = await contentService.getById(fileId);
+                        const file = await fileService.getById(fileId);
                         if(file) referencedFiles.push(file);
                     }
                 }
@@ -334,13 +334,13 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             if (isQuizFile) {
                 questionText = JSON.stringify(JSON.parse(currentItem.metadata?.quizData || '{}'), null, 2);
             } else if (isQuestionFile) {
-                const questionBlob = await contentService.getFileContent(currentItem.metadata!.storagePath!);
+                const questionBlob = await fileService.getFileContent(currentItem.metadata!.storagePath!);
                 questionText = await questionBlob.text();
             }
 
             const sourceFileId = currentItem.metadata?.sourceFileId;
             if (sourceFileId) {
-                const sourceFile = await contentService.getById(sourceFileId);
+                const sourceFile = await fileService.getById(sourceFileId);
                 if (sourceFile) filesToProcess.push(sourceFile);
             } else if (currentItem.type === 'FILE') {
                 filesToProcess.push(currentItem);
@@ -351,10 +351,10 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     filesToProcess.map(async file => {
                         if (file.metadata?.storagePath) {
                             try {
-                                const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
+                                const fileBlob = await fileService.getFileContent(file.metadata.storagePath);
                                 if (file.metadata.mime === 'application/pdf') {
                                     const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
-                                    return await contentService.extractTextFromPdf(pdf);
+                                    return await fileService.extractTextFromPdf(pdf);
                                 } else if (file.metadata.mime?.startsWith('text/')) {
                                     return await fileBlob.text();
                                 }
@@ -864,5 +864,3 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </Dialog>
   );
 }
-
-    
