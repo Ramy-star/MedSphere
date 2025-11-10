@@ -12,7 +12,7 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useState, useRef, useCallback } from 'react';
 import type { Content } from '@/lib/contentService';
-import { contentService } from '@/lib/contentService';
+import { fileService } from '@/lib/fileService';
 import { useToast } from '@/hooks/use-toast';
 import { Progress } from './ui/progress';
 import { AlertCircle, CheckCircle, UploadCloud } from 'lucide-react';
@@ -80,7 +80,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
     setUploadProgress(0);
     setError(null);
 
-    await contentService.uploadAndSetIcon(item.id, selectedFile, {
+    await fileService.uploadAndSetIcon(item.id, selectedFile, {
       onProgress: (progress) => {
         setUploadProgress(progress);
       },
