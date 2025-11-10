@@ -1,3 +1,4 @@
+
 'use client';
 
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
@@ -13,6 +14,7 @@ interface OfflineDB extends DBSchema {
       timestamp: number;
       size: number;
     };
+    indexes: { 'timestamp': number };
   };
   folders: {
     key: string;
@@ -22,6 +24,7 @@ interface OfflineDB extends DBSchema {
       contents: any[];
       timestamp: number;
     };
+    indexes: { 'timestamp': number };
   };
   lectures: {
     key: string;
@@ -30,6 +33,7 @@ interface OfflineDB extends DBSchema {
       data: any;
       timestamp: number;
     };
+    indexes: { 'timestamp': number };
   };
 }
 
