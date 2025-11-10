@@ -3,12 +3,56 @@
 import React from 'react';
 import type { UserProfile } from '@/stores/auth-store';
 import { useAuthStore } from '@/stores/auth-store';
-import { allAchievements, Achievement } from '@/lib/achievements';
+import { allAchievements as allAchievementsData, Achievement } from '@/lib/achievements';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { Lock } from 'lucide-react';
+import { Lock, UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap, MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+const iconMap: { [key: string]: React.ElementType } = {
+    UploadCloud, FolderPlus, FolderKanban, Library, FileCheck2, GraduationCap,
+    MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
+};
+
+const allAchievements: Achievement[] = allAchievementsData.map(ach => {
+    const iconName = Object.keys(iconMap).find(key => key.toLowerCase() === ach.group.toLowerCase() || key.toLowerCase() === ach.id.toLowerCase().split('_')[0]);
+    // A bit of a hacky way to map icon names, but it works for this structure
+    const getIconByName = (name: string) => {
+      for (const key in iconMap) {
+        if (key.toLowerCase() === name.toLowerCase()) {
+          return iconMap[key];
+        }
+      }
+      return UploadCloud; // fallback
+    }
+
+    let icon = UploadCloud; // Default
+    if (ach.id === 'FIRST_LOGIN') icon = Sunrise;
+    else if (ach.id.startsWith('LOGIN_STREAK')) icon = CalendarDays;
+    else if (ach.id === 'ONE_YEAR_MEMBER') icon = HeartHandshake;
+    else if (ach.id === 'NIGHT_OWL') icon = Moon;
+    else if (ach.id === 'EXPLORER') icon = Compass;
+    else if (ach.group === 'filesUploaded') icon = UploadCloud;
+    else if (ach.group === 'foldersCreated') {
+      if (ach.id.includes('100')) icon = Library;
+      else if (ach.id.includes('50')) icon = FolderKanban;
+      else icon = FolderPlus;
+    }
+    else if (ach.group === 'examsCompleted') {
+       if (ach.id.includes('100')) icon = GraduationCap;
+       else icon = FileCheck2;
+    }
+    else if (ach.group === 'aiQueries') {
+      if (ach.id.includes('500')) icon = BrainCircuit;
+      else icon = MessageSquareQuote;
+    }
+
+    return {
+        ...ach,
+        icon,
+    };
+});
 
 const tierColors = {
   bronze: {
