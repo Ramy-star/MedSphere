@@ -1,7 +1,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { fileService } from "@/lib/fileService";
-import type { UploadCallbacks, Content } from "@/lib/contentService";
+import type { UploadCallbacks } from "@/lib/fileService";
+import type { Content } from "@/lib/contentService";
 
 const INBOX_FOLDER_ID = 'telegram-inbox-folder';
 const UPLOAD_SECRET = process.env.TELEGRAM_UPLOAD_SECRET;
@@ -25,8 +26,6 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "No file found in the request." }, { status: 400 });
         }
 
-        // We use a promise here because the createFile function is async but uses callbacks
-        // and doesn't return a promise that resolves with the final result directly.
         const uploadResult = await new Promise<Content>((resolve, reject) => {
             const callbacks: UploadCallbacks = {
                 onProgress: (progress: number) => {
@@ -42,7 +41,7 @@ export async function POST(req: NextRequest) {
                 },
             };
 
-            // Since this is a server-side route, we call the fileService which now handles file creation.
+            // This function will handle the upload to Cloudinary and Firestore creation
             fileService.createFile(INBOX_FOLDER_ID, file, callbacks).catch(reject);
         });
         
