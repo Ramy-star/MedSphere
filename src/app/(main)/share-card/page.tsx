@@ -15,7 +15,7 @@ const ShareCardPage = () => {
       return;
     }
     try {
-      const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 2 });
+      const dataUrl = await toPng(cardRef.current, { cacheBust: true, pixelRatio: 16 });
       const link = document.createElement('a');
       link.download = 'medsphere-share-card.png';
       link.href = dataUrl;
