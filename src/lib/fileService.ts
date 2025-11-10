@@ -1,12 +1,12 @@
-
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
-import { v4 as uuidv4 } from 'uuid';
+import { collection, query, where, getDocs, doc, setDoc } from 'firebase/firestore';
 import { nanoid } from 'nanoid';
-import { offlineStorage } from './offline';
 import * as pdfjs from 'pdfjs-dist';
-import { contentService as serverContentService, type Content } from './contentService';
+import type { Content } from './contentService';
+import { contentService } from './contentService';
 import type { UserProfile } from '@/stores/auth-store';
+import { updateDoc } from 'firebase/firestore';
+import { v4 as uuidv4 } from 'uuid';
 
 if (typeof window !== 'undefined') {
     pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
@@ -154,7 +154,7 @@ export const fileService = {
                     return;
                 }
                 const id = uuidv4();
-                const children = await serverContentService.getChildren(parentId);
+                const children = await contentService.getChildren(parentId);
                 const finalFileUrl = createProxiedUrl(data.secure_url);
                 const mimeType = file.type || (file.name.endsWith('.md') ? 'text/markdown' : 'application/octet-stream');
                 const fileNameWithoutExt = file.name.endsWith('.md') ? file.name.slice(0, -3) : file.name;
@@ -184,26 +184,12 @@ export const fileService = {
   },
 
   async updateFile(itemToUpdate: Content, newFile: File, callbacks: UploadCallbacks): Promise<XMLHttpRequest | undefined> {
-    if (!db) {
-        const error = new Error("Firestore not initialized");
-        callbacks.onError(error);
-        throw error;
-    }
-    const batch = writeBatch(db);
-    try {
-        const parentId = itemToUpdate.parentId;
-        const oldFilePublicId = itemToUpdate.metadata?.cloudinaryPublicId;
-        const oldFileResourceType = itemToUpdate.metadata?.cloudinaryResourceType || 'raw';
-        batch.delete(doc(db, 'content', itemToUpdate.id));
-        await batch.commit();
-        if (oldFilePublicId) {
-            await fileService.deleteCloudinaryAsset(oldFilePublicId, oldFileResourceType);
-        }
-        return await fileService.createFile(parentId, newFile, callbacks, { order: itemToUpdate.order });
-    } catch (e: any) {
-        console.error("Update (delete and replace) failed:", e);
-        callbacks.onError(e);
-    }
+    // This function is now client-only and uses other fileService methods
+    // It is located in FolderGrid.tsx's handleUpdateFile
+    // This is a placeholder to prevent breaking changes if it's called elsewhere, though it shouldn't be.
+    console.error("updateFile is a client-side method and should not be called from a service.");
+    callbacks.onError(new Error("Invalid call to updateFile."));
+    return undefined;
   },
 
   async uploadAndSetIcon(itemId: string, iconFile: File, callbacks: Omit<UploadCallbacks, 'onSuccess'> & { onSuccess: (url: string) => void }): Promise<void> {

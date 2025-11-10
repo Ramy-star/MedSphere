@@ -26,7 +26,7 @@ import { create } from 'zustand';
 import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useIsMobile } from '@/hooks/use-is-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 

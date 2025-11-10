@@ -1,7 +1,5 @@
-
 import { NextRequest, NextResponse } from "next/server";
-import { fileService } from "@/lib/fileService";
-import type { UploadCallbacks } from "@/lib/fileService";
+import { fileService, type UploadCallbacks } from "@/lib/fileService";
 import type { Content } from "@/lib/contentService";
 
 const INBOX_FOLDER_ID = 'telegram-inbox-folder';
@@ -45,7 +43,7 @@ export async function POST(req: NextRequest) {
             fileService.createFile(INBOX_FOLDER_ID, file, callbacks).catch(reject);
         });
         
-        return NextResponse.json({ success: true, message: `File "${uploadResult.name}" uploaded to Inbox.` });
+        return NextResponse.json({ success: true, message: `File "${file.name}" uploaded to Inbox.` });
 
     } catch (err: any) {
         console.error("Error handling Telegram upload:", err);

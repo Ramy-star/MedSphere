@@ -2,6 +2,7 @@
 import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
+import { fileService } from '@/lib/fileService';
 import { FolderCard } from './FolderCard';
 import { FileCard } from './FileCard';
 import { SubjectCard } from './subject-card';

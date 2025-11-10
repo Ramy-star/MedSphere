@@ -40,7 +40,7 @@ export function ChangeIconDialog({ item, onOpenChange }: ChangeIconDialogProps) 
         toast({
           variant: 'destructive',
           title: 'Invalid File Type',
-          description: 'Please select an image file (e.g., PNG, JPG, SVG, WEBP).',
+          description: 'Please select an image file (e.g., PNG, JPG, SVG, WEBP, GIF).',
         });
         return;
       }
