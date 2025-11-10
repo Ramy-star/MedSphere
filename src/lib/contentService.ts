@@ -1,7 +1,7 @@
 
 'use server';
 import { db } from '@/firebase';
-import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot } from 'firebase/firestore';
+import { collection, writeBatch, query, where, getDocs, orderBy, doc, setDoc, getDoc, updateDoc, runTransaction, increment, deleteDoc as deleteFirestoreDoc, DocumentReference, arrayUnion, arrayRemove, DocumentSnapshot, addDoc } from 'firebase/firestore';
 import { v4 as uuidv4 } from 'uuid';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
