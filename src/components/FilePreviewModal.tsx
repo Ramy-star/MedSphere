@@ -10,6 +10,7 @@ import { Button } from './ui/button';
 import FilePreview, { FilePreviewRef } from './FilePreview';
 import type { Content } from '@/lib/contentService';
 import { fileService } from '@/lib/fileService';
+import { contentService } from '@/lib/contentService';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
 import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck, Edit, SquareArrowOutUpRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
@@ -315,7 +316,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                 
                 if (activePage.referencedFileIds) {
                     for (const fileId of activePage.referencedFileIds) {
-                        const file = await fileService.getById(fileId);
+                        const file = await contentService.getById(fileId);
                         if(file) referencedFiles.push(file);
                     }
                 }
@@ -340,7 +341,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
             const sourceFileId = currentItem.metadata?.sourceFileId;
             if (sourceFileId) {
-                const sourceFile = await fileService.getById(sourceFileId);
+                const sourceFile = await contentService.getById(sourceFileId);
                 if (sourceFile) filesToProcess.push(sourceFile);
             } else if (currentItem.type === 'FILE') {
                 filesToProcess.push(currentItem);
