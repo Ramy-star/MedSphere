@@ -1,7 +1,6 @@
 'use client';
 import React, { useEffect, useState, useMemo } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Achievement, allAchievementsWithIcons } from '@/lib/achievements';
+import { allAchievementsWithIcons, Achievement } from '@/lib/achievements';
 import { Button } from '@/components/ui/button';
 import { X, Check } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
