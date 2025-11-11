@@ -23,7 +23,7 @@ const iconMap: { [key: string]: React.ElementType } = {
     MessageSquareQuote, BrainCircuit, Sunrise, CalendarDays, HeartHandshake, Moon, Compass
 };
 
-const allAchievementsData: Omit<Achievement, 'icon'>[] = [
+export const allAchievements: Omit<Achievement, 'icon'>[] = [
   // --- Organization & Contribution ---
   {
     id: 'FILES_UPLOADED_10',
@@ -193,7 +193,7 @@ const allAchievementsData: Omit<Achievement, 'icon'>[] = [
 ];
 
 // This is now the single source of truth for achievements with their icons.
-export const allAchievementsWithIcons: Achievement[] = allAchievementsData.map(ach => {
+export const allAchievementsWithIcons: Achievement[] = allAchievements.map(ach => {
     let icon = UploadCloud; // Default
     if (ach.id === 'FIRST_LOGIN') icon = Sunrise;
     else if (ach.id.startsWith('LOGIN_STREAK')) icon = CalendarDays;

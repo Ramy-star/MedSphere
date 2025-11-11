@@ -7,7 +7,7 @@ import { doc, onSnapshot, getDocs, collection, query, orderBy, DocumentData, upd
 import type { Content } from '@/lib/contentService';
 import { nanoid } from 'nanoid';
 import { telegramInbox } from '@/lib/file-data';
-import { allAchievementsWithIcons, type Achievement } from '@/lib/achievements';
+import { allAchievements, allAchievementsWithIcons, type Achievement } from '@/lib/achievements';
 import { format, differenceInCalendarDays, parseISO } from 'date-fns';
 
 
@@ -342,7 +342,7 @@ const useAuthStore = create<AuthState>((set, get) => ({
     let newAchievementsToGrant: { badgeId: string; earnedAt: string }[] = [];
     let achievementToToast: Achievement | null = null;
   
-    allAchievementsData.forEach(achievementData => {
+    allAchievements.forEach(achievementData => {
       const achievementWithIcon = allAchievementsWithIcons.find(a => a.id === achievementData.id);
       if (!achievementWithIcon) return; // Skip if we can't find the full achievement object
 
