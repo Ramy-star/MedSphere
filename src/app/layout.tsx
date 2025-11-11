@@ -70,15 +70,31 @@ export default function RootLayout({
   };
   
   const renderContent = () => {
+    // TEMPORARILY DISABLED AUTHENTICATION & VERIFICATION FOR TESTING
+    // TODO: Re-enable authentication once issues are resolved
+    console.log('[LAYOUT] Authentication and verification are temporarily disabled');
+
+    return (
+        <div className="flex flex-col h-full w-full">
+            <header className="z-50 w-full">
+            <Header />
+            </header>
+            <main className="flex flex-1 w-full overflow-hidden">
+            {children}
+            </main>
+        </div>
+    );
+
+    /* ORIGINAL AUTHENTICATION CODE - DISABLED
     // While the auth state is being determined, user is null.
     if (user === undefined) {
       return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-background"></div>
       );
     }
-    
+
     if (!isAuthenticated) {
-        return <VerificationScreen onVerified={() => { /* Handled by auth store */ }} />;
+        return <VerificationScreen onVerified={() => { handleVerified by auth store }} />;
     }
 
     return (
@@ -91,6 +107,7 @@ export default function RootLayout({
             </main>
         </div>
     );
+    */
   };
 
   if (!isClient) {
