@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { X, Check } from 'lucide-react';
 import { useAuthStore } from '@/stores/auth-store';
 import { cn } from '@/lib/utils';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const tierColors = {
   bronze: { bg: 'bg-gradient-to-br from-orange-300 to-orange-600', text: 'text-white', icon: 'text-white' },
