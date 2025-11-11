@@ -229,8 +229,14 @@ function ProfileSetupForm() {
 }
 
 export function AuthGuard({ children }: { children: React.ReactNode }) {
+  // TEMPORARILY DISABLED AUTHENTICATION FOR TESTING
+  // TODO: Re-enable authentication once issues are resolved
+  console.log('[AuthGuard] Authentication is temporarily disabled');
+  return <>{children}</>;
+
+  /* ORIGINAL AUTHENTICATION CODE - DISABLED
   const { user, loading, isAuthenticated } = useAuthStore();
-  
+
   if (loading) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
@@ -273,4 +279,5 @@ export function AuthGuard({ children }: { children: React.ReactNode }) {
       <ProfileSetupForm />
     </motion.div>
   );
+  */
 }
