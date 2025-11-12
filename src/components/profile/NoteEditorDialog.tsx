@@ -340,6 +340,134 @@ const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () =>
 );
 
 
+const DrawingCanvas = ({ onSave, onCancel }: { onSave: (dataUrl: string) => void, onCancel: () => void }) => {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [isDrawing, setIsDrawing] = useState(false);
+    const [color, setColor] = useState('#FFFFFF');
+    const [brushSize, setBrushSize] = useState(5);
+    const [isErasing, setIsErasing] = useState(false);
+    const [history, setHistory] = useState<ImageData[]>([]);
+    const [historyIndex, setHistoryIndex] = useState(-1);
+
+    const getContext = () => canvasRef.current?.getContext('2d');
+
+    const saveToHistory = useCallback(() => {
+        const ctx = getContext();
+        if (!ctx || !canvasRef.current) return;
+        const newHistory = history.slice(0, historyIndex + 1);
+        newHistory.push(ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height));
+        setHistory(newHistory);
+        setHistoryIndex(newHistory.length - 1);
+    }, [history, historyIndex]);
+
+    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
+        const ctx = getContext();
+        if (!ctx) return;
+        setIsDrawing(true);
+        const { offsetX, offsetY } = getCoords(e);
+        ctx.beginPath();
+        ctx.moveTo(offsetX, offsetY);
+        saveToHistory();
+    };
+
+    const draw = (e: React.MouseEvent | React.TouchEvent) => {
+        if (!isDrawing) return;
+        const ctx = getContext();
+        if (!ctx) return;
+        const { offsetX, offsetY } = getCoords(e);
+        ctx.strokeStyle = isErasing ? '#000000' : color;
+        ctx.lineWidth = brushSize;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.globalCompositeOperation = isErasing ? 'destination-out' : 'source-over';
+        ctx.lineTo(offsetX, offsetY);
+        ctx.stroke();
+    };
+
+    const stopDrawing = () => {
+        const ctx = getContext();
+        if (!ctx) return;
+        ctx.closePath();
+        setIsDrawing(false);
+    };
+
+    const getCoords = (e: React.MouseEvent | React.TouchEvent) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return { offsetX: 0, offsetY: 0 };
+        const rect = canvas.getBoundingClientRect();
+        if ('touches' in e) { // Touch event
+            return {
+                offsetX: e.touches[0].clientX - rect.left,
+                offsetY: e.touches[0].clientY - rect.top
+            };
+        }
+        // Mouse event
+        return { offsetX: e.nativeEvent.offsetX, offsetY: e.nativeEvent.offsetY };
+    };
+
+    const handleSave = () => {
+        if (canvasRef.current) {
+            onSave(canvasRef.current.toDataURL('image/png'));
+        }
+    };
+    
+    const clearCanvas = () => {
+        const ctx = getContext();
+        if (!ctx || !canvasRef.current) return;
+        saveToHistory();
+        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    };
+
+    const undo = () => {
+        if (historyIndex > 0) {
+            const newIndex = historyIndex - 1;
+            const ctx = getContext();
+            if (ctx) {
+                ctx.putImageData(history[newIndex], 0, 0);
+            }
+            setHistoryIndex(newIndex);
+        }
+    };
+
+    return (
+        <Dialog open onOpenChange={(isOpen) => !isOpen && onCancel()}>
+            <DialogContent className="max-w-2xl w-[90vw] glass-card p-0">
+                <DialogHeader className="p-4 border-b border-slate-700">
+                    <DialogTitle>Drawing Pad</DialogTitle>
+                </DialogHeader>
+                <div className="flex flex-col md:flex-row gap-4 p-4">
+                    <div className="flex flex-row md:flex-col items-center gap-4 p-2 bg-slate-800/50 rounded-lg">
+                        <Button variant="ghost" size="icon" onClick={() => setIsErasing(false)} className={!isErasing ? 'bg-slate-700' : ''}><PenLine/></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setIsErasing(true)} className={isErasing ? 'bg-slate-700' : ''}><Eraser/></Button>
+                        <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent rounded-full cursor-pointer" />
+                        <Slider value={[brushSize]} min={1} max={50} step={1} onValueChange={(val) => setBrushSize(val[0])} orientation="vertical" className="w-auto h-24" />
+                        <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
+                        <Button variant="ghost" size="icon" onClick={clearCanvas}><Trash2/></Button>
+                    </div>
+                    <canvas
+                        ref={canvasRef}
+                        width={500}
+                        height={400}
+                        className="bg-black rounded-md cursor-crosshair"
+                        onMouseDown={startDrawing}
+                        onMouseMove={draw}
+                        onMouseUp={stopDrawing}
+                        onMouseLeave={stopDrawing}
+                        onTouchStart={startDrawing}
+                        onTouchMove={draw}
+                        onTouchEnd={stopDrawing}
+                    />
+                </div>
+                <DialogFooter className="p-4 border-t border-slate-700">
+                    <Button variant="outline" onClick={onCancel}>Cancel</Button>
+                    <Button onClick={handleSave}>Save Drawing</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+};
+
+
 type NoteEditorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -362,6 +490,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [chatContext, setChatContext] = useState<Content | null>(null);
   const [showFileSearch, setShowFileSearch] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
+  const [isDrawing, setIsDrawing] = useState(false);
  
   const { data: allContent } = useCollection<Content>('content');
  
@@ -549,6 +678,13 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         console.error("Image upload failed:", error);
     }
   }, [editor]);
+  
+  const handleDrawingSave = (dataUrl: string) => {
+    if(editor) {
+        editor.chain().focus().setImage({ src: dataUrl }).run();
+    }
+    setIsDrawing(false);
+  }
 
   const handleOpenAiChat = () => {
     if (!note || !activePageId) return;
@@ -643,6 +779,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
             };
             input.click();
         }} tip="Insert Image" />
+        <EditorToolbarButton icon={PenLine} onClick={() => setIsDrawing(true)} tip="Draw" />
         <EmojiSelector editor={editor} container={container} />
       </div>
   );
@@ -852,6 +989,9 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           }
         }}
       />
+    )}
+    {isDrawing && (
+        <DrawingCanvas onSave={handleDrawingSave} onCancel={() => setIsDrawing(false)} />
     )}
    </>
   );
