@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import {
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered,
     Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight,
-    Maximize, Shrink, Trash2, Check, Paperclip, FileText, Eraser, PenLine, MousePointer, Minus as LineToolIcon
+    Maximize, Shrink, Trash2, Check, Paperclip, FileText, Eraser, PenLine, MousePointer
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -52,6 +52,13 @@ import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { FilePreviewModal } from '../FilePreviewModal';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { create } from 'zustand';
+import { db } from '@/firebase';
+import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
+import { AlertDialog } from '../ui/alert-dialog';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { DrawingPadDialog } from './DrawingPadDialog';
+
 
 const NOTE_COLORS = [
     '#282828', // dark grey
@@ -339,207 +346,6 @@ const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () =>
     </TooltipProvider>
 );
 
-type DrawTool = 'pen' | 'eraser' | 'line';
-
-const DrawingCanvas = ({ onSave, onCancel }: { onSave: (dataUrl: string) => void, onCancel: () => void }) => {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [isDrawing, setIsDrawing] = useState(false);
-    const [tool, setTool] = useState<DrawTool>('pen');
-    const [color, setColor] = useState('#FFFFFF');
-    const [brushSize, setBrushSize] = useState(5);
-    const [history, setHistory] = useState<ImageData[]>([]);
-    const [historyIndex, setHistoryIndex] = useState(-1);
-    const [startPoint, setStartPoint] = useState<{x: number, y: number} | null>(null);
-    const tempCanvasRef = useRef<HTMLCanvasElement | null>(null);
-    const [cursorPos, setCursorPos] = useState({ x: -100, y: -100 });
-
-
-    const getContext = useCallback((canvas: HTMLCanvasElement | null = canvasRef.current) => canvas?.getContext('2d'), []);
-
-    const saveToHistory = useCallback(() => {
-        const ctx = getContext();
-        if (!ctx || !canvasRef.current) return;
-        const newHistory = history.slice(0, historyIndex + 1);
-        newHistory.push(ctx.getImageData(0, 0, canvasRef.current.width, canvasRef.current.height));
-        setHistory(newHistory);
-        setHistoryIndex(newHistory.length - 1);
-    }, [history, historyIndex, getContext]);
-    
-    // Create a temporary canvas for previewing shapes
-    useEffect(() => {
-        if (!canvasRef.current) return;
-        const tempCanvas = document.createElement('canvas');
-        tempCanvas.width = canvasRef.current.width;
-        tempCanvas.height = canvasRef.current.height;
-        tempCanvas.style.position = 'absolute';
-        tempCanvas.style.top = '0';
-        tempCanvas.style.left = '0';
-        tempCanvas.style.pointerEvents = 'none';
-        canvasRef.current.parentElement?.appendChild(tempCanvas);
-        tempCanvasRef.current = tempCanvas;
-        return () => {
-            tempCanvasRef.current?.remove();
-        }
-    }, []);
-
-    const getCoords = (e: React.MouseEvent | React.TouchEvent) => {
-        const canvas = canvasRef.current;
-        if (!canvas) return { offsetX: 0, offsetY: 0 };
-        const rect = canvas.getBoundingClientRect();
-        if ('touches' in e) {
-            return {
-                offsetX: e.touches[0].clientX - rect.left,
-                offsetY: e.touches[0].clientY - rect.top
-            };
-        }
-        return { offsetX: e.nativeEvent.offsetX, offsetY: e.nativeEvent.offsetY };
-    };
-
-    const startDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-        const ctx = getContext();
-        if (!ctx) return;
-        const { offsetX, offsetY } = getCoords(e);
-        
-        saveToHistory();
-        setIsDrawing(true);
-        setStartPoint({x: offsetX, y: offsetY});
-
-        if (tool === 'pen' || tool === 'eraser') {
-            ctx.beginPath();
-            ctx.moveTo(offsetX, offsetY);
-        }
-    };
-
-    const draw = (e: React.MouseEvent | React.TouchEvent) => {
-        const { offsetX, offsetY } = getCoords(e);
-        setCursorPos({ x: offsetX, y: offsetY });
-
-        if (!isDrawing) return;
-        const ctx = getContext();
-        if (!ctx) return;
-        
-        if (tool === 'pen' || tool === 'eraser') {
-            ctx.strokeStyle = tool === 'eraser' ? '#000000' : color; // Assuming black bg for eraser
-            ctx.lineWidth = brushSize;
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
-            ctx.lineTo(offsetX, offsetY);
-            ctx.stroke();
-        } else if (tool === 'line' && startPoint && tempCanvasRef.current) {
-            const tempCtx = getContext(tempCanvasRef.current);
-            if (!tempCtx) return;
-            tempCtx.clearRect(0, 0, tempCanvasRef.current.width, tempCanvasRef.current.height);
-            tempCtx.beginPath();
-            tempCtx.moveTo(startPoint.x, startPoint.y);
-            tempCtx.lineTo(offsetX, offsetY);
-            tempCtx.strokeStyle = color;
-            tempCtx.lineWidth = brushSize;
-            tempCtx.lineCap = 'round';
-            tempCtx.stroke();
-        }
-    };
-
-    const stopDrawing = (e: React.MouseEvent | React.TouchEvent) => {
-        const ctx = getContext();
-        if (!ctx) return;
-        
-        if (tool === 'line' && isDrawing && startPoint) {
-            const { offsetX, offsetY } = getCoords(e);
-            ctx.beginPath();
-            ctx.moveTo(startPoint.x, startPoint.y);
-            ctx.lineTo(offsetX, offsetY);
-            ctx.strokeStyle = color;
-            ctx.lineWidth = brushSize;
-            ctx.lineCap = 'round';
-            ctx.stroke();
-
-            const tempCtx = getContext(tempCanvasRef.current);
-            tempCtx?.clearRect(0, 0, tempCanvasRef.current!.width, tempCanvasRef.current!.height);
-        } else if (tool === 'pen' || tool === 'eraser') {
-            ctx.closePath();
-        }
-        
-        setIsDrawing(false);
-        setStartPoint(null);
-    };
-
-    const handleSave = () => {
-        if (canvasRef.current) onSave(canvasRef.current.toDataURL('image/png'));
-    };
-    
-    const clearCanvas = () => {
-        const ctx = getContext();
-        if (!ctx || !canvasRef.current) return;
-        saveToHistory();
-        ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    };
-
-    const undo = () => {
-        if (historyIndex > 0) {
-            const newIndex = historyIndex - 1;
-            const ctx = getContext();
-            if (ctx) ctx.putImageData(history[newIndex], 0, 0);
-            setHistoryIndex(newIndex);
-        }
-    };
-
-    return (
-        <Dialog open onOpenChange={(isOpen) => !isOpen && onCancel()}>
-            <DialogContent className="max-w-3xl w-[90vw] glass-card p-0 flex flex-col">
-                <DialogHeader className="p-4 border-b border-slate-700">
-                    <DialogTitle>Drawing Pad</DialogTitle>
-                </DialogHeader>
-                <div className="flex flex-col md:flex-row gap-4 p-4 flex-1 min-h-0">
-                    <div className="flex flex-row md:flex-col items-center gap-4 p-2 bg-slate-800/50 rounded-lg overflow-auto no-scrollbar">
-                        <Button variant="ghost" size="icon" onClick={() => setTool('pen')} className={cn(tool === 'pen' ? 'bg-slate-700' : '')}><PenLine/></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setTool('line')} className={cn(tool === 'line' ? 'bg-slate-700' : '')}><LineToolIcon /></Button>
-                        <Button variant="ghost" size="icon" onClick={() => setTool('eraser')} className={cn(tool === 'eraser' ? 'bg-slate-700' : '')}><Eraser/></Button>
-                        <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-8 h-8 p-0 border-none bg-transparent rounded-full cursor-pointer" />
-                        <div className="flex flex-col items-center gap-2">
-                          <Slider value={[brushSize]} min={1} max={50} step={1} onValueChange={(val) => setBrushSize(val[0])} orientation="vertical" className="w-auto h-24" />
-                          <span className="text-xs text-white">{brushSize}px</span>
-                        </div>
-                        <Button variant="ghost" size="icon" onClick={undo} disabled={historyIndex <= 0}><Undo/></Button>
-                        <Button variant="ghost" size="icon" onClick={clearCanvas}><Trash2/></Button>
-                    </div>
-                    <div className="relative flex-1 min-h-[300px] md:min-h-0">
-                        <canvas
-                            ref={canvasRef}
-                            width={500}
-                            height={400}
-                            className="bg-black rounded-md cursor-crosshair w-full h-full"
-                            onMouseDown={startDrawing}
-                            onMouseMove={draw}
-                            onMouseUp={stopDrawing}
-                            onMouseLeave={(e) => { stopDrawing(e); setCursorPos({x: -100, y: -100}); }}
-                            onTouchStart={startDrawing}
-                            onTouchMove={draw}
-                            onTouchEnd={stopDrawing}
-                        />
-                         <div 
-                            className="absolute rounded-full pointer-events-none -translate-x-1/2 -translate-y-1/2"
-                            style={{
-                                left: cursorPos.x,
-                                top: cursorPos.y,
-                                width: `${brushSize}px`,
-                                height: `${brushSize}px`,
-                                border: '1px solid white',
-                                mixBlendMode: 'difference'
-                            }}
-                        />
-                    </div>
-                </div>
-                <DialogFooter className="p-4 border-t border-slate-700">
-                    <Button variant="outline" onClick={onCancel}>Cancel</Button>
-                    <Button onClick={handleSave}>Save Drawing</Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-    );
-};
-
-
 type NoteEditorDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -771,11 +577,9 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
       type: 'NOTE', // Custom type to signal special handling
       parentId: null,
       metadata: {
-        // We serialize the entire note object here for simplicity.
-        // The chat panel will receive this and can reconstruct the context.
         quizData: JSON.stringify({
           ...note,
-          pages: [activePage] // Only send the active page context for focus
+          pages: [activePage] 
         })
       }
     };
@@ -877,6 +681,9 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               placeholder="Note Title"
           />
           <div className="flex items-center">
+              <Button variant="ghost" size="icon" onClick={() => setIsDrawing(true)} className="h-9 w-9 text-white">
+                 <PenLine className="w-5 h-5" />
+              </Button>
               <Button variant="ghost" size="icon" onClick={handleOpenAiChat} className="h-9 w-9 text-white">
                 <AiAssistantIcon className="w-5 h-5" />
               </Button>
@@ -1062,8 +869,11 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         }}
       />
     )}
-    {isDrawing && (
-        <DrawingCanvas onSave={handleDrawingSave} onCancel={() => setIsDrawing(false)} />
+     {isDrawing && (
+        <DrawingPadDialog
+          onSave={handleDrawingSave}
+          onClose={() => setIsDrawing(false)}
+        />
     )}
    </>
   );

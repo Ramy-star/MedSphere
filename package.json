@@ -53,6 +53,7 @@
     "@tiptap/pm": "^2.5.7",
     "@tiptap/react": "^2.5.7",
     "@tiptap/starter-kit": "^2.5.7",
+    "@tldraw/tldraw": "^2.1.4",
     "bcryptjs": "^2.4.3",
     "class-variance-authority": "^0.7.0",
     "cloudinary": "^2.7.0",
