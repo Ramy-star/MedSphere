@@ -15,6 +15,7 @@ import { FolderCard } from '@/components/FolderCard';
 import { Loader2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { where } from 'firebase/firestore';
+import Link from 'next/link';
 
 
 // This forces the page to be dynamically rendered.
@@ -62,11 +63,6 @@ export default function HomePage() {
   }, [loading, db, handleSeed, allItems]);
 
   
-  const handleItemClick = (item: Content) => {
-    const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
-    router.push(path);
-  };
-
   const renderContent = () => {
       if (!hasInitialDataLoaded || isSeeding) {
            return (
@@ -84,17 +80,18 @@ export default function HomePage() {
            <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 min-h-[16rem] md:min-h-0">
               {levels && levels.map((item, index) => {
                   const isLastItem = index === levels.length - 1;
+                  const path = item.type === 'LEVEL' ? `/level/${encodeURIComponent(item.name)}` : `/folder/${item.id}`;
 
                   // Render only LEVEL type items
                   if (item.type === 'LEVEL') {
                     return (
-                        <div 
+                        <Link
                             key={item.id}
+                            href={path}
                             className={cn(
                                 "col-span-1 cursor-pointer",
                                 isLastItem && isOdd && "col-span-2 sm:col-span-1"
                             )} 
-                            onClick={() => handleItemClick(item)}
                             onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
                         >
                             <div className={cn(
@@ -103,7 +100,7 @@ export default function HomePage() {
                             )}>
                                 <h3 className="text-base md:text-xl font-semibold text-white">{item.name}</h3>
                             </div>
-                        </div>
+                        </Link>
                     )
                   }
 
@@ -141,4 +138,3 @@ export default function HomePage() {
     </div>
   );
 }
-
