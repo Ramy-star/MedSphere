@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import {
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered,
     Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight,
-    Maximize, Shrink, Trash2, Check, Paperclip, FileText
+    Maximize, Shrink, Trash2, Check, Paperclip, FileText, Eraser, PenLine
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -124,7 +124,7 @@ const editorExtensions = [
     emptyEditorClass: 'is-editor-empty',
   }),
   FontFamily,
-  ImageExtension.configure({ inline: false, allowBase64: true }),
+  ImageExtension.configure({ inline: true, allowBase64: true }),
 ];
 
 
@@ -316,6 +316,7 @@ const EmojiSelector = ({ editor, container }: { editor: Editor, container: HTMLE
         </PopoverContent>
     </Popover>
 );
+
 
 const ReferencedFilePill = ({ file, onRemove }: { file: Content, onRemove: () => void }) => (
     <TooltipProvider>
