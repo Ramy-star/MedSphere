@@ -182,14 +182,6 @@ export function FolderGrid({
       where: where('parentId', '==', parentId),
       orderBy: ['order', 'asc']
   });
-  
-  const [hasInitialDataLoaded, setHasInitialDataLoaded] = useState(false);
-  useEffect(() => {
-    if (!loading) {
-      setHasInitialDataLoaded(true);
-    }
-  }, [loading]);
-
 
   const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
@@ -425,11 +417,13 @@ export function FolderGrid({
     });
   }, []);
 
-  if (!hasInitialDataLoaded) {
+  if (loading) {
+    const gridCols = isSubjectView ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1";
+    const skeletonHeight = isSubjectView ? "h-40" : "h-14";
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => (
-                <Skeleton key={i} className="h-40 rounded-2xl bg-slate-800/50" />
+        <div className={`grid ${gridCols} gap-4`}>
+            {[...Array(isSubjectView ? 8 : 6)].map((_, i) => (
+                <Skeleton key={i} className={`${skeletonHeight} rounded-2xl bg-slate-800/50`} />
             ))}
         </div>
     );
