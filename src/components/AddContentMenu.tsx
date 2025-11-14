@@ -1,4 +1,3 @@
-
 'use client';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -193,7 +192,7 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       />
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
-          {trigger || <Button size="sm" className="rounded-2xl active:scale-95 transition-transform"><Plus className="mr-2 h-4 w-4" />Add Content</Button>}
+          {trigger}
         </PopoverTrigger>
         <PopoverContent 
           className="w-56 p-2 border-slate-700" 

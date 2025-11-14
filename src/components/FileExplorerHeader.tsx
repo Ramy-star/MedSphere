@@ -124,17 +124,17 @@ export default function FileExplorerHeader({ onFileSelected, isSelectMode, onTog
               parentId={currentFolder.id}
               onFileSelected={onFileSelected}
               trigger={
-                  <Tooltip>
-                      <TooltipTrigger asChild>
-                          <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
-                              <Plus className="h-4 w-4" />
-                              {!isMobile && <span className="ml-2">Add Content</span>}
-                          </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>Add new content</p>
-                      </TooltipContent>
-                  </Tooltip>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
+                            <Plus className={cn("h-4 w-4", !isMobile && "mr-2")} />
+                            {!isMobile && <span>Add Content</span>}
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Add new content</p>
+                    </TooltipContent>
+                </Tooltip>
               }
           />
         )}
