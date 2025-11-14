@@ -657,7 +657,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
             };
             input.click();
         }} tip="Insert Image" />
-        <EditorToolbarButton icon={PenLine} onClick={() => setIsTldrawOpen(true)} tip="Draw" />
+        <EditorToolbarButton icon={PenLine} onClick={() => setIsTldrawOpen(true)} tip="Draw (tldraw)" />
         <EmojiSelector editor={editor} container={container} />
       </div>
   );
