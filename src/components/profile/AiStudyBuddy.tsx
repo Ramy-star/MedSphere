@@ -29,7 +29,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 
 if (typeof window !== 'undefined') {
-    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjs.version}/pdf.worker.min.js`;
+    pdfjs.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${'3.11.174'}/pdf.worker.min.js`;
 }
 
 type Suggestion = {
@@ -256,12 +256,12 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                     filesToSubmit.map(async file => {
                         if (file.metadata?.storagePath) {
                             try {
-                                const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
+                                const fileBlob = await contentService.getFileContent(file.metadata.storagePath, file.id);
                                 if (file.metadata.mime === 'application/pdf') {
                                     const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
                                     const text = await contentService.extractTextFromPdf(pdf);
                                     return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
-                                } else {
+                                } else if (file.metadata.mime?.startsWith('text/')) {
                                     const text = await fileBlob.text();
                                     return `--- START OF FILE: ${file.name} ---\n\n${text}\n\n--- END OF FILE: ${file.name} ---`;
                                 }
@@ -633,8 +633,8 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
             </div>
           ))}
           {isResponding && (
-            <div className="self-start flex items-center gap-2 text-slate-500 text-xs">
-              <Loader2 className="w-3 h-3 animate-spin" />
+            <div className="self-start flex items-center gap-2 text-slate-400 text-sm">
+              <Loader2 className="w-4 h-4 animate-spin" />
               <span>Thinking...</span>
             </div>
           )}
@@ -762,18 +762,18 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                                         onOpenAutoFocus={(e) => e.preventDefault()}
                                     >
                                         <div className="text-xs text-slate-400 p-2">Mention a file...</div>
-                                        <div className="max-h-60 overflow-y-auto no-scrollbar">
+                                        <ScrollArea className="max-h-60">
                                             {filteredFiles.map(file => (
                                                 <button
                                                     key={file.id}
                                                     onClick={() => handleFileSelect(file)}
                                                     className="w-full text-left flex items-center gap-2 p-2 rounded-md hover:bg-slate-800 text-sm text-slate-200"
                                                 >
-                                                    <FileText className="w-4 h-4 text-red-400" />
+                                                    <FileText className="w-4 h-4 text-slate-400" />
                                                     <span className="truncate">{file.name}</span>
                                                 </button>
                                             ))}
-                                        </div>
+                                        </ScrollArea>
                                     </PopoverContent>
                                 </Popover>
                                 

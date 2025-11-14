@@ -103,7 +103,10 @@ const config = {
         },
         'spin-slow': 'spin 1.6s linear infinite',
         'dot-bounce': 'dot-bounce 1.4s infinite ease-in-out both',
-        'dot-bounce-more': 'dot-bounce-more 1.4s infinite ease-in-out both',
+        'dot-bounce-more': {
+            '0%, 80%, 100%': { transform: 'scale(0)' },
+            '40%': { transform: 'scale(1.0)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',

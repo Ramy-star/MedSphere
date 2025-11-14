@@ -21,7 +21,7 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
     };
 
     const handleBackdropClick = () => {
-        close();
+        // Do nothing to keep the site interactive
     };
 
     const containerVariants = {
@@ -49,18 +49,6 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
 
     return (
         <>
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        key="backdrop"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        exit={{ opacity: 0 }}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
-                        onClick={handleBackdropClick}
-                    />
-                )}
-            </AnimatePresence>
             <div className="fixed bottom-6 right-6 z-50">
                 <motion.div
                     layout
