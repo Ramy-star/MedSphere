@@ -58,7 +58,7 @@ export default function LevelPage({ params }: { params: { levelName: string } })
                         >
                             <Link href={`/folder/${semester.id}`} className="block h-full group">
                                 <div className="glass-card p-8 hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center rounded-[1.25rem]">
-                                    <h3 className="text-xl font-semibold text-white transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-center">{semester.name}</h3>
+                                    <h3 className="text-xl font-semibold text-white transition-transform duration-150 ease-out group-hover:scale-110 origin-center">{semester.name}</h3>
                                 </div>
                             </Link>
                         </div>

@@ -48,7 +48,7 @@ export const SubjectCard = React.memo(function SubjectCard({
         <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 h-full flex flex-col justify-between">
             <div>
                 <div className="flex justify-between items-start mb-4">
-                    <Icon className={`w-8 h-8 ${color} transition-transform duration-200 ease-out group-hover:scale-[1.07]`} />
+                    <Icon className={`w-8 h-8 ${color} transition-transform duration-150 ease-out group-hover:scale-110`} />
                     {(can('canRename', subject.id) || can('canDelete', subject.id) || can('canChangeIcon', subject.id)) && (
                         <DropdownMenu onOpenChange={setIsMenuOpen}>
                             <DropdownMenuTrigger asChild>
@@ -89,7 +89,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                         </DropdownMenu>
                     )}
                 </div>
-                <h3 className="text-lg font-semibold text-white transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-left">{name}</h3>
+                <h3 className="text-lg font-semibold text-white transition-transform duration-150 ease-out group-hover:scale-110 origin-left">{name}</h3>
             </div>
         </div>
     </Link>

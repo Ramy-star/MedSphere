@@ -281,9 +281,9 @@ export const FileCard = React.memo(function FileCard({
             />
 
             <div className="flex items-center gap-3 overflow-hidden flex-1">
-                <Icon className={cn("w-6 h-6 shrink-0 transition-transform duration-200 ease-out group-hover:scale-[1.07]", color)} />
+                <Icon className={cn("w-6 h-6 shrink-0 transition-transform duration-150 ease-out group-hover:scale-110", color)} />
                 <div className="flex-1 overflow-hidden">
-                    <h3 className={cn("text-sm font-medium text-white/90 break-words transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-left", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
+                    <h3 className={cn("text-sm font-medium text-white/90 break-words transition-transform duration-150 ease-out group-hover:scale-110 origin-left", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
                         {displayName}
                     </h3>
                     {isMobile && (
@@ -302,120 +302,117 @@ export const FileCard = React.memo(function FileCard({
                     {displaySize}
                 </p>
                 
-                <div className="relative flex items-center justify-center w-8 h-8">
-                     {isSelectMode ? (
-                        <div className="absolute inset-0 flex items-center justify-center">
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="w-8 h-8 rounded-full"
-                            >
-                                {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
-                            </Button>
-                        </div>
-                     ) : (
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                             <motion.div
-                                initial={false}
-                                animate={{ opacity: 1, scale: 1 }}
-                                transition={{ duration: 0.2, ease: 'easeOut' }}
-                            >
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                        >
-                                            <MoreVertical className="w-5 h-5" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent 
-                                        className="w-48 p-2"
-                                        align="end"
-                                        container={dialogContainer}
+                 <div className="relative flex items-center justify-center w-8 h-8">
+                    {isSelectMode ? (
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8 rounded-full"
+                        >
+                            {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
+                        </Button>
+                    ) : (
+                         <motion.div
+                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ duration: 0.15 }}
+                        >
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
                                     >
-                                        <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onFileClick(item); }}>
-                                            <MousePointerSquareDashed className="mr-2 h-4 w-4" />
-                                            <span>Open</span>
+                                        <MoreVertical className="w-5 h-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent 
+                                    className="w-48 p-2"
+                                    align="end"
+                                    container={dialogContainer}
+                                >
+                                    <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onFileClick(item); }}>
+                                        <MousePointerSquareDashed className="mr-2 h-4 w-4" />
+                                        <span>Open</span>
+                                    </DropdownMenuItem>
+                                    {browserUrl && (
+                                    <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); window.open(browserUrl, '_blank'); }} disabled={!browserUrl}>
+                                        <ExternalLink className="mr-2 h-4 w-4" />
+                                        <span>Open in browser</span>
+                                    </DropdownMenuItem>
+                                    )}
+                                    {!isLink && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' &&(
+                                        <DropdownMenuItem 
+                                            onSelect={(e) => { e.stopPropagation(); if (storagePath) handleForceDownload(storagePath, item.name); }}
+                                            disabled={!storagePath}
+                                        >
+                                            <Download className="mr-2 h-4 w-4" />
+                                            <span>Download</span>
                                         </DropdownMenuItem>
-                                        {browserUrl && (
-                                        <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); window.open(browserUrl, '_blank'); }} disabled={!browserUrl}>
-                                            <ExternalLink className="mr-2 h-4 w-4" />
-                                            <span>Open in browser</span>
+                                    )}
+                                    
+                                    {user && (
+                                        <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); handleToggleFavorite(); }}>
+                                            <FavoriteIcon className="mr-2 h-4 w-4" />
+                                            <span>{isFavorited ? 'Remove from Favorite' : 'Add to Favorite'}</span>
                                         </DropdownMenuItem>
-                                        )}
-                                        {!isLink && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' &&(
-                                            <DropdownMenuItem 
-                                                onSelect={(e) => { e.stopPropagation(); if (storagePath) handleForceDownload(storagePath, item.name); }}
-                                                disabled={!storagePath}
-                                            >
-                                                <Download className="mr-2 h-4 w-4" />
-                                                <span>Download</span>
-                                            </DropdownMenuItem>
-                                        )}
-                                        
-                                        {user && (
-                                            <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); handleToggleFavorite(); }}>
-                                                <FavoriteIcon className="mr-2 h-4 w-4" />
-                                                <span>{isFavorited ? 'Remove from Favorite' : 'Add to Favorite'}</span>
-                                            </DropdownMenuItem>
-                                        )}
+                                    )}
 
-                                        {(can('canRename', item.id) || can('canDelete', item.id)) && <DropdownMenuSeparator />}
+                                    {(can('canRename', item.id) || can('canDelete', item.id)) && <DropdownMenuSeparator />}
 
-                                        {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && can('canCreateQuestions', item.id) && (
-                                            <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); handleCreateQuestions(); }}>
-                                                <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
-                                                <span>Create Questions</span>
+                                    {item.type === 'FILE' && item.metadata?.mime === 'application/pdf' && can('canCreateQuestions', item.id) && (
+                                        <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); handleCreateQuestions(); }}>
+                                            <Wand2 className="mr-2 h-4 w-4 text-yellow-400" />
+                                            <span>Create Questions</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                    {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', item.id) && (
+                                        <DropdownMenuItem onSelect={handleUpdateClick}>
+                                        <RefreshCw className="mr-2 h-4 w-4" />
+                                        <span>Update</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                    {can('canRename', item.id) && (
+                                        <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onRename(); }}>
+                                            <Edit className="mr-2 h-4 w-4" />
+                                            <span>Rename</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                    {can('canMove', item.id) && (
+                                        <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onMove(); }}>
+                                            <Move className="mr-2 h-4 w-4" />
+                                            <span>Move</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                    {can('canCopy', item.id) && (
+                                        <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onCopy(); }}>
+                                            <Copy className="mr-2 h-4 w-4" />
+                                            <span>Copy</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                    {can('canToggleVisibility', item.id) && (
+                                        <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onToggleVisibility(); }}>
+                                            <VisibilityIcon className="mr-2 h-4 w-4" />
+                                            <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
+                                        </DropdownMenuItem>
+                                    )}
+                                    
+                                    {can('canDelete', item.id) && (
+                                        <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                                <Trash2 className="mr-2 h-4 w-4" />
+                                                <span>Delete</span>
                                             </DropdownMenuItem>
-                                        )}
-                                        {!isLink && onUpdate && item.type !== 'INTERACTIVE_QUIZ' && item.type !== 'INTERACTIVE_EXAM' && item.type !== 'INTERACTIVE_FLASHCARD' && can('canUpdateFile', item.id) && (
-                                            <DropdownMenuItem onSelect={handleUpdateClick}>
-                                            <RefreshCw className="mr-2 h-4 w-4" />
-                                            <span>Update</span>
-                                            </DropdownMenuItem>
-                                        )}
-                                        {can('canRename', item.id) && (
-                                            <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onRename(); }}>
-                                                <Edit className="mr-2 h-4 w-4" />
-                                                <span>Rename</span>
-                                            </DropdownMenuItem>
-                                        )}
-                                        {can('canMove', item.id) && (
-                                            <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onMove(); }}>
-                                                <Move className="mr-2 h-4 w-4" />
-                                                <span>Move</span>
-                                            </DropdownMenuItem>
-                                        )}
-                                        {can('canCopy', item.id) && (
-                                            <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onCopy(); }}>
-                                                <Copy className="mr-2 h-4 w-4" />
-                                                <span>Copy</span>
-                                            </DropdownMenuItem>
-                                        )}
-                                        {can('canToggleVisibility', item.id) && (
-                                            <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onToggleVisibility(); }}>
-                                                <VisibilityIcon className="mr-2 h-4 w-4" />
-                                                <span>{item.metadata?.isHidden ? 'Show' : 'Hide'}</span>
-                                            </DropdownMenuItem>
-                                        )}
-                                        
-                                        {can('canDelete', item.id) && (
-                                            <>
-                                                <DropdownMenuSeparator />
-                                                <DropdownMenuItem onSelect={(e) => { e.stopPropagation(); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    <span>Delete</span>
-                                                </DropdownMenuItem>
-                                            </>
-                                        )}
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </motion.div>
-                         </div>
-                     )}
-                 </div>
+                                        </>
+                                    )}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        </motion.div>
+                    )}
+                </div>
             </div>
         </div>
     );

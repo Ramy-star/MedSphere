@@ -99,7 +99,7 @@ export default function HomePage() {
                                 isLastItem && isOdd && "w-1/2 mx-auto sm:w-full",
                                 "hover:bg-white/10"
                             )}>
-                                <h3 className="text-base md:text-xl font-semibold text-white transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-center">{item.name}</h3>
+                                <h3 className="text-base md:text-xl font-semibold text-white transition-transform duration-150 ease-out group-hover:scale-110 origin-center">{item.name}</h3>
                             </div>
                         </Link>
                     )

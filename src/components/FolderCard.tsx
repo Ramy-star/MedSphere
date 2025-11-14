@@ -56,7 +56,7 @@ export const FolderCard = React.memo(function FolderCard({
     const isFavorited = user?.favorites?.includes(item.id) || false;
     
     const renderIcon = () => {
-      const iconClasses = "w-8 h-8 transition-transform duration-200 ease-out group-hover:scale-[1.07]";
+      const iconClasses = "w-8 h-8 transition-transform duration-150 ease-out group-hover:scale-110";
       if (item.metadata?.iconURL) {
         return (
           <div className={cn("relative", iconClasses)}>
@@ -186,7 +186,7 @@ export const FolderCard = React.memo(function FolderCard({
              >
                 <div className="flex items-center gap-3 overflow-hidden flex-1">
                     {item.metadata?.iconURL ? (
-                       <div className="relative w-6 h-6 shrink-0 transition-transform duration-200 ease-out group-hover:scale-[1.07]">
+                       <div className="relative w-6 h-6 shrink-0 transition-transform duration-150 ease-out group-hover:scale-110">
                             <Image 
                               src={item.metadata.iconURL} 
                               alt={item.name} 
@@ -197,9 +197,9 @@ export const FolderCard = React.memo(function FolderCard({
                             />
                        </div>
                     ) : (
-                       <Folder className="w-6 h-6 text-yellow-400 shrink-0 transition-transform duration-200 ease-out group-hover:scale-[1.07]" />
+                       <Folder className="w-6 h-6 text-yellow-400 shrink-0 transition-transform duration-150 ease-out group-hover:scale-110" />
                     )}
-                    <h3 className="text-sm font-medium text-white/90 break-words flex-1 transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-left">{item.name}</h3>
+                    <h3 className="text-sm font-medium text-white/90 break-words flex-1 transition-transform duration-150 ease-out group-hover:scale-110 origin-left">{item.name}</h3>
                 </div>
                 
                  <div className="flex items-center shrink-0 ml-2 sm:ml-4 gap-2 sm:gap-4">
@@ -273,51 +273,43 @@ export const FolderCard = React.memo(function FolderCard({
         <div className="flex justify-between items-start mb-4">
             {renderIcon()}
             <div className="relative flex items-center justify-center w-8 h-8">
-               <AnimatePresence>
-                    {isSelectMode ? (
-                        <motion.div
-                            key="select-button-grid"
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute inset-0 flex items-center justify-center"
-                        >
-                          <Button
+                {isSelectMode ? (
+                     <div className="absolute inset-0 flex items-center justify-center transition-opacity">
+                         <Button
                             variant="ghost"
                             size="icon"
                             className="w-8 h-8 rounded-full"
-                          >
+                         >
                             {isSelected ? <CheckSquare className="text-blue-300" /> : <Square className="text-slate-600" />}
-                          </Button>
-                        </motion.div>
-                    ) : (
-                        <motion.div
-                            key="more-button-grid"
-                            initial={false}
-                            animate={{ opacity: 1 }}
-                            exit={{ opacity: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"
-                        >
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50"
-                                    >
-                                        <MoreVertical className="w-5 h-5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownContent />
-                            </DropdownMenu>
-                        </motion.div>
-                    )}
-                </AnimatePresence>
+                         </Button>
+                     </div>
+                ) : (
+                    <motion.div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100">
+                         <AnimatePresence>
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.15, ease: 'easeOut' }}
+                            >
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50"
+                                        >
+                                            <MoreVertical className="w-5 h-5" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownContent />
+                                </DropdownMenu>
+                            </motion.div>
+                         </AnimatePresence>
+                    </motion.div>
+                )}
             </div>
         </div>
-        <h3 className="text-lg font-semibold text-white transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-left">{item.name}</h3>
+        <h3 className="text-lg font-semibold text-white transition-transform duration-150 ease-out group-hover:scale-110 origin-left">{item.name}</h3>
       </div>
     );
 });
