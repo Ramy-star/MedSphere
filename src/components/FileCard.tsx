@@ -184,19 +184,17 @@ export const FileCard = React.memo(function FileCard({
     const browserUrl = isLink ? linkUrl : storagePath;
 
     const handleClick = useCallback((e: React.MouseEvent) => {
-        if (isMenuOpen || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
-          e.preventDefault();
+        if ((e.target as HTMLElement).closest('button, [role="menuitem"]')) {
+          e.stopPropagation();
           return;
         }
-
-        if (uploadingFile) return;
 
         if (isSelectMode) {
           onToggleSelect?.(item.id, !isSelected);
         } else {
           onFileClick(item);
         }
-    }, [item, onFileClick, uploadingFile, isMenuOpen, isSelectMode, isSelected, onToggleSelect]);
+    }, [item, onFileClick, isSelectMode, isSelected, onToggleSelect]);
 
 
     const handleCreateQuestions = useCallback(() => {
@@ -306,20 +304,21 @@ export const FileCard = React.memo(function FileCard({
                     {displaySize}
                 </p>
                 
-                 <div className="flex items-center justify-center w-8 h-8">
-                    <AnimatePresence mode="wait">
+                 <div className="relative flex items-center justify-center w-8 h-8">
+                    <AnimatePresence initial={false}>
                         {isSelectMode ? (
                             <motion.div
                                 key="select-icon"
-                                initial={false} // No initial animation
+                                initial={{ opacity: 0, scale: 0.5 }}
                                 animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.5 }}
+                                transition={{ duration: 0.2 }}
+                                className="absolute inset-0 flex items-center justify-center"
                             >
                                <Button
                                     variant="ghost"
                                     size="icon"
                                     className="w-8 h-8 rounded-full"
-                                    onClick={(e) => { e.stopPropagation(); onToggleSelect?.(item.id, !isSelected); }}
                                 >
                                     {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
                                 </Button>
@@ -328,9 +327,10 @@ export const FileCard = React.memo(function FileCard({
                              <motion.div
                                 key="menu-icon"
                                 initial={{ opacity: 0, scale: 0.5 }}
-                                animate={{ opacity: 1, scale: 1, transition: { delay: 0.1, duration: 0.2 } }}
+                                animate={{ opacity: 1, scale: 1 }}
                                 exit={{ opacity: 0, scale: 0.5 }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                transition={{ duration: 0.2, delay: 0.1 }}
+                                className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"
                             >
                                 <DropdownMenu onOpenChange={setIsMenuOpen}>
                                     <DropdownMenuTrigger asChild>
