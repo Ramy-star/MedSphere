@@ -23,15 +23,14 @@ export const useFloatingAssistantStore = create<FloatingAssistantState>((set, ge
   isExpanded: false,
   context: null,
   toggle: () => {
-    const wasOpen = get().isOpen;
     set(state => {
-        // If we are opening from a closed state, don't expand.
-        // If we are closing, reset expanded state.
-        const newIsExpanded = !wasOpen ? false : state.isExpanded;
+        const newIsOpen = !state.isOpen;
+        // If we are closing, always reset expanded state.
+        // If we are opening, it should not be expanded initially.
         return {
-            isOpen: !state.isOpen,
-            isExpanded: newIsExpanded,
-            context: wasOpen ? null : state.context,
+            isOpen: newIsOpen,
+            isExpanded: newIsOpen ? state.isExpanded : false,
+            context: newIsOpen ? state.context : null,
         };
     });
   },

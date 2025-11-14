@@ -21,7 +21,6 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
     };
 
     const handleBackdropClick = () => {
-        // This function ensures that clicking the backdrop closes everything.
         close();
     };
 
@@ -51,7 +50,7 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
     return (
         <>
             <AnimatePresence>
-                {(isOpen && isExpanded) && (
+                {isOpen && (
                     <motion.div
                         key="backdrop"
                         initial={{ opacity: 0 }}

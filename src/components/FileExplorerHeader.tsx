@@ -128,19 +128,10 @@ export default function FileExplorerHeader({ onFileSelected, isSelectMode, onTog
         {canAddContent(currentFolder?.id || null) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
               <PopoverTrigger asChild>
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                       <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
-                          <Plus className={cn("h-4 w-4", !isMobile && "mr-2")} />
-                          {!isMobile && <span>Add Content</span>}
-                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                       <p>Add new content</p>
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
+                  <Plus className={cn("h-4 w-4", !isMobile && "mr-2")} />
+                  {!isMobile && <span>Add Content</span>}
+                </Button>
               </PopoverTrigger>
               <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} setPopoverOpen={setPopoverOpen} />
             </Popover>
