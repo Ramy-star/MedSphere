@@ -36,18 +36,19 @@ export const SubjectCard = React.memo(function SubjectCard({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
-    if (isMenuOpen) {
+    // Prevent navigation if the dropdown menu was clicked
+    if ((e.target as HTMLElement).closest('[role="menu"]')) {
       e.preventDefault();
       return;
     }
-  }, [isMenuOpen]);
+  }, []);
   
   return (
     <Link href={subjectPath} className="block h-full" onClick={handleClick}>
-        <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 h-full flex flex-col justify-between hover:scale-[1.02]">
+        <div className="relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 h-full flex flex-col justify-between">
             <div>
                 <div className="flex justify-between items-start mb-4">
-                    <Icon className={`w-8 h-8 ${color}`} />
+                    <Icon className={`w-8 h-8 ${color} transition-transform duration-300 ease-out group-hover:scale-110`} />
                     {(can('canRename', subject.id) || can('canDelete', subject.id) || can('canChangeIcon', subject.id)) && (
                         <DropdownMenu onOpenChange={setIsMenuOpen}>
                             <DropdownMenuTrigger asChild>
@@ -64,13 +65,13 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 align="end"
                             >
                                 {can('canRename', subject.id) && (
-                                <DropdownMenuItem onSelect={onRename}>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onRename(); }}>
                                     <Edit className="mr-2 h-4 w-4" />
                                     <span>Rename</span>
                                 </DropdownMenuItem>
                                 )}
                                 {can('canChangeIcon', subject.id) && (
-                                <DropdownMenuItem onSelect={() => onIconChange(subject)}>
+                                <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onIconChange(subject); }}>
                                     <ImageIcon className="mr-2 h-4 w-4" />
                                     <span>Change Icon</span>
                                 </DropdownMenuItem>
@@ -78,7 +79,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                                 {can('canDelete', subject.id) && (
                                     <>
                                         <DropdownMenuSeparator />
-                                        <DropdownMenuItem onSelect={onDelete} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
+                                        <DropdownMenuItem onSelect={(e) => { e.preventDefault(); onDelete(); }} className="text-red-400 focus:text-red-400 focus:bg-red-500/10">
                                             <Trash2 className="mr-2 h-4 w-4" />
                                             <span>Delete</span>
                                         </DropdownMenuItem>
@@ -88,7 +89,7 @@ export const SubjectCard = React.memo(function SubjectCard({
                         </DropdownMenu>
                     )}
                 </div>
-                <h3 className="text-lg font-semibold text-white">{name}</h3>
+                <h3 className="text-lg font-semibold text-white transition-transform duration-300 ease-out group-hover:scale-[1.02] origin-left">{name}</h3>
             </div>
         </div>
     </Link>

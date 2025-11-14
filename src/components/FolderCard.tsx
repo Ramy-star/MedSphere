@@ -56,9 +56,10 @@ export const FolderCard = React.memo(function FolderCard({
     const isFavorited = user?.favorites?.includes(item.id) || false;
     
     const renderIcon = () => {
+      const iconClasses = "w-8 h-8 transition-transform duration-300 ease-out group-hover:scale-110";
       if (item.metadata?.iconURL) {
         return (
-          <div className="relative w-8 h-8">
+          <div className={cn("relative", iconClasses)}>
             <Image 
               src={item.metadata.iconURL} 
               alt={item.name} 
@@ -70,7 +71,7 @@ export const FolderCard = React.memo(function FolderCard({
           </div>
         )
       }
-      return <Folder className="w-8 h-8 text-yellow-400" />;
+      return <Folder className={cn(iconClasses, "text-yellow-400")} />;
     }
 
     const handleClick = useCallback((e: React.MouseEvent) => {
@@ -185,18 +186,20 @@ export const FolderCard = React.memo(function FolderCard({
              >
                 <div className="flex items-center gap-3 overflow-hidden flex-1">
                     {item.metadata?.iconURL ? (
-                       <Image 
-                          src={item.metadata.iconURL} 
-                          alt={item.name} 
-                          width={24}
-                          height={24}
-                          className="w-6 h-6 object-cover rounded-sm shrink-0 pointer-events-none select-none"
-                          draggable={false}
-                        />
+                       <div className="relative w-6 h-6 shrink-0 transition-transform duration-300 ease-out group-hover:scale-110">
+                            <Image 
+                              src={item.metadata.iconURL} 
+                              alt={item.name} 
+                              fill
+                              className="object-cover rounded-sm pointer-events-none select-none"
+                              sizes="24px"
+                              draggable={false}
+                            />
+                       </div>
                     ) : (
-                       <Folder className="w-6 h-6 text-yellow-400 shrink-0" />
+                       <Folder className="w-6 h-6 text-yellow-400 shrink-0 transition-transform duration-300 ease-out group-hover:scale-110" />
                     )}
-                    <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
+                    <h3 className="text-sm font-medium text-white/90 break-words flex-1 transition-transform duration-300 ease-out group-hover:scale-[1.02] origin-left">{item.name}</h3>
                 </div>
                 
                  <div className="flex items-center shrink-0 ml-2 sm:ml-4 gap-2 sm:gap-4">
@@ -219,22 +222,33 @@ export const FolderCard = React.memo(function FolderCard({
                             </Button>
                        ) : (
                           <motion.div
-                              className="absolute inset-0 flex items-center justify-center transition-opacity duration-200"
                               animate={{ opacity: isSelectMode ? 0 : 1 }}
                               initial={false}
+                              transition={{ duration: 0.2 }}
                           >
-                            <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <Button 
-                                        variant="ghost" 
-                                        size="icon" 
-                                        className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 opacity-0 group-hover:opacity-100 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                    >
-                                        <MoreVertical className="w-5 h-5" />
-                                    </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownContent />
-                            </DropdownMenu>
+                            <motion.div
+                                animate={{
+                                    opacity: isSelectMode ? 0 : 1,
+                                    scale: isSelectMode ? 0.9 : 1,
+                                }}
+                                transition={{
+                                    duration: 0.2,
+                                    delay: isSelectMode ? 0 : 0.1,
+                                }}
+                            >
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button 
+                                            variant="ghost" 
+                                            size="icon" 
+                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 opacity-0 group-hover:opacity-100 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                        >
+                                            <MoreVertical className="w-5 h-5" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownContent />
+                                </DropdownMenu>
+                            </motion.div>
                           </motion.div>
                        )}
                     </div>
@@ -249,12 +263,12 @@ export const FolderCard = React.memo(function FolderCard({
         onClick={handleClick}
         onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
         className={cn(
-            "relative group glass-card p-4 rounded-[1.25rem] group transition-all duration-200 h-full flex flex-col justify-between",
+            "relative group glass-card p-4 rounded-[1.25rem] transition-all duration-200 h-full flex flex-col justify-between",
             item.metadata?.isHidden && "opacity-60 bg-white/5",
             isSelectMode && 'cursor-pointer',
             isSelected && 'bg-blue-900/50 ring-2 ring-blue-500 hover:bg-blue-900/70',
             !isSelected && isSelectMode && 'hover:bg-slate-800/60',
-            !isSelectMode && 'cursor-pointer hover:bg-white/10 hover:scale-[1.02]'
+            !isSelectMode && 'cursor-pointer hover:bg-white/10'
         )}
       >
         <div className="flex justify-between items-start mb-4">
@@ -274,27 +288,38 @@ export const FolderCard = React.memo(function FolderCard({
                   </Button>
               ) : (
                 <motion.div
-                    className="absolute inset-0 flex items-center justify-center transition-opacity duration-200"
                     animate={{ opacity: isSelectMode ? 0 : 1 }}
                     initial={false}
+                    transition={{ duration: 0.2 }}
                 >
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100"
-                            >
-                                <MoreVertical className="w-5 h-5" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownContent />
-                    </DropdownMenu>
+                    <motion.div
+                        animate={{
+                            opacity: isSelectMode ? 0 : 1,
+                            scale: isSelectMode ? 0.9 : 1,
+                        }}
+                        transition={{
+                            duration: 0.2,
+                            delay: isSelectMode ? 0 : 0.1,
+                        }}
+                    >
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button 
+                                    variant="ghost" 
+                                    size="icon" 
+                                    className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100"
+                                >
+                                    <MoreVertical className="w-5 h-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownContent />
+                        </DropdownMenu>
+                    </motion.div>
                 </motion.div>
               )}
             </div>
         </div>
-        <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+        <h3 className="text-lg font-semibold text-white transition-transform duration-300 ease-out group-hover:scale-[1.02] origin-left">{item.name}</h3>
       </div>
     );
 });

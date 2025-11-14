@@ -18,7 +18,7 @@ export default function LevelPage({ params }: { params: { levelName: string } })
   const decodedLevelName = decodeURIComponent(levelName);
   
   const { data: levels, loading: loadingLevels } = useCollection<Content>('content', {
-    where: [where('type', '==', 'LEVEL'), where('name', '==', decodedLevelName)],
+    where: where('name', '==', decodedLevelName),
     limit: 1,
   });
   
@@ -54,10 +54,11 @@ export default function LevelPage({ params }: { params: { levelName: string } })
                         <div 
                           key={semester.id}
                           onMouseEnter={() => prefetcher.prefetchChildren(semester.id)}
+                          className="h-full"
                         >
-                            <Link href={`/folder/${semester.id}`} className="block h-full">
-                                <div className="glass-card p-8 group hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center rounded-[1.25rem]">
-                                    <h3 className="text-xl font-semibold text-white">{semester.name}</h3>
+                            <Link href={`/folder/${semester.id}`} className="block h-full group">
+                                <div className="glass-card p-8 hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center rounded-[1.25rem]">
+                                    <h3 className="text-xl font-semibold text-white transition-transform duration-300 ease-out group-hover:scale-[1.03] origin-center">{semester.name}</h3>
                                 </div>
                             </Link>
                         </div>
