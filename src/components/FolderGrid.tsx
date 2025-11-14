@@ -401,17 +401,17 @@ export function FolderGrid({
   };
   
 
-  const handleItemSelect = (itemId: string, isSelected: boolean) => {
+  const handleToggleSelectItem = useCallback((itemId: string, selected: boolean) => {
     setSelectedItems(prev => {
         const newSet = new Set(prev);
-        if (isSelected) {
+        if (selected) {
             newSet.add(itemId);
         } else {
             newSet.delete(itemId);
         }
         return newSet;
     });
-  };
+  }, []);
 
   if (!hasInitialDataLoaded) {
     return (
@@ -517,21 +517,21 @@ export function FolderGrid({
                   key={item.id}
                   variants={itemVariants}
                   custom={index}
-                   className={cn(!isSubjectView && "border-b border-white/10 last:border-b-0", isSelectMode && 'pl-8')}
+                   className={cn(!isSubjectView && "border-b border-white/10 last:border-b-0", isSelectMode && 'pr-8')}
                 >
                   <SortableItemWrapper id={item.id} isSubjectView={isSubjectView}>
-                    <div className="relative flex items-center gap-2">
+                     <div className="relative flex items-center gap-2">
                         {isSelectMode && (
-                            <div className="absolute left-[-1.25rem] top-1/2 -translate-y-1/2">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="w-8 h-8 rounded-full"
-                                    onClick={() => handleItemSelect(item.id, !selectedItems.has(item.id))}
-                                >
-                                    {selectedItems.has(item.id) ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
-                                </Button>
-                            </div>
+                          <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
+                              <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="w-8 h-8 rounded-full"
+                                  onClick={() => handleToggleSelectItem(item.id, !selectedItems.has(item.id))}
+                              >
+                                  {selectedItems.has(item.id) ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
+                              </Button>
+                          </div>
                         )}
                         {(() => {
                           switch (item.type) {
@@ -558,6 +558,9 @@ export function FolderGrid({
                                         onToggleVisibility={() => handleToggleVisibility(item)}
                                         onClick={handleFolderClick}
                                         displayAs={item.metadata?.isClassContainer || isSubjectView ? 'grid' : 'list'}
+                                        isSelectMode={isSelectMode}
+                                        isSelected={selectedItems.has(item.id)}
+                                        onToggleSelect={handleToggleSelectItem}
                                     />
                                 );
                             default:
@@ -574,6 +577,9 @@ export function FolderGrid({
                                         onToggleVisibility={() => handleToggleVisibility(item)}
                                         onRetryUpload={onRetry}
                                         onRemoveUpload={onRemove}
+                                        isSelectMode={isSelectMode}
+                                        isSelected={selectedItems.has(item.id)}
+                                        onToggleSelect={handleToggleSelectItem}
                                     />
                                 );
                           }

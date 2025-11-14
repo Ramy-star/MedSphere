@@ -123,7 +123,9 @@ export const FileCard = React.memo(function FileCard({
     onMove,
     onCopy,
     onToggleVisibility,
-    showDragHandle = true,
+    isSelectMode,
+    isSelected,
+    onToggleSelect,
     uploadingFile,
     onRemoveUpload,
     onRetryUpload,
@@ -137,7 +139,9 @@ export const FileCard = React.memo(function FileCard({
     onMove: () => void;
     onCopy: () => void;
     onToggleVisibility: () => void;
-    showDragHandle?: boolean,
+    isSelectMode: boolean;
+    isSelected: boolean;
+    onToggleSelect: (itemId: string, selected: boolean) => void;
     uploadingFile?: UploadingFile,
     onRemoveUpload?: (id: string) => void,
     onRetryUpload?: (id: string) => void,
@@ -179,17 +183,19 @@ export const FileCard = React.memo(function FileCard({
     const browserUrl = isLink ? linkUrl : storagePath;
 
     const handleClick = useCallback((e: React.MouseEvent) => {
-        if (isMenuOpen) {
+        if (isMenuOpen || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
           e.preventDefault();
           return;
         }
-        // Also check if the click originated from within the dropdown trigger
-        if ((e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
-            return;
-        }
+
         if (uploadingFile) return;
-        onFileClick(item);
-    }, [item, onFileClick, uploadingFile, isMenuOpen]);
+
+        if (isSelectMode) {
+          onToggleSelect(item.id, !isSelected);
+        } else {
+          onFileClick(item);
+        }
+    }, [item, onFileClick, uploadingFile, isMenuOpen, isSelectMode, isSelected, onToggleSelect]);
 
 
     const handleCreateQuestions = useCallback(() => {
@@ -260,7 +266,12 @@ export const FileCard = React.memo(function FileCard({
 
     return (
         <div 
-            className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+            className={cn(
+                "relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl my-1.5",
+                item.metadata?.isHidden && "opacity-60 bg-white/5",
+                isSelectMode && 'cursor-pointer',
+                isSelected && 'bg-blue-500/20'
+            )}
             onClick={handleClick}
         >
              <input
@@ -269,10 +280,6 @@ export const FileCard = React.memo(function FileCard({
                 className="hidden"
                 onChange={handleFileUpdate}
             />
-            {/* The drag handle is now just an empty div for hit area without a visible icon */}
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full w-5 flex items-center">
-                {showDragHandle && !isMobile && can('canReorder', item.id) && <div className="h-5 w-5 cursor-grab touch-none" />}
-            </div>
 
             <div className="flex items-center gap-3 overflow-hidden flex-1 transition-transform duration-200 group-hover:scale-[1.01]">
                 <Icon className={`w-6 h-6 ${color} shrink-0`} />

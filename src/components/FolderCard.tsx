@@ -30,7 +30,10 @@ export const FolderCard = React.memo(function FolderCard({
     onCopy,
     onToggleVisibility,
     onClick,
-    displayAs = 'grid' 
+    displayAs = 'grid',
+    isSelectMode,
+    isSelected,
+    onToggleSelect,
 }: { 
     item: Content, 
     onRename: () => void, 
@@ -40,7 +43,10 @@ export const FolderCard = React.memo(function FolderCard({
     onCopy: () => void;
     onToggleVisibility: () => void;
     onClick: (item: Content) => void,
-    displayAs?: 'grid' | 'list' 
+    displayAs?: 'grid' | 'list',
+    isSelectMode: boolean;
+    isSelected: boolean;
+    onToggleSelect: (itemId: string, selected: boolean) => void;
 }) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
@@ -69,12 +75,17 @@ export const FolderCard = React.memo(function FolderCard({
     }
 
     const handleClick = useCallback((e: React.MouseEvent) => {
-        if (isMenuOpen) {
+        if (isMenuOpen || (e.target as HTMLElement).closest('[data-radix-dropdown-menu-trigger]')) {
           e.preventDefault();
           return;
         }
-        onClick(item);
-    }, [onClick, item, isMenuOpen]);
+
+        if (isSelectMode) {
+            onToggleSelect(item.id, !isSelected);
+        } else {
+            onClick(item);
+        }
+    }, [onClick, item, isMenuOpen, isSelectMode, isSelected, onToggleSelect]);
 
     const handleToggleFavorite = async () => {
         if (!user) return;
@@ -163,7 +174,12 @@ export const FolderCard = React.memo(function FolderCard({
         return (
              <div 
                 onClick={handleClick}
-                className={cn("relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl cursor-pointer my-1.5", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+                className={cn(
+                    "relative group flex items-center w-full p-2 md:p-2 md:hover:bg-white/10 transition-colors duration-200 md:rounded-2xl my-1.5",
+                    item.metadata?.isHidden && "opacity-60 bg-white/5",
+                    isSelectMode && 'cursor-pointer',
+                    isSelected && 'bg-blue-500/20'
+                )}
                 onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
              >
                 <div className="flex items-center gap-3 overflow-hidden flex-1 transition-transform duration-200 group-hover:scale-[1.01]">
@@ -211,7 +227,12 @@ export const FolderCard = React.memo(function FolderCard({
       <div 
         onClick={handleClick}
         onMouseEnter={() => prefetcher.prefetchChildren(item.id)}
-        className={cn("relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200 cursor-pointer", item.metadata?.isHidden && "opacity-60 bg-white/5")}
+        className={cn(
+            "relative group glass-card p-4 rounded-[1.25rem] group hover:bg-white/10 transition-all duration-200",
+            item.metadata?.isHidden && "opacity-60 bg-white/5",
+            isSelectMode && 'cursor-pointer',
+            isSelected && 'bg-blue-500/20'
+        )}
       >
         <div className="transition-transform duration-200 group-hover:scale-[1.01]">
           <div className="flex justify-between items-start mb-4">
