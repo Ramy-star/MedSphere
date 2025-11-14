@@ -1,37 +1,19 @@
 'use client';
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from '@/components/ui/dialog';
-import { Button } from './ui/button';
-import FilePreview, { FilePreviewRef } from './FilePreview';
+import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
 import type { Content } from '@/lib/contentService';
 import { contentService } from '@/lib/contentService';
-import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
 import { X, Download, RefreshCw, Check, ExternalLink, File as FileIcon, FileText, FileImage, FileVideo, Music, FileSpreadsheet, Presentation, Sparkles, Minus, Plus, ChevronLeft, ChevronRight, FileCode, Square, Loader2, ArrowUp, Wand2, MessageSquareQuote, Lightbulb, HelpCircle, Maximize, Shrink, FileCheck, Edit, SquareArrowOutUpRight } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { motion, AnimatePresence } from 'framer-motion';
-
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription as AlertDialogDesc, // Renamed to avoid conflict
-  AlertDialogFooter,
-  AlertDialogHeader as AlertDialogHeader2,
-  AlertDialogTitle as AlertDialogTitle2,
-} from "@/components/ui/alert-dialog"
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { Link2Icon } from './icons/Link2Icon';
 import type { PDFDocumentProxy } from 'pdfjs-dist';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Input } from './ui/input';
+import { Button } from './ui/button';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
 import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
@@ -74,6 +56,9 @@ const ChatPanelSkeleton = () => (
         </div>
     </div>
 );
+
+
+const FilePreview = lazy(() => import('./FilePreview'));
 
 
 type PdfControlsProps = {
@@ -253,7 +238,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
   const [scaleInput, setScaleInput] = useState('100%');
   const [isExamInProgress, setIsExamInProgress] = useState(false);
   const isMobile = useIsMobile();
-  const pdfViewerRef = useRef<FilePreviewRef>(null);
+  const pdfViewerRef = useRef<any>(null);
   const pageInputRef = useRef<HTMLInputElement>(null);
   const previewContainerRef = useRef<HTMLDivElement>(null);
   const fileContentRef = useRef<HTMLDivElement | null>(null);
@@ -309,7 +294,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
         
         if (currentItem.type === 'NOTE') {
             try {
-                const noteData: Note = JSON.parse(currentItem.metadata?.quizData || '{}');
+                const noteData: Note = JSON.parse(currentItem.metadata!.quizData!);
                 const activePage = noteData.pages[0]; // Assuming only one page is passed for context
                 lectureText = `# ${noteData.title}\n\n**Page: ${activePage.title}**\n\n${activePage.content}`;
                 
@@ -332,7 +317,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             let filesToProcess: Content[] = [...referencedFiles];
 
             if (isQuizFile) {
-                questionText = JSON.stringify(JSON.parse(currentItem.metadata?.quizData || '{}'), null, 2);
+                questionText = JSON.stringify(JSON.parse(currentItem.metadata!.quizData || '{}'), null, 2);
             } else if (isQuestionFile) {
                 const questionBlob = await contentService.getFileContent(currentItem.metadata!.storagePath!);
                 questionText = await questionBlob.text();
@@ -351,7 +336,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                     filesToProcess.map(async file => {
                         if (file.metadata?.storagePath) {
                             try {
-                                const fileBlob = await contentService.getFileContent(file.metadata.storagePath);
+                                const fileBlob = await contentService.getFileContent(file.metadata.storagePath, file.id);
                                 if (file.metadata.mime === 'application/pdf') {
                                     const pdf = await pdfjs.getDocument(await fileBlob.arrayBuffer()).promise;
                                     return await contentService.extractTextFromPdf(pdf);
@@ -774,6 +759,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
 
         <main ref={fileContentRef} className={cn("flex-1 overflow-auto", isQuiz ? "w-full max-w-6xl mx-auto" : "overflow-x-auto", isFullscreen && "w-full h-full")}>
              <div className={cn("no-scrollbar overflow-auto h-full", isQuiz ? 'w-full h-full' : '[grid-area:1/1]')}>
+             <Suspense fallback={<Skeleton className="h-full w-full rounded-lg" />}>
               <FilePreview 
                   key={item.id}
                   itemId={item.id}
@@ -792,6 +778,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                   quizData={item.metadata?.quizData}
                   onExamStateChange={setIsExamInProgress}
               />
+              </Suspense>
             </div>
             {selection && isQuoteAvailable && (
                 <div
@@ -816,53 +803,69 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
     </div>
   )};
 
+  if (!item) {
+    return null; // Return null if there's no item, which effectively hides the dialog
+  }
+
   return (
-    <Dialog open={!!item} onOpenChange={(open) => !open && handleClose()}>
-      <DialogContent 
-        className={cn(
-            "max-w-none w-screen p-0 flex flex-row bg-slate-900/80 backdrop-blur-sm border-0 gap-0",
-            "h-full md:h-[var(--1dvh,100vh)] z-[60]" // z-index is higher than main layout's floating assistant
-        )}
-        hideCloseButton={true}
-      >
-        <DialogHeader className="sr-only">
-          <DialogTitle>File Preview: {displayName}</DialogTitle>
-          <DialogDescription>
-            Previewing file {displayName}. You can download, share, or chat with the document if supported.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <div className={cn(
-          "flex-1 flex flex-col transition-all duration-300 ease-in-out", 
-          showChat && !isMobile ? "w-[calc(100%-512px)]" : "w-full"
-        )}>
-            {renderFilePreview()}
-        </div>
-        
-        
-        <div className={cn(
-            "h-full transition-all duration-300 ease-in-out overflow-hidden",
-            isMobile ? 'fixed top-0 left-0 w-full z-20' : 'relative',
-            isMobile && (showChat ? 'translate-x-0' : 'translate-x-full'),
-            !isMobile && (showChat ? 'w-[512px]' : 'w-0')
-        )}>
-             {(isChatAvailable || showChat) && (
-                <ChatPanel
-                    showChat={showChat}
-                    isMobile={isMobile}
-                    documentText={documentContext.lectureText}
-                    isExtracting={isExtracting}
-                    onClose={() => setShowChat(false)}
-                    initialQuotedText={initialQuotedText}
-                    onInitialQuotedTextConsumed={() => setInitialQuotedText(null)}
-                    questionsText={documentContext.questionText}
+    <div className="fixed inset-0 z-50">
+        <AnimatePresence>
+            {item && (
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/60 backdrop-blur-sm"
+                    onClick={handleClose}
                 />
             )}
+        </AnimatePresence>
+        <div className="fixed inset-0 flex items-center justify-center p-0" onClick={handleClose}>
+             <AnimatePresence>
+                {item && (
+                     <motion.div
+                        key={item.id}
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.95 }}
+                        transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
+                        className={cn(
+                            "w-full max-w-none p-0 flex flex-row bg-slate-900/80 border-0 gap-0",
+                            "h-full md:h-[calc(var(--1dvh,100vh)-4rem)] md:w-[calc(100vw-4rem)] md:rounded-2xl"
+                        )}
+                        onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                     >
+                        <div className={cn(
+                          "flex-1 flex flex-col transition-all duration-300 ease-in-out", 
+                          showChat && !isMobile ? "w-[calc(100%-512px)]" : "w-full"
+                        )}>
+                            {renderFilePreview()}
+                        </div>
+                        
+                        
+                        <div className={cn(
+                            "h-full transition-all duration-300 ease-in-out overflow-hidden",
+                            isMobile ? 'fixed top-0 left-0 w-full z-20' : 'relative',
+                            isMobile && (showChat ? 'translate-x-0' : 'translate-x-full'),
+                            !isMobile && (showChat ? 'w-[512px]' : 'w-0')
+                        )}>
+                            {(isChatAvailable || showChat) && (
+                                <ChatPanel
+                                    showChat={showChat}
+                                    isMobile={isMobile}
+                                    documentText={documentContext.lectureText}
+                                    isExtracting={isExtracting}
+                                    onClose={() => setShowChat(false)}
+                                    initialQuotedText={initialQuotedText}
+                                    onInitialQuotedTextConsumed={() => setInitialQuotedText(null)}
+                                    questionsText={documentContext.questionText}
+                                />
+                            )}
+                        </div>
+                     </motion.div>
+                )}
+            </AnimatePresence>
         </div>
-
-      </DialogContent>
-    </Dialog>
+    </div>
   );
 }
-
-    
