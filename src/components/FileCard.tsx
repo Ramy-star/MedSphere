@@ -281,9 +281,9 @@ export const FileCard = React.memo(function FileCard({
             />
 
             <div className="flex items-center gap-3 overflow-hidden flex-1">
-                <Icon className={cn("w-6 h-6 shrink-0 transition-transform duration-300 ease-out group-hover:scale-110", color)} />
+                <Icon className={cn("w-6 h-6 shrink-0 transition-transform duration-200 ease-out group-hover:scale-[1.07]", color)} />
                 <div className="flex-1 overflow-hidden">
-                    <h3 className={cn("text-sm font-medium text-white/90 break-words transition-transform duration-300 ease-out group-hover:scale-[1.02] origin-left", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
+                    <h3 className={cn("text-sm font-medium text-white/90 break-words transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-left", isMobile && "whitespace-nowrap overflow-hidden text-ellipsis")}>
                         {displayName}
                     </h3>
                     {isMobile && (
@@ -304,28 +304,28 @@ export const FileCard = React.memo(function FileCard({
                 
                 <div className="relative flex items-center justify-center w-8 h-8">
                      {isSelectMode ? (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-8 h-8 rounded-full"
-                        >
-                            {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
-                        </Button>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-8 h-8 rounded-full"
+                            >
+                                {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
+                            </Button>
+                        </div>
                      ) : (
-                        <motion.div
-                            animate={{ opacity: isSelectMode ? 0 : 1, transition: { duration: 0.1 } }}
-                            initial={false}
-                        >
+                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
                              <motion.div
-                                animate={{ opacity: isSelectMode ? 0 : 1, scale: isSelectMode ? 0.9 : 1 }}
-                                transition={{ duration: 0.2, ease: 'easeOut', delay: isSelectMode ? 0 : 0.1 }}
+                                initial={false}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ duration: 0.2, ease: 'easeOut' }}
                             >
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
                                         <Button 
                                             variant="ghost" 
                                             size="icon" 
-                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 opacity-0 group-hover:opacity-100 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
                                         >
                                             <MoreVertical className="w-5 h-5" />
                                         </Button>
@@ -413,7 +413,7 @@ export const FileCard = React.memo(function FileCard({
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </motion.div>
-                         </motion.div>
+                         </div>
                      )}
                  </div>
             </div>

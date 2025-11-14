@@ -56,7 +56,7 @@ export const FolderCard = React.memo(function FolderCard({
     const isFavorited = user?.favorites?.includes(item.id) || false;
     
     const renderIcon = () => {
-      const iconClasses = "w-8 h-8 transition-transform duration-300 ease-out group-hover:scale-110";
+      const iconClasses = "w-8 h-8 transition-transform duration-200 ease-out group-hover:scale-[1.07]";
       if (item.metadata?.iconURL) {
         return (
           <div className={cn("relative", iconClasses)}>
@@ -186,7 +186,7 @@ export const FolderCard = React.memo(function FolderCard({
              >
                 <div className="flex items-center gap-3 overflow-hidden flex-1">
                     {item.metadata?.iconURL ? (
-                       <div className="relative w-6 h-6 shrink-0 transition-transform duration-300 ease-out group-hover:scale-110">
+                       <div className="relative w-6 h-6 shrink-0 transition-transform duration-200 ease-out group-hover:scale-[1.07]">
                             <Image 
                               src={item.metadata.iconURL} 
                               alt={item.name} 
@@ -197,9 +197,9 @@ export const FolderCard = React.memo(function FolderCard({
                             />
                        </div>
                     ) : (
-                       <Folder className="w-6 h-6 text-yellow-400 shrink-0 transition-transform duration-300 ease-out group-hover:scale-110" />
+                       <Folder className="w-6 h-6 text-yellow-400 shrink-0 transition-transform duration-200 ease-out group-hover:scale-[1.07]" />
                     )}
-                    <h3 className="text-sm font-medium text-white/90 break-words flex-1 transition-transform duration-300 ease-out group-hover:scale-[1.02] origin-left">{item.name}</h3>
+                    <h3 className="text-sm font-medium text-white/90 break-words flex-1 transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-left">{item.name}</h3>
                 </div>
                 
                  <div className="flex items-center shrink-0 ml-2 sm:ml-4 gap-2 sm:gap-4">
@@ -208,49 +208,48 @@ export const FolderCard = React.memo(function FolderCard({
                     </p>
                     
                     <div className="relative flex items-center justify-center w-8 h-8">
-                       {isSelectMode ? (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                className="w-8 h-8 rounded-full"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onToggleSelect?.(item.id, !isSelected)
-                                }}
-                            >
-                                {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
-                            </Button>
-                       ) : (
-                          <motion.div
-                              animate={{ opacity: isSelectMode ? 0 : 1 }}
-                              initial={false}
-                              transition={{ duration: 0.2 }}
-                          >
-                            <motion.div
-                                animate={{
-                                    opacity: isSelectMode ? 0 : 1,
-                                    scale: isSelectMode ? 0.9 : 1,
-                                }}
-                                transition={{
-                                    duration: 0.2,
-                                    delay: isSelectMode ? 0 : 0.1,
-                                }}
-                            >
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 opacity-0 group-hover:opacity-100 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                        >
-                                            <MoreVertical className="w-5 h-5" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownContent />
-                                </DropdownMenu>
-                            </motion.div>
-                          </motion.div>
-                       )}
+                       <AnimatePresence>
+                           {isSelectMode ? (
+                                <motion.div
+                                    key="select-button"
+                                    initial={{ opacity: 0, scale: 0.8 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.8 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute inset-0 flex items-center justify-center"
+                                >
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="w-8 h-8 rounded-full"
+                                    >
+                                        {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
+                                    </Button>
+                                </motion.div>
+                            ) : (
+                                <motion.div
+                                    key="more-button"
+                                    initial={false}
+                                    animate={{ opacity: 1 }}
+                                    exit={{ opacity: 0 }}
+                                    transition={{ duration: 0.2 }}
+                                    className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"
+                                >
+                                    <DropdownMenu>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                            >
+                                                <MoreVertical className="w-5 h-5" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownContent />
+                                    </DropdownMenu>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
                     </div>
                  </div>
             </div>
@@ -274,52 +273,51 @@ export const FolderCard = React.memo(function FolderCard({
         <div className="flex justify-between items-start mb-4">
             {renderIcon()}
             <div className="relative flex items-center justify-center w-8 h-8">
-              {isSelectMode ? (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="w-8 h-8 rounded-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onToggleSelect?.(item.id, !isSelected)
-                    }}
-                  >
-                    {isSelected ? <CheckSquare className="text-blue-300" /> : <Square className="text-slate-600" />}
-                  </Button>
-              ) : (
-                <motion.div
-                    animate={{ opacity: isSelectMode ? 0 : 1 }}
-                    initial={false}
-                    transition={{ duration: 0.2 }}
-                >
-                    <motion.div
-                        animate={{
-                            opacity: isSelectMode ? 0 : 1,
-                            scale: isSelectMode ? 0.9 : 1,
-                        }}
-                        transition={{
-                            duration: 0.2,
-                            delay: isSelectMode ? 0 : 0.1,
-                        }}
-                    >
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button 
-                                    variant="ghost" 
-                                    size="icon" 
-                                    className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100"
-                                >
-                                    <MoreVertical className="w-5 h-5" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownContent />
-                        </DropdownMenu>
-                    </motion.div>
-                </motion.div>
-              )}
+               <AnimatePresence>
+                    {isSelectMode ? (
+                        <motion.div
+                            key="select-button-grid"
+                            initial={{ opacity: 0, scale: 0.8 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.8 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 flex items-center justify-center"
+                        >
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="w-8 h-8 rounded-full"
+                          >
+                            {isSelected ? <CheckSquare className="text-blue-300" /> : <Square className="text-slate-600" />}
+                          </Button>
+                        </motion.div>
+                    ) : (
+                        <motion.div
+                            key="more-button-grid"
+                            initial={false}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100"
+                        >
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50"
+                                    >
+                                        <MoreVertical className="w-5 h-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownContent />
+                            </DropdownMenu>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
             </div>
         </div>
-        <h3 className="text-lg font-semibold text-white transition-transform duration-300 ease-out group-hover:scale-[1.02] origin-left">{item.name}</h3>
+        <h3 className="text-lg font-semibold text-white transition-transform duration-200 ease-out group-hover:scale-[1.07] origin-left">{item.name}</h3>
       </div>
     );
 });
