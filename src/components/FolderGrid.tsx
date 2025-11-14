@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, lazy, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, lazy, useRef, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
