@@ -139,7 +139,8 @@
                     "canAccessTelegramInbox",
                     "canCreateQuiz",
                     "canCreateExam",
-                    "canAccessCommunityPage"
+                    "canAccessCommunityPage",
+                    "canSelectItem"
                   ]
                 }
               }
@@ -171,8 +172,7 @@
             "userId": { "type": "string" },
             "userName": { "type": "string" }
           }
-        },
-        "joinRequests": { "type": "array", "items": { "type": "string" } }
+        }
       },
       "required": ["id", "name", "type", "members", "admins", "createdAt"]
     },

@@ -449,10 +449,12 @@ export function FolderGrid({
                       </Button>
                     }
                   />
-                  <Button variant="outline" onClick={() => setIsSelectMode(true)}>
-                      <CheckSquare className="mr-2 h-4 w-4" />
-                      Select Items
-                  </Button>
+                  {can('canSelectItem', null) && (
+                    <Button variant="outline" onClick={() => setIsSelectMode(true)}>
+                        <CheckSquare className="mr-2 h-4 w-4" />
+                        Select Items
+                    </Button>
+                  )}
                 </div>
              )}
          </div>
@@ -471,21 +473,23 @@ export function FolderGrid({
     >
       <DropZone isVisible={isDraggingOver} />
 
-      <div className="flex justify-end mb-4 pr-1">
-         <Button variant="outline" onClick={() => setIsSelectMode(!isSelectMode)} size="sm" className="rounded-full">
-            {isSelectMode ? (
-                <>
-                    <XIcon className="mr-2 h-4 w-4"/>
-                    Cancel Selection
-                </>
-            ) : (
-                <>
-                    <CheckSquare className="mr-2 h-4 w-4" />
-                    Select Items
-                </>
-            )}
-        </Button>
-      </div>
+      {can('canSelectItem', null) && (
+        <div className="flex justify-end mb-4 pr-1">
+          <Button variant="outline" onClick={() => setIsSelectMode(!isSelectMode)} size="sm" className="rounded-full">
+              {isSelectMode ? (
+                  <>
+                      <XIcon className="mr-2 h-4 w-4"/>
+                      Cancel Selection
+                  </>
+              ) : (
+                  <>
+                      <CheckSquare className="mr-2 h-4 w-4" />
+                      Select Items
+                  </>
+              )}
+          </Button>
+        </div>
+      )}
        
        {newUploads.length > 0 && (
          <div className="flex flex-col">

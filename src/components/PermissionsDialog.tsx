@@ -56,6 +56,7 @@ const permissionGroups = {
         { id: 'canAdministerExams', label: 'Administer Exams' },
         { id: 'canAdministerFlashcards', label: 'Administer Flashcards' },
         { id: 'canAccessTelegramInbox', label: 'Telegram Inbox' },
+        { id: 'canSelectItem', label: 'Select Multiple Items'}
     ]
 };
 

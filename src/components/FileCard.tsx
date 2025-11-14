@@ -269,8 +269,9 @@ export const FileCard = React.memo(function FileCard({
                 className="hidden"
                 onChange={handleFileUpdate}
             />
-            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full flex items-center">
-                {showDragHandle && !isMobile && can('canReorder', item.id) && <GripVertical className="h-5 w-5 text-slate-500 cursor-grab touch-none" />}
+            {/* The drag handle is now just an empty div for hit area without a visible icon */}
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity absolute -left-5 h-full w-5 flex items-center">
+                {showDragHandle && !isMobile && can('canReorder', item.id) && <div className="h-5 w-5 cursor-grab touch-none" />}
             </div>
 
             <div className="flex items-center gap-3 overflow-hidden flex-1 transition-transform duration-200 group-hover:scale-[1.01]">
