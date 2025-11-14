@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { useEffect } from 'react';
 
 // The Tldraw component must have a child component that uses the useEditor hook.
-function SaveButton({ onSave }: { onSave: (dataUrl: string) => void }) {
+function SaveButton({ onSave, onClose }: { onSave: (dataUrl: string) => void, onClose: () => void }) {
     const editor = useEditor();
 
     const handleSave = async () => {
@@ -23,12 +23,17 @@ function SaveButton({ onSave }: { onSave: (dataUrl: string) => void }) {
             // This is safer than `currentPageShapeIds` which can be undefined.
             const shapeIds = editor.shapesArray ? editor.shapesArray.map((shape) => shape.id) : [];
 
-            // If there are no shapes, we can either save an empty image or do nothing.
-            // For now, let's proceed, getSvg can handle an empty array.
+            // If there are no shapes, we can't generate an SVG, so just close.
+            if (shapeIds.length === 0) {
+                onClose();
+                return;
+            }
+
             const svg = await editor.getSvg(shapeIds, {
                 scale: 2,
                 background: false, // Transparent background
             });
+
             if (!svg) {
                 console.error("Failed to get SVG from tldraw");
                 return;
@@ -81,7 +86,7 @@ export function DrawingPadDialog({ onSave, onClose }: { onSave: (dataUrl: string
                 </DialogHeader>
                 <div className="flex-1 relative">
                     <Tldraw>
-                        <SaveButton onSave={onSave} />
+                        <SaveButton onSave={onSave} onClose={onClose} />
                     </Tldraw>
                 </div>
             </DialogContent>
