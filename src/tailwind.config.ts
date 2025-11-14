@@ -22,7 +22,7 @@ const config = {
         sans: ['var(--font-nunito-sans)', ...fontFamily.sans],
         ubuntu: ['var(--font-ubuntu)', ...fontFamily.sans],
         inter: ['var(--font-inter)', ...fontFamily.sans],
-        'plex-arabic': ['"IBM Plex Sans Arabic"', ...fontFamily.sans],
+        'plex-arabic': ['"IBM Plex Sans Arabic"', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -102,10 +102,13 @@ const config = {
           to: { opacity: '0', transform: 'translateY(-2px)' },
         },
         'spin-slow': 'spin 1.6s linear infinite',
-        'dot-bounce': 'dot-bounce 1.4s infinite ease-in-out both',
+        'dot-bounce': {
+          '0%, 80%, 100%': { transform: 'scale(0)' },
+          '40%': { transform: 'scale(1.0)' },
+        },
         'dot-bounce-more': {
-            '0%, 80%, 100%': { transform: 'scale(0)' },
-            '40%': { transform: 'scale(1.0)' },
+            '0%, 100%': { opacity: '0', transform: 'scale(0.5)' },
+            '50%': { opacity: '1', transform: 'scale(1.2)' },
         },
       },
       animation: {
@@ -115,7 +118,7 @@ const config = {
         'slide-up-and-fade': 'slide-up-and-fade 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
         'spin-slow': 'spin 1.6s linear infinite',
         'dot-bounce': 'dot-bounce 1.4s infinite ease-in-out both',
-        'dot-bounce-more': 'dot-bounce-more 1.4s infinite ease-in-out both',
+        'dot-bounce-more': 'dot-bounce-more 1.2s infinite ease-in-out',
       },
     },
   },
