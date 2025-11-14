@@ -9,6 +9,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { useEffect } from 'react';
 
 // The Tldraw component must have a child component that uses the useEditor hook.
 function SaveButton({ onSave }: { onSave: (dataUrl: string) => void }) {
@@ -18,7 +19,13 @@ function SaveButton({ onSave }: { onSave: (dataUrl: string) => void }) {
         if (!editor) return;
 
         try {
-            const svg = await editor.getSvg(Array.from(editor.currentPageShapeIds), {
+            // Get the IDs of all shapes on the current page.
+            // This is safer than `currentPageShapeIds` which can be undefined.
+            const shapeIds = editor.shapesArray.map((shape) => shape.id);
+
+            // If there are no shapes, we can either save an empty image or do nothing.
+            // For now, let's proceed, getSvg can handle an empty array.
+            const svg = await editor.getSvg(shapeIds, {
                 scale: 2,
                 background: false, // Transparent background
             });
@@ -34,8 +41,8 @@ function SaveButton({ onSave }: { onSave: (dataUrl: string) => void }) {
             
             image.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = svg.width.baseVal.value * 2;
-                canvas.height = svg.height.baseVal.value * 2;
+                canvas.width = svg.width.baseVal.value;
+                canvas.height = svg.height.baseVal.value;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
