@@ -1,5 +1,5 @@
 'use client'
-import { Tldraw, useEditor } from '@tldraw/tldraw'
+import { Tldraw, useEditor, Editor } from '@tldraw/tldraw'
 import '@tldraw/tldraw/tldraw.css'
 import {
     Dialog,
@@ -10,25 +10,10 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
-export function DrawingPadDialog({ onSave, onClose }: { onSave: (dataUrl: string) => void; onClose: () => void }) {
-    
-    return (
-        <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
-            <DialogContent className="max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 glass-card">
-                <DialogHeader className="p-4 border-b border-slate-700">
-                    <DialogTitle>Drawing Pad</DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 relative">
-                   <TldrawEditor onSave={onSave} />
-                </div>
-            </DialogContent>
-        </Dialog>
-    )
-}
+// The Tldraw component must have a child component that uses the useEditor hook.
+function SaveButton({ onSave }: { onSave: (dataUrl: string) => void }) {
+    const editor = useEditor();
 
-function TldrawEditor({ onSave }: { onSave: (dataUrl: string) => void }) {
-    const editor = useEditor()
-    
     const handleSave = async () => {
         if (!editor) return;
 
@@ -73,11 +58,26 @@ function TldrawEditor({ onSave }: { onSave: (dataUrl: string) => void }) {
     }
 
     return (
-        <div className='w-full h-full'>
-            <Tldraw />
-            <div className="absolute bottom-4 right-4 z-[9999]">
-                 <Button onClick={handleSave}>Insert Drawing</Button>
-            </div>
+        <div className="absolute bottom-4 right-4 z-[9999]">
+            <Button onClick={handleSave}>Insert Drawing</Button>
         </div>
+    )
+}
+
+export function DrawingPadDialog({ onSave, onClose }: { onSave: (dataUrl: string) => void; onClose: () => void }) {
+    
+    return (
+        <Dialog open={true} onOpenChange={(isOpen) => !isOpen && onClose()}>
+            <DialogContent className="max-w-4xl w-[90vw] h-[85vh] flex flex-col p-0 glass-card">
+                <DialogHeader className="p-4 border-b border-slate-700">
+                    <DialogTitle>Drawing Pad</DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 relative">
+                    <Tldraw>
+                        <SaveButton onSave={onSave} />
+                    </Tldraw>
+                </div>
+            </DialogContent>
+        </Dialog>
     )
 }
