@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
-import { Folder as FolderIcon, Plus, UploadCloud } from 'lucide-react';
+import { Folder as FolderIcon, Plus, UploadCloud, CheckSquare, Square, X as XIcon, Trash2, Move, Copy, Eye, EyeOff, Star, StarOff } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
@@ -109,6 +109,53 @@ const SortableItemWrapper = ({ id, children, isSubjectView }: { id: string, chil
   );
 };
 
+const BulkActionBar = ({ selectedItems, onClear, onBulkDelete, onBulkMove, onBulkCopy, onBulkToggleVisibility, onBulkToggleFavorite }: {
+    selectedItems: Content[],
+    onClear: () => void;
+    onBulkDelete: () => void;
+    onBulkMove: () => void;
+    onBulkCopy: () => void;
+    onBulkToggleVisibility: () => void;
+    onBulkToggleFavorite: () => void;
+}) => {
+    const { can } = useAuthStore();
+
+    const canDelete = selectedItems.every(item => can('canDelete', item.id));
+    const canMove = selectedItems.every(item => can('canMove', item.id));
+    const canCopy = selectedItems.every(item => can('canCopy', item.id));
+    const canToggleVisibility = selectedItems.every(item => can('canToggleVisibility', item.id));
+
+    return (
+        <AnimatePresence>
+            {selectedItems.length > 0 && (
+                <motion.div
+                    initial={{ y: '110%' }}
+                    animate={{ y: '0%' }}
+                    exit={{ y: '110%' }}
+                    transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                    className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-3rem)] md:w-auto z-20"
+                >
+                    <div className="glass-card p-2 flex items-center justify-between gap-2 rounded-2xl shadow-lg border-2 border-blue-500/50">
+                        <div className="flex items-center gap-2">
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-slate-300" onClick={onClear}>
+                                <XIcon size={20} />
+                            </Button>
+                            <p className="text-sm font-semibold text-white">{selectedItems.length} selected</p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                            {canDelete && <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full text-red-400" onClick={onBulkDelete}><Trash2 size={18} /></Button>}
+                            {canMove && <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={onBulkMove}><Move size={18} /></Button>}
+                            {canCopy && <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={onBulkCopy}><Copy size={18} /></Button>}
+                            {canToggleVisibility && <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={onBulkToggleVisibility}><Eye size={18} /></Button>}
+                            <Button variant="ghost" size="icon" className="h-9 w-9 rounded-full" onClick={onBulkToggleFavorite}><Star size={18} /></Button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+    );
+}
+
 export function FolderGrid({ 
     parentId, 
     uploadingFiles, 
@@ -124,7 +171,7 @@ export function FolderGrid({
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
 }) {
-  const { can } = useAuthStore();
+  const { can, user } = useAuthStore();
   const canReorder = can('canReorder', parentId);
 
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
@@ -145,10 +192,13 @@ export function FolderGrid({
   const [itemToMove, setItemToMove] = useState<Content | null>(null);
   const [itemToCopy, setItemToCopy] = useState<Content | null>(null);
   const [itemToDelete, setItemToDelete] = useState<Content | null>(null);
+  const [itemsToDelete, setItemsToDelete] = useState<Content[]>([]);
   const [itemForIconChange, setItemForIconChange] = useState<Content | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showFolderSelector, setShowFolderSelector] = useState(false);
   const [currentAction, setCurrentAction] = useState<'move' | 'copy' | null>(null);
+  const [isSelectMode, setIsSelectMode] = useState(false);
+  const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   const dropZoneRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
@@ -251,31 +301,27 @@ export function FolderGrid({
   }, [canReorder, parentId]);
 
   const handleFolderSelect = useCallback(async (folder: Content) => {
-    const itemToProcess = currentAction === 'move' ? itemToMove : itemToCopy;
-    if (!itemToProcess || !currentAction) return;
-
+    const itemsToProcess = [...selectedItems].map(id => sortedItems.find(item => item.id === id)).filter(Boolean) as Content[];
+    if (itemsToProcess.length === 0 || !currentAction) return;
+    
     try {
-        if (currentAction === 'move') {
-            await contentService.move(itemToProcess.id, folder.id);
-            toast({ title: "Item Moved", description: `Moved "${itemToProcess.name}" successfully.` });
-        } else { // copy
-            await contentService.copy(itemToProcess, folder.id);
-            toast({ title: "Item Copied", description: `Copied "${itemToProcess.name}" successfully.` });
-        }
+        await Promise.all(itemsToProcess.map(item => {
+            if (currentAction === 'move') return contentService.move(item.id, folder.id);
+            return contentService.copy(item, folder.id);
+        }));
+        
+        toast({ title: `Items ${currentAction === 'move' ? 'Moved' : 'Copied'}`, description: `${itemsToProcess.length} items have been processed.` });
+
     } catch (error: any) {
-        console.error(`Failed to ${currentAction} item:`, error);
-        toast({
-            variant: 'destructive',
-            title: `Error ${currentAction === 'move' ? 'Moving' : 'Copying'} Item`,
-            description: error.message || 'An unknown error occurred.',
-        });
+        console.error(`Failed to ${currentAction} items:`, error);
+        toast({ variant: 'destructive', title: `Error`, description: error.message || 'An unknown error occurred.' });
     } finally {
         setShowFolderSelector(false);
-        setItemToMove(null);
-        setItemToCopy(null);
         setCurrentAction(null);
+        setSelectedItems(new Set());
+        setIsSelectMode(false);
     }
-  }, [currentAction, itemToCopy, itemToMove, toast]);
+  }, [currentAction, selectedItems, sortedItems, toast]);
 
   const handleToggleVisibility = useCallback(async (item: Content) => {
       await contentService.toggleVisibility(item.id);
@@ -301,12 +347,71 @@ export function FolderGrid({
     return visibleItems.map(item => {
       return {
         item: item,
-        uploadingFile: updatingMap.get(item.id),
+        uploadingFile: uploadingMap.get(item.id),
       };
     });
   }, [sortedItems, uploadingFiles, can]);
 
   const newUploads = useMemo(() => uploadingFiles.filter(f => !f.isUpdate), [uploadingFiles]);
+
+  // Bulk actions
+  const handleBulkDelete = () => {
+    const toDelete = [...selectedItems].map(id => sortedItems.find(item => item.id === id)).filter(Boolean) as Content[];
+    setItemsToDelete(toDelete);
+  };
+  
+  const confirmBulkDelete = async () => {
+    try {
+      await Promise.all(itemsToDelete.map(item => contentService.delete(item.id)));
+      toast({ title: 'Items Deleted', description: `${itemsToDelete.length} items have been deleted.` });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message || "Failed to delete some items." });
+    } finally {
+      setItemsToDelete([]);
+      setSelectedItems(new Set());
+      setIsSelectMode(false);
+    }
+  };
+
+  const handleBulkToggleVisibility = async () => {
+    const items = [...selectedItems].map(id => sortedItems.find(item => item.id === id)).filter(Boolean) as Content[];
+    try {
+      await Promise.all(items.map(item => contentService.toggleVisibility(item.id)));
+      toast({ title: 'Visibility Updated', description: `Visibility for ${items.length} items has been toggled.` });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message || "Failed to update visibility." });
+    } finally {
+      setSelectedItems(new Set());
+      setIsSelectMode(false);
+    }
+  };
+
+  const handleBulkToggleFavorite = async () => {
+    if (!user) return;
+    const items = [...selectedItems].map(id => sortedItems.find(item => item.id === id)).filter(Boolean) as Content[];
+    try {
+      await Promise.all(items.map(item => contentService.toggleFavorite(user.id, item.id)));
+      toast({ title: 'Favorites Updated', description: `Favorites for ${items.length} items have been updated.` });
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Error', description: error.message || "Failed to update favorites." });
+    } finally {
+      setSelectedItems(new Set());
+      setIsSelectMode(false);
+    }
+  };
+  
+
+  const handleItemSelect = (itemId: string, isSelected: boolean) => {
+    setSelectedItems(prev => {
+        const newSet = new Set(prev);
+        if (isSelected) {
+            newSet.add(itemId);
+        } else {
+            newSet.delete(itemId);
+        }
+        return newSet;
+    });
+  };
 
   if (!hasInitialDataLoaded) {
     return (
@@ -386,54 +491,68 @@ export function FolderGrid({
                   key={item.id}
                   variants={itemVariants}
                   custom={index}
-                   className={cn(!isSubjectView && "border-b border-white/10 last:border-b-0")}
+                   className={cn(!isSubjectView && "border-b border-white/10 last:border-b-0", isSelectMode && 'pl-8')}
                 >
                   <SortableItemWrapper id={item.id} isSubjectView={isSubjectView}>
-                    {(() => {
-                      switch (item.type) {
-                        case 'SUBJECT':
-                            return (
-                                <SubjectCard 
-                                    subject={item}
-                                    onRename={() => setItemToRename(item)}
-                                    onDelete={() => setItemToDelete(item)}
-                                    onIconChange={() => setItemForIconChange(item)}
-                                />
-                            );
-                        case 'FOLDER':
-                        case 'SEMESTER':
-                        case 'LEVEL':
-                              return (
-                                <FolderCard
-                                    item={item}
-                                    onRename={() => setItemToRename(item)}
-                                    onDelete={() => setItemToDelete(item)}
-                                    onIconChange={() => setItemForIconChange(item)}
-                                    onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
-                                    onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
-                                    onToggleVisibility={() => handleToggleVisibility(item)}
-                                    onClick={handleFolderClick}
-                                    displayAs={item.metadata?.isClassContainer || isSubjectView ? 'grid' : 'list'}
-                                />
-                            );
-                        default:
-                            return (
-                                <FileCard
-                                    item={item}
-                                    uploadingFile={uploadingFile}
-                                    onFileClick={handleFileClick}
-                                    onRename={() => setItemToRename(item)}
-                                    onDelete={() => setItemToDelete(item)}
-                                    onUpdate={(file) => onUpdateFile(item, file)}
-                                    onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
-                                    onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
-                                    onToggleVisibility={() => handleToggleVisibility(item)}
-                                    onRetryUpload={onRetry}
-                                    onRemoveUpload={onRemove}
-                                />
-                            );
-                      }
-                    })()}
+                    <div className="relative flex items-center gap-2">
+                        {isSelectMode && (
+                            <div className="absolute left-[-1.25rem] top-1/2 -translate-y-1/2">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="w-8 h-8 rounded-full"
+                                    onClick={() => handleItemSelect(item.id, !selectedItems.has(item.id))}
+                                >
+                                    {selectedItems.has(item.id) ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
+                                </Button>
+                            </div>
+                        )}
+                        {(() => {
+                          switch (item.type) {
+                            case 'SUBJECT':
+                                return (
+                                    <SubjectCard 
+                                        subject={item}
+                                        onRename={() => setItemToRename(item)}
+                                        onDelete={() => setItemToDelete(item)}
+                                        onIconChange={() => setItemForIconChange(item)}
+                                    />
+                                );
+                            case 'FOLDER':
+                            case 'SEMESTER':
+                            case 'LEVEL':
+                                  return (
+                                    <FolderCard
+                                        item={item}
+                                        onRename={() => setItemToRename(item)}
+                                        onDelete={() => setItemToDelete(item)}
+                                        onIconChange={() => setItemForIconChange(item)}
+                                        onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
+                                        onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
+                                        onToggleVisibility={() => handleToggleVisibility(item)}
+                                        onClick={handleFolderClick}
+                                        displayAs={item.metadata?.isClassContainer || isSubjectView ? 'grid' : 'list'}
+                                    />
+                                );
+                            default:
+                                return (
+                                    <FileCard
+                                        item={item}
+                                        uploadingFile={uploadingFile}
+                                        onFileClick={handleFileClick}
+                                        onRename={() => setItemToRename(item)}
+                                        onDelete={() => setItemToDelete(item)}
+                                        onUpdate={(file) => onUpdateFile(item, file)}
+                                        onMove={() => { setItemToMove(item); setCurrentAction('move'); setShowFolderSelector(true); }}
+                                        onCopy={() => { setItemToCopy(item); setCurrentAction('copy'); setShowFolderSelector(true); }}
+                                        onToggleVisibility={() => handleToggleVisibility(item)}
+                                        onRetryUpload={onRetry}
+                                        onRemoveUpload={onRemove}
+                                    />
+                                );
+                          }
+                        })()}
+                    </div>
                   </SortableItemWrapper>
                 </motion.div>
               ))}
@@ -482,7 +601,31 @@ export function FolderGrid({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
+        <AlertDialog open={itemsToDelete.length > 0} onOpenChange={(isOpen) => !isOpen && setItemsToDelete([])}>
+            <AlertDialogContent>
+                <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                        This will permanently delete {itemsToDelete.length} selected item(s). This cannot be undone.
+                    </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={confirmBulkDelete} className="bg-red-600 hover:bg-red-700">Delete</AlertDialogAction>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
+
+         <BulkActionBar
+            selectedItems={sortedItems.filter(item => selectedItems.has(item.id))}
+            onClear={() => { setSelectedItems(new Set()); setIsSelectMode(false); }}
+            onBulkDelete={handleBulkDelete}
+            onBulkMove={() => { setCurrentAction('move'); setShowFolderSelector(true); }}
+            onBulkCopy={() => { setCurrentAction('copy'); setShowFolderSelector(true); }}
+            onBulkToggleVisibility={handleBulkToggleVisibility}
+            onBulkToggleFavorite={handleBulkToggleFavorite}
+        />
     </div>
   );
 }
