@@ -16,19 +16,19 @@ import { useDebounce } from 'use-debounce';
 import { search as searchFlow } from '@/ai/flows/search-flow';
 import { Content, contentService } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { FileCard } from './FileCard';
+import FilePreviewModal from './FilePreviewModal';
+import { RenameDialog } from './RenameDialog';
+import { ChangeIconDialog } from './ChangeIconDialog';
+import { FolderSelectorDialog } from './FolderSelectorDialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter as AlertDialogFooterComponent } from './ui/alert-dialog';
 import { useRouter } from 'next/navigation';
 import { ScrollArea } from './ui/scroll-area';
 import { Skeleton } from './ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from './ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { FilePreviewModal } from './FilePreviewModal';
-import { RenameDialog } from './RenameDialog';
-import { ChangeIconDialog } from './ChangeIconDialog';
-import { FolderSelectorDialog } from './FolderSelectorDialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogTitle, AlertDialogFooter as AlertDialogFooterComponent } from './ui/alert-dialog';
 import { cn } from '@/lib/utils';
 import { LayersIcon } from 'lucide-react';
+import { FileCard } from './FileCard';
 
 
 type SearchFilters = {
