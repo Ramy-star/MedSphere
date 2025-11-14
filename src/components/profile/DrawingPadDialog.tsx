@@ -1,5 +1,5 @@
 'use client'
-import { Tldraw, useEditor, Editor } from '@tldraw/tldraw'
+import { Tldraw, useEditor } from '@tldraw/tldraw'
 import '@tldraw/tldraw/tldraw.css'
 import {
     Dialog,
@@ -21,7 +21,7 @@ function SaveButton({ onSave }: { onSave: (dataUrl: string) => void }) {
         try {
             // Get the IDs of all shapes on the current page.
             // This is safer than `currentPageShapeIds` which can be undefined.
-            const shapeIds = editor.shapesArray.map((shape) => shape.id);
+            const shapeIds = editor.shapesArray ? editor.shapesArray.map((shape) => shape.id) : [];
 
             // If there are no shapes, we can either save an empty image or do nothing.
             // For now, let's proceed, getSvg can handle an empty array.
@@ -41,8 +41,8 @@ function SaveButton({ onSave }: { onSave: (dataUrl: string) => void }) {
             
             image.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = svg.width.baseVal.value;
-                canvas.height = svg.height.baseVal.value;
+                canvas.width = svg.width.baseVal.value * 2; // Match the scale
+                canvas.height = svg.height.baseVal.value * 2; // Match the scale
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
