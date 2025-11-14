@@ -1,5 +1,5 @@
 'use client'
-import React, { useRef } from 'react';
+import React, { useRef, forwardRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
     Dialog,
@@ -17,37 +17,53 @@ type ExcalidrawAPIRef = {
     getFiles: () => any;
 };
 
-// Dynamically import the Excalidraw component, ensuring it's only loaded on the client.
-const Excalidraw = dynamic(
-  async () => (await import('@excalidraw/excalidraw')).Excalidraw,
-  { ssr: false }
-);
+// This is the component that will be dynamically imported.
+// It receives the excalidrawAPI ref via forwardRef.
+const ExcalidrawWrapper = forwardRef<ExcalidrawAPIRef, {}>((props, ref) => {
+    // Dynamically import the Excalidraw component itself within this wrapper
+    const Excalidraw = dynamic(
+        async () => (await import('@excalidraw/excalidraw')).Excalidraw,
+        { ssr: false }
+    );
+
+    return (
+        <div style={{ height: "100%", width: "100%" }}>
+            <Excalidraw
+                excalidrawAPI={(api) => {
+                    // Assign the API to the forwarded ref
+                    if (typeof ref === 'function') {
+                        ref(api as ExcalidrawAPIRef);
+                    } else if (ref) {
+                        ref.current = api as ExcalidrawAPIRef;
+                    }
+                }}
+                theme="dark"
+            />
+        </div>
+    );
+});
+ExcalidrawWrapper.displayName = 'ExcalidrawWrapper';
 
 
 export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string) => void; onClose: () => void }) {
-    // Use useRef to hold a reference to the Excalidraw API instance.
     const excalidrawApiRef = useRef<ExcalidrawAPIRef | null>(null);
 
     const handleSave = async () => {
-        // Ensure the API ref has been set.
         if (!excalidrawApiRef.current) {
             console.error("Excalidraw API not available.");
             return;
         }
 
         try {
-            // Dynamically import the export function only when needed.
             const { exportToBlob } = await import('@excalidraw/excalidraw');
             
             const elements = excalidrawApiRef.current.getSceneElements();
             
-            // If the canvas is empty, just close the dialog.
             if (!elements || elements.length === 0) {
               onClose();
               return;
             }
 
-            // Export the scene to a blob.
             const blob = await exportToBlob({
                 elements: elements,
                 appState: excalidrawApiRef.current.getAppState(),
@@ -55,7 +71,6 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
                 exportPadding: 10,
             });
             
-            // Convert the blob to a base64 Data URL.
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64data = reader.result;
@@ -64,7 +79,7 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
                 } else {
                     console.error("Failed to convert Excalidraw blob to data URL");
                 }
-                onClose(); // Close the dialog after processing.
+                onClose();
             };
             reader.readAsDataURL(blob);
 
@@ -81,8 +96,8 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
                     <DialogTitle>Excalidraw Pad</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 relative">
-                    {/* The Excalidraw component with the ref to capture its API */}
-                    <Excalidraw excalidrawAPI={(api) => (excalidrawApiRef.current = api as ExcalidrawAPIRef)} theme="dark" />
+                    {/* Render the wrapper which dynamically loads Excalidraw */}
+                    <ExcalidrawWrapper ref={excalidrawApiRef} />
                 </div>
                  <DialogFooter className="p-4 border-t border-slate-700">
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
