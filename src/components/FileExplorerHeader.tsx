@@ -92,6 +92,9 @@ export default function FileExplorerHeader({ onFileSelected, isSelectMode, onTog
 
     return <Icon className={`w-7 h-7 sm:w-8 sm:h-8 ${iconColor}`} />;
   };
+  
+  const showSelectButton = currentFolder?.type !== 'LEVEL';
+
 
   return (
     <div className="flex items-center justify-between min-h-[40px] flex-wrap gap-4">
@@ -102,7 +105,7 @@ export default function FileExplorerHeader({ onFileSelected, isSelectMode, onTog
         </h1>
       </div>
       <div className="flex gap-2">
-        {can('canSelectItem', null) && onToggleSelectMode && (
+         {showSelectButton && can('canSelectItem', null) && onToggleSelectMode && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -124,21 +127,21 @@ export default function FileExplorerHeader({ onFileSelected, isSelectMode, onTog
         )}
         {canAddContent(currentFolder?.id || null) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-              <TooltipProvider>
+              <PopoverTrigger asChild>
+                <TooltipProvider>
                   <Tooltip>
-                      <TooltipTrigger asChild>
-                          <PopoverTrigger asChild>
-                              <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
-                                  <Plus className={cn("h-4 w-4", !isMobile && "mr-2")} />
-                                  {!isMobile && <span>Add Content</span>}
-                              </Button>
-                          </PopoverTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                          <p>Add new content</p>
-                      </TooltipContent>
+                    <TooltipTrigger asChild>
+                       <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
+                          <Plus className={cn("h-4 w-4", !isMobile && "mr-2")} />
+                          {!isMobile && <span>Add Content</span>}
+                       </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                       <p>Add new content</p>
+                    </TooltipContent>
                   </Tooltip>
-              </TooltipProvider>
+                </TooltipProvider>
+              </PopoverTrigger>
               <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} setPopoverOpen={setPopoverOpen} />
             </Popover>
         )}

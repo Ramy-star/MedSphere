@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import { useFloatingAssistantStore } from '@/stores/floating-assistant-store';
 
 export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
-    const { isOpen, isExpanded, toggle, toggleExpand } = useFloatingAssistantStore();
+    const { isOpen, isExpanded, toggle, toggleExpand, close } = useFloatingAssistantStore();
 
     if (!user) {
         return null;
@@ -18,6 +18,11 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
     const handleToggleOpen = (e: React.MouseEvent) => {
         e.stopPropagation();
         toggle();
+    };
+
+    const handleBackdropClick = () => {
+        // This function ensures that clicking the backdrop closes everything.
+        close();
     };
 
     const containerVariants = {
@@ -45,7 +50,19 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
 
     return (
         <>
-            <div className="fixed bottom-6 right-6 z-40">
+            <AnimatePresence>
+                {(isOpen && isExpanded) && (
+                    <motion.div
+                        key="backdrop"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"
+                        onClick={handleBackdropClick}
+                    />
+                )}
+            </AnimatePresence>
+            <div className="fixed bottom-6 right-6 z-50">
                 <motion.div
                     layout
                     variants={containerVariants}
@@ -55,7 +72,7 @@ export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
                     style={{
                         backgroundColor: 'rgba(30, 41, 59, 0.8)',
                     }}
-                    onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+                    onClick={(e) => e.stopPropagation()} 
                 >
                     <AnimatePresence>
                         {isOpen && (
