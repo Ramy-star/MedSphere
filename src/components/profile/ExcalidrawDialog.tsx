@@ -1,5 +1,5 @@
 'use client'
-import React from 'react';
+import React, { useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
     Dialog,
@@ -9,6 +9,7 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { exportToBlob } from '@excalidraw/excalidraw';
 
 // Dynamically import Excalidraw with SSR turned off
 const Excalidraw = dynamic(
@@ -17,23 +18,30 @@ const Excalidraw = dynamic(
 );
 
 export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string) => void; onClose: () => void }) {
-    let excalidrawAPI: any = null;
+    const excalidrawRef = useRef<any>(null);
 
     const handleSave = async () => {
-        if (!excalidrawAPI) return;
+        if (!excalidrawRef.current) {
+            console.error("Excalidraw API not available.");
+            return;
+        }
+
         try {
-            const { exportToBlob } = await import('@excalidraw/excalidraw');
             const blob = await exportToBlob({
-                elements: excalidrawAPI.getSceneElements(),
-                appState: excalidrawAPI.getAppState(),
-                files: excalidrawAPI.getFiles(),
+                elements: excalidrawRef.current.getSceneElements(),
+                appState: excalidrawRef.current.getAppState(),
+                files: excalidrawRef.current.getFiles(),
                 exportPadding: 10,
             });
             
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64data = reader.result;
-                onSave(base64data as string);
+                if (base64data) {
+                    onSave(base64data as string);
+                } else {
+                    console.error("Failed to convert Excalidraw blob to data URL");
+                }
                 onClose();
             };
             reader.readAsDataURL(blob);
@@ -51,7 +59,7 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
                 </DialogHeader>
                 <div className="flex-1 relative">
                     <Excalidraw 
-                        excalidrawAPI={(api) => (excalidrawAPI = api)}
+                        excalidrawAPI={(api) => (excalidrawRef.current = api)}
                         theme="dark"
                     />
                 </div>
