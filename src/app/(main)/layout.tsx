@@ -12,11 +12,13 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ImageIcon } from "lucide-react";
 import { Header } from "@/components/header";
 import { FloatingAssistant } from "@/components/profile/FloatingAssistant";
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Content } from '@/lib/contentService';
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
+import { useFilePreviewStore } from '@/stores/file-preview-store';
 
+const FilePreviewModal = lazy(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal));
 
 export default function MainLayout({
   children,
@@ -27,6 +29,8 @@ export default function MainLayout({
   const isMobile = useIsMobile();
   const pathname = usePathname();
   const { user } = useAuthStore();
+  const { previewItem, setPreviewItem } = useFilePreviewStore();
+
   const isHomePage = pathname === '/';
   const isQuestionsCreatorPage = pathname.startsWith('/questions-creator');
   const isProfilePage = pathname === '/profile';
@@ -148,6 +152,16 @@ export default function MainLayout({
         </motion.main>
       </div>
       <FloatingAssistant user={user} />
+       <Suspense fallback={null}>
+        {previewItem && (
+          <FilePreviewModal
+            item={previewItem}
+            onOpenChange={(isOpen) => {
+              if (!isOpen) setPreviewItem(null);
+            }}
+          />
+        )}
+      </Suspense>
     </>
   );
 }

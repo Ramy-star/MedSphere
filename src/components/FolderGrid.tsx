@@ -1,5 +1,6 @@
+
 'use client';
-import { useEffect, useState, useMemo, lazy, useRef, useCallback, Suspense } from 'react';
+import { useEffect, useState, useMemo, lazy, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -14,7 +15,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
 import { Button } from './ui/button';
 import { Folder as FolderIcon, Plus, UploadCloud, CheckSquare, Square, X as XIcon, Trash2, Move, Copy, Eye, EyeOff, Star, StarOff, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -33,14 +34,8 @@ import { FolderSelectorDialog } from './FolderSelectorDialog';
 import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
 import { where } from 'firebase/firestore';
+import { useFilePreviewStore } from '@/stores/file-preview-store';
 
-
-const FilePreviewModal = dynamic(() => import('./FilePreviewModal').then(mod => mod.FilePreviewModal), {
-    loading: () => <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><Skeleton className="w-3/4 h-3/4 rounded-lg bg-slate-800" /></div>,
-    ssr: false
-});
-
-const RenameDialog = dynamic(() => import('./RenameDialog').then(mod => mod.RenameDialog), { ssr: false });
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
   if (!isVisible) return null;
@@ -176,13 +171,13 @@ export function FolderGrid({
 }) {
   const { can, user } = useAuthStore();
   const canReorder = can('canReorder', parentId);
+  const { setPreviewItem } = useFilePreviewStore();
 
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: where('parentId', '==', parentId),
       orderBy: ['order', 'asc']
   });
 
-  const [previewFile, setPreviewFile] = useState<Content | null>(null);
   const [itemToRename, setItemToRename] = useState<Content | null>(null);
   const [itemToMove, setItemToMove] = useState<Content | null>(null);
   const [itemToCopy, setItemToCopy] = useState<Content | null>(null);
@@ -227,8 +222,8 @@ export function FolderGrid({
         }
         return;
     }
-    setPreviewFile(file);
-  }, []);
+    setPreviewItem(file);
+  }, [setPreviewItem]);
 
   const handleRename = useCallback(async (newName: string) => {
     if (!itemToRename) return;
@@ -547,19 +542,11 @@ export function FolderGrid({
         </SortableContext>
       </DndContext>
 
-      <Suspense fallback={null}>
-        {previewFile && (
-          <FilePreviewModal
-              item={previewFile}
-              onOpenChange={(isOpen) => !isOpen && setPreviewFile(null)}
-          />
-        )}
-        <RenameDialog 
-            item={itemToRename} 
-            onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
-            onRename={handleRename}
-        />
-      </Suspense>
+      <RenameDialog 
+          item={itemToRename} 
+          onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
+          onRename={handleRename}
+      />
       
       <FolderSelectorDialog
           open={showFolderSelector}
