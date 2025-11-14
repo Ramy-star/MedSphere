@@ -9,7 +9,6 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { exportToBlob } from '@excalidraw/excalidraw';
 
 // Dynamically import Excalidraw with SSR turned off
 const Excalidraw = dynamic(
@@ -27,6 +26,9 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
         }
 
         try {
+            // Dynamically import exportToBlob only when needed on the client-side
+            const { exportToBlob } = await import('@excalidraw/excalidraw');
+
             const blob = await exportToBlob({
                 elements: excalidrawRef.current.getSceneElements(),
                 appState: excalidrawRef.current.getAppState(),
