@@ -402,6 +402,14 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
     }
   }, []);
 
+  const handleDrawingSave = useCallback((dataUrl: string) => {
+    if (editor) {
+        editor.chain().focus().setImage({ src: dataUrl }).run();
+    }
+    setIsTldrawOpen(false);
+    setIsExcalidrawOpen(false);
+  }, [editor]);
+
   useEffect(() => {
     if (open && initialNote) {
       setNote(initialNote);
@@ -557,14 +565,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         console.error("Image upload failed:", error);
     }
   }, [editor]);
-  
-  const handleDrawingSave = (dataUrl: string) => {
-    if (editor) {
-        editor.chain().focus().setImage({ src: dataUrl }).run();
-    }
-    setIsTldrawOpen(false);
-    setIsExcalidrawOpen(false);
-  };
 
   const handleOpenAiChat = () => {
     if (!note || !activePageId) return;
