@@ -6,19 +6,21 @@ import Image from 'next/image';
 import { allSubjectIcons } from '@/lib/file-data';
 import { usePathname } from 'next/navigation';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from './ui/button';
 import { Content } from '@/lib/contentService';
 import { LucideIcon, Folder, Layers, Calendar, Inbox } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { Popover, PopoverContent, PopoverTrigger } from './ui/popover';
 
 
 export default function FileExplorerHeader({ onFileSelected, isSelectMode, onToggleSelectMode }: { onFileSelected?: (file: File) => void, isSelectMode?: boolean, onToggleSelectMode?: () => void }) {
   const { canAddContent, can } = useAuthStore();
   const isMobile = useIsMobile();
   const pathname = usePathname();
+  const [popoverOpen, setPopoverOpen] = useState(false);
   
   const { data: allItems } = useCollection<Content>('content');
 
@@ -121,7 +123,24 @@ export default function FileExplorerHeader({ onFileSelected, isSelectMode, onTog
           </TooltipProvider>
         )}
         {canAddContent(currentFolder?.id || null) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
-          <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
+           <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+              <TooltipProvider>
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <PopoverTrigger asChild>
+                              <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
+                                  <Plus className={cn("h-4 w-4", !isMobile && "mr-2")} />
+                                  {!isMobile && <span>Add Content</span>}
+                              </Button>
+                          </PopoverTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Add new content</p>
+                      </TooltipContent>
+                  </Tooltip>
+              </TooltipProvider>
+              <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} setPopoverOpen={setPopoverOpen} />
+            </Popover>
         )}
         <div className="hidden md:flex items-center gap-1">
           <TooltipProvider>

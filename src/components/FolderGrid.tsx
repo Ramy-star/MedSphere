@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, lazy, Suspense, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, lazy, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -24,7 +24,6 @@ import { CSS } from '@dnd-kit/utilities';
 import { UploadingFile, UploadProgress } from './UploadProgress';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
-import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
 import React from 'react';
 import { useAuthStore } from '@/stores/auth-store';
@@ -444,14 +443,6 @@ export function FolderGrid({
              <p className="mt-2 text-sm text-slate-400">
                Drag and drop files here, or use the button to add content.
              </p>
-             {can('canAddFolder', parentId) && onFileSelected && (
-               <div className="mt-6 flex items-center gap-4">
-                  <AddContentMenu
-                    parentId={parentId}
-                    onFileSelected={onFileSelected}
-                  />
-                </div>
-             )}
          </div>
       );
   }
