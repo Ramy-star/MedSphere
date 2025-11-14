@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import {
     Bold, Italic, Underline, Strikethrough, Link as LinkIcon, List, ListOrdered,
     Minus, Palette, Heading1, Heading2, Heading3, Undo, Redo, ChevronDown, AlignLeft, AlignCenter, AlignRight, Highlighter, TextQuote, Pilcrow, Image as ImageIcon, X, Plus, ChevronLeft, ChevronRight,
-    Maximize, Shrink, Trash2, Check, Paperclip, FileText, Eraser, PenLine, MousePointer
+    Maximize, Shrink, Trash2, Check, Paperclip, FileText, Eraser, PenLine, MousePointer, Brush
 } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
 import { cn } from '@/lib/utils';
@@ -57,6 +57,7 @@ import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DrawingPadDialog } from './DrawingPadDialog';
+import { ExcalidrawDialog } from './ExcalidrawDialog';
 
 
 const NOTE_COLORS = [
@@ -367,7 +368,8 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [chatContext, setChatContext] = useState<Content | null>(null);
   const [showFileSearch, setShowFileSearch] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
-  const [isDrawing, setIsDrawing] = useState(false);
+  const [isTldrawOpen, setIsTldrawOpen] = useState(false);
+  const [isExcalidrawOpen, setIsExcalidrawOpen] = useState(false);
  
   const { data: allContent } = useCollection<Content>('content');
  
@@ -557,11 +559,12 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   }, [editor]);
   
   const handleDrawingSave = (dataUrl: string) => {
-    if(editor) {
+    if (editor) {
         editor.chain().focus().setImage({ src: dataUrl }).run();
     }
-    setIsDrawing(false);
-  }
+    setIsTldrawOpen(false);
+    setIsExcalidrawOpen(false);
+  };
 
   const handleOpenAiChat = () => {
     if (!note || !activePageId) return;
@@ -654,7 +657,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
             };
             input.click();
         }} tip="Insert Image" />
-        <EditorToolbarButton icon={PenLine} onClick={() => setIsDrawing(true)} tip="Draw" />
+        <EditorToolbarButton icon={PenLine} onClick={() => setIsTldrawOpen(true)} tip="Draw" />
         <EmojiSelector editor={editor} container={container} />
       </div>
   );
@@ -680,8 +683,11 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               placeholder="Note Title"
           />
           <div className="flex items-center">
-              <Button variant="ghost" size="icon" onClick={() => setIsDrawing(true)} className="h-9 w-9 text-white">
+              <Button variant="ghost" size="icon" onClick={() => setIsTldrawOpen(true)} className="h-9 w-9 text-white" title="Draw (tldraw)">
                  <PenLine className="w-5 h-5" />
+              </Button>
+              <Button variant="ghost" size="icon" onClick={() => setIsExcalidrawOpen(true)} className="h-9 w-9 text-white" title="Sketch (Excalidraw)">
+                 <Brush className="w-5 h-5" />
               </Button>
               <Button variant="ghost" size="icon" onClick={handleOpenAiChat} className="h-9 w-9 text-white">
                 <AiAssistantIcon className="w-5 h-5" />
@@ -868,10 +874,16 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         }}
       />
     )}
-     {isDrawing && (
+     {isTldrawOpen && (
         <DrawingPadDialog
           onSave={handleDrawingSave}
-          onClose={() => setIsDrawing(false)}
+          onClose={() => setIsTldrawOpen(false)}
+        />
+    )}
+     {isExcalidrawOpen && (
+        <ExcalidrawDialog
+          onSave={handleDrawingSave}
+          onClose={() => setIsExcalidrawOpen(false)}
         />
     )}
    </>
