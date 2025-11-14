@@ -44,9 +44,9 @@ export const FolderCard = React.memo(function FolderCard({
     onToggleVisibility: () => void;
     onClick: (item: Content) => void,
     displayAs?: 'grid' | 'list',
-    isSelectMode: boolean;
-    isSelected: boolean;
-    onToggleSelect: (itemId: string, selected: boolean) => void;
+    isSelectMode?: boolean;
+    isSelected?: boolean;
+    onToggleSelect?: (itemId: string, selected: boolean) => void;
 }) {
     const createdAt = item.createdAt ? format(new Date(item.createdAt), 'MMM dd, yyyy') : 'N/A';
     const isMobile = useIsMobile();
@@ -81,7 +81,7 @@ export const FolderCard = React.memo(function FolderCard({
         }
 
         if (isSelectMode) {
-            onToggleSelect(item.id, !isSelected);
+            onToggleSelect?.(item.id, !isSelected);
         } else {
             onClick(item);
         }
@@ -177,7 +177,7 @@ export const FolderCard = React.memo(function FolderCard({
                 className={cn(
                     "relative group flex items-center w-full p-2 md:p-2 transition-colors duration-200 md:rounded-2xl my-1.5",
                     item.metadata?.isHidden && "opacity-60 bg-white/5",
-                    isSelectMode && 'cursor-pointer pr-12 md:pr-14',
+                    isSelectMode && 'cursor-pointer',
                     isSelected && 'bg-blue-900/50 md:hover:bg-blue-900/70',
                     !isSelected && isSelectMode && 'md:hover:bg-slate-800/60',
                     !isSelectMode && 'md:hover:bg-white/10'
@@ -200,39 +200,53 @@ export const FolderCard = React.memo(function FolderCard({
                     <h3 className="text-sm font-medium text-white/90 break-words flex-1">{item.name}</h3>
                 </div>
                 
-                 <div className={cn("flex items-center shrink-0 ml-2 sm:ml-4", isSelectMode ? 'gap-0 sm:gap-0' : 'gap-2 sm:gap-4')}>
+                 <div className="flex items-center shrink-0 ml-2 sm:ml-4 gap-2 sm:gap-4">
                     <p className="text-xs text-slate-400 hidden lg:block w-24 text-right font-ubuntu">
                         {createdAt}
                     </p>
                     
-                    <AnimatePresence mode="wait">
-                       {isSelectMode ? (
-                            <motion.div key="select-icon" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }}>
-                               <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="w-8 h-8 rounded-full"
+                    <div className="flex items-center justify-center w-8 h-8">
+                        <AnimatePresence mode="wait">
+                           {isSelectMode ? (
+                                <motion.div
+                                    key="select-icon"
+                                    initial={false} // No initial animation
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    exit={{ opacity: 0, scale: 0.5 }}
                                 >
-                                    {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
-                                </Button>
-                             </motion.div>
-                        ) : hasAnyPermission && (
-                             <motion.div key="menu-icon" initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1, transition:{delay: 0.1}}} exit={{ opacity: 0, scale: 0.5 }}>
-                                <DropdownMenu onOpenChange={setIsMenuOpen}>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button 
-                                            variant="ghost" 
-                                            size="icon" 
-                                            className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
-                                        >
-                                            <MoreVertical className="w-5 h-5" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownContent />
-                                </DropdownMenu>
-                            </motion.div>
-                        )}
-                    </AnimatePresence>
+                                   <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="w-8 h-8 rounded-full"
+                                        onClick={(e) => { e.stopPropagation(); onToggleSelect?.(item.id, !isSelected); }}
+                                    >
+                                        {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
+                                    </Button>
+                                 </motion.div>
+                            ) : hasAnyPermission && (
+                                <motion.div
+                                    key="menu-icon"
+                                    initial={{ opacity: 0, scale: 0.5 }}
+                                    animate={{ opacity: 1, scale: 1, transition: { delay: 0.1, duration: 0.2 } }}
+                                    exit={{ opacity: 0, scale: 0.5 }}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    <DropdownMenu onOpenChange={setIsMenuOpen}>
+                                        <DropdownMenuTrigger asChild>
+                                            <Button 
+                                                variant="ghost" 
+                                                size="icon" 
+                                                className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700 focus-visible:ring-0 focus-visible:ring-offset-0"
+                                            >
+                                                <MoreVertical className="w-5 h-5" />
+                                            </Button>
+                                        </DropdownMenuTrigger>
+                                        <DropdownContent />
+                                    </DropdownMenu>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </div>
                  </div>
             </div>
         )
@@ -252,40 +266,52 @@ export const FolderCard = React.memo(function FolderCard({
             !isSelectMode && 'hover:bg-white/10 hover:scale-[1.02]'
         )}
       >
-        <AnimatePresence>
-            {isSelectMode && (
-                <motion.div
-                  key="select-indicator"
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  className="absolute top-2 right-2 z-10"
-                >
-                    {isSelected ? <CheckSquare className="text-blue-300 h-5 w-5" /> : <Square className="text-slate-600 h-5 w-5" />}
-                </motion.div>
-            )}
-        </AnimatePresence>
-
-        <div className="transition-transform duration-200 group-hover:scale-[1.01]">
-          <div className="flex justify-between items-start mb-4">
-              {renderIcon()}
-              {!isSelectMode && hasAnyPermission && (
-                  <DropdownMenu onOpenChange={setIsMenuOpen}>
-                       <DropdownMenuTrigger asChild>
-                            <Button 
-                                variant="ghost" 
-                                size="icon" 
-                                className="absolute top-2 right-2 w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50 opacity-0 group-hover:opacity-100 transition-opacity focus-visible:ring-0 focus-visible:ring-offset-0"
+        <div className="flex justify-between items-start mb-4">
+            {renderIcon()}
+             <div className="flex items-center justify-center w-8 h-8">
+                <AnimatePresence mode="wait">
+                    {isSelectMode ? (
+                        <motion.div
+                            key="select-icon-grid"
+                            initial={false}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                        >
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="w-8 h-8 rounded-full"
+                                onClick={(e) => { e.stopPropagation(); onToggleSelect?.(item.id, !isSelected); }}
                             >
-                                <MoreVertical className="w-5 h-5" />
+                                {isSelected ? <CheckSquare className="text-blue-300" /> : <Square className="text-slate-600" />}
                             </Button>
-                        </DropdownMenuTrigger>
-                      <DropdownContent />
-                  </DropdownMenu>
-              )}
-          </div>
-          <h3 className="text-lg font-semibold text-white">{item.name}</h3>
+                        </motion.div>
+                    ) : hasAnyPermission && (
+                        <motion.div
+                            key="menu-icon-grid"
+                            initial={{ opacity: 0, scale: 0.5 }}
+                            animate={{ opacity: 1, scale: 1, transition: { delay: 0.1, duration: 0.2 } }}
+                            exit={{ opacity: 0, scale: 0.5 }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                            <DropdownMenu onOpenChange={setIsMenuOpen}>
+                                <DropdownMenuTrigger asChild>
+                                    <Button 
+                                        variant="ghost" 
+                                        size="icon" 
+                                        className="w-8 h-8 rounded-full text-slate-400 hover:text-white hover:bg-slate-700/50"
+                                    >
+                                        <MoreVertical className="w-5 h-5" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownContent />
+                            </DropdownMenu>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
         </div>
+        <h3 className="text-lg font-semibold text-white">{item.name}</h3>
       </div>
     );
 });
