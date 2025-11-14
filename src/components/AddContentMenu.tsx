@@ -13,14 +13,15 @@ import { FlashcardIcon } from './icons/FlashcardIcon';
 import { InteractiveExamIcon } from './icons/InteractiveExamIcon';
 import { Lightbulb } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type AddContentMenuProps = {
   parentId: string | null;
   onFileSelected: (file: File) => void;
-  trigger?: React.ReactNode;
 }
 
-export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContentMenuProps) {
+export function AddContentMenu({ parentId, onFileSelected }: AddContentMenuProps) {
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [showNewClassDialog, setShowNewClassDialog] = useState(false);
   const [showNewLinkDialog, setShowNewLinkDialog] = useState(false);
@@ -31,6 +32,8 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   const [popoverOpen, setPopoverOpen] = useState(false);
   const { toast } = useToast();
   const { can, user } = useAuthStore();
+  const isMobile = useIsMobile();
+
 
   const handleAddFolder = async (folderName: string) => {
     try {
@@ -181,6 +184,13 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
   const visibleMenuItems = menuItems.filter(item => can(item.permission, parentId));
   
   if (!user || visibleMenuItems.length === 0) return null;
+  
+  const TriggerButton = (
+      <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
+          <Plus className={cn("h-4 w-4", !isMobile && "mr-2")} />
+          {!isMobile && <span>Add Content</span>}
+      </Button>
+  );
 
   return (
     <>
@@ -192,8 +202,18 @@ export function AddContentMenu({ parentId, onFileSelected, trigger }: AddContent
       />
       <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
         <PopoverTrigger asChild>
-          {trigger}
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        {TriggerButton}
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Add new content</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         </PopoverTrigger>
+
         <PopoverContent 
           className="w-56 p-2 border-slate-700" 
           align="end"

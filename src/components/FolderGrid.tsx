@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useRef, Dispatch, SetStateAction, useMemo, lazy, Suspense } from 'react';
+import { useEffect, useState, useMemo, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -217,7 +217,8 @@ export function FolderGrid({
   }, [isSelectMode]);
 
   const handleFolderClick = useCallback((folder: Content) => {
-    router.push(`/folder/${folder.id}`);
+    const path = folder.type === 'LEVEL' ? `/level/${encodeURIComponent(folder.name)}` : `/folder/${folder.id}`;
+    router.push(path);
   }, [router]);
 
   const handleFileClick = useCallback((file: Content) => {
@@ -417,7 +418,7 @@ export function FolderGrid({
     });
   }, []);
 
-  if (loading) {
+  if (loading && !fetchedItems) {
     const gridCols = isSubjectView ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1";
     const skeletonHeight = isSubjectView ? "h-40" : "h-14";
     return (
@@ -448,12 +449,6 @@ export function FolderGrid({
                   <AddContentMenu
                     parentId={parentId}
                     onFileSelected={onFileSelected}
-                    trigger={
-                      <Button className="rounded-2xl active:scale-95 transition-transform">
-                        <Plus className="mr-2 h-4 w-4" />
-                        Add Content
-                      </Button>
-                    }
                   />
                 </div>
              )}

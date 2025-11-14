@@ -100,45 +100,29 @@ export default function FileExplorerHeader({ onFileSelected, isSelectMode, onTog
         </h1>
       </div>
       <div className="flex gap-2">
-        <TooltipProvider>
         {can('canSelectItem', null) && onToggleSelectMode && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-                <Button 
-                    variant={isSelectMode ? "secondary" : "outline"} 
-                    onClick={onToggleSelectMode} 
-                    size={isMobile ? "icon" : "sm"}
-                    className={cn("rounded-2xl active:scale-95 transition-transform", isMobile && "w-9 h-9")}
-                >
-                    <CheckSquare className="h-4 w-4" />
-                    {!isMobile && <span className="ml-2">Select Items</span>}
-                </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Select multiple items</p>
-            </TooltipContent>
-          </Tooltip>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                  <Button 
+                      variant={isSelectMode ? "secondary" : "outline"} 
+                      onClick={onToggleSelectMode} 
+                      size={isMobile ? "icon" : "sm"}
+                      className={cn("rounded-2xl active:scale-95 transition-transform", isMobile && "w-9 h-9")}
+                  >
+                      <CheckSquare className="h-4 w-4" />
+                      {!isMobile && <span className="ml-2">Select Items</span>}
+                  </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Select multiple items</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
         {canAddContent(currentFolder?.id || null) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
-          <AddContentMenu
-              parentId={currentFolder.id}
-              onFileSelected={onFileSelected}
-              trigger={
-                <Tooltip>
-                    <TooltipTrigger asChild>
-                        <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
-                            <Plus className={cn("h-4 w-4", !isMobile && "mr-2")} />
-                            {!isMobile && <span>Add Content</span>}
-                        </Button>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                        <p>Add new content</p>
-                    </TooltipContent>
-                </Tooltip>
-              }
-          />
+          <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
         )}
-        </TooltipProvider>
         <div className="hidden md:flex items-center gap-1">
           <TooltipProvider>
             <Tooltip>
