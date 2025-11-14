@@ -1,11 +1,11 @@
 'use client';
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { Button } from '@/components/ui/button';
 import { PlusCircle, Loader2, StickyNote, Star } from 'lucide-react';
 import { NoteCard } from '@/components/profile/NoteCard';
-import { NoteEditorDialog } from '@/components/profile/NoteEditorDialog';
+import { NoteEditorDialog, editorRef } from '@/components/profile/NoteEditorDialog';
 import { nanoid } from 'nanoid';
 import { db } from '@/firebase';
 import { doc, setDoc, serverTimestamp, deleteDoc, writeBatch, updateDoc } from 'firebase/firestore';
@@ -16,13 +16,15 @@ import { CSS } from '@dnd-kit/utilities';
 import { useToast } from '@/hooks/use-toast';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect } from 'react';
 import { FilePreviewModal } from '@/components/FilePreviewModal';
+import { DrawingPadDialog } from '@/components/profile/DrawingPadDialog';
+import { ExcalidrawDialog } from '@/components/profile/ExcalidrawDialog';
 
 export type NotePage = {
   id: string;
   title: string;
   content: string;
+  referencedFileIds?: string[];
 }
 
 export type Note = {
@@ -78,11 +80,20 @@ export default function NotesPage() {
   const [viewingNote, setViewingNote] = useState<Note | null>(null);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   
+  const [isTldrawOpen, setIsTldrawOpen] = useState(false);
+  const [isExcalidrawOpen, setIsExcalidrawOpen] = useState(false);
+  
   const sortedNotes = useMemo(() => notes || [], [notes]);
 
   useEffect(() => {
     const noteIdToEdit = searchParams.get('edit');
-    if (noteIdToEdit && notes) {
+    const isNewNote = searchParams.get('new') === 'true';
+
+    if(isNewNote) {
+        handleNewNote();
+        router.replace('/notes', { scroll: false });
+    }
+    else if (noteIdToEdit && notes) {
       const note = notes.find(n => n.id === noteIdToEdit);
       if (note) {
         setEditingNote(note);
@@ -117,16 +128,10 @@ export default function NotesPage() {
     const contentToView = {
         id: note.id,
         name: note.title,
-        type: 'INTERACTIVE_QUIZ', // Using this type to trigger the correct preview logic
+        type: 'NOTE', 
         parentId: user?.id || null,
         metadata: {
-            quizData: JSON.stringify(note.pages.map(p => ({
-                id: p.id,
-                name: p.title,
-                mcqs_level_1: [],
-                mcqs_level_2: [],
-                written: [{ case: "", subqs: [{ q: "", a: p.content }] }]
-            })))
+            quizData: JSON.stringify(note)
         }
     };
     setViewingNote(contentToView as any);
@@ -200,11 +205,21 @@ export default function NotesPage() {
     }
   };
 
+  const handleDrawingSave = useCallback((dataUrl: string) => {
+    const editor = editorRef.current;
+    if (editor && dataUrl) {
+      editor.chain().focus().setImage({ src: dataUrl }).run();
+    }
+    setIsTldrawOpen(false);
+    setIsExcalidrawOpen(false);
+  }, []);
+
   if (!user) {
     return <div className="flex items-center justify-center h-full"><p>Please log in to see your notes.</p></div>
   }
 
   return (
+    <>
     <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -259,6 +274,8 @@ export default function NotesPage() {
         }}
         note={editingNote}
         onSave={handleSaveNote}
+        onOpenTldraw={() => setIsTldrawOpen(true)}
+        onOpenExcalidraw={() => setIsExcalidrawOpen(true)}
       />
       {viewingNote && (
           <FilePreviewModal 
@@ -267,5 +284,8 @@ export default function NotesPage() {
           />
       )}
     </motion.div>
+    {isTldrawOpen && <DrawingPadDialog onSave={handleDrawingSave} onClose={() => setIsTldrawOpen(false)} />}
+    {isExcalidrawOpen && <ExcalidrawDialog onSave={handleDrawingSave} onClose={() => setIsExcalidrawOpen(false)} />}
+    </>
   );
 };

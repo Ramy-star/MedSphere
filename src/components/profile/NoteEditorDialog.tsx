@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, createRef } from 'react';
 import { Note, NotePage } from './ProfileNotesSection';
 import {
   Dialog,
@@ -56,9 +56,9 @@ import { create } from 'zustand';
 import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { DrawingPadDialog } from './DrawingPadDialog';
-import { ExcalidrawDialog } from './ExcalidrawDialog';
 
+
+export const editorRef = createRef<Editor | null>();
 
 const NOTE_COLORS = [
     '#282828', // dark grey
@@ -351,9 +351,11 @@ type NoteEditorDialogProps = {
   onOpenChange: (open: boolean) => void;
   note: Note | null;
   onSave: (note: Note) => void;
+  onOpenTldraw: () => void;
+  onOpenExcalidraw: () => void;
 };
 
-export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave }: NoteEditorDialogProps) => {
+export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave, onOpenTldraw, onOpenExcalidraw }: NoteEditorDialogProps) => {
   const [note, setNote] = useState<Note | null>(initialNote);
   const [activePageId, setActivePageId] = useState<string | null>(null);
   const [isToolbarOpen, setIsToolbarOpen] = useState(false);
@@ -368,8 +370,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
   const [chatContext, setChatContext] = useState<Content | null>(null);
   const [showFileSearch, setShowFileSearch] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
-  const [isTldrawOpen, setIsTldrawOpen] = useState(false);
-  const [isExcalidrawOpen, setIsExcalidrawOpen] = useState(false);
  
   const { data: allContent } = useCollection<Content>('content');
  
@@ -400,15 +400,17 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
         );
         setNote(prevNote => prevNote ? { ...prevNote, pages: updatedPages } : null);
     }
-  }, []);
+  });
 
-  const handleDrawingSave = useCallback((dataUrl: string) => {
+  useEffect(() => {
     if (editor) {
-        editor.chain().focus().setImage({ src: dataUrl }).run();
+      editorRef.current = editor;
     }
-    setIsTldrawOpen(false);
-    setIsExcalidrawOpen(false);
+    return () => {
+      editorRef.current = null;
+    }
   }, [editor]);
+
 
   useEffect(() => {
     if (open && initialNote) {
@@ -657,7 +659,7 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
             };
             input.click();
         }} tip="Insert Image" />
-        <EditorToolbarButton icon={PenLine} onClick={() => setIsTldrawOpen(true)} tip="Draw (tldraw)" />
+        <EditorToolbarButton icon={PenLine} onClick={onOpenTldraw} tip="Draw (tldraw)" />
         <EmojiSelector editor={editor} container={container} />
       </div>
   );
@@ -683,10 +685,10 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
               placeholder="Note Title"
           />
           <div className="flex items-center">
-              <Button variant="ghost" size="icon" onClick={() => setIsTldrawOpen(true)} className="h-9 w-9 text-white" title="Draw (tldraw)">
+              <Button variant="ghost" size="icon" onClick={() => onOpenTldraw()} className="h-9 w-9 text-white" title="Draw (tldraw)">
                  <PenLine className="w-5 h-5" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={() => setIsExcalidrawOpen(true)} className="h-9 w-9 text-white" title="Sketch (Excalidraw)">
+              <Button variant="ghost" size="icon" onClick={() => onOpenExcalidraw()} className="h-9 w-9 text-white" title="Sketch (Excalidraw)">
                  <Brush className="w-5 h-5" />
               </Button>
               <Button variant="ghost" size="icon" onClick={handleOpenAiChat} className="h-9 w-9 text-white">
@@ -873,18 +875,6 @@ export const NoteEditorDialog = ({ open, onOpenChange, note: initialNote, onSave
           }
         }}
       />
-    )}
-     {isTldrawOpen && (
-        <DrawingPadDialog
-          onSave={handleDrawingSave}
-          onClose={() => setIsTldrawOpen(false)}
-        />
-    )}
-     {isExcalidrawOpen && (
-        <ExcalidrawDialog
-          onSave={handleDrawingSave}
-          onClose={() => setIsExcalidrawOpen(false)}
-        />
     )}
    </>
   );
