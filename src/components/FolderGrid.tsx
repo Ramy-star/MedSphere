@@ -417,7 +417,7 @@ export function FolderGrid({
     });
   }, []);
 
-  if (loading && !fetchedItems) {
+  if (loading) {
     const gridCols = isSubjectView ? "grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" : "grid-cols-1";
     const skeletonHeight = isSubjectView ? "h-40" : "h-14";
     return (

@@ -14,17 +14,12 @@ import { motion } from 'framer-motion';
 export default function FolderPage({ params }: { params: { id: string } }) {
   const resolvedParams = use(params);
   const { id } = resolvedParams;
-  const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { toast } = useToast();
   const [isSelectMode, setIsSelectMode] = useState(false);
 
-
-  useEffect(() => {
-    if (!loadingCurrent && !current) {
-        notFound();
-    }
-  }, [loadingCurrent, current]);
+  // We no longer need to wait for `current` to render the main layout.
+  // FolderGrid will handle its own data fetching based on the `id`.
 
   const processFileUpload = useCallback(async (file: File) => {
     if (!id) return;
@@ -153,18 +148,16 @@ export default function FolderPage({ params }: { params: { id: string } }) {
             onToggleSelectMode={() => setIsSelectMode(!isSelectMode)}
         />
         <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
-            {!loadingCurrent && current && (
-                <FolderGrid 
-                    parentId={id} 
-                    uploadingFiles={uploadingFiles} 
-                    onFileSelected={processFileUpload}
-                    onUpdateFile={handleUpdateFile}
-                    onRetry={handleRetryUpload}
-                    onRemove={handleRemoveUpload}
-                    isSelectMode={isSelectMode}
-                    onToggleSelectMode={() => setIsSelectMode(!isSelectMode)}
-                />
-            )}
+            <FolderGrid 
+                parentId={id} 
+                uploadingFiles={uploadingFiles} 
+                onFileSelected={processFileUpload}
+                onUpdateFile={handleUpdateFile}
+                onRetry={handleRetryUpload}
+                onRemove={handleRemoveUpload}
+                isSelectMode={isSelectMode}
+                onToggleSelectMode={() => setIsSelectMode(!isSelectMode)}
+            />
         </div>
     </motion.div>
   );
