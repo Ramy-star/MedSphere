@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -26,6 +27,7 @@ import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
 import { AlertDialog, AlertDialogTrigger, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../ui/alert-dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { ScrollArea } from '../ui/scroll-area';
 
 
 if (typeof window !== 'undefined') {
@@ -273,7 +275,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                         return '';
                     })
                 );
-                fileContent = fileContents.join('\n\n');
+                fileContent = fileContents.filter(Boolean).join('\n\n');
             }
             
             const userStats = {
@@ -633,9 +635,9 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
             </div>
           ))}
           {isResponding && (
-            <div className="self-start flex items-center gap-2 text-slate-400 text-sm">
-              <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Thinking...</span>
+            <div className="self-start flex items-center gap-3 text-slate-400">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-base font-medium">Thinking...</span>
             </div>
           )}
         </div>
@@ -822,3 +824,5 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         </div>
     );
 }
+
+    
