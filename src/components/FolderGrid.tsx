@@ -1,6 +1,5 @@
-
 'use client';
-import { useEffect, useState, useMemo, lazy, useRef, useCallback } from 'react';
+import { useEffect, useState, useMemo, lazy, useRef, useCallback, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -35,6 +34,7 @@ import dynamic from 'next/dynamic';
 import { Skeleton } from './ui/skeleton';
 import { where } from 'firebase/firestore';
 import { useFilePreviewStore } from '@/stores/file-preview-store';
+import { RenameDialog } from './RenameDialog';
 
 
 function DropZone({ isVisible }: { isVisible: boolean }) {
@@ -171,7 +171,7 @@ export function FolderGrid({
 }) {
   const { can, user } = useAuthStore();
   const canReorder = can('canReorder', parentId);
-  const { setPreviewItem } = useFilePreviewStore();
+  const { previewItem, setPreviewItem } = useFilePreviewStore();
 
   const { data: fetchedItems, loading } = useCollection<Content>('content', {
       where: where('parentId', '==', parentId),
@@ -541,7 +541,7 @@ export function FolderGrid({
           </motion.div>
         </SortableContext>
       </DndContext>
-
+      
       <RenameDialog 
           item={itemToRename} 
           onOpenChange={(isOpen) => !isOpen && setItemToRename(null)} 
