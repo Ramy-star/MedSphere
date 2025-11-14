@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback, useRef, createRef } from 'react';
+import { useState, useEffect, useCallback, useRef, createRef, useMemo } from 'react';
 import { Note, NotePage } from './ProfileNotesSection';
 import {
   Dialog,
