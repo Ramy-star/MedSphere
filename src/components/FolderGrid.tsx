@@ -201,7 +201,6 @@ export function FolderGrid({
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   const dropZoneRef = useRef<HTMLDivElement>(null);
-  const isMobile = useIsMobile();
   const { toast } = useToast();
   
   const router = useRouter();
@@ -302,15 +301,18 @@ export function FolderGrid({
 
   const handleFolderSelect = useCallback(async (folder: Content) => {
     const itemsToProcess = [...selectedItems].map(id => sortedItems.find(item => item.id === id)).filter(Boolean) as Content[];
-    if (itemsToProcess.length === 0 || !currentAction) return;
+    if (itemsToProcess.length === 0 && !itemToMove && !itemToCopy) return;
+
+    const finalItems = itemsToProcess.length > 0 ? itemsToProcess : [itemToMove || itemToCopy].filter(Boolean) as Content[];
     
     try {
-        await Promise.all(itemsToProcess.map(item => {
+        await Promise.all(finalItems.map(item => {
             if (currentAction === 'move') return contentService.move(item.id, folder.id);
-            return contentService.copy(item, folder.id);
+            if (currentAction === 'copy') return contentService.copy(item, folder.id);
+            return Promise.resolve();
         }));
         
-        toast({ title: `Items ${currentAction === 'move' ? 'Moved' : 'Copied'}`, description: `${itemsToProcess.length} items have been processed.` });
+        toast({ title: `Items ${currentAction === 'move' ? 'Moved' : 'Copied'}`, description: `${finalItems.length} items have been processed.` });
 
     } catch (error: any) {
         console.error(`Failed to ${currentAction} items:`, error);
@@ -318,10 +320,12 @@ export function FolderGrid({
     } finally {
         setShowFolderSelector(false);
         setCurrentAction(null);
+        setItemToMove(null);
+        setItemToCopy(null);
         setSelectedItems(new Set());
         setIsSelectMode(false);
     }
-  }, [currentAction, selectedItems, sortedItems, toast]);
+  }, [currentAction, selectedItems, sortedItems, itemToMove, itemToCopy, toast]);
 
   const handleToggleVisibility = useCallback(async (item: Content) => {
       await contentService.toggleVisibility(item.id);
@@ -340,21 +344,18 @@ export function FolderGrid({
       : undefined
   ) as ReturnType<typeof useSensors>;
   
+  const updatingMap = useMemo(() => new Map(uploadingFiles.filter(f => f.isUpdate).map(f => [f.originalId, f])), [uploadingFiles]);
+  
   const itemsToRender = useMemo(() => {
-    const updatingMap = new Map(uploadingFiles.filter(f => f.isUpdate).map(f => [f.originalId, f]));
     const visibleItems = sortedItems.filter(item => !item.metadata?.isHidden || can('canToggleVisibility', item.id));
-
-    return visibleItems.map(item => {
-      return {
-        item: item,
-        uploadingFile: updatingMap.get(item.id),
-      };
-    });
-  }, [sortedItems, uploadingFiles, can]);
+    return visibleItems.map(item => ({
+      item: item,
+      uploadingFile: updatingMap.get(item.id),
+    }));
+  }, [sortedItems, updatingMap, can]);
 
   const newUploads = useMemo(() => uploadingFiles.filter(f => !f.isUpdate), [uploadingFiles]);
 
-  // Bulk actions
   const handleBulkDelete = () => {
     const toDelete = [...selectedItems].map(id => sortedItems.find(item => item.id === id)).filter(Boolean) as Content[];
     setItemsToDelete(toDelete);
@@ -517,23 +518,10 @@ export function FolderGrid({
                   key={item.id}
                   variants={itemVariants}
                   custom={index}
-                   className={cn(!isSubjectView && "border-b border-white/10 last:border-b-0", isSelectMode && 'pr-8')}
+                   className={cn(!isSubjectView && "border-b border-white/10 last:border-b-0")}
                 >
                   <SortableItemWrapper id={item.id} isSubjectView={isSubjectView}>
-                     <div className="relative flex items-center gap-2">
-                        {isSelectMode && (
-                          <div className="absolute right-0 top-1/2 -translate-y-1/2 z-10">
-                              <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="w-8 h-8 rounded-full"
-                                  onClick={() => handleToggleSelectItem(item.id, !selectedItems.has(item.id))}
-                              >
-                                  {selectedItems.has(item.id) ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
-                              </Button>
-                          </div>
-                        )}
-                        {(() => {
+                     {(() => {
                           switch (item.type) {
                             case 'SUBJECT':
                                 return (
@@ -584,7 +572,6 @@ export function FolderGrid({
                                 );
                           }
                         })()}
-                    </div>
                   </SortableItemWrapper>
                 </motion.div>
               ))}
@@ -639,7 +626,7 @@ export function FolderGrid({
                 <AlertDialogHeader>
                     <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                     <AlertDialogDescription>
-                        This will permanently delete {itemsToDelete.length} selected item(s). This cannot be undone.
+                        This will permanently delete {itemsToDelete.length} selected item(s). This action cannot be undone.
                     </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
