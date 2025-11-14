@@ -55,7 +55,6 @@ import { Tooltip, TooltipProvider, TooltipContent, TooltipTrigger } from '@/comp
 import { create } from 'zustand';
 import { db } from '@/firebase';
 import { doc, serverTimestamp, writeBatch, deleteDoc, addDoc, collection, updateDoc, getDoc, getDocs } from 'firebase/firestore';
-import { AlertDialog } from '../ui/alert-dialog';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { DrawingPadDialog } from './DrawingPadDialog';
 
