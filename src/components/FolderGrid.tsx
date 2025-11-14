@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Button } from './ui/button';
-import { Folder as FolderIcon, Plus, UploadCloud, CheckSquare, Square, X as XIcon, Trash2, Move, Copy, Eye, EyeOff, Star, StarOff } from 'lucide-react';
+import { Folder as FolderIcon, Plus, UploadCloud, CheckSquare, Square, X as XIcon, Trash2, Move, Copy, Eye, EyeOff, Star, StarOff, MoreHorizontal } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragEndEvent } from '@dnd-kit/core';
 import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove, rectSortingStrategy } from '@dnd-kit/sortable';
@@ -347,7 +347,7 @@ export function FolderGrid({
     return visibleItems.map(item => {
       return {
         item: item,
-        uploadingFile: uploadingMap.get(item.id),
+        uploadingFile: updatingMap.get(item.id),
       };
     });
   }, [sortedItems, uploadingFiles, can]);
@@ -438,16 +438,22 @@ export function FolderGrid({
                Drag and drop files here, or use the button to add content.
              </p>
              {can('canAddFolder', parentId) && (
-               <AddContentMenu
-                 parentId={parentId}
-                 onFileSelected={onFileSelected}
-                 trigger={
-                   <Button className="mt-6 rounded-2xl active:scale-95 transition-transform">
-                     <Plus className="mr-2 h-4 w-4" />
-                     Add Content
-                   </Button>
-                 }
-               />
+               <div className="mt-6 flex items-center gap-4">
+                  <AddContentMenu
+                    parentId={parentId}
+                    onFileSelected={onFileSelected}
+                    trigger={
+                      <Button className="rounded-2xl active:scale-95 transition-transform">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Add Content
+                      </Button>
+                    }
+                  />
+                  <Button variant="outline" onClick={() => setIsSelectMode(true)}>
+                      <CheckSquare className="mr-2 h-4 w-4" />
+                      Select Items
+                  </Button>
+                </div>
              )}
          </div>
       );
@@ -464,6 +470,22 @@ export function FolderGrid({
         className={cn("relative h-full", isDraggingOver && "opacity-50")}
     >
       <DropZone isVisible={isDraggingOver} />
+
+      <div className="flex justify-end mb-4 pr-1">
+         <Button variant="outline" onClick={() => setIsSelectMode(!isSelectMode)} size="sm" className="rounded-full">
+            {isSelectMode ? (
+                <>
+                    <XIcon className="mr-2 h-4 w-4"/>
+                    Cancel Selection
+                </>
+            ) : (
+                <>
+                    <CheckSquare className="mr-2 h-4 w-4" />
+                    Select Items
+                </>
+            )}
+        </Button>
+      </div>
        
        {newUploads.length > 0 && (
          <div className="flex flex-col">
