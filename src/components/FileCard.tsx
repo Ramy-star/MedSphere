@@ -264,12 +264,12 @@ export const FileCard = React.memo(function FileCard({
     return (
         <div 
             className={cn(
-                "relative group flex items-center w-full p-2 md:p-2 transition-colors duration-200 md:rounded-2xl my-1.5",
+                "group flex items-center w-full p-2 md:p-2 transition-colors duration-200 md:rounded-2xl my-1.5",
                 item.metadata?.isHidden && "opacity-60 bg-white/5",
                 isSelectMode && 'cursor-pointer',
                 isSelected && 'bg-blue-900/50 md:hover:bg-blue-900/70',
                 !isSelected && isSelectMode && 'md:hover:bg-slate-800/60',
-                !isSelectMode && 'md:hover:bg-white/10'
+                !isSelectMode && 'cursor-pointer md:hover:bg-white/10'
             )}
             onClick={handleClick}
         >
@@ -303,25 +303,15 @@ export const FileCard = React.memo(function FileCard({
                 </p>
                 
                  <div className="relative flex items-center justify-center w-8 h-8">
-                    {isSelectMode ? (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="w-8 h-8 rounded-full"
-                        >
-                            {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
-                        </Button>
-                    ) : (
-                      hasAnyPermission && (
-                        <AnimatePresence>
-                          <motion.div
-                            key="menu-icon"
-                            initial={{ opacity: 0, scale: 0.5 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.5 }}
-                            transition={{ duration: 0.2 }}
-                            className="opacity-0 group-hover:opacity-100"
-                          >
+                     <motion.div
+                        animate={{
+                            opacity: isSelectMode ? 0 : 1,
+                            scale: isSelectMode ? 0.8 : 1,
+                        }}
+                        transition={{ duration: 0.2 }}
+                        className={cn("absolute inset-0 flex items-center justify-center", isSelectMode ? "pointer-events-none" : "opacity-0 group-hover:opacity-100")}
+                     >
+                        {hasAnyPermission && (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <Button 
@@ -414,10 +404,29 @@ export const FileCard = React.memo(function FileCard({
                                     )}
                                 </DropdownMenuContent>
                             </DropdownMenu>
-                          </motion.div>
-                        </AnimatePresence>
-                      )
-                    )}
+                        )}
+                     </motion.div>
+
+                    <motion.div
+                        className={cn("absolute inset-0 flex items-center justify-center", !isSelectMode && "pointer-events-none")}
+                        animate={{
+                            opacity: isSelectMode ? 1 : 0,
+                            scale: isSelectMode ? 1 : 0.8,
+                        }}
+                        transition={{ duration: 0.2 }}
+                    >
+                         <Button
+                              variant="ghost"
+                              size="icon"
+                              className="w-8 h-8 rounded-full"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onToggleSelect?.(item.id, !isSelected)
+                              }}
+                          >
+                              {isSelected ? <CheckSquare className="text-blue-400" /> : <Square className="text-slate-500" />}
+                          </Button>
+                    </motion.div>
                  </div>
             </div>
         </div>
