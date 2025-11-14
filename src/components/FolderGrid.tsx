@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, useMemo, lazy, Suspense } from 'react';
+import { useEffect, useState, useMemo, lazy, Suspense, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { contentService, Content } from '@/lib/contentService';
 import { FolderCard } from './FolderCard';
@@ -26,7 +26,7 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useToast } from '@/hooks/use-toast';
 import { AddContentMenu } from './AddContentMenu';
 import { useIsMobile } from '@/hooks/use-mobile';
-import React, { useCallback } from 'react';
+import React from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { ChangeIconDialog } from './ChangeIconDialog';
 import { useRouter } from 'next/navigation';
