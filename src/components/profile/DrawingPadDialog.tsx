@@ -19,50 +19,37 @@ function SaveButton({ onSave, onClose }: { onSave: (dataUrl: string) => void, on
         if (!editor) return;
 
         try {
-            // Get the IDs of all shapes on the current page.
             // This is safer than `currentPageShapeIds` which can be undefined.
             const shapeIds = editor.shapesArray ? editor.shapesArray.map((shape) => shape.id) : [];
 
-            // If there are no shapes, we can't generate an SVG, so just close.
+            // If there are no shapes, just close the dialog without saving.
             if (shapeIds.length === 0) {
                 onClose();
                 return;
             }
 
-            const svg = await editor.getSvg(shapeIds, {
+            const blob = await editor.exportToBlob({
+                ids: shapeIds,
+                format: 'png',
                 scale: 2,
-                background: false, // Transparent background
             });
-
-            if (!svg) {
-                console.error("Failed to get SVG from tldraw");
+            
+            if (!blob) {
+                console.error("Failed to get blob from tldraw");
                 return;
             }
 
-            // To convert SVG to PNG, we need to render it on a canvas
-            const image = new Image();
-            const svgBlob = new Blob([svg.outerHTML], { type: 'image/svg+xml;charset=utf-8' });
-            const url = URL.createObjectURL(svgBlob);
-            
-            image.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = svg.width.baseVal.value * 2; // Match the scale
-                canvas.height = svg.height.baseVal.value * 2; // Match the scale
-                const ctx = canvas.getContext('2d');
-                if (ctx) {
-                    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-                    const pngUrl = canvas.toDataURL('image/png');
-                    onSave(pngUrl);
+            // Convert blob to data URL to insert into the editor
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                const base64data = reader.result;
+                if (base64data) {
+                    onSave(base64data as string);
+                } else {
+                     console.error("Failed to convert blob to data URL");
                 }
-                URL.revokeObjectURL(url);
             };
-
-            image.onerror = (e) => {
-                console.error("Error loading SVG image for conversion", e);
-                URL.revokeObjectURL(url);
-            }
-
-            image.src = url;
+            reader.readAsDataURL(blob);
 
         } catch (e) {
             console.error("Error saving drawing:", e);
