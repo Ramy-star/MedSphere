@@ -837,7 +837,7 @@ export const contentService = {
             ...originalItem,
             id: newId,
             parentId: targetParentId,
-            name: `${originalItem.name} (Copy)`,
+            name: originalItem.name,
             order: newOrder,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
