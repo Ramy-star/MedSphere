@@ -1,5 +1,6 @@
 'use client'
-import { Excalidraw, exportToBlob } from '@excalidraw/excalidraw';
+import React from 'react';
+import dynamic from 'next/dynamic';
 import {
     Dialog,
     DialogContent,
@@ -9,12 +10,19 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
+// Dynamically import Excalidraw with SSR turned off
+const Excalidraw = dynamic(
+  async () => (await import('@excalidraw/excalidraw')).Excalidraw,
+  { ssr: false }
+);
+
 export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string) => void; onClose: () => void }) {
     let excalidrawAPI: any = null;
 
     const handleSave = async () => {
         if (!excalidrawAPI) return;
         try {
+            const { exportToBlob } = await import('@excalidraw/excalidraw');
             const blob = await exportToBlob({
                 elements: excalidrawAPI.getSceneElements(),
                 appState: excalidrawAPI.getAppState(),
