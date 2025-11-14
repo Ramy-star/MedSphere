@@ -32,7 +32,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AdvancedSearchDialog } from './AdvancedSearchDialog';
 import { useKeyboardShortcuts } from '@/hooks/use-keyboard-shortcuts';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import { useToast } from '@/hooks/use-toast';
 
 
@@ -56,28 +56,25 @@ export const Header = ({ onMenuClick }: { onMenuClick?: () => void }) => {
       });
       return;
     }
-
+  
     try {
-      const dataUrl = await toPng(mainContent, { 
-        cacheBust: true,
-        pixelRatio: 2,
-        filter: (node: HTMLElement) => {
-            if (node.hasAttribute && node.hasAttribute('data-radix-tooltip-content')) {
-                return false;
-            }
-            return true;
-        }
+      const canvas = await html2canvas(mainContent, {
+        allowTaint: true,
+        useCORS: true,
+        // Filter out tooltips from the screenshot
+        ignoreElements: (element) => element.hasAttribute('data-radix-tooltip-content'),
       });
+      const dataUrl = canvas.toDataURL('image/png');
       const link = document.createElement('a');
       link.download = `medsphere-screenshot-${new Date().toISOString()}.png`;
       link.href = dataUrl;
       link.click();
-    } catch (err) {
+    } catch (err: any) {
       console.error('Oops, something went wrong!', err);
       toast({
         variant: "destructive",
         title: "Screenshot Failed",
-        description: "Could not capture the screen. Please try again.",
+        description: err.message || "Could not capture the screen. Please try again.",
       });
     }
   }, [toast]);
