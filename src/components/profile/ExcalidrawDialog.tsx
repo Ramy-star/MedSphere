@@ -9,34 +9,45 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import type { ExcalidrawAPIRef } from './DrawingPadDialog'; // Re-use the type definition
 
-// Correctly import the Excalidraw component for Next.js
+// Define the type for the Excalidraw API reference
+type ExcalidrawAPIRef = {
+    getSceneElements: () => any[];
+    getAppState: () => any;
+    getFiles: () => any;
+};
+
+// Dynamically import the Excalidraw component, ensuring it's only loaded on the client.
 const Excalidraw = dynamic(
-  async () => (await import('@excalidraw/excalidraw-next')).Excalidraw,
+  async () => (await import('@excalidraw/excalidraw')).Excalidraw,
   { ssr: false }
 );
 
+
 export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string) => void; onClose: () => void }) {
+    // Use useRef to hold a reference to the Excalidraw API instance.
     const excalidrawApiRef = useRef<ExcalidrawAPIRef | null>(null);
 
     const handleSave = async () => {
+        // Ensure the API ref has been set.
         if (!excalidrawApiRef.current) {
             console.error("Excalidraw API not available.");
             return;
         }
 
         try {
-            // The exportToBlob function must be imported dynamically as well.
+            // Dynamically import the export function only when needed.
             const { exportToBlob } = await import('@excalidraw/excalidraw');
             
             const elements = excalidrawApiRef.current.getSceneElements();
             
+            // If the canvas is empty, just close the dialog.
             if (!elements || elements.length === 0) {
               onClose();
               return;
             }
 
+            // Export the scene to a blob.
             const blob = await exportToBlob({
                 elements: elements,
                 appState: excalidrawApiRef.current.getAppState(),
@@ -44,6 +55,7 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
                 exportPadding: 10,
             });
             
+            // Convert the blob to a base64 Data URL.
             const reader = new FileReader();
             reader.onloadend = () => {
                 const base64data = reader.result;
@@ -52,7 +64,7 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
                 } else {
                     console.error("Failed to convert Excalidraw blob to data URL");
                 }
-                onClose();
+                onClose(); // Close the dialog after processing.
             };
             reader.readAsDataURL(blob);
 
@@ -69,6 +81,7 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
                     <DialogTitle>Excalidraw Pad</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 relative">
+                    {/* The Excalidraw component with the ref to capture its API */}
                     <Excalidraw excalidrawAPI={(api) => (excalidrawApiRef.current = api as ExcalidrawAPIRef)} theme="dark" />
                 </div>
                  <DialogFooter className="p-4 border-t border-slate-700">
