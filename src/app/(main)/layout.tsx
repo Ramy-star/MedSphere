@@ -18,7 +18,7 @@ import type { Content } from '@/lib/contentService';
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useFilePreviewStore } from '@/stores/file-preview-store';
 
-const FilePreviewModal = lazy(() => import('@/components/FilePreviewModal').then(mod => mod.FilePreviewModal));
+const FilePreviewModal = lazy(() => import('@/components/FilePreviewModal'));
 
 export default function MainLayout({
   children,

@@ -1,3 +1,4 @@
+
 'use client';
 import React, { useEffect, useState, useRef, useCallback, lazy, Suspense, FormEvent } from 'react';
 import type { Content } from '@/lib/contentService';
@@ -220,7 +221,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, 
     }
 };
 
-export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
+export default function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const router = useRouter();
   const [showChat, setShowChat] = useState(false);
@@ -319,7 +320,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
             if (isQuizFile) {
                 questionText = JSON.stringify(JSON.parse(currentItem.metadata!.quizData || '{}'), null, 2);
             } else if (isQuestionFile) {
-                const questionBlob = await contentService.getFileContent(currentItem.metadata!.storagePath!);
+                const questionBlob = await contentService.getFileContent(currentItem.metadata!.storagePath!, currentItem.id);
                 questionText = await questionBlob.text();
             }
 
@@ -830,8 +831,7 @@ export function FilePreviewModal({ item, onOpenChange }: { item: Content | null,
                         exit={{ opacity: 0, scale: 0.95 }}
                         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                         className={cn(
-                            "w-full max-w-none p-0 flex flex-row bg-slate-900/80 border-0 gap-0",
-                            "h-full md:h-[calc(var(--1dvh,100vh)-4rem)] md:w-[calc(100vw-4rem)] md:rounded-2xl"
+                            "w-full max-w-none p-0 flex flex-row bg-slate-900/80 border-0 gap-0 h-screen w-screen rounded-none"
                         )}
                         onClick={(e) => e.stopPropagation()} // Prevent closing when clicking inside
                      >
