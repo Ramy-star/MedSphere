@@ -1,5 +1,5 @@
 'use client'
-import React, { useRef, forwardRef, useImperativeHandle } from 'react';
+import React, { useRef } from 'react';
 import dynamic from 'next/dynamic';
 import {
     Dialog,
@@ -9,41 +9,13 @@ import {
     DialogFooter,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import type { ExcalidrawAPIRef } from './DrawingPadDialog'; // Re-use the type definition
 
-// --- Step 1: Create an inner component that holds the Excalidraw logic ---
-
-// This type defines the methods we want to expose via the ref.
-export interface ExcalidrawAPIRef {
-  getSceneElements: () => any[];
-  getAppState: () => any;
-  getFiles: () => any;
-}
-
-// The component itself, which receives a ref that will be populated with the Excalidraw API.
-const ExcalidrawInner = forwardRef<ExcalidrawAPIRef>((props, ref) => {
-  const Excalidraw = dynamic(
-    async () => (await import('@excalidraw/excalidraw')).Excalidraw,
-    { ssr: false }
-  );
-
-  // This hook exposes the Excalidraw API through the ref.
-  useImperativeHandle(ref, () => excalidrawRef.current);
-
-  const excalidrawRef = useRef<any>(null);
-
-  return (
-    <div style={{ height: '100%', width: '100%' }}>
-      <Excalidraw
-        excalidrawAPI={(api) => (excalidrawRef.current = api)}
-        theme="dark"
-      />
-    </div>
-  );
-});
-ExcalidrawInner.displayName = "ExcalidrawInner";
-
-
-// --- Step 2: The main dialog component ---
+// Correctly import the Excalidraw component for Next.js
+const Excalidraw = dynamic(
+  async () => (await import('@excalidraw/excalidraw-next')).Excalidraw,
+  { ssr: false }
+);
 
 export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string) => void; onClose: () => void }) {
     const excalidrawApiRef = useRef<ExcalidrawAPIRef | null>(null);
@@ -55,11 +27,11 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
         }
 
         try {
+            // The exportToBlob function must be imported dynamically as well.
             const { exportToBlob } = await import('@excalidraw/excalidraw');
             
             const elements = excalidrawApiRef.current.getSceneElements();
             
-            // If there are no shapes, just close the dialog.
             if (!elements || elements.length === 0) {
               onClose();
               return;
@@ -86,7 +58,6 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
 
         } catch (error) {
             console.error("Error exporting from Excalidraw:", error);
-            // Still close the dialog on error to avoid getting stuck.
             onClose();
         }
     };
@@ -98,7 +69,7 @@ export function ExcalidrawDialog({ onSave, onClose }: { onSave: (dataUrl: string
                     <DialogTitle>Excalidraw Pad</DialogTitle>
                 </DialogHeader>
                 <div className="flex-1 relative">
-                    <ExcalidrawInner ref={excalidrawApiRef} />
+                    <Excalidraw excalidrawAPI={(api) => (excalidrawApiRef.current = api as ExcalidrawAPIRef)} theme="dark" />
                 </div>
                  <DialogFooter className="p-4 border-t border-slate-700">
                     <Button variant="outline" onClick={onClose}>Cancel</Button>
