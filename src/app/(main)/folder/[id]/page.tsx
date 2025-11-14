@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, use } from 'react';
@@ -18,6 +17,8 @@ export default function FolderPage({ params }: { params: { id: string } }) {
   const { data: current, loading: loadingCurrent } = useDoc<Content>('content', id);
   const [uploadingFiles, setUploadingFiles] = useState<UploadingFile[]>([]);
   const { toast } = useToast();
+  const [isSelectMode, setIsSelectMode] = useState(false);
+
 
   useEffect(() => {
     if (!loadingCurrent && !current) {
@@ -146,7 +147,11 @@ export default function FolderPage({ params }: { params: { id: string } }) {
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="flex flex-col flex-1 overflow-hidden"
     >
-        <FileExplorerHeader onFileSelected={processFileUpload} />
+        <FileExplorerHeader 
+            onFileSelected={processFileUpload} 
+            isSelectMode={isSelectMode}
+            onToggleSelectMode={() => setIsSelectMode(!isSelectMode)}
+        />
         <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
             {!loadingCurrent && current && (
                 <FolderGrid 
@@ -156,6 +161,8 @@ export default function FolderPage({ params }: { params: { id: string } }) {
                     onUpdateFile={handleUpdateFile}
                     onRetry={handleRetryUpload}
                     onRemove={handleRemoveUpload}
+                    isSelectMode={isSelectMode}
+                    onToggleSelectMode={() => setIsSelectMode(!isSelectMode)}
                 />
             )}
         </div>

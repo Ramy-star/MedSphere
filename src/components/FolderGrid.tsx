@@ -162,7 +162,9 @@ export function FolderGrid({
     onFileSelected,
     onUpdateFile,
     onRetry, 
-    onRemove 
+    onRemove,
+    isSelectMode,
+    onToggleSelectMode
 }: { 
     parentId: string, 
     uploadingFiles: UploadingFile[], 
@@ -170,6 +172,8 @@ export function FolderGrid({
     onUpdateFile: (item: Content, file: File) => void,
     onRetry: (fileId: string) => void,
     onRemove: (fileId: string) => void,
+    isSelectMode?: boolean;
+    onToggleSelectMode?: () => void;
 }) {
   const { can, user } = useAuthStore();
   const canReorder = can('canReorder', parentId);
@@ -197,7 +201,7 @@ export function FolderGrid({
   const [isDraggingOver, setIsDraggingOver] = useState(false);
   const [showFolderSelector, setShowFolderSelector] = useState(false);
   const [currentAction, setCurrentAction] = useState<'move' | 'copy' | null>(null);
-  const [isSelectMode, setIsSelectMode] = useState(false);
+  
   const [selectedItems, setSelectedItems] = useState<Set<string>>(new Set());
 
   const dropZoneRef = useRef<HTMLDivElement>(null);
@@ -212,6 +216,13 @@ export function FolderGrid({
           setSortedItems(fetchedItems);
       }
   }, [fetchedItems]);
+  
+   // Clear selection when select mode is turned off
+  useEffect(() => {
+    if (!isSelectMode) {
+      setSelectedItems(new Set());
+    }
+  }, [isSelectMode]);
 
   const handleFolderClick = useCallback((folder: Content) => {
     router.push(`/folder/${folder.id}`);
@@ -323,9 +334,9 @@ export function FolderGrid({
         setItemToMove(null);
         setItemToCopy(null);
         setSelectedItems(new Set());
-        setIsSelectMode(false);
+        if(onToggleSelectMode) onToggleSelectMode();
     }
-  }, [currentAction, selectedItems, sortedItems, itemToMove, itemToCopy, toast]);
+  }, [currentAction, selectedItems, sortedItems, itemToMove, itemToCopy, toast, onToggleSelectMode]);
 
   const handleToggleVisibility = useCallback(async (item: Content) => {
       await contentService.toggleVisibility(item.id);
@@ -370,7 +381,7 @@ export function FolderGrid({
     } finally {
       setItemsToDelete([]);
       setSelectedItems(new Set());
-      setIsSelectMode(false);
+      if (onToggleSelectMode) onToggleSelectMode();
     }
   };
 
@@ -383,7 +394,7 @@ export function FolderGrid({
         toast({ variant: 'destructive', title: 'Error', description: error.message || "Failed to update visibility." });
     } finally {
       setSelectedItems(new Set());
-      setIsSelectMode(false);
+      if (onToggleSelectMode) onToggleSelectMode();
     }
   };
 
@@ -397,7 +408,7 @@ export function FolderGrid({
         toast({ variant: 'destructive', title: 'Error', description: error.message || "Failed to update favorites." });
     } finally {
       setSelectedItems(new Set());
-      setIsSelectMode(false);
+      if (onToggleSelectMode) onToggleSelectMode();
     }
   };
   
@@ -438,7 +449,7 @@ export function FolderGrid({
              <p className="mt-2 text-sm text-slate-400">
                Drag and drop files here, or use the button to add content.
              </p>
-             {can('canAddFolder', parentId) && (
+             {can('canAddFolder', parentId) && onFileSelected && (
                <div className="mt-6 flex items-center gap-4">
                   <AddContentMenu
                     parentId={parentId}
@@ -450,12 +461,6 @@ export function FolderGrid({
                       </Button>
                     }
                   />
-                  {can('canSelectItem', null) && (
-                    <Button variant="outline" onClick={() => setIsSelectMode(true)}>
-                        <CheckSquare className="mr-2 h-4 w-4" />
-                        Select Items
-                    </Button>
-                  )}
                 </div>
              )}
          </div>
@@ -473,24 +478,6 @@ export function FolderGrid({
         className={cn("relative h-full", isDraggingOver && "opacity-50")}
     >
       <DropZone isVisible={isDraggingOver} />
-
-      {can('canSelectItem', null) && (
-        <div className="flex justify-end mb-4 pr-1">
-          <Button variant="outline" onClick={() => setIsSelectMode(!isSelectMode)} size="sm" className="rounded-full">
-              {isSelectMode ? (
-                  <>
-                      <XIcon className="mr-2 h-4 w-4"/>
-                      Cancel Selection
-                  </>
-              ) : (
-                  <>
-                      <CheckSquare className="mr-2 h-4 w-4" />
-                      Select Items
-                  </>
-              )}
-          </Button>
-        </div>
-      )}
        
        {newUploads.length > 0 && (
          <div className="flex flex-col">
@@ -638,7 +625,7 @@ export function FolderGrid({
 
          <BulkActionBar
             selectedItems={sortedItems.filter(item => selectedItems.has(item.id))}
-            onClear={() => { setSelectedItems(new Set()); setIsSelectMode(false); }}
+            onClear={() => { setSelectedItems(new Set()); onToggleSelectMode?.(); }}
             onBulkDelete={handleBulkDelete}
             onBulkMove={() => { setCurrentAction('move'); setShowFolderSelector(true); }}
             onBulkCopy={() => { setCurrentAction('copy'); setShowFolderSelector(true); }}

@@ -1,21 +1,22 @@
-
 'use client';
 
 import Link from 'next/link';
 import { notFound, useRouter } from 'next/navigation';
-import React, { useEffect, useMemo, use } from 'react';
+import React, { useEffect, useMemo, use, useState } from 'react';
 import { Content } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { prefetcher } from '@/lib/prefetchService';
 import FileExplorerHeader from '@/components/FileExplorerHeader';
 import { motion } from 'framer-motion';
 import { where } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 export default function LevelPage({ params }: { params: { levelName: string } }) {
   const resolvedParams = use(params);
   const { levelName } = resolvedParams;
   const router = useRouter();
   const decodedLevelName = decodeURIComponent(levelName);
+  const [isSelectMode, setIsSelectMode] = useState(false);
   
   const { data: levels, loading: loadingLevels } = useCollection<Content>('content', {
     where: where('name', '==', decodedLevelName),
@@ -46,7 +47,7 @@ export default function LevelPage({ params }: { params: { levelName: string } })
         transition={{ type: "spring", stiffness: 300, damping: 30 }}
         className="flex flex-col flex-1 overflow-hidden"
     >
-        <FileExplorerHeader />
+        <FileExplorerHeader isSelectMode={isSelectMode} onToggleSelectMode={() => setIsSelectMode(!isSelectMode)} />
         <div className="relative flex-1 overflow-y-auto mt-4 pr-2 -mr-2">
             {!loading && semesters && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
@@ -58,7 +59,7 @@ export default function LevelPage({ params }: { params: { levelName: string } })
                         >
                             <Link href={`/folder/${semester.id}`} className="block h-full group">
                                 <div className="glass-card p-8 hover:bg-white/10 transition-colors cursor-pointer h-full flex items-center justify-center text-center rounded-[1.25rem]">
-                                    <h3 className="text-xl font-semibold text-white transition-transform duration-150 ease-out group-hover:scale-110 origin-center">{semester.name}</h3>
+                                    <h3 className={cn("text-xl font-semibold text-white transition-transform duration-150 ease-out group-hover:scale-110 origin-center")}>{semester.name}</h3>
                                 </div>
                             </Link>
                         </div>

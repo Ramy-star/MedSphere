@@ -1,6 +1,5 @@
-
 'use client';
-import { ArrowRight, ArrowLeft } from 'lucide-react';
+import { ArrowRight, ArrowLeft, Plus, CheckSquare } from 'lucide-react';
 import { AddContentMenu } from './AddContentMenu';
 import { useAuthStore } from '@/stores/auth-store';
 import Image from 'next/image';
@@ -12,10 +11,13 @@ import { Button } from './ui/button';
 import { Content } from '@/lib/contentService';
 import { LucideIcon, Folder, Layers, Calendar, Inbox } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from './ui/tooltip';
+import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
-export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?: (file: File) => void }) {
-  const { canAddContent } = useAuthStore();
+export default function FileExplorerHeader({ onFileSelected, isSelectMode, onToggleSelectMode }: { onFileSelected?: (file: File) => void, isSelectMode?: boolean, onToggleSelectMode?: () => void }) {
+  const { canAddContent, can } = useAuthStore();
+  const isMobile = useIsMobile();
   const pathname = usePathname();
   
   const { data: allItems } = useCollection<Content>('content');
@@ -98,11 +100,45 @@ export default function FileExplorerHeader({ onFileSelected }: { onFileSelected?
         </h1>
       </div>
       <div className="flex gap-2">
-        {canAddContent(currentFolder?.id || null) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
-          <div>
-            <AddContentMenu parentId={currentFolder.id} onFileSelected={onFileSelected} />
-          </div>
+        <TooltipProvider>
+        {can('canSelectItem', null) && onToggleSelectMode && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+                <Button 
+                    variant={isSelectMode ? "secondary" : "outline"} 
+                    onClick={onToggleSelectMode} 
+                    size={isMobile ? "icon" : "sm"}
+                    className={cn("rounded-2xl active:scale-95 transition-transform", isMobile && "w-9 h-9")}
+                >
+                    <CheckSquare className="h-4 w-4" />
+                    {!isMobile && <span className="ml-2">Select Items</span>}
+                </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Select multiple items</p>
+            </TooltipContent>
+          </Tooltip>
         )}
+        {canAddContent(currentFolder?.id || null) && currentFolder && onFileSelected && currentFolder.type !== 'LEVEL' && (
+          <AddContentMenu
+              parentId={currentFolder.id}
+              onFileSelected={onFileSelected}
+              trigger={
+                  <Tooltip>
+                      <TooltipTrigger asChild>
+                          <Button size={isMobile ? "icon" : "sm"} className="rounded-2xl active:scale-95 transition-transform">
+                              <Plus className="h-4 w-4" />
+                              {!isMobile && <span className="ml-2">Add Content</span>}
+                          </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                          <p>Add new content</p>
+                      </TooltipContent>
+                  </Tooltip>
+              }
+          />
+        )}
+        </TooltipProvider>
         <div className="hidden md:flex items-center gap-1">
           <TooltipProvider>
             <Tooltip>
