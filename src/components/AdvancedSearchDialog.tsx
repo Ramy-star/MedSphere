@@ -104,15 +104,6 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
         performSearch();
     }, [performSearch]);
 
-    const handleClose = () => {
-        onOpenChange(false);
-        setTimeout(() => {
-            setQuery('');
-            setResults([]);
-            setFilters({ type: 'all', level: 'all' });
-        }, 300);
-    };
-
     const handleFileClick = (item: Content) => {
         setPreviewFile(item);
     };
@@ -169,7 +160,7 @@ export function AdvancedSearchDialog({ open, onOpenChange }: { open: boolean, on
 
     return (
         <>
-            <Dialog open={open} onOpenChange={handleClose}>
+            <Dialog open={open} onOpenChange={onOpenChange}>
                 <DialogContent 
                     ref={dialogContentRef}
                     className="max-w-3xl h-[80vh] flex flex-col p-0 gap-0 rounded-2xl bg-gradient-to-br from-slate-900/80 to-green-950/80 backdrop-blur-xl text-white border-0"
