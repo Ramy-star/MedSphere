@@ -146,6 +146,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                       renderAnnotationLayer={true}
                       renderTextLayer={true}
                       loading={<Skeleton style={{ height: pageDimensions[pageIndex]?.height * debouncedScale || 1000, width: pageDimensions[pageIndex]?.width * debouncedScale || 700 }} />}
+                      width={undefined} // Remove width constraint to allow horizontal overflow
                     />
                   </div>
                 </div>
