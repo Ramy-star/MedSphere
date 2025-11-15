@@ -127,31 +127,31 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
       <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<div className="p-4 w-full flex justify-center"><Skeleton className="h-[80vh] w-[80%]" /></div>}>
         {numPages > 0 && pageDimensions.length > 0 && (
           <div style={{ height: `${rowVirtualizer.getTotalSize()}px`, width: '100%', position: 'relative' }}>
-            {virtualItems.map((virtualItem) => {
-              const pageIndex = virtualItem.index;
-              const pageNumber = pageIndex + 1;
-              return (
-                <div
-                  key={virtualItem.key}
-                  data-index={virtualItem.index}
-                  ref={rowVirtualizer.measureElement}
-                  style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
-                  className="flex justify-center w-full"
-                >
-                  <div className="shadow-lg" style={{ marginBottom: '4px' }}>
-                    <Page
-                      pageNumber={pageNumber}
-                      scale={debouncedScale}
-                      onRenderError={onRenderError}
-                      renderAnnotationLayer={true}
-                      renderTextLayer={true}
-                      loading={<Skeleton style={{ height: pageDimensions[pageIndex]?.height * debouncedScale || 1000, width: pageDimensions[pageIndex]?.width * debouncedScale || 700 }} />}
-                      width={undefined} // Remove width constraint to allow horizontal overflow
-                    />
+            <div style={{ margin: '0 auto' }}> {/* This centers the content */}
+              {virtualItems.map((virtualItem) => {
+                const pageIndex = virtualItem.index;
+                const pageNumber = pageIndex + 1;
+                return (
+                  <div
+                    key={virtualItem.key}
+                    data-index={virtualItem.index}
+                    ref={rowVirtualizer.measureElement}
+                    style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
+                  >
+                    <div className="shadow-lg" style={{ marginBottom: '4px', width: 'fit-content' }}>
+                      <Page
+                        pageNumber={pageNumber}
+                        scale={debouncedScale}
+                        onRenderError={onRenderError}
+                        renderAnnotationLayer={true}
+                        renderTextLayer={true}
+                        loading={<Skeleton style={{ height: pageDimensions[pageIndex]?.height * debouncedScale || 1000, width: pageDimensions[pageIndex]?.width * debouncedScale || 700 }} />}
+                      />
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         )}
       </Document>
