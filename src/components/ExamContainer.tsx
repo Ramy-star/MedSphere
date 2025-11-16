@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
-import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown, GripVertical, Pencil, Settings2, PlusSquare, Tag, ImageIcon, Upload, Save, GraduationCap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, CheckCircle, XCircle, AlertCircle, LogOut, X, Clock, FileText, SkipForward, Crown, Shield, User as UserIcon, PlusCircle, Trash2, Edit, Check, ChevronDown, ArrowDown, GripVertical, Pencil, Settings2, PlusSquare, Tag, ImageIcon, Upload, Save, GraduationCap, Wand2 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip as RechartsTooltip, CartesianGrid, LabelList } from 'recharts';
 import * as AlertDialogPrimitive from "@radix-ui/react-alert-dialog";
 import * as TooltipPrimitive from "@radix-ui/react-tooltip";
@@ -36,6 +36,8 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { db } from '@/firebase';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { convertQuestionsToJson } from '@/ai/flows/question-gen-flow';
 
 
 // === Types ===
@@ -594,7 +596,7 @@ const UpsertMcqDialog = ({
     onClose: () => void;
     lectures: Lecture[];
     activeLectureId?: string;
-    onUpsert: (lectureId: string, newLectureName: string, mcq: MCQ, level: 1 | 2, originalMcq?: MCQ) => void;
+    onUpsert: (lectureId: string, newLectureName: string, mcqs: MCQ[], level: 1 | 2, originalMcq?: MCQ) => void;
     mcqToEdit: { mcq: MCQ, level: 1 | 2 } | null;
 }) => {
     const isEditing = !!mcqToEdit;
@@ -629,11 +631,14 @@ const UpsertMcqFormContent = ({
 }: {
     lectures: Lecture[];
     activeLectureId?: string;
-    onUpsert: (lectureId: string, newLectureName: string, mcq: MCQ, level: 1 | 2, originalMcq?: MCQ) => void;
+    onUpsert: (lectureId: string, newLectureName: string, mcqs: MCQ[], level: 1 | 2, originalMcq?: MCQ) => void;
     closeDialog: () => void;
     mcqToEdit: { mcq: MCQ, level: 1 | 2 } | null;
 }) => {
     const isEditing = !!mcqToEdit;
+    const [activeTab, setActiveTab] = useState('manual');
+    const [bulkText, setBulkText] = useState('');
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const getInitialLectureId = () => {
         if (isEditing) {
@@ -659,7 +664,7 @@ const UpsertMcqFormContent = ({
         setOptions(newOptions);
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleManualSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const trimmedQuestion = question.trim();
         const trimmedOptions = options.map(o => o.trim()).filter(Boolean);
@@ -679,91 +684,177 @@ const UpsertMcqFormContent = ({
         }
 
         const newMcq: MCQ = { q: trimmedQuestion, o: trimmedOptions, a: trimmedAnswer };
-        onUpsert(lectureId, newLectureName, newMcq, level, mcqToEdit?.mcq);
+        onUpsert(lectureId, newLectureName, [newMcq], level, mcqToEdit?.mcq);
         closeDialog();
+    };
+
+    const handleBulkSubmit = async () => {
+        if (!bulkText.trim()) return;
+        if (lectureId === 'new' && !newLectureName.trim()) {
+            alert("Please provide a name for the new lecture.");
+            return;
+        }
+
+        setIsGenerating(true);
+        try {
+            const lectureName = newLectureName.trim() || lectures.find(l => l.id === lectureId)?.name || 'New Lecture';
+            const result = await convertQuestionsToJson({ lectureName, text: bulkText }) as any;
+            
+            const newMcqs: MCQ[] = [
+                ...(result.mcqs_level_1 || []),
+                ...(result.mcqs_level_2 || [])
+            ];
+
+            if (newMcqs.length > 0) {
+                onUpsert(lectureId, newLectureName, newMcqs, level);
+                closeDialog();
+            } else {
+                alert("AI could not find any questions in the provided text. Please check the format.");
+            }
+        } catch (error) {
+            console.error("AI bulk generation failed:", error);
+            alert("An error occurred while generating questions with AI. Please try again.");
+        } finally {
+            setIsGenerating(false);
+        }
     };
 
     return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
             <DialogHeader className="pb-4 border-b">
-                <motion.div custom={0} initial="hidden" animate="visible" variants={motionVariants}>
+                 <motion.div custom={0} initial="hidden" animate="visible" variants={motionVariants}>
                     <DialogTitle className="font-headline text-xl flex items-center gap-2">
                         {isEditing ? <Pencil className="w-5 h-5 text-primary" /> : <PlusCircle className="w-5 h-5 text-primary" />}
-                        {isEditing ? 'Edit Question' : 'Create a New Question'}
+                        {isEditing ? 'Edit Question' : 'Add Questions'}
                     </DialogTitle>
                 </motion.div>
             </DialogHeader>
-            <form onSubmit={handleSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto p-1 pr-4 mt-4">
-                <motion.div custom={1} initial="hidden" animate="visible" variants={motionVariants}>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Lecture</label>
-                        <Select value={lectureId} onValueChange={setLectureId}>
-                            <SelectTrigger><SelectValue placeholder="Select a lecture" /></SelectTrigger>
-                            <SelectContent>
-                                {lectures.map(lec => (<SelectItem key={lec.id} value={lec.id}>{lec.name}</SelectItem>))}
-                                <SelectItem value="new">Create a new lecture...</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </motion.div>
-
-                {lectureId === 'new' && (
-                    <motion.div custom={2} initial="hidden" animate="visible" variants={motionVariants}>
-                        <div className="space-y-2">
-                            <label className="text-sm font-medium">New Lecture Name</label>
-                            <Input value={newLectureName} onChange={(e) => setNewLectureName(e.target.value)} placeholder="e.g., L6 Cardiology" required />
-                        </div>
-                    </motion.div>
-                )}
-                
-                <motion.div custom={3} initial="hidden" animate="visible" variants={motionVariants}>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Question Level</label>
-                        <Select value={String(level)} onValueChange={(v) => setLevel(Number(v) as 1 | 2)}>
-                            <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
-                            <SelectContent>
-                            <SelectItem value="1">Level 1</SelectItem>
-                            <SelectItem value="2">Level 2</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </motion.div>
-                
-                <motion.div custom={4} initial="hidden" animate="visible" variants={motionVariants}>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Question</label>
-                        <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g., What is the primary function of the mitochondria?" required />
-                    </div>
-                </motion.div>
-
-                <motion.div custom={5} initial="hidden" animate="visible" variants={motionVariants}>
-                    <div className="space-y-3">
-                        <label className="text-sm font-medium">Options</label>
-                        {Array.from({ length: 5 }).map((_, index) => (
-                            <div key={index} className="flex items-center gap-2">
-                            <span className="font-semibold text-gray-500">{String.fromCharCode(65 + index)}</span>
-                                <Input value={options[index] || ''} onChange={(e) => handleOptionChange(index, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + index)}`} />
+            
+            <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'manual' | 'bulk')} className="w-full mt-4">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="manual">Manual Entry</TabsTrigger>
+                    <TabsTrigger value="bulk">Bulk Create with AI</TabsTrigger>
+                </TabsList>
+                <TabsContent value="manual">
+                    <form onSubmit={handleManualSubmit} className="space-y-4 max-h-[60vh] overflow-y-auto p-1 pr-4 mt-4">
+                        <motion.div custom={1} initial="hidden" animate="visible" variants={motionVariants}>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Lecture</label>
+                                <Select value={lectureId} onValueChange={setLectureId}>
+                                    <SelectTrigger><SelectValue placeholder="Select a lecture" /></SelectTrigger>
+                                    <SelectContent>
+                                        {lectures.map(lec => (<SelectItem key={lec.id} value={lec.id}>{lec.name}</SelectItem>))}
+                                        <SelectItem value="new">Create a new lecture...</SelectItem>
+                                    </SelectContent>
+                                </Select>
                             </div>
-                        ))}
-                    </div>
-                </motion.div>
+                        </motion.div>
 
-                <motion.div custom={6} initial="hidden" animate="visible" variants={motionVariants}>
-                    <div className="space-y-2">
-                        <label className="text-sm font-medium">Correct Answer</label>
-                        <Input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Copy-paste the exact text of the correct option" required />
-                    </div>
-                </motion.div>
+                        {lectureId === 'new' && (
+                            <motion.div custom={2} initial="hidden" animate="visible" variants={motionVariants}>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-medium">New Lecture Name</label>
+                                    <Input value={newLectureName} onChange={(e) => setNewLectureName(e.target.value)} placeholder="e.g., L6 Cardiology" required />
+                                </div>
+                            </motion.div>
+                        )}
+                        
+                        <motion.div custom={3} initial="hidden" animate="visible" variants={motionVariants}>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Question Level</label>
+                                <Select value={String(level)} onValueChange={(v) => setLevel(Number(v) as 1 | 2)}>
+                                    <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                                    <SelectContent>
+                                    <SelectItem value="1">Level 1</SelectItem>
+                                    <SelectItem value="2">Level 2</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </motion.div>
+                        
+                        <motion.div custom={4} initial="hidden" animate="visible" variants={motionVariants}>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Question</label>
+                                <Textarea value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g., What is the primary function of the mitochondria?" required />
+                            </div>
+                        </motion.div>
 
-                <DialogFooter className="pt-4 mt-4 border-t sm:justify-center gap-2">
-                    <motion.div custom={7} initial="hidden" animate="visible" variants={motionVariants} className="w-full sm:w-28">
-                        <Button type="button" variant="outline" className="w-full" onClick={closeDialog}>Cancel</Button>
-                    </motion.div>
-                    <motion.div custom={8} initial="hidden" animate="visible" variants={motionVariants} className="w-full sm:w-28">
-                        <Button type="submit" className="w-full">{isEditing ? 'Save Changes' : 'Add Question'}</Button>
-                    </motion.div>
-                </DialogFooter>
-            </form>
+                        <motion.div custom={5} initial="hidden" animate="visible" variants={motionVariants}>
+                            <div className="space-y-3">
+                                <label className="text-sm font-medium">Options</label>
+                                {Array.from({ length: 5 }).map((_, index) => (
+                                    <div key={index} className="flex items-center gap-2">
+                                    <span className="font-semibold text-gray-500">{String.fromCharCode(65 + index)}</span>
+                                        <Input value={options[index] || ''} onChange={(e) => handleOptionChange(index, e.target.value)} placeholder={`Option ${String.fromCharCode(65 + index)}`} />
+                                    </div>
+                                ))}
+                            </div>
+                        </motion.div>
+
+                        <motion.div custom={6} initial="hidden" animate="visible" variants={motionVariants}>
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">Correct Answer</label>
+                                <Input value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Copy-paste the exact text of the correct option" required />
+                            </div>
+                        </motion.div>
+
+                        <DialogFooter className="pt-4 mt-4 border-t sm:justify-center gap-2">
+                            <motion.div custom={7} initial="hidden" animate="visible" variants={motionVariants} className="w-full sm:w-28">
+                                <Button type="button" variant="outline" className="w-full" onClick={closeDialog}>Cancel</Button>
+                            </motion.div>
+                            <motion.div custom={8} initial="hidden" animate="visible" variants={motionVariants} className="w-full sm:w-auto">
+                                <Button type="submit" className="w-full">{isEditing ? 'Save Changes' : 'Add Question'}</Button>
+                            </motion.div>
+                        </DialogFooter>
+                    </form>
+                </TabsContent>
+                <TabsContent value="bulk">
+                    <div className="space-y-4 max-h-[60vh] overflow-y-auto p-1 pr-4 mt-4">
+                         <div className="space-y-2">
+                            <label className="text-sm font-medium">Lecture</label>
+                            <Select value={lectureId} onValueChange={setLectureId}>
+                                <SelectTrigger><SelectValue placeholder="Select a lecture" /></SelectTrigger>
+                                <SelectContent>
+                                    {lectures.map(lec => (<SelectItem key={lec.id} value={lec.id}>{lec.name}</SelectItem>))}
+                                    <SelectItem value="new">Create a new lecture...</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        {lectureId === 'new' && (
+                            <div className="space-y-2">
+                                <label className="text-sm font-medium">New Lecture Name</label>
+                                <Input value={newLectureName} onChange={(e) => setNewLectureName(e.target.value)} placeholder="e.g., L7 Renal System" required />
+                            </div>
+                        )}
+                        <div className="space-y-2">
+                            <label className="text-sm font-medium">Question Level</label>
+                            <Select value={String(level)} onValueChange={(v) => setLevel(Number(v) as 1 | 2)}>
+                                <SelectTrigger><SelectValue placeholder="Select level" /></SelectTrigger>
+                                <SelectContent>
+                                <SelectItem value="1">Level 1</SelectItem>
+                                <SelectItem value="2">Level 2</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="space-y-2">
+                            <label className="text-sm font-medium">Paste Questions</label>
+                            <Textarea
+                                value={bulkText}
+                                onChange={(e) => setBulkText(e.target.value)}
+                                placeholder={`1. Question text...\na) Option 1\nb) Option 2\nAnswer: a) Option 1`}
+                                className="h-48 font-mono text-xs"
+                            />
+                            <p className="text-xs text-muted-foreground">Paste your questions in the format shown above. The AI will parse them automatically.</p>
+                        </div>
+                    </div>
+                     <DialogFooter className="pt-4 mt-4 border-t sm:justify-center gap-2">
+                        <Button type="button" variant="outline" className="w-full sm:w-28" onClick={closeDialog}>Cancel</Button>
+                        <Button type="button" className="w-full sm:w-auto" onClick={handleBulkSubmit} disabled={isGenerating || !bulkText.trim()}>
+                            {isGenerating ? <><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Generating...</> : <><Wand2 className="mr-2 h-4 w-4" /> Generate Questions</>}
+                        </Button>
+                    </DialogFooter>
+                </TabsContent>
+            </Tabs>
         </motion.div>
     );
 };
@@ -1490,7 +1581,7 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
         setIsUpsertMcqDialogOpen(true);
     };
 
-    const handleUpsertMcq = (lectureId: string, newLectureName: string, mcqData: MCQ, level: 1 | 2, originalMcq?: MCQ) => {
+    const handleUpsertMcq = (lectureId: string, newLectureName: string, mcqs: MCQ[], level: 1 | 2, originalMcq?: MCQ) => {
         let updatedLectures = [...lecturesState];
         let targetLectureId = lectureId;
         let newLectureCreated = false;
@@ -1512,15 +1603,19 @@ export default function ExamContainer({ lectures: rawLecturesData, onStateChange
 
         const lectureToUpdate = {...updatedLectures[lectureIndex]};
         const key: 'mcqs_level_1' | 'mcqs_level_2' = `mcqs_level_${level}`;
-        let mcqs = [...(lectureToUpdate[key] || [])];
+        
+        let existingMcqs = [...(lectureToUpdate[key] || [])];
 
-        if (originalMcq) {
-            const mcqIndex = mcqs.findIndex(m => m.q === originalMcq.q);
-            if (mcqIndex > -1) mcqs[mcqIndex] = mcqData;
-        } else {
-            mcqs.push(mcqData);
+        if (originalMcq) { // Editing
+            const mcqIndex = existingMcqs.findIndex(m => m.q === originalMcq.q);
+            if (mcqIndex > -1) {
+                existingMcqs[mcqIndex] = mcqs[0]; // Assuming edit is one at a time
+            }
+        } else { // Adding
+            existingMcqs.push(...mcqs);
         }
-        lectureToUpdate[key] = mcqs;
+        
+        lectureToUpdate[key] = existingMcqs;
         updatedLectures[lectureIndex] = lectureToUpdate;
 
         handleLecturesUpdate(updatedLectures);
