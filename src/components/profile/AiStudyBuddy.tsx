@@ -120,7 +120,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     const [fontSize, setFontSize] = useState(13); // Reduced default font size slightly
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
-    const [fileSearchQuery, setFileSearchQuery] = useState('');
     const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
     const [itemToDelete, setItemToDelete] = useState<AiBuddyChatSession | null>(null);
     const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
@@ -248,6 +247,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         setChatHistory(newHistory);
         setIsResponding(true);
         setCustomQuestion('');
+        // Don't clear referenced files here: setReferencedFiles([]);
         
         let fileContent = '';
         try {
@@ -595,7 +595,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                 <div
                   dir="auto"
                   className={cn(
-                    'text-slate-300 max-w-[95%] prose prose-sm prose-invert pl-2',
+                    'text-slate-300 max-w-[95%] prose prose-sm prose-invert pl-4',
                     isRtl(message.text)
                       ? 'self-end text-right'
                       : 'self-start text-left'
