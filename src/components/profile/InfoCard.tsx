@@ -6,7 +6,7 @@ import { Copy, Check, Edit, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
-export const InfoCard = ({ icon: Icon, label, value, onEdit, isSecret = false }: { icon: React.ElementType, label: string, value: string | null, onEdit?: () => void, isSecret?: boolean }) => {
+export const InfoCard = ({ icon: Icon, label, value, onEdit, isSecret = false, showCopy = true }: { icon: React.ElementType, label: string, value: string | null, onEdit?: () => void, isSecret?: boolean, showCopy?: boolean }) => {
     const [isCopied, setIsCopied] = useState(false);
     const { toast } = useToast();
 
@@ -32,7 +32,7 @@ export const InfoCard = ({ icon: Icon, label, value, onEdit, isSecret = false }:
             </p>
         </div>
         <div className="flex items-center gap-1">
-             {!isSecret && (
+             {!isSecret && showCopy && (
                 <Button
                     size="icon"
                     variant="ghost"

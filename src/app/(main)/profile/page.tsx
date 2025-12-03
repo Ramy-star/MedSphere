@@ -5,7 +5,7 @@ import { useState, useRef, useEffect, ReactNode, Suspense, lazy } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, StickyNote, KeyRound, NotebookPen } from 'lucide-react';
+import { Camera, Edit, Loader2, Save, User as UserIcon, X, Trash2, Crown, Shield, Mail, Badge, School, Image as ImageIcon, LogOut, Star, Activity, Info, ChevronDown, NotebookPen } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '@/firebase';
@@ -333,10 +333,10 @@ export default function ProfilePage() {
         <div className="flex flex-col space-y-6 sm:space-y-8 min-w-0">
              <CollapsibleSection title="User Information" icon={Info} defaultOpen={true}>
                 <div className="space-y-3 sm:space-y-4">
-                    <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
-                    <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
-                    <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
-                    <InfoCard icon={KeyRound} label="Secret Code" value={user.secretCodeHash} isSecret onEdit={() => setShowChangeSecretCode(true)} />
+                    <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} showCopy={false} />
+                    <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} showCopy={false} />
+                    <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} showCopy={false} />
+                    <InfoCard icon={Badge} label="Secret Code" value={user.secretCodeHash} isSecret onEdit={() => setShowChangeSecretCode(true)} />
                 </div>
             </CollapsibleSection>
              <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
@@ -364,10 +364,10 @@ export default function ProfilePage() {
       <div className="mt-8 sm:mt-12 flex flex-col gap-y-8 items-start w-full px-4 sm:px-8">
           <CollapsibleSection title="User Information" icon={Info} defaultOpen={false}>
               <div className="space-y-3 sm:space-y-4">
-                  <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
-                  <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
-                  <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
-                  <InfoCard icon={KeyRound} label="Secret Code" value={user.secretCodeHash} isSecret onEdit={() => setShowChangeSecretCode(true)} />
+                  <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} showCopy={false} />
+                  <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} showCopy={false} />
+                  <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} showCopy={false} />
+                  <InfoCard icon={Badge} label="Secret Code" value={user.secretCodeHash} isSecret onEdit={() => setShowChangeSecretCode(true)} />
               </div>
           </CollapsibleSection>
           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={false}>
