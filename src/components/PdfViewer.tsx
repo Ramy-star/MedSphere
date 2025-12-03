@@ -114,9 +114,15 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
   if (isFullscreen) {
     return (
-      <div className="w-screen h-screen flex flex-col items-center justify-center bg-black overflow-auto">
+      <div className="w-screen h-screen flex items-center justify-center bg-black overflow-auto">
         <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<Skeleton className="h-[80vh] w-[80%]" />}>
-          <Page pageNumber={currentPage || 1} scale={scale} onRenderError={onRenderError} renderAnnotationLayer={false} renderTextLayer={true} />
+          <Page 
+            pageNumber={currentPage || 1} 
+            scale={scale} 
+            onRenderError={onRenderError} 
+            renderAnnotationLayer={true} 
+            renderTextLayer={true}
+          />
         </Document>
       </div>
     );
@@ -138,7 +144,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
                   >
                     <div className="w-full h-full grid place-items-center overflow-auto box-border">
-                        <div className="shadow-lg" style={{ marginBottom: '2px' }}>
+                        <div className="shadow-lg" style={{ marginBottom: '8px' }}>
                         <Page
                             pageNumber={pageNumber}
                             scale={debouncedScale}
