@@ -16,7 +16,7 @@ import { useDebounce } from 'use-debounce';
 import { search as searchFlow } from '@/ai/flows/search-flow';
 import { Content, contentService } from '@/lib/contentService';
 import { useCollection } from '@/firebase/firestore/use-collection';
-import FilePreviewModal from './FilePreviewModal';
+import { FilePreviewModal } from './FilePreviewModal';
 import { RenameDialog } from './RenameDialog';
 import { ChangeIconDialog } from './ChangeIconDialog';
 import { FolderSelectorDialog } from './FolderSelectorDialog';
