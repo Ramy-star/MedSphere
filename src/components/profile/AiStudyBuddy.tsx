@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -249,7 +248,6 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         setChatHistory(newHistory);
         setIsResponding(true);
         setCustomQuestion('');
-        setReferencedFiles([]); // Clear referenced files from the input area after submission
         
         let fileContent = '';
         try {
@@ -597,7 +595,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
                 <div
                   dir="auto"
                   className={cn(
-                    'text-slate-300 max-w-[95%] prose prose-sm prose-invert',
+                    'text-slate-300 max-w-[95%] prose prose-sm prose-invert pl-2',
                     isRtl(message.text)
                       ? 'self-end text-right'
                       : 'self-start text-left'
@@ -824,5 +822,3 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         </div>
     );
 }
-
-    
