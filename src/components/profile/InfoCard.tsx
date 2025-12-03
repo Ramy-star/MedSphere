@@ -8,7 +8,6 @@ import { useToast } from '@/hooks/use-toast';
 
 export const InfoCard = ({ icon: Icon, label, value, onEdit, isSecret = false }: { icon: React.ElementType, label: string, value: string | null, onEdit?: () => void, isSecret?: boolean }) => {
     const [isCopied, setIsCopied] = useState(false);
-    const [isSecretVisible, setIsSecretVisible] = useState(false);
     const { toast } = useToast();
 
     if (!value) return null;
@@ -20,11 +19,6 @@ export const InfoCard = ({ icon: Icon, label, value, onEdit, isSecret = false }:
         toast({ title: `${label} Copied`});
         setTimeout(() => setIsCopied(false), 2000);
     }
-
-    const toggleSecretVisibility = (e: React.MouseEvent) => {
-        e.stopPropagation();
-        setIsSecretVisible(prev => !prev);
-    }
     
     return (
     <div className="glass-card flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-2xl group">
@@ -34,20 +28,11 @@ export const InfoCard = ({ icon: Icon, label, value, onEdit, isSecret = false }:
         <div className="flex-1 overflow-hidden">
             <span className="text-xs sm:text-sm text-slate-400">{label}</span>
             <p className="text-sm sm:text-base font-medium text-white mt-0.5 font-mono break-all">
-                {isSecret && !isSecretVisible ? '••••••••' : value}
+                {isSecret ? '••••••••' : value}
             </p>
         </div>
         <div className="flex items-center gap-1">
-             {isSecret ? (
-                <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={toggleSecretVisibility}
-                    className="w-8 h-8 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                    {isSecretVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                </Button>
-             ) : (
+             {!isSecret && (
                 <Button
                     size="icon"
                     variant="ghost"
