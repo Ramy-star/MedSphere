@@ -221,7 +221,7 @@ const getIconForFileType = (item: Content): { Icon: LucideIcon | React.FC<any>, 
     }
 };
 
-export default function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
+export function FilePreviewModal({ item, onOpenChange }: { item: Content | null, onOpenChange: (open: boolean) => void }) {
   const { toast } = useToast();
   const router = useRouter();
   const [showChat, setShowChat] = useState(false);
@@ -585,7 +585,7 @@ export default function FilePreviewModal({ item, onOpenChange }: { item: Content
   const isQuiz = item?.type === 'INTERACTIVE_QUIZ' || item?.type === 'INTERACTIVE_EXAM' || item?.type === 'INTERACTIVE_FLASHCARD';
   const isChatAvailable = (isPdf || isMarkdown || isTextFile || isQuiz || isNote) && !isExamInProgress;
   const isQuoteAvailable = (isPdf || isMarkdown || isTextFile || isNote) && !isExamInProgress;
-  const displayName = item.name;
+  const displayName = item.name.replace(/\.[^/.]+$/, "");
   const canEditInteractive = can('canAdministerExams', item.id) && (item.type === 'INTERACTIVE_QUIZ' || item.type === 'INTERACTIVE_EXAM');
   
   const renderLoadingSkeleton = () => (

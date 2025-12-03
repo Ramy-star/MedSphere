@@ -1,3 +1,4 @@
+
 'use client';
 import { useState, useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import { Document, Page, pdfjs } from 'react-pdf';
@@ -115,14 +116,14 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
   if (isFullscreen) {
     return (
       <div className="w-screen h-screen bg-black overflow-auto">
-        <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<Skeleton className="h-[80vh] w-[80%]" />} className="w-full h-full">
+        <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<Skeleton className="h-full w-full" />} className="w-full h-full">
           <Page 
             pageNumber={currentPage || 1} 
             scale={scale} 
             onRenderError={onRenderError} 
             renderAnnotationLayer={true} 
             renderTextLayer={true}
-            className="w-full h-full flex justify-center"
+            className="w-full h-full"
           />
         </Document>
       </div>

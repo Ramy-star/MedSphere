@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect } from 'react';
@@ -42,7 +43,7 @@ export function RenameDialog({ item, onOpenChange, onRename }: RenameDialogProps
 
   useEffect(() => {
     if (item) {
-      form.reset({ name: item.name });
+      form.reset({ name: item.name.replace(/\.[^/.]+$/, "") });
     }
   }, [item, form]);
 
@@ -59,7 +60,7 @@ export function RenameDialog({ item, onOpenChange, onRename }: RenameDialogProps
           <DialogHeader>
             <DialogTitle>Rename {item?.type === 'FOLDER' ? 'Folder' : 'File'}</DialogTitle>
             <DialogDescription>
-              Enter a new name for "{item?.name}".
+              Enter a new name for "{item?.name.replace(/\.[^/.]+$/, "")}".
             </DialogDescription>
           </DialogHeader>
           <Form {...form}>
