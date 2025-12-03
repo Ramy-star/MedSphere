@@ -140,7 +140,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
                   >
                     <div className="w-full h-full grid place-items-center overflow-auto p-4 box-border">
-                        <div className="shadow-lg" style={{ marginBottom: '4px' }}>
+                        <div className="shadow-lg" style={{ marginBottom: '2px' }}>
                         <Page
                             pageNumber={pageNumber}
                             scale={debouncedScale}
