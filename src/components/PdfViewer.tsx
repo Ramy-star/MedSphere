@@ -114,14 +114,15 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
 
   if (isFullscreen) {
     return (
-      <div className="w-screen h-screen flex items-center justify-center bg-black overflow-auto">
-        <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<Skeleton className="h-[80vh] w-[80%]" />}>
+      <div className="w-screen h-screen bg-black overflow-auto">
+        <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<Skeleton className="h-[80vh] w-[80%]" />} className="w-full h-full">
           <Page 
             pageNumber={currentPage || 1} 
             scale={scale} 
             onRenderError={onRenderError} 
             renderAnnotationLayer={true} 
             renderTextLayer={true}
+            className="w-full h-full flex justify-center"
           />
         </Document>
       </div>
