@@ -116,9 +116,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
     return (
       <div className="w-full h-full flex flex-col items-center justify-center bg-black">
         <Document file={file} onLoadSuccess={onDocumentLoadSuccessInternal} onLoadError={onDocumentLoadError} options={options} loading={<Skeleton className="h-[80vh] w-[80%]" />}>
-          <div className="grid place-items-center w-full h-full overflow-auto">
-             <Page pageNumber={currentPage || 1} scale={scale} onRenderError={onRenderError} renderAnnotationLayer={false} renderTextLayer={true} className="shadow-2xl fullscreen:object-contain" />
-          </div>
+          <Page pageNumber={currentPage || 1} scale={scale} onRenderError={onRenderError} renderAnnotationLayer={false} renderTextLayer={true} className="shadow-2xl" />
         </Document>
       </div>
     );
@@ -139,7 +137,7 @@ const PdfViewer = forwardRef<PdfViewerRef, PdfViewerProps>(({ file, onLoadSucces
                     ref={rowVirtualizer.measureElement}
                     style={{ position: 'absolute', top: 0, left: 0, width: '100%', transform: `translateY(${virtualItem.start}px)` }}
                   >
-                    <div className="w-full h-full grid place-items-center overflow-auto p-4 box-border">
+                    <div className="w-full h-full grid place-items-center overflow-auto box-border">
                         <div className="shadow-lg" style={{ marginBottom: '2px' }}>
                         <Page
                             pageNumber={pageNumber}
