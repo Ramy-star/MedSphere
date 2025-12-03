@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { useEffect, useState, useCallback, useRef, useLayoutEffect, useMemo } from 'react';
@@ -120,6 +121,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
     const [fontSize, setFontSize] = useState(13); // Reduced default font size slightly
     const [copiedMessageIndex, setCopiedMessageIndex] = useState<number | null>(null);
     const [showFileSearch, setShowFileSearch] = useState(false);
+    const [fileSearchQuery, setFileSearchQuery] = useState('');
     const [referencedFiles, setReferencedFiles] = useState<Content[]>([]);
     const [itemToDelete, setItemToDelete] = useState<AiBuddyChatSession | null>(null);
     const [showClearHistoryDialog, setShowClearHistoryDialog] = useState(false);
@@ -247,7 +249,7 @@ export function AiStudyBuddy({ user, isFloating = false, onToggleExpand, isExpan
         setChatHistory(newHistory);
         setIsResponding(true);
         setCustomQuestion('');
-        // Don't clear referenced files here: setReferencedFiles([]);
+        setReferencedFiles([]);
         
         let fileContent = '';
         try {
