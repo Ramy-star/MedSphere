@@ -336,7 +336,7 @@ export default function ProfilePage() {
                     <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                     <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
                     <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
-                    <InfoCard icon={KeyRound} label="Secret Code" value={"••••••••"} onEdit={() => setShowChangeSecretCode(true)} />
+                    <InfoCard icon={KeyRound} label="Secret Code" value={user.secretCodeHash} isSecret onEdit={() => setShowChangeSecretCode(true)} />
                 </div>
             </CollapsibleSection>
              <CollapsibleSection title="Active Sessions" icon={Activity} defaultOpen={true}>
@@ -367,7 +367,7 @@ export default function ProfilePage() {
                   <InfoCard icon={Badge} label="Student ID" value={user.studentId ?? 'N/A'} />
                   <InfoCard icon={Mail} label="Email" value={user.email ?? 'Not available'} />
                   <InfoCard icon={School} label="Academic Level" value={userLevel ?? 'Not Specified'} />
-                  <InfoCard icon={KeyRound} label="Secret Code" value={"••••••••"} onEdit={() => setShowChangeSecretCode(true)} />
+                  <InfoCard icon={KeyRound} label="Secret Code" value={user.secretCodeHash} isSecret onEdit={() => setShowChangeSecretCode(true)} />
               </div>
           </CollapsibleSection>
           <CollapsibleSection title="Favorites" icon={Star} defaultOpen={false}>
@@ -634,4 +634,3 @@ export default function ProfilePage() {
     </>
   );
 }
-
