@@ -19,8 +19,6 @@ import level5Data from '@/lib/student-ids/level-5-data.json';
 
 const SUPER_ADMIN_ID = "221100154";
 
-// --- Hashing functions using bcryptjs ---
-// Dynamically import bcryptjs only when needed to avoid bundling issues.
 async function hashSecretCode(secretCode: string): Promise<string> {
     const bcrypt = (await import('bcryptjs')).default;
     const salt = await bcrypt.genSalt(10);

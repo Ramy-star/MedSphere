@@ -253,8 +253,6 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     
         if (type === 'flashcards') {
             jsonResult = await convertFlashcardsToJson({ lectureName, text });
-        } else if (type === 'exam') {
-            jsonResult = await convertQuestionsToJson({ lectureName, text });
         } else {
             jsonResult = await convertQuestionsToJson({ lectureName, text });
         }
