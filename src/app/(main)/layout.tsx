@@ -12,9 +12,7 @@ import { useAuthStore } from "@/stores/auth-store";
 import { ImageIcon, Loader2 } from "lucide-react";
 import { Header } from "@/components/header";
 import { FloatingAssistant } from "@/components/profile/FloatingAssistant";
-import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
-import { useCollection } from '@/firebase/firestore/use-collection';
-import type { Content } from '@/lib/contentService';
+import { useEffect, useState, Suspense, lazy } from 'react';
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useFilePreviewStore } from '@/stores/file-preview-store';
 import { WelcomeScreen } from "@/components/WelcomeScreen";
@@ -38,7 +36,6 @@ export default function MainLayout({
   const [showWelcome, setShowWelcome] = useState(true);
   const [isClient, setIsClient] = useState(false);
   
-  // Moved to the top to respect the Rules of Hooks.
   useKeyboardShortcuts();
 
   useEffect(() => {
@@ -54,7 +51,6 @@ export default function MainLayout({
     setShowWelcome(false);
   };
   
-  // Render loading indicator, welcome, or verification screens if not authenticated
   if (!isClient || authState === 'loading') {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
@@ -147,7 +143,7 @@ export default function MainLayout({
 
           <div className={cn(
             "flex-shrink-0 flex flex-col min-h-[48px] relative z-10",
-            isHomePage && "px-2 sm:px-6 pt-4 md:pt-6" // Apply consistent padding on homepage
+            isHomePage && "px-2 sm:px-6 pt-4 md:pt-6"
           )}>
               <Breadcrumbs />
           </div>
@@ -161,7 +157,7 @@ export default function MainLayout({
           </div>
         </motion.main>
       </div>
-      <FloatingAssistant />
+      <FloatingAssistant user={user} />
        <Suspense fallback={null}>
         {previewItem && (
           <FilePreviewModal

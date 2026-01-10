@@ -5,15 +5,13 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, createChannel, joinChannel } from '@/lib/communityService';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, PlusCircle, Users, Check, UserPlus } from 'lucide-react';
+import { ArrowLeft, PlusCircle, Users, Check } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
 import { CreateChannelDialog } from '@/components/community/CreateChannelDialog';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { QueryConstraint, where, or } from 'firebase/firestore';
+import { QueryConstraint, where } from 'firebase/firestore';
 
 const ChannelCard = ({ channel }: { channel: Channel }) => {
   const memberCount = Array.isArray(channel.members) ? channel.members.length : 0;
@@ -96,7 +94,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-export default function ChannelsPage({ params }: { params: { category: string } }) {
+export default function Page({ params }: { params: { category: string } }) {
   const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
@@ -112,7 +110,6 @@ export default function ChannelsPage({ params }: { params: { category: string } 
   const queryConstraints = useMemo(() => {
     const constraints: QueryConstraint[] = [];
     
-    // For super admins on the 'level' page, we want all level channels.
     if (category === 'level' && isSuperAdmin) {
         constraints.push(where('type', '==', 'level'));
     } else if (category === 'public') {
@@ -122,12 +119,9 @@ export default function ChannelsPage({ params }: { params: { category: string } 
             constraints.push(where('type', '==', 'private'));
             constraints.push(where('members', 'array-contains', user.uid));
         } else {
-            // If user is not logged in, they can't see private channels.
-            // This creates a query that finds nothing.
             constraints.push(where('type', '==', 'invalid-category'));
         }
     } else {
-        // Fallback for any other category or non-admin on level page
         constraints.push(where('type', '==', 'invalid-category'));
     }
 
@@ -173,7 +167,8 @@ export default function ChannelsPage({ params }: { params: { category: string } 
         return;
     }
     try {
-        const newChannelId = await createChannel(name, description, category as Channel['type'], user.uid, category === 'level' ? user.level : undefined);
+        const channelType = category === 'public' ? 'public' : 'private';
+        const newChannelId = await createChannel(name, description, channelType, user.uid);
         toast({
             title: "Channel Created!",
             description: `"${name}" has been successfully created.`,
@@ -233,7 +228,7 @@ export default function ChannelsPage({ params }: { params: { category: string } 
     <CreateChannelDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onCreate={handleCreateChannel}
+        onCreate={(name, description) => handleCreateChannel(name, description)}
     />
     </>
   );

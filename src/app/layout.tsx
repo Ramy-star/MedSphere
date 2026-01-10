@@ -1,7 +1,4 @@
 'use client';
-
-import type { Metadata } from "next";
-import { Nunito_Sans, Ubuntu, Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
@@ -11,7 +8,7 @@ import { OfflineIndicator } from "@/components/OfflineIndicator";
 import { useAuthStore } from "@/stores/auth-store";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
-
+import { Nunito_Sans, Ubuntu, Inter } from "next/font/google";
 
 const nunitoSans = Nunito_Sans({ 
   subsets: ["latin"],
@@ -43,7 +40,9 @@ export default function RootLayout({
     useEffect(() => {
         setIsClient(true);
         const setDynamicVh = () => {
-            document.documentElement.style.setProperty('--1dvh', `${window.innerHeight}px`);
+            if (typeof window !== 'undefined') {
+                document.documentElement.style.setProperty('--1dvh', `${window.innerHeight}px`);
+            }
         };
 
         setDynamicVh();
@@ -51,10 +50,12 @@ export default function RootLayout({
         return () => window.removeEventListener('resize', setDynamicVh);
     }, []);
 
+    const bodyClassName = `${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`;
+
     if (!isClient) {
         return (
             <html lang="en" className="dark h-full">
-                <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
+                <body className={bodyClassName}>
                      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
                         <div className="flex flex-col items-center gap-4">
                             <Logo className="h-16 w-16 animate-pulse" />
@@ -77,7 +78,7 @@ export default function RootLayout({
                 <link rel="apple-touch-icon" href="/logo.svg" />
                 <link rel="preconnect" href="https://res.cloudinary.com" />
             </head>
-            <body className={`${nunitoSans.variable} ${ubuntu.variable} ${inter.variable} font-sans h-full bg-background overflow-hidden`}>
+            <body className={bodyClassName}>
                 <FirebaseClientProvider config={firebaseConfig}>
                     <div className="flex flex-col h-full w-full">
                         <OfflineIndicator />

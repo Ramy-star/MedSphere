@@ -1,5 +1,5 @@
 'use client';
-import { useState, useMemo, useEffect, useRef, use } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
@@ -13,12 +13,9 @@ import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon } from 'lucide-react';
-import { cn } from '@/lib/utils';
-import { ImagePreviewDialog } from '@/components/community/ImagePreviewDialog';
 
 export default function DirectMessagePage({ params }: { params: { chatId: string } }) {
-  const resolvedParams = use(params);
-  const { chatId } = resolvedParams;
+  const { chatId } = params;
   const { user: currentUser } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -34,7 +31,7 @@ export default function DirectMessagePage({ params }: { params: { chatId: string
     return chat.participants.find(p => p !== currentUser.uid);
   }, [chat, currentUser]);
 
-  const { userProfile: otherUser, loading: loadingOtherUser } = useUserProfile(otherParticipantId);
+  const { userProfile: otherUser, loading: loadingOtherUser } = useUserProfile(otherParticipantId || undefined);
   
   const { data: messages, loading: loadingMessages } = useCollection<Message>(`directMessages/${chatId}/messages`, {
     orderBy: ['timestamp', 'asc']
