@@ -9,7 +9,7 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 import Image from "next/image";
 import { useAuthStore } from "@/stores/auth-store";
-import { ImageIcon } from "lucide-react";
+import { ImageIcon, Loader2 } from "lucide-react";
 import { Header } from "@/components/header";
 import { FloatingAssistant } from "@/components/profile/FloatingAssistant";
 import { useEffect, useState, useMemo, Suspense, lazy } from 'react';
@@ -17,8 +17,12 @@ import { useCollection } from '@/firebase/firestore/use-collection';
 import type { Content } from '@/lib/contentService';
 import { useKeyboardShortcuts } from "@/hooks/use-keyboard-shortcuts";
 import { useFilePreviewStore } from '@/stores/file-preview-store';
+import { WelcomeScreen } from "@/components/WelcomeScreen";
+import { VerificationScreen } from "@/components/VerificationScreen";
+import { Logo } from "@/components/logo";
 
 const FilePreviewModal = lazy(() => import('@/components/FilePreviewModal').then(module => ({ default: module.FilePreviewModal })));
+const WELCOME_SCREEN_KEY = 'medsphere-has-visited';
 
 export default function MainLayout({
   children,
@@ -28,8 +32,72 @@ export default function MainLayout({
   const { isMobileSidebarOpen, setMobileSidebarOpen } = useSidebarStore();
   const isMobile = useIsMobile();
   const pathname = usePathname();
-  const { user } = useAuthStore();
+  const { authState, user } = useAuthStore();
   const { previewItem, setPreviewItem } = useFilePreviewStore();
+
+  const [showWelcome, setShowWelcome] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    const hasVisited = localStorage.getItem(WELCOME_SCREEN_KEY);
+    if (hasVisited) {
+      setShowWelcome(false);
+    }
+  }, []);
+
+  const handleGetStarted = () => {
+    localStorage.setItem(WELCOME_SCREEN_KEY, 'true');
+    setShowWelcome(false);
+  };
+  
+  // Render loading indicator, welcome, or verification screens if not authenticated
+  if (!isClient || authState === 'loading') {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <Logo className="h-16 w-16 animate-pulse" />
+          <p className="text-slate-400">Connecting to MedSphere...</p>
+        </div>
+      </div>
+    );
+  }
+  
+  if (showWelcome) {
+    return (
+        <>
+            <WelcomeScreen onGetStarted={handleGetStarted} />
+            <footer className="absolute bottom-4 text-center text-xs text-slate-500 z-10 w-full">
+                © 2025 MedSphere. All rights reserved.
+            </footer>
+        </>
+    );
+  }
+
+  if (authState !== 'authenticated') {
+    return (
+        <>
+          <VerificationScreen />
+          <footer className="absolute bottom-4 text-center text-xs text-slate-500 z-10 w-full">
+            © 2025 MedSphere. All rights reserved.
+          </footer>
+        </>
+    );
+  }
+
+  if (user?.isBlocked) {
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-background p-4">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-500">Account Blocked</h1>
+          <p className="text-slate-400 mt-2">
+            Your account has been blocked. Please contact an administrator.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
 
   const isHomePage = pathname === '/';
   const isQuestionsCreatorPage = pathname.startsWith('/questions-creator');
@@ -37,59 +105,6 @@ export default function MainLayout({
 
   // Global shortcuts
   useKeyboardShortcuts();
-
-  const [isLevel2Descendant, setIsLevel2Descendant] = useState(false);
-  const { data: allContent } = useCollection<Content>('content');
-
-  const itemMap = useMemo(() => {
-    if (!allContent) return new Map();
-    return new Map(allContent.map(item => [item.id, item]));
-  }, [allContent]);
-
-  useEffect(() => {
-    if (pathname === '/' || !allContent || allContent.length === 0) {
-      setIsLevel2Descendant(false);
-      return;
-    }
-
-    const pathSegments = pathname.split('/').filter(Boolean);
-    const firstSegment = pathSegments[0];
-    const secondSegment = pathSegments[1];
-    let currentItem: Content | undefined;
-
-    if (firstSegment === 'folder' && secondSegment) {
-      currentItem = itemMap.get(secondSegment);
-    } else if (firstSegment === 'level' && secondSegment) {
-      const levelName = decodeURIComponent(secondSegment);
-      currentItem = allContent.find(item => item.type === 'LEVEL' && item.name === levelName);
-    } else {
-      setIsLevel2Descendant(false);
-      return;
-    }
-
-    if (!currentItem) {
-      setIsLevel2Descendant(false);
-      return;
-    }
-
-    if (currentItem.type === 'LEVEL' && currentItem.name === 'Level 2') {
-      setIsLevel2Descendant(true);
-      return;
-    }
-
-    const findLevel2Parent = (itemId: string | null): boolean => {
-      if (!itemId) return false;
-      const item = itemMap.get(itemId);
-      if (!item) return false;
-      if (item.type === 'LEVEL' && item.name === 'Level 2') {
-        return true;
-      }
-      return findLevel2Parent(item.parentId);
-    };
-
-    setIsLevel2Descendant(findLevel2Parent(currentItem.id));
-
-  }, [pathname, allContent, itemMap]);
 
   return (
     <>
@@ -144,11 +159,6 @@ export default function MainLayout({
           )}>
             {children}
           </div>
-           {isLevel2Descendant && (
-            <div className="text-center py-3 text-sm text-slate-400 font-sans flex-shrink-0 mt-auto">
-                <em className="italic">Powered by</em> <strong className="font-bold text-yellow-400 text-base">Spark Lab</strong>
-            </div>
-        )}
         </motion.main>
       </div>
       <FloatingAssistant user={user} />
