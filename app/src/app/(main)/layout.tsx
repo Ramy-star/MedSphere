@@ -161,7 +161,7 @@ export default function MainLayout({
           </div>
         </motion.main>
       </div>
-      <FloatingAssistant user={user} />
+      <FloatingAssistant />
        <Suspense fallback={null}>
         {previewItem && (
           <FilePreviewModal
