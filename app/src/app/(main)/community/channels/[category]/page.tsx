@@ -94,12 +94,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-// Correctly typed props for Next.js App Router dynamic pages
-type PageProps = {
-  params: { category: string };
-};
-
-export default function Page({ params }: PageProps) {
+export default function Page({ params }: { params: { category: string } }) {
   const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
