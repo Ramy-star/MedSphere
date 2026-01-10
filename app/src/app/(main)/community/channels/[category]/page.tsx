@@ -96,7 +96,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-export default function ChannelsPage({ params }: { params: { category: string } }) {
+export default function Page({ params }: { params: { category: string } }) {
   const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();

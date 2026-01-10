@@ -3,15 +3,13 @@
 import React from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { UserProfile } from '@/stores/auth-store';
-import { useAuthStore } from '@/stores/auth-store';
 import { AiAssistantIcon } from '../icons/AiAssistantIcon';
 import { AiStudyBuddy } from './AiStudyBuddy';
 import { X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useFloatingAssistantStore } from '@/stores/floating-assistant-store';
 
-export const FloatingAssistant = () => {
-    const { user } = useAuthStore();
+export const FloatingAssistant = ({ user }: { user: UserProfile | null }) => {
     const { isOpen, isExpanded, toggle, toggleExpand } = useFloatingAssistantStore();
 
     if (!user) {
