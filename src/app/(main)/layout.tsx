@@ -37,6 +37,9 @@ export default function MainLayout({
 
   const [showWelcome, setShowWelcome] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  
+  // Moved to the top to respect the Rules of Hooks.
+  useKeyboardShortcuts();
 
   useEffect(() => {
     setIsClient(true);
@@ -103,9 +106,6 @@ export default function MainLayout({
   const isQuestionsCreatorPage = pathname.startsWith('/questions-creator');
   const isProfilePage = pathname === '/profile';
 
-  // Global shortcuts
-  useKeyboardShortcuts();
-
   return (
     <>
       <Header />
@@ -161,7 +161,7 @@ export default function MainLayout({
           </div>
         </motion.main>
       </div>
-      <FloatingAssistant user={user} />
+      <FloatingAssistant />
        <Suspense fallback={null}>
         {previewItem && (
           <FilePreviewModal
