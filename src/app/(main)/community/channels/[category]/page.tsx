@@ -1,3 +1,4 @@
+
 'use client';
 import { useMemo, useState, useEffect } from 'react';
 import { useCollection } from '@/firebase/firestore/use-collection';
@@ -95,11 +96,7 @@ const ChannelCard = ({ channel }: { channel: Channel }) => {
   );
 };
 
-interface ChannelsPageProps {
-  params: { category: string };
-}
-
-export default function ChannelsPage({ params }: ChannelsPageProps) {
+export default function ChannelsPage({ params }: { params: { category: string } }) {
   const { category } = params;
   const { user, isSuperAdmin } = useAuthStore();
   const router = useRouter();
@@ -241,3 +238,5 @@ export default function ChannelsPage({ params }: ChannelsPageProps) {
     </>
   );
 }
+
+    

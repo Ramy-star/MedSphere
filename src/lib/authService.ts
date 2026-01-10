@@ -1,3 +1,4 @@
+
 'use client';
 
 import { db } from '@/firebase';
@@ -167,3 +168,5 @@ export async function createUserProfile(studentId: string, secretCode: string): 
 
     return newUserProfile;
 }
+
+    
