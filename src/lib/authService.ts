@@ -168,5 +168,3 @@ export async function createUserProfile(studentId: string, secretCode: string): 
 
     return newUserProfile;
 }
-
-    

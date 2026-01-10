@@ -238,5 +238,3 @@ export default function ChannelsPage({ params }: { params: { category: string } 
     </>
   );
 }
-
-    
