@@ -157,7 +157,7 @@ export default function Page({ params }: { params: { category: string } }) {
       return null;
   }
 
-  const handleCreateChannel = async (name: string, description: string) => {
+  const handleCreateChannel = async (name: string, description: string, type: 'public' | 'private') => {
     if (!user) {
         toast({
             variant: "destructive",
@@ -167,8 +167,7 @@ export default function Page({ params }: { params: { category: string } }) {
         return;
     }
     try {
-        const channelType = category === 'public' ? 'public' : 'private';
-        const newChannelId = await createChannel(name, description, channelType, user.uid);
+        const newChannelId = await createChannel(name, description, type, user.uid);
         toast({
             title: "Channel Created!",
             description: `"${name}" has been successfully created.`,
@@ -228,7 +227,7 @@ export default function Page({ params }: { params: { category: string } }) {
     <CreateChannelDialog
         open={isCreateDialogOpen}
         onOpenChange={setIsCreateDialogOpen}
-        onCreate={(name, description) => handleCreateChannel(name, description)}
+        onCreate={handleCreateChannel}
     />
     </>
   );
