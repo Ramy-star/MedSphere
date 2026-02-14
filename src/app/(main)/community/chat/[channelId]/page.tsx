@@ -1,24 +1,19 @@
 'use client';
-import { useState, useMemo, useEffect, useRef, use } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useDoc } from '@/firebase/firestore/use-doc';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useAuthStore } from '@/stores/auth-store';
 import { type Channel, type Message, sendMessage, updateMessage, deleteMessage } from '@/lib/communityService';
-import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, ChevronDown } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { ChatMessage } from '@/components/community/ChatMessage';
 import { ChatInput } from '@/components/community/ChatInput';
-import { useUserProfile } from '@/hooks/use-user-profile';
 import { Skeleton } from '@/components/ui/skeleton';
-import { cn } from '@/lib/utils';
-import { isSameDay, isAfter, subMinutes } from 'date-fns';
-
+import { isAfter, subMinutes } from 'date-fns';
 
 export default function ChatPage({ params }: { params: { channelId: string } }) {
-  const resolvedParams = use(params);
-  const { channelId } = resolvedParams;
+  const { channelId } = params;
   const { user } = useAuthStore();
   const router = useRouter();
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -58,17 +53,14 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
   };
 
   useEffect(() => {
-    // Scroll to the bottom when messages load for the first time
     if (!loadingMessages) {
         scrollToBottom();
     }
   }, [loadingMessages]);
 
   useEffect(() => {
-    // Scroll to bottom when a new message is added, but only if user is near the bottom
      if (messagesContainerRef.current) {
         const { scrollTop, scrollHeight, clientHeight } = messagesContainerRef.current;
-        // The threshold of 100px allows some space for the user to be slightly scrolled up
         if (scrollHeight - scrollTop <= clientHeight + 100) {
             scrollToBottom('smooth');
         }
@@ -149,8 +141,6 @@ export default function ChatPage({ params }: { params: { channelId: string } }) 
         ) : (
           messages?.map((message, index) => {
             const previousMessage = messages[index - 1];
-            // A message is consecutive if it's from the same user, with the same anonymity status,
-            // and sent within 5 minutes of the previous one.
             const isConsecutive = 
               previousMessage &&
               previousMessage.userId === message.userId &&

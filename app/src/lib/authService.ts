@@ -43,6 +43,7 @@ export async function updateSecretCode(userId: string, newSecretCode: string): P
     });
 }
 
+
 const allStudentIds = new Set([
     ...level1Ids,
     ...level2Ids,

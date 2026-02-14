@@ -179,7 +179,7 @@ async function runGenerationProcess(
     } catch (err: any) {
         if (err.name === 'AbortError' || signal.aborted) {
              console.log(`Generation process for ${type} aborted by user.`);
-             updateStatus('idle');
+             updateStatus('idle'); // Reset this specific task status
              return;
         }
         console.error(`Error during ${type} generation:`, err);
@@ -253,9 +253,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     
         if (type === 'flashcards') {
             jsonResult = await convertFlashcardsToJson({ lectureName, text });
-        } else if (type === 'exam') {
-            jsonResult = await convertQuestionsToJson({ lectureName, text });
-        } else {
+        } else { // 'questions' or 'exam'
             jsonResult = await convertQuestionsToJson({ lectureName, text });
         }
         
@@ -307,7 +305,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
 
     retryGeneration: (type, prompts) => {
         const { task } = get();
-        if(!task) return;
+        if(!task) return; // Only retry if there is a task.
         
         const newAbortController = new AbortController();
         const newTask = { ...task, abortController: newAbortController };
@@ -333,6 +331,7 @@ export const useQuestionGenerationStore = create<QuestionGenerationState>()(
     },
 
     closeOptionsDialog: () => {
+        // If user closes the dialog, reset the flow
         if (get().flowStep === 'awaiting_options') {
             get().resetFlow();
         }
